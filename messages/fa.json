@@ -107,7 +107,13 @@
     "allTours": "همه تورها",
     "culturalTours": "فرهنگی و تاریخی",
     "natureTours": "طبیعت‌گردی و کویر",
-    "luxuryTours": "لوکس و اختصاصی"
+    "luxuryTours": "لوکس و اختصاصی",
+    "tourRecreational": "تفریحی و گردشگری",
+    "tourCultural": "فرهنگی و تاریخی",
+    "tourNature": "طبیعت‌گردی و کویر",
+    "tourMedical": "سلامت و درمانی",
+    "tourAdventure": "ماجراجویی و ورزشی",
+    "tourCommercial": "تجاری و نمایشگاهی"
   },
   "Home": {
     "offersKicker": "ویژه مقصد شما",
@@ -383,7 +389,15 @@
     "filterFreeCancel": "فقط کنسلی رایگان",
     "compareTitle": "مقایسه اقامتگاه‌ها",
     "viewHotel": "مشاهده و رزرو",
-    "perNight": "هر شب از"
+    "perNight": "هر شب از",
+    "freeCancel": "کنسلی رایگان",
+    "addFav": "افزودن به علاقه‌مندی‌ها",
+    "reviews": "نظر",
+    "compare": "مقایسه اقامتگاه",
+    "totalNights": "جمع {nights} شب ≈ {price} میلیون تومان",
+    "millionToman": "میلیون تومان",
+    "perNightFrom": "هر شب از",
+    "viewAndBook": "مشاهده و رزرو"
   },
   "Admin": {
     "dashboard": "داشبورد مدیریت فیروز",

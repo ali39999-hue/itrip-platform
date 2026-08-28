@@ -4,6 +4,7 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { HOTELS } from '@/lib/data';
+import type { Hotel } from '@/lib/types';
 import {
   HotelSearchHeader,
   HotelSearchToolbar,
@@ -95,7 +96,7 @@ export default function HotelsSearchPage() {
             ) : results.length === 0 ? (
               <HotelEmptyState onResetFilters={resetAll} />
             ) : (
-              results.map((hotel: any) => {
+              results.map((hotel: Hotel) => {
                 const numericId = Number(String(hotel.id).replace(/^h/, '')) || 0;
                 return (
                   <HotelCard

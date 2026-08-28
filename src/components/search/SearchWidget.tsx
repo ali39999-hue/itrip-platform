@@ -1,91 +1,50 @@
 'use client';
 
-import { useState } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
-import { useRouter } from '@/i18n/routing';
 import { useCountryStore } from '@/stores/country-store';
 import { countryName } from '@/lib/countries';
 import { dualDate } from '@/lib/jalali';
 import { JalaliDatePicker } from '@/components/ui/DatePicker';
 import {
-  CalendarDays, Search, X, ArrowLeftRight, Sparkles, Compass, CheckCircle2
+  CalendarDays, Search, X, ArrowLeftRight, Sparkles, Compass
 } from 'lucide-react';
 import { CityAutocomplete } from './CityAutocomplete';
 import { TravelerPicker } from './TravelerPicker';
-import { SearchModeTabs, SEARCH_TABS, type SearchTabId } from './SearchModeTabs';
-
-const ROUTES: Record<SearchTabId, string> = {
-  plan: '/plan',
-  flights: '/flights/search',
-  hotels: '/hotels/search',
-  tours: '/tours',
-};
+import { SearchModeTabs } from './SearchModeTabs';
+import { useSearchFormState } from './hooks/useSearchFormState';
 
 export function SearchWidget() {
-  const router = useRouter();
-  const locale = useLocale();
-  const t = useTranslations('Search');
   const { country } = useCountryStore();
-
-  const [tab, setTab] = useState<SearchTabId>('plan');
-  const [query, setQuery] = useState('');
-  const [dest, setDest] = useState('');
-  const [routeTo, setRouteTo] = useState('');
-  const [date1, setDate1] = useState('');
-  const [date2, setDate2] = useState('');
-  const [adults, setAdults] = useState(2);
-  const [children, setChildren] = useState(0);
-  const [rooms, setRooms] = useState(1);
-  const [guestOpen, setGuestOpen] = useState(false);
-  const [error, setError] = useState('');
-  const [tourType, setTourType] = useState('recreational');
-
-  const tabDef = SEARCH_TABS.find((tb) => tb.id === tab)!;
-
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (tab === 'plan') {
-      if (!query.trim()) {
-        router.push('/plan');
-      } else {
-        router.push(`/plan?q=${encodeURIComponent(query)}`);
-      }
-      return;
-    }
-
-    if (!dest.trim()) {
-      setError(tabDef.routeMode ? t('errFrom') : t('errDest'));
-      return;
-    }
-    if (tabDef.routeMode && !routeTo.trim()) {
-      setError(t('errDest'));
-      return;
-    }
-    setError('');
-
-    let q = '';
-    if (tabDef.routeMode) {
-      q = `?from=${encodeURIComponent(dest)}&to=${encodeURIComponent(routeTo)}`;
-      if (date1) q += `&depart=${encodeURIComponent(date1)}`;
-      if (date2) q += `&return=${encodeURIComponent(date2)}`;
-      q += `&adults=${adults}&children=${children}`;
-    } else if (tab === 'hotels') {
-      q = `?city=${encodeURIComponent(dest)}`;
-      if (date1) q += `&checkin=${encodeURIComponent(date1)}`;
-      if (date2) q += `&checkout=${encodeURIComponent(date2)}`;
-      q += `&rooms=${rooms}&adults=${adults}`;
-    } else {
-      q = `?city=${encodeURIComponent(dest)}&type=${encodeURIComponent(tourType)}`;
-    }
-
-    router.push(`${ROUTES[tab]}${q}`);
-  }
-
-  function swap() {
-    const temp = dest;
-    setDest(routeTo);
-    setRouteTo(temp);
-  }
+  const {
+    tab,
+    setTab,
+    tabDef,
+    query,
+    setQuery,
+    dest,
+    setDest,
+    routeTo,
+    setRouteTo,
+    date1,
+    setDate1,
+    date2,
+    setDate2,
+    adults,
+    setAdults,
+    children,
+    setChildren,
+    rooms,
+    setRooms,
+    guestOpen,
+    setGuestOpen,
+    error,
+    setError,
+    tourType,
+    setTourType,
+    submit,
+    swap,
+    t,
+    locale,
+  } = useSearchFormState();
 
   const fieldCls =
     'min-h-[58px] flex items-center gap-3 px-3 rounded-xl bg-surface border border-line/80 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand transition';
@@ -98,40 +57,31 @@ export function SearchWidget() {
         </div>
       )}
       <div className="glass-card rounded-3xl p-5 md:p-7 shadow-elev-3 overflow-visible">
-        {/* Segmented Tabs */}
-        <SearchModeTabs
-          activeTab={tab}
-          onTabChange={(newTab) => {
-            setTab(newTab);
-            setError('');
-          }}
-        />
+        {/* Tab Selection */}
+        <SearchModeTabs currentTab={tab} onTabChange={setTab} />
 
-        <form
-          onSubmit={submit}
-          noValidate
-          className={`grid grid-cols-1 ${
-            tab === 'plan'
-              ? 'md:grid-cols-[1fr_auto]'
-              : tab === 'tours'
-              ? 'md:grid-cols-7'
-              : 'md:grid-cols-6'
-          } gap-3 relative`}
-        >
+        {/* Dynamic Search Fields Container */}
+        <form onSubmit={submit} className="relative grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
           {tab === 'plan' ? (
-            <div className={`${fieldCls} md:col-span-1 shadow-inner bg-soft/50`}>
-              <Sparkles size={20} className="text-brand shrink-0" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t('planPlaceholder')}
-                className="w-full h-full border-0 outline-0 p-0 text-[15px] font-bold text-ink bg-transparent placeholder:text-sub"
-              />
+            /* AI Plan Mode Input */
+            <div className="md:col-span-5 relative">
+              <div className="min-h-[58px] flex items-center gap-3 px-4 rounded-xl bg-surface border border-brand/30 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand transition">
+                <Sparkles size={20} className="text-gold shrink-0 animate-pulse" />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t('promptPlaceholder')}
+                  className="w-full border-0 outline-0 p-0 text-sm font-bold text-ink placeholder:text-sub bg-transparent"
+                  id="search-ai-prompt-input"
+                />
+              </div>
             </div>
           ) : (
+            /* Flights / Hotels / Tours Inputs */
             <>
               {/* Origin / Destination Autocomplete */}
-              <div className={`${fieldCls} md:col-span-2`}>
+              <div className={`${fieldCls} ${tabDef.routeMode ? 'md:col-span-2' : tab === 'tours' ? 'md:col-span-2' : 'md:col-span-3'}`}>
                 <CityAutocomplete
                   value={dest}
                   onChange={(val) => {
@@ -154,16 +104,19 @@ export function SearchWidget() {
                   <Compass size={18} className="text-brand-dark shrink-0" />
                   <div className="w-full min-w-0">
                     <label className="block mb-0.5 text-[11px] font-bold text-sub">
-                      {locale === 'en' ? 'Tour Type' : 'نوع تور'}
+                      {t('tourCategory')}
                     </label>
                     <select
                       value={tourType}
                       onChange={(e) => setTourType(e.target.value)}
                       className="w-full border-0 outline-0 p-0 text-[13px] font-bold text-ink bg-transparent appearance-none cursor-pointer"
                     >
-                      <option value="recreational">{locale === 'en' ? 'Recreational' : 'تفریحی'}</option>
-                      <option value="medical">{locale === 'en' ? 'Medical' : 'درمانی'}</option>
-                      <option value="commercial">{locale === 'en' ? 'Commercial' : 'تجاری'}</option>
+                      <option value="recreational">{t('tourRecreational')}</option>
+                      <option value="cultural">{t('tourCultural')}</option>
+                      <option value="nature">{t('tourNature')}</option>
+                      <option value="medical">{t('tourMedical')}</option>
+                      <option value="adventure">{t('tourAdventure')}</option>
+                      <option value="commercial">{t('tourCommercial')}</option>
                     </select>
                   </div>
                 </div>
@@ -197,8 +150,8 @@ export function SearchWidget() {
                 </button>
               )}
 
-              {/* Departure Date */}
-              <div className={`${fieldCls} ${tab === 'tours' ? 'md:col-span-2' : 'md:col-span-1'}`}>
+              {/* Departure / Check-in Date */}
+              <div className={`${fieldCls} ${tabDef.routeMode ? 'md:col-span-1' : tab === 'tours' ? 'md:col-span-2' : 'md:col-span-1'}`}>
                 <CalendarDays size={18} className="text-brand-dark shrink-0" />
                 <div className="w-full min-w-0">
                   <label className="block mb-0.5 text-[11px] font-bold text-sub">
@@ -214,7 +167,7 @@ export function SearchWidget() {
               </div>
 
               {/* Guests / Rooms Picker */}
-              <div className={`${tab === 'tours' ? 'md:col-span-2' : 'md:col-span-1'}`}>
+              <div className={`${tabDef.routeMode ? 'md:col-span-1' : tab === 'tours' ? 'md:col-span-1' : 'md:col-span-1'}`}>
                 <TravelerPicker
                   adults={adults}
                   setAdults={setAdults}
@@ -232,7 +185,7 @@ export function SearchWidget() {
           {/* Search Submit CTA */}
           <button
             type="submit"
-            className="min-h-[58px] px-6 rounded-xl bg-action hover:bg-action-hover text-[#14201f] text-[15px] font-black shadow-md transition-all flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-[0.98]"
+            className="min-h-[58px] px-6 rounded-xl bg-action hover:bg-action-hover text-[#14201f] text-[15px] font-black shadow-md transition-all flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-[0.98] md:col-span-1"
           >
             <Search size={18} />
             <span>{tab === 'plan' ? t('btnPlan') : t('btnSearch')}</span>

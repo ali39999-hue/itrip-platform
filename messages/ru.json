@@ -107,7 +107,13 @@
     "allTours": "Все туры",
     "culturalTours": "Культурные и исторические",
     "natureTours": "Природа и пустыни",
-    "luxuryTours": "VIP и индивидуальные"
+    "luxuryTours": "VIP и индивидуальные",
+    "tourRecreational": "Развлекательные и отдых",
+    "tourCultural": "Культурные и исторические",
+    "tourNature": "Природные и экотуры",
+    "tourMedical": "Медицинские и оздоровительные",
+    "tourAdventure": "Приключенческие и спорт",
+    "tourCommercial": "Деловые и выставки"
   },
   "Home": {
     "offersKicker": "Для вашего направления",
@@ -383,7 +389,15 @@
     "filterFreeCancel": "Только с бесплатной отменой",
     "compareTitle": "Сравнение отелей",
     "viewHotel": "Посмотреть и забронировать",
-    "perNight": "за ночь от"
+    "perNight": "за ночь от",
+    "freeCancel": "Бесплатная отмена",
+    "addFav": "Добавить в избранное",
+    "reviews": "отзывов",
+    "compare": "Сравнить отель",
+    "totalNights": "Всего {nights} ноч. ≈ {price} млн туманов",
+    "millionToman": "млн туманов",
+    "perNightFrom": "За ночь от",
+    "viewAndBook": "Посмотреть и забронировать"
   },
   "Admin": {
     "dashboard": "Панель управления Firuzo",

@@ -107,7 +107,13 @@
     "allTours": "全部体验",
     "culturalTours": "历史与人文",
     "natureTours": "自然与沙漠探索",
-    "luxuryTours": "尊享私家定制"
+    "luxuryTours": "尊享私家定制",
+    "tourRecreational": "休闲观光",
+    "tourCultural": "文化与历史",
+    "tourNature": "自然与生态",
+    "tourMedical": "医疗与康养",
+    "tourAdventure": "探险与运动",
+    "tourCommercial": "商务与会展"
   },
   "Home": {
     "offersKicker": "为您的目的地精选",
@@ -383,7 +389,15 @@
     "filterFreeCancel": "仅限免费取消",
     "compareTitle": "住宿对比",
     "viewHotel": "查看与预订",
-    "perNight": "每晚起价"
+    "perNight": "每晚起价",
+    "freeCancel": "免费取消",
+    "addFav": "添加到收藏夹",
+    "reviews": "条评价",
+    "compare": "比较住宿",
+    "totalNights": "共 {nights} 晚 ≈ {price} 百万图曼",
+    "millionToman": "百万图曼",
+    "perNightFrom": "每晚起",
+    "viewAndBook": "查看并预订"
   },
   "Admin": {
     "dashboard": "Firuzo管理控制台",

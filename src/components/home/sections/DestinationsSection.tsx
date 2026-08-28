@@ -5,28 +5,43 @@ import { Link } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES, countryName } from '@/lib/countries';
-import { shimmerDataUrl } from '@/lib/image-utils';
+import { shimmerDataUrl, DESTINATION_IMAGE_MAP } from '@/lib/image-utils';
 
 export function DestinationsSection() {
   const locale = useLocale();
   const t = useTranslations('Home');
   const { country } = useCountryStore();
-  const c = COUNTRIES[country];
+  const c = COUNTRIES[country] || COUNTRIES.iran;
 
-  const cities = [
-    { nameFa: 'تهران', nameEn: 'Tehran', img: 'https://images.unsplash.com/photo-1579762715118-a6f1d4b934f1?w=600&q=80', desc: 'پایتخت پرجنب‌وجوش با کافه‌ها و کاخ‌های تاریخی' },
-    { nameFa: 'مشهد', nameEn: 'Mashhad', img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=80', desc: 'پایتخت معنوی و زیارتی با هتل‌های لوکس ۵ ستاره' },
-    { nameFa: 'اصفهان', nameEn: 'Isfahan', img: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=600&q=80', desc: 'نصف جهان، پایتخت فرهنگ و معماری بی‌بدیل صفوی' },
-    { nameFa: 'شیراز', nameEn: 'Shiraz', img: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80', desc: 'شهر شعر، ادب، باغ‌های دل‌انگیز و تخت جمشید' },
-  ];
+  const cities = (c.cities && c.cities.length > 0 ? c.cities.slice(0, 4) : [
+    { fa: 'تهران', en: 'Tehran', href: '/hotels/search?city=تهران', gradient: 'from-teal-500 to-emerald-700' },
+    { fa: 'مشهد', en: 'Mashhad', href: '/hotels/search?city=مشهد', gradient: 'from-amber-500 to-orange-700' },
+    { fa: 'اصفهان', en: 'Isfahan', href: '/hotels/search?city=اصفهان', gradient: 'from-cyan-500 to-blue-700' },
+    { fa: 'شیراز', en: 'Shiraz', href: '/hotels/search?city=شیراز', gradient: 'from-emerald-500 to-teal-800' },
+  ]).map((city) => {
+    const cityName = locale === 'fa' ? city.fa : city.en;
+    const img = DESTINATION_IMAGE_MAP[city.en] || DESTINATION_IMAGE_MAP[city.fa] || 'https://images.unsplash.com/photo-1579762715118-a6f1d4b934f1?w=600&q=80';
+    const desc = locale === 'fa' 
+      ? `کشف زیبایی‌ها، جاذبه‌های برتر و اقامتگاه‌های لوکس ${city.fa}`
+      : `Discover top attractions, culture & luxury stays in ${city.en}`;
+
+    return {
+      name: cityName,
+      nameFa: city.fa,
+      nameEn: city.en,
+      href: city.href || `/hotels/search?city=${encodeURIComponent(city.fa)}`,
+      img,
+      desc,
+    };
+  });
 
   return (
     <section className="w-full py-12 md:py-16 px-4 md:px-10">
       <div className="max-w-[1280px] mx-auto flex flex-col gap-8">
         <div>
-          <p className="mb-2 text-brand-dark font-black tracking-wide text-xs">{t('destinationsKicker')}</p>
+          <p className="mb-2 text-brand-dark font-black tracking-wide text-xs">{t('destKicker')}</p>
           <h2 className="text-2xl md:text-[32px] font-black text-ink m-0 tracking-tight">
-            {t('destinationsTitle', { country: countryName(country, locale) })}
+            {t('destTitle', { country: countryName(country, locale) })}
           </h2>
         </div>
 
@@ -34,12 +49,12 @@ export function DestinationsSection() {
           {cities.map((city) => (
             <Link
               key={city.nameEn}
-              href={`/hotels/search?city=${encodeURIComponent(city.nameFa)}`}
+              href={city.href}
               className="group relative h-72 rounded-3xl overflow-hidden shadow-elev-1 hover:shadow-elev-3 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <Image
                 src={city.img}
-                alt={city.nameFa}
+                alt={city.name}
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                 placeholder="blur"
@@ -48,7 +63,7 @@ export function DestinationsSection() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-deep/90 via-deep/30 to-transparent" />
               <div className="absolute bottom-4 start-4 end-4 text-surface">
-                <h3 className="text-lg font-bold mb-1">{city.nameFa}</h3>
+                <h3 className="text-lg font-bold mb-1">{city.name}</h3>
                 <p className="text-xs text-surface/80 line-clamp-2 leading-relaxed">{city.desc}</p>
               </div>
             </Link>

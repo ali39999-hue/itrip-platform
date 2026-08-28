@@ -1,5 +1,7 @@
 'use client';
 
+import { AlertTriangle, RotateCcw } from 'lucide-react';
+
 export default function GlobalError({
   error,
   reset,
@@ -9,23 +11,24 @@ export default function GlobalError({
 }) {
   return (
     <html lang="fa" dir="rtl">
-      <body className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-4">
-        <div className="max-w-md w-full text-center bg-slate-800 border border-slate-700 rounded-3xl p-8 shadow-2xl space-y-6">
-          <div className="w-16 h-16 rounded-2xl bg-rose-500/20 text-rose-400 grid place-items-center mx-auto text-2xl font-bold">
-            !
+      <body className="min-h-screen bg-deep text-surface flex items-center justify-center p-4 antialiased">
+        <div className="max-w-md w-full text-center glass-card bg-surface/90 text-ink border border-line/80 rounded-3xl p-8 shadow-elev-3 space-y-6">
+          <div className="w-16 h-16 rounded-2xl bg-rose-500/10 text-rose-500 grid place-items-center mx-auto text-2xl font-bold shadow-sm">
+            <AlertTriangle size={32} />
           </div>
           <div>
-            <h1 className="text-2xl font-black mb-2">خطای سیستمی در برنامه</h1>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              سیستم با خطای غیرمنتظره‌ای روبرو شد. برای بارگذاری مجدد برنامه روی دکمه زیر کلیک کنید.
+            <h1 className="text-xl md:text-2xl font-black mb-2 text-ink">خطای غیرمنتظره در بارگذاری سیستم</h1>
+            <p className="text-xs md:text-sm text-sub leading-relaxed">
+              سیستم با خطای فنی موقت روبرو شد. برای بارگذاری مجدد و بازیابی اطلاعات روی دکمه زیر کلیک کنید.
             </p>
           </div>
           <button
             type="button"
             onClick={() => reset()}
-            className="w-full h-11 rounded-xl bg-teal-500 hover:bg-teal-600 text-slate-900 font-black text-xs transition"
+            className="w-full h-12 rounded-xl bg-action hover:bg-gold-light text-[#14201f] font-black text-sm transition flex items-center justify-center gap-2 shadow-sm hover:shadow-elev-1 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
           >
-            بارگذاری مجدد سیستم
+            <RotateCcw size={16} />
+            تلاش مجدد و بارگذاری سیستم
           </button>
         </div>
       </body>

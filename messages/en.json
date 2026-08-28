@@ -107,7 +107,13 @@
     "allTours": "All Tours",
     "culturalTours": "Cultural & Historic",
     "natureTours": "Nature & Desert",
-    "luxuryTours": "Luxury & Private"
+    "luxuryTours": "Luxury & Private",
+    "tourRecreational": "Recreational & Leisure",
+    "tourCultural": "Cultural & Historical",
+    "tourNature": "Nature & Eco-Tour",
+    "tourMedical": "Medical & Wellness",
+    "tourAdventure": "Adventure & Sports",
+    "tourCommercial": "Business & Expo"
   },
   "Home": {
     "offersKicker": "For your destination",
@@ -383,7 +389,15 @@
     "filterFreeCancel": "Free Cancellation Only",
     "compareTitle": "Compare Accommodations",
     "viewHotel": "View & Book",
-    "perNight": "per night from"
+    "perNight": "per night from",
+    "freeCancel": "Free Cancellation",
+    "addFav": "Add to favorites",
+    "reviews": "reviews",
+    "compare": "Compare property",
+    "totalNights": "Total {nights} nights ≈ {price}M Toman",
+    "millionToman": "M Toman",
+    "perNightFrom": "Per night from",
+    "viewAndBook": "View & Book"
   },
   "Admin": {
     "dashboard": "Firuzo ERP Dashboard",

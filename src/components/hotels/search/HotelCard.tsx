@@ -2,23 +2,24 @@
 
 import React from 'react';
 import Image from 'next/image';
+import { useLocale, useTranslations } from 'next-intl';
 import { Star, Heart, MapPin } from 'lucide-react';
 import { Link } from '@/i18n/routing';
-import { shimmerDataUrl } from '@/lib/image-utils';
+import { shimmerDataUrl, getHotelImage } from '@/lib/image-utils';
 import type { HotelCardProps } from './types';
 
-const AM_FA: Record<string, string> = {
-  wifi: 'وای‌فای',
-  pool: 'استخر',
-  spa: 'اسپا',
-  restaurant: 'رستوران',
-  parking: 'پارکینگ',
-  shuttle: 'ترانسفر',
-  garden: 'باغ',
-  museum: 'موزه',
-  teahouse: 'چایخانه',
-  gym: 'باشگاه',
-  beach_access: 'ساحل',
+const AM_MAP: Record<string, { fa: string; en: string }> = {
+  wifi: { fa: 'وای‌فای', en: 'Wi-Fi' },
+  pool: { fa: 'استخر', en: 'Pool' },
+  spa: { fa: 'اسپا', en: 'Spa' },
+  restaurant: { fa: 'رستوران', en: 'Restaurant' },
+  parking: { fa: 'پارکینگ', en: 'Parking' },
+  shuttle: { fa: 'ترانسفر', en: 'Shuttle' },
+  garden: { fa: 'باغ', en: 'Garden' },
+  museum: { fa: 'موزه', en: 'Museum' },
+  teahouse: { fa: 'چایخانه', en: 'Tea House' },
+  gym: { fa: 'باشگاه', en: 'Gym' },
+  beach_access: { fa: 'ساحل', en: 'Beach' },
 };
 
 export function HotelCard({
@@ -29,9 +30,21 @@ export function HotelCard({
   onCmp,
   nights = 4,
 }: HotelCardProps) {
-  const img = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=700&q=80';
-  const priceMillion = (hotel.pricePerNight / 10000000).toFixed(1);
-  const totalMillion = ((hotel.pricePerNight * nights) / 10000000).toFixed(1);
+  const locale = useLocale();
+  const t = useTranslations('HotelsSearch');
+  const isRtl = ['fa', 'ar'].includes(locale);
+
+  const img = getHotelImage(hotel);
+  const rawPriceMillion = (hotel.pricePerNight / 10000000);
+  const rawTotalMillion = ((hotel.pricePerNight * nights) / 10000000);
+  
+  const priceMillion = isRtl
+    ? rawPriceMillion.toLocaleString('fa-IR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+    : rawPriceMillion.toFixed(1);
+    
+  const totalMillion = isRtl
+    ? rawTotalMillion.toLocaleString('fa-IR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+    : rawTotalMillion.toFixed(1);
 
   return (
     <article className="bg-surface border border-line rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row gap-5 hover:border-brand/40 transition-all shadow-elev-1 hover:shadow-elev-2 group">
@@ -47,13 +60,13 @@ export function HotelCard({
         />
         {hotel.freeCancellation && (
           <span className="absolute top-2.5 start-2.5 px-2.5 py-1 rounded-full bg-emerald-500/90 text-surface text-xs font-bold shadow-sm backdrop-blur-sm">
-            کنسلی رایگان
+            {t('freeCancel')}
           </span>
         )}
         <button
           type="button"
           onClick={onFav}
-          aria-label="افزودن به علاقه‌مندی‌ها"
+          aria-label={t('addFav')}
           className="absolute top-2.5 end-2.5 w-8 h-8 rounded-full bg-surface/80 backdrop-blur-sm text-ink grid place-items-center hover:bg-surface transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
         >
           <Heart size={16} className={fav ? 'fill-rose-500 text-rose-500' : 'text-sub'} />
@@ -70,19 +83,21 @@ export function HotelCard({
                     <Star key={i} size={13} className="fill-gold text-gold" />
                   ))}
                 </div>
-                <span className="text-xs text-sub">{hotel.city}</span>
+                <span className="text-xs text-sub">{locale === 'fa' ? hotel.city : hotel.cityEn}</span>
               </div>
               <h3 className="text-base sm:text-lg font-bold text-ink group-hover:text-brand-dark transition-colors">
-                {hotel.name}
+                {locale === 'fa' ? hotel.name : hotel.nameEn}
               </h3>
-              <p className="text-xs text-sub font-mono">{hotel.nameEn}</p>
+              <p className="text-xs text-sub font-mono">{locale === 'fa' ? hotel.nameEn : hotel.name}</p>
             </div>
             <div className="text-end shrink-0">
               <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-brand/10 text-brand-dark font-black text-sm">
-                <span>{hotel.rating}</span>
+                <span>{isRtl ? hotel.rating.toLocaleString('fa-IR') : hotel.rating}</span>
                 <span className="text-[11px] text-sub font-normal">/ 10</span>
               </div>
-              <p className="text-[11px] text-sub mt-0.5">{hotel.reviewsCount} نظر</p>
+              <p className="text-[11px] text-sub mt-0.5">
+                {isRtl ? hotel.reviewsCount.toLocaleString('fa-IR') : hotel.reviewsCount} {t('reviews')}
+              </p>
             </div>
           </div>
 
@@ -94,7 +109,7 @@ export function HotelCard({
           <div className="flex flex-wrap gap-1.5">
             {hotel.amenities.slice(0, 4).map((am) => (
               <span key={am} className="px-2 py-0.5 rounded-lg bg-soft text-sub text-xs font-medium">
-                {AM_FA[am] || am}
+                {AM_MAP[am]?.[isRtl ? 'fa' : 'en'] || am}
               </span>
             ))}
           </div>
@@ -109,25 +124,25 @@ export function HotelCard({
                 onChange={onCmp}
                 className="w-4 h-4 rounded border-line text-brand focus:ring-brand"
               />
-              <span>مقایسه اقامتگاه</span>
+              <span>{t('compare')}</span>
             </label>
             <div className="text-[11px] text-sub mt-1">
-              جمع {nights} شب ≈ {totalMillion} میلیون ت
+              {t('totalNights', { nights, price: totalMillion })}
             </div>
           </div>
 
           <div className="flex items-center justify-between sm:justify-end gap-3">
             <div className="text-end">
-              <span className="text-xs text-sub block">هر شب از</span>
+              <span className="text-xs text-sub block">{t('perNightFrom')}</span>
               <span className="text-base sm:text-lg font-black text-ink font-mono num">
-                {priceMillion} <span className="text-xs font-normal text-sub">میلیون ت</span>
+                {priceMillion} <span className="text-xs font-normal text-sub">{t('millionToman')}</span>
               </span>
             </div>
             <Link
               href={`/hotels/${hotel.id}`}
               className="h-11 px-5 rounded-xl bg-action hover:bg-gold-light text-[#14201f] font-black text-xs sm:text-sm flex items-center justify-center transition shadow-sm hover:shadow-elev-1 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
             >
-              مشاهده و رزرو
+              {t('viewAndBook')}
             </Link>
           </div>
         </div>

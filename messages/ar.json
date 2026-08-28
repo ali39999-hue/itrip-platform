@@ -107,7 +107,13 @@
     "allTours": "جميع الجولات",
     "culturalTours": "ثقافية وتاريخية",
     "natureTours": "طبيعية وصحراوية",
-    "luxuryTours": "فاخرة وخاصة"
+    "luxuryTours": "فاخرة وخاصة",
+    "tourRecreational": "ترفيه وسياحة",
+    "tourCultural": "ثقافي وتاريخي",
+    "tourNature": "طبيعة وسياحة بيئية",
+    "tourMedical": "علاجي وصحي",
+    "tourAdventure": "مغامرة ورياضة",
+    "tourCommercial": "تجاري ومعارض"
   },
   "Home": {
     "offersKicker": "خاص بوجهتك",
@@ -383,7 +389,15 @@
     "filterFreeCancel": "إلغاء مجاني فقط",
     "compareTitle": "مقارنة أماكن الإقامة",
     "viewHotel": "عرض وحجز",
-    "perNight": "لكل ليلة من"
+    "perNight": "لكل ليلة من",
+    "freeCancel": "إلغاء مجاني",
+    "addFav": "إضافة إلى المفضلة",
+    "reviews": "تقييم",
+    "compare": "مقارنة الإقامة",
+    "totalNights": "المجموع {nights} ليالٍ ≈ {price} مليون تومان",
+    "millionToman": "مليون تومان",
+    "perNightFrom": "لكل ليلة من",
+    "viewAndBook": "عرض وحجز"
   },
   "Admin": {
     "dashboard": "لوحة تحكم فيروزو",

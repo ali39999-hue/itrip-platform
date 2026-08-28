@@ -2,8 +2,8 @@ import { HeroSection } from '@/components/home/HeroSection';
 import { 
   SpecialOffersSection, 
   AiPlannerHookSection, 
+  DestinationsSection,
   ServicesCatalog, 
-  DestinationsSection, 
   FinancialSection, 
   TrustMarquee, 
   SupportSection 
@@ -12,20 +12,20 @@ import {
 export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
-      {/* 1. Primary Action: Hero & Unified Search Widget */}
+      {/* 1. Primary Action: Hero & Unified Search Engine */}
       <HeroSection />
 
-      {/* 2. Personalized Smart Planning Hook */}
+      {/* 2. Personalized Smart Planning Conversational Hook */}
       <AiPlannerHookSection />
 
-      {/* 3. Curated Signature Experiences (Country-Specific) */}
+      {/* 3. Personalized Signature Recommendations & Experiences */}
       <SpecialOffersSection />
 
-      {/* 4. Core Travel Services Bento Catalog */}
-      <ServicesCatalog />
-
-      {/* 5. Destination City Discovery */}
+      {/* 4. Destination Discovery & City Exploration */}
       <DestinationsSection />
+
+      {/* 5. Integrated Travel Services Bento Catalog */}
+      <ServicesCatalog />
 
       {/* 6. Financial Security, Settle in Local Currency & Trust */}
       <TrustMarquee />
