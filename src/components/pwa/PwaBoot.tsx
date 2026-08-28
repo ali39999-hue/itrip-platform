@@ -27,31 +27,30 @@ export function PwaBoot() {
   if (!deferred || hidden) return null;
 
   return (
-    <div className="fixed bottom-20 md:bottom-5 start-4 z-95 flex items-center gap-2 p-2 pe-3 rounded-xl bg-surface/95 backdrop-blur border border-line shadow-elev-3">
-      <span className="grid place-items-center w-9 h-9 rounded-full bg-brand text-surface shrink-0">
+    <div className="fixed bottom-20 md:bottom-6 end-4 md:end-6 z-[115] flex items-center gap-3 p-2.5 pe-3.5 rounded-2xl bg-surface/95 backdrop-blur border border-line shadow-elev-3 animate-in slide-in-from-bottom-2 duration-300">
+      <span className="grid place-items-center w-9 h-9 rounded-xl bg-brand text-surface shrink-0 shadow-sm">
         <Download size={17} />
       </span>
       <div className="min-w-0">
-        <b className="block text-[12px] font-black">نصب اپلیکیشن iTrip</b>
-        <span className="block text-[10.5px] font-bold text-sub">دسترسی سریعتر بدون مرورگر</span>
+        <b className="block text-[12px] font-black text-ink leading-snug">نصب اپلیکیشن iTrip</b>
+        <span className="block text-[10.5px] font-bold text-sub">دسترسی سریع‌تر بدون مرورگر</span>
       </div>
       <button
         onClick={async () => {
           await deferred.prompt();
           setDeferred(null);
         }}
-        className="min-h-[34px] px-3 rounded-full bg-brand text-surface text-[12px] font-extrabold shrink-0"
+        className="min-h-[34px] px-3.5 rounded-xl bg-action hover:bg-gold-light text-[#14201f] text-[12px] font-black shrink-0 transition shadow-sm"
       >
         نصب
       </button>
       <button
         onClick={() => setHidden(true)}
         aria-label="بستن"
-        className="grid place-items-center w-7 h-7 rounded-full bg-soft text-sub shrink-0"
+        className="grid place-items-center w-7 h-7 rounded-lg bg-soft text-sub hover:text-ink shrink-0 transition"
       >
         <X size={13} />
       </button>
     </div>
   );
 }
-

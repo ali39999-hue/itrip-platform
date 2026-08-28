@@ -20,9 +20,9 @@ export function HotelSearchToolbar({
   activeFiltersCount,
 }: HotelSearchToolbarProps) {
   return (
-    <div className="sticky top-[128px] z-40 flex items-center gap-2 my-3.5 p-2 border border-line rounded-[14px] bg-surface/95 backdrop-blur overflow-x-auto scrollbar-none shadow-xs">
-      <span className="hidden sm:inline-flex items-center gap-1.5 px-1 text-[11.5px] font-extrabold text-sub shrink-0">
-        <ArrowDownUp size={14} /> مرتب‌سازی
+    <div className="flex items-center gap-2 my-4 p-2.5 border border-line rounded-2xl bg-surface shadow-xs overflow-x-auto scrollbar-none">
+      <span className="hidden sm:inline-flex items-center gap-1.5 px-2 text-[12px] font-black text-sub shrink-0">
+        <ArrowDownUp size={14} className="text-brand-dark" /> مرتب‌سازی:
       </span>
 
       {SORT_OPTIONS.map((item) => (
@@ -30,7 +30,7 @@ export function HotelSearchToolbar({
           key={item.key}
           type="button"
           onClick={() => onSortChange(item.key)}
-          className={`shrink-0 min-h-[34px] px-3 rounded-full border text-[12px] font-extrabold whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+          className={`shrink-0 min-h-[36px] px-3.5 rounded-xl border text-[12px] font-extrabold whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
             sort === item.key
               ? 'border-brand text-surface bg-brand shadow-xs'
               : 'border-line text-sub bg-surface hover:border-mint-bright hover:text-ink'
@@ -44,7 +44,7 @@ export function HotelSearchToolbar({
         type="button"
         onClick={onToggleMap}
         aria-pressed={showMap}
-        className={`me-auto shrink-0 min-h-[34px] px-3.5 inline-flex items-center gap-1.5 rounded-full border text-[12px] font-extrabold whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+        className={`me-auto shrink-0 min-h-[36px] px-4 inline-flex items-center gap-1.5 rounded-xl border text-[12px] font-extrabold whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
           showMap
             ? 'border-brand text-surface bg-brand shadow-xs'
             : 'border-line text-sub bg-surface hover:border-mint-bright hover:text-ink'
@@ -56,12 +56,12 @@ export function HotelSearchToolbar({
       <button
         type="button"
         onClick={onOpenMobileFilters}
-        className="lg:hidden shrink-0 min-h-[34px] px-3.5 inline-flex items-center gap-1.5 rounded-full border border-line text-sub bg-surface text-[12px] font-extrabold hover:border-mint-bright transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className="lg:hidden shrink-0 min-h-[36px] px-3.5 inline-flex items-center gap-1.5 rounded-xl border border-line text-sub bg-surface text-[12px] font-extrabold hover:border-mint-bright transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
         <SlidersHorizontal size={14} /> فیلترها
         {activeFiltersCount > 0 && (
-          <span className="w-5 h-5 grid place-items-center rounded-full bg-brand text-surface text-[10px] font-black">
-            {activeFiltersCount.toLocaleString('fa-IR')}
+          <span className="w-5 h-5 rounded-full bg-brand text-surface text-[10px] font-black grid place-items-center">
+            {activeFiltersCount}
           </span>
         )}
       </button>
