@@ -1,6 +1,6 @@
 import { HeroSection } from '@/components/home/HeroSection';
+import { CountryExperiencesSection } from '@/components/shared/CountryExperiences';
 import { 
-  SpecialOffersSection, 
   AiPlannerHookSection, 
   ServicesCatalog, 
   DestinationsSection, 
@@ -18,8 +18,8 @@ export default function HomePage() {
       {/* 2. Personalized Smart Planning Hook */}
       <AiPlannerHookSection />
 
-      {/* 3. Curated Signature Experiences (Country-Specific) */}
-      <SpecialOffersSection />
+      {/* 3. Authentic Signature Experiences of Selected Destination */}
+      <CountryExperiencesSection />
 
       {/* 4. Core Travel Services Bento Catalog */}
       <ServicesCatalog />
