@@ -10,9 +10,13 @@ const STATUS_FA: Record<string, string> = {
   REFUNDED: 'مسترد شده',
 };
 
-// @ts-ignore
-export default async function AdminBookingsPage({ searchParams }) {
-  const q = searchParams?.q || '';
+export default async function AdminBookingsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ q?: string }>;
+}) {
+  const sp = searchParams ? await searchParams : undefined;
+  const q = sp?.q || '';
   const result = await getAdminBookings();
   const bookings = result.success && result.bookings ? result.bookings : [];
 

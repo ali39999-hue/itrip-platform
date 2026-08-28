@@ -1,17 +1,35 @@
 import type { Flight, Hotel, Tour, TransferOption, InsurancePlan } from './types';
 import type { CountryId } from './countries';
 
-export const CITIES = [
-  { id: 'thr', fa: 'تهران', en: 'Tehran', airport: 'THR', country: 'IR' },
-  { id: 'mhd', fa: 'مشهد', en: 'Mashhad', airport: 'MHD', country: 'IR' },
-  { id: 'ifn', fa: 'اصفهان', en: 'Isfahan', airport: 'IFN', country: 'IR' },
-  { id: 'kih', fa: 'کیش', en: 'Kish', airport: 'KIH', country: 'IR' },
-  { id: 'syz', fa: 'شیراز', en: 'Shiraz', airport: 'SYZ', country: 'IR' },
-  { id: 'tbz', fa: 'تبریز', en: 'Tabriz', airport: 'TBZ', country: 'IR' },
-  { id: 'ist', fa: 'استانبول', en: 'Istanbul', airport: 'IST', country: 'TR' },
-  { id: 'dxb', fa: 'دبی', en: 'Dubai', airport: 'DXB', country: 'AE' },
-  { id: 'tbs', fa: 'تفلیس', en: 'Tbilisi', airport: 'TBS', country: 'GE' },
-  { id: 'mow', fa: 'مسکو', en: 'Moscow', airport: 'SVO', country: 'RU' },
+export interface CityOption {
+  id: string;
+  fa: string;
+  en: string;
+  nameFa: string;
+  nameEn: string;
+  airport: string;
+  airportCode: string;
+  airportNameFa: string;
+  airportNameEn: string;
+  country: string;
+  countryCode: string;
+  countryId: CountryId;
+  flag: string;
+  popular?: boolean;
+}
+
+export const CITIES: CityOption[] = [
+  { id: 'thr', fa: 'تهران', en: 'Tehran', nameFa: 'تهران', nameEn: 'Tehran', airport: 'THR', airportCode: 'THR', airportNameFa: 'فرودگاه مهرآباد / امام خمینی', airportNameEn: 'Mehrabad & IKA Airports', country: 'IR', countryCode: 'IR', countryId: 'iran', flag: '🇮🇷', popular: true },
+  { id: 'mhd', fa: 'مشهد', en: 'Mashhad', nameFa: 'مشهد', nameEn: 'Mashhad', airport: 'MHD', airportCode: 'MHD', airportNameFa: 'فرودگاه شهید هاشمی‌نژاد', airportNameEn: 'Shahid Hasheminejad Airport', country: 'IR', countryCode: 'IR', countryId: 'iran', flag: '🇮🇷', popular: true },
+  { id: 'ifn', fa: 'اصفهان', en: 'Isfahan', nameFa: 'اصفهان', nameEn: 'Isfahan', airport: 'IFN', airportCode: 'IFN', airportNameFa: 'فرودگاه شهید بهشتی', airportNameEn: 'Shahid Beheshti Airport', country: 'IR', countryCode: 'IR', countryId: 'iran', flag: '🇮🇷', popular: true },
+  { id: 'syz', fa: 'شیراز', en: 'Shiraz', nameFa: 'شیراز', nameEn: 'Shiraz', airport: 'SYZ', airportCode: 'SYZ', airportNameFa: 'فرودگاه بین‌المللی شهید دستغیب', airportNameEn: 'Shahid Dastgheib Airport', country: 'IR', countryCode: 'IR', countryId: 'iran', flag: '🇮🇷', popular: true },
+  { id: 'kih', fa: 'کیش', en: 'Kish', nameFa: 'کیش', nameEn: 'Kish Island', airport: 'KIH', airportCode: 'KIH', airportNameFa: 'فرودگاه بین‌المللی کیش', airportNameEn: 'Kish International Airport', country: 'IR', countryCode: 'IR', countryId: 'iran', flag: '🇮🇷', popular: true },
+  { id: 'tbz', fa: 'تبریز', en: 'Tabriz', nameFa: 'تبریز', nameEn: 'Tabriz', airport: 'TBZ', airportCode: 'TBZ', airportNameFa: 'فرودگاه بین‌المللی شهید مدنی', airportNameEn: 'Shahid Madani Airport', country: 'IR', countryCode: 'IR', countryId: 'iran', flag: '🇮🇷', popular: true },
+  { id: 'ist', fa: 'استانبول', en: 'Istanbul', nameFa: 'استانبول', nameEn: 'Istanbul', airport: 'IST', airportCode: 'IST', airportNameFa: 'فرودگاه استانبول / صبیحه', airportNameEn: 'Istanbul (IST / SAW) Airports', country: 'TR', countryCode: 'TR', countryId: 'turkey', flag: '🇹🇷', popular: true },
+  { id: 'dxb', fa: 'دبی', en: 'Dubai', nameFa: 'دبی', nameEn: 'Dubai', airport: 'DXB', airportCode: 'DXB', airportNameFa: 'فرودگاه بین‌المللی دبی', airportNameEn: 'Dubai International Airport', country: 'AE', countryCode: 'AE', countryId: 'uae', flag: '🇦🇪', popular: true },
+  { id: 'tbs', fa: 'تفلیس', en: 'Tbilisi', nameFa: 'تفلیس', nameEn: 'Tbilisi', airport: 'TBS', airportCode: 'TBS', airportNameFa: 'فرودگاه بین‌المللی شوتا روستاولی', airportNameEn: 'Shota Rustaveli Airport', country: 'GE', countryCode: 'GE', countryId: 'georgia', flag: '🇬🇪', popular: true },
+  { id: 'mow', fa: 'مسکو', en: 'Moscow', nameFa: 'مسکو', nameEn: 'Moscow', airport: 'SVO', airportCode: 'SVO', airportNameFa: 'فرودگاه شرمتیوو / ونوکووا', airportNameEn: 'Sheremetyevo & Vnukovo', country: 'RU', countryCode: 'RU', countryId: 'russia', flag: '🇷🇺', popular: true },
+  { id: 'mct', fa: 'مسقط', en: 'Muscat', nameFa: 'مسقط', nameEn: 'Muscat', airport: 'MCT', airportCode: 'MCT', airportNameFa: 'فرودگاه بین‌المللی مسقط', airportNameEn: 'Muscat International Airport', country: 'OM', countryCode: 'OM', countryId: 'oman', flag: '🇴🇲', popular: true },
 ];
 
 export const FLIGHTS: Flight[] = [

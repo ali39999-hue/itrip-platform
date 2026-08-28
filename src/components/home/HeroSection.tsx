@@ -1,9 +1,11 @@
 'use client';
 
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useCountryStore } from '@/stores/country-store';
 import type { CountryId } from '@/lib/countries';
 import { SearchWidget } from '@/components/search/SearchWidget';
+import { shimmerDataUrl } from '@/lib/image-utils';
 
 const HERO_IMAGES: Record<CountryId, string> = {
   iran: 'https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?auto=format&fit=crop&q=80&w=2560',
@@ -25,10 +27,19 @@ export function HeroSection() {
     <section className="relative w-full min-h-[640px] md:h-[85vh] flex items-center justify-center overflow-visible">
       {/* Background image + overlays */}
       <div className="absolute inset-0 z-0 px-4 md:px-10 pt-4 pb-2">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <div className="absolute inset-0 bg-black/20 z-10 pointer-events-none" />
-      <img src={currentHeroImg} alt="" className="w-full h-full object-cover img-arch shadow-elev-1 transition-all duration-700" />
-        <div className="absolute inset-0 bg-black/20 img-arch mx-4 md:mx-10 my-4 mb-2 transition-all duration-700" />
+        <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-elev-1">
+          <Image
+            src={currentHeroImg}
+            alt="iTrip Travel Hero"
+            fill
+            priority
+            sizes="100vw"
+            placeholder="blur"
+            blurDataURL={shimmerDataUrl(1920, 1080)}
+            className="object-cover transition-all duration-700"
+          />
+          <div className="absolute inset-0 bg-deep/30 pointer-events-none" />
+        </div>
       </div>
 
       {/* Hero content + glass search */}
@@ -45,3 +56,4 @@ export function HeroSection() {
     </section>
   );
 }
+

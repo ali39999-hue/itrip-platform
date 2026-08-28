@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useRouter } from '@/i18n/routing';
+import { Link, useRouter } from '@/i18n/routing';
 import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES, countryName } from '@/lib/countries';
 import { CountryExperiencesSection } from '@/components/shared/CountryExperiences';
@@ -72,16 +72,19 @@ export default function ServicesPage() {
                   : `تمام سرویس‌هایی که در ${cName} به آن‌ها نیاز پیدا خواهید کرد، یک‌جا رزرو کنید.`}
               </p>
             </div>
-            <button className="hidden md:flex text-action font-black text-[13px] items-center gap-1 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">
+            <Link
+              href="/guide"
+              className="hidden md:flex text-action font-black text-[13px] items-center gap-1 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+            >
               {isEn ? `${cName} guide` : `مشاهده راهنمای ${cName}`} <ArrowLeft size={16} className="ltr:rotate-180" />
-            </button>
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {c.services.slice(0, 4).map((s) => (
-              <button 
+              <Link 
                 key={s.key} 
-                onClick={() => router.push(s.href)} 
+                href={s.href} 
                 className="bg-surface rounded-xl p-5 text-start border border-line shadow-sm hover:border-action/50 hover:shadow-md transition-all group card-lift flex flex-col justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
               >
                 <div>
@@ -93,16 +96,16 @@ export default function ServicesPage() {
                     <ArrowUpLeft size={18} className="ltr:rotate-180" />
                   </span>
                 </div>
-              </button>
+              </Link>
             ))}
           </div>
         </section>
 
         {/* Smart planner CTA */}
         <section className="mb-16">
-          <button
-            onClick={() => router.push('/plan')}
-            className="w-full text-start rounded-2xl p-6 md:p-8 rtl:bg-gradient-to-l ltr:bg-gradient-to-r from-brand to-brand-dark text-surface relative overflow-hidden shadow-sm group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+          <Link
+            href="/plan"
+            className="block w-full text-start rounded-2xl p-6 md:p-8 rtl:bg-gradient-to-l ltr:bg-gradient-to-r from-brand to-brand-dark text-surface relative overflow-hidden shadow-sm group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
           >
             <span className="absolute -start-16 -top-20 w-48 h-48 rounded-full border-[28px] border-white/10 pointer-events-none" />
             <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -119,7 +122,7 @@ export default function ServicesPage() {
                 {t('generate')} <ArrowLeft size={15} className="ltr:rotate-180" />
               </span>
             </div>
-          </button>
+          </Link>
         </section>
 
         {/* Signature experiences of the selected country */}
@@ -132,17 +135,19 @@ export default function ServicesPage() {
             {MAIN_SERVICES.map((s) => {
               const Icon = s.icon;
               return (
-                <button
+                <Link
                   key={s.title}
-                  onClick={() => router.push(s.href)}
-                  className="bg-surface rounded-xl border border-line p-6 text-start shadow-sm hover:border-brand hover:shadow-md transition-all group card-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+                  href={s.href}
+                  className="bg-surface rounded-xl border border-line p-6 text-start shadow-sm hover:border-brand hover:shadow-md transition-all group card-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 flex flex-col justify-between"
                 >
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${s.bg} mb-5 group-hover:scale-110 transition-transform`}>
-                    <Icon size={28} strokeWidth={2.5} />
+                  <div>
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${s.bg} mb-5 group-hover:scale-110 transition-transform`}>
+                      <Icon size={28} strokeWidth={2.5} />
+                    </div>
+                    <h3 className="font-black text-[17px] text-ink mb-2">{s.title}</h3>
+                    <p className="font-bold text-[13px] text-sub leading-relaxed">{s.desc}</p>
                   </div>
-                  <h3 className="font-black text-[17px] text-ink mb-2">{s.title}</h3>
-                  <p className="font-bold text-[13px] text-sub leading-relaxed">{s.desc}</p>
-                </button>
+                </Link>
               );
             })}
           </div>
