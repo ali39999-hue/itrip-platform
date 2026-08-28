@@ -84,38 +84,39 @@ export function CityAutocomplete({
   }
 
   return (
-    <div ref={containerRef} className={`relative w-full ${className}`}>
-      <div className="flex items-center gap-3 w-full">
-        <MapPin size={18} className="text-brand-dark shrink-0" aria-hidden="true" />
-        <div className="w-full min-w-0">
-          <label htmlFor={id} className="block mb-0.5 text-[11px] font-bold text-sub">
-            {label}
-          </label>
-          <input
-            ref={inputRef}
-            id={id}
-            value={value}
-            onChange={(e) => {
-              onChange(e.target.value);
-              setOpen(true);
-              setHighlightIdx(0);
-            }}
-            onFocus={() => setOpen(true)}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            autoComplete="off"
-            aria-expanded={open}
-            aria-haspopup="listbox"
-            aria-autocomplete="list"
-            className="w-full border-0 outline-0 p-0 text-[13.5px] font-bold text-ink bg-transparent placeholder:text-sub focus:ring-0"
-          />
-        </div>
+    <div
+      ref={containerRef}
+      className={`relative w-full min-h-[58px] px-3.5 py-2 rounded-2xl bg-surface border border-line/80 hover:border-brand focus-within:border-brand focus-within:ring-2 focus-within:ring-brand flex items-center gap-2.5 transition ${className}`}
+    >
+      <MapPin size={18} className="text-brand-dark shrink-0" aria-hidden="true" />
+      <div className="w-full min-w-0 flex flex-col justify-center">
+        <label htmlFor={id} className="block text-[11px] font-bold text-sub select-none leading-none mb-1">
+          {label}
+        </label>
+        <input
+          ref={inputRef}
+          id={id}
+          value={value}
+          onChange={(e) => {
+            onChange(e.target.value);
+            setOpen(true);
+            setHighlightIdx(0);
+          }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          autoComplete="off"
+          aria-expanded={open}
+          aria-haspopup="listbox"
+          aria-autocomplete="list"
+          className="w-full bg-transparent border-0 outline-0 p-0 text-[13px] font-bold text-ink placeholder:text-sub focus:ring-0 leading-tight"
+        />
       </div>
 
       {open && filteredCities.length > 0 && (
         <div
           role="listbox"
-          className="absolute top-[calc(100%+12px)] start-0 z-[100] w-full min-w-[240px] max-h-60 overflow-y-auto p-1.5 rounded-2xl bg-surface border border-line shadow-elev-3 animate-in fade-in slide-in-from-top-2 duration-200"
+          className="absolute top-[calc(100%+8px)] start-0 z-[100] w-full min-w-[240px] max-h-60 overflow-y-auto p-1.5 rounded-2xl bg-surface border border-line shadow-elev-3 animate-in fade-in slide-in-from-top-2 duration-200"
         >
           <div className="px-2 py-1 text-[11px] font-bold text-sub border-b border-line/50 mb-1">
             {locale === 'en' ? `Cities in ${countryName(country, locale)}` : `شهرهای ${countryName(country, locale)}`}
