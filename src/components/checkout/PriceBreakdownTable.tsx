@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { formatMoney } from '@/lib/money';
 import { ESIM_PRICE, INSURANCE_PRICE } from './AddonsSection';
 import { Luggage, ShieldCheck, Tag } from 'lucide-react';
@@ -21,12 +22,13 @@ export function PriceBreakdownTable({
   itemTitle,
   discountAmount = 0,
 }: PriceBreakdownTableProps) {
+  const t = useTranslations('Checkout');
   const addonsTotal = (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0);
   const totalPayable = Math.max(0, baseAmount + addonsTotal - discountAmount);
 
   return (
     <div className="p-6 rounded-2xl bg-surface border border-line shadow-sm space-y-4">
-      <h3 className="text-[16px] font-black text-ink">جزئیات صورت‌حساب شفاف</h3>
+      <h3 className="text-[16px] font-black text-ink">{t('priceBreakdown')}</h3>
 
       <div className="space-y-2.5 text-[13px] pt-1">
         {/* 1. What I'm buying */}

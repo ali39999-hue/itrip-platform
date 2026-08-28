@@ -9,6 +9,8 @@ import { COUNTRIES, EXPERIENCE_CATEGORY_META, countryName } from '@/lib/countrie
 import { daysFromNow } from '@/lib/utils';
 import { num } from '@/lib/format';
 import { CATEGORY_ICONS } from '@/components/shared/CountryExperiences';
+import Image from 'next/image';
+import { CATEGORY_PHOTO_MAP, shimmerDataUrl } from '@/lib/image-utils';
 import {
   ArrowLeft, Sparkles, ChevronRight, ChevronLeft,
 } from 'lucide-react';
@@ -79,6 +81,7 @@ export function SpecialOffersSection() {
             </button>
           </div>
         </div>
+
         <div ref={scrollRef} className="flex overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 gap-6 hide-scrollbar">
           {offers.map((offer) => {
             const Icon = CATEGORY_ICONS[offer.category];
@@ -88,31 +91,36 @@ export function SpecialOffersSection() {
             const title = locale === 'en' ? offer.titleEn : offer.title;
             const desc = locale === 'en' ? offer.descEn : offer.desc;
             const when = locale === 'en' ? offer.whenEn : offer.when;
+            const photoUrl = CATEGORY_PHOTO_MAP[offer.category] || CATEGORY_PHOTO_MAP.culture;
             return (
               <button
                 key={offer.titleEn}
                 onClick={() => book(locale === 'en' ? offer.titleEn : offer.title, locale === 'en' ? offer.whereEn : offer.where, offer.fromPrice)}
-                className="shrink-0 w-[280px] md:w-auto snap-start bg-surface rounded-2xl shadow-sm overflow-hidden hover:shadow-elev-1 transition-shadow group cursor-pointer border border-line/40 text-start focus-visible:ring-2 focus-visible:ring-brand"
+                className="shrink-0 w-[280px] md:w-auto snap-start bg-surface rounded-2xl shadow-sm overflow-hidden hover:shadow-elev-2 hover:-translate-y-1 transition-all group cursor-pointer border border-line/50 text-start focus-visible:ring-2 focus-visible:ring-brand flex flex-col"
               >
-                <div className={`h-[150px] relative overflow-hidden bg-gradient-to-br ${
-                  offer.category === 'yacht' ? 'from-sky-700 to-indigo-900' :
-                  offer.category === 'festival' ? 'from-amber-600 to-rose-800' :
-                  offer.category === 'nature' ? 'from-emerald-700 to-teal-900' :
-                  'from-teal-700 to-emerald-950'
-                }`}>
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-                  <div className="absolute top-3 start-3">
+                <div className="h-[160px] relative w-full overflow-hidden bg-brand-dark/20">
+                  <Image
+                    src={photoUrl}
+                    alt={title}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    placeholder="blur"
+                    blurDataURL={shimmerDataUrl(400, 200)}
+                    sizes="(max-width: 768px) 280px, 33vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
+                  <div className="absolute top-3 start-3 z-10">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface/90 backdrop-blur-md text-[11px] font-black text-brand-dark shadow-sm">
                       {Icon && <Icon size={12} />}
                       {catLabel}
                     </span>
                   </div>
-                  <div className="absolute bottom-3 start-3 end-3 text-surface">
+                  <div className="absolute bottom-3 start-3 end-3 text-surface z-10">
                     <p className="text-[11px] text-surface/80 font-bold m-0">{when}</p>
                     <p className="text-[15px] font-black leading-tight m-0 truncate">{title}</p>
                   </div>
                 </div>
-                <div className="p-4 flex flex-col gap-3">
+                <div className="p-4 flex flex-col gap-3 flex-1 justify-between">
                   <p className="text-xs text-sub leading-relaxed m-0 line-clamp-2">{desc}</p>
                   <div className="flex items-center justify-between pt-2 border-t border-line/60">
                     <span className="text-[11px] text-sub font-bold">{t('offersStarts')}</span>

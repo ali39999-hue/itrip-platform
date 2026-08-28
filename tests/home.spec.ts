@@ -9,10 +9,10 @@ test('Homepage UX Architecture Validation', async ({ page }) => {
   await expect(heroHeading).toBeVisible();
 
   // 2. Verify SearchWidget Tabs (Flights, Hotels, Tours)
-  await expect(page.getByRole('tab', { name: /پرواز|Flights/i }).or(page.getByText('پرواز').first())).toBeVisible();
+  await expect(page.getByRole('tab', { name: /پرواز|Flights/i }).first()).toBeVisible();
 
   // 3. Verify AI Smart Planner Hook Section
-  await expect(page.getByText(/چیدمان هوشمند|Smart Planning|برنامه‌ریز هوشمند/i).first()).toBeVisible();
+  await expect(page.getByText(/برنامه‌ریزی هوشمند|هوش مصنوعی|Smart Planning|چیدمان هوشمند/i).first()).toBeVisible();
 
   // 4. Verify Global Header & Footer
   await expect(page.locator('header').first()).toBeVisible();

@@ -29,6 +29,8 @@ export function SearchModeTabs({ activeTab, onTabChange }: SearchModeTabsProps) 
             <button
               key={id}
               type="button"
+              role="tab"
+              aria-selected={active}
               onClick={() => onTabChange(id)}
               className={`shrink-0 min-h-[42px] px-4 md:px-5 inline-flex items-center gap-2 rounded-xl transition-all font-black text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                 active

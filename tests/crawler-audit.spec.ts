@@ -38,8 +38,8 @@ const ROUTES = [
 
 test.describe('0-to-100 Platform & Link Audit', () => {
 
-  test('Check all routes across fa, en, and ar for 200 OK and valid links', async ({ page }) => {
-    test.setTimeout(180000);
+  test('Check all routes across fa, en, and ar for 200 OK and valid links', async ({ page, request }) => {
+    test.setTimeout(120000);
 
     const brokenLinks: { to: string; status: number }[] = [];
     const collectedLinks = new Set<string>();
@@ -67,20 +67,30 @@ test.describe('0-to-100 Platform & Link Audit', () => {
 
     console.log(`Verified 93 total localized pages. Found ${collectedLinks.size} unique internal links.`);
 
-    // 3. Validate collected internal links
-    for (const link of collectedLinks) {
-      if (link.startsWith('#') || link.startsWith('mailto:') || link.startsWith('tel:')) continue;
-      
-      const res = await page.goto(link, { waitUntil: 'domcontentloaded', timeout: 10000 }).catch(() => null);
-      const status = res ? res.status() : 0;
-      
-      if (status >= 400 || status === 0) {
-        brokenLinks.push({ to: link, status });
-        console.error(`❌ Broken Link: ${link} returned status ${status}`);
+    // 3. Fast Parallel Validate collected internal links via API request
+    const linkArray = Array.from(collectedLinks).filter(
+      (link) => !link.startsWith('#') && !link.startsWith('mailto:') && !link.startsWith('tel:')
+    );
+
+    const results = await Promise.all(
+      linkArray.map(async (link) => {
+        try {
+          const res = await request.get(link);
+          return { to: link, status: res.status() };
+        } catch {
+          return { to: link, status: 0 };
+        }
+      })
+    );
+
+    for (const r of results) {
+      if (r.status >= 400 || r.status === 0) {
+        brokenLinks.push(r);
+        console.error(`❌ Broken Link: ${r.to} returned status ${r.status}`);
       }
     }
 
-    console.log(`Link verification finished: ${collectedLinks.size} links checked, ${brokenLinks.length} broken links found.`);
+    console.log(`Link verification finished: ${linkArray.length} links checked, ${brokenLinks.length} broken links found.`);
     expect(brokenLinks.length, `Found broken links: ${JSON.stringify(brokenLinks)}`).toBe(0);
   });
 });

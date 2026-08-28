@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Vazirmatn, Geist_Mono } from "next/font/google";
 import "../globals.css";
 import {NextIntlClientProvider} from 'next-intl';
-import {getMessages} from 'next-intl/server';
+import {getMessages, setRequestLocale} from 'next-intl/server';
 import {routing} from '@/i18n/routing';
 import {notFound} from 'next/navigation';
 import {Providers} from '@/providers';
@@ -54,6 +54,7 @@ export default async function RootLayout({
     notFound();
   }
 
+  setRequestLocale(locale);
   const messages = await getMessages();
   const dir = ['fa', 'ar'].includes(locale) ? 'rtl' : 'ltr';
 

@@ -49,7 +49,7 @@ export function LocaleSwitcher() {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="listbox"
-        aria-label="تغییر زبان"
+        aria-label="Language / تغییر زبان"
         className="min-h-[38px] inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-[13px] font-bold text-ink hover:bg-soft transition border border-line/80 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
       >
         <Globe size={14} className="text-sub" />

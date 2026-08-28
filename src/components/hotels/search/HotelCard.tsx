@@ -34,7 +34,7 @@ export function HotelCard({
   const totalMillion = ((hotel.pricePerNight * nights) / 10000000).toFixed(1);
 
   return (
-    <div className="bg-surface border border-line rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row gap-5 hover:border-brand/40 transition-all shadow-elev-1 hover:shadow-elev-2 group">
+    <article className="bg-surface border border-line rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row gap-5 hover:border-brand/40 transition-all shadow-elev-1 hover:shadow-elev-2 group">
       <div className="relative w-full md:w-64 h-48 md:h-auto rounded-xl overflow-hidden shrink-0 bg-soft">
         <Image
           src={img}
@@ -132,6 +132,6 @@ export function HotelCard({
           </div>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
