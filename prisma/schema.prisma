@@ -1,0 +1,115 @@
+// Prisma Schema for iTrip/Firuzo Travel Platform - V1 Backend
+// Provider: SQLite (dev); swap to PostgreSQL for production.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+// SQLite doesn't support native enums, so we use string fields
+// with validation at the application layer (Zod / TS types).
+
+// ─── User ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  phone        String?
+  name         String?
+  role         String   @default("USER") // USER | AGENT | ADMIN
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  wallet    Wallet?
+  bookings  Booking[]
+  auditLogs AuditLog[]
+}
+
+// ─── Wallet (multi-currency via JSON balances) ────────────────────────────────
+
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  balances  String   @default("{}") // JSON string: { "IRR": 500000, "USD": 120 }
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+}
+
+// ─── Booking ──────────────────────────────────────────────────────────────────
+
+model Booking {
+  id          String    @id @default(cuid())
+  userId      String
+  type        String    // FLIGHT | HOTEL | TOUR | TRANSFER | TRAIN | INSURANCE | ESIM | VISA
+  status      String    @default("DRAFT") // DRAFT | PENDING_PAYMENT | CONFIRMED | CANCELLED | REFUNDED
+  details     String    @default("{}") // JSON payload (flight legs, hotel nights, etc.)
+  totalAmount Decimal
+  currency    String    @default("IRR")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  cancelledAt DateTime?
+
+  user         User          @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ─── Transaction ──────────────────────────────────────────────────────────────
+
+model Transaction {
+  id             String   @id @default(cuid())
+  walletId       String
+  bookingId      String?
+  type           String   // TOPUP | PAYMENT | REFUND | PENALTY
+  amount         Decimal
+  currency       String   @default("IRR")
+  description    String?
+  idempotencyKey String   @unique
+  createdAt      DateTime @default(now())
+
+  wallet  Wallet   @relation(fields: [walletId], references: [id])
+  booking Booking? @relation(fields: [bookingId], references: [id])
+
+  @@index([walletId])
+  @@index([bookingId])
+}
+
+// ─── Cancellation Policy ──────────────────────────────────────────────────────
+
+model CancellationPolicy {
+  id                    String @id @default(cuid())
+  bookingType           String // matches Booking.type
+  hoursBeforeDeparture  Int
+  penaltyPercent        Int
+  description           String?
+
+  @@unique([bookingType, hoursBeforeDeparture])
+}
+
+// ─── Audit Log ────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String   // e.g. "BOOKING_CREATED", "WALLET_TOPUP"
+  entity    String   // e.g. "Booking", "Wallet"
+  entityId  String
+  diff      String   @default("{}") // JSON diff of changes
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entity, entityId])
+}

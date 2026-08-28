@@ -1,0 +1,9 @@
+- `destinations/page.tsx`: Added `focus-visible:ring-brand` and `shadow-sm` to all action buttons.
+- `guide/page.tsx`: Replaced `shadow-md` with `shadow-sm` for a softer look. Added `aria-label="بستن"` to the icon-only close buttons in the modal. Added `focus-visible:ring-brand` to buttons.
+- `tours/page.tsx`: Replaced physical paddings `pr/pl` with logical `pe/ps` in the filter select elements. Replaced `shadow-elev-1` and `shadow-elev-2` with `shadow-sm` on the hero section, sticky bar, and tour cards. Added `focus-visible:ring-brand` to tour cards.
+- `travelogues/page.tsx`: Upgraded card hover states from `shadow-md` to `shadow-sm` and added `focus-visible:ring-brand`.
+- `travelogues/[id]/page.tsx`: Added `focus-visible:ring-brand` to the back link and the share/like icon buttons. These already had proper `aria-label`s.
+- `my-trips/page.tsx`: Added `focus-visible:ring-brand` to the tab selectors, refund request, and detail action buttons to improve keyboard navigation.
+- `wallet/page.tsx`: Changed `ml-2` physical margins on the "Confirm" and "Get Rate" button icons to logical `ms-2` (margin-start). Added `aria-label="جابجایی ارز"` to the swap currency button. Added `focus-visible:ring-brand` to action buttons.
+- `account/page.tsx`: Replaced `shadow-elev-1` with `shadow-sm` on the sidebar navigation for a cleaner, high-end look.
+- `support/page.tsx`: Converted `pr-5`, `pl-4`, and `pr-14` to logical properties `pe-5`, `ps-4`, and `pe-14` in the search bar. Added `aria-label="پشتیبانی"` and `focus-visible:ring-brand` to the floating live chat button.

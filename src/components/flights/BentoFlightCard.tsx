@@ -1,0 +1,146 @@
+'use client';
+
+import { useState } from 'react';
+import { Plane, Briefcase, ChevronDown, Armchair, Ticket, Clock } from 'lucide-react';
+import type { Flight } from '@/lib/types';
+
+/* "3h 50m" → minutes (for sorting) */
+export function durationMinutes(d: string): number {
+  const h = /(\d+)\s*h/.exec(d)?.[1] ?? '0';
+  const m = /(\d+)\s*m/.exec(d)?.[1] ?? '0';
+  return Number(h) * 60 + Number(m);
+}
+
+/* "3h 50m" → "۳ ساعت و ۵۰ دقیقه" */
+export function durationFa(d: string): string {
+  const h = Number(/(\d+)\s*h/.exec(d)?.[1] ?? 0);
+  const m = Number(/(\d+)\s*m/.exec(d)?.[1] ?? 0);
+  const parts: string[] = [];
+  if (h) parts.push(`${h.toLocaleString('fa-IR')} ساعت`);
+  if (m) parts.push(`${m.toLocaleString('fa-IR')} دقیقه`);
+  return parts.join(' و ');
+}
+
+export function BentoFlightCard({ flight, onSelect }: { flight: Flight; onSelect: () => void }) {
+  const [open, setOpen] = useState(false);
+  const overnight = flight.arrivalTime < flight.departureTime;
+  const business = flight.cabinClass === 'business';
+
+  return (
+    <article 
+      className="bg-surface rounded-xl border border-line overflow-hidden hover:shadow-elev-2 hover:border-brand/30 transition-all group cursor-pointer"
+      onClick={() => setOpen(!open)}
+    >
+      <div className="flex flex-col md:flex-row">
+        {/* Flight info + timeline */}
+        <div className="flex-grow p-5 md:p-6">
+          <div className="flex justify-between items-start mb-6 gap-3">
+            <div className="flex items-center gap-3">
+              <span className="w-10 h-10 bg-mint rounded-full grid place-items-center text-brand-dark">
+                <Plane size={18} className="-rotate-45" />
+              </span>
+              <div>
+                <h4 className="font-black text-[14px] text-ink leading-5">{flight.airline}</h4>
+                <span className="text-[12px] text-sub" dir="ltr">{flight.flightNo} • {business ? 'بیزینس' : 'اکونومی'}</span>
+              </div>
+            </div>
+            <span
+              className={`px-2.5 py-1 rounded-full text-[11.5px] font-bold flex items-center gap-1 ${
+                business ? 'bg-gold-soft text-price' : 'bg-mint text-brand-dark'
+              }`}
+            >
+              <Ticket size={13} />
+              {business ? 'بیزینس کلاس' : 'تایید آنی'}
+            </span>
+          </div>
+
+          {/* Visual flight path */}
+          <div className="flex items-center justify-between w-full">
+            <div className="text-start shrink-0">
+              <div className="text-xl md:text-2xl font-black text-ink" dir="ltr">{flight.departureTime}</div>
+              <div className="text-[11.5px] text-sub mt-0.5">{flight.origin}</div>
+            </div>
+
+            <div className="flex-grow mx-3 md:mx-8 relative flex flex-col items-center justify-center min-w-0">
+              <span className="text-[11.5px] text-sub mb-1 whitespace-nowrap">{durationFa(flight.duration)}</span>
+              <div className="w-full relative h-8 flex items-center justify-between px-1">
+                {/* dashed path */}
+                <span className="absolute top-1/2 -translate-y-1/2 inset-x-1 h-0.5 bg-[repeating-linear-gradient(90deg,var(--color-line)_0_6px,transparent_6px_12px)]" />
+                <span className="relative w-3 h-3 rounded-full bg-brand border-2 border-surface" />
+                <span className="relative w-8 h-8 rounded-full bg-surface border border-line grid place-items-center shadow-sm text-brand group-hover:scale-110 transition-transform">
+                  <Plane size={15} className="-rotate-45" />
+                </span>
+                <span className="relative w-3 h-3 rounded-full bg-line border-2 border-surface" />
+              </div>
+              <span className={`text-[11.5px] font-bold mt-1 ${flight.stops === 0 ? 'text-brand' : 'text-gold'}`}>
+                {flight.stops === 0 ? 'بدون توقف' : `${flight.stops.toLocaleString('fa-IR')} توقف`}
+              </span>
+            </div>
+
+            <div className="text-end shrink-0">
+              <div className="text-xl md:text-2xl font-black text-ink" dir="ltr">{flight.arrivalTime}</div>
+              {overnight && <div className="text-[11px] text-destructive font-bold">+۱ روز</div>}
+              <div className="text-[11.5px] text-sub mt-0.5">{flight.destination}</div>
+            </div>
+          </div>
+
+          {/* Expanded details */}
+          {open && (
+            <div className="fade-soft mt-5 p-4 bg-soft/70 border border-line/70 rounded-xl grid grid-cols-2 md:grid-cols-4 gap-3 text-[12px]">
+              {([
+                ['شماره پرواز', <span dir="ltr" key="n">{flight.flightNo}</span>],
+                ['مدت پرواز', durationFa(flight.duration)],
+                ['بار مجاز', <span key="b" className="inline-flex items-center gap-1"><Briefcase size={12} /> {flight.baggage}</span>],
+                ['صندلی باقی‌مانده', <span key="s" className="inline-flex items-center gap-1"><Armchair size={12} /> {flight.seatsLeft.toLocaleString('fa-IR')}</span>],
+              ] as [string, React.ReactNode][]).map(([l, v]) => (
+                <div key={l}>
+                  <b className="block text-[10px] text-sub font-bold mb-0.5">{l}</b>
+                  <span className="font-bold text-ink">{v}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Price & action */}
+        <div className="bg-soft/70 p-5 md:p-6 flex flex-col justify-between items-stretch border-t md:border-t-0 md:border-s border-line w-full md:w-64 shrink-0">
+          <div className="flex md:flex-col justify-between md:justify-start items-center md:items-end gap-2 mb-4 md:mb-0">
+            {flight.seatsLeft < 5 ? (
+              <div className="text-[11.5px] text-destructive font-bold flex items-center gap-1 md:mb-1 md:order-1">
+                <Armchair size={14} />
+                فقط {flight.seatsLeft.toLocaleString('fa-IR')} صندلی باقی مانده
+              </div>
+            ) : (
+              <div className="hidden md:flex text-[11.5px] text-sub items-center gap-1 mb-1 order-1">
+                <Clock size={13} />
+                {durationFa(flight.duration)}
+              </div>
+            )}
+            <div className="text-end md:text-start md:order-2">
+              <span className="text-[11.5px] text-sub block mb-1">قیمت برای هر مسافر</span>
+              <div className="text-xl md:text-2xl font-black text-price flex items-baseline gap-1">
+                {flight.price.toLocaleString('fa-IR')}
+                <span className="text-[12px] font-normal text-sub">تومان</span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={(e) => { e.stopPropagation(); onSelect(); }}
+            className="w-full min-h-11 rounded-lg bg-action text-[#14201f] font-black text-[13.5px] hover:bg-action-hover active:bg-action-active transition-colors shadow-sm mt-4 md:mt-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            انتخاب بلیط
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+            aria-expanded={open}
+            className="w-full mt-2.5 min-h-8 text-[12px] text-sub hover:text-brand font-bold flex items-center justify-center gap-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-md"
+          >
+            جزئیات پرواز
+            <ChevronDown size={15} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
