@@ -24,11 +24,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { BottomNav } from '@/components/layout/BottomNav';
+import { AppChrome } from '@/components/layout/AppChrome';
 import { PwaBoot } from '@/components/pwa/PwaBoot';
-import { SosInterpreter } from '@/components/shared/SosInterpreter';
 
 export const metadata: Metadata = {
   title: "Firuzo Platform",
@@ -67,13 +64,9 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col bg-paper text-ink pb-[62px] md:pb-0">
         <NextIntlClientProvider messages={messages}>
           <Providers>
-            <Header />
-            <main className="flex-1">
+            <AppChrome>
               {children}
-            </main>
-            <Footer />
-            <BottomNav />
-            <SosInterpreter />
+            </AppChrome>
           </Providers>
         </NextIntlClientProvider>
         <PwaBoot />

@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { Link } from '@/i18n/routing';
 import { Sparkles, BedDouble, Ruler, Eye, Users, Check, Flame, Ban, Coffee, Clock, Wallet } from 'lucide-react';
-import { fa, fa1, gShort, wFmt } from '@/lib/hotel-format';
-import { ROOMS, PLANS, type PlanId } from '@/lib/hotel-mock';
+import { fa, gShort, wFmt } from '@/lib/hotel-format';
+import { ROOMS, PLANS } from '@/lib/hotel-mock';
 import { quote, NIGHTS, CHECKIN, CHECKOUT, ADULTS, CHILDREN, TAX, keyOf, type useHotelBooking } from '@/hooks/useHotelBooking';
 
 interface HotelRoomsProps {

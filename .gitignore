@@ -46,3 +46,11 @@ next-env.d.ts
 /blob-report/
 /playwright/.cache/
 
+
+cloudflared.exe
+*.exe
+
+# Database
+prisma/*.db
+prisma/*.db-journal
+

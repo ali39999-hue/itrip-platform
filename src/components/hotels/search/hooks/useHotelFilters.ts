@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { HOTELS } from '@/lib/data';
-import type { Hotel } from '@/lib/types';
 import type { SortKey, FilterChip } from '../types';
 
 interface UseHotelFiltersProps {

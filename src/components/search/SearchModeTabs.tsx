@@ -1,6 +1,6 @@
 'use client';
 
-import { Sparkles, Plane, BedDouble, Compass, type LucideIcon } from 'lucide-react';
+import { Sparkles, Plane, BedDouble, Compass } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 export const SEARCH_TABS = [

@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { Link, useRouter } from '@/i18n/routing';
+import { Link } from '@/i18n/routing';
 import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES, countryName } from '@/lib/countries';
 import { CountryExperiencesSection } from '@/components/shared/CountryExperiences';
@@ -28,7 +28,6 @@ const MAIN_SERVICES = [
 ];
 
 export default function ServicesPage() {
-  const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('Plan');
   const isEn = locale === 'en';

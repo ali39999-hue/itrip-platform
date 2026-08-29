@@ -40,7 +40,7 @@ export function PwaBoot() {
           await deferred.prompt();
           setDeferred(null);
         }}
-        className="min-h-[34px] px-3.5 rounded-xl bg-action hover:bg-gold-light text-[#14201f] text-[12px] font-black shrink-0 transition shadow-sm"
+        className="min-h-[34px] px-3.5 rounded-xl bg-action hover:bg-action-hover text-[#14201f] text-[12px] font-black shrink-0 transition shadow-sm"
       >
         نصب
       </button>

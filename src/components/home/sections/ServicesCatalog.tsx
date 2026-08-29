@@ -3,7 +3,7 @@
 import { Link } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCountryStore } from '@/stores/country-store';
-import { COUNTRIES, countryName } from '@/lib/countries';
+import { countryName } from '@/lib/countries';
 import {
   Plane, BedDouble, Compass, CarTaxiFront, TrainFront, Wifi, Languages,
   type LucideIcon,
@@ -22,7 +22,6 @@ export function ServicesCatalog() {
   const locale = useLocale();
   const t = useTranslations('Home');
   const { country } = useCountryStore();
-  const c = COUNTRIES[country];
 
   const coreServices: ServiceCardData[] = [
     { href: '/flights/search', icon: Plane, titleKey: 'srvFlights', descKey: 'srvFlightsDesc', tag: 'پروازهای چارتری و سیستمی' },

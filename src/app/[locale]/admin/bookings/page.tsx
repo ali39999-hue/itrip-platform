@@ -22,10 +22,10 @@ export default async function AdminBookingsPage({
 
   const filtered = bookings.filter((b) => {
     if (!q) return true;
-    let details: any = {};
+    let details: { title?: string; subtitle?: string; passengers?: { lastNameFa?: string }[] } = {};
     try {
       details = JSON.parse(b.details || '{}');
-    } catch(e) {}
+    } catch {}
     const title = details.title || b.type;
     return (
       title.includes(q) ||
@@ -70,10 +70,10 @@ export default async function AdminBookingsPage({
             </thead>
             <tbody>
               {filtered.map((b) => {
-                let details: any = {};
+                let details: { title?: string; subtitle?: string; passengers?: { lastNameFa?: string }[] } = {};
                 try {
                   details = JSON.parse(b.details || '{}');
-                } catch(e) {}
+                } catch {}
                 const title = details.title || b.type;
                 const subtitle = details.subtitle || '';
                 const passengers = details.passengers || [];

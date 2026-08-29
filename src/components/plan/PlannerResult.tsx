@@ -25,7 +25,7 @@ interface PlannerResultProps {
   setSeed: React.Dispatch<React.SetStateAction<number>>;
 }
 
-export function PlannerResult({ ans, setAns, setStep, locale, isEn, shared, shareUrl, seed, setSeed }: PlannerResultProps) {
+export function PlannerResult({ ans, setStep, locale, isEn, shared, shareUrl, seed, setSeed }: PlannerResultProps) {
   const t = useTranslations('Plan');
   const router = useRouter();
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
@@ -36,7 +36,7 @@ export function PlannerResult({ ans, setAns, setStep, locale, isEn, shared, shar
   const [addOnInsurance, setAddOnInsurance] = useState(true);
   const [addOnInterpreter, setAddOnInterpreter] = useState(true);
 
-  const { plan, c, who, days, travelers, budget, pace } = usePlanner({
+  const { plan, c, days, travelers, budget, pace } = usePlanner({
     ans, tune, addOnTransfer, addOnEsim, addOnInsurance, addOnInterpreter, seed, isEn
   });
 

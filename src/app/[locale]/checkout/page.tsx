@@ -6,8 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useBookingStore } from '@/stores/booking-store';
 import { useCountryStore } from '@/stores/country-store';
 import { countryName } from '@/lib/countries';
-import { useLocale } from 'next-intl';
-import { passengerSchema, type Passenger } from '@/lib/validations';
+import { passengerSchema, type Passenger, type BookingType } from '@/lib/validations';
 import { createBookingDraft, payBooking } from '@/actions/booking';
 
 import { CheckoutStepper, type CheckoutPhase } from '@/components/checkout/CheckoutStepper';
@@ -87,7 +86,7 @@ export default function CheckoutPage() {
 
   const onSubmitPassenger = async (data: Passenger) => {
     setError('');
-    const btype = (bookingContext?.type?.toUpperCase() || 'HOTEL') as any;
+    const btype = (bookingContext?.type?.toUpperCase() || 'HOTEL') as BookingType;
     const totalAmount = baseAmount + (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0);
 
     const bp: import('@/lib/types').BookingPassenger = {

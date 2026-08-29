@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 
 test.describe('Search Widget Visual Alignment', () => {
   test('Capture high-res screenshots for all 4 search tabs', async ({ page }) => {

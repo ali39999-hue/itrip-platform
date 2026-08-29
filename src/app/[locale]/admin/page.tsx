@@ -5,7 +5,7 @@ import { useHydration } from '@/hooks/useHydration';
 import { QuickActionsBar } from '@/components/admin/QuickActionsBar';
 import { ActionWidgets } from '@/components/admin/ActionWidgets';
 import { LiveActivityFeed } from '@/components/admin/LiveActivityFeed';
-import { BriefcaseBusiness, Wallet as WalletIcon, ArrowUpRight, ArrowDownRight, Percent } from 'lucide-react';
+import { BriefcaseBusiness, Wallet as WalletIcon, ArrowDownRight, Percent } from 'lucide-react';
 
 export default function AdminDashboard() {
   const isHydrated = useHydration();

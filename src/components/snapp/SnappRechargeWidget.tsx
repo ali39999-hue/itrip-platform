@@ -15,13 +15,9 @@ const MAX = 50000000;
 export function SnappRechargeWidget({ locale, initialAmount }: { locale: string; initialAmount?: number }) {
   const router = useRouter();
   const [phone, setPhone] = useState('');
-  const [amountIrr, setAmountIrr] = useState(initialAmount || 10000000);
+  const [amountIrr, setAmountIrr] = useState(() => initialAmount || 10000000);
   const [lockTime, setLockTime] = useState(60);
   const [attempted, setAttempted] = useState(false);
-
-  useEffect(() => {
-    if (initialAmount) setAmountIrr(initialAmount);
-  }, [initialAmount]);
 
   useEffect(() => {
     const timer = setInterval(() => {

@@ -3,9 +3,10 @@
 import { useTranslations } from 'next-intl';
 import { num } from '@/lib/format';
 import { Plane, BedDouble, Sparkles, Plus, CheckCircle2, Check, CarTaxiFront, Wifi, Languages, ShieldCheck } from 'lucide-react';
+import type { PlanPackage } from '@/hooks/usePlanner';
 
 interface PlannerSidebarProps {
-  plan: any; // ReturnType<typeof usePlanner>['plan']
+  plan: PlanPackage;
   travelers: number;
   days: number;
   locale: string;

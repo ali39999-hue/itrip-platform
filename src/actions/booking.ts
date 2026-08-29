@@ -1,13 +1,13 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { bookingSchema, BookingType, BookingStatus, TransactionType } from '@/lib/validations';
+import { bookingSchema } from '@/lib/validations';
 import { revalidatePath } from 'next/cache';
 
 	// Mock User ID for V1 since we don't have NextAuth yet
 const MOCK_USER_ID = 'clr_mock_user_123';
 
-export async function createBookingDraft(data: any, totalAmount: number, currency: string) {
+export async function createBookingDraft(data: unknown, totalAmount: number, currency: string) {
   try {
     // 1. Validate data
     const parsed = bookingSchema.parse(data);
@@ -41,8 +41,9 @@ export async function createBookingDraft(data: any, totalAmount: number, currenc
     });
 
     return { success: true, bookingId: booking.id };
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err.message : 'An error occurred';
+    return { success: false, error };
   }
 }
 
@@ -105,7 +106,8 @@ export async function payBooking(bookingId: string, method: 'wallet_irr' | 'gate
 
     revalidatePath('/my-trips');
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err.message : 'An error occurred';
+    return { success: false, error };
   }
 }

@@ -106,7 +106,9 @@ export function CityAutocomplete({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           autoComplete="off"
+          role="combobox"
           aria-expanded={open}
+          aria-controls={`${id}-listbox`}
           aria-haspopup="listbox"
           aria-autocomplete="list"
           className="w-full bg-transparent border-0 outline-0 p-0 text-[13px] font-bold text-ink placeholder:text-sub focus:ring-0 leading-tight"
@@ -115,6 +117,7 @@ export function CityAutocomplete({
 
       {open && filteredCities.length > 0 && (
         <div
+          id={`${id}-listbox`}
           role="listbox"
           className="absolute top-[calc(100%+8px)] start-0 z-[100] w-full min-w-[240px] max-h-60 overflow-y-auto p-1.5 rounded-2xl bg-surface border border-line shadow-elev-3 animate-in fade-in slide-in-from-top-2 duration-200"
         >

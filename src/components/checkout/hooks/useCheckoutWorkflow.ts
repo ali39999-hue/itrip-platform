@@ -3,7 +3,7 @@ import { useBookingStore } from '@/stores/booking-store';
 import { createBookingDraft, payBooking } from '@/actions/booking';
 import { ESIM_PRICE, INSURANCE_PRICE, DEFAULT_COUNTDOWN } from '../constants';
 import type { CheckoutPhase, PaymentMethod } from '../types';
-import type { Passenger } from '@/lib/validations';
+import type { Passenger, BookingType } from '@/lib/validations';
 import type { BookingPassenger } from '@/lib/types';
 
 interface UseCheckoutWorkflowOptions {
@@ -77,13 +77,13 @@ export function useCheckoutWorkflow(options: UseCheckoutWorkflowOptions = {}) {
 
   const baseAmount = bookingContext?.amount ?? defaultBaseAmount;
   const itemTitle = bookingContext?.title ?? defaultItemTitle;
-  const currency = 'IRR';
+  const currency = bookingContext?.currency ?? defaultCurrency;
   const walletBalance = wallet?.IRR ?? 150000000;
 
   const handlePassengerSubmit = useCallback(
     async (data: Passenger) => {
       setError('');
-      const btype = (bookingContext?.type?.toUpperCase() || 'HOTEL') as any;
+      const btype = (bookingContext?.type?.toUpperCase() || 'HOTEL') as BookingType;
       const totalAmount =
         baseAmount +
         (addEsim ? defaultEsimPrice : 0) +
@@ -124,7 +124,7 @@ export function useCheckoutWorkflow(options: UseCheckoutWorkflowOptions = {}) {
         }
         setPassengers([bp]);
         setPhase('payment');
-      } catch (err: any) {
+      } catch {
         setPassengers([bp]);
         setPhase('payment');
       }

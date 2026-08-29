@@ -64,8 +64,8 @@ export function JalaliDatePicker({
             // Always return ISO format string (YYYY-MM-DD) for backend compatibility
             onChange(d.convert(gregorian, gregorian_en).format('YYYY-MM-DD'));
           }}
-          calendar={(isRtl ? persian : undefined) as any}
-          locale={(isRtl ? persian_fa : undefined) as any}
+          calendar={isRtl ? persian : gregorian}
+          locale={isRtl ? persian_fa : gregorian_en}
           calendarPosition="bottom-center"
           minDate={minDate}
           maxDate={maxDate}

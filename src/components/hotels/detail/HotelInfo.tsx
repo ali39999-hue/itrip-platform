@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { MapPin, Coffee, Wallet, Headset, BarChart3, ShieldCheck, Waves, Users, KeyRound, Check, X, ThumbsUp, Ban, ChevronDown, BedDouble } from 'lucide-react';
-import { fa1, fa, gShort } from '@/lib/hotel-format';
+import { MapPin, Coffee, Wallet, Headset, BarChart3, ShieldCheck, Waves, Users, KeyRound, Check, X, ThumbsUp, Ban, ChevronDown, BedDouble, type LucideIcon } from 'lucide-react';
+import { fa1, gShort } from '@/lib/hotel-format';
 import { DISTS, CATS, REVIEWS, FAQS } from '@/lib/hotel-mock';
 import type { Hotel } from '@/lib/types';
 import { FREE_CANCEL_HOURS } from '@/hooks/useHotelBooking';
@@ -10,17 +10,19 @@ import { FREE_CANCEL_HOURS } from '@/hooks/useHotelBooking';
 export function HotelOverview({ hotel }: { hotel: Hotel }) {
   const [descOpen, setDescOpen] = useState(false);
 
+  const highlights: [LucideIcon, string, string][] = [
+    [MapPin, 'قلب شهر قدیم', 'پیاده تا ایاصوفیه و بازار بزرگ'],
+    [Coffee, 'صبحانه بوفه ترکی', 'در تراس رو به بسفر'],
+    [Wallet, 'تسویه ریالی', 'بدون نیاز به کارت بین‌المللی'],
+    [Headset, 'پشتیبانی فارسی', '۲۴ ساعته در طول اقامت'],
+  ];
+
   return (
     <section id="overview" className="p-5 border border-line rounded-xl bg-surface shadow-sm scroll-mt-32">
       <h2 className="m-0 mb-1 text-lg font-black">چرا این هتل برای سفر شما مناسب است</h2>
       <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">خلاصه‌ای از مهم‌ترین مزیت‌های اقامت.</p>
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-5 mb-4">
-        {[
-          [MapPin, 'قلب شهر قدیم', 'پیاده تا ایاصوفیه و بازار بزرگ'],
-          [Coffee, 'صبحانه بوفه ترکی', 'در تراس رو به بسفر'],
-          [Wallet, 'تسویه ریالی', 'بدون نیاز به کارت بین‌المللی'],
-          [Headset, 'پشتیبانی فارسی', '۲۴ ساعته در طول اقامت'],
-        ].map(([Icon, t, s]: any) => (
+        {highlights.map(([Icon, t, s]) => (
           <div key={t} className="flex flex-col items-center gap-2 text-center group">
             <span className="w-16 h-16 rounded-full bg-soft grid place-items-center text-brand-dark group-hover:bg-mint group-hover:scale-110 transition-all">
               <Icon size={26} />
@@ -58,24 +60,25 @@ export function HotelLocation({ hotel }: { hotel: Hotel }) {
       <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">فاصله‌ها بر اساس مسیر واقعی پیاده‌روی.</p>
       <div className="grid grid-cols-1 md:grid-cols-[1.05fr_.95fr] gap-3.5">
         <div className="relative min-h-[240px] rounded-xl overflow-hidden border border-line bg-soft">
-          <svg viewBox="0 0 400 300" preserveAspectRatio="none" className="absolute inset-0 w-full h-full" aria-hidden>
-            <rect width="400" height="300" fill="var(--color-soft)" />
-            <path d="M250 0c14 70-30 110-14 180s40 90 30 120h134V0Z" fill="var(--color-mint)" />
-            <g stroke="var(--color-line)" strokeWidth="6" fill="none"><path d="M-10 90h270M-10 200h250M60 -10v320M170 -10v320" /></g>
-            <g fill="var(--color-mint)"><rect x="80" y="110" width="60" height="50" rx="6" /><rect x="190" y="120" width="46" height="60" rx="6" /><rect x="310" y="150" width="60" height="55" rx="6" /></g>
-            <circle cx="120" cy="60" r="20" fill="var(--color-mint-bright)" />
-          </svg>
-          <div className="absolute top-[44%] end-[47%] translate-x-1/2 flex flex-col items-center">
-            <span className="px-2.5 py-1 rounded-full text-surface bg-brand text-[11.5px] font-black border-2 border-surface shadow-md whitespace-nowrap">{hotel.name}</span>
-            <span className="w-0.5 h-2 bg-surface" />
+          <div className="absolute inset-0 bg-[radial-gradient(#00a9a522_1px,transparent_1px)] bg-[size:14px_14px]" />
+          <div className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1">
+            <span className="w-8 h-8 rounded-full bg-brand text-surface grid place-items-center shadow-lg shadow-brand/40 animate-pulse">
+              <MapPin size={18} />
+            </span>
+            <span className="px-2.5 py-1 rounded-md bg-surface text-ink text-[11px] font-black shadow-sm border border-line">
+              {hotel.name}
+            </span>
           </div>
         </div>
-        <div>
-          <h4 className="m-0 mb-1.5 text-[12.5px] font-black text-sub">نزدیک‌ترین نقاط</h4>
-          {DISTS.map(([name, Icon, dist]) => (
-            <div key={name} className="flex items-center gap-2 py-1.5 border-b border-dashed border-line/70 last:border-0 text-[12.5px] font-bold text-ink/80">
-              <Icon size={15} className="text-brand-dark" /> {name}
-              <b className="me-auto text-sub font-extrabold text-xs">{dist}</b>
+
+        <div className="flex flex-col gap-2">
+          {DISTS.map(([p, m, t]) => (
+            <div key={p} className="flex items-center justify-between p-2.5 rounded-lg border border-line/60 bg-soft/50 text-xs">
+              <span className="font-bold text-ink">{p}</span>
+              <div className="flex items-center gap-2 text-sub font-mono">
+                <span>{m}</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface border border-line">{t}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -85,23 +88,25 @@ export function HotelLocation({ hotel }: { hotel: Hotel }) {
 }
 
 export function HotelAmenities() {
+  const sections: [string, LucideIcon, [string, number][]][] = [
+    ['امکانات اقامت', BedDouble, [['وای‌فای رایگان', 1], ['تهویه مطبوع', 1], ['اتاق ضدصدا', 1], ['اتاق سیگار', 0]]],
+    ['غذا و نوشیدنی', Coffee, [['صبحانه بوفه ترکی', 1], ['رستوران تراس', 1], ['روم‌سرویس ۲۴ ساعته', 1], ['کافه لابی', 1]]],
+    ['خدمات و رفاه', ShieldCheck, [['پذیرش ۲۴ ساعته', 1], ['ترانسفر فرودگاه', 1], ['نگهداری چمدان', 1], ['پارکینگ', 0]]],
+    ['سرگرمی', Waves, [['استخر سرپوشیده', 1], ['حمام ترکی و سونا', 1], ['باشگاه بدنسازی', 1], ['استخر روباز', 0]]],
+    ['خانواده', Users, [['تخت کودک زیر ۶ سال رایگان', 1], ['منوی کودک', 1], ['اتاق به‌هم‌پیوسته', 1], ['زمین بازی', 0]]],
+    ['دسترسی', KeyRound, [['آسانسور', 1], ['اتاق مناسب ویلچر', 1], ['ورودی بدون پله', 1], ['ویلچر رایگان', 0]]],
+  ];
+
   return (
     <section id="amenities" className="p-5 border border-line rounded-xl bg-surface shadow-sm scroll-mt-32">
       <h2 className="m-0 mb-1 text-lg font-black">امکانات هتل</h2>
       <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">موارد با ✕ در این هتل ارائه نمی‌شوند.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        {[
-          ['امکانات اقامت', BedDouble, [['وای‌فای رایگان', 1], ['تهویه مطبوع', 1], ['اتاق ضدصدا', 1], ['اتاق سیگار', 0]]],
-          ['غذا و نوشیدنی', Coffee, [['صبحانه بوفه ترکی', 1], ['رستوران تراس', 1], ['روم‌سرویس ۲۴ ساعته', 1], ['کافه لابی', 1]]],
-          ['خدمات و رفاه', ShieldCheck, [['پذیرش ۲۴ ساعته', 1], ['ترانسفر فرودگاه', 1], ['نگهداری چمدان', 1], ['پارکینگ', 0]]],
-          ['سرگرمی', Waves, [['استخر سرپوشیده', 1], ['حمام ترکی و سونا', 1], ['باشگاه بدنسازی', 1], ['استخر روباز', 0]]],
-          ['خانواده', Users, [['تخت کودک زیر ۶ سال رایگان', 1], ['منوی کودک', 1], ['اتاق به‌هم‌پیوسته', 1], ['زمین بازی', 0]]],
-          ['دسترسی', KeyRound, [['آسانسور', 1], ['اتاق مناسب ویلچر', 1], ['ورودی بدون پله', 1], ['ویلچر رایگان', 0]]],
-        ].map(([title, Icon, items]: any) => (
+        {sections.map(([title, Icon, items]) => (
           <div key={title}>
             <h4 className="m-0 mb-2 flex items-center gap-1.5 text-[12.5px] font-black"><Icon size={15} className="text-brand" /> {title}</h4>
             <ul className="m-0 p-0 list-none flex flex-col gap-1.5">
-              {items.map(([name, ok]: any) => (
+              {items.map(([name, ok]) => (
                 <li key={name} className={`flex items-center gap-1.5 text-[12.5px] font-semibold ${ok ? 'text-sub' : 'text-sub/70'}`}>
                   {ok ? <Check size={13} className="text-success" /> : <X size={13} className="text-line" />} {name}
                 </li>
@@ -179,15 +184,17 @@ export function HotelReviews({ hotel }: { hotel: Hotel }) {
 export function HotelPolicies({ checkinDate }: { checkinDate: string }) {
   const dl = new Date(new Date(checkinDate + 'T14:00:00').getTime() - FREE_CANCEL_HOURS * 36e5);
 
+  const policyItems: [LucideIcon, string, string][] = [
+    [KeyRound, 'ورود و خروج', 'ورود از ۱۴:۰۰ · خروج تا ۱۲:۰۰. ورود زودهنگام در صورت خالی بودن اتاق رایگان است.'],
+    [Users, 'کودک و تخت اضافه', 'افراد بالای ۱۲ سال بزرگسال محسوب می‌شوند. درخواست تخت اضافه باید پیش از ورود تأیید شود.'],
+  ];
+
   return (
     <section id="policies" className="p-5 border border-line rounded-xl bg-surface shadow-sm scroll-mt-32">
       <h2 className="m-0 mb-1 text-lg font-black">قوانین و شرایط</h2>
       <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">شرایط لغو بر اساس نرخ انتخابی متفاوت است.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {[
-          [KeyRound, 'ورود و خروج', 'ورود از ۱۴:۰۰ · خروج تا ۱۲:۰۰. ورود زودهنگام در صورت خالی بودن اتاق رایگان است.'],
-          [Users, 'کودک و تخت اضافه', 'افراد بالای ۱۲ سال بزرگسال محسوب می‌شوند. درخواست تخت اضافه باید پیش از ورود تأیید شود.'],
-        ].map(([Icon, t, d]: any) => (
+        {policyItems.map(([Icon, t, d]) => (
           <div key={t} className="p-3.5 border border-line rounded-xl bg-soft/50">
             <b className="flex items-center gap-1.5 text-[12.5px] font-black mb-1.5"><Icon size={15} className="text-brand" /> {t}</b>
             <p className="m-0 text-xs font-semibold text-sub leading-loose">{d}</p>

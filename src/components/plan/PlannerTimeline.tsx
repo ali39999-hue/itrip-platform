@@ -1,14 +1,14 @@
-﻿'use client';
+'use client';
 
 import { useTranslations } from 'next-intl';
 import { num } from '@/lib/format';
 import { EXPERIENCE_CATEGORY_META } from '@/lib/countries';
 import { CATEGORY_ICONS } from '@/components/shared/CountryExperiences';
 import { Plane, BedDouble, Sparkles, CalendarDays, MapPin, Sun, Sunset, MoonStar, type LucideIcon } from 'lucide-react';
-import type { PickedExperience } from '@/hooks/usePlanner';
+import type { PickedExperience, PlanPackage } from '@/hooks/usePlanner';
 
 interface PlannerTimelineProps {
-  plan: any; // Ideally we use ReturnType<typeof usePlanner>['plan'], but any is fine for UI component
+  plan: PlanPackage;
   days: number;
   locale: string;
   isEn: boolean;

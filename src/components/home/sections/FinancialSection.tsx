@@ -1,12 +1,9 @@
 'use client';
 
 import { Link } from '@/i18n/routing';
-import { useLocale, useTranslations } from 'next-intl';
-import { Wallet, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { Wallet, ArrowLeft, ShieldCheck } from 'lucide-react';
 
 export function FinancialSection() {
-  const locale = useLocale();
-  const t = useTranslations('Home');
 
   return (
     <section className="w-full py-12 md:py-16 px-4 md:px-10 bg-soft/30">

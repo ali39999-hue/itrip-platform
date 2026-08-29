@@ -155,7 +155,7 @@ export function BentoFlightCard({ flight, onSelect }: { flight: Flight; onSelect
           <button
             type="button"
             onClick={onSelect}
-            className="w-full h-11 px-5 rounded-xl bg-action hover:bg-gold-light text-[#14201f] font-black text-xs md:text-sm flex items-center justify-center transition shadow-sm hover:shadow-elev-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-[0.98]"
+            className="w-full h-11 px-5 rounded-xl bg-action hover:bg-action-hover text-[#14201f] font-black text-xs md:text-sm flex items-center justify-center transition shadow-sm hover:shadow-elev-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-[0.98]"
           >
             انتخاب بلیط
           </button>

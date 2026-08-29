@@ -1,12 +1,9 @@
 'use client';
 
 import { Link } from '@/i18n/routing';
-import { useLocale, useTranslations } from 'next-intl';
-import { Sparkles, ArrowLeft, Bot } from 'lucide-react';
+import { Sparkles, ArrowLeft } from 'lucide-react';
 
 export function AiPlannerHookSection() {
-  const locale = useLocale();
-  const t = useTranslations('Home');
 
   const samplePrompts = [
     'برنامه‌ریزی ۴ روزه مشهد با هتل ۵ ستاره و گشت‌های تاریخی',
@@ -45,7 +42,7 @@ export function AiPlannerHookSection() {
         <div className="pt-4">
           <Link
             href="/plan"
-            className="inline-flex items-center gap-2 h-12 px-8 rounded-2xl bg-action hover:bg-gold-light text-[#14201f] text-sm font-black shadow-md hover:shadow-elev-2 transition-all"
+            className="inline-flex items-center gap-2 h-12 px-8 rounded-2xl bg-action hover:bg-action-hover text-[#14201f] text-sm font-black shadow-md hover:shadow-elev-2 transition-all"
           >
             <span>شروع برنامه‌ریزی هوشمند رایگان</span>
             <ArrowLeft size={16} className="ltr:rotate-180" />

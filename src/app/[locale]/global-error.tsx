@@ -3,7 +3,6 @@
 import { AlertTriangle, RotateCcw } from 'lucide-react';
 
 export default function GlobalError({
-  error,
   reset,
 }: {
   error: Error & { digest?: string };
@@ -25,7 +24,7 @@ export default function GlobalError({
           <button
             type="button"
             onClick={() => reset()}
-            className="w-full h-12 rounded-xl bg-action hover:bg-gold-light text-[#14201f] font-black text-sm transition flex items-center justify-center gap-2 shadow-sm hover:shadow-elev-1 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+            className="w-full h-12 rounded-xl bg-action hover:bg-action-hover text-[#14201f] font-black text-sm transition flex items-center justify-center gap-2 shadow-sm hover:shadow-elev-1 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
           >
             <RotateCcw size={16} />
             تلاش مجدد و بارگذاری سیستم

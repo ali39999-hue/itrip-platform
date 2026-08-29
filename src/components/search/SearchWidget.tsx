@@ -70,7 +70,7 @@ export function SearchWidget() {
 
               <button
                 type="submit"
-                className="md:col-span-2 min-h-[58px] px-6 rounded-2xl bg-action hover:bg-gold-light text-[#14201f] text-[15px] font-black shadow-elev-1 hover:shadow-elev-2 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                className="md:col-span-2 min-h-[58px] px-6 rounded-2xl bg-action hover:bg-action-hover text-[#14201f] text-[15px] font-black shadow-elev-1 hover:shadow-elev-2 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
                 <Search size={18} />
                 <span>{t('btnPlan')}</span>
@@ -144,7 +144,7 @@ export function SearchWidget() {
               {/* Search CTA */}
               <button
                 type="submit"
-                className="md:col-span-2 min-h-[58px] px-6 rounded-2xl bg-action hover:bg-gold-light text-[#14201f] text-[15px] font-black shadow-elev-1 hover:shadow-elev-2 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                className="md:col-span-2 min-h-[58px] px-6 rounded-2xl bg-action hover:bg-action-hover text-[#14201f] text-[15px] font-black shadow-elev-1 hover:shadow-elev-2 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
                 <Search size={18} />
                 <span>{t('btnSearch')}</span>
@@ -194,7 +194,7 @@ export function SearchWidget() {
               {/* Search CTA */}
               <button
                 type="submit"
-                className="md:col-span-2 min-h-[58px] px-6 rounded-2xl bg-action hover:bg-gold-light text-[#14201f] text-[15px] font-black shadow-elev-1 hover:shadow-elev-2 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                className="md:col-span-2 min-h-[58px] px-6 rounded-2xl bg-action hover:bg-action-hover text-[#14201f] text-[15px] font-black shadow-elev-1 hover:shadow-elev-2 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
                 <Search size={18} />
                 <span>{t('btnSearch')}</span>
@@ -267,7 +267,7 @@ export function SearchWidget() {
               {/* Search CTA */}
               <button
                 type="submit"
-                className="md:col-span-2 min-h-[58px] px-6 rounded-2xl bg-action hover:bg-gold-light text-[#14201f] text-[15px] font-black shadow-elev-1 hover:shadow-elev-2 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                className="md:col-span-2 min-h-[58px] px-6 rounded-2xl bg-action hover:bg-action-hover text-[#14201f] text-[15px] font-black shadow-elev-1 hover:shadow-elev-2 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
                 <Search size={18} />
                 <span>{t('btnSearch')}</span>

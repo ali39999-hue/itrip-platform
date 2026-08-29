@@ -1,10 +1,9 @@
 'use client';
 
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { ShieldCheck, RefreshCcw, CheckCircle2, Headset } from 'lucide-react';
 
 export function TrustMarquee() {
-  const locale = useLocale();
   const t = useTranslations('Home');
 
   const items = [

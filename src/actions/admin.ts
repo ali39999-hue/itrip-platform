@@ -8,18 +8,18 @@ export async function getAdminBookings() {
     const bookings = await prisma.booking.findMany({
       orderBy: { createdAt: 'desc' },
       take: 50,
-      // include: { user: true } // If we wanted user info
     });
     return { success: true, bookings };
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err.message : 'An error occurred';
+    return { success: false, error };
   }
 }
 
 export async function refundBookingAdmin(bookingId: string) {
   try {
     const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
-    if (!booking) throw new Error('Bookinng not found');
+    if (!booking) throw new Error('Booking not found');
     if (booking.status !== 'CONFIRMED') throw new Error('Only Confirmed bookings can be refunded');
 
     await prisma.$transaction(async (tx) => {
@@ -64,7 +64,8 @@ export async function refundBookingAdmin(bookingId: string) {
 
     revalidatePath('/admin/bookings');
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err.message : 'An error occurred';
+    return { success: false, error };
   }
 }

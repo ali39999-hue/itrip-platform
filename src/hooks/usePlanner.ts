@@ -69,7 +69,7 @@ export function usePlanner({
   const budget = ans.budget ?? 'balanced';
   const paceBase = ans.pace ?? 'balanced';
   const pace: Pace = tune.more ? (paceBase === 'relaxed' ? 'balanced' : 'packed') : paceBase;
-  const interests = ans.interests ?? [];
+  const interests = useMemo(() => ans.interests ?? [], [ans.interests]);
 
   const plan = useMemo(() => {
     const map = PLANNER_MAP[c.id];
@@ -89,7 +89,7 @@ export function usePlanner({
         if (tune.cheaper) score += (capPerPerson - e.fromPrice) / capPerPerson;
         return { e, score, catMatch, priceFit };
       })
-      .sort((a: any, b: any) => b.score - a.score || a.e.fromPrice - b.e.fromPrice);
+      .sort((a, b) => b.score - a.score || a.e.fromPrice - b.e.fromPrice);
 
     const picked: PickedExperience[] = [];
     let spentPerPerson = 0;
@@ -149,3 +149,5 @@ export function usePlanner({
 
   return { plan, c, who, days, travelers, budget, pace, interests };
 }
+
+export type PlanPackage = ReturnType<typeof usePlanner>['plan'];

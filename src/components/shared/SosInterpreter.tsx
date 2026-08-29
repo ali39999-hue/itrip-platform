@@ -137,7 +137,7 @@ export function SosInterpreter() {
                   <button
                     type="button"
                     onClick={call}
-                    className="w-full h-12 rounded-xl bg-action hover:bg-gold-light text-[#14201f] font-black text-sm flex items-center justify-center gap-2 shadow-sm hover:shadow-elev-1 transition active:scale-[0.98]"
+                    className="w-full h-12 rounded-xl bg-action hover:bg-action-hover text-[#14201f] font-black text-sm flex items-center justify-center gap-2 shadow-sm hover:shadow-elev-1 transition active:scale-[0.98]"
                   >
                     <PhoneCall size={16} />
                     <span>برقراری تماس زنده با مترجم</span>

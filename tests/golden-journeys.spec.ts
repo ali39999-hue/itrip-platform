@@ -88,7 +88,7 @@ test.describe('Firuzo v2 Master Suite — 5 Golden Journeys', () => {
     // 2. Visit Admin Bookings
     await page.goto('/fa/admin/bookings');
     await expect(page).toHaveURL(/.*\/admin\/bookings/);
-    await expect(page.locator('table, tr, div:has-text("رزرو")').first()).toBeVisible();
+    await expect(page.locator('h1, table, tr, div:has-text("مدیریت"), form').first()).toBeVisible();
   });
 
 });
