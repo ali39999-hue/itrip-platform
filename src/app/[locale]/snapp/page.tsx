@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useLocale } from 'next-intl';
-import { Wallet, Check, Phone, RefreshCw } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
+import { Wallet, Check } from 'lucide-react';
 import { SnappRechargeWidget } from '@/components/snapp/SnappRechargeWidget';
 import { TrustBar } from '@/components/shared/TrustBar';
 import { ManualOpsNotice } from '@/components/shared/ManualOpsNotice';
@@ -10,6 +10,7 @@ import { SignatureBlock } from '@/components/shared/SignatureBlock';
 import { ProcessSteps } from '@/components/shared/ProcessSteps';
 
 export default function SnappChargePage() {
+  const t = useTranslations('Snapp');
   const locale = useLocale();
   const [selectedAmount, setSelectedAmount] = useState<number>(10000000);
 
@@ -27,13 +28,13 @@ export default function SnappChargePage() {
       <section className="relative overflow-hidden bg-gradient-to-b from-mint to-paper pt-20 pb-16">
         <div className="max-w-[1180px] mx-auto px-6">
           <span className="inline-flex items-center gap-2 px-3 py-1 text-[13px] font-bold text-brand-dark bg-surface border border-brand/20 rounded-full mb-6">
-            <Wallet size={16} /> خدمات مالی و تاکسی محلی
+            <Wallet size={16} /> {locale === 'fa' ? 'خدمات مالی و تاکسی محلی' : 'Fintech & Local Rides'}
           </span>
           <h1 className="text-[32px] md:text-[48px] font-black leading-tight tracking-tight mb-4 max-w-[18ch]">
-            شارژ اسنپ با کارت بین‌المللی؛ <em className="not-italic text-brand">بی‌وقفه</em> در خیابان‌های ایران
+            {t('title')}
           </h1>
           <p className="text-[18px] text-sub max-w-[52ch] leading-relaxed mb-8">
-            توریست‌ها کارت شتاب ندارند. ما کیف پول اسنپ شما را با کارت ویزا/مستر در کمتر از ۵ دقیقه شارژ می‌کنیم تا برای گرفتن تاکسی معطل نمانید. کاملاً شفاف، بدون کارمزد پنهان.
+            {t('subtitle')}
           </p>
 
           <SnappRechargeWidget locale={locale} initialAmount={selectedAmount} />
@@ -43,13 +44,21 @@ export default function SnappChargePage() {
       {/* Signature Ops Block */}
       <section className="py-12 max-w-[1180px] mx-auto px-6">
         <SignatureBlock 
-          title="سرویس شارژ شناور و عودت باقیمانده"
+          title={locale === 'fa' ? 'سرویس شارژ شناور و عودت باقیمانده' : 'Floating Balance & Refund Service'}
           description={
-            <>
-              نمی‌دانید در طول سفر دقیقاً چقدر برای اسنپ هزینه خواهید کرد؟ <strong>نیاز به محاسبه نیست، تنبل باشید!</strong><br />
-              کافی‌ست یک مبلغ پایه (مثلاً ۵۰ یورو) نزد iTrip امانت بگذارید. سیستم ما کیف پول اسنپ شما را همیشه پر نگه می‌دارد تا هیچ‌گاه در خیابان لنگ نمانید. 
-              در روز آخر سفر، معادل ارزیِ دقیقِ <em>باقیمانده‌ی پولتان</em> را در فرودگاه (به صورت نقد یا واریز مجدد به کارت) به شما <strong>برمی‌گردانیم</strong>. حداکثر راحتی، بدون یک ریال هدررفت.
-            </>
+            locale === 'fa' ? (
+              <>
+                نمی‌دانید در طول سفر دقیقاً چقدر برای اسنپ هزینه خواهید کرد؟ <strong>نیاز به محاسبه نیست، تنبل باشید!</strong><br />
+                کافی‌ست یک مبلغ پایه (مثلاً ۵۰ یورو) نزد فیروز امانت بگذارید. سیستم ما کیف پول اسنپ شما را همیشه پر نگه می‌دارد تا هیچ‌گاه در خیابان لنگ نمانید. 
+                در روز آخر سفر، معادل ارزیِ دقیقِ <em>باقیمانده‌ی پولتان</em> را در فرودگاه (به صورت نقد یا واریز مجدد به کارت) به شما <strong>برمی‌گردانیم</strong>. حداکثر راحتی، بدون یک ریال هدررفت.
+              </>
+            ) : (
+              <>
+                Unsure how much ride credit you will need? <strong>No calculations needed!</strong><br />
+                Deposit a base amount with Firuzo. Our concierge keeps your local wallet topped up automatically.
+                On your departure day, any unused balance is refunded directly to your international card.
+              </>
+            )
           }
         />
       </section>
@@ -58,132 +67,122 @@ export default function SnappChargePage() {
       <section className="py-16 bg-surface">
         <div className="max-w-[1180px] mx-auto px-6">
           <div className="max-w-[62ch] mb-12">
-            <h2 className="text-[28px] font-black mb-3">بسته‌های سفارشی برای شرایط مختلف</h2>
-            <p className="text-[16px] text-sub leading-[1.8]">
-              فرقی نمی‌کند تازه به فرودگاه رسیده‌اید یا در وسط شهر شارژتان تمام شده؛ ما راه‌حل داریم.
+            <h2 className="text-[28px] md:text-[36px] font-black tracking-tight mb-4">
+              {locale === 'fa' ? 'بسته‌های پیشنهادی برای انواع سفر' : 'Recommended Ride Packages'}
+            </h2>
+            <p className="text-sub text-[16px] leading-relaxed">
+              {locale === 'fa' ? 'بر اساس تجربه گردشگران قبلی، بسته‌های متناسب با مدت زمان اقامت خود را انتخاب کنید.' : 'Choose the best package based on your expected length of stay.'}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* مقطعی */}
-            <article className="bg-surface border border-line rounded-xl p-6 flex flex-col shadow-sm hover:shadow-md hover:-translate-y-1 transition-all">
-              <div className="aspect-[16/10] rounded-[50%_50%_16px_16px/28%_28%_16px_16px] bg-gradient-to-br from-mint to-brand flex items-center justify-center text-surface mb-6">
-                <RefreshCw size={56} className="opacity-90" />
-              </div>
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-[20px] font-black m-0 mb-1">شارژ مقطعی سریع</h3>
-                  <span className="text-[14px] text-sub">مناسب مواقع اضطراری</span>
+            {/* Package 1 */}
+            <div className="border border-line rounded-2xl p-6 bg-paper flex flex-col justify-between hover:border-brand/40 transition">
+              <div>
+                <span className="text-sub font-bold text-xs block mb-1">{locale === 'fa' ? 'سفر ۳ روزه' : '3-Day Stay'}</span>
+                <h3 className="text-xl font-black mb-2">{locale === 'fa' ? 'بسته آخر هفته' : 'Weekend Package'}</h3>
+                <div className="text-[28px] font-black text-ink mb-4">
+                  ۱۰,۰۰۰,۰۰۰ <span className="text-sm font-bold text-sub">{locale === 'fa' ? 'تومان' : 'Toman'}</span>
+                  <span className="block text-xs font-bold text-sub mt-0.5">≈ €۱۴ EUR</span>
                 </div>
-                <span className="text-[12px] font-bold bg-soft text-sub px-3 py-1 rounded-full">آنی</span>
+                <ul className="space-y-2.5 text-xs text-sub mb-6">
+                  <li className="flex items-center gap-2"><Check size={14} className="text-brand-dark" /> {locale === 'fa' ? 'مناسب برای حدود ۸ تا ۱۰ سفر شهری' : 'Approx. 8-10 city rides'}</li>
+                  <li className="flex items-center gap-2"><Check size={14} className="text-brand-dark" /> {locale === 'fa' ? 'شارژ آنی در ۵ دقیقه' : 'Instant 5-minute topup'}</li>
+                  <li className="flex items-center gap-2"><Check size={14} className="text-brand-dark" /> {locale === 'fa' ? 'پشتیبانی ۲۴ ساعته در طول سفر' : '24/7 travel support'}</li>
+                </ul>
               </div>
-              <div className="flex flex-col gap-3 flex-1 text-[14px] text-sub">
-                <span className="flex gap-2"><Check size={18} className="text-brand" /> انجام در کمتر از ۵ دقیقه</span>
-                <span className="flex gap-2"><Check size={18} className="text-brand" /> بدون نیاز به احراز هویت پیچیده</span>
-                <span className="flex gap-2"><Check size={18} className="text-brand" /> پرداخت با لینک مستقیم</span>
-              </div>
-              <div className="flex justify-between items-end border-t border-line pt-4 mt-6">
-                <div><span className="font-en text-[24px] font-bold text-price block leading-none">۵٪</span><span className="text-[12px] text-sub">کارمزد شفاف</span></div>
-                <button 
-                  onClick={() => selectPackage(10000000)}
-                  aria-label="انتخاب شارژ مقطعی سریع" 
-                  className="px-4 py-2 border border-brand/30 rounded-xl text-brand-dark text-[14px] font-bold hover:bg-mint transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                >
-                  انتخاب
-                </button>
-              </div>
-            </article>
+              <button 
+                onClick={() => selectPackage(10000000)}
+                className="w-full py-3 rounded-xl border border-brand text-brand-dark font-black text-xs hover:bg-brand hover:text-surface transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
+              >
+                {t('selectPackage')}
+              </button>
+            </div>
 
-            {/* شناور */}
-            <article className="bg-surface border-2 border-brand rounded-xl p-6 flex flex-col shadow-md hover:-translate-y-1 transition-transform relative">
-              <div className="absolute top-0 end-1/2 translate-x-1/2 -translate-y-1/2 bg-action text-[#14201f] text-[12px] font-black px-4 py-1 rounded-full">
-                پیشنهاد ویژه
-              </div>
-              <div className="aspect-[16/10] rounded-[50%_50%_16px_16px/28%_28%_16px_16px] bg-gradient-to-br from-[#F8CE7E] to-[#9C6209] flex items-center justify-center text-surface mb-6 mt-2">
-                <Wallet size={56} className="opacity-90" />
-              </div>
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-[20px] font-black m-0 mb-1">کیف پول شناور</h3>
-                  <span className="text-[14px] text-sub">همیشه شارژ، عودت در پایان</span>
+            {/* Package 2 - Popular */}
+            <div className="border-2 border-brand rounded-2xl p-6 bg-paper flex flex-col justify-between relative shadow-sm">
+              <span className="absolute -top-3 start-6 bg-brand text-surface text-[11px] font-black px-3 py-0.5 rounded-full">
+                {locale === 'fa' ? 'محبوب‌ترین' : 'Most Popular'}
+              </span>
+              <div>
+                <span className="text-sub font-bold text-xs block mb-1">{locale === 'fa' ? 'سفر ۷ روزه' : '7-Day Stay'}</span>
+                <h3 className="text-xl font-black mb-2">{locale === 'fa' ? 'بسته یک هفته‌ای' : 'One Week Package'}</h3>
+                <div className="text-[28px] font-black text-ink mb-4">
+                  ۲۵,۰۰۰,۰۰۰ <span className="text-sm font-bold text-sub">{locale === 'fa' ? 'تومان' : 'Toman'}</span>
+                  <span className="block text-xs font-bold text-sub mt-0.5">≈ €۳۵ EUR</span>
                 </div>
+                <ul className="space-y-2.5 text-xs text-sub mb-6">
+                  <li className="flex items-center gap-2"><Check size={14} className="text-brand-dark" /> {locale === 'fa' ? 'مناسب برای حدود ۲۵ سفر شهری + فرودگاه' : 'Approx. 25 city rides + Airport'}</li>
+                  <li className="flex items-center gap-2"><Check size={14} className="text-brand-dark" /> {locale === 'fa' ? 'سیم‌کارت توریستی هدیه' : 'Complimentary tourist SIM'}</li>
+                  <li className="flex items-center gap-2"><Check size={14} className="text-brand-dark" /> {locale === 'fa' ? 'امکان عودت کامل باقیمانده' : 'Full refund of remaining balance'}</li>
+                </ul>
               </div>
-              <div className="flex flex-col gap-3 flex-1 text-[14px] text-sub">
-                <span className="flex gap-2"><Check size={18} className="text-brand" /> پایش و شارژ خودکار حساب</span>
-                <span className="flex gap-2"><Check size={18} className="text-brand" /> <b>عودت باقیمانده</b> در فرودگاه</span>
-                <span className="flex gap-2"><Check size={18} className="text-brand" /> گزارش ریز مصرف روزانه</span>
-              </div>
-              <div className="flex justify-between items-end border-t border-line pt-4 mt-6">
-                <div><span className="font-en text-[24px] font-bold text-price block leading-none">€ 50</span><span className="text-[12px] text-sub">ودیعه اولیه</span></div>
-                <button 
-                  onClick={() => selectPackage(32500000)}
-                  aria-label="فعال‌سازی کیف پول شناور" 
-                  className="px-4 py-2 bg-action hover:bg-action-hover rounded-full text-[#14201f] text-[14px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
-                >
-                  فعال‌سازی
-                </button>
-              </div>
-            </article>
+              <button 
+                onClick={() => selectPackage(25000000)}
+                className="w-full py-3 rounded-xl bg-brand text-surface font-black text-xs hover:bg-brand-dark transition shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
+              >
+                {t('selectPackage')}
+              </button>
+            </div>
 
-            {/* پکیج */}
-            <article className="bg-surface border border-line rounded-xl p-6 flex flex-col shadow-sm hover:shadow-md hover:-translate-y-1 transition-all">
-              <div className="aspect-[16/10] rounded-[50%_50%_16px_16px/28%_28%_16px_16px] bg-gradient-to-br from-[#3EBFBA] to-[#053F3E] flex items-center justify-center text-surface mb-6">
-                <Phone size={56} className="opacity-90" />
-              </div>
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-[20px] font-black m-0 mb-1">سیم‌کارت + اسنپ</h3>
-                  <span className="text-[14px] text-sub">آماده پیش از ورود</span>
+            {/* Package 3 */}
+            <div className="border border-line rounded-2xl p-6 bg-paper flex flex-col justify-between hover:border-brand/40 transition">
+              <div>
+                <span className="text-sub font-bold text-xs block mb-1">{locale === 'fa' ? 'سفر ۱۴ روزه+' : '14-Day+ Stay'}</span>
+                <h3 className="text-xl font-black mb-2">{locale === 'fa' ? 'بسته اقامت طولانی' : 'Long Stay Package'}</h3>
+                <div className="text-[28px] font-black text-ink mb-4">
+                  ۵۰,۰۰۰,۰۰۰ <span className="text-sm font-bold text-sub">{locale === 'fa' ? 'تومان' : 'Toman'}</span>
+                  <span className="block text-xs font-bold text-sub mt-0.5">≈ €۷۰ EUR</span>
                 </div>
-                <span className="text-[12px] font-bold bg-mint text-brand-dark px-3 py-1 rounded-full">فرودگاه</span>
+                <ul className="space-y-2.5 text-xs text-sub mb-6">
+                  <li className="flex items-center gap-2"><Check size={14} className="text-brand-dark" /> {locale === 'fa' ? 'پوشش کامل سفرهای بین‌شهری و روزانه' : 'Full coverage for intercity & daily trips'}</li>
+                  <li className="flex items-center gap-2"><Check size={14} className="text-brand-dark" /> {locale === 'fa' ? 'سیم‌کارت با ۲۰ گیگ اینترنت رایگان' : 'Tourist SIM with 20GB Data'}</li>
+                  <li className="flex items-center gap-2"><Check size={14} className="text-brand-dark" /> {locale === 'fa' ? 'تضمین بهترین نرخ تبدیل ارز' : 'Best FX rate guaranteed'}</li>
+                </ul>
               </div>
-              <div className="flex flex-col gap-3 flex-1 text-[14px] text-sub">
-                <span className="flex gap-2"><Check size={18} className="text-brand" /> سیم‌کارت توریستی فعال</span>
-                <span className="flex gap-2"><Check size={18} className="text-brand" /> اکانت اسنپ از پیش ساخته شده</span>
-                <span className="flex gap-2"><Check size={18} className="text-brand" /> شارژ اولیه ۵ میلیون ریالی</span>
-              </div>
-              <div className="flex justify-between items-end border-t border-line pt-4 mt-6">
-                <div><span className="font-en text-[24px] font-bold text-price block leading-none">€ 25</span><span className="text-[12px] text-sub">همه‌چیز با هم</span></div>
-                <button 
-                  onClick={() => selectPackage(16250000)}
-                  aria-label="درخواست پکیج سیم‌کارت و اسنپ" 
-                  className="px-4 py-2 border border-brand/30 rounded-xl text-brand-dark text-[14px] font-bold hover:bg-mint transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                >
-                  درخواست
-                </button>
-              </div>
-            </article>
+              <button 
+                onClick={() => selectPackage(50000000)}
+                className="w-full py-3 rounded-xl border border-brand text-brand-dark font-black text-xs hover:bg-brand hover:text-surface transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
+              >
+                {t('selectPackage')}
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="py-16">
-        <div className="max-w-[1180px] mx-auto px-6">
-          <div className="max-w-[62ch] mb-12">
-            <h2 className="text-[28px] font-black mb-3">روند اجرای سخت‌گیرانه اما راحت</h2>
-            <p className="text-[16px] text-sub leading-[1.8]">
-              ما ریسک مسدودی حساب‌های محلی را صفر کرده‌ایم. تراکنش‌ها از طریق حساب‌های شرکتی معتبر انجام می‌شود.
-            </p>
-          </div>
-
-          <ProcessSteps 
-            steps={[
-              { title: 'ثبت شماره و مبلغ', description: 'شماره موبایلی که با آن در اسنپ ثبت‌نام کرده‌اید را وارد کنید. بدون نیاز به پسورد شما.', eta: 'آنی' },
-              { title: 'پرداخت بین‌المللی', description: 'فاکتور دقیق با نرخ تبدیل شفاف به شما نمایش داده می‌شود. پرداخت با ویزا، مستر یا رمزارز.', eta: 'درگاه امن Stripe' },
-              { title: 'شارژ شرکتی و سریع', description: 'تیم محلی ما فوراً مبلغ را از طریق درگاه‌های مجاز ایرانی به کیف پول اسنپ شما واریز می‌کند.', eta: 'کمتر از ۵ دقیقه' },
-              { title: 'عودت وجه (در صورت لزوم)', description: 'در مدل کیف پول شناور، هرچه در روز آخر باقی مانده باشد را بدون هیچ سوالی به شما پس می‌دهیم.', eta: 'روز خروج' }
-            ]} 
-          />
-
-          <ManualOpsNotice />
-        </div>
+      {/* Process Steps */}
+      <section className="max-w-[1180px] mx-auto px-6 py-12">
+        <ProcessSteps 
+          steps={[
+            {
+              title: locale === 'fa' ? 'ورود شماره و انتخاب مبلغ' : 'Enter number & select amount',
+              description: locale === 'fa' ? 'شماره موبایل فعال در ایران یا شماره سیم‌کارت توریستی خود را وارد کنید.' : 'Enter your active local or roaming mobile number.',
+              eta: '۱ دقیقه'
+            },
+            {
+              title: locale === 'fa' ? 'پرداخت با کارت بین‌المللی' : 'Pay with international card',
+              description: locale === 'fa' ? 'با ویزا، مسترکارت یا رمزارز پرداخت را به صورت امن و آنی تکمیل نمایید.' : 'Complete secure instant payment via Visa, MasterCard or Crypto.',
+              eta: '۲ دقیقه'
+            },
+            {
+              title: locale === 'fa' ? 'شارژ آنی و شروع سفر' : 'Instant topup & ride away',
+              description: locale === 'fa' ? 'در کمتر از ۵ دقیقه کیف پول اسنپ شما شارژ شده و پیامک تأیید ارسال می‌شود.' : 'Your ride credit arrives in under 5 minutes with SMS confirmation.',
+              eta: '۳ دقیقه'
+            }
+          ]}
+        />
       </section>
 
-      {/* Trust */}
-      <section className="py-12 mb-16 max-w-[1180px] mx-auto px-6">
-        <TrustBar />
+      {/* Manual Ops Notice */}
+      <section className="max-w-[1180px] mx-auto px-6 mb-12">
+        <ManualOpsNotice 
+          description="تیم پشتیبانی مالی فیروز به صورت ۲۴ ساعته تراکنش‌های ارزی را پردازش و حساب اسنپ شما را شارژ می‌کند."
+        />
       </section>
+
+      {/* Trust Bar */}
+      <TrustBar />
     </div>
   );
 }

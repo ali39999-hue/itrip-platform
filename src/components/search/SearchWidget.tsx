@@ -43,14 +43,16 @@ export function SearchWidget() {
           <X size={16} /> {error}
         </div>
       )}
-      <div className="glass-card rounded-3xl p-4 sm:p-6 md:p-7 shadow-elev-3 overflow-visible">
-        {/* Tab Selection */}
+
+      <div className="glass-panel rounded-3xl p-4 md:p-6 shadow-elev-3 transition-all border border-line">
         <SearchModeTabs activeTab={tab} onTabChange={setTab} />
 
-        {/* Dynamic Search Subforms Container */}
-        <form onSubmit={submit} className="relative grid grid-cols-1 md:grid-cols-12 gap-2.5 sm:gap-3 items-stretch">
+        <form onSubmit={submit} className="relative z-10">
           {tab === 'plan' && (
-            <PlanSearchForm query={query} setQuery={setQuery} />
+            <PlanSearchForm
+              query={query}
+              setQuery={setQuery}
+            />
           )}
 
           {tab === 'flights' && (
@@ -70,7 +72,6 @@ export function SearchWidget() {
               guestOpen={guestOpen}
               setGuestOpen={setGuestOpen}
               swap={swap}
-              locale={locale}
               onErrorClear={() => error && setError('')}
             />
           )}
@@ -89,7 +90,6 @@ export function SearchWidget() {
               setRooms={setRooms}
               guestOpen={guestOpen}
               setGuestOpen={setGuestOpen}
-              locale={locale}
               onErrorClear={() => error && setError('')}
             />
           )}

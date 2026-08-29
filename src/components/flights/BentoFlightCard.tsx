@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { Plane, Briefcase, ChevronDown, Armchair, Ticket, Clock, CheckCircle2 } from 'lucide-react';
 import type { Flight } from '@/lib/types';
 import { Badge } from '@/components/ui/Badge';
@@ -12,17 +13,25 @@ export function durationMinutes(d: string): number {
   return Number(h) * 60 + Number(m);
 }
 
-/* "3h 50m" → "۳ ساعت و ۵۰ دقیقه" */
-export function durationFa(d: string): string {
+/* "3h 50m" → localized duration string */
+export function durationLocalized(d: string, locale: string): string {
   const h = Number(/(\d+)\s*h/.exec(d)?.[1] ?? 0);
   const m = Number(/(\d+)\s*m/.exec(d)?.[1] ?? 0);
+  if (locale === 'fa') {
+    const parts: string[] = [];
+    if (h) parts.push(`${h.toLocaleString('fa-IR')} ساعت`);
+    if (m) parts.push(`${m.toLocaleString('fa-IR')} دقیقه`);
+    return parts.join(' و ');
+  }
   const parts: string[] = [];
-  if (h) parts.push(`${h.toLocaleString('fa-IR')} ساعت`);
-  if (m) parts.push(`${m.toLocaleString('fa-IR')} دقیقه`);
-  return parts.join(' و ');
+  if (h) parts.push(`${h}h`);
+  if (m) parts.push(`${m}m`);
+  return parts.join(' ');
 }
 
 export function BentoFlightCard({ flight, onSelect }: { flight: Flight; onSelect: () => void }) {
+  const t = useTranslations('Flights');
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const overnight = flight.arrivalTime < flight.departureTime;
   const business = flight.cabinClass === 'business';
@@ -49,7 +58,7 @@ export function BentoFlightCard({ flight, onSelect }: { flight: Flight; onSelect
               </div>
               <Badge variant={business ? 'gold' : 'mint'}>
                 {business ? <Ticket size={13} /> : <CheckCircle2 size={13} />}
-                <span>{business ? 'بیزینس کلاس' : 'تایید آنی'}</span>
+                <span>{business ? (locale === 'fa' ? 'بیزینس کلاس' : 'Business Class') : (locale === 'fa' ? 'تایید آنی' : 'Instant Confirmation')}</span>
               </Badge>
             </div>
 
@@ -64,7 +73,7 @@ export function BentoFlightCard({ flight, onSelect }: { flight: Flight; onSelect
 
               <div className="flex-grow mx-3 md:mx-8 relative flex flex-col items-center justify-center min-w-0">
                 <span className="text-[11px] font-bold text-sub mb-1 whitespace-nowrap">
-                  {durationFa(flight.duration)}
+                  {durationLocalized(flight.duration, locale)}
                 </span>
                 <div className="w-full relative h-8 flex items-center justify-between px-1">
                   {/* dashed path */}
@@ -80,7 +89,7 @@ export function BentoFlightCard({ flight, onSelect }: { flight: Flight; onSelect
                     flight.stops === 0 ? 'text-brand-dark' : 'text-gold'
                   }`}
                 >
-                  {flight.stops === 0 ? 'پرواز مستقیم' : `${flight.stops.toLocaleString('fa-IR')} توقف`}
+                  {flight.stops === 0 ? t('directFlight') : `${flight.stops.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')} ${t('stops')}`}
                 </span>
               </div>
 
@@ -88,7 +97,7 @@ export function BentoFlightCard({ flight, onSelect }: { flight: Flight; onSelect
                 <div className="text-xl md:text-2xl font-black text-ink font-mono" dir="ltr">
                   {flight.arrivalTime}
                 </div>
-                {overnight && <div className="text-[10.5px] text-destructive font-bold">+۱ روز</div>}
+                {overnight && <div className="text-[10.5px] text-destructive font-bold">{t('plusOneDay')}</div>}
                 <div className="text-xs text-sub font-bold mt-0.5">{flight.destination}</div>
               </div>
             </div>
@@ -102,12 +111,12 @@ export function BentoFlightCard({ flight, onSelect }: { flight: Flight; onSelect
               aria-expanded={open}
               className="text-xs text-sub hover:text-brand-dark font-bold flex items-center gap-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg"
             >
-              <span>جزئیات پرواز و بار</span>
+              <span>{t('flightDetails')}</span>
               <ChevronDown size={14} className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
             </button>
             <span className="text-[11px] text-sub font-medium flex items-center gap-1">
               <Briefcase size={13} className="text-brand-dark" />
-              <span>بار مجاز: {flight.baggage}</span>
+              <span>{t('baggageIncluded')}: {flight.baggage}</span>
             </span>
           </div>
 
@@ -115,10 +124,10 @@ export function BentoFlightCard({ flight, onSelect }: { flight: Flight; onSelect
           {open && (
             <div className="animate-in fade-in slide-in-from-top-2 duration-200 mt-3 p-4 bg-soft/70 border border-line/70 rounded-xl grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
               {([
-                ['شماره پرواز', <span dir="ltr" key="n" className="font-mono">{flight.flightNo}</span>],
-                ['مدت کل پرواز', durationFa(flight.duration)],
-                ['بار مجاز', <span key="b" className="inline-flex items-center gap-1"><Briefcase size={12} /> {flight.baggage}</span>],
-                ['صندلی باقی‌مانده', <span key="s" className="inline-flex items-center gap-1"><Armchair size={12} /> {flight.seatsLeft.toLocaleString('fa-IR')}</span>],
+                [locale === 'fa' ? 'شماره پرواز' : 'Flight No', <span dir="ltr" key="n" className="font-mono">{flight.flightNo}</span>],
+                [locale === 'fa' ? 'مدت کل پرواز' : 'Duration', durationLocalized(flight.duration, locale)],
+                [t('baggageIncluded'), <span key="b" className="inline-flex items-center gap-1"><Briefcase size={12} /> {flight.baggage}</span>],
+                [locale === 'fa' ? 'صندلی باقی‌مانده' : 'Seats Left', <span key="s" className="inline-flex items-center gap-1"><Armchair size={12} /> {flight.seatsLeft.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}</span>],
               ] as [string, React.ReactNode][]).map(([l, v]) => (
                 <div key={l}>
                   <b className="block text-[10.5px] text-sub font-bold mb-0.5">{l}</b>
@@ -135,19 +144,19 @@ export function BentoFlightCard({ flight, onSelect }: { flight: Flight; onSelect
             {flight.seatsLeft < 5 ? (
               <div className="text-[11px] text-destructive font-bold flex items-center gap-1 md:mb-2 md:order-1">
                 <Armchair size={13} />
-                فقط {flight.seatsLeft.toLocaleString('fa-IR')} صندلی باقی مانده
+                {locale === 'fa' ? `فقط ${flight.seatsLeft.toLocaleString('fa-IR')} صندلی باقی مانده` : `Only ${flight.seatsLeft} seats left`}
               </div>
             ) : (
               <div className="hidden md:flex text-[11px] text-sub items-center gap-1 mb-2 order-1">
                 <Clock size={12} />
-                {durationFa(flight.duration)}
+                {durationLocalized(flight.duration, locale)}
               </div>
             )}
             <div className="text-end md:text-start md:order-2">
-              <span className="text-[11px] text-sub block mb-1">قیمت هر مسافر</span>
+              <span className="text-[11px] text-sub block mb-1">{t('perPassenger')}</span>
               <div className="text-xl md:text-2xl font-black text-ink font-mono num flex items-baseline gap-1">
-                {flight.price.toLocaleString('fa-IR')}
-                <span className="text-xs font-normal text-sub">تومان</span>
+                {flight.price.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}
+                <span className="text-xs font-normal text-sub">{t('toman')}</span>
               </div>
             </div>
           </div>
@@ -157,7 +166,7 @@ export function BentoFlightCard({ flight, onSelect }: { flight: Flight; onSelect
             onClick={onSelect}
             className="w-full h-11 px-5 rounded-xl bg-action hover:bg-action-hover text-[#14201f] font-black text-xs md:text-sm flex items-center justify-center transition shadow-sm hover:shadow-elev-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-[0.98]"
           >
-            انتخاب بلیط
+            {t('selectTicket')}
           </button>
         </div>
       </div>

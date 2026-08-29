@@ -1,6 +1,6 @@
 'use client';
 
-import { useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { Check } from 'lucide-react';
 
 export type CheckoutPhase = 'passengers' | 'payment' | 'issuing' | 'success';
@@ -10,14 +10,13 @@ interface CheckoutStepperProps {
 }
 
 const STEPS = [
-  { id: 'passengers', labelFa: 'اطلاعات مسافر', labelEn: 'Passenger Info', num: 1 },
-  { id: 'payment', labelFa: 'پرداخت و بازبینی', labelEn: 'Payment & Review', num: 2 },
-  { id: 'issuing', labelFa: 'صدور و نهایی‌سازی', labelEn: 'Issuance & Voucher', num: 3 },
+  { id: 'passengers', labelKey: 'stepPassengers' as const, num: 1 },
+  { id: 'payment', labelKey: 'stepPayment' as const, num: 2 },
+  { id: 'issuing', labelKey: 'stepIssuing' as const, num: 3 },
 ];
 
 export function CheckoutStepper({ phase }: CheckoutStepperProps) {
-  const locale = useLocale();
-  const isEn = locale === 'en';
+  const t = useTranslations('Checkout');
   const phaseIdx = phase === 'passengers' ? 0 : phase === 'payment' ? 1 : 2;
 
   return (
@@ -32,7 +31,7 @@ export function CheckoutStepper({ phase }: CheckoutStepperProps) {
         {STEPS.map((step, idx) => {
           const isDone = phaseIdx > idx || phase === 'success';
           const isCurrent = phaseIdx === idx && phase !== 'success';
-          const label = isEn ? step.labelEn : step.labelFa;
+          const label = t(step.labelKey);
           return (
             <div key={step.id} className="relative z-10 flex flex-col items-center">
               <div

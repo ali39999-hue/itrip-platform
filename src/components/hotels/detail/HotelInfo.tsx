@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { MapPin, Coffee, Wallet, Headset, BarChart3, ShieldCheck, Waves, Users, KeyRound, Check, X, ThumbsUp, Ban, ChevronDown, BedDouble, type LucideIcon } from 'lucide-react';
 import { fa1, gShort } from '@/lib/hotel-format';
 import { DISTS, CATS, REVIEWS, FAQS } from '@/lib/hotel-mock';
@@ -8,6 +9,7 @@ import type { Hotel } from '@/lib/types';
 import { FREE_CANCEL_HOURS } from '@/hooks/useHotelBooking';
 
 export function HotelOverview({ hotel }: { hotel: Hotel }) {
+  const t = useTranslations('HotelDetail');
   const [descOpen, setDescOpen] = useState(false);
 
   const highlights: [LucideIcon, string, string][] = [
@@ -19,30 +21,30 @@ export function HotelOverview({ hotel }: { hotel: Hotel }) {
 
   return (
     <section id="overview" className="p-5 border border-line rounded-xl bg-surface shadow-sm scroll-mt-32">
-      <h2 className="m-0 mb-1 text-lg font-black">چرا این هتل برای سفر شما مناسب است</h2>
-      <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">خلاصه‌ای از مهم‌ترین مزیت‌های اقامت.</p>
+      <h2 className="m-0 mb-1 text-lg font-black">{t('whyThisHotel')}</h2>
+      <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">{t('summaryAdvantages')}</p>
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-5 mb-4">
-        {highlights.map(([Icon, t, s]) => (
-          <div key={t} className="flex flex-col items-center gap-2 text-center group">
+        {highlights.map(([Icon, title, sub]) => (
+          <div key={title} className="flex flex-col items-center gap-2 text-center group">
             <span className="w-16 h-16 rounded-full bg-soft grid place-items-center text-brand-dark group-hover:bg-mint group-hover:scale-110 transition-all">
               <Icon size={26} />
             </span>
-            <b className="block text-[12.5px] font-black leading-snug">{t}</b>
-            <span className="block text-[11px] font-semibold text-sub leading-relaxed">{s}</span>
+            <b className="block text-[12.5px] font-black leading-snug">{title}</b>
+            <span className="block text-[11px] font-semibold text-sub leading-relaxed">{sub}</span>
           </div>
         ))}
       </div>
       <div className={`relative text-ink/80 text-[13.5px] leading-8 ${descOpen ? '' : 'max-h-[88px] overflow-hidden'}`}>
         <p className="mt-0">این اقامتگاه در بهترین موقعیت {hotel.city} قرار دارد و دسترسی پیاده به اصلی‌ترین جاذبه‌ها را ممکن می‌کند. اتاق‌های رو به حیاط آرام و بدون صدای خیابان هستند و تراس روف‌گاردن صبحانه بوفه سرو می‌کند.</p>
-        <p className="mb-0">پذیرش ۲۴ ساعته با پشتیبانی فارسی، ترانسفر فرودگاهی با نرخ ثابت و امکان افزودن خدمات تکمیلی iTrip (ترانسفر، eSIM و بیمه) در مرحله پرداخت.</p>
+        <p className="mb-0">پذیرش ۲۴ ساعته با پشتیبانی فارسی، ترانسفر فرودگاهی با نرخ ثابت و امکان افزودن خدمات تکمیلی فیروز (ترانسفر، eSIM و بیمه) در مرحله پرداخت.</p>
         {!descOpen && <span className="absolute inset-x-0 bottom-0 h-[34px] bg-gradient-to-t from-surface to-transparent" />}
       </div>
-      <button onClick={() => setDescOpen(!descOpen)} className="mt-2 border-0 bg-transparent text-brand-dark text-[12.5px] font-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">
-        {descOpen ? 'بستن توضیحات' : 'ادامه توضیحات'}
+      <button onClick={() => setDescOpen(!descOpen)} className="mt-2 border-0 bg-transparent text-brand-dark text-[12.5px] font-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded cursor-pointer">
+        {descOpen ? t('closeDesc') : t('readMore')}
       </button>
       <div className="flex items-center gap-3 mt-4 p-3 border border-mint-bright/60 rounded-xl bg-gradient-to-l from-surface to-mint/40 text-[12.5px] font-bold text-brand-dark">
         <BarChart3 size={16} className="text-success shrink-0" />
-        <span>میانگین نرخ این هتل در تاریخ‌های شما <b className="text-brand">۱۴٪ پایین‌تر</b> از میانگین هتل‌های ۵ ستاره این منطقه است.</span>
+        <span>{t('priceLowerNotice')}</span>
         <span className="me-auto hidden md:flex items-end gap-[3px] h-[30px]" dir="ltr">
           {[80, 76, 72, 66, 58, 78, 84].map((h, i) => (
             <i key={i} style={{ height: `${h}%` }} className={`w-[7px] rounded-sm ${i === 4 ? 'bg-brand' : 'bg-line'}`} />
@@ -54,10 +56,12 @@ export function HotelOverview({ hotel }: { hotel: Hotel }) {
 }
 
 export function HotelLocation({ hotel }: { hotel: Hotel }) {
+  const t = useTranslations('HotelDetail');
+
   return (
     <section id="location" className="p-5 border border-line rounded-xl bg-surface shadow-sm scroll-mt-32">
-      <h2 className="m-0 mb-1 text-lg font-black">موقعیت و دسترسی</h2>
-      <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">فاصله‌ها بر اساس مسیر واقعی پیاده‌روی.</p>
+      <h2 className="m-0 mb-1 text-lg font-black">{t('location')}</h2>
+      <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">{t('walkingDistances')}</p>
       <div className="grid grid-cols-1 md:grid-cols-[1.05fr_.95fr] gap-3.5">
         <div className="relative min-h-[240px] rounded-xl overflow-hidden border border-line bg-soft">
           <div className="absolute inset-0 bg-[radial-gradient(#00a9a522_1px,transparent_1px)] bg-[size:14px_14px]" />
@@ -72,13 +76,13 @@ export function HotelLocation({ hotel }: { hotel: Hotel }) {
         </div>
 
         <div className="flex flex-col gap-2">
-          {DISTS.map(([p, IconComponent, t]) => (
+          {DISTS.map(([p, IconComponent, distanceTime]) => (
             <div key={p} className="flex items-center justify-between p-2.5 rounded-lg border border-line/60 bg-soft/50 text-xs">
               <span className="font-bold text-ink flex items-center gap-1.5">
                 <IconComponent size={14} className="text-brand-dark" />
                 {p}
               </span>
-              <span className="text-[11px] font-bold text-sub font-mono">{t}</span>
+              <span className="text-[11px] font-bold text-sub font-mono">{distanceTime}</span>
             </div>
           ))}
         </div>
@@ -88,6 +92,8 @@ export function HotelLocation({ hotel }: { hotel: Hotel }) {
 }
 
 export function HotelAmenities() {
+  const t = useTranslations('HotelDetail');
+
   const sections: [string, LucideIcon, [string, number][]][] = [
     ['امکانات اقامت', BedDouble, [['وای‌فای رایگان', 1], ['تهویه مطبوع', 1], ['اتاق ضدصدا', 1], ['اتاق سیگار', 0]]],
     ['غذا و نوشیدنی', Coffee, [['صبحانه بوفه ترکی', 1], ['رستوران تراس', 1], ['روم‌سرویس ۲۴ ساعته', 1], ['کافه لابی', 1]]],
@@ -99,8 +105,8 @@ export function HotelAmenities() {
 
   return (
     <section id="amenities" className="p-5 border border-line rounded-xl bg-surface shadow-sm scroll-mt-32">
-      <h2 className="m-0 mb-1 text-lg font-black">امکانات هتل</h2>
-      <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">موارد با ✕ در این هتل ارائه نمی‌شوند.</p>
+      <h2 className="m-0 mb-1 text-lg font-black">{t('amenities')}</h2>
+      <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">{t('amenitiesNotice')}</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {sections.map(([title, Icon, items]) => (
           <div key={title}>
@@ -120,19 +126,31 @@ export function HotelAmenities() {
 }
 
 export function HotelReviews({ hotel }: { hotel: Hotel }) {
+  const t = useTranslations('HotelDetail');
+  const locale = useLocale();
   const [revType, setRevType] = useState('همه');
   const revList = revType === 'همه' ? REVIEWS : REVIEWS.filter((r) => r.t === revType);
   const overall = CATS.reduce((s, c) => s + c[1], 0) / CATS.length;
 
+  const filters = [
+    { key: 'همه', label: t('reviewFilterAll') },
+    { key: 'خانواده', label: t('reviewFilterFamily') },
+    { key: 'زوج', label: t('reviewFilterCouple') },
+    { key: 'کاری', label: t('reviewFilterBusiness') },
+    { key: 'تنها', label: t('reviewFilterSolo') },
+  ];
+
   return (
     <section id="reviews" className="p-5 border border-line rounded-xl bg-surface shadow-sm scroll-mt-32">
-      <h2 className="m-0 mb-1 text-lg font-black">نظر مهمانان</h2>
-      <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">میانگین وزنی شش معیار از رزروهای واقعی.</p>
+      <h2 className="m-0 mb-1 text-lg font-black">{t('guestReviews')}</h2>
+      <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">{t('reviewsWeighted')}</p>
       <div className="grid grid-cols-1 md:grid-cols-[190px_1fr] gap-4 pb-4 border-b border-line/70 mb-4">
         <div className="p-4 rounded-xl bg-mint text-center">
           <div className="text-[38px] font-black text-brand-dark leading-none">{fa1(overall.toFixed(1))}</div>
-          <b className="block mt-1 text-[13px] font-black">فوق‌العاده</b>
-          <span className="block text-[11.5px] font-bold text-sub">از {hotel.reviewsCount.toLocaleString('fa-IR')} نظر</span>
+          <b className="block mt-1 text-[13px] font-black">{t('superb')}</b>
+          <span className="block text-[11.5px] font-bold text-sub">
+            {hotel.reviewsCount.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')} {t('verifiedReviews')}
+          </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 content-center">
           {CATS.map(([n, v]) => (
@@ -147,13 +165,15 @@ export function HotelReviews({ hotel }: { hotel: Hotel }) {
         </div>
       </div>
       <div className="flex gap-1.5 flex-wrap mb-3">
-        {['همه', 'خانواده', 'زوج', 'کاری', 'تنها'].map((tp) => (
+        {filters.map((f) => (
           <button
-            key={tp}
-            onClick={() => setRevType(tp)}
-            className={`min-h-8 px-3 rounded-full border text-[11.5px] font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${revType === tp ? 'border-brand text-surface bg-brand' : 'border-line text-sub bg-surface'}`}
+            key={f.key}
+            onClick={() => setRevType(f.key)}
+            className={`min-h-8 px-3 rounded-full border text-[11.5px] font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer ${
+              revType === f.key ? 'border-brand text-surface bg-brand' : 'border-line text-sub bg-surface'
+            }`}
           >
-            {tp}{tp !== 'همه' && ` (${REVIEWS.filter((r) => r.t === tp).length.toLocaleString('fa-IR')})`}
+            {f.label}{f.key !== 'همه' && ` (${REVIEWS.filter((r) => r.t === f.key).length.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')})`}
           </button>
         ))}
       </div>
@@ -182,6 +202,7 @@ export function HotelReviews({ hotel }: { hotel: Hotel }) {
 }
 
 export function HotelPolicies({ checkinDate }: { checkinDate: string }) {
+  const t = useTranslations('HotelDetail');
   const dl = new Date(new Date(checkinDate + 'T14:00:00').getTime() - FREE_CANCEL_HOURS * 36e5);
 
   const policyItems: [LucideIcon, string, string][] = [
@@ -191,13 +212,13 @@ export function HotelPolicies({ checkinDate }: { checkinDate: string }) {
 
   return (
     <section id="policies" className="p-5 border border-line rounded-xl bg-surface shadow-sm scroll-mt-32">
-      <h2 className="m-0 mb-1 text-lg font-black">قوانین و شرایط</h2>
+      <h2 className="m-0 mb-1 text-lg font-black">{t('policies')}</h2>
       <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">شرایط لغو بر اساس نرخ انتخابی متفاوت است.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {policyItems.map(([Icon, t, d]) => (
-          <div key={t} className="p-3.5 border border-line rounded-xl bg-soft/50">
-            <b className="flex items-center gap-1.5 text-[12.5px] font-black mb-1.5"><Icon size={15} className="text-brand" /> {t}</b>
-            <p className="m-0 text-xs font-semibold text-sub leading-loose">{d}</p>
+        {policyItems.map(([Icon, title, desc]) => (
+          <div key={title} className="p-3.5 border border-line rounded-xl bg-soft/50">
+            <b className="flex items-center gap-1.5 text-[12.5px] font-black mb-1.5"><Icon size={15} className="text-brand" /> {title}</b>
+            <p className="m-0 text-xs font-semibold text-sub leading-loose">{desc}</p>
           </div>
         ))}
       </div>
@@ -220,7 +241,7 @@ export function HotelPolicies({ checkinDate }: { checkinDate: string }) {
         </div>
       </div>
 
-      <h3 className="mt-5 mb-1 text-[15px] font-black">پرسش‌های پرتکرار</h3>
+      <h3 className="mt-5 mb-1 text-[15px] font-black">{t('faq')}</h3>
       {FAQS.map(([qq, aa]) => (
         <details key={qq} className="group border-b border-line/70 last:border-0">
           <summary className="flex items-center gap-2.5 py-3 cursor-pointer list-none [&::-webkit-details-marker]:hidden text-[13px] font-extrabold text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">

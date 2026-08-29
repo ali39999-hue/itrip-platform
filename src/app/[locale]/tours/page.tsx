@@ -1,33 +1,21 @@
 'use client';
 
 import { Suspense, useMemo, useState } from 'react';
+import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { TOURS } from '@/lib/data';
 import type { Tour } from '@/lib/types';
 import { useBookingStore } from '@/stores/booking-store';
 import { daysFromNow } from '@/lib/utils';
+import { shimmerDataUrl } from '@/lib/image-utils';
 import { CountryExperiencesSection } from '@/components/shared/CountryExperiences';
-import { MapPin, Star, ArrowLeft, CalendarDays, SlidersHorizontal, ChevronDown, Tent } from 'lucide-react';
+import { MapPin, Star, ArrowLeft, ArrowRight, CalendarDays, SlidersHorizontal, Tent } from 'lucide-react';
 
-const CATEGORIES = [
-  { id: 'all', label: 'همه تورها' },
-  { id: 'cultural', label: 'فرهنگی و زیارتی' },
-  { id: 'nature', label: 'طبیعت‌گردی' },
-  { id: 'medical', label: 'درمانی' },
-  { id: 'adventure', label: 'ماجراجویی' },
-  { id: 'signature', label: 'تجربه اصیل' },
-] as const;
-
-const CAT_FA: Record<Tour['category'], string> = {
-  cultural: 'فرهنگی', nature: 'طبیعت‌گردی', medical: 'درمانی', adventure: 'ماجراجویی',
-};
-
-/* placeholder تصاویر — باید با عکس واقعی تورها جایگزین شود (work/stitch-mockup-notes.md)
-   URLها HEAD-تست شده (200): سی‌وسه‌پل اصفهان، حرم امام رضا (Wikimedia)، کوهستان گرجستان (Unsplash) */
 const TOUR_IMGS: Record<string, string> = {
-  t1: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Si-o-se-Pol.jpg/960px-Si-o-se-Pol.jpg',
-  t2: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Imam_Reza_shrine.jpg/960px-Imam_Reza_shrine.jpg',
+  t1: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=70&w=800',
+  t2: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&q=70&w=800',
   t3: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&q=70&w=800',
   t4: 'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?auto=format&fit=crop&q=70&w=800',
 };
@@ -37,13 +25,22 @@ const ASPECTS = ['aspect-[3/4]', 'aspect-square', 'aspect-[4/3]', 'aspect-[3/4]'
 type SortKey = 'rec' | 'cheap' | 'expensive';
 
 function ToursContent() {
+  const t = useTranslations('Tours');
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
   const [sort, setSort] = useState<SortKey>('rec');
 
-  /* دسته‌بندی کاملاً از URL مشتق می‌شود — دیپ‌لینک /tours?category=signature
-     از کاتالوگ خدمات و پیشنهادهای ویژه + دکمه‌های فیلتر URL را به‌روز می‌کنند */
+  const CATEGORIES = [
+    { id: 'all', label: t('allTours') },
+    { id: 'cultural', label: t('cultural') },
+    { id: 'nature', label: t('nature') },
+    { id: 'medical', label: t('medical') },
+    { id: 'adventure', label: t('adventure') },
+    { id: 'signature', label: locale === 'fa' ? 'تجربه اصیل' : 'Signature' },
+  ] as const;
+
   const qParam = searchParams.get('category');
   const category = CATEGORIES.some((c) => c.id === qParam) ? qParam! : 'all';
   function setCategory(id: string) {
@@ -53,7 +50,7 @@ function ToursContent() {
   const isSignature = category === 'signature';
 
   const filtered = useMemo(() => {
-    let list = category === 'all' ? TOURS : TOURS.filter((t) => t.category === category);
+    let list = category === 'all' ? TOURS : TOURS.filter((tour) => tour.category === category);
     if (sort === 'cheap') list = [...list].sort((a, b) => a.price - b.price);
     if (sort === 'expensive') list = [...list].sort((a, b) => b.price - a.price);
     if (sort === 'rec') list = [...list].sort((a, b) => b.rating - a.rating);
@@ -63,8 +60,8 @@ function ToursContent() {
   function book(tour: Tour) {
     setBookingContext({
       type: 'tours',
-      title: tour.title,
-      subtitle: `${tour.city} • ${tour.durationDays} روزه`,
+      title: locale === 'fa' ? tour.title : tour.titleEn,
+      subtitle: `${tour.durationDays} ${locale === 'fa' ? 'روزه' : 'Days'} • ${tour.city}`,
       amount: tour.price,
       travelDate: daysFromNow(14),
     });
@@ -72,136 +69,138 @@ function ToursContent() {
   }
 
   return (
-    <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-6 md:pt-8 pb-20">
-      {/* Hero banner (mockup firuzo_page_5) */}
-      <div className="relative mb-10 rounded-2xl overflow-hidden h-64 md:h-80 shadow-sm img-overlay-strong">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="https://images.unsplash.com/photo-1530521954074-e64f6810b32d?auto=format&fit=crop&q=75&w=1800"
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
+    <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-6 md:pt-8 pb-20 flex flex-col gap-10">
+      {/* Hero Section */}
+      <section className="relative rounded-2xl overflow-hidden min-h-[380px] md:min-h-[460px] flex items-center justify-center bg-deep shadow-sm group">
+        <Image
+          src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=75&w=1800"
+          alt={t('title')}
+          fill
+          sizes="100vw"
+          placeholder="blur"
+          blurDataURL={shimmerDataUrl(1800, 460)}
+          className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
         />
-        <div className="absolute bottom-0 inset-x-0 p-6 md:p-8 text-start">
-          <h1 className="text-surface mb-2 text-[28px] md:text-[40px] leading-tight font-black tracking-tight">
-            کشف تجربه‌های ناب
+        <div className="absolute inset-0 bg-gradient-to-t from-deep/90 via-deep/40 to-transparent" />
+        <div className="relative z-10 text-center px-4 max-w-3xl py-12">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface/10 backdrop-blur-md text-surface text-xs font-black mb-4 border border-surface/20">
+            <Tent size={14} className="text-brand" /> {locale === 'fa' ? 'تجربه‌های دست‌چین و برنامه‌ریزی‌شده' : 'Curated Travel Experiences'}
+          </span>
+          <h1 className="text-surface mb-4 text-[32px] md:text-[44px] leading-tight font-black tracking-tight">
+            {t('title')}
           </h1>
-          <p className="text-surface/85 max-w-2xl text-[13.5px] md:text-lg leading-relaxed">
-            از سفرهای ماجراجویانه در دل طبیعت تا تورهای فرهنگی در شهرهای تاریخی، ما بهترین مسیرها را برای شما آماده کرده‌ایم.
+          <p className="text-surface/90 text-[16px] md:text-[18px] leading-relaxed max-w-xl mx-auto">
+            {t('subtitle')}
           </p>
         </div>
-      </div>
+      </section>
 
-      {/* Sticky glass filter bar */}
-      <div className="sticky top-[72px] z-40 mb-8 -mx-4 px-4 md:mx-0 md:px-0">
-        <div className="glass-panel shadow-sm border-line/60 rounded-full py-2.5 px-3 md:px-5 flex items-center justify-between gap-3 overflow-x-auto scrollbar-none">
-          <span className="hidden md:inline-flex items-center gap-1.5 shrink-0 text-[13px] font-black text-ink">
-            <SlidersHorizontal size={15} className="text-brand-dark" />
-            فیلترها:
-          </span>
-          <div className="flex gap-1.5 flex-nowrap">
-            {CATEGORIES.map((c) => {
-              const active = category === c.id;
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => setCategory(c.id)}
-                  className={`whitespace-nowrap min-h-9 px-4 rounded-full text-[12.5px] md:text-[13px] font-black transition-all ${
-                    active
-                      ? 'bg-brand text-surface shadow-sm shadow-brand/25'
-                      : 'bg-soft/80 border border-line/70 text-sub hover:bg-soft hover:text-brand-dark'
-                  }`}
-                >
-                  {c.label}
-                </button>
-              );
-            })}
-          </div>
-          {!isSignature && (
-            <div className="hidden md:flex items-center gap-1.5 pe-3 border-s border-line/70 shrink-0">
-              <span className="text-[12px] font-black text-sub">مرتب‌سازی:</span>
-              <div className="relative">
-                <select
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value as SortKey)}
-                  className="appearance-none bg-transparent text-brand-dark font-black text-[13px] border-0 cursor-pointer py-1 ps-6 pe-1 outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                >
-                  <option value="rec">پیشنهاد ما</option>
-                  <option value="cheap">ارزان‌ترین</option>
-                  <option value="expensive">گران‌ترین</option>
-                </select>
-                <ChevronDown size={14} className="absolute end-1 top-1/2 -translate-y-1/2 text-brand-dark pointer-events-none" />
-              </div>
-            </div>
-          )}
+      {/* Categories Bar & Sort Controls */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-line pb-4">
+        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-none">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => setCategory(c.id)}
+              className={`px-4 py-2 rounded-xl text-xs md:text-sm font-black whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                category === c.id
+                  ? 'bg-brand text-surface shadow-sm'
+                  : 'bg-paper text-sub hover:text-brand-dark hover:bg-soft'
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-3 self-end md:self-auto">
+          <SlidersHorizontal size={16} className="text-sub" />
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortKey)}
+            aria-label={locale === 'fa' ? 'مرتب‌سازی تورها' : 'Sort tours'}
+            className="bg-paper border border-line rounded-xl px-3 py-2 text-xs font-bold text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
+          >
+            <option value="rec">{t('featured')}</option>
+            <option value="cheap">{t('lowestPrice')}</option>
+            <option value="expensive">{t('highestPrice')}</option>
+          </select>
         </div>
       </div>
 
+      {/* Dynamic Tours Section or Signature Experiences */}
       {isSignature ? (
-        /* تجربه‌های اصیل مخصوص کشور انتخابی (یات/جشنواره/تئاتر/نمایشگاه/شبانه/...) */
-        <CountryExperiencesSection variant="embedded" />
+        <CountryExperiencesSection />
       ) : (
-        /* Masonry grid */
-        <>
-          {filtered.length === 0 ? (
-            <div className="text-center py-20 bg-surface rounded-xl border border-dashed border-line">
-              <Tent size={44} className="mx-auto text-line mb-3" />
-              <p className="text-sub font-bold text-[13px]">توری در این دسته‌بندی موجود نیست</p>
-            </div>
-          ) : (
-            <div className="masonry-grid">
-              {filtered.map((tour, i) => (
-                <button
-                  key={tour.id}
-                  onClick={() => book(tour)}
-                  className="masonry-item group relative w-full text-start rounded-xl overflow-hidden shadow-sm hover:shadow-sm transition-shadow bg-surface border border-line/60 img-overlay-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                >
-                  <div className={`${ASPECTS[i % ASPECTS.length]} w-full overflow-hidden relative ph-texture bg-brand-dark`}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={TOUR_IMGS[tour.id]}
-                      alt={tour.title}
-                      loading="lazy"
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <span className="absolute top-4 end-4 bg-surface/90 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1 shadow-sm text-[12px] font-black text-ink">
-                      <Star size={14} className="fill-gold text-gold" />
-                      {tour.rating.toLocaleString('fa-IR')}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {filtered.map((tour, idx) => (
+            <article
+              key={tour.id}
+              className="bg-paper rounded-2xl overflow-hidden border border-line shadow-sm hover:shadow-md transition-all hover:border-brand/40 group flex flex-col justify-between"
+            >
+              <div>
+                <div className={`relative ${ASPECTS[idx % ASPECTS.length]} overflow-hidden bg-soft`}>
+                  <Image
+                    src={TOUR_IMGS[tour.id] || TOUR_IMGS.t1}
+                    alt={locale === 'fa' ? tour.title : tour.titleEn}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                    placeholder="blur"
+                    blurDataURL={shimmerDataUrl(400, 300)}
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute top-3 start-3 flex gap-2">
+                    <span className="bg-deep/80 backdrop-blur-md text-surface text-[11px] font-black px-2.5 py-1 rounded-full flex items-center gap-1">
+                      <Star size={12} className="text-gold fill-gold" /> {tour.rating}
                     </span>
                   </div>
+                </div>
 
-                  <div className="absolute bottom-0 inset-x-0 p-5">
-                    <div className="flex justify-between items-end gap-2 mb-2">
-                      <h3 className="text-surface text-lg md:text-xl font-black leading-snug">{tour.title}</h3>
-                      <span className="shrink-0 bg-brand/85 text-surface text-[11px] font-bold px-2 py-1 rounded-lg backdrop-blur-sm">
-                        {CAT_FA[tour.category]}
-                      </span>
-                    </div>
-                    <div className="flex gap-4 text-surface/80 text-[12px] font-bold mb-3">
-                      <span className="flex items-center gap-1">
-                        <CalendarDays size={14} /> {tour.durationDays.toLocaleString('fa-IR')} روزه
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin size={14} /> {tour.city}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center border-t border-surface/25 pt-3">
-                      <div className="text-start">
-                        <span className="block text-surface/75 text-[11px] font-bold">شروع از</span>
-                        <span className="text-price text-lg md:text-[20px] font-black num">
-                          {tour.price.toLocaleString('fa-IR')}
-                          <span className="text-[11px] font-bold text-surface/80 me-1">تومان</span>
-                        </span>
-                      </div>
-                      <span className="bg-surface/15 hover:bg-surface/30 text-surface p-2.5 rounded-full backdrop-blur-sm transition-colors group-hover:bg-brand group-hover:text-surface">
-                        <ArrowLeft size={16} className="ltr:rotate-180" />
-                      </span>
-                    </div>
+                <div className="p-4 flex flex-col gap-2">
+                  <div className="flex items-center gap-1 text-[11px] font-bold text-sub">
+                    <MapPin size={12} className="text-brand-dark" />
+                    <span>{tour.city}</span>
+                    <span className="mx-1">•</span>
+                    <CalendarDays size={12} className="text-brand-dark" />
+                    <span>{tour.durationDays} {locale === 'fa' ? 'روزه' : 'Days'}</span>
                   </div>
+
+                  <h3 className="font-black text-[15px] text-ink line-clamp-2 leading-snug group-hover:text-brand-dark transition-colors">
+                    {locale === 'fa' ? tour.title : tour.titleEn}
+                  </h3>
+
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {tour.includes?.slice(0, 2).map((inc, i) => (
+                      <span key={i} className="text-[10.5px] font-bold text-sub bg-soft px-2 py-0.5 rounded-md">
+                        {inc}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 pt-0 flex justify-between items-center border-t border-line/60 mt-3">
+                <div className="pt-3">
+                  <span className="text-[10.5px] font-bold text-sub block">{locale === 'fa' ? 'قیمت هر نفر' : 'Per Person'}</span>
+                  <span className="text-[16px] font-black text-price font-mono num">
+                    {tour.price.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}
+                    <span className="text-[10.5px] font-bold text-sub ms-1">{locale === 'fa' ? 'تومان' : 'Toman'}</span>
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => book(tour)}
+                  aria-label={`رزرو ${locale === 'fa' ? tour.title : tour.titleEn}`}
+                  className="mt-3 bg-action hover:bg-action-hover text-[#14201f] px-4 py-2 rounded-xl font-black text-xs transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand flex items-center gap-1 cursor-pointer"
+                >
+                  <span>{t('bookTour')}</span>
+                  <ArrowLeft size={14} className="rtl:hidden" />
+                  <ArrowRight size={14} className="ltr:hidden" />
                 </button>
-              ))}
-            </div>
-          )}
-        </>
+              </div>
+            </article>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -209,7 +208,7 @@ function ToursContent() {
 
 export default function ToursPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div className="min-h-screen bg-soft animate-pulse" />}>
       <ToursContent />
     </Suspense>
   );

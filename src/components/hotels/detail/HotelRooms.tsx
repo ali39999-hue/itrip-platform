@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Sparkles, BedDouble, Ruler, Eye, Users, Check, Flame, Ban, Coffee, Clock, Wallet } from 'lucide-react';
-import { fa, gShort, wFmt } from '@/lib/hotel-format';
+import { fa, gShort } from '@/lib/hotel-format';
 import { ROOMS, PLANS } from '@/lib/hotel-mock';
 import { quote, NIGHTS, CHECKIN, CHECKOUT, ADULTS, CHILDREN, TAX, keyOf, type useHotelBooking } from '@/hooks/useHotelBooking';
 
@@ -13,6 +14,8 @@ interface HotelRoomsProps {
 }
 
 export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
+  const t = useTranslations('HotelDetail');
+  const locale = useLocale();
   const { sel, setSel, takenOf, bestCombo, capacity } = booking;
   const [openBd, setOpenBd] = useState<string | null>(null);
 
@@ -20,18 +23,23 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
 
   return (
     <section id="rooms" className="p-5 border border-line rounded-xl bg-surface shadow-sm scroll-mt-32">
-      <h2 className="m-0 mb-1 text-lg font-black">انتخاب اتاق</h2>
-      <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">نرخ‌ها شامل مالیات و عوارض اقامت است.</p>
+      <h2 className="m-0 mb-1 text-lg font-black">{t('selectRoom')}</h2>
+      <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">{t('ratesIncludeTax')}</p>
 
       <div className="flex items-center gap-3 flex-wrap p-3 border border-mint-bright/60 rounded-xl bg-mint/40 mb-4">
-        {[['ورود', gShort.format(new Date(CHECKIN + 'T00:00:00'))], ['خروج', gShort.format(new Date(CHECKOUT + 'T00:00:00'))], ['مدت', `${fa(NIGHTS.length)} شب`], ['مسافران', `${fa(ADULTS)} بزرگسال، ${fa(CHILDREN)} کودک`]].map(([l, v]) => (
+        {[
+          [t('checkIn'), gShort.format(new Date(CHECKIN + 'T00:00:00'))],
+          [t('checkOut'), gShort.format(new Date(CHECKOUT + 'T00:00:00'))],
+          [t('duration'), t('nightsCount', { count: NIGHTS.length })],
+          [t('capacity'), t('passengersSummary', { adults: ADULTS, children: CHILDREN })]
+        ].map(([l, v]) => (
           <div key={l}>
             <span className="block text-[10.5px] font-extrabold text-sub">{l}</span>
             <b className="text-[13px] font-black">{v}</b>
           </div>
         ))}
         <Link href="/hotels/search" className="me-auto min-h-[38px] px-3.5 inline-flex items-center border border-mint-bright/70 rounded-[10px] bg-surface text-brand-dark text-[12.5px] font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
-          تغییر تاریخ یا مسافر
+          {t('changeDates')}
         </Link>
       </div>
 
@@ -39,10 +47,12 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
         <div className="flex items-center gap-3 p-3 border border-dashed border-gold/50 rounded-xl bg-gold-soft text-[12.5px] font-bold text-price mb-4">
           <Sparkles size={16} className="text-action-hover shrink-0" />
           <span>
-            ارزان‌ترین چیدمان مناسب {fa(ADULTS)} بزرگسال و {fa(CHILDREN)} کودک:{' '}
-            <b>{bestCombo.pick.map((o) => `${o.r.name} — ${PLANS[o.p].name}`).join(' + ')}</b> — جمع {fa(bestCombo.cost)} لیر
+            {t('bestCombo', { adults: ADULTS, children: CHILDREN })}{' '}
+            <b>{bestCombo.pick.map((o) => `${o.r.name} — ${PLANS[o.p].name}`).join(' + ')}</b> — {t('totalLira', { cost: fa(bestCombo.cost) })}
           </span>
-          <button onClick={onApplyCombo} className="me-auto min-h-9 px-3.5 rounded-[10px] bg-price text-surface text-xs font-black shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">اعمال چیدمان</button>
+          <button onClick={onApplyCombo} className="me-auto min-h-9 px-3.5 rounded-[10px] bg-price text-surface text-xs font-black shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+            {t('applyCombo')}
+          </button>
         </div>
       )}
 
@@ -59,22 +69,32 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
                 <div className="p-4">
                   <h3 className="m-0 mb-1 text-[15.5px] font-black">{room.name}</h3>
                   <div className="flex flex-wrap gap-1.5 mt-2">
-                    <span className="spec inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-line bg-soft/50 text-sub text-[11px] font-bold"><Ruler size={12} /> {fa(room.size)} متر مربع</span>
-                    <span className="spec inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-line bg-soft/50 text-sub text-[11px] font-bold"><BedDouble size={12} /> {room.bed}</span>
-                    <span className="spec inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-line bg-soft/50 text-sub text-[11px] font-bold"><Eye size={12} /> {room.view}</span>
+                    <span className="spec inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-line bg-soft/50 text-sub text-[11px] font-bold">
+                      <Ruler size={12} /> {fa(room.size)} {locale === 'fa' ? 'متر مربع' : 'm²'}
+                    </span>
+                    <span className="spec inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-line bg-soft/50 text-sub text-[11px] font-bold">
+                      <BedDouble size={12} /> {room.bed}
+                    </span>
+                    <span className="spec inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-line bg-soft/50 text-sub text-[11px] font-bold">
+                      <Eye size={12} /> {room.view}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-2.5 text-xs font-extrabold text-sub flex-wrap">
                     <Users size={14} className="text-brand" />
-                    ظرفیت {fa(room.capA)} بزرگسال{room.capC ? ` و ${fa(room.capC)} کودک` : ''}
+                    {t('capacity')} {t('passengersSummary', { adults: room.capA, children: room.capC })}
                     {fits ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-success/30 text-success bg-success/10 text-[11px] font-extrabold"><Check size={11} /> کافی برای شما</span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-success/30 text-success bg-success/10 text-[11px] font-extrabold">
+                        <Check size={11} /> {locale === 'fa' ? 'کافی برای شما' : 'Fits your group'}
+                      </span>
                     ) : (
-                      <span className="inline-flex px-2 py-0.5 rounded-full border border-line text-sub bg-soft text-[11px] font-extrabold">کافی نیست</span>
+                      <span className="inline-flex px-2 py-0.5 rounded-full border border-line text-sub bg-soft text-[11px] font-extrabold">
+                        {locale === 'fa' ? 'کافی نیست' : 'Not enough space'}
+                      </span>
                     )}
                   </div>
                   {room.left <= 3 && (
                     <div className="inline-flex items-center gap-1 mt-2 text-rose-warm text-[11.5px] font-extrabold">
-                      <Flame size={13} /> فقط {fa(room.left)} اتاق از این نوع باقی مانده
+                      <Flame size={13} /> {t('roomsLeft', { count: fa(room.left) })}
                     </div>
                   )}
                 </div>
@@ -101,30 +121,29 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
                             {p.meal === 'بدون وعده' ? <Ban size={12} /> : <Coffee size={12} />} {p.meal}
                           </span>
                           <span className={`inline-flex items-center gap-1 text-[11px] font-bold ${p.refund === 'free' ? 'text-success' : p.refund === 'partial' ? 'text-action-hover' : 'text-sub/70'}`}>
-                            {p.refund === 'free' ? <><Check size={12} /> لغو رایگان تا {gShort.format(dl)}</> : p.refund === 'partial' ? <><Clock size={12} /> لغو با کسر یک شب</> : <><Ban size={12} /> غیرقابل استرداد</>}
+                            {p.refund === 'free' ? <><Check size={12} /> {locale === 'fa' ? `لغو رایگان تا ${gShort.format(dl)}` : `Free cancellation until ${gShort.format(dl)}`}</> : p.refund === 'partial' ? <><Clock size={12} /> {locale === 'fa' ? 'لغو با کسر یک شب' : 'Partial refund'}</> : <><Ban size={12} /> {locale === 'fa' ? 'غیرقابل استرداد' : 'Non-refundable'}</>}
                           </span>
                           <span className="inline-flex items-center gap-1 text-[11px] font-bold text-sub"><Wallet size={12} /> {p.pay}</span>
-                          {q.extraChild > 0 && <span className="inline-flex items-center gap-1 text-[11px] font-bold text-action-hover"><Users size={12} /> تخت اضافه کودک: {fa(q.extraChild)} لیر</span>}
                         </div>
                         <button onClick={() => setOpenBd(isOpen ? null : k)} className="self-start border-0 bg-transparent p-0 text-brand-dark text-[11px] font-extrabold underline underline-offset-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">
-                          {isOpen ? 'بستن جزئیات' : 'جزئیات قیمت هر شب'}
+                          {isOpen ? (locale === 'fa' ? 'بستن جزئیات' : 'Hide details') : (locale === 'fa' ? 'جزئیات قیمت هر شب' : 'Nightly rate details')}
                         </button>
                       </div>
                       <div className="md:text-end">
-                        {pid === 'saver' && <div className="text-sub text-xs font-bold line-through">{fa(ref)} لیر</div>}
-                        <div className="text-lg font-black leading-snug text-price num">{fa(q.avg)} <small className="text-[11.5px] font-extrabold text-sub">لیر / شب</small></div>
-                        <div className="text-[11.5px] font-bold text-sub">جمع {fa(NIGHTS.length)} شب: <b>{fa(q.total)} لیر</b></div>
-                        <div className="text-[11px] font-bold text-sub">≈ {fa(Math.round((q.total * 2350) / 1000) * 1000)} تومان</div>
+                        {pid === 'saver' && <div className="text-sub text-xs font-bold line-through">{fa(ref)} TRY</div>}
+                        <div className="text-lg font-black leading-snug text-price num">{fa(q.avg)} <small className="text-[11.5px] font-extrabold text-sub">TRY / {locale === 'fa' ? 'شب' : 'night'}</small></div>
+                        <div className="text-[11.5px] font-bold text-sub">{locale === 'fa' ? `جمع ${fa(NIGHTS.length)} شب:` : `Total ${NIGHTS.length} nights:`} <b>{fa(q.total)} TRY</b></div>
                       </div>
                       <div className="flex items-center justify-start md:justify-end gap-2">
                         <select
                           value={qty}
                           onChange={(e) => { const v = +e.target.value; setSel((s) => { const n = { ...s }; if (v) n[k] = v; else delete n[k]; return n; }); }}
                           disabled={maxSel < 1}
-                          className="min-h-10 px-2 border border-line rounded-[10px] bg-surface text-[12.5px] font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                          aria-label="Room quantity"
+                          className="min-h-10 px-2 border border-line rounded-[10px] bg-surface text-[12.5px] font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
                         >
                           {Array.from({ length: maxSel + 1 }, (_, i) => (
-                            <option key={i} value={i}>{i ? `${fa(i)} اتاق` : '—'}</option>
+                            <option key={i} value={i}>{i ? `${fa(i)} ${locale === 'fa' ? 'اتاق' : 'room'}` : '—'}</option>
                           ))}
                         </select>
                       </div>
@@ -135,15 +154,13 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
                               {q.nights.map((n, i) => (
                                 <tr key={i} className="border-b border-dashed border-line/70 last:border-0">
                                   <td className="py-1 font-bold text-sub">
-                                    {gShort.format(n.date)} — {wFmt.format(n.date)}
-                                    {n.weekend && <span className="text-gold font-black"> (آخر هفته)</span>}
+                                    {gShort.format(n.date)}
                                   </td>
-                                  <td className="py-1 text-end font-extrabold">{fa(n.price)} لیر</td>
+                                  <td className="py-1 text-end font-extrabold">{fa(n.price)} TRY</td>
                                 </tr>
                               ))}
-                              {q.extraChild > 0 && <tr><td className="py-1 font-bold">تخت اضافه کودک</td><td className="py-1 text-end font-extrabold">{fa(q.extraChild)} لیر</td></tr>}
-                              <tr><td className="py-1 font-bold">مالیات و عوارض ({fa(TAX * 100)}٪)</td><td className="py-1 text-end font-extrabold">{fa(q.tax)} لیر</td></tr>
-                              <tr><td className="pt-1 font-black">جمع کل یک اتاق</td><td className="pt-1 text-end font-black">{fa(q.total)} لیر</td></tr>
+                              <tr><td className="py-1 font-bold">{locale === 'fa' ? `مالیات و عوارض (${fa(TAX * 100)}٪)` : `Taxes & Fees (${TAX * 100}%)`}</td><td className="py-1 text-end font-extrabold">{fa(q.tax)} TRY</td></tr>
+                              <tr><td className="pt-1 font-black">{locale === 'fa' ? 'جمع کل یک اتاق' : 'Total per room'}</td><td className="pt-1 text-end font-black">{fa(q.total)} TRY</td></tr>
                             </tbody>
                           </table>
                         </div>

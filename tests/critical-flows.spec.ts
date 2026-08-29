@@ -16,7 +16,8 @@ test.describe('Critical E2E Flows', () => {
     await phoneInput.fill('09123456789');
     
     // Click submit button
-    const submitBtn = page.getByRole('button', { name: 'ادامه' });
+    const submitBtn = page.locator('#auth-submit-btn');
+    await expect(submitBtn).toBeVisible({ timeout: 5000 });
     await submitBtn.click();
 
     // 2. OTP step
@@ -24,7 +25,8 @@ test.describe('Critical E2E Flows', () => {
     await expect(otpInput).toBeVisible({ timeout: 10000 });
     await otpInput.fill('12345');
     
-    const confirmBtn = page.getByRole('button', { name: 'تایید و ورود' });
+    const confirmBtn = page.locator('#auth-verify-btn');
+    await expect(confirmBtn).toBeVisible({ timeout: 5000 });
     await confirmBtn.click();
 
     // 3. Verification - Account Page

@@ -113,7 +113,17 @@
     "tourNature": "طبيعة وسياحة بيئية",
     "tourMedical": "علاجي وصحي",
     "tourAdventure": "مغامرة ورياضة",
-    "tourCommercial": "تجاري ومعارض"
+    "tourCommercial": "تجاري ومعارض",
+    "dateDepart": "تاريخ المغادرة",
+    "btnFlights": "البحث عن الرحلات",
+    "dest": "الوجهة",
+    "dateCheckIn": "تاريخ الوصول",
+    "btnHotels": "البحث عن الفنادق",
+    "tourTypeLabel": "نوع الجولة",
+    "tourTypeRecreational": "ترفيهي وسياحي",
+    "tourTypeMedical": "علاجي وصحي",
+    "tourTypeCommercial": "تجاري ومعارض",
+    "btnTours": "البحث عن الجولات"
   },
   "Home": {
     "offersKicker": "خاص بوجهتك",
@@ -270,7 +280,12 @@
     "budgetOver": "اختيارات التجارب {over} فوق الحد — قلّلها بالأزرار أعلاه.",
     "day": "اليوم",
     "emptyCats": "لا توجد تجارب تطابق هذا الذوق هنا؛ وسّع الفلاتر.",
-    "continue": "متابعة"
+    "continue": "متابعة",
+    "offersKicker": "توصيات ذكية",
+    "offersTitle": "برامج سياحية ذكية مخصصة لـ {country}",
+    "offersAll": "عرض جميع العروض",
+    "offersStarts": "يبدأ من",
+    "offersToman": "تومان"
   },
   "Interpreter": {
     "kicker": "مترجم iTrip المرافق",
@@ -410,5 +425,181 @@
     "statusConfirmed": "مؤكد",
     "statusPending": "في انتظار الدفع",
     "statusCancelled": "ملغي"
+  },
+  "Destinations": {
+    "title": "أفضل الوجهات ودليل السفر الشامل",
+    "subtitle": "دليل شامل للمدن السياحية والفنادق والتجارب الأصيلة في 6 دول",
+    "exploreHotels": "استكشاف الفنادق",
+    "guideBook": "دليل التجارب الأصيلة والفعاليات",
+    "guideBookSubtitle": "فعاليات بارزة ومعالم مخفية وجولات فريدة لتخطيط رحلتك"
+  },
+  "MyTrips": {
+    "title": "رحلاتي",
+    "subtitle": "إدارة وعرض جميع التذاكر والقسائم والحجوزات المؤكدة",
+    "upcoming": "الرحلات القادمة",
+    "past": "الرحلات السابقة",
+    "cancelled": "المعاملات المالية",
+    "noTrips": "لم يتم العثور على رحلات",
+    "viewVoucher": "عرض القسيمة / التذكرة",
+    "cancelTrip": "طلب استرداد"
+  },
+  "Services": {
+    "title": "خدمات فيروز السياحية المتكاملة",
+    "subtitle": "حلول سفر متكاملة: طيران، فنادق، تأشيرات، شرائح إلكترونية، نقل ودعم في 6 دول"
+  },
+  "Snapp": {
+    "title": "شحن محفظة سناب أونلاين",
+    "subtitle": "شحن فوري لرصيد تاكسي سناب باستخدام البطاقات الدولية والعملات الرقمية",
+    "selectPackage": "اختيار هذه الباقة"
+  },
+  "Support": {
+    "title": "دعم فيروز على مدار الساعة",
+    "subtitle": "فريق الدعم المخصص لدينا جاهز للإجابة على استفساراتكم في كافة مراحل الرحلة.",
+    "phone": "الاتصال الهاتفي المباشر",
+    "email": "الدعم عبر البريد الإلكتروني",
+    "liveChat": "المحادثة الفورية",
+    "contactForm": "نموذج إرسال رسالة وتذكرة",
+    "sendMessage": "إرسال الرسالة"
+  },
+  "Tours": {
+    "title": "الجولات والرحلات السياحية",
+    "subtitle": "تجارب محلية فريدة ومرشدون متخصصون وجولات مخصصة",
+    "allTours": "جميع الجولات",
+    "cultural": "ثقافي وتاريخي",
+    "nature": "طبيعة ومغامرة",
+    "medical": "صحي وعلاجي",
+    "adventure": "مغامرات ورياضة",
+    "featured": "المميزة",
+    "lowestPrice": "الأقل سعراً",
+    "highestPrice": "الأعلى سعراً",
+    "bookTour": "حجز الجولة"
+  },
+  "Trains": {
+    "title": "القطارات والحافلات بين المدن",
+    "subtitle": "حجز سريع وموثوق لتذاكر القطارات والحافلات السياحية الفاخرة",
+    "fromStation": "محطة الانطلاق",
+    "toStation": "محطة الوصول",
+    "trainOption": "قطار الركاب (٤ و ٦ أسرّة)",
+    "busOption": "حافلة فاخرة VIP (٢٥ مقعد)",
+    "perPassenger": "لكل راكب",
+    "selectTicket": "اختيار التذكرة"
+  },
+  "Transfers": {
+    "title": "خدمات الاستقبال في المطار وسيارات VIP",
+    "airportPickup": "الانطلاق: المطار / الفندق",
+    "hotelDropoff": "الوصول: الفندق / وسط المدينة",
+    "availableVehicles": "السيارات المتاحة",
+    "bookTransfer": "حجز التوصيل"
+  },
+  "Visa": {
+    "title": "خدمات التأشيرة الإلكترونية والسياحية",
+    "subtitle": "إصدار سريع ومضمون للتأشيرات السياحية لمختلف الوجهات",
+    "cta": "تقديم طلب التأشيرة",
+    "startApplication": "بدء إجراءات التأشيرة",
+    "requirements": "المستندات والمتطلبات"
+  },
+  "Wallet": {
+    "title": "محفظة فيروز متعددة العملات",
+    "subtitle": "إدارة أرصدة الريال والتيثر والدرهم والتحويل الفوري بأسعار حية",
+    "primaryBalance": "الرصيد الأساسي للحساب",
+    "deposit": "إيداع / شحن الرصيد",
+    "exchange": "تحويل العملات الفوري",
+    "transactions": "سجل المعاملات"
+  },
+  "Account": {
+    "title": "الحساب",
+    "settings": "الإعدادات",
+    "logout": "تسجيل الخروج",
+    "profile": "الملف الشخصي والبيانات"
+  },
+  "Auth": {
+    "loginTitle": "تسجيل الدخول إلى فيروز",
+    "loginSubtitle": "أدخل رقم هاتفك لتلقي رمز التحقق",
+    "phone": "رقم الهاتف",
+    "sendOtp": "إرسال رمز التحقق",
+    "enterOtp": "أدخل رمز التحقق",
+    "otp": "رمز من 5 أرقام",
+    "verify": "تحقق ومتابعة"
+  },
+  "Book": {
+    "title": "إدارة التذاكر والقسائم",
+    "subtitle": "عرض التفاصيل وتحميل قسائم الحجز الرسمية",
+    "startSearch": "البحث عن الخدمات",
+    "flights": "الرحلات",
+    "hotels": "الفنادق",
+    "tours": "الجولات",
+    "transfers": "التوصيل"
+  },
+  "Esim": {
+    "title": "شريحة البيانات الدولية eSIM",
+    "subtitle": "إنترنت عالي السرعة 4G/5G فور الوصول دون الحاجة لشريحة فعلية",
+    "searchCountry": "البحث عن الدولة أو المنطقة...",
+    "popularPackages": "باقات الإنترنت الشائعة",
+    "buyEsim": "شراء وتفعيل فوري",
+    "activationGuide": "دليل التفعيل في ٣ خطوات"
+  },
+  "Insurance": {
+    "title": "تأمين السفر الدولي",
+    "subtitle": "تغطية شاملة للمصاريف الطبية وتأخير الرحلات وفقدان الأمتعة",
+    "plansTitle": "خطط تأمين السفر من فيروز",
+    "specialOffer": "عرض خاص",
+    "buyPlan": "اختيار وشراء الوثيقة"
+  },
+  "Flights": {
+    "directFlight": "رحلة مباشرة",
+    "stops": "{stops} توقف",
+    "plusOneDay": "+١ يوم",
+    "flightDetails": "تفاصيل الرحلة والأمتعة",
+    "baggageIncluded": "الأمتعة المسموحة: {baggage}",
+    "perPassenger": "لكل راكب",
+    "toman": "تومان",
+    "selectTicket": "اختيار التذكرة والحجز"
+  },
+  "HotelDetail": {
+    "checkIn": "تسجيل الوصول",
+    "checkOut": "تسجيل المغادرة",
+    "capacity": "سعة الغرفة",
+    "passengersSummary": "{adults} بالغ، {children} أطفال",
+    "continuePay": "المتابعة والدفع",
+    "exteriorView": "الإطلالة الخارجية",
+    "lobby": "الردهة والاستقبال",
+    "deluxeRoom": "غرفة ديلوكس",
+    "breakfastTerrace": "تراس الإفطار",
+    "suite": "جناح بريميوم",
+    "backToSearch": "العودة لنتائج الفنادق",
+    "destinations": "الوجهات",
+    "payRial": "دفع متعدد العملات",
+    "verifiedByFiruzo": "معتمد من فيروز",
+    "showOnMap": "عرض على الخريطة",
+    "superb": "ممتاز",
+    "verifiedReviews": "{count} تقييم موثق",
+    "morePhotos": "المزيد من الصور",
+    "whyThisHotel": "لماذا هذا الفندق؟",
+    "summaryAdvantages": "أبرز المزايا",
+    "closeDesc": "إغلاق التفاصيل",
+    "readMore": "قراءة المزيد",
+    "priceLowerNotice": "سعر فيروز المضمون أقل من الحجز المباشر.",
+    "location": "الموقع الجغرافي",
+    "walkingDistances": "مسافات السير إلى المعالم",
+    "amenities": "مرافق وخدمات الفندق",
+    "amenitiesNotice": "تم فحص جميع المرافق من قبل خبراء فيروز.",
+    "reviewFilterAll": "جميع التقييمات",
+    "reviewFilterFamily": "العائلات",
+    "reviewFilterCouple": "الأزواج",
+    "reviewFilterBusiness": "رحلات عمل",
+    "reviewFilterSolo": "سفر فردي",
+    "guestReviews": "تقييمات وآراء النزلاء",
+    "reviewsWeighted": "يتم احتساب التقييمات بناءً على إقامات موثقة.",
+    "policies": "السياسات وشروط الإلغاء",
+    "faq": "الأسئلة الشائعة",
+    "selectRoom": "اختيار الغرفة",
+    "ratesIncludeTax": "جميع الأسعار تشمل الضرائب والرسوم.",
+    "duration": "مدة الإقامة",
+    "nightsCount": "{nights} ليالي",
+    "changeDates": "تغيير التواريخ",
+    "bestCombo": "أفضل عرض مجمع",
+    "totalLira": "المجموع بالليرة",
+    "applyCombo": "تطبيق العرض",
+    "roomsLeft": "متبقي {count} غرف فقط"
   }
 }

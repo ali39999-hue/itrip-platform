@@ -1,11 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
+import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { useBookingStore } from '@/stores/booking-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { daysFromNow } from '@/lib/utils';
+import { shimmerDataUrl } from '@/lib/image-utils';
 import { TrainFront, BusFront, MapPin, CalendarDays, CircleDot, Search } from 'lucide-react';
 
 const SERVICES = [
@@ -16,6 +19,8 @@ const SERVICES = [
 ];
 
 export default function TrainsPage() {
+  const t = useTranslations('Trains');
+  const locale = useLocale();
   const router = useRouter();
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
   
@@ -28,12 +33,12 @@ export default function TrainsPage() {
     return false;
   });
 
-  function reserve(s: (typeof SERVICES)[number]) {
+  function reserve(service: (typeof SERVICES)[number]) {
     setBookingContext({
       type: 'trains',
-      title: s.title,
-      subtitle: `${s.cls} • ${s.dep}`,
-      amount: s.price,
+      title: service.title,
+      subtitle: `${service.cls} • ${service.dep}`,
+      amount: service.price,
       travelDate: daysFromNow(7),
     });
     router.push('/checkout');
@@ -43,131 +48,164 @@ export default function TrainsPage() {
     <div className="flex flex-col min-h-screen bg-soft">
       {/* Hero / Search Section */}
       <section className="relative w-full h-[50vh] min-h-[450px] flex items-center justify-center overflow-hidden img-overlay-strong">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRtugYc6KVBoB-nI62UP-PEPpZ5yFw6H0rmQODp7ivpffVixXES82XMMO8Huv8PJjuK2kAw379zSlVxLjoc8LLay194PK13lB4DrwzlD69_X9OIQvqrazlRftya789ExVuZuir68q2QH72l-4S_x2-6HUUKUmp9ne_VQqfvraZG5na864W4CGY-EXKdeIcJBI-0nP5wRd-n6YOIzjbzECUKKiPDYyTe6OTnH97BPI1e18iH3PzEYa1Lg4W9PBDFqwycA"
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover opacity-80"
+        <Image
+          src="https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&q=75&w=1800"
+          alt={t('title')}
+          fill
+          sizes="100vw"
+          placeholder="blur"
+          blurDataURL={shimmerDataUrl(1800, 500)}
+          className="object-cover opacity-80"
         />
         <div className="absolute inset-0 bg-brand-dark/70 mix-blend-multiply" />
         
         <div className="relative z-10 w-full px-4 md:px-0 flex flex-col items-center text-center pt-8">
-          <h1 className="text-[32px] md:text-[40px] font-black text-surface mb-2 tracking-tight">سفر با قطار و اتوبوس</h1>
-          <p className="text-[16px] md:text-[18px] font-bold text-surface/90 mb-10">آسان، راحت و مقرون به صرفه سفر کنید.</p>
+          <h1 className="text-[32px] md:text-[40px] font-black text-surface mb-2 tracking-tight">{t('title')}</h1>
+          <p className="text-[16px] md:text-[18px] font-bold text-surface/90 mb-10">{t('subtitle')}</p>
           
           {/* Search Floating Card */}
           <div className="glass-panel shadow-sm rounded-xl p-5 md:p-6 w-full max-w-4xl mx-auto">
             <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 relative">
+              <div className="relative flex-1">
                 <MapPin size={18} className="absolute start-3 top-1/2 -translate-y-1/2 text-sub pointer-events-none z-10" />
-                <Input aria-label="مبدا" className="w-full ps-10 pe-3 py-3 h-12 rounded-lg border-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus:border-brand font-bold text-[14px] bg-surface text-ink" placeholder="مبدا" type="text" />
+                <Input
+                  defaultValue={locale === 'fa' ? 'تهران' : 'Tehran'}
+                  aria-label={t('fromStation')}
+                  className="h-12 w-full rounded-lg border-line bg-surface ps-10 font-bold text-[14px] text-ink focus-visible:ring-brand focus:border-brand"
+                  placeholder={t('fromStation')}
+                />
               </div>
-              <div className="flex-1 relative">
+              <div className="relative flex-1">
                 <MapPin size={18} className="absolute start-3 top-1/2 -translate-y-1/2 text-sub pointer-events-none z-10" />
-                <Input aria-label="مقصد" className="w-full ps-10 pe-3 py-3 h-12 rounded-lg border-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus:border-brand font-bold text-[14px] bg-surface text-ink" placeholder="مقصد" type="text" />
+                <Input
+                  defaultValue={locale === 'fa' ? 'مشهد' : 'Mashhad'}
+                  aria-label={t('toStation')}
+                  className="h-12 w-full rounded-lg border-line bg-surface ps-10 font-bold text-[14px] text-ink focus-visible:ring-brand focus:border-brand"
+                  placeholder={t('toStation')}
+                />
               </div>
-              <div className="flex-1 relative">
+              <div className="relative flex-1">
                 <CalendarDays size={18} className="absolute start-3 top-1/2 -translate-y-1/2 text-sub pointer-events-none z-10" />
-                <Input aria-label="تاریخ" className="w-full ps-10 pe-3 py-3 h-12 rounded-lg border-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus:border-brand font-bold text-[14px] bg-surface text-sub" type="date" />
+                <Input
+                  type="date"
+                  aria-label={locale === 'fa' ? 'تاریخ حرکت' : 'Departure date'}
+                  className="h-12 w-full rounded-lg border-line bg-surface ps-10 font-bold text-[14px] text-sub focus-visible:ring-brand focus:border-brand"
+                />
               </div>
-              <Button aria-label="جستجوی بلیت قطار و اتوبوس" className="bg-brand text-surface h-12 px-8 rounded-lg font-black text-[14px] hover:bg-brand-dark transition-colors shadow-sm flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">
-                <Search size={18} /> جستجو
+              <Button
+                aria-label={locale === 'fa' ? 'جستجوی بلیط' : 'Search tickets'}
+                className="h-12 bg-brand hover:bg-brand-dark text-surface font-black text-[14px] rounded-lg px-8 flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                <Search size={18} /> {locale === 'fa' ? 'جستجو' : 'Search'}
               </Button>
             </div>
           </div>
         </div>
       </section>
 
-      <main className="w-full max-w-[1280px] mx-auto px-4 md:px-10 py-10 flex flex-col md:flex-row gap-8 pb-24 -mt-10 relative z-20">
-        
+      {/* Main Content & Results */}
+      <main className="max-w-[1280px] w-full mx-auto px-4 md:px-10 py-10 flex flex-col md:flex-row gap-8 pb-24">
         {/* Filters Sidebar */}
-        <aside className="w-full md:w-72 shrink-0">
-          <div className="bg-surface rounded-xl p-6 sticky top-24 shadow-sm border border-line">
-            <h3 className="font-black text-[20px] text-ink mb-5 border-b border-line pb-3">فیلترها</h3>
-            
-            <div className="mb-6">
-              <h4 className="font-bold text-[14px] text-sub mb-4">نوع وسیله نقلیه</h4>
-              <div className="flex flex-col gap-3">
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <input type="checkbox" checked={filterTrain} onChange={(e) => setFilterTrain(e.target.checked)} className="size-4 rounded text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer" />
-                  <span className="font-bold text-[16px] text-ink group-hover:text-brand-dark transition-colors">قطار</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <input type="checkbox" checked={filterBus} onChange={(e) => setFilterBus(e.target.checked)} className="size-4 rounded text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer" />
-                  <span className="font-bold text-[16px] text-ink group-hover:text-brand-dark transition-colors">اتوبوس</span>
-                </label>
-              </div>
-            </div>
-            
-            <div className="mb-4">
-              <h4 className="font-bold text-[14px] text-sub mb-4">محدوده قیمت</h4>
-              <input type="range" aria-label="محدوده قیمت" min="0" max="100" defaultValue="50" className="w-full accent-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" />
-              <div className="flex justify-between font-bold text-[11px] text-sub mt-2">
-                <span>ارزان‌ترین</span>
-                <span>گران‌ترین</span>
-              </div>
+        <aside className="w-full md:w-64 shrink-0">
+          <div className="bg-surface rounded-xl border border-line p-6 sticky top-24 shadow-sm flex flex-col gap-6">
+            <h3 className="font-black text-ink text-[18px] border-b border-line pb-3">{locale === 'fa' ? 'نوع وسیله نقلیه' : 'Transport Type'}</h3>
+            <div className="flex flex-col gap-3">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filterTrain}
+                  onChange={(e) => setFilterTrain(e.target.checked)}
+                  aria-label={t('trainOption')}
+                  className="rounded border-line text-brand focus:ring-brand w-4 h-4"
+                />
+                <span className="text-[14px] font-bold text-ink flex items-center gap-2">
+                  <TrainFront size={16} className="text-brand-dark" /> {t('trainOption')}
+                </span>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filterBus}
+                  onChange={(e) => setFilterBus(e.target.checked)}
+                  aria-label={t('busOption')}
+                  className="rounded border-line text-brand focus:ring-brand w-4 h-4"
+                />
+                <span className="text-[14px] font-bold text-ink flex items-center gap-2">
+                  <BusFront size={16} className="text-brand-dark" /> {t('busOption')}
+                </span>
+              </label>
             </div>
           </div>
         </aside>
 
         {/* Results List */}
-        <div className="flex-1 flex flex-col gap-5">
+        <section className="flex-1 flex flex-col gap-4">
+          <h2 className="font-black text-ink text-[20px] mb-2">
+            {list.length.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')} {locale === 'fa' ? 'سرویس موجود' : 'Available Services'}
+          </h2>
+
           {list.map((s) => (
-            <div key={s.id} className="bg-surface rounded-xl shadow-sm hover:shadow-md transition-shadow p-5 border border-line flex flex-col md:flex-row gap-6 items-center group card-lift">
-              
-              {/* Provider Info */}
-              <div className="flex flex-col items-center w-full md:w-28 text-center shrink-0">
-                {s.kind === 'قطار' ? (
-                  <TrainFront size={40} className="text-brand mb-2" />
-                ) : (
-                  <BusFront size={40} className="text-brand-dark mb-2" />
-                )}
-                <span className="font-black text-[16px] text-ink">{s.provider}</span>
-                <span className="font-bold text-[12px] text-sub mt-0.5">{s.stars}</span>
-              </div>
-              
-              {/* Timeline */}
-              <div className="flex-1 w-full relative flex items-center justify-between py-6 my-2 md:my-0">
-                <div className="absolute top-1/2 start-0 end-0 h-[2px] bg-line -z-10" />
-                
-                <div className="flex flex-col items-center bg-surface px-3">
-                  <span className="font-black text-[22px] text-ink num">{s.dep}</span>
-                  <span className="font-bold text-[14px] text-sub">{s.from}</span>
+            <article
+              key={s.id}
+              className="bg-surface rounded-2xl border border-line p-5 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm hover:shadow-md transition-all hover:border-brand/40"
+            >
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                  <span className="w-10 h-10 rounded-xl bg-mint grid place-items-center text-brand-dark">
+                    {s.kind.includes('قطار') ? <TrainFront size={20} /> : <BusFront size={20} />}
+                  </span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-black text-[16px] text-ink">{s.title}</h3>
+                      {s.tag && (
+                        <span className="bg-gold-soft text-[#14201f] text-[10.5px] font-black px-2 py-0.5 rounded-full">
+                          {s.tag}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs font-bold text-sub">
+                      {s.provider} • {s.cls} • {s.stars}
+                    </span>
+                  </div>
                 </div>
-                
-                <div className="flex flex-col items-center bg-surface px-3 text-center -mt-2">
-                  <span className="font-bold text-[12px] text-brand-dark mb-1 num">{s.duration}</span>
-                  <CircleDot size={16} className="text-line bg-surface rounded-full" />
-                </div>
-                
-                <div className="flex flex-col items-center bg-surface px-3">
-                  <span className="font-black text-[22px] text-ink num">{s.arr}</span>
-                  <span className="font-bold text-[14px] text-sub">{s.to}</span>
+
+                <div className="flex items-center gap-6 mt-3 pt-3 border-t border-line/60">
+                  <div className="flex items-center gap-2">
+                    <CircleDot size={14} className="text-brand" />
+                    <span className="font-mono font-black text-[16px] text-ink" dir="ltr">{s.dep}</span>
+                    <span className="text-xs font-bold text-sub">{s.from}</span>
+                  </div>
+                  <span className="text-xs font-bold text-sub bg-soft px-2.5 py-1 rounded-full">
+                    {s.duration}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <CircleDot size={14} className="text-brand-dark" />
+                    <span className="font-mono font-black text-[16px] text-ink" dir="ltr">{s.arr}</span>
+                    <span className="text-xs font-bold text-sub">{s.to}</span>
+                  </div>
                 </div>
               </div>
-              
-              {/* Price & Action */}
-              <div className="flex flex-col items-center md:items-end w-full md:w-48 md:border-e border-line pt-4 md:pt-0 md:pe-6 shrink-0 border-t md:border-t-0">
-                <span className="font-bold text-[11px] text-sub mb-1">قیمت برای هر نفر</span>
-                <span className="font-black text-[22px] text-price mb-4 num">
-                  {s.price.toLocaleString('fa-IR')} <span className="font-bold text-[12px] text-sub">تومان</span>
-                </span>
-                
-                {/* دکمه اکشن زعفرانی طبق قوانین Firuzo */}
-                <Button onClick={() => reserve(s)} aria-label={`انتخاب بلیت ${s.title}`} className="w-full bg-brand hover:bg-brand-2 text-surface py-2 h-11 rounded-full font-black text-[14px] transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">
-                  انتخاب بلیت
-                </Button>
+
+              <div className="flex flex-row md:flex-col justify-between md:justify-center items-center md:items-end w-full md:w-auto gap-3 pt-4 md:pt-0 border-t md:border-t-0 border-line">
+                <div className="text-start md:text-end">
+                  <span className="text-xs font-bold text-sub block">{t('perPassenger')}</span>
+                  <span className="text-[20px] font-black text-price font-mono num">
+                    {s.price.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}
+                    <span className="text-xs font-bold text-sub ms-1">{locale === 'fa' ? 'تومان' : 'Toman'}</span>
+                  </span>
+                </div>
+                <button
+                  onClick={() => reserve(s)}
+                  aria-label={`انتخاب ${s.title}`}
+                  className="bg-action hover:bg-action-hover text-[#14201f] px-6 py-2.5 rounded-xl font-black text-[13px] transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  {t('selectTicket')}
+                </button>
               </div>
-              
-            </div>
+            </article>
           ))}
-          
-          {list.length === 0 && (
-            <div className="text-center py-16 bg-surface rounded-xl border border-dashed border-line text-sub font-bold text-[14px]">
-              بلیتی با این مشخصات یافت نشد؛ فیلترها را تغییر دهید.
-            </div>
-          )}
-        </div>
+        </section>
       </main>
     </div>
   );
