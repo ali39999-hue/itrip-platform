@@ -1,5 +1,6 @@
 'use client';
 
+import { useLocale } from 'next-intl';
 import { Check } from 'lucide-react';
 
 export type CheckoutPhase = 'passengers' | 'payment' | 'issuing' | 'success';
@@ -15,6 +16,8 @@ const STEPS = [
 ];
 
 export function CheckoutStepper({ phase }: CheckoutStepperProps) {
+  const locale = useLocale();
+  const isEn = locale === 'en';
   const phaseIdx = phase === 'passengers' ? 0 : phase === 'payment' ? 1 : 2;
 
   return (
@@ -29,6 +32,7 @@ export function CheckoutStepper({ phase }: CheckoutStepperProps) {
         {STEPS.map((step, idx) => {
           const isDone = phaseIdx > idx || phase === 'success';
           const isCurrent = phaseIdx === idx && phase !== 'success';
+          const label = isEn ? step.labelEn : step.labelFa;
           return (
             <div key={step.id} className="relative z-10 flex flex-col items-center">
               <div
@@ -47,7 +51,7 @@ export function CheckoutStepper({ phase }: CheckoutStepperProps) {
                   isCurrent ? 'text-brand-dark font-black' : isDone ? 'text-ink' : 'text-sub'
                 }`}
               >
-                {step.labelFa}
+                {label}
               </span>
             </div>
           );

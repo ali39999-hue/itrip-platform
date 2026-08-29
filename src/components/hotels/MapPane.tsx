@@ -60,33 +60,25 @@ export default function MapPane({ hotels }: { hotels: Hotel[] }) {
         <FitToPins points={points} />
         {pins.map(({ hotel, pos, icon }) => (
           <Marker key={hotel.id} position={pos} icon={icon}>
-            <Popup>
-              <div dir="rtl" style={{ fontFamily: 'inherit', minWidth: 180 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  <b style={{ fontSize: 13 }}>{hotel.name}</b>
-                  <span style={{ display: 'inline-flex' }}>
+            <Popup className="itrip-map-popup">
+              <div dir="rtl" className="min-w-[180px] font-sans p-1">
+                <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                  <b className="text-xs font-black text-ink">{hotel.name}</b>
+                  <span className="inline-flex text-gold">
                     {Array.from({ length: hotel.stars }).map((_, i) => (
-                      <Star key={i} size={11} color="var(--color-gold)" fill="var(--color-gold)" />
+                      <Star key={i} size={11} className="fill-gold text-gold" />
                     ))}
                   </span>
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--color-sub)', margin: '4px 0' }}>
+                <div className="text-[11px] text-sub mb-1.5 font-medium">
                   {hotel.city} · {hotel.distanceFromCenter}
                 </div>
-                <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 8 }}>
-                  {(hotel.pricePerNight / 1000000).toLocaleString('fa-IR')} میلیون / شب
+                <div className="text-xs font-black text-ink mb-2 font-mono">
+                  {(hotel.pricePerNight / 1000000).toLocaleString('fa-IR')} میلیون تومان / شب
                 </div>
                 <Link
                   href={`/hotels/${hotel.id}`}
-                  style={{
-                    display: 'inline-block',
-                    padding: '6px 12px',
-                    borderRadius: 9,
-                    background: BRAND,
-                    color: 'var(--color-surface)',
-                    fontWeight: 800,
-                    fontSize: 12,
-                  }}
+                  className="inline-flex items-center justify-center h-8 px-3 rounded-lg bg-brand hover:bg-brand-dark text-surface text-xs font-black transition shadow-xs"
                 >
                   مشاهده اتاق‌ها ←
                 </Link>
@@ -98,4 +90,3 @@ export default function MapPane({ hotels }: { hotels: Hotel[] }) {
     </div>
   );
 }
-
