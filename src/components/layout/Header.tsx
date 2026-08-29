@@ -56,27 +56,36 @@ export function Header() {
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-line bg-surface p-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
+        <div className="lg:hidden border-t border-line bg-surface p-4 space-y-5 animate-in slide-in-from-top-2 duration-200 max-h-[80vh] overflow-y-auto">
           <div className="flex items-center gap-2 pb-3 border-b border-line">
             <CountrySwitcher />
             <LocaleSwitcher />
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            {NAV_CATEGORIES.flatMap((c) => c.items).map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.key}
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 p-2.5 rounded-xl bg-soft/50 hover:bg-soft text-[13px] font-bold text-ink transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
-                >
-                  <Icon size={16} className="text-brand-dark" />
-                  <span>{t(item.key)}</span>
-                </Link>
-              );
-            })}
+          <div className="space-y-4">
+            {NAV_CATEGORIES.map((cat) => (
+              <div key={cat.key} className="space-y-1.5">
+                <h4 className="text-[11px] font-black uppercase text-sub tracking-wider px-1">
+                  {t(cat.key)}
+                </h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {cat.items.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.key}
+                        href={item.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-2 p-2.5 rounded-xl bg-soft/50 hover:bg-soft text-[12.5px] font-bold text-ink transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+                      >
+                        <Icon size={15} className="text-brand-dark shrink-0" />
+                        <span className="truncate">{t(item.key)}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

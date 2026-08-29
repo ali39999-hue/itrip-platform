@@ -118,7 +118,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <UserCheck size={16} />
             </div>
             <div className="hidden sm:block text-start">
-              <span className="block text-xs font-black text-ink">{user.name || 'مدیر سیستم'}</span>
+              <span className="block text-xs font-black text-ink">{user.phone || 'مدیر سیستم'}</span>
               <span className="block text-[10px] font-bold text-success flex items-center gap-1">
                 <ShieldCheck size={10} /> ادمین فعال
               </span>

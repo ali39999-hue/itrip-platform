@@ -72,13 +72,13 @@ export function HotelLocation({ hotel }: { hotel: Hotel }) {
         </div>
 
         <div className="flex flex-col gap-2">
-          {DISTS.map(([p, m, t]) => (
+          {DISTS.map(([p, IconComponent, t]) => (
             <div key={p} className="flex items-center justify-between p-2.5 rounded-lg border border-line/60 bg-soft/50 text-xs">
-              <span className="font-bold text-ink">{p}</span>
-              <div className="flex items-center gap-2 text-sub font-mono">
-                <span>{m}</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface border border-line">{t}</span>
-              </div>
+              <span className="font-bold text-ink flex items-center gap-1.5">
+                <IconComponent size={14} className="text-brand-dark" />
+                {p}
+              </span>
+              <span className="text-[11px] font-bold text-sub font-mono">{t}</span>
             </div>
           ))}
         </div>

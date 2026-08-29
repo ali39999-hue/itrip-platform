@@ -3,8 +3,9 @@
 import { Link, usePathname } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
 import {
-  Map, Compass, FileText, Wallet, CreditCard, Plane,
-  BedDouble, ShieldCheck, CarTaxiFront, Train, Smartphone, Briefcase
+  Map, Compass, Newspaper, BookOpen, Wallet, CreditCard, Plane,
+  BedDouble, ShieldCheck, CarTaxiFront, Train, Smartphone, Briefcase,
+  FileCheck, LifeBuoy
 } from 'lucide-react';
 
 export const NAV_CATEGORIES = [
@@ -13,8 +14,8 @@ export const NAV_CATEGORIES = [
     items: [
       { key: 'destinations', href: '/destinations', icon: Map },
       { key: 'tours', href: '/tours', icon: Compass },
-      { key: 'travelogues', href: '/travelogues', icon: FileText },
-      { key: 'guide', href: '/guide', icon: FileText },
+      { key: 'travelogues', href: '/travelogues', icon: Newspaper },
+      { key: 'guide', href: '/guide', icon: BookOpen },
     ],
   },
   {
@@ -24,7 +25,7 @@ export const NAV_CATEGORIES = [
       { key: 'cityPass', href: '/city-pass', icon: CreditCard },
       { key: 'flights', href: '/flights/search', icon: Plane },
       { key: 'hotels', href: '/hotels/search', icon: BedDouble },
-      { key: 'visa', href: '/visa', icon: FileText },
+      { key: 'visa', href: '/visa', icon: FileCheck },
       { key: 'insurance', href: '/insurance', icon: ShieldCheck },
       { key: 'transfer', href: '/transfers', icon: CarTaxiFront },
       { key: 'trains', href: '/trains', icon: Train },
@@ -36,7 +37,7 @@ export const NAV_CATEGORIES = [
     items: [
       { key: 'myTrips', href: '/my-trips', icon: Briefcase },
       { key: 'wallet', href: '/wallet', icon: Wallet },
-      { key: 'sos', href: '/interpreter', icon: Smartphone },
+      { key: 'sos', href: '/interpreter', icon: LifeBuoy },
     ],
   },
 ];

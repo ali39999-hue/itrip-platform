@@ -34,7 +34,7 @@ export function SearchModeTabs({ activeTab, onTabChange }: SearchModeTabsProps) 
               onClick={() => onTabChange(id)}
               className={`shrink-0 min-h-[42px] px-4 md:px-5 inline-flex items-center gap-2 rounded-xl transition-all font-black text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                 active
-                  ? 'bg-brand text-surface shadow-md shadow-brand/25 scale-[1.02]'
+                  ? 'bg-brand text-surface shadow-md shadow-brand/25'
                   : 'text-sub hover:text-brand-dark hover:bg-surface/60'
               }`}
             >

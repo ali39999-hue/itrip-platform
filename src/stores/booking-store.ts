@@ -3,22 +3,16 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Booking, BookingPassenger, WalletTransaction } from '@/lib/types';
-
-interface WalletBalances {
-  IRR: number;
-  USDT: number;
-  AED: number;
-}
-
-interface BookingSummary {
-  type: Booking['type'];
-  title: string;
-  subtitle: string;
-  amount: number;
-  travelDate: string;
-  meta?: Record<string, string>;
-  id?: string;
-}
+import {
+  BookingDomainService,
+  type BookingSummary,
+  type BookingFundLock,
+} from '@/domains/booking/BookingDomainService';
+import {
+  defaultCurrencyService,
+  type WalletBalances,
+  type SupportedCurrency,
+} from '@/domains/currency/CurrencyService';
 
 interface BookingState {
   wallet: WalletBalances;
@@ -26,17 +20,17 @@ interface BookingState {
   passengers: BookingPassenger[];
   bookings: Booking[];
   transactions: WalletTransaction[];
-  lockedAmounts: { bookingId: string; amount: number; currency: keyof WalletBalances; expiresAt: number }[];
+  lockedAmounts: BookingFundLock[];
 
   setBookingContext: (item: BookingSummary | null) => void;
   setPassengers: (p: BookingPassenger[]) => void;
 
-  lockFunds: (amount: number, currency: keyof WalletBalances, bookingId: string) => boolean;
+  lockFunds: (amount: number, currency: SupportedCurrency, bookingId: string) => boolean;
   confirmBooking: (paymentMethod: Booking['paymentMethod'], addOns?: string[]) => Booking | null;
   addDirectBooking: (booking: Omit<Booking, 'id' | 'reference' | 'createdAt'>) => Booking;
   refundBooking: (bookingId: string) => void;
-  deposit: (wallet: keyof WalletBalances, amount: number, method: string) => void;
-  exchange: (from: keyof WalletBalances, to: keyof WalletBalances, amount: number) => boolean;
+  deposit: (wallet: SupportedCurrency, amount: number, method: string) => void;
+  exchange: (from: SupportedCurrency, to: SupportedCurrency, amount: number) => boolean;
 }
 
 let counter = Date.now();
@@ -44,15 +38,6 @@ function genId(prefix: string) {
   counter += 1;
   return `${prefix}-${counter.toString(36).toUpperCase()}`;
 }
-
-const EXCHANGE_RATES: Record<string, number> = {
-  'IRR_USDT': 0.000000024,
-  'USDT_IRR': 41800000,
-  'IRR_AED': 0.00000088,
-  'AED_IRR': 1140000,
-  'USDT_AED': 3.67,
-  'AED_USDT': 0.2725,
-};
 
 export const useBookingStore = create<BookingState>()(
   persist(
@@ -69,20 +54,19 @@ export const useBookingStore = create<BookingState>()(
 
       lockFunds: (amount, currency, bookingId) => {
         const { wallet } = get();
-        if (wallet[currency] < amount) return false;
+        const result = BookingDomainService.createFundLock(bookingId, amount, currency, wallet[currency]);
+        if (!result) return false;
+
         set({
-          wallet: { ...wallet, [currency]: wallet[currency] - amount },
-          lockedAmounts: [
-            ...get().lockedAmounts,
-            { bookingId, amount, currency, expiresAt: Date.now() + 30_000 },
-          ],
+          wallet: { ...wallet, [currency]: result.newBalance },
+          lockedAmounts: [...get().lockedAmounts, result.lock],
           transactions: [
             {
               id: genId('tx'),
               type: 'withdraw',
               wallet: currency as WalletTransaction['wallet'],
               amount,
-              description: `قفل وجه موقت برای رزرو ${bookingId}`,
+              description: `قفل وجه تراکنش ${bookingId}`,
               createdAt: new Date().toISOString(),
               status: 'locked',
             },
@@ -94,50 +78,43 @@ export const useBookingStore = create<BookingState>()(
 
       confirmBooking: (paymentMethod, addOns = []) => {
         const { bookingContext, passengers, lockedAmounts } = get();
-        if (!bookingContext) return null;
-        // Find lock by the unique context ID, fallback to 'pending' if it was hardcoded
-        const lock = lockedAmounts.find((l) => l.bookingId === bookingContext.id || l.bookingId === 'pending');
-        if (lock) {
-          setTimeout(() => {
-            set((s) => ({
-              lockedAmounts: s.lockedAmounts.filter((l) => l.bookingId !== lock.bookingId),
-            }));
-          }, 100);
+        if (!bookingContext || !bookingContext.id) return null;
+
+        // Deterministic Lock resolution by exact context ID
+        const lockIndex = lockedAmounts.findIndex((l) => l.bookingId === bookingContext.id && l.state === 'LOCKED');
+        let updatedLocks = [...lockedAmounts];
+        const newTransactions = [...get().transactions];
+
+        if (lockIndex !== -1) {
+          const currentLock = lockedAmounts[lockIndex];
+          const capturedLock = BookingDomainService.captureLock(currentLock);
+          updatedLocks = lockedAmounts.filter((_, idx) => idx !== lockIndex);
+
+          newTransactions.unshift({
+            id: genId('tx'),
+            type: 'payment',
+            wallet: capturedLock.currency,
+            amount: capturedLock.amount,
+            description: `پرداخت نهایی رزرو ${bookingContext.title}`,
+            createdAt: new Date().toISOString(),
+            status: 'completed',
+          });
         }
-        if (lock) {
-          set((s) => ({
-            transactions: [
-              {
-                id: genId('tx'),
-                type: 'payment',
-                wallet: lock.currency,
-                amount: lock.amount,
-                description: `پرداخت نهایی رزرو ${bookingContext.title}`,
-                createdAt: new Date().toISOString(),
-                status: 'completed',
-              },
-              ...s.transactions,
-            ],
-          }));
-        }
-        const reference = 'IRP' + Math.floor(Math.random() * 900000 + 100000);
-        const booking: Booking = {
-          id: genId('bk'),
-          reference,
-          type: bookingContext.type,
-          status: 'confirmed',
-          title: bookingContext.title,
-          subtitle: bookingContext.subtitle,
-          amount: bookingContext.amount,
-          currency: 'IRR',
-          createdAt: new Date().toISOString(),
-          travelDate: bookingContext.travelDate || new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+
+        const booking = BookingDomainService.createConfirmedBooking(
+          bookingContext,
           passengers,
-          addOns,
           paymentMethod,
-          qrPayload: `ITRIP|${reference}|${bookingContext.type.toUpperCase()}`,
-        };
-        set({ bookings: [booking, ...get().bookings], bookingContext: null });
+          addOns
+        );
+
+        set({
+          bookings: [booking, ...get().bookings],
+          bookingContext: null,
+          lockedAmounts: updatedLocks,
+          transactions: newTransactions,
+        });
+
         return booking;
       },
 
@@ -156,7 +133,7 @@ export const useBookingStore = create<BookingState>()(
             {
               id: genId('tx'),
               type: 'payment',
-              wallet: data.currency || 'IRR',
+              wallet: (data.currency as SupportedCurrency) || 'IRR',
               amount: data.amount,
               description: `پرداخت سفارش ${data.title}`,
               createdAt: new Date().toISOString(),
@@ -171,6 +148,8 @@ export const useBookingStore = create<BookingState>()(
       refundBooking: (bookingId) => {
         const booking = get().bookings.find((b) => b.id === bookingId);
         if (!booking || booking.status !== 'confirmed') return;
+
+        // Staged refund workflow simulation
         set({
           bookings: get().bookings.map((b) =>
             b.id === bookingId ? { ...b, status: 'refunded' as const } : b
@@ -182,7 +161,7 @@ export const useBookingStore = create<BookingState>()(
               type: 'refund',
               wallet: 'IRR',
               amount: booking.amount,
-              description: `بازگشت وجه استرداد ${booking.reference}`,
+              description: `استرداد و بازگشت وجه ${booking.reference}`,
               createdAt: new Date().toISOString(),
               status: 'completed',
             },
@@ -210,20 +189,23 @@ export const useBookingStore = create<BookingState>()(
       },
 
       exchange: (from, to, amount) => {
-        const rate = EXCHANGE_RATES[`${from}_${to}`];
-        if (!rate) return false;
         const { wallet } = get();
         if (wallet[from] < amount) return false;
-        const result = amount * rate;
+
+        const converted = defaultCurrencyService.convert(amount, from, to);
         set({
-          wallet: { ...wallet, [from]: wallet[from] - amount, [to]: wallet[to] + result },
+          wallet: {
+            ...wallet,
+            [from]: wallet[from] - amount,
+            [to]: wallet[to] + converted,
+          },
           transactions: [
             {
               id: genId('tx'),
               type: 'exchange',
               wallet: from,
               amount,
-              resultAmount: result,
+              resultAmount: converted,
               resultWallet: to,
               description: `تبدیل ${amount.toLocaleString()} ${from} به ${to}`,
               createdAt: new Date().toISOString(),
@@ -238,3 +220,4 @@ export const useBookingStore = create<BookingState>()(
     { name: 'itrip-bookings' }
   )
 );
+

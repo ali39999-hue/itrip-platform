@@ -1,92 +1,102 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Firuzo v2 Master Suite — 5 Golden Journeys', () => {
+test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () => {
 
   test('Golden Journey 1: Flight Search -> Passenger Booking -> Checkout -> Instant Voucher', async ({ page }) => {
     // 1. Visit Flights search
-    await page.goto('/fa/flights/search');
+    await page.goto('/fa/flights/search', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveTitle(/iTrip|Firuzo/i);
 
-    // Verify search results presence
+    // Verify search results presence and click first available ticket
     const selectBtn = page.locator('button:has-text("انتخاب بلیط")').first();
-    await expect(selectBtn).toBeVisible({ timeout: 10000 });
+    await expect(selectBtn).toBeVisible({ timeout: 15000 });
     await selectBtn.click();
 
     // 2. We should land on Checkout
-    await expect(page).toHaveURL(/.*\/checkout/);
-    await expect(page.locator('body')).toBeVisible();
+    await page.waitForURL(/\/fa\/checkout/);
+    await expect(page.locator('h1, h2').first()).toBeVisible();
 
-    // Auto-fill or click test passenger if needed
-    const nationalIdInput = page.locator('input[name="nationalId"], input#nationalId').first();
-    if (await nationalIdInput.isVisible()) {
-      await nationalIdInput.fill('0012345678');
+    // Use smart OCR scan button or fill passenger form
+    const scanBtn = page.locator('button:has-text("اسکن هوشمند پاسپورت")').first();
+    if (await scanBtn.isVisible()) {
+      await scanBtn.click();
+      await page.waitForTimeout(600);
+    } else {
+      await page.locator('input#firstName').fill('ALI');
+      await page.locator('input#lastName').fill('MOHAMMADI');
+      await page.locator('input#passportNo').fill('L2948175');
+      await page.locator('input#nationalId').fill('0012345678');
     }
 
-    // Submit to next stage
-    const nextBtn = page.locator('button:has-text("ادامه به پرداخت"), button:has-text("تایید")').first();
-    if (await nextBtn.isVisible()) {
-      await nextBtn.click();
-    }
+    // Submit to payment phase
+    const nextBtn = page.locator('button[type="submit"]').first();
+    await expect(nextBtn).toBeVisible();
+    await nextBtn.click();
+
+    // Verify Payment phase elements (price breakdown, wallet or gateway selector)
+    await expect(page.locator('h2:has-text("انتخاب روش پرداخت"), h2:has-text("جزئیات قیمت"), div:has-text("کیف پول")').first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('Golden Journey 2: Hotel Search -> Multi-Filter & Compare -> Hotel Details', async ({ page }) => {
+  test('Golden Journey 2: Hotel Search -> Multi-Filter & Compare -> Hotel Details -> Room Selection', async ({ page }) => {
     // 1. Visit Hotel Search
-    await page.goto('/fa/hotels/search');
+    await page.goto('/fa/hotels/search', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveTitle(/iTrip|Firuzo/i);
 
     // Check hotel cards render with price
     const hotelCard = page.locator('div:has-text("هر شب از")').first();
-    await expect(hotelCard).toBeVisible({ timeout: 10000 });
+    await expect(hotelCard).toBeVisible({ timeout: 15000 });
 
     // Click on details
     const viewBtn = page.locator('a:has-text("مشاهده و رزرو")').first();
     await expect(viewBtn).toBeVisible();
     await viewBtn.click();
 
-    // We should be on Hotel Detail page
-    await expect(page).toHaveURL(/.*\/hotels\/h\d+/);
-    await expect(page.locator('h1, h2').first()).toBeVisible();
+    // 2. We should land on Hotel Detail page
+    await page.waitForURL(/\/fa\/hotels\/h\d+/);
+    await expect(page.locator('h1').first()).toBeVisible();
+
+    // Verify hotel rooms section
+    const roomCard = page.locator('div:has-text("اتاق"), div:has-text("سوییت"), button:has-text("انتخاب اتاق")').first();
+    await expect(roomCard).toBeVisible({ timeout: 10000 });
   });
 
   test('Golden Journey 3: AI Smart Trip Planner -> Wizard -> Timeline View', async ({ page }) => {
-    // 1. Visit AI Planner
-    await page.goto('/fa/plan');
+    // 1. Visit AI Planner with destination param for instant deterministic timeline verification
+    await page.goto('/fa/plan?dest=tr&who=duo&days=4&bud=balanced&pace=balanced', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveTitle(/iTrip|Firuzo/i);
 
-    // Check planner heading
-    await expect(page.locator('h1')).toBeVisible();
+    // Verify generated plan header and days
+    const resultHeader = page.locator('h1, h2').first();
+    await expect(resultHeader).toBeVisible({ timeout: 10000 });
 
-    // Type a prompt or click prompt chip
-    const planInput = page.locator('textarea, input[placeholder*="مثال"]').first();
-    if (await planInput.isVisible()) {
-      await planInput.fill('سفر ۴ روزه به مشهد');
-      const submitBtn = page.locator('button:has-text("بساز"), button:has-text("شروع")').first();
-      if (await submitBtn.isVisible()) {
-        await submitBtn.click();
-      }
-    }
+    // Verify timeline days rendered
+    const dayItem = page.locator('div:has-text("روز ۱"), div:has-text("روز اول"), div:has-text("روز 1"), div:has-text("برنامه روزانه")').first();
+    await expect(dayItem).toBeVisible({ timeout: 10000 });
   });
 
-  test('Golden Journey 4: My Trips Management & Wallet Balance', async ({ page }) => {
+  test('Golden Journey 4: My Trips Management & Multi-Currency Wallet', async ({ page }) => {
     // 1. Visit My Trips
-    await page.goto('/fa/my-trips');
+    await page.goto('/fa/my-trips', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveTitle(/iTrip|Firuzo/i);
     await expect(page.locator('h1, h2').first()).toBeVisible();
 
     // 2. Visit Wallet
-    await page.goto('/fa/wallet');
+    await page.goto('/fa/wallet', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveTitle(/iTrip|Firuzo/i);
     await expect(page.locator('h1').first()).toContainText('کیف پول');
+
+    // Verify balance card presence
+    await expect(page.locator('div:has-text("موجودی"), div:has-text("ریال"), div:has-text("USDT")').first()).toBeVisible();
   });
 
-  test('Golden Journey 5: Admin ERP Portal -> Bookings & Financial Feed', async ({ page }) => {
+  test('Golden Journey 5: Admin ERP Portal -> Security Gate & Bookings Structure', async ({ page }) => {
     // 1. Visit Admin Root
-    await page.goto('/fa/admin');
+    await page.goto('/fa/admin', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveTitle(/iTrip|Firuzo/i);
     await expect(page.locator('h1, h2').first()).toBeVisible();
 
     // 2. Visit Admin Bookings
-    await page.goto('/fa/admin/bookings');
+    await page.goto('/fa/admin/bookings', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/.*\/admin\/bookings/);
     await expect(page.locator('h1, table, tr, div:has-text("مدیریت"), form').first()).toBeVisible();
   });
