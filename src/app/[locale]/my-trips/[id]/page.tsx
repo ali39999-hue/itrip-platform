@@ -2,6 +2,7 @@
 
 import { useRouter } from '@/i18n/routing';
 import { useAuthStore } from '@/stores/auth-store';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
   UserRound, LayoutGrid, PlaneTakeoff, Gift, Settings, LogOut,
@@ -106,8 +107,7 @@ export default function TripDetailsPage() {
                 <span className="font-black text-[13px] text-sub bg-soft w-fit px-4 py-1.5 rounded-full border border-line/50">رفت - ۱۵ مهر</span>
                 <div className="flex flex-col md:flex-row justify-between items-center bg-surface p-5 rounded-xl border border-line/50 hover:shadow-md transition-shadow gap-6 md:gap-4">
                   <div className="flex items-center gap-4 w-full md:w-auto">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img alt="Mahan Air" className="w-14 h-14 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVEefg8xUL60eIR-jZlX3ltR6ocvrZ22CSAabVUSjzn6iYpZm7Ej64TMeGLvlbCsZ4Qp_r0ditl0bfuCokls_3m3uEdjO8X5sBnlsplmO6z_2K1QVchZlfYgQzlZPWR-o_5v8mMwZrDw4L_ZzS_338riW8QkorOLWRBAGg0T5E7wCGbgutMsnCB6UCgScG4eIJ4YPo4MLLkshwPcAv0IkpzKUhrBOpKOJ7pkTVpo4lfYgT_ODylvqR" />
+                    <Image alt="Mahan Air" width={56} height={56} className="w-14 h-14 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVEefg8xUL60eIR-jZlX3ltR6ocvrZ22CSAabVUSjzn6iYpZm7Ej64TMeGLvlbCsZ4Qp_r0ditl0bfuCokls_3m3uEdjO8X5sBnlsplmO6z_2K1QVchZlfYgQzlZPWR-o_5v8mMwZrDw4L_ZzS_338riW8QkorOLWRBAGg0T5E7wCGbgutMsnCB6UCgScG4eIJ4YPo4MLLkshwPcAv0IkpzKUhrBOpKOJ7pkTVpo4lfYgT_ODylvqR" />
                     <div>
                       <p className="font-black text-[15px] text-ink">ماهان ایر</p>
                       <p className="font-bold text-[13px] text-sub mt-0.5">پرواز W5-112</p>
@@ -139,8 +139,7 @@ export default function TripDetailsPage() {
                 <span className="font-black text-[13px] text-sub bg-soft w-fit px-4 py-1.5 rounded-full border border-line/50">برگشت - ۲۲ مهر</span>
                 <div className="flex flex-col md:flex-row justify-between items-center bg-surface p-5 rounded-xl border border-line/50 hover:shadow-md transition-shadow gap-6 md:gap-4">
                   <div className="flex items-center gap-4 w-full md:w-auto">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img alt="Turkish Airlines" className="w-14 h-14 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjJF8Qmfxl5DFi2Ov9G4l9ZGOALW3e94IvZox770JKOmWgkkdI2JV6s06Lyko75ptz-ctTU6zZUp-EZCNsA7wcl7huPTSfReozeQicySnKmyPLu81gQu8OffFmsedDqhVYBTclLfaCv0UJOlCniwnfx24GAE4TfgkdvJHmhtcm9FVSATuRZSyHDAn_tzutYD78BQh34X7Ic-X_zyXT2pHQeo7WHGg6PTgjGV1VVcIO91k9cPf4EmsI" />
+                    <Image alt="Turkish Airlines" width={56} height={56} className="w-14 h-14 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjJF8Qmfxl5DFi2Ov9G4l9ZGOALW3e94IvZox770JKOmWgkkdI2JV6s06Lyko75ptz-ctTU6zZUp-EZCNsA7wcl7huPTSfReozeQicySnKmyPLu81gQu8OffFmsedDqhVYBTclLfaCv0UJOlCniwnfx24GAE4TfgkdvJHmhtcm9FVSATuRZSyHDAn_tzutYD78BQh34X7Ic-X_zyXT2pHQeo7WHGg6PTgjGV1VVcIO91k9cPf4EmsI" />
                     <div>
                       <p className="font-black text-[15px] text-ink">ترکیش ایرلاینز</p>
                       <p className="font-bold text-[13px] text-sub mt-0.5">پرواز TK-874</p>
@@ -172,8 +171,7 @@ export default function TripDetailsPage() {
           {/* Hotel Stay (Glassmorphism Card) */}
           <div className="lg:col-span-4 bg-surface shadow-sm rounded-xl border border-line/50 overflow-hidden flex flex-col group">
             <div className="h-48 w-full relative overflow-hidden bg-brand-dark">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvPDCK_lXFsQvRLL4q_Cxn_yjmEiOx3cDqULhzx8yQDLSqhJD1tdSOWiS1z11ApbraZJbAEmoJS6dukRTsejBDEFXEa5WYkL3ONLKr0P_CjS5OkbOf07Un2ghsYwl_78EgCK-ZRD0FG--bAWg87e3C-UHRdjkGYpzjMQHCfj0CLqdg-9NJzHhrMT3RdbfQT_d9e-50qQKcUBhfgGzkl8M8vD6Tmdfb7P8HQRGO_jemwkuovlL0DRtN" alt="Hilton Bomonti" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" />
+              <Image src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvPDCK_lXFsQvRLL4q_Cxn_yjmEiOx3cDqULhzx8yQDLSqhJD1tdSOWiS1z11ApbraZJbAEmoJS6dukRTsejBDEFXEa5WYkL3ONLKr0P_CjS5OkbOf07Un2ghsYwl_78EgCK-ZRD0FG--bAWg87e3C-UHRdjkGYpzjMQHCfj0CLqdg-9NJzHhrMT3RdbfQT_d9e-50qQKcUBhfgGzkl8M8vD6Tmdfb7P8HQRGO_jemwkuovlL0DRtN" alt="Hilton Bomonti" fill sizes="(max-width: 1024px) 100vw, 33vw" className="object-cover transform group-hover:scale-105 transition-transform duration-700" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
               <div className="absolute bottom-5 end-5 text-surface">
                 <h3 className="text-xl font-black mb-1.5">هتل هیلتون بومونتی</h3>
@@ -236,8 +234,7 @@ export default function TripDetailsPage() {
                 <h4 className="font-black text-lg text-ink mb-2">روز اول - ورود به استانبول</h4>
                 <p className="font-bold text-[14px] text-sub leading-relaxed mb-4">ترانسفر از فرودگاه به هتل و استراحت. بعد از ظهر وقت آزاد برای گشت و گذار در اطراف میدان تکسیم.</p>
                 <div className="h-40 rounded-xl overflow-hidden relative bg-brand-dark">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDKlSEsSUJKiDMCAojsgKrO3yqQAuWR7Im9G5OVz514n8eL5-Pxb5z24U0PRFJmnxPnL83TM9IP-eD_aekKDJY0GQE2NSBqkDcbeKeQyNyFwTxN0kfWNEshgsYGZ1TkiE77yt1xP-jV8jnAftuicqRgKiuey9wnZDAQU5NCO1i-ruVQSsKOyLyc24P5qWo-S1jF2gzXs5G_wKp_NFu45XcR41TOVCofhj5XQIPM_XOWpD_QDFp4gD8R" alt="Day 1" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" />
+                  <Image src="https://lh3.googleusercontent.com/aida-public/AB6AXuDKlSEsSUJKiDMCAojsgKrO3yqQAuWR7Im9G5OVz514n8eL5-Pxb5z24U0PRFJmnxPnL83TM9IP-eD_aekKDJY0GQE2NSBqkDcbeKeQyNyFwTxN0kfWNEshgsYGZ1TkiE77yt1xP-jV8jnAftuicqRgKiuey9wnZDAQU5NCO1i-ruVQSsKOyLyc24P5qWo-S1jF2gzXs5G_wKp_NFu45XcR41TOVCofhj5XQIPM_XOWpD_QDFp4gD8R" alt="Day 1" fill sizes="(max-width: 768px) 100vw, 45vw" className="object-cover transform group-hover:scale-105 transition-transform duration-700" />
                 </div>
               </div>
             </div>
@@ -254,8 +251,7 @@ export default function TripDetailsPage() {
                 <h4 className="font-black text-lg text-ink mb-2">روز دوم - گشت شهری</h4>
                 <p className="font-bold text-[14px] text-sub leading-relaxed mb-4">بازدید از مسجد ایاصوفیه، مسجد آبی و بازار بزرگ. ناهار در رستوران سنتی (شامل تور).</p>
                 <div className="h-40 rounded-xl overflow-hidden relative bg-brand-dark">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRTvC-g1x9kwdMMWtTw8gN-WFpMZAJ0xi1rTR9l5KQk8tQnG-HVBHnZ__MWpE8hUDMr5wGGXSeJ8g34c9-27kbU1sxD2UTHSk_WOncVvNnYRPDBs3HGkN-B7eJyI-esIUk5DKPFpGHP5sYMHfPNwxO2mNd_Ciu8CGrRb4koGITWtdDjtBxd0plty77ofy1nUKpRmfXqwg75qoOQgdNayDwHByeFRfWphBRdxpZN1Td_C4imyH9BRmX" alt="Day 2" className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" />
+                  <Image src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRTvC-g1x9kwdMMWtTw8gN-WFpMZAJ0xi1rTR9l5KQk8tQnG-HVBHnZ__MWpE8hUDMr5wGGXSeJ8g34c9-27kbU1sxD2UTHSk_WOncVvNnYRPDBs3HGkN-B7eJyI-esIUk5DKPFpGHP5sYMHfPNwxO2mNd_Ciu8CGrRb4koGITWtdDjtBxd0plty77ofy1nUKpRmfXqwg75qoOQgdNayDwHByeFRfWphBRdxpZN1Td_C4imyH9BRmX" alt="Day 2" fill sizes="(max-width: 768px) 100vw, 45vw" className="object-cover transform group-hover:scale-105 transition-transform duration-700" />
                 </div>
               </div>
             </div>

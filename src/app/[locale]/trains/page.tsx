@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { daysFromNow } from '@/lib/utils';
 import { shimmerDataUrl } from '@/lib/image-utils';
 import { TrainFront, BusFront, MapPin, CalendarDays, CircleDot, Search } from 'lucide-react';
+import { lt } from '@/lib/lt';
 
 const SERVICES = [
   { id: 't1', kind: 'قطار', provider: 'رجاء', stars: '۴ ستاره', title: 'قطار پنج‌ستاره تهران ← مشهد', dep: '20:50', arr: '08:15', from: 'تهران', to: 'مشهد', duration: '۱۱ ساعت و ۲۵ دقیقه', cls: 'کوپه ۴ تخته', price: 9800000, tag: 'پیشنهاد فیروز' },
@@ -69,7 +70,7 @@ export default function TrainsPage() {
               <div className="relative flex-1">
                 <MapPin size={18} className="absolute start-3 top-1/2 -translate-y-1/2 text-sub pointer-events-none z-10" />
                 <Input
-                  defaultValue={locale === 'fa' ? 'تهران' : 'Tehran'}
+                  defaultValue={lt(locale, { fa: 'تهران', en: 'Tehran', ar: 'طهران', zh: '德黑兰', ru: 'Тегеран' })}
                   aria-label={t('fromStation')}
                   className="h-12 w-full rounded-lg border-line bg-surface ps-10 font-bold text-[14px] text-ink focus-visible:ring-brand focus:border-brand"
                   placeholder={t('fromStation')}
@@ -78,7 +79,7 @@ export default function TrainsPage() {
               <div className="relative flex-1">
                 <MapPin size={18} className="absolute start-3 top-1/2 -translate-y-1/2 text-sub pointer-events-none z-10" />
                 <Input
-                  defaultValue={locale === 'fa' ? 'مشهد' : 'Mashhad'}
+                  defaultValue={lt(locale, { fa: 'مشهد', en: 'Mashhad', ar: 'مشهد', zh: '马什哈德', ru: 'Мешхед' })}
                   aria-label={t('toStation')}
                   className="h-12 w-full rounded-lg border-line bg-surface ps-10 font-bold text-[14px] text-ink focus-visible:ring-brand focus:border-brand"
                   placeholder={t('toStation')}
@@ -88,15 +89,15 @@ export default function TrainsPage() {
                 <CalendarDays size={18} className="absolute start-3 top-1/2 -translate-y-1/2 text-sub pointer-events-none z-10" />
                 <Input
                   type="date"
-                  aria-label={locale === 'fa' ? 'تاریخ حرکت' : 'Departure date'}
+                  aria-label={lt(locale, { fa: 'تاریخ حرکت', en: 'Departure date', ar: 'تاريخ المغادرة', zh: '出发日期', ru: 'Дата выезда' })}
                   className="h-12 w-full rounded-lg border-line bg-surface ps-10 font-bold text-[14px] text-sub focus-visible:ring-brand focus:border-brand"
                 />
               </div>
               <Button
-                aria-label={locale === 'fa' ? 'جستجوی بلیط' : 'Search tickets'}
+                aria-label={lt(locale, { fa: 'جستجوی بلیط', en: 'Search tickets', ar: 'البحث عن تذاكر', zh: '搜索车票', ru: 'Поиск билетов' })}
                 className="h-12 bg-brand hover:bg-brand-dark text-surface font-black text-[14px] rounded-lg px-8 flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
-                <Search size={18} /> {locale === 'fa' ? 'جستجو' : 'Search'}
+                <Search size={18} /> {lt(locale, { fa: 'جستجو', en: 'Search', ar: 'بحث', zh: '搜索', ru: 'Поиск' })}
               </Button>
             </div>
           </div>
@@ -108,7 +109,7 @@ export default function TrainsPage() {
         {/* Filters Sidebar */}
         <aside className="w-full md:w-64 shrink-0">
           <div className="bg-surface rounded-xl border border-line p-6 sticky top-24 shadow-sm flex flex-col gap-6">
-            <h3 className="font-black text-ink text-[18px] border-b border-line pb-3">{locale === 'fa' ? 'نوع وسیله نقلیه' : 'Transport Type'}</h3>
+            <h3 className="font-black text-ink text-[18px] border-b border-line pb-3">{lt(locale, { fa: 'نوع وسیله نقلیه', en: 'Transport Type', ar: 'نوع المركبة', zh: '交通工具类型', ru: 'Тип транспорта' })}</h3>
             <div className="flex flex-col gap-3">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -142,7 +143,7 @@ export default function TrainsPage() {
         {/* Results List */}
         <section className="flex-1 flex flex-col gap-4">
           <h2 className="font-black text-ink text-[20px] mb-2">
-            {list.length.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')} {locale === 'fa' ? 'سرویس موجود' : 'Available Services'}
+            {list.length.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} {lt(locale, { fa: 'سرویس موجود', en: 'Available Services', ar: 'الخدمات المتاحة', zh: '可用服务', ru: 'Доступные услуги' })}
           </h2>
 
           {list.map((s) => (
@@ -191,8 +192,8 @@ export default function TrainsPage() {
                 <div className="text-start md:text-end">
                   <span className="text-xs font-bold text-sub block">{t('perPassenger')}</span>
                   <span className="text-[20px] font-black text-price font-mono num">
-                    {s.price.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}
-                    <span className="text-xs font-bold text-sub ms-1">{locale === 'fa' ? 'تومان' : 'Toman'}</span>
+                    {s.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
+                    <span className="text-xs font-bold text-sub ms-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
                   </span>
                 </div>
                 <button

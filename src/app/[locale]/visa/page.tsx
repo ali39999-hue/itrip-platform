@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { shimmerDataUrl } from '@/lib/image-utils';
 import { FileCheck2, ArrowRight, ArrowLeft, CheckCircle2, Headset } from 'lucide-react';
+import { lt } from '@/lib/lt';
 
 const VISA_IMGS: Record<string, string> = {
   Turkey: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&q=70&w=800',
@@ -41,11 +42,11 @@ export default function VisaPage() {
   function submit() {
     if (!selected) return;
     if (!firstEn.trim() || !lastEn.trim() || !passport.trim()) {
-      setError(locale === 'fa' ? 'لطفاً همه فیلدها را تکمیل کنید' : 'Please fill all required fields');
+      setError(lt(locale, { fa: 'لطفاً همه فیلدها را تکمیل کنید', en: 'Please fill all required fields', ar: 'يرجى تعبئة جميع الحقول المطلوبة', zh: '请填写所有必填项', ru: 'Заполните все обязательные поля' }));
       return;
     }
     if (!/^[A-Z0-9]{6,12}$/i.test(passport)) {
-      setError(locale === 'fa' ? 'شماره پاسپورت معتبر نیست (حروف لاتین و اعداد)' : 'Invalid passport number');
+      setError(lt(locale, { fa: 'شماره پاسپورت معتبر نیست (حروف لاتین و اعداد)', en: 'Invalid passport number', ar: 'رقم جواز سفر غير صالح (أحرف لاتينية وأرقام)', zh: '护照号无效（拉丁字母和数字）', ru: 'Неверный номер паспорта (латиница и цифры)' }));
       return;
     }
     setStep(3);
@@ -98,7 +99,7 @@ export default function VisaPage() {
       {/* Staggered Visa Cards Grid */}
       <section id="visa-cards">
         <h2 className="text-center font-black text-ink text-[24px] md:text-[28px] tracking-tight mb-8">
-          {locale === 'fa' ? 'محبوب‌ترین مقاصد ویزا' : 'Popular Visa Destinations'}
+          {lt(locale, { fa: 'محبوب‌ترین مقاصد ویزا', en: 'Popular Visa Destinations', ar: 'أشهر وجهات التأشيرة', zh: '热门签证目的地', ru: 'Популярные визовые направления' })}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
           {VISA_SERVICES.map((v, i) => (
@@ -128,22 +129,22 @@ export default function VisaPage() {
               <div className="p-5 bg-surface/90 backdrop-blur-md -mt-8 mb-4 relative z-10 mx-4 rounded-xl shadow-sm border border-line">
                 <div className="flex justify-between items-center mb-4 border-b border-line pb-3">
                   <div className="flex flex-col gap-1">
-                    <span className="text-[12px] font-bold text-sub">{locale === 'fa' ? 'نوع ویزا' : 'Visa Type'}</span>
+                    <span className="text-[12px] font-bold text-sub">{lt(locale, { fa: 'نوع ویزا', en: 'Visa Type', ar: 'نوع التأشيرة', zh: '签证类型', ru: 'Тип визы' })}</span>
                     <span className="text-[14px] font-black text-ink">{v.type}</span>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <span className="text-[12px] font-bold text-sub">{locale === 'fa' ? 'درصد موفقیت' : 'Success Rate'}</span>
+                    <span className="text-[12px] font-bold text-sub">{lt(locale, { fa: 'درصد موفقیت', en: 'Success Rate', ar: 'نسبة الموافقة', zh: '成功率', ru: 'Процент одобрения' })}</span>
                     <span className="text-[20px] md:text-[24px] text-brand-dark font-black num">
-                      %{v.approvalRate.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}
+                      %{v.approvalRate.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                     </span>
                   </div>
                 </div>
                 <div className="flex justify-between items-center">
                   <div className="flex flex-col gap-1">
-                    <span className="text-[12px] font-bold text-sub">{locale === 'fa' ? 'شروع قیمت از' : 'Starting from'}</span>
+                    <span className="text-[12px] font-bold text-sub">{lt(locale, { fa: 'شروع قیمت از', en: 'Starting from', ar: 'يبدأ السعر من', zh: '价格起', ru: 'От' })}</span>
                     <span className="text-[20px] md:text-[24px] text-price font-black num">
-                      {v.price.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}
-                      <span className="text-[12px] font-bold text-sub me-1">{locale === 'fa' ? 'تومان' : 'Toman'}</span>
+                      {v.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
+                      <span className="text-[12px] font-bold text-sub me-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
                     </span>
                   </div>
                   <button
@@ -184,7 +185,7 @@ export default function VisaPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-ink mb-1">
-                {locale === 'fa' ? 'نام (لاتین)' : 'First Name (Latin)'}
+                {lt(locale, { fa: 'نام (لاتین)', en: 'First Name (Latin)', ar: 'الاسم الأول (باللاتينية)', zh: '名（拉丁字母）', ru: 'Имя (латиницей)' })}
               </label>
               <Input
                 value={firstEn}
@@ -196,7 +197,7 @@ export default function VisaPage() {
 
             <div>
               <label className="block text-xs font-bold text-ink mb-1">
-                {locale === 'fa' ? 'نام خانوادگی (لاتین)' : 'Last Name (Latin)'}
+                {lt(locale, { fa: 'نام خانوادگی (لاتین)', en: 'Last Name (Latin)', ar: 'اسم العائلة (باللاتينية)', zh: '姓（拉丁字母）', ru: 'Фамилия (латиницей)' })}
               </label>
               <Input
                 value={lastEn}
@@ -208,7 +209,7 @@ export default function VisaPage() {
 
             <div>
               <label className="block text-xs font-bold text-ink mb-1">
-                {locale === 'fa' ? 'شماره پاسپورت' : 'Passport Number'}
+                {lt(locale, { fa: 'شماره پاسپورت', en: 'Passport Number', ar: 'رقم جواز السفر', zh: '护照号码', ru: 'Номер паспорта' })}
               </label>
               <Input
                 value={passport}
@@ -225,7 +226,7 @@ export default function VisaPage() {
             >
               {step === 3 ? (
                 <span className="flex items-center gap-2">
-                  <CheckCircle2 size={16} /> {locale === 'fa' ? 'در حال انتقال به پرداخت...' : 'Redirecting to checkout...'}
+                  <CheckCircle2 size={16} /> {lt(locale, { fa: 'در حال انتقال به پرداخت...', en: 'Redirecting to checkout...', ar: 'جارٍ التحويل إلى الدفع...', zh: '正在跳转到支付…', ru: 'Переход к оплате…' })}
                 </span>
               ) : (
                 t('startApplication')

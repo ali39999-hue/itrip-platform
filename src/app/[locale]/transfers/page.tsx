@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { daysFromNow } from '@/lib/utils';
 import { shimmerDataUrl } from '@/lib/image-utils';
 import { CarFront, Users, Luggage, Clock, Search, Crown, PlaneTakeoff, MapPin, CalendarDays, TrainFront, BusFront, Star } from 'lucide-react';
+import { lt } from '@/lib/lt';
 
 const TRANSFER_IMGS: Record<string, string> = {
   tr1: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&q=70&w=800',
@@ -31,9 +32,9 @@ export default function TransfersPage() {
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
 
   const CATS: { id: CarCat; label: string }[] = [
-    { id: 'eco', label: locale === 'fa' ? 'اقتصادی' : 'Economy' },
-    { id: 'vip', label: locale === 'fa' ? 'تشریفات (VIP)' : 'VIP / Luxury' },
-    { id: 'van', label: locale === 'fa' ? 'ون و مینی‌بوس' : 'Van & Minibus' },
+    { id: 'eco', label: lt(locale, { fa: 'اقتصادی', en: 'Economy', ar: 'اقتصادي', zh: '经济型', ru: 'Эконом' }) },
+    { id: 'vip', label: lt(locale, { fa: 'تشریفات (VIP)', en: 'VIP / Luxury', ar: 'تشريفية (VIP)', zh: '豪华型（VIP）', ru: 'VIP / Люкс' }) },
+    { id: 'van', label: lt(locale, { fa: 'ون و مینی‌بوس', en: 'Van & Minibus', ar: 'فان وميني باص', zh: '厢式车与小巴', ru: 'Фургон и микроавтобус' }) },
   ];
 
   const froms = useMemo(() => [...new Set(TRANSFERS.map((t) => t.from))], []);
@@ -90,10 +91,10 @@ export default function TransfersPage() {
                 <CarFront size={18} /> {t('title')}
               </span>
               <Link href="/trains" className="text-sub hover:text-brand-dark font-black text-[14px] pb-3 flex items-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
-                <TrainFront size={18} /> {locale === 'fa' ? 'قطار' : 'Trains'}
+                <TrainFront size={18} /> {lt(locale, { fa: 'قطار', en: 'Trains', ar: 'قطارات', zh: '火车', ru: 'Поезда' })}
               </Link>
               <Link href="/trains" className="text-sub hover:text-brand-dark font-black text-[14px] pb-3 flex items-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
-                <BusFront size={18} /> {locale === 'fa' ? 'اتوبوس' : 'Buses'}
+                <BusFront size={18} /> {lt(locale, { fa: 'اتوبوس', en: 'Buses', ar: 'حافلات', zh: '巴士', ru: 'Автобусы' })}
               </Link>
             </div>
 
@@ -128,11 +129,11 @@ export default function TransfersPage() {
               
               <div className="relative">
                 <CalendarDays size={18} className="absolute start-3 top-1/2 -translate-y-1/2 text-sub pointer-events-none z-10" />
-                <Input type="date" aria-label={locale === 'fa' ? 'تاریخ سفر' : 'Travel date'} value={date} onChange={(e) => setDate(e.target.value)} className="h-12 w-full rounded-lg border-line bg-surface ps-10 focus-visible:ring-brand focus:ring-brand focus:border-brand font-bold text-[14px] text-sub" />
+                <Input type="date" aria-label={lt(locale, { fa: 'تاریخ سفر', en: 'Travel date', ar: 'تاريخ السفر', zh: '出行日期', ru: 'Дата поездки' })} value={date} onChange={(e) => setDate(e.target.value)} className="h-12 w-full rounded-lg border-line bg-surface ps-10 focus-visible:ring-brand focus:ring-brand focus:border-brand font-bold text-[14px] text-sub" />
               </div>
               
-              <Button onClick={() => setSearched(true)} aria-label={locale === 'fa' ? 'جستجو ترانسفر' : 'Search transfers'} className="h-12 bg-brand hover:bg-brand-dark text-surface font-black text-[14px] rounded-lg w-full flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">
-                <Search size={18} /> {locale === 'fa' ? 'جستجو' : 'Search'}
+              <Button onClick={() => setSearched(true)} aria-label={lt(locale, { fa: 'جستجو ترانسفر', en: 'Search transfers', ar: 'البحث عن خدمات النقل', zh: '搜索接送服务', ru: 'Поиск трансферов' })} className="h-12 bg-brand hover:bg-brand-dark text-surface font-black text-[14px] rounded-lg w-full flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">
+                <Search size={18} /> {lt(locale, { fa: 'جستجو', en: 'Search', ar: 'بحث', zh: '搜索', ru: 'Поиск' })}
               </Button>
             </div>
           </div>
@@ -143,9 +144,9 @@ export default function TransfersPage() {
         {/* Sidebar filters */}
         <aside className="w-full md:w-1/4 hidden md:block">
           <div className="bg-surface rounded-xl shadow-sm border border-line p-6 sticky top-24">
-            <h3 className="font-black text-ink text-[24px] mb-6 border-b border-line pb-3">{locale === 'fa' ? 'فیلترها' : 'Filters'}</h3>
+            <h3 className="font-black text-ink text-[24px] mb-6 border-b border-line pb-3">{lt(locale, { fa: 'فیلترها', en: 'Filters', ar: 'الفلاتر', zh: '筛选', ru: 'Фильтры' })}</h3>
             <div>
-              <h4 className="font-bold text-[14px] text-sub mb-4">{locale === 'fa' ? 'نوع خودرو' : 'Vehicle Type'}</h4>
+              <h4 className="font-bold text-[14px] text-sub mb-4">{lt(locale, { fa: 'نوع خودرو', en: 'Vehicle Type', ar: 'نوع السيارة', zh: '车型', ru: 'Тип автомобиля' })}</h4>
               <div className="flex flex-col gap-3">
                 {CATS.map((c) => (
                   <label key={c.id} className="flex items-center gap-3 cursor-pointer">
@@ -168,7 +169,7 @@ export default function TransfersPage() {
         <section className="w-full md:w-3/4 flex flex-col gap-6">
           <div className="flex justify-between items-center">
             <h2 className="font-black text-ink text-[20px] md:text-[24px]">
-              {results.length.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')} {t('availableVehicles')}
+              {results.length.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} {t('availableVehicles')}
             </h2>
           </div>
 
@@ -220,17 +221,17 @@ export default function TransfersPage() {
                       </span>
                       <span className="flex items-center gap-1.5 bg-soft px-3 py-1.5 rounded-lg">
                         <Clock size={14} className="text-brand-dark" />
-                        {locale === 'fa' ? 'انتظار رایگان تا ۶۰ دقیقه' : 'Free 60 min wait time'}
+                        {lt(locale, { fa: 'انتظار رایگان تا ۶۰ دقیقه', en: 'Free 60 min wait time', ar: 'انتظار مجاني حتى 60 دقيقة', zh: '免费等待 60 分钟', ru: 'Бесплатное ожидание 60 минут' })}
                       </span>
                     </div>
                   </div>
 
                   <div className="flex justify-between items-center mt-6 pt-4 border-t border-line">
                     <div>
-                      <span className="text-xs font-bold text-sub block">{locale === 'fa' ? 'قیمت کل مسیر' : 'Total route price'}</span>
+                      <span className="text-xs font-bold text-sub block">{lt(locale, { fa: 'قیمت کل مسیر', en: 'Total route price', ar: 'سعر المسار الإجمالي', zh: '全程总价', ru: 'Итоговая цена маршрута' })}</span>
                       <span className="text-[20px] md:text-[24px] font-black text-price font-mono num">
-                        {tr.price.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}
-                        <span className="text-xs font-bold text-sub ms-1">{locale === 'fa' ? 'تومان' : 'Toman'}</span>
+                        {tr.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
+                        <span className="text-xs font-bold text-sub ms-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
                       </span>
                     </div>
 

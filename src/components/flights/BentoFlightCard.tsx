@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { Plane, Briefcase, ChevronDown, Armchair, Ticket, Clock, CheckCircle2 } from 'lucide-react';
 import type { Flight } from '@/lib/types';
 import { Badge } from '@/components/ui/Badge';
+import { lt } from '@/lib/lt';
 
 /* "3h 50m" → minutes (for sorting) */
 export function durationMinutes(d: string): number {
@@ -58,7 +59,7 @@ export function BentoFlightCard({ flight, onSelect }: { flight: Flight; onSelect
               </div>
               <Badge variant={business ? 'gold' : 'mint'}>
                 {business ? <Ticket size={13} /> : <CheckCircle2 size={13} />}
-                <span>{business ? (locale === 'fa' ? 'بیزینس کلاس' : 'Business Class') : (locale === 'fa' ? 'تایید آنی' : 'Instant Confirmation')}</span>
+                <span>{business ? (lt(locale, { fa: 'بیزینس کلاس', en: 'Business Class', ar: 'درجة الأعمال', zh: '商务舱', ru: 'Бизнес-класс' })) : (lt(locale, { fa: 'تایید آنی', en: 'Instant Confirmation', ar: 'تأكيد فوري', zh: '即时确认', ru: 'Мгновенное подтверждение' }))}</span>
               </Badge>
             </div>
 
@@ -89,7 +90,7 @@ export function BentoFlightCard({ flight, onSelect }: { flight: Flight; onSelect
                     flight.stops === 0 ? 'text-brand-dark' : 'text-gold'
                   }`}
                 >
-                  {flight.stops === 0 ? t('directFlight') : `${flight.stops.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')} ${t('stops')}`}
+                  {flight.stops === 0 ? t('directFlight') : `${flight.stops.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} ${t('stops')}`}
                 </span>
               </div>
 
@@ -124,10 +125,10 @@ export function BentoFlightCard({ flight, onSelect }: { flight: Flight; onSelect
           {open && (
             <div className="animate-in fade-in slide-in-from-top-2 duration-200 mt-3 p-4 bg-soft/70 border border-line/70 rounded-xl grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
               {([
-                [locale === 'fa' ? 'شماره پرواز' : 'Flight No', <span dir="ltr" key="n" className="font-mono">{flight.flightNo}</span>],
-                [locale === 'fa' ? 'مدت کل پرواز' : 'Duration', durationLocalized(flight.duration, locale)],
+                [lt(locale, { fa: 'شماره پرواز', en: 'Flight No', ar: 'رقم الرحلة', zh: '航班号', ru: 'Номер рейса' }), <span dir="ltr" key="n" className="font-mono">{flight.flightNo}</span>],
+                [lt(locale, { fa: 'مدت کل پرواز', en: 'Duration', ar: 'المدة الإجمالية', zh: '总时长', ru: 'Общая длительность' }), durationLocalized(flight.duration, locale)],
                 [t('baggageIncluded'), <span key="b" className="inline-flex items-center gap-1"><Briefcase size={12} /> {flight.baggage}</span>],
-                [locale === 'fa' ? 'صندلی باقی‌مانده' : 'Seats Left', <span key="s" className="inline-flex items-center gap-1"><Armchair size={12} /> {flight.seatsLeft.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}</span>],
+                [lt(locale, { fa: 'صندلی باقی‌مانده', en: 'Seats Left', ar: 'مقاعد متبقية', zh: '剩余座位', ru: 'Осталось мест' }), <span key="s" className="inline-flex items-center gap-1"><Armchair size={12} /> {flight.seatsLeft.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}</span>],
               ] as [string, React.ReactNode][]).map(([l, v]) => (
                 <div key={l}>
                   <b className="block text-[10.5px] text-sub font-bold mb-0.5">{l}</b>
@@ -155,7 +156,7 @@ export function BentoFlightCard({ flight, onSelect }: { flight: Flight; onSelect
             <div className="text-end md:text-start md:order-2">
               <span className="text-[11px] text-sub block mb-1">{t('perPassenger')}</span>
               <div className="text-xl md:text-2xl font-black text-ink font-mono num flex items-baseline gap-1">
-                {flight.price.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}
+                {flight.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                 <span className="text-xs font-normal text-sub">{t('toman')}</span>
               </div>
             </div>

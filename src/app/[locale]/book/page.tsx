@@ -3,6 +3,7 @@
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { Plane, Building2, Map, Car, ArrowLeft, ArrowRight, FileCheck2, ShieldCheck, Wifi, Wallet, UserRound, BookOpenText } from 'lucide-react';
+import { lt } from '@/lib/lt';
 
 export default function BookPage() {
   const t = useTranslations('Book');
@@ -17,12 +18,12 @@ export default function BookPage() {
   ];
 
   const QUICK = [
-    { label: locale === 'fa' ? 'ویزا' : 'Visa', icon: FileCheck2, href: '/visa' },
-    { label: locale === 'fa' ? 'بیمه مسافرتی' : 'Insurance', icon: ShieldCheck, href: '/insurance' },
-    { label: locale === 'fa' ? 'سیم‌کارت eSIM' : 'eSIM', icon: Wifi, href: '/esim' },
-    { label: locale === 'fa' ? 'کیف پول و ارز' : 'Wallet', icon: Wallet, href: '/wallet' },
-    { label: locale === 'fa' ? 'سفرهای من' : 'My Trips', icon: UserRound, href: '/my-trips' },
-    { label: locale === 'fa' ? 'راهنمای سفر' : 'Travel Guide', icon: BookOpenText, href: '/guide' },
+    { label: lt(locale, { fa: 'ویزا', en: 'Visa', ar: 'تأشيرة', zh: '签证', ru: 'Виза' }), icon: FileCheck2, href: '/visa' },
+    { label: lt(locale, { fa: 'بیمه مسافرتی', en: 'Travel Insurance', ar: 'تأمين السفر', zh: '旅行保险', ru: 'Страховка для поездок' }), icon: ShieldCheck, href: '/insurance' },
+    { label: lt(locale, { fa: 'سیم‌کارت eSIM', en: 'eSIM', ar: 'شريحة eSIM', zh: 'eSIM 卡', ru: 'eSIM' }), icon: Wifi, href: '/esim' },
+    { label: lt(locale, { fa: 'کیف پول و ارز', en: 'Wallet', ar: 'المحفظة والعملات', zh: '钱包与货币', ru: 'Кошелёк и валюты' }), icon: Wallet, href: '/wallet' },
+    { label: lt(locale, { fa: 'سفرهای من', en: 'My Trips', ar: 'رحلاتي', zh: '我的旅行', ru: 'Мои поездки' }), icon: UserRound, href: '/my-trips' },
+    { label: lt(locale, { fa: 'راهنمای سفر', en: 'Travel Guide', ar: 'دليل السفر', zh: '旅行指南', ru: 'Путеводитель' }), icon: BookOpenText, href: '/guide' },
   ];
 
   return (
@@ -51,7 +52,7 @@ export default function BookPage() {
         })}
       </div>
 
-      <h2 className="text-xl font-black text-ink mb-6">{locale === 'fa' ? 'خدمات تکمیلی' : 'Additional Services'}</h2>
+      <h2 className="text-xl font-black text-ink mb-6">{lt(locale, { fa: 'خدمات تکمیلی', en: 'Additional Services', ar: 'خدمات إضافية', zh: '增值服务', ru: 'Дополнительные услуги' })}</h2>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {QUICK.map((q) => {
           const Icon = q.icon;

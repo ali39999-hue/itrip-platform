@@ -9,6 +9,7 @@ import {
   Wallet as WalletIcon, ArrowDownRight, ArrowUpRight,
   Loader2
 } from 'lucide-react';
+import { lt } from '@/lib/lt';
 
 export default function WalletPage() {
   const t = useTranslations('Wallet');
@@ -28,10 +29,10 @@ export default function WalletPage() {
     if (!amt || amt <= 0) return;
     const ok = exchange(exFrom, exTo, amt);
     if (ok) {
-      setExMsg(locale === 'fa' ? 'تبدیل ارز با موفقیت انجام شد' : 'Exchange completed successfully');
+      setExMsg(lt(locale, { fa: 'تبدیل ارز با موفقیت انجام شد', en: 'Exchange completed successfully', ar: 'تم تحويل العملة بنجاح', zh: '货币兑换成功', ru: 'Обмен валюты выполнен' }));
       setExAmount('');
     } else {
-      setExMsg(locale === 'fa' ? 'موجودی ناکافی است' : 'Insufficient balance');
+      setExMsg(lt(locale, { fa: 'موجودی ناکافی است', en: 'Insufficient balance', ar: 'الرصيد غير كافٍ', zh: '余额不足', ru: 'Недостаточно средств' }));
     }
   }
 
@@ -53,7 +54,7 @@ export default function WalletPage() {
         <div className="bg-gradient-to-br from-brand to-brand-dark rounded-2xl p-6 text-surface shadow-md relative overflow-hidden">
           <span className="text-xs font-black opacity-80 block mb-1">IRR (تومان)</span>
           <span className="text-3xl font-black font-mono num block mb-4">
-            {wallet.IRR.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}
+            {wallet.IRR.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
           </span>
           <span className="text-[11px] font-bold opacity-75">{t('primaryBalance')}</span>
         </div>
@@ -62,20 +63,20 @@ export default function WalletPage() {
           <div>
             <span className="text-xs font-black text-sub block mb-1">USDT (Tether)</span>
             <span className="text-2xl font-black text-ink font-mono num block mb-1">
-              ${wallet.USDT.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}
+              ${wallet.USDT.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
             </span>
           </div>
-          <span className="text-[11px] font-bold text-sub">≈ {(wallet.USDT * 60000).toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')} {locale === 'fa' ? 'تومان' : 'Toman'}</span>
+          <span className="text-[11px] font-bold text-sub">≈ {(wallet.USDT * 60000).toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
         </div>
 
         <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-between">
           <div>
             <span className="text-xs font-black text-sub block mb-1">AED (درهم امارات)</span>
             <span className="text-2xl font-black text-ink font-mono num block mb-1">
-              د.إ {wallet.AED.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}
+              د.إ {wallet.AED.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
             </span>
           </div>
-          <span className="text-[11px] font-bold text-sub">≈ {(wallet.AED * 16000).toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')} {locale === 'fa' ? 'تومان' : 'Toman'}</span>
+          <span className="text-[11px] font-bold text-sub">≈ {(wallet.AED * 16000).toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
         </div>
       </div>
 
@@ -84,11 +85,11 @@ export default function WalletPage() {
         {/* Deposit / Topup */}
         <div className="bg-surface border border-line rounded-2xl p-6 md:p-8 shadow-sm">
           <h2 className="font-black text-xl text-ink mb-2">{t('deposit')}</h2>
-          <p className="text-xs font-bold text-sub mb-6">{locale === 'fa' ? 'افزایش موجودی ریالی از طریق کلیه کارت‌های عضو شتاب' : 'Top up your Rial balance instantly via Shetab cards'}</p>
+          <p className="text-xs font-bold text-sub mb-6">{lt(locale, { fa: 'افزایش موجودی ریالی از طریق کلیه کارت‌های عضو شتاب', en: 'Top up your Rial balance instantly via Shetab cards', ar: 'اشحن رصيدك بالريال فوراً عبر بطاقات شتاب', zh: '通过 Shetab 银行卡即时充值里亚尔余额', ru: 'Мгновенно пополните риалевый баланс картами Shetab' })}</p>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-sub mb-1">{locale === 'fa' ? 'مبلغ شارژ (تومان)' : 'Amount (Toman)'}</label>
+              <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'مبلغ شارژ (تومان)', en: 'Amount (Toman)', ar: 'مبلغ الشحن (تومان)', zh: '充值金额（图曼）', ru: 'Сумма пополнения (томанов)' })}</label>
               <Input
                 type="number"
                 value={depositAmount}
@@ -106,7 +107,7 @@ export default function WalletPage() {
                   onClick={() => setDepositAmount(String(amt))}
                   className="px-3 py-1.5 rounded-lg border border-line bg-soft text-xs font-bold text-sub hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
-                  +{amt.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}
+                  +{amt.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                 </button>
               ))}
             </div>
@@ -117,7 +118,7 @@ export default function WalletPage() {
                 if (amt > 0) {
                   setCharging(true);
                   setTimeout(() => {
-                    deposit('IRR', amt, locale === 'fa' ? 'شارژ درگاه شتاب' : 'Shetab Gateway Topup');
+                    deposit('IRR', amt, lt(locale, { fa: 'شارژ درگاه شتاب', en: 'Shetab Gateway Topup', ar: 'شحن عبر بوابة شتاب', zh: 'Shetab 网关充值', ru: 'Пополнение через шлюз Shetab' }));
                     setDepositAmount('');
                     setCharging(false);
                   }, 600);
@@ -134,7 +135,7 @@ export default function WalletPage() {
         {/* Currency Exchange */}
         <div className="bg-surface border border-line rounded-2xl p-6 md:p-8 shadow-sm">
           <h2 className="font-black text-xl text-ink mb-2">{t('exchange')}</h2>
-          <p className="text-xs font-bold text-sub mb-6">{locale === 'fa' ? 'تبدیل آنی ارزها با نرخ لحظه‌ای بدون کارمزد اضافی' : 'Instant multi-currency exchange at live market rates'}</p>
+          <p className="text-xs font-bold text-sub mb-6">{lt(locale, { fa: 'تبدیل آنی ارزها با نرخ لحظه‌ای بدون کارمزد اضافی', en: 'Instant multi-currency exchange at live market rates', ar: 'تحويل فوري للعملات بأسعار السوق الحية دون رسوم إضافية', zh: '按实时汇率即时多币种兑换，无额外手续费', ru: 'Мгновенный обмен валют по рыночному курсу без лишних комиссий' })}</p>
 
           {exMsg && (
             <div className="p-3 mb-4 rounded-xl bg-mint/50 border border-brand/20 text-brand-dark text-xs font-bold">
@@ -145,7 +146,7 @@ export default function WalletPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-sub mb-1">{locale === 'fa' ? 'از ارز' : 'From'}</label>
+                <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'از ارز', en: 'From', ar: 'من عملة', zh: '从货币', ru: 'Из валюты' })}</label>
                 <select
                   value={exFrom}
                   onChange={(e) => setExFrom(e.target.value as 'IRR' | 'USDT' | 'AED')}
@@ -158,7 +159,7 @@ export default function WalletPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-sub mb-1">{locale === 'fa' ? 'به ارز' : 'To'}</label>
+                <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'به ارز', en: 'To', ar: 'إلى عملة', zh: '到货币', ru: 'В валюту' })}</label>
                 <select
                   value={exTo}
                   onChange={(e) => setExTo(e.target.value as 'IRR' | 'USDT' | 'AED')}
@@ -173,7 +174,7 @@ export default function WalletPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-sub mb-1">{locale === 'fa' ? 'مقدار مبدا' : 'Amount'}</label>
+              <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'مقدار مبدا', en: 'Amount', ar: 'المبلغ', zh: '金额', ru: 'Сумма' })}</label>
               <Input
                 type="number"
                 value={exAmount}
@@ -200,7 +201,7 @@ export default function WalletPage() {
 
         <div className="space-y-3">
           {transactions.length === 0 ? (
-            <p className="text-center text-sub py-8 text-sm font-bold">{locale === 'fa' ? 'هنوز تراکنشی ثبت نشده است.' : 'No transactions recorded yet.'}</p>
+            <p className="text-center text-sub py-8 text-sm font-bold">{lt(locale, { fa: 'هنوز تراکنشی ثبت نشده است.', en: 'No transactions recorded yet.', ar: 'لم تُسجَّل أي معاملات بعد.', zh: '尚无交易记录。', ru: 'Операций ещё не было.' })}</p>
           ) : (
             transactions.map((tx) => (
               <div key={tx.id} className="flex justify-between items-center p-4 rounded-xl border border-line/60 bg-soft/40">
@@ -216,7 +217,7 @@ export default function WalletPage() {
 
                 <div className="text-end">
                   <span className={`font-black text-base font-mono num ${tx.amount > 0 ? 'text-success' : 'text-rose-warm'}`}>
-                    {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')} {locale === 'fa' ? 'تومان' : 'Toman'}
+                    {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
                   </span>
                   <span className="block text-[10.5px] text-sub">{tx.status}</span>
                 </div>

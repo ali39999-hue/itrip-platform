@@ -16,6 +16,7 @@ import {
   TrainFront, LogOut, Settings, Gift, User, LayoutGrid,
   PlaneTakeoff, Award
 } from 'lucide-react';
+import { lt } from '@/lib/lt';
 
 const TYPE_META: Record<Booking['type'], { label: string; icon: typeof Plane; image: string }> = {
   flights: { label: 'پرواز', icon: Plane, image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&q=70&w=800' },
@@ -68,14 +69,14 @@ export default function MyTripsPage() {
                 sizes="80px"
               />
             </div>
-            <h2 className="text-[20px] font-black text-brand mb-1">{locale === 'fa' ? 'سلام، علی رضایی' : 'Hello, Ali Rezaei'}</h2>
-            <p className="font-bold text-[13px] text-sub">{locale === 'fa' ? 'امتیاز شما: ۲۵۰۰' : 'Reward points: 2,500'}</p>
+            <h2 className="text-[20px] font-black text-brand mb-1">{lt(locale, { fa: 'سلام، علی رضایی', en: 'Hello, John Doe', ar: 'مرحباً، علي رضائي', zh: '您好，阿里·雷扎伊', ru: 'Привет, Али Резаи' })}</h2>
+            <p className="font-bold text-[13px] text-sub">{lt(locale, { fa: 'امتیاز شما: ۲۵۰۰', en: 'Reward points: 2,500', ar: 'نقاطك: 2,500', zh: '您的积分：2,500', ru: 'Ваши баллы: 2 500' })}</p>
           </div>
           
           <nav className="flex flex-col gap-2 p-4">
             <Link href="/account" className="text-sub flex items-center gap-3 px-4 py-3 font-bold text-[14px] rounded-xl hover:bg-surface transition-all cursor-pointer">
               <LayoutGrid size={20} />
-              {locale === 'fa' ? 'داشبورد' : 'Dashboard'}
+              {lt(locale, { fa: 'داشبورد', en: 'Dashboard', ar: 'لوحة التحكم', zh: '仪表板', ru: 'Панель управления' })}
             </Link>
             <Link href="/my-trips" className="bg-brand text-surface flex items-center gap-3 px-4 py-3 font-black text-[14px] rounded-xl shadow-sm cursor-pointer">
               <PlaneTakeoff size={20} />
@@ -83,22 +84,22 @@ export default function MyTripsPage() {
             </Link>
             <Link href="/account" className="text-sub flex items-center gap-3 px-4 py-3 font-bold text-[14px] rounded-xl hover:bg-surface transition-all cursor-pointer">
               <User size={20} />
-              {locale === 'fa' ? 'پروفایل کاربری' : 'Profile'}
+              {lt(locale, { fa: 'پروفایل کاربری', en: 'Profile', ar: 'الملف الشخصي', zh: '个人资料', ru: 'Профиль' })}
             </Link>
             <Link href="/wallet" className="text-sub flex items-center gap-3 px-4 py-3 font-bold text-[14px] rounded-xl hover:bg-surface transition-all cursor-pointer">
               <Gift size={20} />
-              {locale === 'fa' ? 'کیف پول و امتیازات' : 'Wallet & Rewards'}
+              {lt(locale, { fa: 'کیف پول و امتیازات', en: 'Wallet & Rewards', ar: 'المحفظة والمكافآت', zh: '钱包与奖励', ru: 'Кошелёк и бонусы' })}
             </Link>
             <Link href="/account" className="text-sub flex items-center gap-3 px-4 py-3 font-bold text-[14px] rounded-xl hover:bg-surface transition-all cursor-pointer">
               <Settings size={20} />
-              {locale === 'fa' ? 'تنظیمات' : 'Settings'}
+              {lt(locale, { fa: 'تنظیمات', en: 'Settings', ar: 'الإعدادات', zh: '设置', ru: 'Настройки' })}
             </Link>
           </nav>
           
           <div className="p-4 mt-auto">
             <button className="w-full flex items-center justify-center gap-2 text-rose-warm hover:bg-rose-warm/10 px-4 py-3 rounded-xl transition-colors font-black text-[14px]">
               <LogOut size={20} />
-              {locale === 'fa' ? 'خروج' : 'Sign Out'}
+              {lt(locale, { fa: 'خروج', en: 'Sign Out', ar: 'تسجيل الخروج', zh: '退出登录', ru: 'Выйти' })}
             </button>
           </div>
         </aside>
@@ -149,9 +150,9 @@ export default function MyTripsPage() {
             <div className="bg-surface rounded-xl border border-line p-14 text-center shadow-sm flex flex-col items-center justify-center">
               <Luggage size={64} className="text-line mb-6" />
               <p className="font-black text-[20px] text-ink mb-2">{t('noTrips')}</p>
-              <p className="font-bold text-[14px] text-sub mb-8">{locale === 'fa' ? 'با فیروز سفر رویاهاتون رو برنامه‌ریزی کنید.' : 'Start planning your next adventure with Firuzo.'}</p>
+              <p className="font-bold text-[14px] text-sub mb-8">{lt(locale, { fa: 'با فیروز سفر رویاهاتون رو برنامه‌ریزی کنید.', en: 'Start planning your next adventure with Firuzo.', ar: 'ابدأ التخطيط لرحلة أحلامك مع فيروزو.', zh: '与 Firuzo 一起规划您的梦想之旅。', ru: 'Начните планировать путешествие мечты с Firuzo.' })}</p>
               <Button onClick={() => router.push('/services')} className="bg-brand hover:bg-brand-2 text-surface h-12 px-8 font-black rounded-xl text-[15px]">
-                {locale === 'fa' ? 'مشاهده خدمات سفر' : 'Explore Travel Services'}
+                {lt(locale, { fa: 'مشاهده خدمات سفر', en: 'Explore Travel Services', ar: 'استكشف خدمات السفر', zh: '浏览旅行服务', ru: 'Открыть туристические услуги' })}
               </Button>
             </div>
           ) : (
@@ -176,7 +177,7 @@ export default function MyTripsPage() {
                         b.status === 'refunded' ? 'bg-line/90 text-sub' :
                         'bg-hotel text-surface'
                       }`}>
-                        {b.status === 'confirmed' ? (locale === 'fa' ? 'در جریان' : 'Confirmed') : b.status === 'refunded' ? (locale === 'fa' ? 'مسترد شده' : 'Refunded') : (locale === 'fa' ? 'در انتظار پرداخت' : 'Pending')}
+                        {b.status === 'confirmed' ? (lt(locale, { fa: 'در جریان', en: 'Confirmed', ar: 'مؤكدة', zh: '已确认', ru: 'Подтверждено' })) : b.status === 'refunded' ? (lt(locale, { fa: 'مسترد شده', en: 'Refunded', ar: 'تم الاسترداد', zh: '已退款', ru: 'Возвращено' })) : (lt(locale, { fa: 'در انتظار پرداخت', en: 'Pending', ar: 'في انتظار الدفع', zh: '待支付', ru: 'Ожидает оплаты' }))}
                       </div>
                     </div>
 
@@ -195,13 +196,13 @@ export default function MyTripsPage() {
 
                         <div className="grid grid-cols-2 gap-4 py-4 border-y border-line text-xs font-bold">
                           <div>
-                            <span className="text-sub block mb-1">{locale === 'fa' ? 'تاریخ حرکت / ورود:' : 'Travel Date:'}</span>
+                            <span className="text-sub block mb-1">{lt(locale, { fa: 'تاریخ حرکت / ورود:', en: 'Travel Date:', ar: 'تاريخ المغادرة / الوصول:', zh: '出发/到达日期：', ru: 'Дата выезда / заезда:' })}</span>
                             <span className="text-ink font-mono">{b.travelDate}</span>
                           </div>
                           <div>
-                            <span className="text-sub block mb-1">{locale === 'fa' ? 'مبلغ پرداختی:' : 'Amount Paid:'}</span>
+                            <span className="text-sub block mb-1">{lt(locale, { fa: 'مبلغ پرداختی:', en: 'Amount Paid:', ar: 'المبلغ المدفوع:', zh: '已付金额：', ru: 'Оплачено:' })}</span>
                             <span className="text-price font-black text-[15px] font-mono num">
-                              {b.amount.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')} {locale === 'fa' ? 'تومان' : 'Toman'}
+                              {b.amount.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
                             </span>
                           </div>
                         </div>
@@ -249,10 +250,10 @@ function LedgerView() {
 
   return (
     <div className="bg-surface rounded-2xl border border-line p-6 shadow-sm">
-      <h3 className="font-black text-[18px] text-ink mb-4">{locale === 'fa' ? 'دفتر تراکنش‌های مالی و استردادها' : 'Transaction & Refund History'}</h3>
+      <h3 className="font-black text-[18px] text-ink mb-4">{lt(locale, { fa: 'دفتر تراکنش‌های مالی و استردادها', en: 'Transaction & Refund History', ar: 'سجل المعاملات المالية والاستردادات', zh: '交易与退款记录', ru: 'История операций и возвратов' })}</h3>
       <div className="space-y-3">
         {transactions.length === 0 ? (
-          <div className="text-center py-8 text-sub text-sm font-bold">{locale === 'fa' ? 'هیچ تراکنشی ثبت نشده است.' : 'No transactions found.'}</div>
+          <div className="text-center py-8 text-sub text-sm font-bold">{lt(locale, { fa: 'هیچ تراکنشی ثبت نشده است.', en: 'No transactions found.', ar: 'لا توجد معاملات.', zh: '暂无交易记录。', ru: 'Операций пока нет.' })}</div>
         ) : (
           transactions.map((tx) => (
             <div key={tx.id} className="flex justify-between items-center p-3.5 rounded-xl border border-line bg-soft/50 text-xs font-bold">
@@ -262,7 +263,7 @@ function LedgerView() {
               </div>
               <div className="text-end">
                 <span className={`font-black text-base font-mono num ${tx.amount > 0 ? 'text-success' : 'text-rose-warm'}`}>
-                  {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')} {locale === 'fa' ? 'تومان' : 'Toman'}
+                  {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
                 </span>
                 <span className="block text-[10.5px] text-sub">{tx.status}</span>
               </div>

@@ -12,8 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // اسکریپت‌های کمکی محلی (تولید پکیج/اسکرین‌شات) — بخشی از اپ نیستند
     "work/**",
+    "scripts/**",
+    ".tmp-i18n-work/**",
+    "scratch/**",
+    "*.cjs",
   ]),
 ]);
 

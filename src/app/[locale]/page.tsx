@@ -7,7 +7,7 @@ import {
   FinancialSection, 
   TrustMarquee, 
   SupportSection 
-} from '@/components/home/HomeSections';
+} from '@/components/home/sections';
 
 export default function HomePage() {
   return (

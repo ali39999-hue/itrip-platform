@@ -9,6 +9,7 @@ import { fa1, fa } from '@/lib/hotel-format';
 import { shimmerDataUrl } from '@/lib/image-utils';
 import { GALLERY } from '@/lib/hotel-mock';
 import type { Hotel } from '@/lib/types';
+import { lt } from '@/lib/lt';
 
 export function HotelHero({ hotel }: { hotel: Hotel }) {
   const t = useTranslations('HotelDetail');
@@ -81,7 +82,7 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
               <div className="text-end">
                 <b className="block text-[13px] font-black leading-tight">{t('superb')}</b>
                 <span className="block text-[11px] font-bold text-sub">
-                  {hotel.reviewsCount.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')} {t('verifiedReviews')}
+                  {hotel.reviewsCount.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} {t('verifiedReviews')}
                 </span>
               </div>
               <span className="min-w-[52px] h-[42px] grid place-items-center rounded-full rounded-es-sm text-surface bg-brand text-[17px] font-black">

@@ -9,6 +9,7 @@ import { useBookingStore } from '@/stores/booking-store';
 import { daysFromNow } from '@/lib/utils';
 import { shimmerDataUrl } from '@/lib/image-utils';
 import { ShieldCheck, CheckCircle2, XCircle, Plane, Shield, Users } from 'lucide-react';
+import { lt } from '@/lib/lt';
 
 export default function InsurancePage() {
   const t = useTranslations('Insurance');
@@ -59,7 +60,7 @@ export default function InsurancePage() {
             </p>
             <div className="flex items-center gap-2 mt-4 bg-surface/10 backdrop-blur-md px-6 py-3 rounded-full border border-surface/20">
               <ShieldCheck className="text-brand shrink-0" size={20} />
-              <span className="font-bold text-[14px] text-surface">{locale === 'fa' ? 'پشتیبانی ۲۴/۷ بین‌المللی' : '24/7 International Assistance'}</span>
+              <span className="font-bold text-[14px] text-surface">{lt(locale, { fa: 'پشتیبانی ۲۴/۷ بین‌المللی', en: '24/7 International Assistance', ar: 'دعم دولي على مدار الساعة', zh: '24/7 国际支援', ru: 'Круглосуточная международная поддержка' })}</span>
             </div>
           </div>
         </section>
@@ -69,7 +70,7 @@ export default function InsurancePage() {
           <div className="flex flex-col gap-2 text-start">
             <h2 className="font-black text-[28px] md:text-[32px] text-ink">{t('plansTitle')}</h2>
             <p className="font-bold text-[14px] md:text-[16px] text-sub">
-              {locale === 'fa' ? 'پوشش‌های متنوع برای سفرهای انفرادی، خانوادگی و تجاری' : 'Tailored coverage for individual, family, and business travel'}
+              {lt(locale, { fa: 'پوشش‌های متنوع برای سفرهای انفرادی، خانوادگی و تجاری', en: 'Tailored coverage for individual, family, and business travel', ar: 'تغطيات متنوعة للرحلات الفردية والعائلية والتجارية', zh: '适合个人、家庭及商务旅行的多种保障', ru: 'Различные покрытия для индивидуальных, семейных и деловых поездок' })}
             </p>
           </div>
 
@@ -106,9 +107,9 @@ export default function InsurancePage() {
 
                     <div className="text-start">
                       <span className="font-black text-[28px] text-price font-mono num">
-                        {plan.price.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}
+                        {plan.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                       </span>
-                      <span className="text-xs font-bold text-sub ms-1">{locale === 'fa' ? 'تومان' : 'Toman'}</span>
+                      <span className="text-xs font-bold text-sub ms-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
                     </div>
 
                     <div className="border-t border-line pt-6 flex flex-col gap-3.5">

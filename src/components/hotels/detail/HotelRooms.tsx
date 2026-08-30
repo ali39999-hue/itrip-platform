@@ -7,6 +7,7 @@ import { Sparkles, BedDouble, Ruler, Eye, Users, Check, Flame, Ban, Coffee, Cloc
 import { fa, gShort } from '@/lib/hotel-format';
 import { ROOMS, PLANS } from '@/lib/hotel-mock';
 import { quote, NIGHTS, CHECKIN, CHECKOUT, ADULTS, CHILDREN, TAX, keyOf, type useHotelBooking } from '@/hooks/useHotelBooking';
+import { lt } from '@/lib/lt';
 
 interface HotelRoomsProps {
   booking: ReturnType<typeof useHotelBooking>;
@@ -70,7 +71,7 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
                   <h3 className="m-0 mb-1 text-[15.5px] font-black">{room.name}</h3>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     <span className="spec inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-line bg-soft/50 text-sub text-[11px] font-bold">
-                      <Ruler size={12} /> {fa(room.size)} {locale === 'fa' ? 'متر مربع' : 'm²'}
+                      <Ruler size={12} /> {fa(room.size)} {lt(locale, { fa: 'متر مربع', en: 'm²', ar: 'م²', zh: '平方米', ru: 'м²' })}
                     </span>
                     <span className="spec inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-line bg-soft/50 text-sub text-[11px] font-bold">
                       <BedDouble size={12} /> {room.bed}
@@ -84,11 +85,11 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
                     {t('capacity')} {t('passengersSummary', { adults: room.capA, children: room.capC })}
                     {fits ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-success/30 text-success bg-success/10 text-[11px] font-extrabold">
-                        <Check size={11} /> {locale === 'fa' ? 'کافی برای شما' : 'Fits your group'}
+                        <Check size={11} /> {lt(locale, { fa: 'کافی برای شما', en: 'Fits your group', ar: 'تناسب مجموعتك', zh: '适合您的团队', ru: 'Подходит вашей группе' })}
                       </span>
                     ) : (
                       <span className="inline-flex px-2 py-0.5 rounded-full border border-line text-sub bg-soft text-[11px] font-extrabold">
-                        {locale === 'fa' ? 'کافی نیست' : 'Not enough space'}
+                        {lt(locale, { fa: 'کافی نیست', en: 'Not enough space', ar: 'المساحة غير كافية', zh: '空间不足', ru: 'Недостаточно места' })}
                       </span>
                     )}
                   </div>
@@ -121,17 +122,17 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
                             {p.meal === 'بدون وعده' ? <Ban size={12} /> : <Coffee size={12} />} {p.meal}
                           </span>
                           <span className={`inline-flex items-center gap-1 text-[11px] font-bold ${p.refund === 'free' ? 'text-success' : p.refund === 'partial' ? 'text-action-hover' : 'text-sub/70'}`}>
-                            {p.refund === 'free' ? <><Check size={12} /> {locale === 'fa' ? `لغو رایگان تا ${gShort.format(dl)}` : `Free cancellation until ${gShort.format(dl)}`}</> : p.refund === 'partial' ? <><Clock size={12} /> {locale === 'fa' ? 'لغو با کسر یک شب' : 'Partial refund'}</> : <><Ban size={12} /> {locale === 'fa' ? 'غیرقابل استرداد' : 'Non-refundable'}</>}
+                            {p.refund === 'free' ? <><Check size={12} /> {locale === 'fa' ? `لغو رایگان تا ${gShort.format(dl)}` : `Free cancellation until ${gShort.format(dl)}`}</> : p.refund === 'partial' ? <><Clock size={12} /> {lt(locale, { fa: 'لغو با کسر یک شب', en: 'Partial refund', ar: 'إلغاء مع خصم ليلة واحدة', zh: '取消扣一晚房费', ru: 'Отмена с вычетом одной ночи' })}</> : <><Ban size={12} /> {lt(locale, { fa: 'غیرقابل استرداد', en: 'Non-refundable', ar: 'غير قابل للاسترداد', zh: '不可退款', ru: 'Возврату не подлежит' })}</>}
                           </span>
                           <span className="inline-flex items-center gap-1 text-[11px] font-bold text-sub"><Wallet size={12} /> {p.pay}</span>
                         </div>
                         <button onClick={() => setOpenBd(isOpen ? null : k)} className="self-start border-0 bg-transparent p-0 text-brand-dark text-[11px] font-extrabold underline underline-offset-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">
-                          {isOpen ? (locale === 'fa' ? 'بستن جزئیات' : 'Hide details') : (locale === 'fa' ? 'جزئیات قیمت هر شب' : 'Nightly rate details')}
+                          {isOpen ? (lt(locale, { fa: 'بستن جزئیات', en: 'Hide details', ar: 'إخفاء التفاصيل', zh: '收起详情', ru: 'Скрыть детали' })) : (lt(locale, { fa: 'جزئیات قیمت هر شب', en: 'Nightly rate details', ar: 'تفاصيل سعر كل ليلة', zh: '每晚价格明细', ru: 'Детали тарифа за ночь' }))}
                         </button>
                       </div>
                       <div className="md:text-end">
                         {pid === 'saver' && <div className="text-sub text-xs font-bold line-through">{fa(ref)} TRY</div>}
-                        <div className="text-lg font-black leading-snug text-price num">{fa(q.avg)} <small className="text-[11.5px] font-extrabold text-sub">TRY / {locale === 'fa' ? 'شب' : 'night'}</small></div>
+                        <div className="text-lg font-black leading-snug text-price num">{fa(q.avg)} <small className="text-[11.5px] font-extrabold text-sub">TRY / {lt(locale, { fa: 'شب', en: 'night', ar: 'ليلة', zh: '晚', ru: 'ночь' })}</small></div>
                         <div className="text-[11.5px] font-bold text-sub">{locale === 'fa' ? `جمع ${fa(NIGHTS.length)} شب:` : `Total ${NIGHTS.length} nights:`} <b>{fa(q.total)} TRY</b></div>
                       </div>
                       <div className="flex items-center justify-start md:justify-end gap-2">
@@ -143,7 +144,7 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
                           className="min-h-10 px-2 border border-line rounded-[10px] bg-surface text-[12.5px] font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
                         >
                           {Array.from({ length: maxSel + 1 }, (_, i) => (
-                            <option key={i} value={i}>{i ? `${fa(i)} ${locale === 'fa' ? 'اتاق' : 'room'}` : '—'}</option>
+                            <option key={i} value={i}>{i ? `${fa(i)} ${lt(locale, { fa: 'اتاق', en: 'room', ar: 'غرفة', zh: '间', ru: 'номер' })}` : '—'}</option>
                           ))}
                         </select>
                       </div>
@@ -160,7 +161,7 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
                                 </tr>
                               ))}
                               <tr><td className="py-1 font-bold">{locale === 'fa' ? `مالیات و عوارض (${fa(TAX * 100)}٪)` : `Taxes & Fees (${TAX * 100}%)`}</td><td className="py-1 text-end font-extrabold">{fa(q.tax)} TRY</td></tr>
-                              <tr><td className="pt-1 font-black">{locale === 'fa' ? 'جمع کل یک اتاق' : 'Total per room'}</td><td className="pt-1 text-end font-black">{fa(q.total)} TRY</td></tr>
+                              <tr><td className="pt-1 font-black">{lt(locale, { fa: 'جمع کل یک اتاق', en: 'Total per room', ar: 'الإجمالي لكل غرفة', zh: '每间房合计', ru: 'Итого за номер' })}</td><td className="pt-1 text-end font-black">{fa(q.total)} TRY</td></tr>
                             </tbody>
                           </table>
                         </div>

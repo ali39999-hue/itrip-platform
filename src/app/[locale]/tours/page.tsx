@@ -12,6 +12,7 @@ import { daysFromNow } from '@/lib/utils';
 import { shimmerDataUrl } from '@/lib/image-utils';
 import { CountryExperiencesSection } from '@/components/shared/CountryExperiences';
 import { MapPin, Star, ArrowLeft, ArrowRight, CalendarDays, SlidersHorizontal, Tent } from 'lucide-react';
+import { lt } from '@/lib/lt';
 
 const TOUR_IMGS: Record<string, string> = {
   t1: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=70&w=800',
@@ -38,7 +39,7 @@ function ToursContent() {
     { id: 'nature', label: t('nature') },
     { id: 'medical', label: t('medical') },
     { id: 'adventure', label: t('adventure') },
-    { id: 'signature', label: locale === 'fa' ? 'تجربه اصیل' : 'Signature' },
+    { id: 'signature', label: lt(locale, { fa: 'تجربه اصیل', en: 'Signature', ar: 'تجربة مميزة', zh: '特色体验', ru: 'Фирменные впечатления' }) },
   ] as const;
 
   const qParam = searchParams.get('category');
@@ -61,7 +62,7 @@ function ToursContent() {
     setBookingContext({
       type: 'tours',
       title: locale === 'fa' ? tour.title : tour.titleEn,
-      subtitle: `${tour.durationDays} ${locale === 'fa' ? 'روزه' : 'Days'} • ${tour.city}`,
+      subtitle: `${tour.durationDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дн.' })} • ${tour.city}`,
       amount: tour.price,
       travelDate: daysFromNow(14),
     });
@@ -84,7 +85,7 @@ function ToursContent() {
         <div className="absolute inset-0 bg-gradient-to-t from-deep/90 via-deep/40 to-transparent" />
         <div className="relative z-10 text-center px-4 max-w-3xl py-12">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface/10 backdrop-blur-md text-surface text-xs font-black mb-4 border border-surface/20">
-            <Tent size={14} className="text-brand" /> {locale === 'fa' ? 'تجربه‌های دست‌چین و برنامه‌ریزی‌شده' : 'Curated Travel Experiences'}
+            <Tent size={14} className="text-brand" /> {lt(locale, { fa: 'تجربه‌های دست‌چین و برنامه‌ریزی‌شده', en: 'Curated Travel Experiences', ar: 'تجارب سفر منتقاهاً بعناية', zh: '精选旅行体验', ru: 'Тщательно отобранные впечатления' })}
           </span>
           <h1 className="text-surface mb-4 text-[32px] md:text-[44px] leading-tight font-black tracking-tight">
             {t('title')}
@@ -118,7 +119,7 @@ function ToursContent() {
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortKey)}
-            aria-label={locale === 'fa' ? 'مرتب‌سازی تورها' : 'Sort tours'}
+            aria-label={lt(locale, { fa: 'مرتب‌سازی تورها', en: 'Sort tours', ar: 'ترتيب الجولات', zh: '旅游产品排序', ru: 'Сортировка туров' })}
             className="bg-paper border border-line rounded-xl px-3 py-2 text-xs font-bold text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
           >
             <option value="rec">{t('featured')}</option>
@@ -162,7 +163,7 @@ function ToursContent() {
                     <span>{tour.city}</span>
                     <span className="mx-1">•</span>
                     <CalendarDays size={12} className="text-brand-dark" />
-                    <span>{tour.durationDays} {locale === 'fa' ? 'روزه' : 'Days'}</span>
+                    <span>{tour.durationDays} {lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дн.' })}</span>
                   </div>
 
                   <h3 className="font-black text-[15px] text-ink line-clamp-2 leading-snug group-hover:text-brand-dark transition-colors">
@@ -181,10 +182,10 @@ function ToursContent() {
 
               <div className="p-4 pt-0 flex justify-between items-center border-t border-line/60 mt-3">
                 <div className="pt-3">
-                  <span className="text-[10.5px] font-bold text-sub block">{locale === 'fa' ? 'قیمت هر نفر' : 'Per Person'}</span>
+                  <span className="text-[10.5px] font-bold text-sub block">{lt(locale, { fa: 'قیمت هر نفر', en: 'Per Person', ar: 'للفرد', zh: '每人价格', ru: 'За человека' })}</span>
                   <span className="text-[16px] font-black text-price font-mono num">
-                    {tour.price.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}
-                    <span className="text-[10.5px] font-bold text-sub ms-1">{locale === 'fa' ? 'تومان' : 'Toman'}</span>
+                    {tour.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
+                    <span className="text-[10.5px] font-bold text-sub ms-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
                   </span>
                 </div>
 

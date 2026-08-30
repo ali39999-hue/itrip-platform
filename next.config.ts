@@ -7,11 +7,10 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ['*.trycloudflare.com', 'localhost:3000', '127.0.0.1:3000'],
   experimental: {
     serverActions: {
-      allowedOrigins: ['*'],
+      allowedOrigins: ['http://localhost:3000', 'http://127.0.0.1:3000', '*.trycloudflare.com'],
     },
   },
   images: {
-    dangerouslyAllowLocalIP: true,
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {

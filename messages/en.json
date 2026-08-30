@@ -201,7 +201,14 @@
     "destinationsKicker": "Popular Cities",
     "destinationsTitle": "Top Destinations in {country}",
     "offersStarts": "Starts from",
-    "offersToman": "Toman"
+    "offersToman": "Toman",
+    "aiPlannerBadge": "Firuzo AI Smart Trip Planner",
+    "aiPlannerTitle": "Create your tailored travel itinerary in under 10 seconds",
+    "aiPlannerSubtitle": "Simply describe your trip goals and budget to get day-by-day plans, recommended hotels, flights, and exact costs all in one place.",
+    "aiPlannerCta": "Start Free AI Planning",
+    "aiPlannerSample1": "4-day trip to Mashhad with 5-star hotel & historic tours",
+    "aiPlannerSample2": "Budget 3-day family trip to Isfahan for 4 people",
+    "aiPlannerSample3": "Luxury Shiraz tour with traditional boutique hotel stay"
   },
   "Experiences": {
     "kicker": "Signature experiences · {country}",
@@ -209,7 +216,7 @@
     "subtitle": "Every experience lists venue, season and starting price; add it straight to your booking cart.",
     "all": "All",
     "from": "From",
-    "toman": "IRT"
+    "toman": "Toman"
   },
   "Plan": {
     "kicker": "Smart trip planner",

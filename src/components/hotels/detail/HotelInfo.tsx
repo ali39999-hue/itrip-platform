@@ -7,6 +7,7 @@ import { fa1, gShort } from '@/lib/hotel-format';
 import { DISTS, CATS, REVIEWS, FAQS } from '@/lib/hotel-mock';
 import type { Hotel } from '@/lib/types';
 import { FREE_CANCEL_HOURS } from '@/hooks/useHotelBooking';
+import { lt } from '@/lib/lt';
 
 export function HotelOverview({ hotel }: { hotel: Hotel }) {
   const t = useTranslations('HotelDetail');
@@ -149,7 +150,7 @@ export function HotelReviews({ hotel }: { hotel: Hotel }) {
           <div className="text-[38px] font-black text-brand-dark leading-none">{fa1(overall.toFixed(1))}</div>
           <b className="block mt-1 text-[13px] font-black">{t('superb')}</b>
           <span className="block text-[11.5px] font-bold text-sub">
-            {hotel.reviewsCount.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')} {t('verifiedReviews')}
+            {hotel.reviewsCount.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} {t('verifiedReviews')}
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 content-center">
@@ -173,7 +174,7 @@ export function HotelReviews({ hotel }: { hotel: Hotel }) {
               revType === f.key ? 'border-brand text-surface bg-brand' : 'border-line text-sub bg-surface'
             }`}
           >
-            {f.label}{f.key !== 'همه' && ` (${REVIEWS.filter((r) => r.t === f.key).length.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')})`}
+            {f.label}{f.key !== 'همه' && ` (${REVIEWS.filter((r) => r.t === f.key).length.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))})`}
           </button>
         ))}
       </div>

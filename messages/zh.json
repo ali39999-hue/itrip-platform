@@ -201,7 +201,14 @@
     "destinationsKicker": "热门目的地",
     "destinationsTitle": "{country}精选热门旅游城市",
     "offersStarts": "起价",
-    "offersToman": "图曼"
+    "offersToman": "图曼",
+    "aiPlannerBadge": "Firuzo AI 智能行程规划器",
+    "aiPlannerTitle": "10秒内生成您的专属定制旅行路线",
+    "aiPlannerSubtitle": "只需描述您的旅行目标与预算，即可一键获取每日行程、推荐酒店、航班与精确费用。",
+    "aiPlannerCta": "开始免费智能规划",
+    "aiPlannerSample1": "马什哈德4日游（五星级酒店+历史文化游览）",
+    "aiPlannerSample2": "伊斯法罕4口之家3日经济型旅行",
+    "aiPlannerSample3": "设拉子奢华之旅（入住特色精品酒店）"
   },
   "Experiences": {
     "kicker": "精选体验 · {country}",
@@ -209,7 +216,7 @@
     "subtitle": "每项体验均标注场馆、季节和起步价；可直接加入预订购物车。",
     "all": "全部",
     "from": "起价",
-    "toman": "IRT"
+    "toman": "图曼"
   },
   "Plan": {
     "kicker": "智能行程规划",

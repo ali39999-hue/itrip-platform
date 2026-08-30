@@ -10,6 +10,7 @@ import { daysFromNow } from '@/lib/utils';
 import { shimmerDataUrl } from '@/lib/image-utils';
 import { Search, ShoppingCart, QrCode, Wifi, Signal, Globe } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { lt } from '@/lib/lt';
 
 export default function EsimPage() {
   const t = useTranslations('Esim');
@@ -26,7 +27,7 @@ export default function EsimPage() {
     setBookingContext({
       type: 'esim',
       title: `eSIM ${pkg.country}`,
-      subtitle: `${pkg.dataGb} GB • ${pkg.validityDays} ${locale === 'fa' ? 'روزه' : 'Days'}`,
+      subtitle: `${pkg.dataGb} GB • ${pkg.validityDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дн.' })}`,
       amount: pkg.price,
       travelDate: daysFromNow(3),
     });
@@ -93,19 +94,19 @@ export default function EsimPage() {
                   <div className="py-4 border-y border-line flex justify-between items-baseline mb-4">
                     <span className="font-black text-[24px] text-brand-dark">{pkg.dataGb} GB</span>
                     <span className="text-xs font-bold text-sub">
-                      {pkg.validityDays} {locale === 'fa' ? 'روز اعتبار' : 'Days Validity'}
+                      {pkg.validityDays} {lt(locale, { fa: 'روز اعتبار', en: 'Days Validity', ar: 'أيام الصلاحية', zh: '有效天数', ru: 'Дней действия' })}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-sub">{locale === 'fa' ? 'قیمت:' : 'Price:'}</span>
+                    <span className="text-xs font-bold text-sub">{lt(locale, { fa: 'قیمت:', en: 'Price:', ar: 'السعر:', zh: '价格：', ru: 'Цена:' })}</span>
                     <div className="text-end">
                       <span className="font-black text-[20px] text-price font-mono num">
-                        {pkg.price.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}
+                        {pkg.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                       </span>
-                      <span className="text-xs font-bold text-sub ms-1">{locale === 'fa' ? 'تومان' : 'Toman'}</span>
+                      <span className="text-xs font-bold text-sub ms-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
                     </div>
                   </div>
 
@@ -132,9 +133,9 @@ export default function EsimPage() {
               <div className="w-16 h-16 rounded-2xl bg-mint grid place-items-center text-brand-dark shadow-sm">
                 <ShoppingCart size={28} />
               </div>
-              <h3 className="font-black text-[16px] text-ink">{locale === 'fa' ? '۱. انتخاب و خرید بسته' : '1. Choose & Buy Package'}</h3>
+              <h3 className="font-black text-[16px] text-ink">{lt(locale, { fa: '۱. انتخاب و خرید بسته', en: '1. Choose & Buy Package', ar: '1. اختيار وشراء الباقة', zh: '1. 选择并购买套餐', ru: '1. Выбор и покупка пакета' })}</h3>
               <p className="text-xs font-bold text-sub leading-relaxed">
-                {locale === 'fa' ? 'کشور مقصد و حجم اینترنت مورد نیاز را مشخص و پرداخت را با درگاه شتاب انجام دهید.' : 'Select your destination and data package, then complete instant payment.'}
+                {lt(locale, { fa: 'کشور مقصد و حجم اینترنت مورد نیاز را مشخص و پرداخت را با درگاه شتاب انجام دهید.', en: 'Select your destination and data package, then complete instant payment.', ar: 'حدد وجهتك وحجم البيانات المطلوب ثم أكمل الدفع الفوري عبر بوابة شتاب.', zh: '选择目的地和所需流量套餐，然后通过 Shetab 网关即时支付。', ru: 'Выберите направление и нужный объём данных, затем оплатите через шлюз Shetab.' })}
               </p>
             </div>
 
@@ -142,9 +143,9 @@ export default function EsimPage() {
               <div className="w-16 h-16 rounded-2xl bg-mint grid place-items-center text-brand-dark shadow-sm">
                 <QrCode size={28} />
               </div>
-              <h3 className="font-black text-[16px] text-ink">{locale === 'fa' ? '۲. اسکن بارکد QR' : '2. Scan QR Code'}</h3>
+              <h3 className="font-black text-[16px] text-ink">{lt(locale, { fa: '۲. اسکن بارکد QR', en: '2. Scan QR Code', ar: '2. مسح رمز QR', zh: '2. 扫描二维码', ru: '2. Сканирование QR-кода' })}</h3>
               <p className="text-xs font-bold text-sub leading-relaxed">
-                {locale === 'fa' ? 'کد فعال‌سازی به صورت آنی به ایمیل و پنل شما ارسال می‌شود؛ آن را با گوشی اسکن کنید.' : 'Instant QR activation code is delivered to your email and dashboard.'}
+                {lt(locale, { fa: 'کد فعال‌سازی به صورت آنی به ایمیل و پنل شما ارسال می‌شود؛ آن را با گوشی اسکن کنید.', en: 'Instant QR activation code is delivered to your email and dashboard.', ar: 'يُرسل رمز التفعيل فوراً إلى بريدك الإلكتروني ولوحة حسابك؛ امسحه بهاتفك.', zh: '激活二维码将即时发送至您的邮箱和用户面板；请用手机扫描。', ru: 'QR-код активации мгновенно приходит на вашу почту и в личный кабинет; отсканируйте его телефоном.' })}
               </p>
             </div>
 
@@ -152,9 +153,9 @@ export default function EsimPage() {
               <div className="w-16 h-16 rounded-2xl bg-mint grid place-items-center text-brand-dark shadow-sm">
                 <Wifi size={28} />
               </div>
-              <h3 className="font-black text-[16px] text-ink">{locale === 'fa' ? '۳. اتصال بی‌درنگ' : '3. Instant Connection'}</h3>
+              <h3 className="font-black text-[16px] text-ink">{lt(locale, { fa: '۳. اتصال بی‌درنگ', en: '3. Instant Connection', ar: '3. اتصال فوري', zh: '3. 即时连接', ru: '3. Мгновенное подключение' })}</h3>
               <p className="text-xs font-bold text-sub leading-relaxed">
-                {locale === 'fa' ? 'به محض ورود به کشور مقصد، سیم‌کارت را روشن کرده و از اینترنت لذت ببرید.' : 'Activate upon arrival at your destination and enjoy seamless high-speed internet.'}
+                {lt(locale, { fa: 'به محض ورود به کشور مقصد، سیم‌کارت را روشن کرده و از اینترنت لذت ببرید.', en: 'Activate upon arrival at your destination and enjoy seamless high-speed internet.', ar: 'فور وصولك إلى وجهتك، فعّل الشريحة واستمتع بإنترنت فائق السرعة.', zh: '抵达目的地后即刻激活，畅享高速网络。', ru: 'По прибытии активируйте eSIM и наслаждайтесь скоростным интернетом.' })}
               </p>
             </div>
           </div>

@@ -7,6 +7,7 @@ import { CheckCircle2, XCircle, Clock, Wallet, ShieldCheck, RefreshCcw, Ticket, 
 import { useBookingStore } from '@/stores/booking-store';
 import { num } from '@/lib/format';
 import { useLocale } from 'next-intl';
+import { lt } from '@/lib/lt';
 
 type PayState = 'processing' | 'failed' | 'unknown' | 'paid_pending' | 'confirmed';
 
@@ -73,7 +74,7 @@ export default function PaymentStatusPage() {
   const displayAmount = latestBooking ? latestBooking.amount : 12500000;
   const displayCurrency = latestBooking?.currency || 'IRR';
   const displayTitle = latestBooking?.title || 'سفارش خدمات مسافرتی iTrip';
-  const displayDate = latestBooking ? new Date(latestBooking.createdAt).toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US') : 'امروز';
+  const displayDate = latestBooking ? new Date(latestBooking.createdAt).toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })) : 'امروز';
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden py-12">
