@@ -480,7 +480,15 @@
     "reviewFilterFamily": "خانواده",
     "reviewFilterCouple": "زوج‌ها",
     "reviewFilterBusiness": "کاری و تجاری",
-    "reviewFilterSolo": "تک‌نفره"
+    "reviewFilterSolo": "تک‌نفره",
+    "navOverview": "معرفی",
+    "navLocation": "موقعیت",
+    "navRooms": "اتاق‌ها و نرخ‌ها",
+    "navAmenities": "امکانات",
+    "navReviews": "نظرات",
+    "navPolicies": "قوانین",
+    "hotelNotFound": "هتل یافت نشد",
+    "comboAppliedToast": "چیدمان پیشنهادی اعمال شد"
   },
   "Flights": {
     "flightDetails": "جزئیات پرواز و بار",
@@ -496,7 +504,24 @@
     "airlines": "ایرلاین‌ها",
     "flightFound": "{count} پرواز یافت شد",
     "noFlights": "پروازی با این فیلترها یافت نشد",
-    "clearFilters": "پاک کردن فیلترها"
+    "clearFilters": "پاک کردن فیلترها",
+    "clearAll": "پاک کردن همه",
+    "priceRange": "محدوده قیمت",
+    "stopsCount": "تعداد توقف",
+    "directOnly": "بدون توقف",
+    "oneStop": "یک توقف",
+    "twoOrMoreStops": "دو توقف یا بیشتر",
+    "allOrigins": "همه مبدأها",
+    "allDestinations": "همه مقصدها",
+    "changeSearch": "تغییر جستجو",
+    "sortCheapest": "ارزان‌ترین",
+    "sortFastest": "سریع‌ترین",
+    "sortSuggested": "پیشنهاد ما",
+    "sortEarliest": "زودترین حرکت",
+    "noFlightsFound": "پروازی با این فیلترها یافت نشد",
+    "promoTitle": "تجربه سفری نوین با فیروز",
+    "promoSubtitle": "بهترین پروازها را با رزرو سریع و پرداخت چندارزی کشف کنید.",
+    "learnMore": "بیشتر بدانید"
   },
   "Tours": {
     "title": "گشت‌ها و تورهای اختصاصی",
@@ -673,5 +698,27 @@
     "specialForDest": "ویژه مقصد شما",
     "exclusivePackage": "پکیج اختصاصی سفر به {country}",
     "subtitle": "پوشش کامل پرواز، هتل، ویزا، بیمه، سیم‌کارت، ترانسفر و پشتیبانی در ۶ کشور"
+  },
+  "FlightCheckout": {
+    "searchFlights": "جستجوی پرواز",
+    "selectFlight": "انتخاب پرواز",
+    "passengerInfoAndPayment": "اطلاعات مسافران و پرداخت",
+    "recommendedExtras": "خدمات تکمیلی (پیشنهادی)",
+    "esimTitle": "سیم‌کارت توریستی ایرانسل + 10GB اینترنت",
+    "esimSubtitle": "تحویل فوری در فرودگاه بین‌المللی",
+    "insuranceTitle": "بیمه مسافرتی سامان (پوشش تا سقف ۱۰ هزار یورو)",
+    "insuranceSubtitle": "پوشش کامل حوادث و هزینه‌های پزشکی",
+    "add": "افزودن",
+    "remove": "حذف",
+    "priceDetails": "جزئیات قیمت",
+    "flightToMashhad": "پرواز تهران به مشهد",
+    "adultPassengerCount": "۱ عدد مسافر بزرگسال",
+    "taxesAndFees": "مالیات و عوارض",
+    "addedServices": "خدمات افزوده",
+    "touristEsim": "سیم‌کارت توریستی",
+    "travelInsurance": "بیمه مسافرتی",
+    "amountPayable": "مبلغ قابل پرداخت",
+    "confirmAndProceed": "تایید و ادامه پرداخت",
+    "policyNotice": "طبق قوانین پلتفرم، صدور سند رزرو و کسر وجه با تضمین قطعی PNR صورت می‌پذیرد."
   }
 }

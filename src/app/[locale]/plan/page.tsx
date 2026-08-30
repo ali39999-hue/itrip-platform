@@ -71,7 +71,6 @@ export default function PlanPage() {
       ans={ans} 
       setAns={setAns} 
       locale={locale} 
-      isEn={isEn} 
       setSeed={setSeed} 
     />
   );

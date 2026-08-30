@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useLocale } from 'next-intl';
 import { Link, useRouter } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Headset, ArrowLeft, ShieldCheck, PlaneTakeoff, X } from 'lucide-react';
+import { lt } from '@/lib/lt';
 
 const ARTICLES = [
   {
@@ -50,35 +52,36 @@ const ARTICLES = [
 
 export default function GuidePage() {
   const router = useRouter();
+  const locale = useLocale();
   const [openId, setOpenId] = useState<string | null>(null);
 
   const selectedArticle = ARTICLES.find(a => a.id === openId);
 
   return (
-    <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-8 max-w-[1280px]">
+    <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-8">
       
       {/* Hero Section */}
-      <section className="relative rounded-2xl overflow-hidden mb-12 min-h-[400px] flex items-end p-8 shadow-sm">
+      <section className="relative rounded-3xl overflow-hidden mb-12 min-h-[400px] flex items-end p-8 shadow-elev-1 border border-line/80">
         <div 
           className="absolute inset-0 z-0 bg-cover bg-center"
           style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDonc3pJALSi5oDUv59ZyawABTM2A-0tTlTHQ7mFXfTJl5zV9oDt9ngvykdwQfRlDyI-Lmdfjpdsld73NvUBXuEln_zEPV28DN4y6YFOWzdsrdW4Gr91NIlYYADD5PfFnwpYMVXie6V2NnLBjbu2LohUfi8kkM68xmT8fK7o69N1GSZnq_CZWIhDyZ6_tcxq5eYuGcggkjI19ryBd71_x5gzJzTVkuMP6t6NJDUj2xNdjq-HG9gI2XFxwJLPq3H_lOz2A')" }}
         />
-        <div className="absolute inset-0 z-0 bg-gradient-to-t from-deep/80 via-deep/40 to-transparent" />
+        <div className="absolute inset-0 z-0 bg-gradient-to-t from-deep/90 via-deep/40 to-transparent" />
         <div className="relative z-10 w-full max-w-2xl">
-          <span className="inline-block px-4 py-1.5 bg-brand/90 text-surface font-bold text-[13px] rounded-full mb-4 shadow-sm backdrop-blur-md">
-            راهنمای سفر
+          <span className="inline-block px-4 py-1.5 bg-brand text-surface font-black text-[13px] rounded-full mb-4 shadow-sm backdrop-blur-md">
+            {lt(locale, { fa: 'راهنمای سفر', en: 'Travel Guide', ar: 'دليل السفر', zh: '旅行指南', ru: 'Гид по путешествиям' })}
           </span>
           <h1 className="font-black text-[32px] md:text-[40px] text-surface mb-4 leading-tight">
-            کشف شگفتی‌های پنهان، سفر به قلب تاریخ
+            {lt(locale, { fa: 'کشف شگفتی‌های پنهان، سفر به قلب تاریخ', en: 'Discover Hidden Wonders, Journey into History', ar: 'اكتشف الروائع الخفية، وسافر إلى قلب التاريخ', zh: '探索隐秘奇观，漫游历史核心', ru: 'Откройте скрытые чудеса и отправьтесь в сердце истории' })}
           </h1>
-          <p className="font-bold text-[16px] md:text-[18px] text-surface/80 mb-8 leading-relaxed">
-            از کوچه پس کوچه‌های باستانی تا مناظر طبیعی بکر، ما راهنمای شما در کشف بهترین مقاصد گردشگری هستیم.
+          <p className="font-bold text-[16px] md:text-[18px] text-surface/90 mb-8 leading-relaxed">
+            {lt(locale, { fa: 'از کوچه پس کوچه‌های باستانی تا مناظر طبیعی بکر، ما راهنمای شما در کشف بهترین مقاصد گردشگری هستیم.', en: 'From ancient alleys to pristine natural landscapes, we guide you to the finest destinations.', ar: 'من الأزقة القديمة إلى الطبيعة البكر، نحن دليلك لاكتشاف أفضل الوجهات.', zh: '从古老街巷到纯净自然，我们指引您探寻绝美胜地。', ru: 'От старинных улочек до первозданной природы — ваш надежный гид.' })}
           </p>
           <Button 
             onClick={() => router.push('/tours')}
-            className="bg-brand text-surface px-8 h-12 rounded-full font-black text-[15px] hover:bg-brand-2 transition-colors shadow-sm"
+            className="bg-action hover:bg-action-hover text-[#14201f] px-8 h-12 rounded-2xl font-black text-[15px] transition-all shadow-md"
           >
-            مشاهده تورهای ویژه
+            {lt(locale, { fa: 'مشاهده تورهای ویژه', en: 'Explore Featured Tours', ar: 'استكشف الجولات المميزة', zh: '查看特色旅游', ru: 'Смотреть туры' })}
           </Button>
         </div>
       </section>
@@ -87,11 +90,15 @@ export default function GuidePage() {
       <section className="mb-16">
         <div className="flex justify-between items-end mb-8">
           <div>
-            <h2 className="font-black text-[28px] text-brand mb-2">نکات و مقالات کاربردی</h2>
-            <p className="font-bold text-[15px] text-sub">برای تجربه‌ای بی‌نظیر، قبل از سفر بخوانید.</p>
+            <h2 className="font-black text-[28px] text-ink mb-2">
+              {lt(locale, { fa: 'نکات و مقالات کاربردی', en: 'Travel Insights & Guides', ar: 'نصائح ومقالات عملية', zh: '实用攻略与文章', ru: 'Полезные советы и статьи' })}
+            </h2>
+            <p className="font-bold text-[15px] text-sub">
+              {lt(locale, { fa: 'برای تجربه‌ای بی‌نظیر، قبل از سفر بخوانید.', en: 'Essential knowledge to read before you travel.', ar: 'اقرأ قبل السفر لتجربة استثنائية.', zh: '出行前必读，尽享非凡体验。', ru: 'Прочтите перед поездкой для безупречного опыта.' })}
+            </p>
           </div>
-          <Link href="/travelogues" className="hidden md:flex text-brand hover:text-brand-2 transition-colors font-black text-[14px] items-center gap-1">
-            مشاهده همه <ArrowLeft size={16} />
+          <Link href="/travelogues" className="hidden md:flex text-brand-dark hover:underline transition-colors font-black text-[14px] items-center gap-1">
+            {lt(locale, { fa: 'مشاهده همه', en: 'View All', ar: 'عرض الكل', zh: '查看全部', ru: 'Все статьи' })} <ArrowLeft size={16} className="ltr:rotate-180" />
           </Link>
         </div>
 
@@ -100,7 +107,7 @@ export default function GuidePage() {
           {/* Article 1: Large Image (2x2) */}
           <div 
             onClick={() => setOpenId(ARTICLES[0].id)}
-            className="md:col-span-2 md:row-span-2 rounded-2xl overflow-hidden relative group cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+            className="md:col-span-2 md:row-span-2 rounded-3xl overflow-hidden relative group cursor-pointer shadow-sm hover:shadow-elev-2 transition-all border border-line/80"
           >
             <div 
               className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
@@ -123,7 +130,7 @@ export default function GuidePage() {
           {/* Article 2: Wide Text Block (2x1) */}
           <div 
             onClick={() => setOpenId(ARTICLES[1].id)}
-            className="md:col-span-2 rounded-xl bg-surface border border-line shadow-sm p-8 flex flex-col justify-between hover:border-brand hover:shadow-sm transition-all cursor-pointer group"
+            className="md:col-span-2 rounded-3xl bg-surface/95 backdrop-blur-xl border border-line/80 shadow-sm p-8 flex flex-col justify-between hover:border-brand hover:shadow-elev-1 transition-all cursor-pointer group"
           >
             <div className="flex justify-between items-start">
               <div className="w-14 h-14 rounded-2xl bg-brand/10 text-brand flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -134,7 +141,7 @@ export default function GuidePage() {
               </span>
             </div>
             <div>
-              <h3 className="font-black text-[20px] text-ink mb-2 group-hover:text-brand transition-colors">
+              <h3 className="font-black text-[20px] text-ink mb-2 group-hover:text-brand-dark transition-colors">
                 {ARTICLES[1].title}
               </h3>
               <p className="font-bold text-[14px] text-sub leading-7 line-clamp-2">
@@ -146,15 +153,15 @@ export default function GuidePage() {
           {/* Article 3: Small Image Block (1x1) */}
           <div 
             onClick={() => setOpenId(ARTICLES[2].id)}
-            className="rounded-2xl overflow-hidden relative group cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+            className="rounded-3xl overflow-hidden relative group cursor-pointer shadow-sm hover:shadow-elev-1 transition-all border border-line/80"
           >
             <div 
-              className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
               style={{ backgroundImage: `url('${ARTICLES[2].image}')` }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent group-hover:bg-black/60 transition-colors" />
             <div className="absolute inset-0 p-6 flex flex-col justify-end">
-              <span className="inline-block px-2 py-1 bg-brand text-surface font-bold text-[10px] rounded mb-2 w-fit">
+              <span className="inline-block px-2.5 py-1 bg-brand text-surface font-black text-[11px] rounded-lg mb-2 w-fit">
                 {ARTICLES[2].category}
               </span>
               <h4 className="font-black text-[16px] text-surface leading-tight">
@@ -166,7 +173,7 @@ export default function GuidePage() {
           {/* Article 4: Colored Block (1x1) */}
           <div 
             onClick={() => setOpenId(ARTICLES[3].id)}
-            className="rounded-2xl bg-brand/10 text-brand p-6 flex flex-col justify-center items-center text-center hover:bg-brand hover:text-surface transition-colors shadow-sm cursor-pointer group"
+            className="rounded-3xl bg-surface/95 backdrop-blur-xl border border-line/80 text-brand p-6 flex flex-col justify-center items-center text-center hover:bg-brand hover:text-surface transition-all shadow-sm cursor-pointer group"
           >
             {(() => { const Icon = ARTICLES[3].icon; return Icon && <Icon size={48} className="mb-4 opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-transform" />; })()}
             <h4 className="font-black text-[18px] leading-tight">
@@ -176,28 +183,31 @@ export default function GuidePage() {
 
         </div>
         
-        <Link href="/travelogues" className="md:hidden mt-6 flex justify-center text-brand font-black text-[14px] items-center gap-1">
-          مشاهده همه مقالات <ArrowLeft size={16} />
+        <Link href="/travelogues" className="md:hidden mt-6 flex justify-center text-brand-dark font-black text-[14px] items-center gap-1">
+          {lt(locale, { fa: 'مشاهده همه مقالات', en: 'View All Articles', ar: 'عرض جميع المقالات', zh: '查看所有攻略', ru: 'Все статьи' })} <ArrowLeft size={16} className="ltr:rotate-180" />
         </Link>
       </section>
 
       {/* Support Section */}
-      <div className="bg-gradient-to-l from-brand-dark to-brand rounded-2xl p-8 md:p-10 text-surface flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm relative overflow-hidden">
-        {/* Pattern overlay */}
+      <div className="bg-gradient-to-l from-brand-dark to-brand rounded-3xl p-8 md:p-10 text-surface flex flex-col md:flex-row items-center justify-between gap-6 shadow-elev-2 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
         
-        <div className="relative z-10 flex items-center gap-5 text-center md:text-end">
+        <div className="relative z-10 flex items-center gap-5 text-center md:text-start">
           <div className="w-16 h-16 rounded-full bg-surface/20 flex items-center justify-center backdrop-blur-sm shrink-0">
             <Headset size={32} />
           </div>
           <div>
-            <p className="font-black text-[24px] mb-1">هنوز سوال دارید؟</p>
-            <p className="font-bold text-[15px] opacity-90">کارشناسان فیروز ۲۴ ساعته پاسخگوی شما هستند</p>
+            <p className="font-black text-[24px] mb-1">
+              {lt(locale, { fa: 'هنوز سوال دارید؟', en: 'Still Have Questions?', ar: 'هل لديك أسئلة بعد؟', zh: '还有疑问？', ru: 'Остались вопросы?' })}
+            </p>
+            <p className="font-bold text-[15px] opacity-90">
+              {lt(locale, { fa: 'کارشناسان فیروز ۲۴ ساعته پاسخگوی شما هستند', en: 'Firuzo concierges are available 24/7 to assist you', ar: 'خبراء فيروز في خدمتكم على مدار الساعة', zh: 'Firuzo 专家 24 小时随时为您答疑', ru: 'Специалисты Firuzo на связи 24/7' })}
+            </p>
           </div>
         </div>
         <Link href="/support" className="relative z-10 w-full md:w-auto">
-          <Button variant="outline" className="w-full md:w-auto border-white text-surface hover:bg-surface hover:text-brand px-10 h-14 font-black text-[15px] rounded-xl shadow-sm">
-            تماس با پشتیبانی
+          <Button variant="outline" className="w-full md:w-auto border-white text-surface hover:bg-surface hover:text-brand-dark px-10 h-14 font-black text-[15px] rounded-2xl shadow-sm">
+            {lt(locale, { fa: 'تماس با پشتیبانی', en: 'Contact Support', ar: 'الاتصال بالدعم', zh: '联系客服', ru: 'Связаться с поддержкой' })}
           </Button>
         </Link>
       </div>
@@ -206,7 +216,7 @@ export default function GuidePage() {
       {openId && selectedArticle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setOpenId(null)}>
           <div 
-            className="bg-surface rounded-xl shadow-elev-1 w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            className="bg-surface rounded-3xl shadow-elev-3 w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-line"
             onClick={(e) => e.stopPropagation()}
           >
             {selectedArticle.image && (
@@ -241,7 +251,7 @@ export default function GuidePage() {
                   <span className="font-bold text-surface bg-brand text-[11px] px-3 py-1 rounded-full shadow-sm">{selectedArticle.category}</span>
                 )}
                 <span className="text-sub font-bold text-[12px] flex items-center gap-1">
-                   {selectedArticle.readTime} مطالعه
+                   {selectedArticle.readTime}
                 </span>
               </div>
               <h2 className="font-black text-[24px] text-ink mb-6 leading-tight">
@@ -252,8 +262,8 @@ export default function GuidePage() {
               </div>
               
               <div className="mt-8 pt-6 border-t border-line flex justify-end">
-                <Button onClick={() => setOpenId(null)} className="bg-brand hover:bg-brand-2 text-surface font-black rounded-xl px-8">
-                  بستن
+                <Button onClick={() => setOpenId(null)} className="bg-brand hover:bg-brand-dark text-surface font-black rounded-2xl px-8 h-12">
+                  {lt(locale, { fa: 'بستن', en: 'Close', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}
                 </Button>
               </div>
             </div>

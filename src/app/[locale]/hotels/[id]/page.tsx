@@ -3,11 +3,12 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { useParams } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { HOTELS } from '@/lib/data';
 import { useBookingStore } from '@/stores/booking-store';
-import { Check, Building2 } from 'lucide-react';
-import { fa } from '@/lib/hotel-format';
+import { Building2 } from 'lucide-react';
 import { Link } from '@/i18n/routing';
+import { num } from '@/lib/format';
 
 // Hooks & Mocks
 import { useHotelBooking, CHECKIN, NIGHTS, keyOf, toman } from '@/hooks/useHotelBooking';
@@ -21,6 +22,8 @@ import { BookingPanel } from '@/components/hotels/detail/BookingPanel';
 export default function HotelDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('HotelDetail');
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
   const hotel = HOTELS.find((h) => h.id === params.id);
 
@@ -51,8 +54,8 @@ export default function HotelDetailPage() {
     return (
       <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-24 text-center">
         <Building2 size={52} className="mx-auto text-line mb-4" />
-        <h1 className="text-xl font-black mb-2">هتل یافت نشد</h1>
-        <Link href="/hotels/search" className="text-brand-dark font-extrabold hover:underline">بازگشت به نتایج</Link>
+        <h1 className="text-xl font-black mb-2 text-ink">{t('hotelNotFound')}</h1>
+        <Link href="/hotels/search" className="text-brand-dark font-extrabold hover:underline">{t('backToResults')}</Link>
       </div>
     );
   }
@@ -61,7 +64,7 @@ export default function HotelDetailPage() {
     setBookingContext({
       type: 'hotels',
       title: hotel!.name,
-      subtitle: `${capacity.n.toLocaleString('fa-IR')} اتاق • ${NIGHTS.length.toLocaleString('fa-IR')} شب`,
+      subtitle: `${num(capacity.n, locale)} ${t('navRooms')} • ${num(NIGHTS.length, locale)} ${t('nights') || 'شب'}`,
       amount: toman(totals.total),
       travelDate: CHECKIN,
     });
@@ -73,23 +76,27 @@ export default function HotelDetailPage() {
     const next: Record<string, number> = {};
     bestCombo.pick.forEach((o) => { next[keyOf(o.r.id, o.p)] = (next[keyOf(o.r.id, o.p)] || 0) + 1; });
     setSel(next);
-    showToast('چیدمان پیشنهادی اعمال شد');
+    showToast(t('comboAppliedToast'));
     document.getElementById('rooms')?.scrollIntoView({ behavior: 'smooth' });
   }
 
-  const panelAmount = capacity.n > 0 ? totals.total : 0; // Handled nicely in BookingPanel
+  const subnavItems = [
+    ['overview', t('navOverview')],
+    ['location', t('navLocation')],
+    ['rooms', t('navRooms')],
+    ['amenities', t('navAmenities')],
+    ['reviews', t('navReviews')],
+    ['policies', t('navPolicies')],
+  ] as const;
 
   return (
     <div className="bg-paper pb-24">
       <HotelHero hotel={hotel} />
 
       {/* subnav */}
-      <div className="sticky top-16 z-60 mt-4 border-y border-line bg-paper/95 backdrop-blur-xl">
+      <div className="sticky top-16 z-60 mt-4 border-y border-line/80 bg-paper/95 backdrop-blur-xl">
         <div className="max-w-[1280px] mx-auto px-4 md:px-10 flex items-center gap-1 overflow-x-auto scrollbar-none">
-          {([
-            ['overview', 'معرفی'], ['location', 'موقعیت'], ['rooms', 'اتاق‌ها و نرخ‌ها'],
-            ['amenities', 'امکانات'], ['reviews', 'نظرات'], ['policies', 'قوانین'],
-          ] as const).map(([id, label]) => (
+          {subnavItems.map(([id, label]) => (
             <button
               key={id}
               onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })}
@@ -98,21 +105,14 @@ export default function HotelDetailPage() {
               {label}
             </button>
           ))}
-          <div className="me-auto hidden lg:flex items-center gap-2.5 ps-3">
-            <div className="text-end">
-              <b className="text-[15px] font-black">{fa(panelAmount)} لیر</b>
-              <small className="block text-[11px] font-bold text-sub">برای {fa(NIGHTS.length)} شب</small>
-            </div>
-            <button onClick={() => document.getElementById('rooms')?.scrollIntoView({ behavior: 'smooth' })} className="min-h-9 px-4 rounded-[10px] bg-action hover:bg-action-hover text-[#14201f] text-[12.5px] font-black transition">
-              انتخاب اتاق
-            </button>
-          </div>
         </div>
       </div>
 
-      <div className="max-w-[1280px] mx-auto px-4 md:px-10">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_352px] gap-6 items-start py-6">
-          <div className="min-w-0 flex flex-col gap-3.5">
+      {/* Main Layout */}
+      <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-6 md:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
+          {/* Main Sections */}
+          <div className="space-y-10 min-w-0">
             <HotelOverview hotel={hotel} />
             <HotelLocation hotel={hotel} />
             <HotelRooms booking={booking} onApplyCombo={handleApplyCombo} />
@@ -121,28 +121,22 @@ export default function HotelDetailPage() {
             <HotelPolicies checkinDate={CHECKIN} />
           </div>
 
-          <BookingPanel booking={booking} onBook={handleBook} />
+          {/* Sticky Booking Panel */}
+          <div className="hidden lg:block sticky top-32">
+            <BookingPanel
+              booking={booking}
+              onBook={handleBook}
+            />
+          </div>
         </div>
       </div>
 
+      {/* Toast Notification */}
       {toast && (
-        <div role="status" aria-live="polite" className="fixed bottom-6 end-6 z-130 flex items-center gap-2 px-4 py-3 rounded-xl bg-deep text-surface text-[12.5px] font-extrabold shadow-xl">
-          <Check size={15} className="text-mint-bright" /> {toast}
+        <div className="fixed bottom-6 start-1/2 -translate-x-1/2 rtl:translate-x-1/2 z-95 bg-brand text-surface px-5 py-2.5 rounded-full shadow-elev-3 text-xs font-bold transition-all">
+          {toast}
         </div>
       )}
-
-      {/* mobile bar */}
-      <div className="lg:hidden fixed inset-x-0 bottom-0 z-80 border-t border-line bg-surface/95 backdrop-blur shadow-[0_-10px_30px_rgba(5,63,62,.1)]">
-        <div className="max-w-[1280px] mx-auto px-4 flex items-center gap-3 py-2.5">
-          <div className="text-end">
-            <span className="block text-[10.5px] font-bold text-sub">{capacity.n ? `جمع ${fa(capacity.n)} اتاق` : 'شروع از'}</span>
-            <b className="text-lg font-black text-price">{fa(panelAmount)} لیر</b>
-          </div>
-          <button onClick={() => document.getElementById('rooms')?.scrollIntoView({ behavior: 'smooth' })} className="me-auto min-h-12 px-6 rounded-full bg-action hover:bg-action-hover text-[#14201f] text-[13px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-sm">
-            انتخاب اتاق
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

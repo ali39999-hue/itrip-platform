@@ -480,7 +480,15 @@
     "reviewFilterFamily": "Семьи",
     "reviewFilterCouple": "Пары",
     "reviewFilterBusiness": "Бизнес",
-    "reviewFilterSolo": "Соло"
+    "reviewFilterSolo": "Соло",
+    "navOverview": "Обзор",
+    "navLocation": "Расположение",
+    "navRooms": "Номера и цены",
+    "navAmenities": "Удобства",
+    "navReviews": "Отзывы",
+    "navPolicies": "Правила",
+    "hotelNotFound": "Отель не найден",
+    "comboAppliedToast": "Рекомендованная комбинация применена"
   },
   "Flights": {
     "flightDetails": "Детали рейса и багажа",
@@ -496,7 +504,24 @@
     "airlines": "Авиакомпании",
     "flightFound": "Найдено {count} рейсов",
     "noFlights": "Рейсов по выбранным фильтрам не найдено",
-    "clearFilters": "Сбросить фильтры"
+    "clearFilters": "Сбросить фильтры",
+    "clearAll": "Очистить все",
+    "priceRange": "Диапазон цен",
+    "stopsCount": "Количество пересадок",
+    "directOnly": "Прямой",
+    "oneStop": "1 пересадка",
+    "twoOrMoreStops": "2+ пересадки",
+    "allOrigins": "Все пункты отправления",
+    "allDestinations": "Все направления",
+    "changeSearch": "Изменить поиск",
+    "sortCheapest": "Самый дешевый",
+    "sortFastest": "Самый быстрый",
+    "sortSuggested": "Рекомендуемый",
+    "sortEarliest": "Самый ранний",
+    "noFlightsFound": "По этим фильтрам рейсов не найдено",
+    "promoTitle": "Новый опыт путешествий с Firuzo",
+    "promoSubtitle": "Откройте для себя лучшие рейсы с мгновенным бронированием.",
+    "learnMore": "Узнать больше"
   },
   "Tours": {
     "title": "Туры и авторские экскурсии",
@@ -673,5 +698,27 @@
     "specialForDest": "Специально для вашего направления",
     "exclusivePackage": "Эксклюзивный пакет для поездки в {country}",
     "subtitle": "Полный спектр услуг: авиабилеты, отели, визы, eSIM, трансферы и поддержка в 6 странах"
+  },
+  "FlightCheckout": {
+    "searchFlights": "Поиск рейсов",
+    "selectFlight": "Выбор рейса",
+    "passengerInfoAndPayment": "Пассажиры и оплата",
+    "recommendedExtras": "Дополнительные услуги (Рекомендуется)",
+    "esimTitle": "Туристическая SIM Irancell + 10 ГБ",
+    "esimSubtitle": "Мгновенное получение в международном аэропорту",
+    "insuranceTitle": "Туристическая страховка Saman (покрытие до 10 000 €)",
+    "insuranceSubtitle": "Полное медицинское и страховое покрытие",
+    "add": "Добавить",
+    "remove": "Удалить",
+    "priceDetails": "Детализация стоимости",
+    "flightToMashhad": "Рейс Тегеран — Мешхед",
+    "adultPassengerCount": "1 взрослый пассажир",
+    "taxesAndFees": "Налоги и сборы",
+    "addedServices": "Дополнительные услуги",
+    "touristEsim": "Туристическая eSIM",
+    "travelInsurance": "Туристическая страховка",
+    "amountPayable": "Итого к оплате",
+    "confirmAndProceed": "Подтвердить и перейти к оплате",
+    "policyNotice": "Оформление бронирования и списание средств осуществляются с гарантированным мгновенным PNR."
   }
 }

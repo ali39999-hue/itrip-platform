@@ -5,6 +5,7 @@ import { useRouter } from '@/i18n/routing';
 import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES, COUNTRY_ORDER, countryName, type CountryId } from '@/lib/countries';
 import { MapPin, ArrowLeft, ArrowRight, Compass, BookOpenText, Check } from 'lucide-react';
+import { lt } from '@/lib/lt';
 
 const GRADIENTS = [
   'from-teal-500 to-emerald-700',
@@ -51,7 +52,7 @@ export default function DestinationsPage() {
       <section className="mb-12">
         <h2 className="text-xl font-black text-ink mb-5 flex items-center gap-2">
           <MapPin size={22} className="text-brand-dark" />
-          {isEn ? `Cities of ${c.nameEn}` : `شهرهای ${c.nameFa}`} {c.flag}
+          {lt(locale, { fa: 'شهرهای', en: 'Cities of', ar: 'مدن', zh: '的城市', ru: 'Города' })} {countryName(country, locale)} {c.flag}
         </h2>
         <div className="masonry-grid">
           {c.cities.map((city, i) => (

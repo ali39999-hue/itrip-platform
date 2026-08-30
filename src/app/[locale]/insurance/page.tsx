@@ -20,8 +20,8 @@ export default function InsurancePage() {
   function select(plan: InsurancePlan) {
     setBookingContext({
       type: 'insurance',
-      title: `بیمه مسافرتی ${plan.name}`,
-      subtitle: `پوشش €${plan.coverageEur.toLocaleString('en-US')} • ${plan.priceLabel}`,
+      title: `${lt(locale, { fa: 'بیمه مسافرتی', en: 'Travel Insurance', ar: 'تأمين السفر', zh: '旅游保险', ru: 'Туристическая страховка' })} ${plan.name}`,
+      subtitle: `${lt(locale, { fa: 'سقف پوشش', en: 'Coverage up to', ar: 'سقف التغطية', zh: '保额最高', ru: 'Покрытие до' })} €${plan.coverageEur.toLocaleString('en-US')} • ${plan.priceLabel}`,
       amount: plan.price,
       travelDate: daysFromNow(10),
     });

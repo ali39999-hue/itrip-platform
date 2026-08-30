@@ -8,6 +8,7 @@ import { num } from '@/lib/format';
 import { CATEGORY_ICONS } from '@/components/shared/CountryExperiences';
 import { ArrowLeft, ArrowRight, Sun, Sunset, MoonStar, Users, type LucideIcon } from 'lucide-react';
 import { BUDGET_CAP, BUDGET_LABEL, type Answers, type BudgetTier, type Pace, type Who } from '@/hooks/usePlanner';
+import { lt } from '@/lib/lt';
 
 export const QUESTIONS = ['dest', 'who', 'days', 'interests', 'budget', 'pace'] as const;
 const PACE_META: Record<Pace, { key: 'paceRelaxed' | 'paceBalanced' | 'pacePacked'; Icon: LucideIcon }> = {
@@ -22,11 +23,10 @@ interface PlannerWizardProps {
   ans: Answers;
   setAns: React.Dispatch<React.SetStateAction<Answers>>;
   locale: string;
-  isEn: boolean;
   setSeed: React.Dispatch<React.SetStateAction<number>>;
 }
 
-export function PlannerWizard({ step, setStep, ans, setAns, locale, isEn, setSeed }: PlannerWizardProps) {
+export function PlannerWizard({ step, setStep, ans, setAns, locale, setSeed }: PlannerWizardProps) {
   const t = useTranslations('Plan');
   const { country, setCountry } = useCountryStore();
 
@@ -90,7 +90,7 @@ export function PlannerWizard({ step, setStep, ans, setAns, locale, isEn, setSee
                   className={`${chip(ans.dest === id)} flex-col !items-start min-w-[150px]`}
                 >
                   <span className="text-[17px]">{COUNTRIES[id].flag} {countryName(id, locale)}</span>
-                  <span className={`text-[10.5px] font-bold ${ans.dest === id ? 'text-surface/80' : 'text-sub'}`}>{num(COUNTRIES[id].signatureExperiences.length, locale)} {isEn ? 'experiences' : 'تجربه'} · {COUNTRIES[id].currency}</span>
+                  <span className={`text-[10.5px] font-bold ${ans.dest === id ? 'text-surface/80' : 'text-sub'}`}>{num(COUNTRIES[id].signatureExperiences.length, locale)} {lt(locale, { fa: 'تجربه', en: 'experiences', ar: 'تجربة', zh: '个体验', ru: 'впечатлений' })} · {COUNTRIES[id].currency}</span>
                 </button>
               ))}
             </div>
@@ -144,7 +144,7 @@ export function PlannerWizard({ step, setStep, ans, setAns, locale, isEn, setSee
                     })}
                     className={`min-h-11 px-4 rounded-full text-[13px] font-black inline-flex items-center gap-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${on ? 'bg-brand text-surface shadow-sm shadow-brand/25' : 'bg-soft border border-line text-sub hover:text-brand-dark'}`}
                   >
-                    <Icon size={15} /> {isEn ? EXPERIENCE_CATEGORY_META[cat].en : EXPERIENCE_CATEGORY_META[cat].fa}
+                    <Icon size={15} /> {lt(locale, { fa: EXPERIENCE_CATEGORY_META[cat].fa, en: EXPERIENCE_CATEGORY_META[cat].en, ar: EXPERIENCE_CATEGORY_META[cat].fa, zh: EXPERIENCE_CATEGORY_META[cat].en, ru: EXPERIENCE_CATEGORY_META[cat].en })}
                   </button>
                 );
               })}
@@ -165,7 +165,7 @@ export function PlannerWizard({ step, setStep, ans, setAns, locale, isEn, setSee
             <div className="grid grid-cols-3 gap-2.5">
               {(['economy', 'balanced', 'luxury'] as BudgetTier[]).map((b) => (
                 <button key={b} onClick={() => { setAns((a) => ({ ...a, budget: b })); setStep(5); }} className={`p-4 rounded-2xl border text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${ans.budget === b ? 'border-brand bg-mint/60 shadow-sm' : 'border-line bg-soft/50 hover:border-brand/40'}`}>
-                  <b className="block text-[14px] font-black">{isEn ? BUDGET_LABEL[b].en : BUDGET_LABEL[b].fa}</b>
+                  <b className="block text-[14px] font-black">{lt(locale, { fa: BUDGET_LABEL[b].fa, en: BUDGET_LABEL[b].en, ar: BUDGET_LABEL[b].fa, zh: BUDGET_LABEL[b].en, ru: BUDGET_LABEL[b].en })}</b>
                   <span className="block text-[10.5px] font-bold text-sub mt-1 num">≤ {num(BUDGET_CAP[b], locale)}</span>
                   <span className="block text-[9.5px] font-bold text-sub">{t('perPerson')}</span>
                 </button>

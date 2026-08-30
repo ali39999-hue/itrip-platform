@@ -43,8 +43,8 @@ export function PlannerResult({ ans, setStep, locale, isEn, shared, shareUrl, se
   function bookAll() {
     setBookingContext({
       type: 'tours',
-      title: `${t('kicker')} Â· ${countryName(c.id, locale)} Â· ${num(days, locale)} ${t('qDays')}`,
-      subtitle: `${num(travelers, locale)} pax Â· ${plan.flight.flightNo} Â· ${plan.hotel.name} Â· ${num(plan.picked.length, locale)} exp`,
+      title: `${t('kicker')} · ${countryName(c.id, locale)} · ${num(days, locale)} ${t('qDays')}`,
+      subtitle: `${num(travelers, locale)} pax · ${plan.flight.flightNo} · ${plan.hotel.name} · ${num(plan.picked.length, locale)} exp`,
       amount: plan.total,
       travelDate: daysFromNow(days + 7),
       meta: { planner: 'smart', country: c.id, budget, pace },

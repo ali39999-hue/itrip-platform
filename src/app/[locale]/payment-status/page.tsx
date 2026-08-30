@@ -3,63 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, Clock, Wallet, ShieldCheck, RefreshCcw, Ticket, Download, ArrowLeft, Headset, MapPin, type LucideIcon } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Wallet, RefreshCcw, Ticket, Headset, type LucideIcon } from 'lucide-react';
 import { useBookingStore } from '@/stores/booking-store';
 import { num } from '@/lib/format';
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
 
 type PayState = 'processing' | 'failed' | 'unknown' | 'paid_pending' | 'confirmed';
-
-const STATES: Record<PayState, { 
-  title: string; 
-  desc: string; 
-  icon: LucideIcon; 
-  color: string; 
-  pulseColor: string; 
-  bgStyle: string; 
-}> = {
-  processing: {
-    title: 'در حال بررسی پرداخت شما',
-    desc: 'منتظر نتیجه قطعی درگاه هستیم. وضعیت به‌صورت خودکار به‌روزرسانی می‌شود.',
-    icon: Clock, 
-    color: 'bg-brand text-surface', 
-    pulseColor: 'bg-brand/30',
-    bgStyle: 'bg-brand'
-  },
-  failed: {
-    title: 'پرداخت انجام نشد',
-    desc: 'پیش‌نویس سفارش شما حفظ شده است. روش دیگری انتخاب کنید یا به مرحله بازبینی برگردید.',
-    icon: XCircle, 
-    color: 'bg-rose-warm text-surface', 
-    pulseColor: 'bg-rose-warm/30',
-    bgStyle: 'bg-rose-warm'
-  },
-  unknown: {
-    title: 'وضعیت پرداخت نامشخص است',
-    desc: 'لطفاً پرداخت را تکرار نکنید. با کد پیگیری وضعیت را بررسی کنید یا با پشتیبانی مالی تماس بگیرید.',
-    icon: RefreshCcw, 
-    color: 'bg-hotel text-surface', 
-    pulseColor: 'bg-hotel/30',
-    bgStyle: 'bg-hotel'
-  },
-  paid_pending: {
-    title: 'پرداخت دریافت شد · در انتظار تایید',
-    desc: 'وجه شما ثبت شده و تامین‌کننده در حال نهایی‌سازی رزرو است. کارت سفر به‌زودی صادر می‌شود.',
-    icon: Wallet, 
-    color: 'bg-flight text-surface', 
-    pulseColor: 'bg-flight/30',
-    bgStyle: 'bg-flight'
-  },
-  confirmed: {
-    title: 'پرداخت با موفقیت انجام شد!',
-    desc: 'رزرو شما تایید شد و جزئیات آن در بخش «سفرهای من» ثبت گردید.',
-    icon: CheckCircle2, 
-    color: 'bg-success text-surface', 
-    pulseColor: 'bg-success/30',
-    bgStyle: 'bg-success'
-  },
-};
 
 export default function PaymentStatusPage() {
   const router = useRouter();
@@ -68,16 +18,67 @@ export default function PaymentStatusPage() {
   const latestBooking = bookings[0];
 
   const [state, setState] = useState<PayState>('confirmed');
-  const s = STATES[state];
+
+  const statesConfig: Record<PayState, { 
+    title: string; 
+    desc: string; 
+    icon: LucideIcon; 
+    color: string; 
+    pulseColor: string; 
+    bgStyle: string; 
+  }> = {
+    processing: {
+      title: lt(locale, { fa: 'در حال بررسی پرداخت شما', en: 'Processing Your Payment', ar: 'جارٍ التحقق من الدفع', zh: '正在处理您的付款', ru: 'Обработка вашего платежа' }),
+      desc: lt(locale, { fa: 'منتظر نتیجه قطعی درگاه هستیم. وضعیت به‌صورت خودکار به‌روزرسانی می‌شود.', en: 'Awaiting payment gateway confirmation. Status will update automatically.', ar: 'بانتظار تأكيد بوابة الدفع. سيتم التحديث تلقائياً.', zh: '正在等待支付网关确认，状态将自动更新。', ru: 'Ожидаем подтверждения шлюза. Статус обновится автоматически.' }),
+      icon: Clock, 
+      color: 'bg-brand text-surface', 
+      pulseColor: 'bg-brand/30',
+      bgStyle: 'bg-brand'
+    },
+    failed: {
+      title: lt(locale, { fa: 'پرداخت انجام نشد', en: 'Payment Failed', ar: 'فشلت عملية الدفع', zh: '支付失败', ru: 'Платеж не выполнен' }),
+      desc: lt(locale, { fa: 'پیش‌نویس سفارش شما حفظ شده است. روش دیگری انتخاب کنید یا دوباره تلاش نمایید.', en: 'Your booking draft is saved. Try another payment method or retry.', ar: 'تم حفظ مسودة الحجز. اختر طريقة دفع أخرى أو حاول ثانية.', zh: '您的预订草稿已保存，请选择其他支付方式或重试。', ru: 'Черновик сохранен. Попробуйте другой способ оплаты или повторите попытку.' }),
+      icon: XCircle, 
+      color: 'bg-rose-warm text-surface', 
+      pulseColor: 'bg-rose-warm/30',
+      bgStyle: 'bg-rose-warm'
+    },
+    unknown: {
+      title: lt(locale, { fa: 'وضعیت پرداخت نامشخص است', en: 'Payment Status Unknown', ar: 'حالة الدفع غير معروفة', zh: '支付状态未知', ru: 'Статус платежа неизвестен' }),
+      desc: lt(locale, { fa: 'لطفاً پرداخت را تکرار نکنید. با کد پیگیری وضعیت را بررسی کنید یا با پشتیبانی تماس بگیرید.', en: 'Please do not repeat payment. Use your tracking code or contact concierge support.', ar: 'يرجى عدم تكرار الدفع. تحقق برقم التتبع أو تواصل مع الدعم.', zh: '请勿重复付款。请使用追踪码查询或联系客服。', ru: 'Пожалуйста, не повторяйте оплату. Проверьте код или обратитесь в поддержку.' }),
+      icon: RefreshCcw, 
+      color: 'bg-hotel text-surface', 
+      pulseColor: 'bg-hotel/30',
+      bgStyle: 'bg-hotel'
+    },
+    paid_pending: {
+      title: lt(locale, { fa: 'پرداخت دریافت شد · در انتظار تایید نهایی', en: 'Payment Received · Confirmation Pending', ar: 'تم استلام الدفع · بانتظار التأكيد', zh: '已收到付款 · 待确认', ru: 'Платеж получен · Ожидает подтверждения' }),
+      desc: lt(locale, { fa: 'وجه شما ثبت شده و تامین‌کننده در حال نهایی‌سازی واچر سفر است.', en: 'Payment recorded. Concierge is finalizing your travel voucher issuance.', ar: 'تم تسجيل المبلغ وجارٍ إصدار قسيمة الحجز النهائية.', zh: '已记录付款，供应商正在确认并出具行程单。', ru: 'Платеж зафиксирован, завершается выпуск ваучера.' }),
+      icon: Wallet, 
+      color: 'bg-flight text-surface', 
+      pulseColor: 'bg-flight/30',
+      bgStyle: 'bg-flight'
+    },
+    confirmed: {
+      title: lt(locale, { fa: 'پرداخت با موفقیت انجام شد!', en: 'Payment Successful!', ar: 'تم الدفع بنجاح!', zh: '支付成功！', ru: 'Оплата прошла успешно!' }),
+      desc: lt(locale, { fa: 'رزرو شما تایید شد و سند الکترونیک آن در بخش «سفرهای من» صادر گردید.', en: 'Your reservation is confirmed and electronic voucher is issued in My Trips.', ar: 'تم تأكيد حجزك وإصدار السند الإلكتروني في قسم رحلاتي.', zh: '预订已确认，电子凭证已在“我的旅行”中生成。', ru: 'Бронирование подтверждено, электронный ваучер доступен в «Моих поездках».' }),
+      icon: CheckCircle2, 
+      color: 'bg-success text-surface', 
+      pulseColor: 'bg-success/30',
+      bgStyle: 'bg-success'
+    },
+  };
+
+  const s = statesConfig[state];
+  const IconComponent = s.icon;
 
   const trackingCode = latestBooking?.reference || 'IRP-892415';
   const displayAmount = latestBooking ? latestBooking.amount : 12500000;
   const displayCurrency = latestBooking?.currency || 'IRR';
-  const displayTitle = latestBooking?.title || 'سفارش خدمات مسافرتی iTrip';
-  const displayDate = latestBooking ? new Date(latestBooking.createdAt).toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })) : 'امروز';
+  const displayTitle = latestBooking?.title || lt(locale, { fa: 'سفارش خدمات مسافرتی فیروز', en: 'Firuzo Travel Services Booking', ar: 'طلب خدمات سفر فيروز', zh: 'Firuzo 旅行服务订单', ru: 'Заказ туристических услуг Firuzo' });
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden py-12">
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden py-12 px-4">
       
       {/* Ambient Background Elements */}
       <div className="absolute top-0 start-0 w-full h-full pointer-events-none -z-10 opacity-30">
@@ -86,123 +87,114 @@ export default function PaymentStatusPage() {
       </div>
 
       <div className="w-full px-4 md:px-8 max-w-[650px] z-10 flex flex-col">
-        
-        {/* State Toggle for Demo/Testing Purposes */}
-        <div className="flex flex-wrap gap-2 justify-center mb-8 bg-surface/50 backdrop-blur-sm p-2 rounded-xl mx-auto shadow-sm border border-line">
-          {(Object.keys(STATES) as PayState[]).map((id) => (
+        {/* Preview State Switcher */}
+        <div className="flex flex-wrap gap-1.5 justify-center mb-6 bg-surface/60 backdrop-blur-md p-1.5 rounded-2xl border border-line/60 shadow-sm">
+          {(['confirmed', 'paid_pending', 'processing', 'failed', 'unknown'] as PayState[]).map((st) => (
             <button
-              key={id}
-              onClick={() => setState(id)}
-              className={`px-4 py-2 rounded-xl text-[12px] font-black transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-sm ${
-                state === id ? 'bg-ink text-surface shadow-sm' : 'text-sub hover:bg-surface/80'
+              key={st}
+              onClick={() => setState(st)}
+              className={`px-3 py-1 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                state === st
+                  ? 'bg-brand text-surface shadow-sm'
+                  : 'text-sub hover:text-ink hover:bg-soft'
               }`}
             >
-              {id === 'processing' ? 'در حال پردازش' : 
-               id === 'failed' ? 'ناموفق' : 
-               id === 'unknown' ? 'نامشخص' : 
-               id === 'paid_pending' ? 'در انتظار' : 'قطعی'}
+              {st === 'confirmed' ? '✓ ' + lt(locale, { fa: 'موفق', en: 'Success', ar: 'ناجح', zh: '成功', ru: 'Успешно' })
+                : st === 'paid_pending' ? '⏳ ' + lt(locale, { fa: 'در انتظار', en: 'Pending', ar: 'قيد الانتظار', zh: '待处理', ru: 'В ожидании' })
+                : st === 'processing' ? '⚙️ ' + lt(locale, { fa: 'پردازش', en: 'Processing', ar: 'معالجة', zh: '处理中', ru: 'Обработка' })
+                : st === 'failed' ? '✕ ' + lt(locale, { fa: 'ناموفق', en: 'Failed', ar: 'فاشل', zh: '失败', ru: 'Ошибка' })
+                : '❓ ' + lt(locale, { fa: 'نامشخص', en: 'Unknown', ar: 'غير معروف', zh: '未知', ru: 'Неизвестно' })}
             </button>
           ))}
         </div>
 
-        {/* Status Card (Glassmorphism) */}
-        <div className="bg-surface/90 backdrop-blur-2xl rounded-3xl shadow-xl border border-surface/50 p-8 md:p-12 flex flex-col items-center text-center relative overflow-hidden">
+        {/* Main Status Card */}
+        <div className="bg-surface/95 backdrop-blur-xl rounded-3xl p-8 md:p-10 shadow-elev-3 border border-line/80 relative overflow-hidden text-center flex flex-col items-center">
           
-          {/* Animated Icon */}
-          <div className="relative w-28 h-28 mb-8">
-            <div className={`absolute inset-0 ${s.pulseColor} rounded-full animate-pulse duration-1000`}></div>
-            <div className={`absolute inset-2 ${s.color} rounded-full flex items-center justify-center shadow-lg transition-colors duration-500`}>
-              <s.icon size={44} strokeWidth={2.5} />
+          {/* Status Icon */}
+          <div className="relative mb-6">
+            <div className={`w-20 h-20 rounded-full ${s.color} flex items-center justify-center relative z-10 shadow-md`}>
+              <IconComponent size={40} className="stroke-[2.5]" />
             </div>
+            <div className={`absolute inset-0 rounded-full ${s.pulseColor} animate-ping -z-0 opacity-75`}></div>
           </div>
-          
-          <h1 className="font-black text-[26px] md:text-[32px] text-ink mb-4">{s.title}</h1>
-          <p className="font-bold text-[15px] md:text-[16px] text-sub leading-relaxed mb-10 max-w-md">
+
+          {/* Heading and Description */}
+          <h1 className="text-2xl md:text-3xl font-black text-ink mb-3 leading-tight tracking-tight">
+            {s.title}
+          </h1>
+          <p className="text-sub font-bold text-sm md:text-base max-w-[480px] leading-relaxed mb-8">
             {s.desc}
           </p>
-          
-          {/* Booking Details */}
-          <div className="w-full bg-soft rounded-2xl p-6 mb-10 border border-line/50 flex flex-col gap-4 text-start">
+
+          {/* Transaction Summary Box */}
+          <div className="w-full bg-soft/60 rounded-2xl p-6 border border-line/60 flex flex-col gap-4 text-start mb-8">
             <div className="flex justify-between items-center pb-3 border-b border-line/50">
-              <span className="font-bold text-[14px] text-sub flex items-center gap-2">
-                <Ticket size={18} className="opacity-70" /> شماره پیگیری:
-              </span>
-              <span className="font-black text-[18px] text-ink tracking-wider font-mono">{trackingCode}</span>
+              <span className="text-xs font-bold text-sub">{lt(locale, { fa: 'عنوان رزرو', en: 'Booking Item', ar: 'عنوان الحجز', zh: '预订项目', ru: 'Услуга' })}</span>
+              <span className="text-sm font-black text-ink">{displayTitle}</span>
             </div>
+
             <div className="flex justify-between items-center pb-3 border-b border-line/50">
-              <span className="font-bold text-[14px] text-sub flex items-center gap-2">
-                <MapPin size={18} className="opacity-70" /> عنوان سفارش:
-              </span>
-              <span className="font-bold text-[14px] text-ink truncate max-w-[240px]">{displayTitle}</span>
-            </div>
-            <div className="flex justify-between items-center pb-3 border-b border-line/50">
-              <span className="font-bold text-[14px] text-sub flex items-center gap-2">
-                <Wallet size={18} className="opacity-70" /> مبلغ پرداختی:
-              </span>
-              <span className="font-black text-[18px] text-ink">
-                {num(displayAmount, locale)} <span className="text-[13px] text-sub">{displayCurrency}</span>
+              <span className="text-xs font-bold text-sub">{lt(locale, { fa: 'کد پیگیری PNR', en: 'Tracking Ref / PNR', ar: 'رمز التتبع PNR', zh: '追踪码 PNR', ru: 'Код PNR' })}</span>
+              <span className="text-sm font-black text-brand-dark font-mono bg-mint/50 px-3 py-0.5 rounded-lg border border-brand/20">
+                {trackingCode}
               </span>
             </div>
+
             <div className="flex justify-between items-center">
-              <span className="font-bold text-[14px] text-sub flex items-center gap-2">
-                <Clock size={18} className="opacity-70" /> زمان تراکنش:
+              <span className="text-xs font-bold text-sub">{lt(locale, { fa: 'مبلغ پرداختی', en: 'Paid Amount', ar: 'المبلغ المدفوع', zh: '支付金额', ru: 'Сумма оплаты' })}</span>
+              <span className="text-lg font-black text-price font-mono num">
+                {num(displayAmount, locale)} <span className="text-xs font-bold text-sub">{displayCurrency}</span>
               </span>
-              <span className="font-bold text-[13px] text-ink font-en">{displayDate}</span>
             </div>
           </div>
-          
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row w-full gap-4">
-            {(state === 'processing' || state === 'unknown') && (
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
+            {state === 'confirmed' ? (
               <>
-                <Button onClick={() => setState('confirmed')} className="flex-1 bg-ink text-surface hover:bg-ink/90 py-6 rounded-2xl font-black text-[15px] flex items-center justify-center gap-2 shadow-sm">
-                  <RefreshCcw size={20} /> بررسی مجدد وضعیت
+                <Button 
+                  onClick={() => router.push('/my-trips')}
+                  className="flex-1 h-13 bg-brand hover:bg-brand-2 text-surface font-black rounded-2xl flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <Ticket size={18} />
+                  {lt(locale, { fa: 'مشاهده بلیط و واچر', en: 'View Ticket & Voucher', ar: 'عرض التذكرة والقسيمة', zh: '查看机票与凭证', ru: 'Посмотреть билет и ваучер' })}
                 </Button>
-                <Button variant="outline" onClick={() => router.push('/support')} className="flex-1 bg-surface text-ink hover:bg-soft py-6 border-line/50 rounded-2xl font-black text-[15px] flex items-center justify-center gap-2">
-                  <Headset size={20} /> تماس با پشتیبانی
+                <Button 
+                  onClick={() => router.push('/')}
+                  variant="outline"
+                  className="h-13 border-line text-ink hover:bg-soft font-bold rounded-2xl px-6"
+                >
+                  {lt(locale, { fa: 'صفحه اصلی', en: 'Home', ar: 'الرئيسية', zh: '首页', ru: 'Главная' })}
                 </Button>
               </>
-            )}
-            {state === 'failed' && (
+            ) : state === 'failed' ? (
               <>
-                <Button onClick={() => router.push('/checkout')} className="flex-1 bg-rose-warm text-surface hover:bg-rose-warm/90 py-6 rounded-2xl font-black text-[15px] flex items-center justify-center gap-2 shadow-sm">
-                  <ArrowLeft size={20} /> تلاش مجدد برای پرداخت
+                <Button 
+                  onClick={() => router.push('/checkout')}
+                  className="flex-1 h-13 bg-brand hover:bg-brand-2 text-surface font-black rounded-2xl flex items-center justify-center gap-2"
+                >
+                  {lt(locale, { fa: 'تلاش مجدد برای پرداخت', en: 'Retry Payment', ar: 'إعادة محاولة الدفع', zh: '重新尝试支付', ru: 'Повторить оплату' })}
                 </Button>
-                <Button variant="outline" onClick={() => router.push('/support')} className="flex-1 bg-surface text-ink hover:bg-soft py-6 border-line/50 rounded-2xl font-black text-[15px] flex items-center justify-center gap-2">
-                  <Headset size={20} /> پشتیبانی مالی
+                <Button 
+                  onClick={() => router.push('/support')}
+                  variant="outline"
+                  className="h-13 border-line text-ink hover:bg-soft font-bold rounded-2xl px-6"
+                >
+                  <Headset size={18} />
+                  {lt(locale, { fa: 'پشتیبانی', en: 'Support', ar: 'الدعم', zh: '客服', ru: 'Поддержка' })}
                 </Button>
               </>
-            )}
-            {state === 'paid_pending' && (
-              <>
-                <Button onClick={() => router.push('/my-trips')} className="flex-1 bg-flight text-surface hover:bg-flight/90 py-6 rounded-2xl font-black text-[15px] flex items-center justify-center gap-2 shadow-sm">
-                  <MapPin size={20} /> پیگیری در سفرهای من
-                </Button>
-                <Button variant="outline" onClick={() => router.push('/support')} className="flex-1 bg-surface text-ink hover:bg-soft py-6 border-line/50 rounded-2xl font-black text-[15px] flex items-center justify-center gap-2">
-                  <Headset size={20} /> پشتیبانی
-                </Button>
-              </>
-            )}
-            {state === 'confirmed' && (
-              <>
-                <Button onClick={() => router.push('/my-trips')} className="flex-1 bg-brand text-surface hover:bg-brand-2 py-6 rounded-2xl font-black text-[15px] flex items-center justify-center gap-2 shadow-sm">
-                  <Download size={20} /> مشاهده سند و کارت سفر
-                </Button>
-                <Button variant="outline" onClick={() => router.push('/')} className="flex-1 bg-surface text-ink hover:bg-soft py-6 border-line/50 rounded-2xl font-black text-[15px] flex items-center justify-center gap-2">
-                  <ArrowLeft size={20} /> بازگشت به خانه
-                </Button>
-              </>
+            ) : (
+              <Button 
+                onClick={() => router.push('/my-trips')}
+                className="w-full h-13 bg-brand hover:bg-brand-2 text-surface font-black rounded-2xl"
+              >
+                {lt(locale, { fa: 'پیگیری در سفرهای من', en: 'Track in My Trips', ar: 'متابعة في رحلاتي', zh: '在我的旅行中追踪', ru: 'Отслеживать в поездках' })}
+              </Button>
             )}
           </div>
-
         </div>
-        
-        {/* Helper text indicating dynamic state */}
-        <div className="mt-8 text-center flex items-center justify-center gap-2 text-sub opacity-70">
-          <ShieldCheck size={16} />
-          <span className="font-bold text-[12px]">این محیط امن و رمزنگاری شده است.</span>
-        </div>
-
       </div>
     </div>
   );

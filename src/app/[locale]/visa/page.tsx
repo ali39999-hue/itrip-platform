@@ -53,7 +53,7 @@ export default function VisaPage() {
     setTimeout(() => {
       setBookingContext({
         type: 'visa',
-        title: `ویزای ${selected.countryFa}`,
+        title: `${lt(locale, { fa: 'ویزای', en: 'Visa for', ar: 'تأشيرة', zh: '签证', ru: 'Виза в' })} ${locale === 'fa' ? selected.countryFa : selected.countryEn}`,
         subtitle: `${firstEn} ${lastEn} • ${passport.toUpperCase()}`,
         amount: selected.price,
         travelDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),

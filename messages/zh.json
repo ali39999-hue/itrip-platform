@@ -434,7 +434,7 @@
     "statusCancelled": "已取消"
   },
   "HotelDetail": {
-    "backToResults": "返回结果",
+    "backToResults": "返回搜索结果",
     "backToSearch": "返回搜索结果",
     "destinations": "目的地",
     "payRial": "多币种支付",
@@ -480,7 +480,15 @@
     "reviewFilterFamily": "家庭出游",
     "reviewFilterCouple": "情侣出游",
     "reviewFilterBusiness": "商务出差",
-    "reviewFilterSolo": "单人旅行"
+    "reviewFilterSolo": "单人旅行",
+    "navOverview": "概览",
+    "navLocation": "位置",
+    "navRooms": "客房与房价",
+    "navAmenities": "配套设施",
+    "navReviews": "住客点评",
+    "navPolicies": "入住须知",
+    "hotelNotFound": "未找到该酒店",
+    "comboAppliedToast": "已应用推荐客房组合"
   },
   "Flights": {
     "flightDetails": "航班与行李详情",
@@ -492,11 +500,28 @@
     "baggageIncluded": "托运行李",
     "perPassenger": "每位乘客",
     "toman": "图曼",
-    "filters": "筛选条件",
+    "filters": "筛选",
     "airlines": "航空公司",
     "flightFound": "找到 {count} 个航班",
     "noFlights": "未找到符合筛选条件的航班",
-    "clearFilters": "清除所有筛选"
+    "clearFilters": "清除筛选",
+    "clearAll": "清除全部",
+    "priceRange": "价格区间",
+    "stopsCount": "中转次数",
+    "directOnly": "直达",
+    "oneStop": "1次中转",
+    "twoOrMoreStops": "2次及以上中转",
+    "allOrigins": "所有出发地",
+    "allDestinations": "所有目的地",
+    "changeSearch": "修改搜索",
+    "sortCheapest": "最便宜",
+    "sortFastest": "最快捷",
+    "sortSuggested": "推荐",
+    "sortEarliest": "最早出发",
+    "noFlightsFound": "未找到符合筛选条件的航班",
+    "promoTitle": "通过 Firuzo 体验全新旅行",
+    "promoSubtitle": "发现最佳航班，支持即时预订与多币种支付。",
+    "learnMore": "了解更多"
   },
   "Tours": {
     "title": "精选旅游与特色体验",
@@ -673,5 +698,27 @@
     "specialForDest": "目的地专属特权",
     "exclusivePackage": "{country} 专属旅行全包礼包",
     "subtitle": "一站式旅行解决方案：航班、酒店、签证、eSIM、接送与多语种支持"
+  },
+  "FlightCheckout": {
+    "searchFlights": "搜索航班",
+    "selectFlight": "选择航班",
+    "passengerInfoAndPayment": "乘客信息与支付",
+    "recommendedExtras": "附加增值服务（推荐）",
+    "esimTitle": "Irancell 游客电话卡 + 10GB 流量",
+    "esimSubtitle": "国际机场即时领取",
+    "insuranceTitle": "Saman 境外旅游保险（保额高达 10,000 欧元）",
+    "insuranceSubtitle": "全额医疗及意外事故紧急保障",
+    "add": "添加",
+    "remove": "移除",
+    "priceDetails": "价格明细",
+    "flightToMashhad": "德黑兰至马什哈德航班",
+    "adultPassengerCount": "1 位成人乘客",
+    "taxesAndFees": "税费与附加费",
+    "addedServices": "附加服务",
+    "touristEsim": "游客 eSIM",
+    "travelInsurance": "旅游保险",
+    "amountPayable": "应付总额",
+    "confirmAndProceed": "确认并继续支付",
+    "policyNotice": "平台严格执行即时 PNR 确认机制，保障预订出票合规有效。"
   }
 }
