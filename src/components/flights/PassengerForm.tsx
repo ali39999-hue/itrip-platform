@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslations } from 'next-intl';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Scan, User, Camera, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import { passengerSchema, Passenger } from '@/lib/validations';
 import { useBookingStore } from '@/stores/booking-store';
 
 export function PassengerForm({ onChange }: { onChange?: (p: Passenger) => void }) {
+  const t = useTranslations('PassengerForm');
   const [isScanning, setIsScanning] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
   const setPassengers = useBookingStore((s) => s.setPassengers);
@@ -72,7 +74,7 @@ export function PassengerForm({ onChange }: { onChange?: (p: Passenger) => void 
       <div className="flex justify-between items-center mb-6 pb-4 border-b">
         <h2 className="text-lg font-bold text-ink flex items-center gap-2">
           <User size={20} className="text-brand-dark" />
-          اطلاعات مسافر اصلی
+          {t('title')}
         </h2>
         
         {/* OCR Button */}
@@ -85,27 +87,27 @@ export function PassengerForm({ onChange }: { onChange?: (p: Passenger) => void 
         >
           {isScanning ? (
             <span className="flex items-center gap-2 animate-pulse">
-              <Scan size={18} /> در حال اسکن...
+              <Scan size={18} /> {t('scanning')}
             </span>
           ) : scanComplete ? (
             <span className="flex items-center gap-2">
-              <CheckCircle2 size={18} /> پاسپورت اسکن شد
+              <CheckCircle2 size={18} /> {t('scanComplete')}
             </span>
           ) : (
             <span className="flex items-center gap-2">
-              <Camera size={18} /> اسکن پاسپورت (OCR)
+              <Camera size={18} /> {t('scanPassport')}
             </span>
           )}
         </Button>
       </div>
 
       <div className="bg-mint text-brand-dark text-sm p-4 rounded-lg mb-6">
-        برای جلوگیری از خطای صدور بلیط، لطفاً اطلاعات را دقیقاً مطابق پاسپورت وارد کنید. استفاده از قابلیت اسکن خودکار (OCR) پیشنهاد می‌شود.
+        {t('notice')}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-ink">نام (انگلیسی)</label>
+          <label className="text-sm font-medium text-ink">{t('firstName')}</label>
           <Input 
             {...register('firstName')}
             className="bg-soft uppercase" 
@@ -115,7 +117,7 @@ export function PassengerForm({ onChange }: { onChange?: (p: Passenger) => void 
           {errors.firstName && <span className="text-rose-warm text-xs font-medium">{errors.firstName.message}</span>}
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-ink">نام خانوادگی (انگلیسی)</label>
+          <label className="text-sm font-medium text-ink">{t('lastName')}</label>
           <Input 
             {...register('lastName')}
             className="bg-soft uppercase" 
@@ -125,7 +127,7 @@ export function PassengerForm({ onChange }: { onChange?: (p: Passenger) => void 
           {errors.lastName && <span className="text-rose-warm text-xs font-medium">{errors.lastName.message}</span>}
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-ink">شماره پاسپورت</label>
+          <label className="text-sm font-medium text-ink">{t('passportNo')}</label>
           <Input 
             {...register('passportNo')}
             className="bg-soft uppercase font-mono" 
@@ -135,7 +137,7 @@ export function PassengerForm({ onChange }: { onChange?: (p: Passenger) => void 
           {errors.passportNo && <span className="text-rose-warm text-xs font-medium">{errors.passportNo.message}</span>}
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-ink">کد ملی</label>
+          <label className="text-sm font-medium text-ink">{t('nationalId')}</label>
           <Input 
             {...register('nationalId')}
             className="bg-soft uppercase" 
@@ -145,7 +147,7 @@ export function PassengerForm({ onChange }: { onChange?: (p: Passenger) => void 
           {errors.nationalId && <span className="text-rose-warm text-xs font-medium">{errors.nationalId.message}</span>}
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-ink">تاریخ تولد میلادی</label>
+          <label className="text-sm font-medium text-ink">{t('birthDate')}</label>
           <Input 
             type="date"
             {...register('birthDate')}
@@ -155,10 +157,10 @@ export function PassengerForm({ onChange }: { onChange?: (p: Passenger) => void 
           {errors.birthDate && <span className="text-rose-warm text-xs font-medium">{errors.birthDate.message}</span>}
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-ink">جنسیت</label>
+          <label className="text-sm font-medium text-ink">{t('gender')}</label>
           <select {...register('gender')} className="flex h-10 w-full rounded-md border border-input bg-soft px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 uppercase">
-            <option value="MALE">مرد</option>
-            <option value="FEMALE">زن</option>
+            <option value="MALE">{t('male')}</option>
+            <option value="FEMALE">{t('female')}</option>
           </select>
           {errors.gender && <span className="text-rose-warm text-xs font-medium">{errors.gender.message}</span>}
         </div>

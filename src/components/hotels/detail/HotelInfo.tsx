@@ -179,7 +179,7 @@ export function HotelReviews({ hotel }: { hotel: Hotel }) {
         ))}
       </div>
       {revList.length === 0 ? (
-        <div className="p-5 text-center text-sub text-[12.5px] font-bold border border-dashed border-line rounded-xl">هنوز نظری برای این دسته ثبت نشده است.</div>
+        <div className="p-5 text-center text-sub text-[12.5px] font-bold border border-dashed border-line rounded-xl">{t('emptyReviews')}</div>
       ) : (
         revList.map((r) => (
           <div key={r.n} className="py-3.5 border-b border-dashed border-line/70 last:border-0">
@@ -207,8 +207,8 @@ export function HotelPolicies({ checkinDate }: { checkinDate: string }) {
   const dl = new Date(new Date(checkinDate + 'T14:00:00').getTime() - FREE_CANCEL_HOURS * 36e5);
 
   const policyItems: [LucideIcon, string, string][] = [
-    [KeyRound, 'ورود و خروج', 'ورود از ۱۴:۰۰ · خروج تا ۱۲:۰۰. ورود زودهنگام در صورت خالی بودن اتاق رایگان است.'],
-    [Users, 'کودک و تخت اضافه', 'افراد بالای ۱۲ سال بزرگسال محسوب می‌شوند. درخواست تخت اضافه باید پیش از ورود تأیید شود.'],
+    [KeyRound, t('checkinOut'), t('checkinOutDesc')],
+    [Users, t('childrenExtraBed'), t('childrenExtraBedDesc')],
   ];
 
   return (
