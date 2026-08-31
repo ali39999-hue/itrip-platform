@@ -49,7 +49,7 @@ export function PwaBoot() {
       </button>
       <button
         onClick={() => setHidden(true)}
-        aria-label={t('Common.aria.close')}
+        aria-label={t('aria.close')}
         className="grid place-items-center w-7 h-7 rounded-lg bg-soft text-sub hover:text-ink shrink-0 transition"
       >
         <X size={13} />
