@@ -28,7 +28,7 @@
   },
   "Footer": {
     "brand": "Firuzo",
-    "about": "Firuzo is your all-in-one travel platform. With the best flight, hotel and tour options across 6 countries, we make every trip effortless and memorable.",
+    "about": "Firuzo is your all-in-one travel platform. With the best flight, hotel and tour options across 7 countries, we make every trip effortless and memorable.",
     "booking": "Booking & travel",
     "services": "Services",
     "guide": "Guide",
@@ -130,20 +130,22 @@
     "titleC": "",
     "subtitle": "A new way to plan travel. Find your dream flight, hotel and tour in seconds."
   },
-  "Search": {
-    "tabFlights": "Flights",
-    "tabHotels": "Hotels",
-    "tabTours": "Tours",
-    "tabTransfers": "Transfers",
-    "tabTrains": "Train & bus",
-    "from": "From",
-    "to": "To",
-    "destination": "Destination",
-    "fromPlaceholder": "Tehran (THR)",
-    "toPlaceholder": "Istanbul (IST)",
-    "destPlaceholder": "City, hotel, or destination...",
-    "departDate": "Departure Date",
-    "returnDate": "Return Date (Optional)",
+    "Search": {
+      "tabFlights": "Flights",
+      "tabHotels": "Hotels",
+      "tabTours": "Tours",
+      "tabTransfers": "Transfers",
+      "tabTrains": "Train & bus",
+      "from": "From",
+      "to": "To",
+      "destination": "Destination",
+      "fromPlaceholder": "Tehran (THR)",
+      "toPlaceholder": "Istanbul (IST)",
+      "destPlaceholder": "City, hotel, or destination...",
+      "departDate": "Departure Date",
+      "returnDate": "Return Date (Optional)",
+      "dateCheckOut": "Check-out Date",
+      "dateReturn": "Return Date",
     "time": "Time",
     "guests": "Rooms & guests",
     "guestsDialog": "Rooms & guests",
@@ -736,7 +738,7 @@
   },
   "Destinations": {
     "popular": "Popular Destinations",
-    "subtitle": "Comprehensive city guides, hotels, and signature experiences across 6 countries",
+    "subtitle": "Comprehensive city guides, hotels, and signature experiences across 7 countries",
     "citiesOf": "Cities in {country}",
     "smartPlanner": "AI Smart Planner",
     "readyTours": "Ready-made Tours",
@@ -761,7 +763,7 @@
     "catalog": "Complete Services Catalog",
     "specialForDest": "Tailored for Your Destination",
     "exclusivePackage": "Exclusive Travel Bundle for {country}",
-    "subtitle": "End-to-end travel solutions: flights, hotels, visa, eSIM, transfers, and support in 6 countries"
+    "subtitle": "End-to-end travel solutions: flights, hotels, visa, eSIM, transfers, and support in 7 countries"
   },
   "FlightCheckout": {
     "searchFlights": "Search Flights",

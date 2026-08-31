@@ -200,7 +200,9 @@
     "tourTypeRecreational": "休闲度假",
     "tourTypeMedical": "医疗与康养",
     "tourTypeCommercial": "商务与展览",
-    "btnTours": "搜索旅游"
+    "btnTours": "搜索旅游",
+    "dateReturn": "返回日期",
+    "dateCheckOut": "退房日期"
   },
   "Home": {
     "offersKicker": "为您的目的地精选",
@@ -736,7 +738,7 @@
   },
   "Destinations": {
     "popular": "热门目的地",
-    "subtitle": "涵盖6个国家的城市指南、酒店与地道体验",
+    "subtitle": "涵盖7个国家的城市指南、酒店与地道体验",
     "citiesOf": "{country} 的城市",
     "smartPlanner": "AI智能行程规划",
     "readyTours": "精选现成线路",

@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
-import { Star, Heart, MapPin } from 'lucide-react';
+import { Star, Heart, MapPin, CheckCircle2 } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { shimmerDataUrl, getHotelImage } from '@/lib/image-utils';
 import { num } from '@/lib/format';
@@ -11,28 +11,28 @@ import { lt, LText } from '@/lib/lt';
 import type { HotelCardProps } from './types';
 
 const AM_MAP: Record<string, LText> = {
-  wifi: { fa: 'وای‌فای', en: 'Wi-Fi', ar: 'واي فاي', zh: '无线网络', ru: 'Wi-Fi' },
+  wifi: { fa: 'وای‌فای رایگان', en: 'Free Wi-Fi', ar: 'واي فاي مجاني', zh: '免费无线', ru: 'Бесплатный Wi-Fi' },
   pool: { fa: 'استخر', en: 'Pool', ar: 'مسبح', zh: '游泳池', ru: 'Бассейн' },
-  spa: { fa: 'اسپا', en: 'Spa', ar: 'سبا', zh: '水疗', ru: 'Спа' },
-  restaurant: { fa: 'رستوران', en: 'Restaurant', ar: 'مطعم', zh: '餐厅', ru: 'Ресторан' },
-  parking: { fa: 'پارکینگ', en: 'Parking', ar: 'موقف سيارات', zh: '停车场', ru: 'Парковка' },
-  shuttle: { fa: 'ترانسفر', en: 'Shuttle', ar: 'نقل مكوكي', zh: '接送服务', ru: 'Трансфер' },
-  garden: { fa: 'باغ', en: 'Garden', ar: 'حديقة', zh: '花园', ru: 'Сад' },
-  museum: { fa: 'موزه', en: 'Museum', ar: 'متحف', zh: '博物馆', ru: 'Музей' },
-  teahouse: { fa: 'چایخانه', en: 'Tea House', ar: 'بيت شاي', zh: '茶馆', ru: 'Чайный дом' },
-  gym: { fa: 'باشگاه', en: 'Gym', ar: 'صالة رياضية', zh: '健身房', ru: 'Фитнес' },
-  beach_access: { fa: 'ساحل', en: 'Beach', ar: 'شاطئ', zh: '海滩', ru: 'Пляж' },
-  terrace: { fa: 'تراس', en: 'Terrace', ar: 'تراس', zh: '露台', ru: 'Терраса' },
+  spa: { fa: 'مرکز اسپا', en: 'Spa', ar: 'سبا', zh: '水疗中心', ru: 'Спа' },
+  restaurant: { fa: 'رستوران سنتی', en: 'Restaurant', ar: 'مطعم', zh: '特色餐厅', ru: 'Ресторан' },
+  parking: { fa: 'پارکینگ اختصاصی', en: 'Parking', ar: 'موقف سيارات', zh: '专属停车', ru: 'Парковка' },
+  shuttle: { fa: 'ترانسفر فرودگاهی', en: 'Airport Shuttle', ar: 'نقل المطار', zh: '机场接送', ru: 'Трансфер' },
+  garden: { fa: 'باغ تاریخی', en: 'Garden', ar: 'حديقة', zh: '花园', ru: 'Сад' },
+  museum: { fa: 'موزه اختصاصی', en: 'Museum', ar: 'متحف', zh: '博物馆', ru: 'Музей' },
+  teahouse: { fa: 'چایخانه سنتی', en: 'Tea House', ar: 'بيت شاي', zh: '传统茶馆', ru: 'Чайный дом' },
+  gym: { fa: 'باشگاه ورزشی', en: 'Gym', ar: 'صالة رياضية', zh: '健身房', ru: 'Фитнес' },
+  beach_access: { fa: 'دسترسی اختصاصی ساحل', en: 'Private Beach', ar: 'شاطئ خاص', zh: '私人沙滩', ru: 'Частный пляж' },
+  terrace: { fa: 'تراس و بام سبز', en: 'Terrace', ar: 'تراس', zh: '观景露台', ru: 'Терраса' },
 };
 
 const DISTANCE_MAP: Record<string, LText> = {
-  '۵۰۰ متر تا حرم': { fa: '۵۰۰ متر تا حرم', en: '500 m to the Shrine', ar: 'على بُعد ٥٠٠ متر من الحرم', zh: '距圣地500米', ru: '500 м до святыни' },
+  '۵۰۰ متر تا حرم': { fa: '۵۰۰ متر تا حرم', en: '500m to the Shrine', ar: 'على بُعد ٥٠٠ متر من الحرم', zh: '距圣地500米', ru: '500 м до святыни' },
   '۱ کیلومتر تا میدان نقش جهان': { fa: '۱ کیلومتر تا میدان نقش جهان', en: '1 km to Naqsh-e Jahan Square', ar: 'على بُعد ١ كم من ساحة نقش جهان', zh: '距伊玛目广场1公里', ru: '1 км до площади Накш-е Джахан' },
-  '۳۰۰ متر از ساحل جبرعلی': { fa: '۳۰۰ متر از ساحل جبرعلی', en: '300 m from Jebel Ali Beach', ar: 'على بُعد ٣٠٠ متر من شاطئ جبل علي', zh: '距杰贝阿里海滩300米', ru: '300 м от пляжа Джебель-Али' },
+  '۳۰۰ متر از ساحل جبرعلی': { fa: '۳۰۰ متر از ساحل جبرعلی', en: '300m from Jebel Ali Beach', ar: 'على بُعد ٣٠٠ متر من شاطئ جبل علي', zh: '距杰贝阿里海滩300米', ru: '300 м от пляжа Джебель-Али' },
   'قلب شهر قدیم': { fa: 'قلب شهر قدیم', en: 'Heart of the old town', ar: 'في قلب المدينة القديمة', zh: '老城中心地带', ru: 'В самом сердце старого города' },
-  '۵۰۰ متر تا تاکسیم': { fa: '۵۰۰ متر تا تاکسیم', en: '500 m to Taksim', ar: 'على بُعد ٥٠٠ متر من تقسيم', zh: '距塔克西姆500米', ru: '500 м до Таксим' },
-  '۲۰۰ متر تا میدان سرخ': { fa: '۲۰۰ متر تا میدان سرخ', en: '200 m to Red Square', ar: 'على بُعد ٢٠٠ متر من الساحة الحمراء', zh: '距红场200米', ru: '200 м до Красной площади' },
-  'ساحل القرم': { fa: 'ساحل القرم', en: 'Al Qurm Beach', ar: 'شاطئ القرم', zh: '阿尔古姆海滩', ru: 'Пляж Аль-Курм' },
+  '۵۰۰ متر تا تاکسیم': { fa: '۵۰۰ متر تا تاکسیم', en: '500m to Taksim Square', ar: 'على بُعد ٥٠٠ متر من تقسيم', zh: '距塔克西姆500米', ru: '500 м до Таксим' },
+  '۲۰۰ متر تا میدان سرخ': { fa: '۲۰۰ متر تا میدان سرخ', en: '200m to Red Square', ar: 'على بُعد ٢٠٠ متر من الساحة الحمراء', zh: '距红场200米', ru: '200 м до Красной площади' },
+  'ساحل القرم': { fa: 'ساحل القرم', en: 'Al Qurm Beachfront', ar: 'شاطئ القرم', zh: '阿尔古姆海滩', ru: 'Пляж Аль-Курм' },
 };
 
 export function HotelCard({
@@ -55,6 +55,11 @@ export function HotelCard({
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   });
+
+  const distanceText = lt(
+    locale,
+    DISTANCE_MAP[hotel.distanceFromCenter] ?? { fa: hotel.distanceFromCenter, en: hotel.distanceFromCenter }
+  );
 
   return (
     <article className="bg-surface border border-line rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row gap-5 hover:border-brand/40 transition-all shadow-elev-1 hover:shadow-elev-2 group">
@@ -121,12 +126,26 @@ export function HotelCard({
             </div>
           </div>
 
-          {/* Distance */}
-          <div className="flex items-center gap-1.5 text-xs text-sub mb-3">
-            <MapPin size={13} className="text-brand-dark shrink-0" />
-            <span>
-              {lt(locale, DISTANCE_MAP[hotel.distanceFromCenter] ?? { fa: hotel.distanceFromCenter, en: hotel.distanceFromCenter })}
+          {/* Decision Value Proposition Badge Row */}
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-soft text-brand-dark text-xs font-bold border border-line/60">
+              <MapPin size={12} className="text-brand shrink-0" />
+              <span>{distanceText}</span>
             </span>
+            {hotel.rating >= 8.5 && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-gold-soft text-price text-xs font-black">
+                <CheckCircle2 size={12} className="text-action" />
+                <span>
+                  {lt(locale, {
+                    fa: 'امتیاز ممتاز مهمانان',
+                    en: 'Guest Top Pick',
+                    ar: 'اختيار الضيوف المفضل',
+                    zh: '宾客高分首选',
+                    ru: 'Высокая оценка гостей',
+                  })}
+                </span>
+              </span>
+            )}
           </div>
 
           {/* Amenities */}
@@ -139,7 +158,7 @@ export function HotelCard({
           </div>
         </div>
 
-        {/* Footer Row: Compare & Total + Price & Booking CTA */}
+        {/* Footer Row: Compare, Total Stay & Booking CTA */}
         <div className="pt-3 border-t border-line/60 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div className="flex flex-col gap-1">
             <label className="inline-flex items-center gap-2 cursor-pointer select-none text-xs text-sub font-bold">
@@ -151,22 +170,31 @@ export function HotelCard({
               />
               <span>{t('compare')}</span>
             </label>
-            <div className="text-[11px] text-sub font-medium">
-              {t('totalNights', { nights, price: totalMillion })}
+            <div className="text-xs text-sub font-medium">
+              <span className="text-sub font-bold">
+                {lt(locale, {
+                  fa: `جمع ${nights} شب:`,
+                  en: `Total for ${nights} nights:`,
+                  ar: `المجموع لـ ${nights} ليالٍ:`,
+                  zh: `${nights} 晚总价:`,
+                  ru: `Всего за ${nights} ноч.:`,
+                })}
+              </span>{' '}
+              <strong className="text-ink font-black font-mono">{totalMillion}</strong> {t('millionToman')}
             </div>
           </div>
 
           <div className="flex items-center justify-between sm:justify-end gap-4">
             <div className="text-end">
               <span className="text-[11px] text-sub block font-medium">{t('perNightFrom')}</span>
-              <div className="text-base sm:text-lg font-black text-ink font-mono num flex items-baseline gap-1">
+              <div className="text-base sm:text-lg font-black text-brand-dark font-mono num flex items-baseline gap-1">
                 <span>{priceMillion}</span>
                 <span className="text-xs font-bold text-sub">{t('millionToman')}</span>
               </div>
             </div>
             <Link
               href={`/hotels/${hotel.id}`}
-              className="h-11 px-5 rounded-xl bg-action hover:bg-action-hover text-[#14201f] font-black text-xs sm:text-sm flex items-center justify-center transition shadow-sm hover:shadow-elev-1 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none active:scale-[0.98]"
+              className="h-11 px-5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs sm:text-sm flex items-center justify-center transition shadow-sm hover:shadow-elev-1 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none active:scale-[0.98]"
             >
               {t('viewAndBook')}
             </Link>

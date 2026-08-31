@@ -200,7 +200,9 @@
     "tourTypeRecreational": "ترفيهي وسياحي",
     "tourTypeMedical": "علاجي وصحي",
     "tourTypeCommercial": "تجاري ومعارض",
-    "btnTours": "البحث عن الجولات"
+    "btnTours": "البحث عن الجولات",
+    "dateReturn": "تاريخ العودة",
+    "dateCheckOut": "تاريخ المغادرة"
   },
   "Home": {
     "offersKicker": "خاص بوجهتك",
@@ -735,7 +737,7 @@
   },
   "Destinations": {
     "popular": "وجهات رائجة",
-    "subtitle": "دليل شامل للمدن السياحية والفنادق والتجارب الأصيلة في 6 دول",
+    "subtitle": "دليل شامل للمدن السياحية والفنادق والتجارب الأصيلة في 7 دول",
     "citiesOf": "مدن {country}",
     "smartPlanner": "مخطط الرحلات الذكي",
     "readyTours": "جولات جاهزة",
@@ -760,7 +762,7 @@
     "catalog": "دليل الخدمات الكامل",
     "specialForDest": "مخصص لوجهتك",
     "exclusivePackage": "باقة سفر حصرية إلى {country}",
-    "subtitle": "حلول سفر متكاملة: طيران، فنادق، تأشيرات، شرائح إلكترونية، نقل ودعم في 6 دول"
+    "subtitle": "حلول سفر متكاملة: طيران، فنادق، تأشيرات، شرائح إلكترونية، نقل ودعم في 7 دول"
   },
   "FlightCheckout": {
     "searchFlights": "بحث الرحلات",

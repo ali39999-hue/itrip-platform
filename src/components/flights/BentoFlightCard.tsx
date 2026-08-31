@@ -59,7 +59,11 @@ export function BentoFlightCard({ flight, onSelect }: { flight: Flight; onSelect
               </div>
               <Badge variant={business ? 'gold' : 'mint'}>
                 {business ? <Ticket size={13} /> : <CheckCircle2 size={13} />}
-                <span>{business ? (lt(locale, { fa: 'بیزینس کلاس', en: 'Business Class', ar: 'درجة الأعمال', zh: '商务舱', ru: 'Бизнес-класс' })) : (lt(locale, { fa: 'تایید آنی', en: 'Instant Confirmation', ar: 'تأكيد فوري', zh: '即时确认', ru: 'Мгновенное подтверждение' }))}</span>
+                <span>
+                  {business
+                    ? lt(locale, { fa: 'بیزینس کلاس', en: 'Business Class', ar: 'درجة الأعمال', zh: '商务舱', ru: 'Бизнес-класс' })
+                    : lt(locale, { fa: 'تایید آنی', en: 'Instant Confirmation', ar: 'تأكيد فوري', zh: '即时确认', ru: 'Мгновенное подтверждение' })}
+                </span>
               </Badge>
             </div>
 
@@ -145,7 +149,15 @@ export function BentoFlightCard({ flight, onSelect }: { flight: Flight; onSelect
             {flight.seatsLeft < 5 ? (
               <div className="text-[11px] text-destructive font-bold flex items-center gap-1 md:mb-2 md:order-1">
                 <Armchair size={13} />
-                {locale === 'fa' ? `فقط ${flight.seatsLeft.toLocaleString('fa-IR')} صندلی باقی مانده` : `Only ${flight.seatsLeft} seats left`}
+                <span>
+                  {lt(locale, {
+                    fa: `فقط ${flight.seatsLeft.toLocaleString('fa-IR')} صندلی باقی مانده`,
+                    en: `Only ${flight.seatsLeft} seats left`,
+                    ar: `بقي ${flight.seatsLeft} مقاعد فقط`,
+                    zh: `仅剩 ${flight.seatsLeft} 个座位`,
+                    ru: `Осталось всего ${flight.seatsLeft} мест`,
+                  })}
+                </span>
               </div>
             ) : (
               <div className="hidden md:flex text-[11px] text-sub items-center gap-1 mb-2 order-1">
@@ -155,9 +167,9 @@ export function BentoFlightCard({ flight, onSelect }: { flight: Flight; onSelect
             )}
             <div className="text-end md:text-start md:order-2">
               <span className="text-[11px] text-sub block mb-1">{t('perPassenger')}</span>
-              <div className="text-xl md:text-2xl font-black text-ink font-mono num flex items-baseline gap-1">
+              <div className="text-xl md:text-2xl font-black text-brand-dark font-mono num flex items-baseline gap-1">
                 {flight.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
-                <span className="text-xs font-normal text-sub">{t('toman')}</span>
+                <span className="text-xs font-bold text-sub">{t('toman')}</span>
               </div>
             </div>
           </div>

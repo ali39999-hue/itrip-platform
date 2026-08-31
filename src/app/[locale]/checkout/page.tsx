@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useLocale } from 'next-intl';
+import { lt } from '@/lib/lt';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useBookingStore } from '@/stores/booking-store';
@@ -199,9 +200,15 @@ export default function CheckoutPage() {
             <div className="flex justify-end pt-2">
               <button
                 type="submit"
-                className="w-full sm:w-auto min-h-[52px] px-8 rounded-xl bg-action hover:bg-action-hover text-[#14201f] text-[15px] font-black shadow-md transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+                className="w-full sm:w-auto min-h-[52px] px-8 rounded-xl bg-action hover:bg-action-hover text-ink text-[15px] font-black shadow-md transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
               >
-                تایید اطلاعات و ادامه به مرحله پرداخت ←
+                {lt(locale, {
+                  fa: 'تایید اطلاعات و ادامه به مرحله پرداخت ←',
+                  en: 'Confirm Details & Continue to Payment →',
+                  ar: 'تأكيد البيانات والمتابعة إلى الدفع ←',
+                  zh: '确认信息并前往支付 →',
+                  ru: 'Подтвердить данные и перейти к оплате →',
+                })}
               </button>
             </div>
           </form>
@@ -225,21 +232,49 @@ export default function CheckoutPage() {
               itemTitle={itemTitle}
             />
 
-            <div className="flex items-center justify-between pt-2">
+            {/* Contextual Trust & Anxiety Relief Banner */}
+            <div className="p-4 rounded-2xl bg-mint/40 border border-brand/20 flex items-center gap-3 text-xs text-brand-dark font-bold">
+              <span className="w-8 h-8 rounded-full bg-mint flex items-center justify-center shrink-0 shadow-xs">
+                🛡️
+              </span>
+              <p className="leading-relaxed">
+                {lt(locale, {
+                  fa: 'تراکنش امن با پروتکل رمزنگاری ۲۵۶ بیتی. صدور آنی واچر رسمی و ضمانت استرداد وجه طبق قوانین کنسلی.',
+                  en: 'Secure 256-bit encrypted transaction. Instant official voucher issuance and refund guarantee per cancellation policy.',
+                  ar: 'معاملة آمنة مع تشفير 256 بت. إصدار فوري للقسيمة الرسمية وضمان الاسترداد حسب سياسة الإلغاء.',
+                  zh: '256位加密安全交易。即时出具官方凭证，并按照退订政策提供退款保障。',
+                  ru: 'Безопасная транзакция с 256-битным шифрованием. Мгновенная выдача ваучера и гарантия возврата по правилам отмены.',
+                })}
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
               <button
                 type="button"
                 onClick={() => setPhase('passengers')}
                 className="text-[13px] font-bold text-sub hover:text-ink underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded"
               >
-                ← بازگشت به ویرایش مشخصات
+                {lt(locale, {
+                  fa: '← بازگشت به ویرایش مشخصات',
+                  en: '← Back to Passenger Details',
+                  ar: '← العودة لتعديل البيانات',
+                  zh: '← 返回修改乘客信息',
+                  ru: '← Вернуться к данным пассажиров',
+                })}
               </button>
 
               <button
                 type="button"
                 onClick={handleFinalPayment}
-                className="min-h-[52px] px-8 rounded-xl bg-action hover:bg-action-hover text-[#14201f] text-[15px] font-black shadow-md transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+                className="w-full sm:w-auto min-h-[52px] px-8 rounded-xl bg-action hover:bg-action-hover text-ink text-[15px] font-black shadow-md transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
               >
-                تایید نهایی و پرداخت
+                {lt(locale, {
+                  fa: 'تایید نهایی و پرداخت',
+                  en: 'Finalize & Complete Payment',
+                  ar: 'التأكيد النهائي والدفع',
+                  zh: '最终确认并支付',
+                  ru: 'Подтвердить и оплатить',
+                })}
               </button>
             </div>
           </div>

@@ -85,7 +85,7 @@ export function CityPassWidget({ locale }: { locale: string }) {
                       : 'bg-soft border-transparent text-ink hover:border-brand/40'
                   }`}
                 >
-                  {t(v.nameKey as any)}
+                  {t(v.nameKey as "tehran" | "isfahan" | "mashhad" | "shiraz")}
                 </button>
               ))}
             </div>
@@ -154,7 +154,7 @@ export function CityPassWidget({ locale }: { locale: string }) {
 
         <div className="p-6 bg-surface flex flex-col">
           <div className="flex justify-between items-center py-2 text-[14px]">
-            <span>{type === 'pass' ? t('touristPassOf') : t('storedCardOf')} {t(c.nameKey as any)}</span>
+            <span>{type === 'pass' ? t('touristPassOf') : t('storedCardOf')} {t(c.nameKey as "tehran" | "isfahan" | "mashhad" | "shiraz")}</span>
             <span className="font-en font-bold">, {num(base, locale, { minimumFractionDigits: 2 })}</span>
           </div>
           <div className="flex justify-between items-center py-2 text-[14px]">
