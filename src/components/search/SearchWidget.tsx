@@ -24,6 +24,8 @@ export function SearchWidget({ initialTab = 'plan' }: SearchWidgetProps) {
     setRouteTo,
     date1,
     setDate1,
+    date2,
+    setDate2,
     adults,
     setAdults,
     children,

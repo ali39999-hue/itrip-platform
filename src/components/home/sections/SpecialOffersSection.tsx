@@ -20,6 +20,7 @@ export function SpecialOffersSection() {
   const locale = useLocale();
   const t = useTranslations('Home');
   const t2 = useTranslations('Plan');
+  const ct = useTranslations('Common');
   const { country } = useCountryStore();
   const c = COUNTRIES[country];
 
@@ -61,10 +62,10 @@ export function SpecialOffersSection() {
             </h2>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <button onClick={() => scroll(locale === 'en' ? -300 : 300)} className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-surface border border-line text-brand-dark hover:bg-soft transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" aria-label={t('Common.aria.scrollRight')}>
+            <button onClick={() => scroll(locale === 'en' ? -300 : 300)} className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-surface border border-line text-brand-dark hover:bg-soft transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" aria-label={ct('aria.scrollRight')}>
               <ChevronRight size={18} className="ltr:-scale-x-100" />
             </button>
-            <button onClick={() => scroll(locale === 'en' ? 300 : -300)} className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-surface border border-line text-brand-dark hover:bg-soft transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" aria-label={t('Common.aria.scrollLeft')}>
+            <button onClick={() => scroll(locale === 'en' ? 300 : -300)} className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-surface border border-line text-brand-dark hover:bg-soft transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" aria-label={ct('aria.scrollLeft')}>
               <ChevronLeft size={18} className="ltr:-scale-x-100" />
             </button>
             <button

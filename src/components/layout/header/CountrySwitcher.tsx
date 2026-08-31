@@ -34,7 +34,7 @@ export function CountrySwitcher() {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="listbox"
-        aria-label={t('Common.aria.destinationCountry')}
+        aria-label={t('aria.destinationCountry')}
         className="min-h-[38px] inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-[13px] font-black text-brand-dark bg-brand/10 hover:bg-brand/20 transition border-0 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
       >
         <MapPin size={14} className="text-brand-dark" />

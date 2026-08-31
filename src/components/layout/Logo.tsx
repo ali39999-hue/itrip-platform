@@ -11,6 +11,7 @@ export interface LogoProps {
 
 export function Logo({ variant = 'full', size = 'md', className = '' }: LogoProps) {
   const t = useTranslations('Logo');
+  const ct = useTranslations('Common');
 
   const dims = {
     sm: { img: 28, text: 'text-base', sub: 'text-[9px]' },
@@ -22,7 +23,7 @@ export function Logo({ variant = 'full', size = 'md', className = '' }: LogoProp
     <Link
       href="/"
       className={`inline-flex items-center gap-2.5 group focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-xl p-1 -m-1 transition-all ${className}`}
-      aria-label={t('Common.aria.homepage')}
+      aria-label={ct('aria.homepage')}
     >
       <div className="relative shrink-0 transition-transform duration-300 group-hover:scale-105">
         <Image

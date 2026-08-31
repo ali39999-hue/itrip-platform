@@ -126,8 +126,8 @@ export default async function RootLayout({
               {children}
             </AppChrome>
           </Providers>
+          <PwaBoot />
         </NextIntlClientProvider>
-        <PwaBoot />
       </body>
     </html>
   );

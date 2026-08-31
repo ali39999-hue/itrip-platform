@@ -13,6 +13,7 @@ import { useTranslations } from 'next-intl';
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const t = useTranslations('Nav');
+  const ct = useTranslations('Common');
 
   return (
     <header className="sticky top-0 z-[80] bg-surface/90 backdrop-blur-md border-b border-line/80">
@@ -38,7 +39,7 @@ export function Header() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label={mobileMenuOpen ? t('Common.aria.closeMenu') : t('Common.aria.openMenu')}
+            aria-label={mobileMenuOpen ? ct('aria.closeMenu') : ct('aria.openMenu')}
             aria-expanded={mobileMenuOpen}
             className="lg:hidden w-10 h-10 grid place-items-center rounded-full text-ink hover:bg-soft transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
           >
