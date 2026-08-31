@@ -11,6 +11,8 @@ interface HotelSearchFormProps {
   setDest: (val: string) => void;
   date1: string;
   setDate1: (val: string) => void;
+  date2: string;
+  setDate2: (val: string) => void;
   adults: number;
   setAdults: React.Dispatch<React.SetStateAction<number>>;
   childrenCount: number;
@@ -27,6 +29,8 @@ export function HotelSearchForm({
   setDest,
   date1,
   setDate1,
+  date2,
+  setDate2,
   adults,
   setAdults,
   childrenCount,
@@ -42,7 +46,7 @@ export function HotelSearchForm({
   return (
     <>
       {/* City */}
-      <div className="md:col-span-5">
+      <div className="md:col-span-3">
         <CityAutocomplete
           value={dest}
           onChange={(val) => {
@@ -56,7 +60,7 @@ export function HotelSearchForm({
       </div>
 
       {/* Date */}
-      <div className="md:col-span-3">
+      <div className="md:col-span-2">
         <JalaliDatePicker
           value={date1}
           onChange={(d) => setDate1(d || '')}
@@ -65,8 +69,17 @@ export function HotelSearchForm({
         />
       </div>
 
+      <div className="md:col-span-2">
+        <JalaliDatePicker
+          value={date2}
+          onChange={(d) => setDate2(d || '')}
+          label={t('dateCheckOut')}
+          id="search-date-checkout"
+        />
+      </div>
+
       {/* Guests */}
-      <div className="md:col-span-2 relative">
+      <div className="md:col-span-3 relative">
         <TravelerPicker
           open={guestOpen}
           setOpen={setGuestOpen}

@@ -19,6 +19,8 @@ interface FlightSearchFormProps {
   setChildrenCount: React.Dispatch<React.SetStateAction<number>>;
   rooms: number;
   setRooms: React.Dispatch<React.SetStateAction<number>>;
+  date2: string;
+  setDate2: (val: string) => void;
   guestOpen: boolean;
   setGuestOpen: (val: boolean) => void;
   swap: () => void;
@@ -32,6 +34,8 @@ export function FlightSearchForm({
   setRouteTo,
   date1,
   setDate1,
+  date2,
+  setDate2,
   adults,
   setAdults,
   childrenCount,
@@ -48,7 +52,7 @@ export function FlightSearchForm({
   return (
     <>
       {/* Origin */}
-      <div className="md:col-span-3 relative">
+      <div className="md:col-span-2 relative">
         <CityAutocomplete
           value={dest}
           onChange={(val) => {
@@ -72,7 +76,7 @@ export function FlightSearchForm({
       </div>
 
       {/* Destination */}
-      <div className="md:col-span-3">
+      <div className="md:col-span-2">
         <CityAutocomplete
           value={routeTo}
           onChange={(val) => {
@@ -92,6 +96,15 @@ export function FlightSearchForm({
           onChange={(d) => setDate1(d || '')}
           label={t('dateDepart')}
           id="search-date-depart"
+        />
+      </div>
+
+      <div className="md:col-span-2">
+        <JalaliDatePicker
+          value={date2}
+          onChange={(d) => setDate2(d || '')}
+          label={t('dateReturn')}
+          id="search-date-return"
         />
       </div>
 
