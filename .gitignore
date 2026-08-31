@@ -13,6 +13,10 @@
 # testing
 /coverage
 
+# temporary files
+.tmp*
+.tmp-*/
+
 # next.js
 /.next/
 /out/
