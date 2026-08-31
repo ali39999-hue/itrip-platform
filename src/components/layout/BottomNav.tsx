@@ -1,32 +1,35 @@
 'use client';
 
-import { useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/routing';
 import { Home, Map, Wallet, UserRound, Briefcase } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
+import { useHydration } from '@/hooks/useHydration';
 
 const ITEMS = [
-  { href: '/', fa: 'خانه', en: 'Home', ar: 'الرئيسية' },
-  { href: '/book', fa: 'رزرو', en: 'Book', ar: 'الحجز' },
-  { href: '/destinations', fa: 'مقصدها', en: 'Places', ar: 'الوجهات' },
-  { href: '/wallet', fa: 'کیف پول', en: 'Wallet', ar: 'المحفظة' },
-  { href: '/account', fa: 'حساب', en: 'Account', ar: 'الحساب' },
+  { href: '/', labelKey: 'home' },
+  { href: '/book', labelKey: 'book' },
+  { href: '/destinations', labelKey: 'places' },
+  { href: '/wallet', labelKey: 'wallet' },
+  { href: '/account', labelKey: 'account' },
 ] as const;
 
 export function BottomNav() {
-  const locale = useLocale();
+  const t = useTranslations('Nav');
   const pathname = usePathname();
+  // Persisted store: render SSR-defaults until hydration to avoid mismatch
+  const isHydrated = useHydration();
   const user = useAuthStore((s) => s.user);
+  const effectiveUser = isHydrated ? user : null;
   const items = ITEMS.map((it) =>
-    it.href === '/account' && !user ? { ...it, href: '/auth' } : it,
+    it.href === '/account' && !effectiveUser ? { ...it, href: '/auth' } : it,
   );
-  const labelOf = (it: (typeof items)[number]) => (locale === 'en' ? it.en : locale === 'ar' ? it.ar : it.fa);
 
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
 
   return (
     <nav
-      aria-label="ناوبری موبایل"
+      aria-label={t('ariaLabel')}
       className="fixed inset-x-0 bottom-0 z-85 md:hidden border-t border-line bg-surface/95 backdrop-blur-xl shadow-[0_-8px_28px_rgba(5,63,62,.10)]"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
@@ -54,7 +57,7 @@ export function BottomNav() {
                 {it.href === '/account' && <UserRound size={18} />}
                 {it.href === '/auth' && <UserRound size={18} />}
               </span>
-              {labelOf(it)}
+              {t(it.labelKey)}
               {active && <span className="absolute top-0 inset-x-6 h-[3px] rounded-b-full bg-brand" />}
             </Link>
           );

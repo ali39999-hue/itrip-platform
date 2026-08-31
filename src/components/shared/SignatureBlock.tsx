@@ -5,7 +5,14 @@ interface SignatureBlockProps {
   description: React.ReactNode;
 }
 
-export function SignatureBlock({ title, description }: SignatureBlockProps) {
+import { useLocale } from 'next-intl';
+import { lt } from '@/lib/lt';
+export function SignatureBlock({
+  title,
+  description,
+}: SignatureBlockProps) {
+  const locale = useLocale();
+  //  title, description }: SignatureBlockProps) {
   return (
     <div className="flex flex-col sm:flex-row gap-5 items-start p-6 bg-mint/50 border border-brand/30 rounded-2xl relative overflow-hidden">
       {/* Decorative background circle */}
@@ -16,7 +23,7 @@ export function SignatureBlock({ title, description }: SignatureBlockProps) {
       </span>
       <div className="z-10 relative">
         <h3 className="m-0 mb-2 text-[18px] text-brand-dark flex flex-wrap items-center gap-2 font-bold">
-          <span className="text-[11px] bg-action text-[#14201f] px-2 py-0.5 rounded-full font-black">امضای فیروز</span>
+          <span className="text-[11px] bg-action text-ink px-2 py-0.5 rounded-full font-black">{lt(locale, { fa: 'امضای فیروز', en: 'Firuzo Signature', ar: 'توقيع فيروزو', zh: 'Firuzo 标志', ru: 'Подпись Firuzo' })}</span>
           {title}
         </h3>
         <p className="m-0 text-[14px] text-brand-dark/80 leading-[1.75]">

@@ -164,7 +164,7 @@ export function SnappRechargeWidget({ locale, initialAmount }: { locale: string;
 
           <button 
             type="submit" 
-            className="mt-auto w-full py-4 rounded-full bg-action hover:bg-action-hover text-[#14201f] text-[18px] font-black shadow-sm transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="mt-auto w-full py-4 rounded-full bg-action hover:bg-action-hover text-ink text-[18px] font-black shadow-sm transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             <CreditCard size={20} />
             پرداخت امن با Visa / Master

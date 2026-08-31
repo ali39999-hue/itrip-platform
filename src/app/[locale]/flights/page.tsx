@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { Link } from '@/i18n/routing';
 import { useLocale } from 'next-intl';
+import { lt } from '@/lib/lt';
 import { Plane, ShieldCheck, RefreshCcw, Clock, ArrowLeft } from 'lucide-react';
 import { SearchWidget } from '@/components/search/SearchWidget';
 import { shimmerDataUrl } from '@/lib/image-utils';
@@ -12,12 +13,12 @@ export default function FlightsLandingPage() {
   const locale = useLocale();
 
   const popularRoutes = [
-    { from: 'THR', fromName: 'Tehran', fromFa: 'تهران', to: 'IST', toName: 'Istanbul', toFa: 'استانبول', price: 8500000, img: 'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?w=600&q=80', duration: '۳ ساعت' },
-    { from: 'THR', fromName: 'Tehran', fromFa: 'تهران', to: 'DXB', toName: 'Dubai', toFa: 'دبی', price: 9800000, img: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80', duration: '۲ ساعت' },
-    { from: 'MHD', fromName: 'Mashhad', fromFa: 'مشهد', to: 'THR', toName: 'Tehran', toFa: 'تهران', price: 2350000, img: 'https://images.unsplash.com/photo-1579762715118-a6f1d4b934f1?w=600&q=80', duration: '۱.۵ ساعت' },
-    { from: 'THR', fromName: 'Tehran', fromFa: 'تهران', to: 'TBS', toName: 'Tbilisi', toFa: 'تفلیس', price: 6500000, img: 'https://images.unsplash.com/photo-1565017013837-128c7eb46200?w=600&q=80', duration: '۱.۸ ساعت' },
-    { from: 'SYZ', fromName: 'Shiraz', fromFa: 'شیراز', to: 'IST', toName: 'Istanbul', toFa: 'استانبول', price: 8200000, img: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=600&q=80', duration: '۳.۵ ساعت' },
-    { from: 'KIH', fromName: 'Kish', fromFa: 'کیش', to: 'THR', toName: 'Tehran', toFa: 'تهران', price: 2800000, img: 'https://images.unsplash.com/photo-1549488344-1f9b8d2bd1f3?w=600&q=80', duration: '۱.۶ ساعت' },
+    { from: 'THR', fromName: 'Tehran', fromFa: 'تهران', to: 'IST', toName: 'Istanbul', toFa: 'استانبول', price: 8500000, img: 'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&w=800&q=80', duration: '۳ ساعت' },
+    { from: 'THR', fromName: 'Tehran', fromFa: 'تهران', to: 'DXB', toName: 'Dubai', toFa: 'دبی', price: 9800000, img: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80', duration: '۲ ساعت' },
+    { from: 'MHD', fromName: 'Mashhad', fromFa: 'مشهد', to: 'THR', toName: 'Tehran', toFa: 'تهران', price: 2350000, img: 'https://images.unsplash.com/photo-1579762715118-a6f1d4b934f1?auto=format&fit=crop&w=800&q=80', duration: '۱.۵ ساعت' },
+    { from: 'THR', fromName: 'Tehran', fromFa: 'تهران', to: 'TBS', toName: 'Tbilisi', toFa: 'تفلیس', price: 6500000, img: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80', duration: '۱.۸ ساعت' },
+    { from: 'SYZ', fromName: 'Shiraz', fromFa: 'شیراز', to: 'IST', toName: 'Istanbul', toFa: 'استانبول', price: 8200000, img: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80', duration: '۳.۵ ساعت' },
+    { from: 'KIH', fromName: 'Kish', fromFa: 'کیش', to: 'THR', toName: 'Tehran', toFa: 'تهران', price: 2800000, img: 'https://images.unsplash.com/photo-1549488344-1f9b8d2bd1f3?auto=format&fit=crop&w=800&q=80', duration: '۱.۶ ساعت' },
   ];
 
   return (
@@ -27,13 +28,13 @@ export default function FlightsLandingPage() {
         <div className="max-w-[1280px] mx-auto text-center mb-8">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand/10 text-brand-dark text-xs font-bold mb-4">
             <Plane size={14} />
-            <span>سامانه یکپارچه پروازهای فیروزو</span>
+            <span>{lt(locale, { fa: 'سامانه یکپارچه پروازهای فیروزو', en: 'Firuzo Integrated Flight System', ar: 'نظام فيروزو المتكامل لرحلات الطيران', zh: 'Firuzo 综合航班系统', ru: 'Интегрированная система полетов Firuzo' })}</span>
           </div>
           <h1 className="text-3xl md:text-5xl font-black text-ink tracking-tight mb-4">
-            خرید آنلاین بلیط هواپیما با <span className="text-brand-dark">تضمین کمترین قیمت</span>
+            {lt(locale, { fa: 'خرید آنلاین بلیط هواپیما با', en: 'Buy flight tickets online with', ar: 'شراء تذاكر الطيران عبر الإنترنت مع', zh: '在线购买机票伴随', ru: 'Покупка авиабилетов онлайн с' })} <span className="text-brand-dark">{lt(locale, { fa: 'تضمین کمترین قیمت', en: 'Best Price Guarantee', ar: 'ضمان أقل سعر', zh: '最低价格保证', ru: 'Гарантия лучшей цены' })}</span>
           </h1>
           <p className="text-sm md:text-base text-sub font-bold max-w-2xl mx-auto leading-relaxed">
-            پروازهای داخلی و خارجی بیش از ۴۰۰ ایرلاین معتبر با تسویه آنی و صدور فوری بلیط
+            {lt(locale, { fa: 'پروازهای داخلی و خارجی بیش از ۴۰۰ ایرلاین معتبر با تسویه آنی و صدور فوری بلیط', en: 'Domestic and international flights from over 400 reputable airlines with instant settlement and ticketing', ar: 'رحلات داخلية ودولية من أكثر من 400 شركة طيران ذات سمعة طيبة مع تسوية وإصدار تذاكر فورية', zh: '来自 400 多家知名航空公司的国内和国际航班，即时结算和出票', ru: 'Внутренние и международные рейсы от более чем 400 надежных авиакомпаний с мгновенным расчетом и оформлением билетов' })}
           </p>
         </div>
 
@@ -46,14 +47,14 @@ export default function FlightsLandingPage() {
       <section className="max-w-[1280px] mx-auto py-12 md:py-16 px-4 md:px-10">
         <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4 mb-8">
           <div>
-            <span className="text-xs font-black text-brand-dark tracking-wider uppercase">مسیرهای پرتردد</span>
-            <h2 className="text-2xl md:text-3xl font-black text-ink m-0">محبوب‌ترین پروازهای داخلی و خارجی</h2>
+            <span className="text-xs font-black text-brand-dark tracking-wider uppercase">{lt(locale, { fa: 'مسیرهای پرتردد', en: 'Popular Routes', ar: 'المسارات الشائعة', zh: '热门航线', ru: 'Популярные маршруты' })}</span>
+            <h2 className="text-2xl md:text-3xl font-black text-ink m-0">{lt(locale, { fa: 'محبوب‌ترین پروازهای داخلی و خارجی', en: 'Most Popular Domestic & International Flights', ar: 'أشهر الرحلات الداخلية والدولية', zh: '最受欢迎的国内和国际航班', ru: 'Самые популярные внутренние и международные рейсы' })}</h2>
           </div>
           <Link
             href="/flights/search"
             className="text-xs font-bold text-brand-dark flex items-center gap-1.5 hover:underline"
           >
-            <span>جستجوی همه مسیرها</span>
+            <span>{lt(locale, { fa: 'جستجوی همه مسیرها', en: 'Search All Routes', ar: 'البحث عن جميع المسارات', zh: '搜索所有路线', ru: 'Искать все маршруты' })}</span>
             <ArrowLeft size={14} className="ltr:rotate-180" />
           </Link>
         </div>

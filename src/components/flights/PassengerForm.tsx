@@ -79,7 +79,7 @@ export function PassengerForm({ onChange }: { onChange?: (p: Passenger) => void 
         <Button 
           type="button"
           variant={scanComplete ? "outline" : "default"}
-          className={scanComplete ? "border-brand text-brand-dark bg-mint" : "bg-action hover:bg-action-hover text-[#14201f]"}
+          className={scanComplete ? "border-brand text-brand-dark bg-mint" : "bg-action hover:bg-action-hover text-ink"}
           onClick={handleScan}
           disabled={isScanning || scanComplete}
         >

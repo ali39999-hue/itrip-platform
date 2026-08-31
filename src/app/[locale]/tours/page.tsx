@@ -15,7 +15,7 @@ import { MapPin, Star, ArrowLeft, ArrowRight, CalendarDays, SlidersHorizontal, T
 import { lt } from '@/lib/lt';
 
 const TOUR_IMGS: Record<string, string> = {
-  t1: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&q=70&w=800',
+  t1: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&q=70&w=800',
   t2: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&q=70&w=800',
   t3: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&q=70&w=800',
   t4: 'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?auto=format&fit=crop&q=70&w=800',

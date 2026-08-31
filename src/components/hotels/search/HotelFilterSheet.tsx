@@ -1,7 +1,10 @@
 'use client';
 
 import React from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { X, RotateCcw } from 'lucide-react';
+import { num } from '@/lib/format';
+import { lt } from '@/lib/lt';
 import { HotelPriceHistogram } from './HotelPriceHistogram';
 import type { HotelFilterSheetProps } from './types';
 
@@ -20,13 +23,16 @@ export function HotelFilterSheet({
   onResetAll,
   resultsCount,
 }: HotelFilterSheetProps) {
+  const locale = useLocale();
+  const t = useTranslations('HotelsSearch');
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-deep/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="w-full max-w-lg max-h-[85vh] bg-surface rounded-t-3xl sm:rounded-3xl border border-line shadow-elev-3 flex flex-col overflow-hidden">
         <div className="px-5 py-4 border-b border-line flex items-center justify-between">
-          <h3 className="text-base font-bold text-ink">فیلترهای پیشرفته</h3>
+          <h3 className="text-base font-bold text-ink">{lt(locale, { fa: 'فیلترهای پیشرفته', en: 'Advanced filters', ar: 'فلاتر متقدمة', zh: '高级筛选', ru: 'Расширенные фильтры' })}</h3>
           <button
             type="button"
             onClick={onClose}
@@ -44,7 +50,7 @@ export function HotelFilterSheet({
           />
 
           <div>
-            <h4 className="text-xs font-bold text-sub mb-2.5">ستاره اقامتگاه</h4>
+            <h4 className="text-xs font-bold text-sub mb-2.5">{t('filterStars')}</h4>
             <div className="grid grid-cols-4 gap-2">
               {[5, 4, 3, 2].map((s) => (
                 <button
@@ -65,12 +71,12 @@ export function HotelFilterSheet({
           </div>
 
           <div>
-            <h4 className="text-xs font-bold text-sub mb-2.5">امتیاز مهمانان</h4>
+            <h4 className="text-xs font-bold text-sub mb-2.5">{t('filterScore')}</h4>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { score: 9, label: 'فوق‌العاده (۹+)' },
-                { score: 8, label: 'خیلی خوب (۸+)' },
-                { score: 0, label: 'همه امتیازها' },
+                { score: 9, label: lt(locale, { fa: 'فوق‌العاده (۹+)', en: 'Wonderful (9+)', ar: 'رائع (٩+)', zh: '极佳 (9+)', ru: 'Восхитительно (9+)' }) },
+                { score: 8, label: lt(locale, { fa: 'خیلی خوب (۸+)', en: 'Very good (8+)', ar: 'جيد جداً (٨+)', zh: '很好 (8+)', ru: 'Очень хорошо (8+)' }) },
+                { score: 0, label: lt(locale, { fa: 'همه امتیازها', en: 'All ratings', ar: 'جميع التقييمات', zh: '全部评分', ru: 'Все оценки' }) },
               ].map((item) => (
                 <button
                   key={item.score}
@@ -89,7 +95,7 @@ export function HotelFilterSheet({
           </div>
 
           <div className="flex items-center justify-between p-3 rounded-2xl bg-soft border border-line">
-            <span className="text-xs font-bold text-ink">فقط کنسلی رایگان</span>
+            <span className="text-xs font-bold text-ink">{t('filterFreeCancel')}</span>
             <button
               type="button"
               role="switch"
@@ -115,14 +121,15 @@ export function HotelFilterSheet({
             className="px-4 h-11 rounded-xl bg-surface border border-line text-sub font-bold text-xs hover:text-ink flex items-center gap-1.5"
           >
             <RotateCcw size={14} />
-            <span>ریست</span>
+            <span>{lt(locale, { fa: 'ریست', en: 'Reset', ar: 'إعادة تعيين', zh: '重置', ru: 'Сброс' })}</span>
           </button>
           <button
             type="button"
             onClick={onClose}
             className="flex-1 h-11 rounded-xl bg-brand text-surface font-bold text-xs hover:bg-brand-dark transition"
           >
-            مشاهده ({resultsCount} اقامتگاه)
+            {lt(locale, { fa: 'مشاهده', en: 'Show', ar: 'عرض', zh: '查看', ru: 'Показать' })} ({num(resultsCount, locale)}{' '}
+            {lt(locale, { fa: 'اقامتگاه', en: 'stays', ar: 'إقامة', zh: '家住宿', ru: 'вариантов' })})
           </button>
         </div>
       </div>

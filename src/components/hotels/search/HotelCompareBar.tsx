@@ -1,7 +1,9 @@
 'use client';
 
 import React from 'react';
+import { useLocale } from 'next-intl';
 import { X, ArrowLeft, Layers } from 'lucide-react';
+import { lt } from '@/lib/lt';
 import type { HotelCompareBarProps } from './types';
 
 export function HotelCompareBar({
@@ -10,6 +12,8 @@ export function HotelCompareBar({
   onToggleCmp,
   onCompareAction,
 }: HotelCompareBarProps) {
+  const locale = useLocale();
+
   if (cmp.size === 0) return null;
 
   return (
@@ -18,7 +22,7 @@ export function HotelCompareBar({
         <div className="flex items-center gap-2">
           <Layers size={18} className="text-brand" />
           <span className="text-sm font-bold text-ink">
-            مقایسه اقامتگاه‌ها ({cmp.size} از ۳)
+            {lt(locale, { fa: `مقایسه اقامتگاه‌ها (${cmp.size} از ۳)`, en: `Compare stays (${cmp.size} of 3)`, ar: `مقارنة الإقامات (${cmp.size} من ٣)`, zh: `比较住宿（${cmp.size}/3）`, ru: `Сравнение вариантов (${cmp.size} из 3)` })}
           </span>
         </div>
         <button
@@ -26,7 +30,7 @@ export function HotelCompareBar({
           onClick={() => cmp.forEach((id) => onToggleCmp(id))}
           className="text-xs text-sub hover:text-destructive transition"
         >
-          پاک کردن همه
+          {lt(locale, { fa: 'پاک کردن همه', en: 'Clear all', ar: 'مسح الكل', zh: '清除全部', ru: 'Сбросить всё' })}
         </button>
       </div>
 
@@ -38,7 +42,9 @@ export function HotelCompareBar({
               key={id}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-soft border border-line text-xs shrink-0"
             >
-              <span className="font-bold truncate max-w-[120px]">{h?.name || `هتل #${id}`}</span>
+              <span className="font-bold truncate max-w-[120px]">
+                {h ? (locale === 'fa' ? h.name : h.nameEn) : lt(locale, { fa: `هتل #${id}`, en: `Hotel #${id}`, ar: `فندق #${id}`, zh: `酒店 #${id}`, ru: `Отель #${id}` })}
+              </span>
               <button
                 type="button"
                 onClick={() => onToggleCmp(id)}
@@ -57,7 +63,7 @@ export function HotelCompareBar({
         onClick={onCompareAction}
         className="w-full h-10 rounded-xl bg-brand hover:bg-brand-dark disabled:opacity-50 disabled:cursor-not-allowed text-surface font-bold text-xs flex items-center justify-center gap-2 transition"
       >
-        <span>مقایسه دقیق موارد انتخابی</span>
+        <span>{lt(locale, { fa: 'مقایسه دقیق موارد انتخابی', en: 'Compare selected stays', ar: 'مقارنة العناصر المحددة', zh: '精确比较所选住宿', ru: 'Детальное сравнение выбранных' })}</span>
         <ArrowLeft size={15} className="ltr:rotate-180" />
       </button>
     </div>

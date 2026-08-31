@@ -18,18 +18,19 @@ interface ServiceCardData {
   accent?: string;
 }
 
+import { lt } from '@/lib/lt';
 export function ServicesCatalog() {
   const locale = useLocale();
   const t = useTranslations('Home');
   const { country } = useCountryStore();
 
   const coreServices: ServiceCardData[] = [
-    { href: '/flights/search', icon: Plane, titleKey: 'srvFlights', descKey: 'srvFlightsDesc', tag: 'پروازهای چارتری و سیستمی' },
-    { href: '/hotels/search', icon: BedDouble, titleKey: 'srvHotels', descKey: 'srvHotelsDesc', tag: 'تضمین کمترین قیمت' },
-    { href: '/tours', icon: Compass, titleKey: 'srvTours', descKey: 'srvToursDesc', tag: 'گشت‌های اختصاصی' },
+    { href: '/flights/search', icon: Plane, titleKey: 'srvFlights', descKey: 'srvFlightsDesc', tag: lt(locale, { fa: 'پروازهای چارتری و سیستمی', en: 'Charter & Scheduled Flights', ar: 'رحلات طيران عارضة ومنتظمة', zh: '包机和定期航班', ru: 'Чартерные и регулярные рейсы' }) },
+    { href: '/hotels/search', icon: BedDouble, titleKey: 'srvHotels', descKey: 'srvHotelsDesc', tag: lt(locale, { fa: 'تضمین کمترین قیمت', en: 'Best Price Guarantee', ar: 'ضمان أقل سعر', zh: '最低价格保证', ru: 'Гарантия лучшей цены' }) },
+    { href: '/tours', icon: Compass, titleKey: 'srvTours', descKey: 'srvToursDesc', tag: lt(locale, { fa: 'گشت‌های اختصاصی', en: 'Exclusive Tours', ar: 'جولات خاصة', zh: '独家旅游', ru: 'Эксклюзивные туры' }) },
     { href: '/transfers', icon: CarTaxiFront, titleKey: 'srvTransfers', descKey: 'srvTransfersDesc' },
     { href: '/trains', icon: TrainFront, titleKey: 'srvTrains', descKey: 'srvTrainsDesc' },
-    { href: '/esim', icon: Wifi, titleKey: 'srvEsim', descKey: 'srvEsimDesc', tag: 'فعال‌سازی آنی' },
+    { href: '/esim', icon: Wifi, titleKey: 'srvEsim', descKey: 'srvEsimDesc', tag: lt(locale, { fa: 'فعال‌سازی آنی', en: 'Instant Activation', ar: 'تفعيل فوري', zh: '即时激活', ru: 'Мгновенная активация' }) },
     { href: '/interpreter', icon: Languages, titleKey: 'srvInterpreter', descKey: 'srvInterpreterDesc' },
   ];
 
@@ -76,3 +77,4 @@ export function ServicesCatalog() {
     </section>
   );
 }
+

@@ -8,7 +8,7 @@ interface ManualOpsNoticeProps {
 export function ManualOpsNotice({ title, description }: ManualOpsNoticeProps) {
   return (
     <div className="flex flex-col sm:flex-row gap-4 items-start p-5 bg-gold-soft border border-gold/30 rounded-2xl mt-6">
-      <span className="flex-shrink-0 w-10 h-10 grid place-items-center rounded-full bg-action text-[#14201f]">
+      <span className="flex-shrink-0 w-10 h-10 grid place-items-center rounded-full bg-action text-ink">
         <Hand size={21} />
       </span>
       <div>

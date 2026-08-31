@@ -35,7 +35,7 @@ export function PassengerSection({
           type="button"
           onClick={onScanPassport}
           disabled={scanning}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-action hover:bg-action-hover text-[#14201f] text-[13px] font-black shadow-sm transition disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-action hover:bg-action-hover text-ink text-[13px] font-black shadow-sm transition disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
         >
           {scanning ? (
             <>

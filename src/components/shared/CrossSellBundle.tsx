@@ -64,7 +64,7 @@ export function CrossSellBundle({ currentService, destination }: CrossSellBundle
         <div>
           <h3 className="text-lg font-black text-ink flex items-center gap-2">
             سفر خود به {destination ? destination : c.nameFa} را کامل کنید
-            <span className="px-2 py-0.5 rounded text-[10px] bg-action text-[#14201f]">پیشنهاد هوشمند</span>
+            <span className="px-2 py-0.5 rounded text-[10px] bg-action text-ink">پیشنهاد هوشمند</span>
           </h3>
           <p className="text-[13px] text-sub mt-1 max-w-lg">
             تمامی خدمات {c.nameFa} بدون نیاز به تغییر پلتفرم در دسترس شماست. خدمات ضروری برای ورود و اقامت را همزمان تهیه کنید.

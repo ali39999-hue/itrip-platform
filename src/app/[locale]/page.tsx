@@ -11,28 +11,34 @@ import {
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* 1. Primary Action: Hero & Unified Search Engine */}
+    <div className="flex flex-col min-h-screen bg-soft/20">
+      {/* 1. Primary Focus: Hero & Unified Search Engine */}
       <HeroSection />
 
-      {/* 2. Personalized Smart Planning Conversational Hook */}
-      <AiPlannerHookSection />
+      {/* 2. Secondary Focus: Smart Planning Hook (Visually connected to Hero) */}
+      <div className="-mt-8 relative z-20">
+        <AiPlannerHookSection />
+      </div>
 
-      {/* 3. Personalized Signature Recommendations & Experiences */}
-      <SpecialOffersSection />
+      <div className="flex flex-col gap-8 md:gap-16 pt-12 pb-24">
+        {/* 3. Discovery: Personalized Signature Recommendations */}
+        <SpecialOffersSection />
 
-      {/* 4. Destination Discovery & City Exploration */}
-      <DestinationsSection />
+        {/* 4. Exploration: Destination Discovery */}
+        <DestinationsSection />
 
-      {/* 5. Integrated Travel Services Bento Catalog */}
-      <ServicesCatalog />
+        {/* 5. Utility: Integrated Travel Services */}
+        <ServicesCatalog />
+      </div>
 
-      {/* 6. Financial Security, Settle in Local Currency & Trust */}
-      <TrustMarquee />
-      <FinancialSection />
-
-      {/* 7. 24/7 Concierge Support & Travel Assistance */}
-      <SupportSection />
+      <div className="bg-surface border-t border-line/60">
+        {/* 6. Trust & Security: Financials & Support */}
+        <div className="opacity-90">
+          <TrustMarquee />
+        </div>
+        <FinancialSection />
+        <SupportSection />
+      </div>
     </div>
   );
 }

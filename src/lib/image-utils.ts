@@ -20,7 +20,7 @@ export const shimmerDataUrl = (w: number = 700, h: number = 475) =>
 export const CATEGORY_PHOTO_MAP: Record<string, string> = {
   yacht: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80',
   festival: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80',
-  culture: 'https://images.unsplash.com/photo-1565552684305-7e8f3b2a59e9?auto=format&fit=crop&w=800&q=80',
+  culture: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80',
   nature: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
   wellness: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80',
   nightlife: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80',
@@ -69,7 +69,7 @@ export const DESTINATION_IMAGE_MAP: Record<string, string> = {
   Tehran: 'https://images.unsplash.com/photo-1579762715118-a6f1d4b934f1?auto=format&fit=crop&w=800&q=80', // Tehran Milad Tower & Alborz
   Mashhad: 'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=800&q=80', // Mashhad Grand Islamic Architecture
   Isfahan: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80', // Isfahan Naqsh-e Jahan Square
-  Shiraz: 'https://images.unsplash.com/photo-1565552684305-7e8f3b2a59e9?auto=format&fit=crop&w=800&q=80', // Shiraz Historic Architecture
+  Shiraz: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80', // Shiraz Historic Architecture
   Kish: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80', // Kish Coral Coast
   Tabriz: 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=800&q=80', // Tabriz Grand Bazaar
   Yazd: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80', // Yazd Desert Windcatchers

@@ -11,10 +11,10 @@ const HERO_IMAGES: Record<CountryId, string> = {
   iran: 'https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?auto=format&fit=crop&q=80&w=2560',
   turkey: 'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=2560',
   uae: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&q=80&w=2560',
-  georgia: 'https://images.unsplash.com/photo-1565017013837-128c7eb46200?auto=format&fit=crop&q=80&w=2560',
+  georgia: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&q=80&w=2560',
   russia: 'https://images.unsplash.com/photo-1513326738677-b964603b136d?auto=format&fit=crop&q=80&w=2560',
   oman: 'https://images.unsplash.com/photo-1549488344-1f9b8d2bd1f3?auto=format&fit=crop&q=80&w=2560',
-  china: 'https://images.unsplash.com/photo-1508804185872-d7bad8ab0d4c?auto=format&fit=crop&q=80&w=2560',
+  china: 'https://images.unsplash.com/photo-1508804052814-cd3ba865a116?auto=format&fit=crop&q=80&w=2560',
 };
 
 export function HeroSection() {

@@ -8,7 +8,7 @@ function Badge({ className = '', variant = 'default', ...props }: BadgeProps) {
   const variantStyles = {
     default: 'bg-soft text-sub border-line/60',
     brand: 'bg-brand/10 text-brand-dark border-brand/20',
-    action: 'bg-action text-[#14201f] border-transparent font-black',
+    action: 'bg-action text-ink border-transparent font-black',
     gold: 'bg-gold-soft text-price border-gold/30',
     mint: 'bg-mint text-brand-dark border-brand/20',
     destructive: 'bg-rose-500/10 text-rose-600 border-rose-500/20',

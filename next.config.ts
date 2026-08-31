@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
   },
   images: {
     formats: ['image/avif', 'image/webp'],
+    // Local dev runs behind a fake-IP VPN/DNS (198.18.0.0/15) — the optimizer's
+    // SSRF guard would reject every remote image as "private IP".
+    dangerouslyAllowLocalIP: true,
     remotePatterns: [
       {
         protocol: 'https',

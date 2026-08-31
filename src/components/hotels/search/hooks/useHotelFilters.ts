@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
+import { useLocale } from 'next-intl';
 import { HOTELS } from '@/lib/data';
+import { num } from '@/lib/format';
+import { lt } from '@/lib/lt';
 import type { SortKey, FilterChip } from '../types';
 
 interface UseHotelFiltersProps {
@@ -15,6 +18,7 @@ export function useHotelFilters({
   initialSort = 'rec',
   initialMaxPrice = 160,
 }: UseHotelFiltersProps = {}) {
+  const locale = useLocale();
   const [query, setQuery] = useState(initialCity);
   const [sort, setSortState] = useState<SortKey>(initialSort);
   const [loading, setLoading] = useState(false);
@@ -115,14 +119,26 @@ export function useHotelFilters({
     if (maxPrice < 160) {
       out.push({
         key: 'price',
-        label: `تا ${maxPrice.toLocaleString('fa-IR')} میلیون`,
+        label: lt(locale, {
+          fa: `تا ${num(maxPrice, locale)} میلیون`,
+          en: `Up to ${num(maxPrice, locale)}M`,
+          ar: `حتى ${num(maxPrice, locale)} مليون`,
+          zh: `最高 ${num(maxPrice, locale)}M`,
+          ru: `До ${num(maxPrice, locale)}M`,
+        }),
         clear: () => setMaxPrice(160),
       });
     }
     stars.forEach((s) => {
       out.push({
         key: `star-${s}`,
-        label: `${s.toLocaleString('fa-IR')} ستاره`,
+        label: lt(locale, {
+          fa: `${num(s, locale)} ستاره`,
+          en: `${num(s, locale)} stars`,
+          ar: `${num(s, locale)} نجوم`,
+          zh: `${num(s, locale)}星`,
+          ru: `${num(s, locale)} звёзд`,
+        }),
         clear: () => {
           setStars((prev) => {
             const next = new Set(prev);
@@ -135,19 +151,31 @@ export function useHotelFilters({
     if (minScore) {
       out.push({
         key: 'score',
-        label: `امتیاز ${minScore.toLocaleString('fa-IR')}+`,
+        label: lt(locale, {
+          fa: `امتیاز ${num(minScore, locale)}+`,
+          en: `Rating ${num(minScore, locale)}+`,
+          ar: `تقييم ${num(minScore, locale)}+`,
+          zh: `${num(minScore, locale)}分以上`,
+          ru: `Рейтинг ${num(minScore, locale)}+`,
+        }),
         clear: () => setMinScore(0),
       });
     }
     if (freeCancel) {
       out.push({
         key: 'cancel',
-        label: 'کنسلی رایگان',
+        label: lt(locale, {
+          fa: 'کنسلی رایگان',
+          en: 'Free cancellation',
+          ar: 'إلغاء مجاني',
+          zh: '免费取消',
+          ru: 'Бесплатная отмена',
+        }),
         clear: () => setFreeCancelState(false),
       });
     }
     return out;
-  }, [maxPrice, stars, minScore, freeCancel, setMaxPrice, setMinScore]);
+  }, [maxPrice, stars, minScore, freeCancel, locale, setMaxPrice, setMinScore]);
 
   const loadMore = useCallback(() => {
     setShown((prev) => prev + 6);

@@ -1,7 +1,7 @@
 'use client';
 import Image from 'next/image';
 import { Link } from '@/i18n/routing';
-import { useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
 
 export interface LogoProps {
   variant?: 'full' | 'icon' | 'monochrome';
@@ -10,8 +10,7 @@ export interface LogoProps {
 }
 
 export function Logo({ variant = 'full', size = 'md', className = '' }: LogoProps) {
-  const locale = useLocale();
-  const isFa = locale === 'fa' || locale === 'ar';
+  const t = useTranslations('Logo');
 
   const dims = {
     sm: { img: 28, text: 'text-base', sub: 'text-[9px]' },
@@ -39,10 +38,10 @@ export function Logo({ variant = 'full', size = 'md', className = '' }: LogoProp
       {variant === 'full' && (
         <div className="flex flex-col text-start leading-tight">
           <span className={`font-black tracking-tight text-ink group-hover:text-brand-dark transition-colors ${dims.text}`}>
-            {isFa ? 'فیروزو' : 'Firuzo'}
+            {t('name')}
           </span>
           <span className={`font-bold text-sub tracking-wider uppercase ${dims.sub}`}>
-            {isFa ? 'پلتفرم هوشمند سفر' : 'Travel Platform'}
+            {t('tagline')}
           </span>
         </div>
       )}

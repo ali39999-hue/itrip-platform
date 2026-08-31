@@ -11,7 +11,7 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
   const isAdmin = pathname.includes('/admin');
 
   if (isAdmin) {
-    return <main className="flex-1 min-h-screen bg-[#f4f8f8]">{children}</main>;
+    return <main className="flex-1 min-h-screen bg-soft">{children}</main>;
   }
 
   return (

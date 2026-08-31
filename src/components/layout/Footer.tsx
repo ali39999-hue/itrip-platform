@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { Link } from '@/i18n/routing';
 import { Send, Camera, ShieldCheck, Clock, CreditCard, Sparkles, Check } from 'lucide-react';
 import { Logo } from './Logo';
@@ -61,8 +62,8 @@ export function Footer() {
               <Clock size={22} />
             </div>
             <div>
-              <h4 className="font-black text-[14px] text-ink">پشتیبانی ۲۴ ساعته</h4>
-              <p className="font-bold text-[12px] text-sub">پاسخگویی در تمام ساعات شبانه‌روز</p>
+              <h4 className="font-black text-[14px] text-ink">{t('support24Title')}</h4>
+              <p className="font-bold text-[12px] text-sub">{t('support24Desc')}</p>
             </div>
           </div>
 
@@ -71,8 +72,8 @@ export function Footer() {
               <ShieldCheck size={22} />
             </div>
             <div>
-              <h4 className="font-black text-[14px] text-ink">تضمین اصالت خدمات</h4>
-              <p className="font-bold text-[12px] text-sub">رزرو قطعی و تایید مستقیم تامین‌کننده</p>
+              <h4 className="font-black text-[14px] text-ink">{t('trustTitle')}</h4>
+              <p className="font-bold text-[12px] text-sub">{t('trustDesc')}</p>
             </div>
           </div>
 
@@ -81,8 +82,8 @@ export function Footer() {
               <CreditCard size={22} />
             </div>
             <div>
-              <h4 className="font-black text-[14px] text-ink">پرداخت چندارزی</h4>
-              <p className="font-bold text-[12px] text-sub">کارت‌های شتاب، ویزا، تتر و مسترکارت</p>
+              <h4 className="font-black text-[14px] text-ink">{t('payTitle')}</h4>
+              <p className="font-bold text-[12px] text-sub">{t('payDesc')}</p>
             </div>
           </div>
 
@@ -91,8 +92,8 @@ export function Footer() {
               <Sparkles size={22} />
             </div>
             <div>
-              <h4 className="font-black text-[14px] text-ink">هوشمند و اختصاصی</h4>
-              <p className="font-bold text-[12px] text-sub">برنامه‌ریزی هوشمند متناسب با سلیقه شما</p>
+              <h4 className="font-black text-[14px] text-ink">{t('smartTitle')}</h4>
+              <p className="font-bold text-[12px] text-sub">{t('smartDesc')}</p>
             </div>
           </div>
         </div>
@@ -136,15 +137,15 @@ export function Footer() {
 
             {/* Newsletter Box */}
             <div className="col-span-1 md:col-span-1">
-              <h4 className="font-black text-[14px] text-ink mb-3">خبرنامه تخفیف‌ها</h4>
+              <h4 className="font-black text-[14px] text-ink mb-3">{t('newsletterTitle')}</h4>
               <p className="text-[12px] font-bold text-sub mb-3 leading-relaxed">
-                از آخرین پروازهای لحظه‌آخری و تخفیف‌های طلایی هتل‌ها باخبر شوید.
+                {t('newsletterDesc')}
               </p>
               <form onSubmit={handleSubscribe} className="flex flex-col gap-2">
                 <div className="relative">
-                  <input 
+                  <input
                     type="email"
-                    placeholder="ایمیل خود را وارد کنید..."
+                    placeholder={t('newsletterPlaceholder')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -157,10 +158,10 @@ export function Footer() {
                 >
                   {subscribed ? (
                     <>
-                      <Check size={14} className="text-surface" /> عضو شدید!
+                      <Check size={14} className="text-surface" /> {t('newsletterDone')}
                     </>
                   ) : (
-                    'عضویت در خبرنامه'
+                    t('newsletterCta')
                   )}
                 </button>
               </form>

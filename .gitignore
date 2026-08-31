@@ -55,3 +55,9 @@ cloudflared.exe
 prisma/*.db
 prisma/*.db-journal
 
+
+# Testing Artifacts
+playwright-report/
+test-results/
+screenshots/
+snapshots/

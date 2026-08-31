@@ -6,21 +6,33 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Star, Heart, MapPin } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { shimmerDataUrl, getHotelImage } from '@/lib/image-utils';
+import { num } from '@/lib/format';
+import { lt, LText } from '@/lib/lt';
 import type { HotelCardProps } from './types';
 
-const AM_MAP: Record<string, { fa: string; en: string }> = {
-  wifi: { fa: 'وای‌فای', en: 'Wi-Fi' },
-  pool: { fa: 'استخر', en: 'Pool' },
-  spa: { fa: 'اسپا', en: 'Spa' },
-  restaurant: { fa: 'رستوران', en: 'Restaurant' },
-  parking: { fa: 'پارکینگ', en: 'Parking' },
-  shuttle: { fa: 'ترانسفر', en: 'Shuttle' },
-  garden: { fa: 'باغ', en: 'Garden' },
-  museum: { fa: 'موزه', en: 'Museum' },
-  teahouse: { fa: 'چایخانه', en: 'Tea House' },
-  gym: { fa: 'باشگاه', en: 'Gym' },
-  beach_access: { fa: 'ساحل', en: 'Beach' },
-  terrace: { fa: 'تراس', en: 'Terrace' },
+const AM_MAP: Record<string, LText> = {
+  wifi: { fa: 'وای‌فای', en: 'Wi-Fi', ar: 'واي فاي', zh: '无线网络', ru: 'Wi-Fi' },
+  pool: { fa: 'استخر', en: 'Pool', ar: 'مسبح', zh: '游泳池', ru: 'Бассейн' },
+  spa: { fa: 'اسپا', en: 'Spa', ar: 'سبا', zh: '水疗', ru: 'Спа' },
+  restaurant: { fa: 'رستوران', en: 'Restaurant', ar: 'مطعم', zh: '餐厅', ru: 'Ресторан' },
+  parking: { fa: 'پارکینگ', en: 'Parking', ar: 'موقف سيارات', zh: '停车场', ru: 'Парковка' },
+  shuttle: { fa: 'ترانسفر', en: 'Shuttle', ar: 'نقل مكوكي', zh: '接送服务', ru: 'Трансфер' },
+  garden: { fa: 'باغ', en: 'Garden', ar: 'حديقة', zh: '花园', ru: 'Сад' },
+  museum: { fa: 'موزه', en: 'Museum', ar: 'متحف', zh: '博物馆', ru: 'Музей' },
+  teahouse: { fa: 'چایخانه', en: 'Tea House', ar: 'بيت شاي', zh: '茶馆', ru: 'Чайный дом' },
+  gym: { fa: 'باشگاه', en: 'Gym', ar: 'صالة رياضية', zh: '健身房', ru: 'Фитнес' },
+  beach_access: { fa: 'ساحل', en: 'Beach', ar: 'شاطئ', zh: '海滩', ru: 'Пляж' },
+  terrace: { fa: 'تراس', en: 'Terrace', ar: 'تراس', zh: '露台', ru: 'Терраса' },
+};
+
+const DISTANCE_MAP: Record<string, LText> = {
+  '۵۰۰ متر تا حرم': { fa: '۵۰۰ متر تا حرم', en: '500 m to the Shrine', ar: 'على بُعد ٥٠٠ متر من الحرم', zh: '距圣地500米', ru: '500 м до святыни' },
+  '۱ کیلومتر تا میدان نقش جهان': { fa: '۱ کیلومتر تا میدان نقش جهان', en: '1 km to Naqsh-e Jahan Square', ar: 'على بُعد ١ كم من ساحة نقش جهان', zh: '距伊玛目广场1公里', ru: '1 км до площади Накш-е Джахан' },
+  '۳۰۰ متر از ساحل جبرعلی': { fa: '۳۰۰ متر از ساحل جبرعلی', en: '300 m from Jebel Ali Beach', ar: 'على بُعد ٣٠٠ متر من شاطئ جبل علي', zh: '距杰贝阿里海滩300米', ru: '300 м от пляжа Джебель-Али' },
+  'قلب شهر قدیم': { fa: 'قلب شهر قدیم', en: 'Heart of the old town', ar: 'في قلب المدينة القديمة', zh: '老城中心地带', ru: 'В самом сердце старого города' },
+  '۵۰۰ متر تا تاکسیم': { fa: '۵۰۰ متر تا تاکسیم', en: '500 m to Taksim', ar: 'على بُعد ٥٠٠ متر من تقسيم', zh: '距塔克西姆500米', ru: '500 м до Таксим' },
+  '۲۰۰ متر تا میدان سرخ': { fa: '۲۰۰ متر تا میدان سرخ', en: '200 m to Red Square', ar: 'على بُعد ٢٠٠ متر من الساحة الحمراء', zh: '距红场200米', ru: '200 м до Красной площади' },
+  'ساحل القرم': { fa: 'ساحل القرم', en: 'Al Qurm Beach', ar: 'شاطئ القرم', zh: '阿尔古姆海滩', ru: 'Пляж Аль-Курм' },
 };
 
 export function HotelCard({
@@ -33,19 +45,16 @@ export function HotelCard({
 }: HotelCardProps) {
   const locale = useLocale();
   const t = useTranslations('HotelsSearch');
-  const isRtl = ['fa', 'ar'].includes(locale);
 
   const img = getHotelImage(hotel);
-  const rawPriceMillion = hotel.pricePerNight / 10000000;
-  const rawTotalMillion = (hotel.pricePerNight * nights) / 10000000;
-
-  const priceMillion = isRtl
-    ? rawPriceMillion.toLocaleString('fa-IR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-    : rawPriceMillion.toFixed(1);
-
-  const totalMillion = isRtl
-    ? rawTotalMillion.toLocaleString('fa-IR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-    : rawTotalMillion.toFixed(1);
+  const priceMillion = num(hotel.pricePerNight / 10000000, locale, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+  const totalMillion = num((hotel.pricePerNight * nights) / 10000000, locale, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
 
   return (
     <article className="bg-surface border border-line rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row gap-5 hover:border-brand/40 transition-all shadow-elev-1 hover:shadow-elev-2 group">
@@ -92,7 +101,9 @@ export function HotelCard({
               <h3 className="text-base sm:text-lg font-black text-ink group-hover:text-brand-dark transition-colors">
                 {locale === 'fa' ? hotel.name : hotel.nameEn}
               </h3>
-              <p className="text-xs text-sub font-mono">{locale === 'fa' ? hotel.nameEn : hotel.name}</p>
+              {locale === 'fa' && (
+                <p className="text-xs text-sub font-mono">{hotel.nameEn}</p>
+              )}
             </div>
 
             {/* Score Rating Badge with LTR protection to prevent flipped slashes */}
@@ -101,11 +112,11 @@ export function HotelCard({
                 dir="ltr"
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-mint text-brand-dark font-black text-sm border border-brand/20 shadow-xs"
               >
-                <span>{isRtl ? hotel.rating.toLocaleString('fa-IR') : hotel.rating}</span>
-                <span className="text-[11px] text-sub font-bold">/ {isRtl ? (10).toLocaleString('fa-IR') : '10'}</span>
+                <span>{num(hotel.rating, locale)}</span>
+                <span className="text-[11px] text-sub font-bold">/ {num(10, locale)}</span>
               </div>
               <p className="text-[11px] text-sub font-bold mt-1">
-                {isRtl ? hotel.reviewsCount.toLocaleString('fa-IR') : hotel.reviewsCount} {t('reviews')}
+                {num(hotel.reviewsCount, locale)} {t('reviews')}
               </p>
             </div>
           </div>
@@ -113,14 +124,16 @@ export function HotelCard({
           {/* Distance */}
           <div className="flex items-center gap-1.5 text-xs text-sub mb-3">
             <MapPin size={13} className="text-brand-dark shrink-0" />
-            <span>{hotel.distanceFromCenter}</span>
+            <span>
+              {lt(locale, DISTANCE_MAP[hotel.distanceFromCenter] ?? { fa: hotel.distanceFromCenter, en: hotel.distanceFromCenter })}
+            </span>
           </div>
 
           {/* Amenities */}
           <div className="flex flex-wrap gap-1.5">
             {hotel.amenities.slice(0, 5).map((am) => (
               <span key={am} className="px-2.5 py-0.5 rounded-lg bg-soft border border-line/50 text-sub text-[11px] font-bold">
-                {AM_MAP[am]?.[isRtl ? 'fa' : 'en'] || am}
+                {(AM_MAP[am] && lt(locale, AM_MAP[am])) || am}
               </span>
             ))}
           </div>

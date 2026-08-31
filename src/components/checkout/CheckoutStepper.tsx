@@ -39,7 +39,7 @@ export function CheckoutStepper({ phase }: CheckoutStepperProps) {
                   isDone
                     ? 'bg-brand text-surface shadow-md shadow-brand/20'
                     : isCurrent
-                    ? 'bg-action text-[#14201f] ring-4 ring-gold-soft font-black shadow-md'
+                    ? 'bg-action text-ink ring-4 ring-gold-soft font-black shadow-md'
                     : 'bg-surface border-2 border-line text-sub'
                 }`}
               >

@@ -51,7 +51,7 @@ export function PlannerSidebar({
         <div className={`mt-4 rounded-xl px-3.5 py-2.5 text-[11.5px] font-black inline-flex items-start gap-1.5 w-full ${plan.overBy <= 0 ? 'bg-mint text-brand-dark' : 'bg-gold-soft text-price'}`}>
           {plan.overBy <= 0 ? <><CheckCircle2 size={14} className="shrink-0 mt-0.5" /> {t('budgetOk')}</> : <>{t('budgetOver', { over: num(plan.overBy, locale) })}</>}
         </div>
-        <button onClick={bookAll} disabled={!plan.picked.length} className="w-full mt-4 min-h-12 rounded-full bg-action hover:bg-action-hover text-[#14201f] font-black text-sm inline-flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm focus-visible:ring-2 focus-visible:ring-brand">
+        <button onClick={bookAll} disabled={!plan.picked.length} className="w-full mt-4 min-h-12 rounded-full bg-action hover:bg-action-hover text-ink font-black text-sm inline-flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm focus-visible:ring-2 focus-visible:ring-brand">
           <Check size={16} /> {t('bookAll')}
         </button>
       </div>
