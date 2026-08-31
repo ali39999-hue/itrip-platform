@@ -139,7 +139,7 @@ export default function TravelogueDetailPage() {
             <Heart size={18} className={liked ? 'fill-rose-warm' : ''} />
           </button>
           <button 
-            aria-label="Share" 
+            aria-label="Share"
             onClick={handleShare} 
             className="w-11 h-11 rounded-2xl bg-surface border border-line flex items-center justify-center text-ink hover:text-brand-dark hover:border-brand transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer relative"
           >

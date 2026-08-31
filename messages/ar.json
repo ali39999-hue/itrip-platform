@@ -88,6 +88,28 @@
     "places": "الوجهات",
     "ariaLabel": "التنقل في الهاتف المحمول"
   },
+  "Common": {
+    "aria": {
+      "close": "إغلاق",
+      "previous": "السابق",
+      "next": "التالي",
+      "favorite": "مفضل",
+      "remove": "إزالة",
+      "share": "مشاركة",
+      "like": "إعجاب",
+      "unlike": "إلغاء الإعجاب",
+      "roomQuantity": "كمية الغرفة",
+      "reverseRoute": "عكس المسار",
+      "scrollRight": "التمرير لليمين",
+      "scrollLeft": "التمرير لليسار",
+      "mainNavigation": "التنقل الرئيسي",
+      "destinationCountry": "تحديد بلد الوجهة",
+      "24hSupport": "دعم 24 ساعة",
+      "openMenu": "افتح القائمة",
+      "closeMenu": "إغلاق القائمة",
+      "homepage": "الصفحة الرئيسية Firuzo"
+    }
+  },
   "NotFound": {
     "title": "الصفحة غير موجودة",
     "desc": "العنوان غير موجود أو تم نقله.",

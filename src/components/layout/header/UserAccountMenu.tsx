@@ -14,7 +14,7 @@ export function UserAccountMenu() {
       {/* Support Icon Link */}
       <Link
         href="/support"
-        aria-label="پشتیبانی ۲۴ ساعته"
+        aria-label={t('Common.aria.24hSupport')}
         className="hidden sm:grid w-9 h-9 place-items-center rounded-full text-sub hover:text-brand-dark hover:bg-soft transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
       >
         <Headset size={18} />

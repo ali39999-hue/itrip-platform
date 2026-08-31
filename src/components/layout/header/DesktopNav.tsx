@@ -47,7 +47,7 @@ export function DesktopNav() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="ناوبری اصلی" className="hidden lg:flex items-center gap-1">
+    <nav aria-label={t('Common.aria.mainNavigation')} className="hidden lg:flex items-center gap-1">
       {NAV_CATEGORIES.map((cat) => (
         <div key={cat.key} className="relative group">
           <button

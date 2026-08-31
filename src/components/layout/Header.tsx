@@ -38,7 +38,7 @@ export function Header() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label={mobileMenuOpen ? 'بستن منو' : 'باز کردن منو'}
+            aria-label={mobileMenuOpen ? t('Common.aria.closeMenu') : t('Common.aria.openMenu')}
             aria-expanded={mobileMenuOpen}
             className="lg:hidden w-10 h-10 grid place-items-center rounded-full text-ink hover:bg-soft transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
           >

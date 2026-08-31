@@ -50,9 +50,13 @@ const ARTICLES = [
   },
 ];
 
+import { useTranslations } from 'next-intl';
+
 export default function GuidePage() {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations('Common');
+  
   const [openId, setOpenId] = useState<string | null>(null);
 
   const selectedArticle = ARTICLES.find(a => a.id === openId);
@@ -225,7 +229,7 @@ export default function GuidePage() {
                 style={{ backgroundImage: `url('${selectedArticle.image}')` }}
               >
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <button aria-label="بستن"
+                <button aria-label={t('Common.aria.close')}
                   onClick={() => setOpenId(null)}
                   className="absolute top-4 end-4 w-8 h-8 bg-black/40 hover:bg-black/60 text-surface rounded-full flex items-center justify-center transition-colors backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
@@ -236,7 +240,7 @@ export default function GuidePage() {
             {!selectedArticle.image && (
               <div className="flex justify-between items-center p-4 border-b border-line">
                 <span className="font-bold text-sub text-[12px] bg-soft px-3 py-1 rounded-full">{selectedArticle.category}</span>
-                <button aria-label="بستن"
+                <button aria-label={t('Common.aria.close')}
                   onClick={() => setOpenId(null)}
                   className="w-8 h-8 bg-soft hover:bg-line/50 text-sub rounded-full flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >

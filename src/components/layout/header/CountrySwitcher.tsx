@@ -6,7 +6,10 @@ import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES, COUNTRY_ORDER, countryName, type CountryId } from '@/lib/countries';
 import { MapPin, ChevronDown, Check } from 'lucide-react';
 
+import { useTranslations } from 'next-intl';
+
 export function CountrySwitcher() {
+  const t = useTranslations('Common');
   const { country, setCountry } = useCountryStore();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -31,7 +34,7 @@ export function CountrySwitcher() {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="listbox"
-        aria-label="انتخاب کشور مقصد"
+        aria-label={t('Common.aria.destinationCountry')}
         className="min-h-[38px] inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-[13px] font-black text-brand-dark bg-brand/10 hover:bg-brand/20 transition border-0 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
       >
         <MapPin size={14} className="text-brand-dark" />

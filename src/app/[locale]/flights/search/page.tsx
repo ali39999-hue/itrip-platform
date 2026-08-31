@@ -322,7 +322,7 @@ function FlightSearchInner() {
               <b className="text-[15px] font-black">{t('filters')}</b>
               <div className="flex items-center gap-2">
                 <button onClick={clearAll} className="text-[12px] text-brand-dark font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">{t('clearAll')}</button>
-                <button onClick={() => setSheet(false)} aria-label={t('close') || 'بستن'} className="grid place-items-center w-8 h-8 rounded-full bg-soft text-sub focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                <button onClick={() => setSheet(false)} aria-label={t('Common.aria.close')} className="grid place-items-center w-8 h-8 rounded-full bg-soft text-sub focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
                   <X size={15} />
                 </button>
               </div>

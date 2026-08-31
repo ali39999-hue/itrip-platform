@@ -88,6 +88,28 @@
     "places": "目的地",
     "ariaLabel": "移动端导航"
   },
+  "Common": {
+    "aria": {
+      "close": "关闭",
+      "previous": "上一个",
+      "next": "下一个",
+      "favorite": "最爱",
+      "remove": "移除",
+      "share": "分享",
+      "like": "喜欢",
+      "unlike": "取消喜欢",
+      "roomQuantity": "房间数量",
+      "reverseRoute": "反转路线",
+      "scrollRight": "向右滚动",
+      "scrollLeft": "向左滚动",
+      "mainNavigation": "主导航",
+      "destinationCountry": "选择目的地国家",
+      "24hSupport": "24小时支持",
+      "openMenu": "打开菜单",
+      "closeMenu": "关闭菜单",
+      "homepage": "Firuzo 首页"
+    }
+  },
   "NotFound": {
     "title": "页面未找到",
     "desc": "该地址不存在或已被移动。",

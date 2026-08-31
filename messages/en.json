@@ -88,6 +88,28 @@
     "places": "Places",
     "ariaLabel": "Mobile navigation"
   },
+  "Common": {
+    "aria": {
+      "close": "Close",
+      "previous": "Previous",
+      "next": "Next",
+      "favorite": "Favorite",
+      "remove": "Remove",
+      "share": "Share",
+      "like": "Like",
+      "unlike": "Unlike",
+      "roomQuantity": "Room quantity",
+      "reverseRoute": "Reverse route",
+      "scrollRight": "Scroll right",
+      "scrollLeft": "Scroll left",
+      "mainNavigation": "Main Navigation",
+      "destinationCountry": "Select destination country",
+      "24hSupport": "24h Support",
+      "openMenu": "Open Menu",
+      "closeMenu": "Close Menu",
+      "homepage": "Firuzo Homepage"
+    }
+  },
   "NotFound": {
     "title": "Page not found",
     "desc": "The address doesn't exist or has been moved.",

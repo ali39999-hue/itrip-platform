@@ -140,7 +140,7 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
                           value={qty}
                           onChange={(e) => { const v = +e.target.value; setSel((s) => { const n = { ...s }; if (v) n[k] = v; else delete n[k]; return n; }); }}
                           disabled={maxSel < 1}
-                          aria-label="Room quantity"
+                          aria-label={t('Common.aria.roomQuantity')}
                           className="min-h-10 px-2 border border-line rounded-[10px] bg-surface text-[12.5px] font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
                         >
                           {Array.from({ length: maxSel + 1 }, (_, i) => (

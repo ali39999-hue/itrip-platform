@@ -1,6 +1,9 @@
 import { MapPin, Bus, Wifi, ArrowDownUp, Coffee, Camera, Star } from 'lucide-react';
 
+import { useTranslations } from 'next-intl';
+
 export function RoutePlannerPreview() {
+  const t = useTranslations('Common');
   return (
     <div className="bg-surface rounded-xl overflow-hidden grid grid-cols-1 lg:grid-cols-[320px_1fr] shadow-[0_24px_48px_rgba(0,0,0,0.2)]">
       {/* Sidebar (Virtual Card & Info) */}
@@ -57,7 +60,7 @@ export function RoutePlannerPreview() {
               <input type="text" className="flex-1 bg-transparent border-0 outline-none text-[14px] text-ink" defaultValue="بازار تجریش" />
             </div>
           </div>
-          <button aria-label="Reverse route" className="w-10 h-10 rounded-full border border-line bg-surface text-brand grid place-items-center flex-shrink-0 hover:bg-mint hover:border-brand transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+          <button aria-label={t('Common.aria.reverseRoute')} className="w-10 h-10 rounded-full border border-line bg-surface text-brand grid place-items-center flex-shrink-0 hover:bg-mint hover:border-brand transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
             <ArrowDownUp size={18} />
           </button>
         </div>

@@ -66,7 +66,7 @@ export function SosInterpreter() {
             >
               <button
                 onClick={() => setOpen(false)}
-                aria-label={isEn ? 'Close' : 'بستن'}
+                aria-label={t('Common.aria.close')}
                 className="absolute top-4 start-4 w-8 h-8 rounded-full bg-surface/20 grid place-items-center hover:bg-surface/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand transition"
               >
                 <X size={15} />

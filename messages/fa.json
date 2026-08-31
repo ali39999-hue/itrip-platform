@@ -88,6 +88,28 @@
     "places": "مقصدها",
     "ariaLabel": "ناوبری موبایل"
   },
+  "Common": {
+    "aria": {
+      "close": "بستن",
+      "previous": "قبلی",
+      "next": "بعدی",
+      "favorite": "علاقه‌مندی",
+      "remove": "حذف",
+      "share": "اشتراک‌گذاری",
+      "like": "پسندیدن",
+      "unlike": "نپسندیدن",
+      "roomQuantity": "تعداد اتاق",
+      "reverseRoute": "معکوس کردن مسیر",
+      "scrollRight": "اسکرول به راست",
+      "scrollLeft": "اسکرول به چپ",
+      "mainNavigation": "ناوبری اصلی",
+      "destinationCountry": "انتخاب کشور مقصد",
+      "24hSupport": "پشتیبانی ۲۴ ساعته",
+      "openMenu": "باز کردن منو",
+      "closeMenu": "بستن منو",
+      "homepage": "صفحه اصلی فیروزو"
+    }
+  },
   "NotFound": {
     "title": "صفحه مورد نظر یافت نشد",
     "desc": "آدرس وارد شده وجود ندارد یا جابه‌جا شده است.",

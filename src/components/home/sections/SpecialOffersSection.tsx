@@ -61,10 +61,10 @@ export function SpecialOffersSection() {
             </h2>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <button onClick={() => scroll(locale === 'en' ? -300 : 300)} className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-surface border border-line text-brand-dark hover:bg-soft transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" aria-label="اسکرول به راست">
+            <button onClick={() => scroll(locale === 'en' ? -300 : 300)} className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-surface border border-line text-brand-dark hover:bg-soft transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" aria-label={t('Common.aria.scrollRight')}>
               <ChevronRight size={18} className="ltr:-scale-x-100" />
             </button>
-            <button onClick={() => scroll(locale === 'en' ? 300 : -300)} className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-surface border border-line text-brand-dark hover:bg-soft transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" aria-label="اسکرول به چپ">
+            <button onClick={() => scroll(locale === 'en' ? 300 : -300)} className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-surface border border-line text-brand-dark hover:bg-soft transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" aria-label={t('Common.aria.scrollLeft')}>
               <ChevronLeft size={18} className="ltr:-scale-x-100" />
             </button>
             <button
