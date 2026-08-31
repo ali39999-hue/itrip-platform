@@ -1,3 +1,4 @@
+import { Booking } from '@prisma/client';
 import { Search } from 'lucide-react';
 import { getLocale } from 'next-intl/server';
 import { getAdminBookings } from '@/actions/admin';
@@ -24,7 +25,7 @@ export default async function AdminBookingsPage({
   const bookings = result.success && result.bookings ? result.bookings : [];
   const numFmt = locale === 'fa' ? 'fa-IR' : 'en-US';
 
-  const filtered = bookings.filter((b) => {
+  const filtered = bookings.filter((b: Booking) => {
     if (!q) return true;
     let details: { title?: string; subtitle?: string; passengers?: { lastNameFa?: string }[] } = {};
     try {

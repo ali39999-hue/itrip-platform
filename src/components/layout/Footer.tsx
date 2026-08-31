@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import Image from 'next/image';
 import { Link } from '@/i18n/routing';
 import { Send, Camera, ShieldCheck, Clock, CreditCard, Sparkles, Check } from 'lucide-react';
 import { Logo } from './Logo';

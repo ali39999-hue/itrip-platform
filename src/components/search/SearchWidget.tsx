@@ -38,7 +38,7 @@ export function SearchWidget({ initialTab = 'plan' }: SearchWidgetProps) {
     setTourType,
     submit,
     swap,
-  } = useSearchFormState();
+  } = useSearchFormState(initialTab);
 
   return (
     <div className="w-full max-w-5xl mx-auto relative z-[60]">

@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 
 export async function getAdminBookings() {
@@ -22,7 +23,7 @@ export async function refundBookingAdmin(bookingId: string) {
     if (!booking) throw new Error('Booking not found');
     if (booking.status !== 'CONFIRMED') throw new Error('Only Confirmed bookings can be refunded');
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 1. Mark as REFUNDED
       await tx.booking.update({
         where: { id: bookingId },

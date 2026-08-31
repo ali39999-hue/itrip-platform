@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DatePicker } from '@/components/ui/DatePicker';
 import { daysFromNow } from '@/lib/utils';
 import { shimmerDataUrl } from '@/lib/image-utils';
-import { CarFront, Users, Luggage, Clock, Search, Crown, PlaneTakeoff, MapPin, CalendarDays, TrainFront, BusFront, Star } from 'lucide-react';
+import { CarFront, Users, Luggage, Clock, Search, Crown, PlaneTakeoff, MapPin, TrainFront, BusFront, Star } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
 const TRANSFER_IMGS: Record<string, string> = {

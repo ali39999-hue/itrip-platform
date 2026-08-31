@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { daysFromNow } from '@/lib/utils';
 import { shimmerDataUrl } from '@/lib/image-utils';
-import { TrainFront, BusFront, MapPin, CalendarDays, CircleDot, Search } from 'lucide-react';
+import { TrainFront, BusFront, MapPin, CircleDot, Search } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
 const SERVICES = [

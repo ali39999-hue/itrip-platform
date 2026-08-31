@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { bookingSchema } from '@/lib/validations';
+import { Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 
 	// Mock User ID for V1 since we don't have NextAuth yet
@@ -59,7 +60,7 @@ export async function payBooking(bookingId: string, method: 'wallet_irr' | 'gate
     const balances = JSON.parse(wallet.balances);
     
     // Begin Transaction
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       if (method === 'wallet_irr') {
         if ((balances[booking.currency] || 0) < Number(booking.totalAmount)) {
           throw new Error('Insufficient wallet balance');

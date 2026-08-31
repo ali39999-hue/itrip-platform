@@ -8,7 +8,6 @@ import { HOTELS } from '@/lib/data';
 import { useBookingStore } from '@/stores/booking-store';
 import { Building2 } from 'lucide-react';
 import { Link } from '@/i18n/routing';
-import { notFound } from 'next/navigation';
 import { num } from '@/lib/format';
 
 // Hooks & Mocks
