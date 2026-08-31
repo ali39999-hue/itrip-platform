@@ -28,10 +28,17 @@ import { AppChrome } from '@/components/layout/AppChrome';
 import { PwaBoot } from '@/components/pwa/PwaBoot';
 
 export const metadata: Metadata = {
-  title: "Firuzo Platform",
-  description: "Advanced B2C Travel Platform",
+  title: {
+    template: "%s | فیروزو (Firuzo)",
+    default: "فیروزو (Firuzo) | پلتفرم جامع و هوشمند سفر",
+  },
+  description: "سامانه یکپارچه و هوشمند خدمات سفر، هتل، پرواز، ترانسفر، ویزا و کیف پول چندارزی فیروزو",
   manifest: "/manifest.json",
-  icons: { apple: "/icons/apple-touch-icon.png" },
+  icons: { 
+    icon: "/images/logo.png",
+    shortcut: "/images/logo.png",
+    apple: "/images/logo.png" 
+  },
 };
 
 export const viewport: Viewport = {

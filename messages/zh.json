@@ -521,7 +521,8 @@
     "noFlightsFound": "未找到符合筛选条件的航班",
     "promoTitle": "通过 Firuzo 体验全新旅行",
     "promoSubtitle": "发现最佳航班，支持即时预订与多币种支付。",
-    "learnMore": "了解更多"
+    "learnMore": "了解更多",
+    "flights": "趟航班"
   },
   "Tours": {
     "title": "精选旅游与特色体验",

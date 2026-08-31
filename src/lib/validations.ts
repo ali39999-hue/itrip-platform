@@ -1,5 +1,5 @@
 /**
- * Zod validation schemas for iTrip/Firuzo travel platform.
+ * Zod validation schemas for Firuzo/Firuzo travel platform.
  *
  * These schemas validate API request bodies and are the single source
  * of truth for the allowed values of the string-based "enums" used in

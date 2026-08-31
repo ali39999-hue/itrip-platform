@@ -32,7 +32,7 @@ export function PwaBoot() {
         <Download size={17} />
       </span>
       <div className="min-w-0">
-        <b className="block text-[12px] font-black text-ink leading-snug">نصب اپلیکیشن iTrip</b>
+        <b className="block text-[12px] font-black text-ink leading-snug">نصب اپلیکیشن Firuzo</b>
         <span className="block text-[10.5px] font-bold text-sub">دسترسی سریع‌تر بدون مرورگر</span>
       </div>
       <button

@@ -5,7 +5,7 @@ import { ArrowDownUp, Map as MapIcon, SlidersHorizontal } from 'lucide-react';
 import type { HotelSearchToolbarProps, SortKey } from './types';
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: 'rec', label: 'پیشنهاد iTrip' },
+  { key: 'rec', label: 'پیشنهاد Firuzo' },
   { key: 'cheap', label: 'ارزان‌ترین' },
   { key: 'score', label: 'بالاترین امتیاز' },
   { key: 'stars', label: 'ستاره بیشتر' },

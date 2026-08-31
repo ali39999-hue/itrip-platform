@@ -1,13 +1,15 @@
 import { Search } from 'lucide-react';
+import { getLocale } from 'next-intl/server';
 import { getAdminBookings } from '@/actions/admin';
 import { RefundButton } from '@/components/admin/RefundButton';
+import { lt } from '@/lib/lt';
 
-const STATUS_FA: Record<string, string> = {
-  DRAFT: 'پیش‌نویس',
-  PENDING_PAYMENT: 'در انتظار پرداخت',
-  CONFIRMED: 'قطعی',
-  CANCELLED: 'کنسل شده',
-  REFUNDED: 'مسترد شده',
+const STATUS_LT: Record<string, { fa: string; en: string; ar: string; zh: string; ru: string }> = {
+  DRAFT: { fa: 'پیش‌نویس', en: 'Draft', ar: 'مسودة', zh: '草稿', ru: 'Черновик' },
+  PENDING_PAYMENT: { fa: 'در انتظار پرداخت', en: 'Pending Payment', ar: 'في انتظار الدفع', zh: '待支付', ru: 'Ожидает оплаты' },
+  CONFIRMED: { fa: 'قطعی', en: 'Confirmed', ar: 'مؤكد', zh: '已确认', ru: 'Подтверждено' },
+  CANCELLED: { fa: 'کنسل شده', en: 'Cancelled', ar: 'ملغى', zh: '已取消', ru: 'Отменено' },
+  REFUNDED: { fa: 'مسترد شده', en: 'Refunded', ar: 'مسترد', zh: '已退款', ru: 'Возвращено' },
 };
 
 export default async function AdminBookingsPage({
@@ -15,10 +17,12 @@ export default async function AdminBookingsPage({
 }: {
   searchParams?: Promise<{ q?: string }>;
 }) {
+  const locale = await getLocale();
   const sp = searchParams ? await searchParams : undefined;
   const q = sp?.q || '';
   const result = await getAdminBookings();
   const bookings = result.success && result.bookings ? result.bookings : [];
+  const numFmt = locale === 'fa' ? 'fa-IR' : 'en-US';
 
   const filtered = bookings.filter((b) => {
     if (!q) return true;
@@ -37,8 +41,8 @@ export default async function AdminBookingsPage({
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-ink">مدیریت رزروها</h1>
-          <p className="text-sm text-sub mt-1">{bookings.length.toLocaleString('fa-IR')} سفارش ثبت شده</p>
+          <h1 className="text-2xl font-bold text-ink">{lt(locale, { fa: 'مدیریت رزروها', en: 'Booking Management', ar: 'إدارة الحجوزات', zh: '预订管理', ru: 'Управление бронями' })}</h1>
+          <p className="text-sm text-sub mt-1">{lt(locale, { fa: `${bookings.length.toLocaleString(numFmt)} سفارش ثبت شده`, en: `${bookings.length.toLocaleString(numFmt)} orders recorded`, ar: `تم تسجيل ${bookings.length.toLocaleString(numFmt)} طلب`, zh: `已登记 ${bookings.length.toLocaleString(numFmt)} 笔订单`, ru: `Зарегистрировано заказов: ${bookings.length.toLocaleString(numFmt)}` })}</p>
         </div>
         <div className="relative">
           <form method="GET">
@@ -46,7 +50,7 @@ export default async function AdminBookingsPage({
             <input
               name="q"
               defaultValue={q}
-              placeholder="جستجوی کد رهگیری یا عنوان..."
+              placeholder={lt(locale, { fa: 'جستجوی کد رهگیری یا عنوان...', en: 'Search reference code or title...', ar: 'ابحث برمز التتبع أو العنوان...', zh: '搜索跟踪代码或标题…', ru: 'Поиск по коду или названию...' })}
               className="h-10 w-full md:w-72 rounded-md border border-input bg-surface pe-9 ps-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             />
           </form>
@@ -55,17 +59,17 @@ export default async function AdminBookingsPage({
 
       <div className="bg-surface rounded-2xl border border-line overflow-hidden">
         {filtered.length === 0 ? (
-          <p className="text-center text-sub py-16 text-sm">رزروی یافت نشد</p>
+          <p className="text-center text-sub py-16 text-sm">{lt(locale, { fa: 'رزروی یافت نشد', en: 'No bookings found', ar: 'لا توجد حجوزات', zh: '未找到预订', ru: 'Брони не найдены' })}</p>
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-soft text-sub text-xs">
               <tr>
-                <th className="p-4 text-start font-medium">کد</th>
-                <th className="p-4 text-start font-medium">سرویس</th>
-                <th className="p-4 text-start font-medium">مسافر</th>
-                <th className="p-4 text-end font-medium">مبلغ</th>
-                <th className="p-4 text-start font-medium">وضعیت</th>
-                <th className="p-4 font-medium">اقدام</th>
+                <th className="p-4 text-start font-medium">{lt(locale, { fa: 'کد', en: 'Code', ar: 'الرمز', zh: '代码', ru: 'Код' })}</th>
+                <th className="p-4 text-start font-medium">{lt(locale, { fa: 'سرویس', en: 'Service', ar: 'الخدمة', zh: '服务', ru: 'Услуга' })}</th>
+                <th className="p-4 text-start font-medium">{lt(locale, { fa: 'مسافر', en: 'Passenger', ar: 'المسافر', zh: '乘客', ru: 'Пассажир' })}</th>
+                <th className="p-4 text-end font-medium">{lt(locale, { fa: 'مبلغ', en: 'Amount', ar: 'المبلغ', zh: '金额', ru: 'Сумма' })}</th>
+                <th className="p-4 text-start font-medium">{lt(locale, { fa: 'وضعیت', en: 'Status', ar: 'الحالة', zh: '状态', ru: 'Статус' })}</th>
+                <th className="p-4 font-medium">{lt(locale, { fa: 'اقدام', en: 'Action', ar: 'الإجراء', zh: '操作', ru: 'Действие' })}</th>
               </tr>
             </thead>
             <tbody>
@@ -78,7 +82,7 @@ export default async function AdminBookingsPage({
                 const subtitle = details.subtitle || '';
                 const passengers = details.passengers || [];
                 const passengerName = passengers[0]?.lastNameFa || '—';
-                const amountStr = Number(b.totalAmount).toLocaleString();
+                const amountStr = Number(b.totalAmount).toLocaleString(numFmt);
                 const reference = b.id.substring(0, 8).toUpperCase();
 
                 return (
@@ -98,7 +102,7 @@ export default async function AdminBookingsPage({
                         : b.status === 'REFUNDED' ? 'bg-soft text-sub'
                         : 'bg-warning/10 text-warning'
                       }`}>
-                        {STATUS_FA[b.status] || b.status}
+                        {STATUS_LT[b.status] ? lt(locale, STATUS_LT[b.status]) : b.status}
                       </span>
                     </td>
                     <td className="p-4 text-center">

@@ -12,12 +12,12 @@ const ROUTES: Record<SearchTabId, string> = {
   tours: '/tours',
 };
 
-export function useSearchFormState() {
+export function useSearchFormState(initialTab: SearchTabId = 'plan') {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('Search');
 
-  const [tab, setTab] = useState<SearchTabId>('plan');
+  const [tab, setTab] = useState<SearchTabId>(initialTab);
   const [query, setQuery] = useState('');
   const [dest, setDest] = useState('');
   const [routeTo, setRouteTo] = useState('');

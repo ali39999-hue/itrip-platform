@@ -174,8 +174,8 @@ export const COUNTRIES: Record<CountryId, CountryConfig> = {
     themeEn: 'Premium, business and family travel',
     gateway: 'درگاه AED · پرداخت امن بین‌المللی',
     gatewayEn: 'AED gateway · Secure international payment',
-    exchangeNote: 'درهم در کیف پول iTrip قابل نگهداری و تبدیل',
-    exchangeNoteEn: 'Hold and convert AED in the iTrip wallet',
+    exchangeNote: 'درهم در کیف پول Firuzo قابل نگهداری و تبدیل',
+    exchangeNoteEn: 'Hold and convert AED in the Firuzo wallet',
     cities: [city('دبی', 'Dubai', 0), city('ابوظبی', 'Abu Dhabi', 1), city('شارجه', 'Sharjah', 2), city('راس‌الخیمه', 'Ras Al Khaimah', 3), city('عجمان', 'Ajman', 4), city('فجیره', 'Fujairah', 5)],
     services: [
       S('stays', 'هتل لوکس', 'Luxury hotels', 'اقامت premium با شرایط شفاف', 'Premium stays with clear terms', '/hotels/search'),

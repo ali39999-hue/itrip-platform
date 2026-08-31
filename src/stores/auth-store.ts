@@ -62,6 +62,6 @@ export const useAuthStore = create<AuthState>()(
             : {}),
         })),
     }),
-    { name: 'itrip-auth' }
+    { name: 'firuzo-auth' }
   )
 );

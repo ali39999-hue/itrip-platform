@@ -1,14 +1,18 @@
 'use client';
 
 import { X } from 'lucide-react';
-import { SearchModeTabs } from './SearchModeTabs';
+import { SearchModeTabs, type SearchTabId } from './SearchModeTabs';
 import { useSearchFormState } from './hooks/useSearchFormState';
 import { PlanSearchForm } from './forms/PlanSearchForm';
 import { FlightSearchForm } from './forms/FlightSearchForm';
 import { HotelSearchForm } from './forms/HotelSearchForm';
 import { TourSearchForm } from './forms/TourSearchForm';
 
-export function SearchWidget() {
+export interface SearchWidgetProps {
+  initialTab?: SearchTabId;
+}
+
+export function SearchWidget({ initialTab = 'plan' }: SearchWidgetProps) {
   const {
     tab,
     setTab,
@@ -34,7 +38,7 @@ export function SearchWidget() {
     setTourType,
     submit,
     swap,
-  } = useSearchFormState();
+  } = useSearchFormState(initialTab);
 
   return (
     <div className="w-full max-w-5xl mx-auto relative z-[60]">

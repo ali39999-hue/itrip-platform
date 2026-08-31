@@ -88,12 +88,18 @@ Baseline findings (verified 2026-08-30):
 
 | Task | Owner | Status |
 |---|---|---|
-| ITR-101 | main | ✅ done (tsc clean, lint 1 warning → folded into ITR-104) |
-| ITR-102 | agent-translations | pending |
-| ITR-103 | agent-translations | pending |
-| ITR-104 | agent-refactor | pending |
-| ITR-105 | agent-refactor | pending |
-| ITR-106 | agent-infra | pending |
+| ITR-101 | main | ✅ done (build/tsc/lint green; lint warning fixed in ITR-104) |
+| ITR-102 | main | ✅ done (ar 606/606 backfilled, ICU-aware audit OK) |
+| ITR-103 | main + agents A/B/C/D/E | 🔄 258 ternaries codemod'd to 5-locale `lt()`; remaining ~606 leaks split into batches A(services), B(trips/misc), C(admin+money), D(components), E(lib data) — running sequentially (platform allows 1 concurrent agent) |
+| ITR-104 | agent-refactor | ✅ done (16 dead files removed, global-error deduped, home import fixed) |
+| ITR-105 | agent-refactor | ✅ done (5× next/image, 0 img disables) |
+| ITR-106 | agent-infra | ✅ done (origins scoped, localIP flag removed, screenshots untracked) |
 | ITR-107 | main | pending |
 | ITR-108 | qa-agent | pending |
 | ITR-109 | audit-agent | pending |
+
+### Tooling added
+- `scripts/i18n-audit.js` — 5-locale structural audit (missing/extra keys, ICU-aware placeholders, untranslated detection)
+- `scripts/persian-scan.js` / `scripts/leak-scan.js` — hardcoded-Persian leak scanners (raw / lt-aware)
+- `scripts/backfill-ar.js`, `scripts/extract-catalog.js`, `scripts/apply-catalog.js`, `scripts/fix-imports.js` — one-shot codemods (kept for history)
+- `src/lib/lt.ts` — inline 5-locale string resolver `{ fa, en, ar?, zh?, ru? }` with en fallback

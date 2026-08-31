@@ -30,7 +30,7 @@ export function HeroSection() {
         <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-elev-1">
           <Image
             src={currentHeroImg}
-            alt="iTrip Travel Hero"
+            alt="Firuzo Travel Hero"
             fill
             priority
             sizes="100vw"

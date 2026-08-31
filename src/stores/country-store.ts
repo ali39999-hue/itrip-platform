@@ -15,6 +15,6 @@ export const useCountryStore = create<CountryState>()(
       country: 'iran',
       setCountry: (country) => set({ country }),
     }),
-    { name: 'itrip-country' }
+    { name: 'firuzo-country' }
   )
 );

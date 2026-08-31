@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { useAuthStore } from '@/stores/auth-store';
+import { Logo } from '@/components/layout/Logo';
 import { ScanLine, CheckCircle2, Loader2, User, Lock, LogIn } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
@@ -81,6 +82,9 @@ export default function AuthPage() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-surface border border-line rounded-3xl p-8 shadow-sm">
+        <div className="flex justify-center mb-6">
+          <Logo size="md" />
+        </div>
         {/* Step: Phone input */}
         {step === 'phone' && (
           <div>

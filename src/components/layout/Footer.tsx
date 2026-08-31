@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import Image from 'next/image';
 import { Link } from '@/i18n/routing';
 import { Send, Camera, ShieldCheck, Clock, CreditCard, Sparkles, Check } from 'lucide-react';
+import { Logo } from './Logo';
 import { ShamseDivider } from '@/components/ui/Shamse';
 
 export function Footer() {
@@ -103,9 +103,9 @@ export function Footer() {
         <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-12 pb-10">
           <div className="grid grid-cols-1 md:grid-cols-6 gap-10 text-start">
             <div className="col-span-1 md:col-span-2">
-              <Link href="/" className="inline-flex items-center text-brand-dark font-black text-[21px] tracking-tight mb-4 outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-xl">
-                <Image src="/firuzo-logo.png" alt={t('brand')} width={140} height={44} className="h-11 w-auto object-contain mix-blend-multiply" />
-              </Link>
+              <div className="mb-4">
+                <Logo size="lg" />
+              </div>
               <p className="text-sub text-[13px] font-bold leading-relaxed max-w-sm mb-5">
                 {t('about')}
               </p>

@@ -125,7 +125,7 @@ export const useBookingStore = create<BookingState>()(
           id: genId('bk'),
           reference,
           createdAt: new Date().toISOString(),
-          qrPayload: data.qrPayload || `ITRIP|${reference}|${data.type.toUpperCase()}`,
+          qrPayload: data.qrPayload || `FIRUZO|${reference}|${data.type.toUpperCase()}`,
         };
         set({
           bookings: [booking, ...get().bookings],
@@ -217,7 +217,7 @@ export const useBookingStore = create<BookingState>()(
         return true;
       },
     }),
-    { name: 'itrip-bookings' }
+    { name: 'firuzo-bookings' }
   )
 );
 

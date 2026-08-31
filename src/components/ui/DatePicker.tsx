@@ -10,8 +10,8 @@ import { CalendarDays } from 'lucide-react';
 import { useLocale } from 'next-intl';
 
 interface JalaliDatePickerProps {
-  value: string | undefined;
-  onChange: (date: string | undefined) => void;
+  value?: string | undefined;
+  onChange?: (date: string | undefined) => void;
   label?: string;
   placeholder?: string;
   minDate?: Date | string | number | DateObject;
@@ -40,7 +40,7 @@ export function JalaliDatePicker({
 
   return (
     <div
-      className={`relative w-full min-h-[58px] px-3.5 py-2 rounded-2xl bg-surface border transition flex items-center gap-2.5 ${
+      className={`relative w-full min-h-[48px] md:min-h-[52px] px-3.5 py-2 rounded-2xl bg-surface border transition flex items-center gap-2.5 ${
         error
           ? 'border-rose-500 focus-within:ring-2 focus-within:ring-rose-500/20'
           : 'border-line/80 hover:border-brand focus-within:border-brand focus-within:ring-2 focus-within:ring-brand'
@@ -57,6 +57,7 @@ export function JalaliDatePicker({
           id={id}
           value={dateObj}
           onChange={(d: DateObject | null) => {
+            if (!onChange) return;
             if (!d) {
               onChange(undefined);
               return;
@@ -78,3 +79,6 @@ export function JalaliDatePicker({
     </div>
   );
 }
+
+export { JalaliDatePicker as DatePicker };
+

@@ -21,7 +21,7 @@ function hotelPos(h: Hotel): L.LatLngExpression {
 function pricePin(h: Hotel): L.DivIcon {
   const label = `${(h.pricePerNight / 1000000).toLocaleString('fa-IR', { maximumFractionDigits: 1 })}م`;
   return L.divIcon({
-    className: 'itrip-pin',
+    className: 'firuzo-pin',
     html: `<span style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:52px;height:30px;border-radius:9px;background:${BRAND};color:var(--color-surface);font-weight:800;font-size:12px;font-family:inherit;white-space:nowrap;box-shadow:0 4px 12px rgba(10,50,54,.35);cursor:pointer"><span style="position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border:7px solid transparent;border-top-color:${BRAND};border-bottom:0"></span>${label}</span>`,
     iconSize: [52, 30],
     iconAnchor: [26, 37],
@@ -60,7 +60,7 @@ export default function MapPane({ hotels }: { hotels: Hotel[] }) {
         <FitToPins points={points} />
         {pins.map(({ hotel, pos, icon }) => (
           <Marker key={hotel.id} position={pos} icon={icon}>
-            <Popup className="itrip-map-popup">
+            <Popup className="firuzo-map-popup">
               <div dir="rtl" className="min-w-[180px] font-sans p-1">
                 <div className="flex items-center gap-1.5 flex-wrap mb-1">
                   <b className="text-xs font-black text-ink">{hotel.name}</b>

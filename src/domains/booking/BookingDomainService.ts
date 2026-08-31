@@ -145,7 +145,7 @@ export class BookingDomainService {
       passengers,
       addOns,
       paymentMethod,
-      qrPayload: `ITRIP|${reference}|${context.type.toUpperCase()}`,
+      qrPayload: `FIRUZO|${reference}|${context.type.toUpperCase()}`,
     };
   }
 }

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Link } from '@/i18n/routing';
 import { Menu, X } from 'lucide-react';
+import { Logo } from './Logo';
 import { CountrySwitcher } from './header/CountrySwitcher';
 import { LocaleSwitcher } from './header/LocaleSwitcher';
 import { DesktopNav, NAV_CATEGORIES } from './header/DesktopNav';
@@ -18,15 +19,7 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between gap-4">
         {/* Brand Logo & Switchers */}
         <div className="flex items-center gap-4">
-          <Link
-            href="/"
-            className="flex items-center gap-2 font-black text-[20px] text-brand-dark tracking-tight focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded"
-          >
-            <span className="w-8 h-8 rounded-xl bg-brand text-surface flex items-center justify-center font-black text-[16px] shadow-sm">
-              iT
-            </span>
-            <span className="font-black">iTrip</span>
-          </Link>
+          <Logo size="md" />
 
           <div className="hidden sm:flex items-center gap-2">
             <CountrySwitcher />

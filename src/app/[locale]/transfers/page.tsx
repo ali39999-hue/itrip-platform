@@ -8,10 +8,10 @@ import { TRANSFERS } from '@/lib/data';
 import { useBookingStore } from '@/stores/booking-store';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { daysFromNow } from '@/lib/utils';
 import { shimmerDataUrl } from '@/lib/image-utils';
-import { CarFront, Users, Luggage, Clock, Search, Crown, PlaneTakeoff, MapPin, CalendarDays, TrainFront, BusFront, Star } from 'lucide-react';
+import { CarFront, Users, Luggage, Clock, Search, Crown, PlaneTakeoff, MapPin, TrainFront, BusFront, Star } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
 const TRANSFER_IMGS: Record<string, string> = {
@@ -128,8 +128,11 @@ export default function TransfersPage() {
               </div>
               
               <div className="relative">
-                <CalendarDays size={18} className="absolute start-3 top-1/2 -translate-y-1/2 text-sub pointer-events-none z-10" />
-                <Input type="date" aria-label={lt(locale, { fa: 'تاریخ سفر', en: 'Travel date', ar: 'تاريخ السفر', zh: '出行日期', ru: 'Дата поездки' })} value={date} onChange={(e) => setDate(e.target.value)} className="h-12 w-full rounded-lg border-line bg-surface ps-10 focus-visible:ring-brand focus:ring-brand focus:border-brand font-bold text-[14px] text-sub" />
+                <DatePicker 
+                  value={date} 
+                  onChange={(d: string | undefined) => setDate(d || '')} 
+                  placeholder={lt(locale, { fa: 'تاریخ سفر', en: 'Travel date', ar: 'تاريخ السفر', zh: '出行日期', ru: 'Дата поездки' })} 
+                />
               </div>
               
               <Button onClick={() => setSearched(true)} aria-label={lt(locale, { fa: 'جستجو ترانسفر', en: 'Search transfers', ar: 'البحث عن خدمات النقل', zh: '搜索接送服务', ru: 'Поиск трансферов' })} className="h-12 bg-brand hover:bg-brand-dark text-surface font-black text-[14px] rounded-lg w-full flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">

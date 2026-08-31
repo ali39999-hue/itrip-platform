@@ -1,6 +1,6 @@
 {
   "Header": {
-    "brand": "iTrip",
+    "brand": "Firuzo",
     "signIn": "Sign in / Join",
     "currentCountry": "Country",
     "nav": {
@@ -27,8 +27,8 @@
     "support": "Support"
   },
   "Footer": {
-    "brand": "iTrip",
-    "about": "iTrip is your all-in-one travel platform. With the best flight, hotel and tour options across 6 countries, we make every trip effortless and memorable.",
+    "brand": "Firuzo",
+    "about": "Firuzo is your all-in-one travel platform. With the best flight, hotel and tour options across 6 countries, we make every trip effortless and memorable.",
     "booking": "Booking & travel",
     "services": "Services",
     "guide": "Guide",
@@ -44,12 +44,12 @@
     "guidePage": "Travel guide",
     "myTrips": "My trips",
     "destinations": "Popular destinations",
-    "rights": "© 2026 iTrip — All rights reserved. All services are subject to the legal terms of the local provider."
+    "rights": "© 2026 Firuzo — All rights reserved. All services are subject to the legal terms of the local provider."
   },
   "Hero": {
     "currentDest": "Current destination:",
     "titleA": "Discover the world with",
-    "titleB": "iTrip",
+    "titleB": "Firuzo",
     "titleC": "",
     "subtitle": "A new way to plan travel. Find your dream flight, hotel and tour in seconds."
   },
@@ -295,7 +295,7 @@
     "offersToman": "Toman"
   },
   "Interpreter": {
-    "kicker": "iTrip Interpreter",
+    "kicker": "Firuzo Interpreter",
     "title": "Language is no longer a travel barrier",
     "subtitle": "From a full-day companion to an SOS button — transparent pricing from the start, never “call us”.",
     "tiers": "Four tiers for every budget and need",
@@ -347,7 +347,7 @@
     "sosTimer": "Call time",
     "sosEnd": "End call",
     "sosCost": "This call: {price} IRT ({min} min)",
-    "sosNote": "In Iran and Russia where international payment is hard, the fee is deducted from your iTrip wallet.",
+    "sosNote": "In Iran and Russia where international payment is hard, the fee is deducted from your Firuzo wallet.",
     "added": "Added to cart",
     "moneyLink": "Exchange or prepaid card in {country}? Want an interpreter too?",
     "cultureBadge": "hourly interpreter available"
@@ -521,7 +521,8 @@
     "noFlightsFound": "No flights found with these filters",
     "promoTitle": "Modern Travel Experience with Firuzo",
     "promoSubtitle": "Discover the best flights with instant booking & multi-currency payments.",
-    "learnMore": "Learn More"
+    "learnMore": "Learn More",
+    "flights": "flights"
   },
   "Tours": {
     "title": "Curated Tours & Experiences",

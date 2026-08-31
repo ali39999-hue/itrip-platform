@@ -7,9 +7,10 @@ import { useRouter } from '@/i18n/routing';
 import { useBookingStore } from '@/stores/booking-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { daysFromNow } from '@/lib/utils';
 import { shimmerDataUrl } from '@/lib/image-utils';
-import { TrainFront, BusFront, MapPin, CalendarDays, CircleDot, Search } from 'lucide-react';
+import { TrainFront, BusFront, MapPin, CircleDot, Search } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
 const SERVICES = [
@@ -86,11 +87,8 @@ export default function TrainsPage() {
                 />
               </div>
               <div className="relative flex-1">
-                <CalendarDays size={18} className="absolute start-3 top-1/2 -translate-y-1/2 text-sub pointer-events-none z-10" />
-                <Input
-                  type="date"
-                  aria-label={lt(locale, { fa: 'تاریخ حرکت', en: 'Departure date', ar: 'تاريخ المغادرة', zh: '出发日期', ru: 'Дата выезда' })}
-                  className="h-12 w-full rounded-lg border-line bg-surface ps-10 font-bold text-[14px] text-sub focus-visible:ring-brand focus:border-brand"
+                <DatePicker
+                  placeholder={lt(locale, { fa: 'تاریخ حرکت', en: 'Departure date', ar: 'تاريخ المغادرة', zh: '出发日期', ru: 'Дата выезда' })}
                 />
               </div>
               <Button

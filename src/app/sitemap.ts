@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://itrip.ir';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://firuzo.ir';
   const locales = ['fa', 'en', 'ar', 'ru', 'zh'];
   const routes = [
     '',
