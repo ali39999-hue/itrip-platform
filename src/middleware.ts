@@ -34,7 +34,17 @@ export async function middleware(request: NextRequest) {
   const localeMatch = pathname.match(/^\/([a-z]{2})/);
   const locale = localeMatch ? localeMatch[1] : 'fa';
 
-  // 2. Handle /admin paths (with or without locale prefix)
+  // 2. Handle /login or /[locale]/login alias -> redirect to /[locale]/auth
+  if (pathname === '/login' || pathname.match(/^\/[a-z]{2}\/login$/)) {
+    const callbackUrl = request.nextUrl.searchParams.get('callbackUrl');
+    const authUrl = new URL('/' + locale + '/auth', request.url);
+    if (callbackUrl) {
+      authUrl.searchParams.set('callbackUrl', callbackUrl);
+    }
+    return NextResponse.redirect(authUrl);
+  }
+
+  // 3. Handle /admin paths (with or without locale prefix)
   const isAdminPath = pathname.match(/^\/([a-z]{2}\/)?admin/);
   
   if (isAdminPath) {
@@ -76,7 +86,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 3. Delegate to next-intl middleware for routing/redirects (if not an API route)
+  // 4. Delegate to next-intl middleware for routing/redirects (if not an API route)
   return intlMiddleware(request);
 }
 
