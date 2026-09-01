@@ -111,3 +111,8 @@ The following core modules and capabilities have undergone end-to-end browser au
 - **5.1 Incompatible Specs Resolved:** Synchronized `critical-flows.spec.ts`, `golden-journeys.spec.ts` (updated `dest=turkey`), and `planner.spec.ts` selectors and expectations with current UI.
 - **5.2 Vitest Unit Testing Suite:** Configured `vitest.config.ts`, added unit tests in `src/lib/domain-logic.test.ts` covering date calculations (`dualDate`), financial conversions (`toLocalCurrency`, `formatMoney`, `chargeContext`), number formatting, `CurrencyService`, and `BookingDomainService`.
 - **5.3 Test Scripts Integration:** Added `"typecheck": "tsc --noEmit"` and `"test:unit": "vitest run"` to `package.json`.
+
+### Phase 6 — Polish, Standards, & Documentation Completed
+- **6.1 CSS & UI Refinements:** Aligned `globals.css` color variables (`--color-paper`, `--color-ink`); secured Hero image state machine without direct DOM manipulation; standardized precise `/admin` regex matching in `AppChrome.tsx`.
+- **6.2 State & Storage Hardening:** Configured `partialize`, schema `version`, and explicit migration on all Zustand stores (`firuzo-auth`, `firuzo-bookings`, `firuzo-country`) to ensure sensitive KYC data is never stored in unencrypted client localStorage.
+- **6.3 Technical Documentation Realignment:** Aligned README badges with real Vitest and Playwright test metrics; verified `tsconfig.json` compiler targets `"ES2022"`.

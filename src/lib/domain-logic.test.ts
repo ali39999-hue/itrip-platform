@@ -89,12 +89,15 @@ describe('Unit Tests: Currency & Booking Domain Services', () => {
         {
           firstNameFa: 'علی',
           lastNameFa: 'محمدی',
+          firstNameEn: 'Ali',
+          lastNameEn: 'Mohammadi',
+          passportNo: 'A12345678',
           gender: 'male',
           nationalId: '0012345678',
           birthDate: '1990-01-01',
         },
       ],
-      'wallet'
+      'wallet_irr'
     );
 
     expect(booking.id).toBeDefined();

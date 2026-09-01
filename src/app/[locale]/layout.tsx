@@ -14,7 +14,7 @@ import {notFound} from 'next/navigation';
 import {Providers} from '@/providers';
 
 const vazirmatn = Vazirmatn({
-  variable: "--font-sans",
+  variable: "--font-vazirmatn",
   subsets: ["arabic", "latin"],
   weight: ["400", "500", "700", "800", "900"],
 });
@@ -31,19 +31,19 @@ const geistMono = Geist_Mono({
 });
 
 const plusJakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-sans",
+  variable: "--font-jakarta",
   subsets: ["latin"],
   weight: ["400", "500", "700", "800"],
 });
 
 const notoSans = Noto_Sans({
-  variable: "--font-sans",
+  variable: "--font-noto",
   subsets: ["latin", "cyrillic"],
   weight: ["400", "500", "700", "900"],
 });
 
 const notoSansSC = Noto_Sans_SC({
-  variable: "--font-sans",
+  variable: "--font-noto-sc",
   weight: ["400", "500", "700", "900"],
   preload: false,
 });

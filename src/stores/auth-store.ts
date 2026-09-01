@@ -83,6 +83,33 @@ export const useAuthStore = create<AuthState>()(
             : {}),
         })),
     }),
-    { name: 'firuzo-auth' }
+    {
+      name: 'firuzo-auth',
+      version: 2,
+      partialize: (state) => ({
+        user: state.user
+          ? {
+              id: state.user.id,
+              phone: state.user.phone,
+              firstNameFa: state.user.firstNameFa,
+              lastNameFa: state.user.lastNameFa,
+              firstNameEn: state.user.firstNameEn,
+              lastNameEn: state.user.lastNameEn,
+              kycApproved: state.user.kycApproved,
+              role: state.user.role,
+            }
+          : null,
+      }) as unknown as AuthState,
+      migrate: (persistedState: unknown, version: number) => {
+        const state = persistedState as { user?: User };
+        if (version < 2) {
+          return {
+            user: state?.user || null,
+            kyc: { step: 'phone' },
+          } as unknown as AuthState;
+        }
+        return persistedState as AuthState;
+      },
+    }
   )
 );

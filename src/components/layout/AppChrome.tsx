@@ -8,7 +8,7 @@ import { SosInterpreter } from '@/components/shared/SosInterpreter';
 
 export function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '';
-  const isAdmin = pathname.includes('/admin');
+  const isAdmin = /^\/([a-z]{2}\/)?admin(\/|$)/.test(pathname);
 
   if (isAdmin) {
     return <main className="flex-1 min-h-screen bg-soft">{children}</main>;
