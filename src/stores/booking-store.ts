@@ -119,7 +119,7 @@ export const useBookingStore = create<BookingState>()(
       },
 
       addDirectBooking: (data) => {
-        const reference = 'IRP' + Math.floor(Math.random() * 900000 + 100000);
+        const reference = 'FIR-' + Math.floor(Math.random() * 900000 + 100000);
         const booking: Booking = {
           ...data,
           id: genId('bk'),

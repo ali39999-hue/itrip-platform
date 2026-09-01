@@ -7,7 +7,27 @@ import { fa1, gShort } from '@/lib/hotel-format';
 import { DISTS, CATS, REVIEWS, FAQS } from '@/lib/hotel-mock';
 import type { Hotel } from '@/lib/types';
 import { FREE_CANCEL_HOURS } from '@/hooks/useHotelBooking';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 import { lt } from '@/lib/lt';
+
+// Simple determinist position for mock hotel
+function getHotelPos(id: string): [number, number] {
+  const seed = [...id].reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7) >>> 0;
+  return [
+    41.042 - ((seed % 97) / 97) * 0.062,
+    28.936 + (((seed >> 7) % 113) / 113) * 0.098
+  ];
+}
+
+const BRAND = '#00a9a5';
+const simplePin = (typeof window !== 'undefined') ? L.divIcon({
+  className: 'firuzo-pin',
+  html: `<div style="width:24px;height:24px;background:${BRAND};border-radius:50%;border:3px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.3)"></div>`,
+  iconSize: [24, 24],
+  iconAnchor: [12, 12]
+}) : undefined;
 
 export function HotelOverview({ hotel }: { hotel: Hotel }) {
   const t = useTranslations('HotelDetail');
@@ -64,15 +84,21 @@ export function HotelLocation({ hotel }: { hotel: Hotel }) {
       <h2 className="m-0 mb-1 text-lg font-black">{t('location')}</h2>
       <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">{t('walkingDistances')}</p>
       <div className="grid grid-cols-1 md:grid-cols-[1.05fr_.95fr] gap-3.5">
-        <div className="relative min-h-[240px] rounded-xl overflow-hidden border border-line bg-soft">
-          <div className="absolute inset-0 bg-[radial-gradient(#00a9a522_1px,transparent_1px)] bg-[size:14px_14px]" />
-          <div className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1">
-            <span className="w-8 h-8 rounded-full bg-brand text-surface grid place-items-center shadow-lg shadow-brand/40 animate-pulse">
-              <MapPin size={18} />
-            </span>
-            <span className="px-2.5 py-1 rounded-md bg-surface text-ink text-[11px] font-black shadow-sm border border-line">
-              {hotel.name}
-            </span>
+        <div className="relative min-h-[240px] rounded-xl overflow-hidden border border-line bg-soft z-0" dir="ltr">
+          {typeof window !== 'undefined' ? (
+            <MapContainer center={getHotelPos(hotel.id)} zoom={14} scrollWheelZoom={false} className="h-full w-full absolute inset-0">
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {simplePin && <Marker position={getHotelPos(hotel.id)} icon={simplePin} />}
+            </MapContainer>
+          ) : (
+            <div className="absolute inset-0 bg-soft animate-pulse" />
+          )}
+          <div className="absolute bottom-2 start-2 end-2 pointer-events-none z-[1000] flex justify-center">
+             <span className="px-2.5 py-1 rounded-md bg-surface text-ink text-[11px] font-black shadow-sm border border-line pointer-events-auto">
+               {hotel.name}
+             </span>
           </div>
         </div>
 

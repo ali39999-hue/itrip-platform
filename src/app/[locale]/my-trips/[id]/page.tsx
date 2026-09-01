@@ -106,7 +106,7 @@ export default function TripDetailsPage() {
               <h2 className="text-xl font-black text-brand-dark">{lt(locale, { fa: 'مسیر پروازی و بلیط‌ها', en: 'Flight Routes & Tickets', ar: 'مسارات الطيران والتذاكر', zh: '航班路线与机票', ru: 'Авиамаршрут и билеты' })}</h2>
             </div>
             
-            <div className="flex flex-col gap-8 relative z-10">
+            <div className="flex flex-col gap-8 relative z-10 md:ps-0 ps-6 md:before:hidden before:absolute before:start-2 before:top-0 before:bottom-0 before:w-0.5 before:bg-line">
               {/* Outbound Flight */}
               <div className="flex flex-col gap-3">
                 <span className="font-black text-[13px] text-sub bg-soft w-fit px-4 py-1.5 rounded-full border border-line/50">

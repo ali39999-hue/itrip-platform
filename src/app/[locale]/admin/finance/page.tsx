@@ -88,7 +88,7 @@ export default function AdminFinancePage() {
         </div>
       </div>
 
-      <div className="bg-surface rounded-2xl border border-line overflow-hidden">
+      <div className="bg-surface rounded-2xl border border-line overflow-x-auto">
         <p className="p-5 font-bold text-ink border-b border-line">{lt(locale, { fa: 'دفتر کل تراکنش‌ها', en: 'Transaction Ledger', ar: 'سجل المعاملات', zh: '交易总账', ru: 'Журнал операций' })}</p>
         {transactions.length === 0 ? (
           <p className="text-center text-sub py-12 text-sm">{lt(locale, { fa: 'تراکنشی ثبت نشده است', en: 'No transactions recorded', ar: 'لم تُسجَّل أي معاملات', zh: '暂无交易记录', ru: 'Операций нет' })}</p>

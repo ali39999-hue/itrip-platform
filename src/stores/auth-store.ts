@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { KycProfile } from '@/lib/types';
+import { loginWithCredentials, logoutUser } from '@/actions/auth';
 
 interface User {
   id: string;
@@ -35,11 +36,20 @@ export const useAuthStore = create<AuthState>()(
         await new Promise((r) => setTimeout(r, 600));
         if (otp !== OTP_CODE) return false;
         const isAdmin = phone.endsWith('0000');
+        
+        // Sync with NextAuth (Server side)
+        try {
+           const email = isAdmin ? 'admin@firuzo.com' : 'user@firuzo.com';
+           await loginWithCredentials(email, 'demo');
+        } catch(e) {
+           console.error("NextAuth login failed", e);
+        }
+
         set({
           user: {
-            id: 'u-' + phone.slice(-4),
+            id: isAdmin ? 'clr_admin_123' : 'clr_mock_user_123',
             phone,
-            firstNameFa: 'کاربر',
+            firstNameFa: isAdmin ? 'ادمین' : 'کاربر',
             lastNameFa: 'فیروز',
             kycApproved: true,
             role: isAdmin ? 'admin' : 'customer',
@@ -48,7 +58,10 @@ export const useAuthStore = create<AuthState>()(
         });
         return true;
       },
-      logout: () => set({ user: null, kyc: { step: 'phone' } }),
+      logout: () => {
+         logoutUser().catch(e => console.error("NextAuth logout failed", e));
+         set({ user: null, kyc: { step: 'phone' } });
+      },
       setKycStep: (step) => set((s) => ({ kyc: { ...s.kyc, step } })),
       updateKyc: (data) =>
         set((s) => ({

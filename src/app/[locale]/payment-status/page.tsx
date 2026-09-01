@@ -72,7 +72,7 @@ export default function PaymentStatusPage() {
   const s = statesConfig[state];
   const IconComponent = s.icon;
 
-  const trackingCode = latestBooking?.reference || 'IRP-892415';
+  const trackingCode = latestBooking?.reference || 'FIR-892415';
   const displayAmount = latestBooking ? latestBooking.amount : 12500000;
   const displayCurrency = latestBooking?.currency || 'IRR';
   const displayTitle = latestBooking?.title || lt(locale, { fa: 'سفارش خدمات مسافرتی فیروز', en: 'Firuzo Travel Services Booking', ar: 'طلب خدمات سفر فيروز', zh: 'Firuzo 旅行服务订单', ru: 'Заказ туристических услуг Firuzo' });

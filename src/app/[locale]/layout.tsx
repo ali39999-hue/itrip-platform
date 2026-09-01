@@ -62,6 +62,8 @@ function localeFont(locale: string) {
 
 import { AppChrome } from '@/components/layout/AppChrome';
 import { PwaBoot } from '@/components/pwa/PwaBoot';
+import { Analytics } from '@vercel/analytics/next';
+import Script from 'next/script';
 
 export async function generateMetadata({
   params,
@@ -128,6 +130,16 @@ export default async function RootLayout({
           </Providers>
           <PwaBoot />
         </NextIntlClientProvider>
+        <Analytics />
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX" strategy="afterInteractive" />
+        <Script id="ga" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-XXXXXXXXXX');
+          `}
+        </Script>
       </body>
     </html>
   );

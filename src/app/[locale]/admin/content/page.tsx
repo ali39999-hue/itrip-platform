@@ -35,7 +35,7 @@ export default function AdminContentPage() {
         </button>
       </div>
 
-      <div className="bg-surface rounded-2xl border border-line overflow-hidden shadow-sm">
+      <div className="bg-surface rounded-2xl border border-line overflow-x-auto shadow-sm">
         <p className="p-4 font-bold text-ink border-b border-line flex items-center gap-2 text-sm">
           <DatabaseZap size={16} className="text-brand-dark" aria-hidden="true" />
           {lt(locale, { fa: `${rows.length.toLocaleString(numFmt)} آیتم — ${activeCount.toLocaleString(numFmt)} فعال`, en: `${rows.length.toLocaleString(numFmt)} items — ${activeCount.toLocaleString(numFmt)} active`, ar: `${rows.length.toLocaleString(numFmt)} عنصر — ${activeCount.toLocaleString(numFmt)} نشط`, zh: `${rows.length.toLocaleString(numFmt)} 项 — ${activeCount.toLocaleString(numFmt)} 个启用`, ru: `Позиций: ${rows.length.toLocaleString(numFmt)} — активных: ${activeCount.toLocaleString(numFmt)}` })}

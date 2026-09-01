@@ -91,11 +91,15 @@
   "Common": {
     "aria": {
       "close": "Close",
+      "loading": "Loading...",
+      "language": "Language",
+      "share": "Share",
+      "fromCurrency": "From Currency",
+      "toCurrency": "To Currency",
       "previous": "Previous",
       "next": "Next",
       "favorite": "Favorite",
       "remove": "Remove",
-      "share": "Share",
       "like": "Like",
       "unlike": "Unlike",
       "roomQuantity": "Room quantity",
@@ -130,22 +134,22 @@
     "titleC": "",
     "subtitle": "A new way to plan travel. Find your dream flight, hotel and tour in seconds."
   },
-    "Search": {
-      "tabFlights": "Flights",
-      "tabHotels": "Hotels",
-      "tabTours": "Tours",
-      "tabTransfers": "Transfers",
-      "tabTrains": "Train & bus",
-      "from": "From",
-      "to": "To",
-      "destination": "Destination",
-      "fromPlaceholder": "Tehran (THR)",
-      "toPlaceholder": "Istanbul (IST)",
-      "destPlaceholder": "City, hotel, or destination...",
-      "departDate": "Departure Date",
-      "returnDate": "Return Date (Optional)",
-      "dateCheckOut": "Check-out Date",
-      "dateReturn": "Return Date",
+  "Search": {
+    "tabFlights": "Flights",
+    "tabHotels": "Hotels",
+    "tabTours": "Tours",
+    "tabTransfers": "Transfers",
+    "tabTrains": "Train & bus",
+    "from": "From",
+    "to": "To",
+    "destination": "Destination",
+    "fromPlaceholder": "Tehran (THR)",
+    "toPlaceholder": "Istanbul (IST)",
+    "destPlaceholder": "City, hotel, or destination...",
+    "departDate": "Departure Date",
+    "returnDate": "Return Date (Optional)",
+    "dateCheckOut": "Check-out Date",
+    "dateReturn": "Return Date",
     "time": "Time",
     "guests": "Rooms & guests",
     "guestsDialog": "Rooms & guests",
@@ -487,6 +491,48 @@
     "statusCancelled": "Cancelled"
   },
   "HotelDetail": {
+    "highlights": [
+      {
+        "title": "Old City Heart",
+        "sub": "Walk to Hagia Sophia"
+      },
+      {
+        "title": "Turkish Buffet Breakfast",
+        "sub": "Bosphorus view terrace"
+      },
+      {
+        "title": "Easy Checkout",
+        "sub": "No international card needed"
+      },
+      {
+        "title": "24/7 Support",
+        "sub": "Available throughout stay"
+      }
+    ],
+    "amenityCategories": {
+      "accommodation": "Accommodation",
+      "food": "Food & Drink",
+      "services": "Services",
+      "entertainment": "Entertainment",
+      "family": "Family",
+      "accessibility": "Accessibility"
+    },
+    "amenityItems": {
+      "wifi": "Free WiFi",
+      "ac": "Air Conditioning",
+      "soundproof": "Soundproof",
+      "smoking": "Smoking Room"
+    },
+    "policyItems": {
+      "checkin": "Check-in / Check-out",
+      "children": "Children & Extra Beds"
+    },
+    "cancelTimeline": {
+      "fullRefund": "Full Refund",
+      "partialRefund": "Partial Refund",
+      "noRefund": "No Refund"
+    },
+    "noReviewsForCategory": "No reviews for this category yet.",
     "backToResults": "Back to Results",
     "backToSearch": "Back to Hotel Results",
     "destinations": "Destinations",
@@ -556,6 +602,12 @@
     "childrenExtraBedDesc": "Accommodation for children under two years is free. Request for an extra bed depends on the selected room type."
   },
   "Flights": {
+    "valueProp1Title": "Instant Issuance & Official PNR",
+    "valueProp1Desc": "Direct ticketing...",
+    "valueProp2Title": "Online Cancellation & Refund",
+    "valueProp2Desc": "Instant refund possibility...",
+    "valueProp3Title": "24/7 Airport Support",
+    "valueProp3Desc": "Dedicated support team...",
     "flightDetails": "Flight & Baggage Details",
     "selectTicket": "Select & Book Flight",
     "directFlight": "Direct Flight",
@@ -788,19 +840,23 @@
     "policyNotice": "Reservation document issuance and billing are executed with guaranteed instant PNR confirmation."
   },
   "PassengerForm": {
-    "title": "Main Passenger Information",
+    "title": "Main Passenger Info",
+    "scanOcr": "Scan Passport (OCR)",
     "scanning": "Scanning...",
-    "scanComplete": "Passport Scanned",
-    "scanPassport": "Scan Passport (OCR)",
-    "notice": "To issue the ticket, please enter the information exactly as it appears on the passport. Using the automatic scanning feature (OCR) is recommended.",
-    "firstName": "First Name (English)",
-    "lastName": "Last Name (English)",
+    "scanned": "Passport Scanned",
+    "notice": "To prevent ticketing errors, please enter info accurately.",
+    "firstNameEn": "First Name",
+    "lastNameEn": "Last Name",
     "passportNo": "Passport Number",
     "nationalId": "National ID",
-    "birthDate": "Date of Birth (Gregorian)",
+    "birthDate": "Birth Date",
     "gender": "Gender",
     "male": "Male",
-    "female": "Female"
+    "female": "Female",
+    "scanComplete": "Passport Scanned",
+    "scanPassport": "Scan Passport (OCR)",
+    "firstName": "First Name (English)",
+    "lastName": "Last Name (English)"
   },
   "CityPassWidget": {
     "title": "Buy City Pass",
@@ -828,5 +884,30 @@
     "shiraz": "Shiraz",
     "unlimitedTouristPass": "Unlimited Tourist City Pass",
     "storedValueCard": "Stored Value Card"
+  },
+  "CityPass": {
+    "title": "Buy Firuz Pass",
+    "selectCity": "Select City",
+    "cityNotice": "Each city has its own independent network.",
+    "cardType": "Card Type",
+    "pass3Day": "3-Day Unlimited Pass",
+    "storedCard": "Stored Value Card",
+    "deliveryLocation": "Delivery Location",
+    "deliveryPlaceholder": "Hotel name or airport terminal",
+    "deliveryRequired": "Please enter delivery location.",
+    "deliveryFee": "Card issuance & delivery fee",
+    "routePanel": "English Route Planner",
+    "free": "Free",
+    "totalAmount": "Total Amount",
+    "submitOrder": "Submit & Pay",
+    "paymentNotice": "Pay securely with Visa or Mastercard"
+  },
+  "RoutePlanner": {
+    "cardStatus": "Card Status: Active",
+    "nearestStation": "Nearest Station",
+    "alternativeBrt": "Alternative BRT Station",
+    "stepGuide": "Step-by-Step Guide",
+    "routeDiscoveries": "Route Discoveries",
+    "routeStopsWorth": "Worthwhile stops on this route:"
   }
 }

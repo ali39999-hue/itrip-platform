@@ -5,22 +5,25 @@ import { bookingSchema } from '@/lib/validations';
 import { Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 
-	// Mock User ID for V1 since we don't have NextAuth yet
-const MOCK_USER_ID = 'clr_mock_user_123';
+import { auth } from '@/auth';
 
 export async function createBookingDraft(data: unknown, totalAmount: number, currency: string) {
   try {
+    const session = await auth();
+    if (!session || !session.user) throw new Error('Unauthorized');
+    const userId = session.user.id;
+
     // 1. Validate data
     const parsed = bookingSchema.parse(data);
 
     // 2. Ensure user and wallet exist
-    let user = await prisma.user.findUnique({ where: { id: MOCK_USER_ID } });
+    let user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       user = await prisma.user.create({
         data: {
-          id: MOCK_USER_ID,
-          email: 'user@firuzo.com',
-          name: 'Firuzo User',
+          id: userId,
+          email: session.user.email || 'user@firuzo.com',
+          name: session.user.name || 'Firuzo User',
           passwordHash: 'dummy',
           wallet: {
             create: { balances: JSON.stringify({ IRR: 150000000, USDT: 250 }) }
@@ -32,7 +35,7 @@ export async function createBookingDraft(data: unknown, totalAmount: number, cur
     // 3. Create Booking in DRAFT state
     const booking = await prisma.booking.create({
       data: {
-        userId: MOCK_USER_ID,
+        userId: userId,
         type: parsed.type,
         status: 'DRAFT',
         totalAmount,
@@ -50,11 +53,16 @@ export async function createBookingDraft(data: unknown, totalAmount: number, cur
 
 export async function payBooking(bookingId: string, method: 'wallet_irr' | 'gateway_shetab') {
   try {
+    const session = await auth();
+    if (!session || !session.user) throw new Error('Unauthorized');
+    const userId = session.user.id;
+
     const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
     if (!booking) throw new Error('Booking not found');
+    if (booking.userId !== userId) throw new Error('Unauthorized');
     if (booking.status !== 'DRAFT') throw new Error('Booking already paid or cancelled');
 
-    const wallet = await prisma.wallet.findUnique({ where: { userId: MOCK_USER_ID } });
+    const wallet = await prisma.wallet.findUnique({ where: { userId: userId } });
     if (!wallet) throw new Error('Wallet not found');
 
     const balances = JSON.parse(wallet.balances);
@@ -96,7 +104,7 @@ export async function payBooking(bookingId: string, method: 'wallet_irr' | 'gate
       // Audit log
       await tx.auditLog.create({
         data: {
-          userId: MOCK_USER_ID,
+          userId: userId,
           action: 'booking_paid',
           entity: 'Booking',
           entityId: booking.id,

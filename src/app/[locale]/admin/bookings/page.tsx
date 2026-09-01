@@ -58,7 +58,7 @@ export default async function AdminBookingsPage({
         </div>
       </div>
 
-      <div className="bg-surface rounded-2xl border border-line overflow-hidden">
+      <div className="bg-surface rounded-2xl border border-line overflow-x-auto">
         {filtered.length === 0 ? (
           <p className="text-center text-sub py-16 text-sm">{lt(locale, { fa: 'رزروی یافت نشد', en: 'No bookings found', ar: 'لا توجد حجوزات', zh: '未找到预订', ru: 'Брони не найдены' })}</p>
         ) : (
@@ -74,7 +74,7 @@ export default async function AdminBookingsPage({
               </tr>
             </thead>
             <tbody>
-              {filtered.map((b) => {
+              {filtered.map((b: Booking) => {
                 let details: { title?: string; subtitle?: string; passengers?: { lastNameFa?: string }[] } = {};
                 try {
                   details = JSON.parse(b.details || '{}');

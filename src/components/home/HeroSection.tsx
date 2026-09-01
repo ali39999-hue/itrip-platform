@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useCountryStore } from '@/stores/country-store';
@@ -20,6 +21,7 @@ const HERO_IMAGES: Record<CountryId, string> = {
 export function HeroSection() {
   const { country } = useCountryStore();
   const t = useTranslations('Hero');
+  const [imgError, setImgError] = useState(false);
   
   const currentHeroImg = HERO_IMAGES[country] || HERO_IMAGES['turkey'];
 
@@ -27,7 +29,7 @@ export function HeroSection() {
     <section className="relative w-full min-h-[640px] md:h-[85vh] flex items-center justify-center overflow-visible">
       {/* Background image + overlays */}
       <div className="absolute inset-0 z-0 px-4 md:px-10 pt-4 pb-2">
-        <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-elev-1">
+        <div className={`relative w-full h-full rounded-3xl overflow-hidden shadow-elev-1 ${imgError ? 'bg-gradient-to-br from-brand-dark to-brand' : 'bg-surface'}`}>
           <Image
             src={currentHeroImg}
             alt="Firuzo Travel Hero"
@@ -36,8 +38,14 @@ export function HeroSection() {
             sizes="100vw"
             placeholder="blur"
             blurDataURL={shimmerDataUrl(1920, 1080)}
-            className="object-cover transition-all duration-700"
+            className={`object-cover transition-all duration-700 ${imgError ? 'hidden' : 'block'}`}
+            onError={() => {
+               // using standard dom assignment because state is async above
+               const el = document.getElementById('hero-gradient');
+               if (el) el.classList.remove('hidden');
+            }}
           />
+          <div id="hero-gradient" className="absolute inset-0 bg-gradient-to-br from-brand-dark to-brand hidden" />
           <div className="absolute inset-0 bg-deep/30 pointer-events-none" />
         </div>
       </div>

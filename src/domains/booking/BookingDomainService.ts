@@ -127,7 +127,7 @@ export class BookingDomainService {
     paymentMethod: Booking['paymentMethod'],
     addOns: string[] = []
   ): Booking {
-    const reference = 'IRP' + Math.floor(Math.random() * 900000 + 100000);
+    const reference = 'FIR-' + Math.floor(Math.random() * 900000 + 100000);
     const now = new Date().toISOString();
     const id = `bk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 

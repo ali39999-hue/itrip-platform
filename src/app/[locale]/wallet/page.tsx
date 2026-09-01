@@ -13,6 +13,7 @@ import { lt } from '@/lib/lt';
 
 export default function WalletPage() {
   const t = useTranslations('Wallet');
+  const commonT = useTranslations('Common.aria');
   const locale = useLocale();
   const { wallet, transactions, deposit, exchange } = useBookingStore();
 
@@ -150,7 +151,7 @@ export default function WalletPage() {
                 <select
                   value={exFrom}
                   onChange={(e) => setExFrom(e.target.value as 'IRR' | 'USDT' | 'AED')}
-                  aria-label="From Currency"
+                  aria-label={commonT('fromCurrency')}
                   className="w-full h-11 border border-line rounded-xl px-3 font-bold text-sm bg-surface"
                 >
                   <option value="IRR">IRR (تومان)</option>
@@ -163,7 +164,7 @@ export default function WalletPage() {
                 <select
                   value={exTo}
                   onChange={(e) => setExTo(e.target.value as 'IRR' | 'USDT' | 'AED')}
-                  aria-label="To Currency"
+                  aria-label={commonT('toCurrency')}
                   className="w-full h-11 border border-line rounded-xl px-3 font-bold text-sm bg-surface"
                 >
                   <option value="USDT">USDT</option>

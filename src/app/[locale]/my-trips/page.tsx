@@ -9,7 +9,7 @@ import { useHydration } from '@/hooks/useHydration';
 import type { Booking } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { shimmerDataUrl } from '@/lib/image-utils';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import {
   Plane, QrCode, RotateCcw, Luggage,
   MapPin, BedDouble, CarFront, FileCheck2, Wifi, ShieldCheck,

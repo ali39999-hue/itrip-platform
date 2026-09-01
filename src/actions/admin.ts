@@ -3,9 +3,15 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
+import { auth } from '@/auth';
 
 export async function getAdminBookings() {
   try {
+    const session = await auth();
+    if (!session || session.user.role !== 'ADMIN') {
+      throw new Error('Unauthorized');
+    }
+
     const bookings = await prisma.booking.findMany({
       orderBy: { createdAt: 'desc' },
       take: 50,
@@ -19,6 +25,11 @@ export async function getAdminBookings() {
 
 export async function refundBookingAdmin(bookingId: string) {
   try {
+    const session = await auth();
+    if (!session || session.user.role !== 'ADMIN') {
+      throw new Error('Unauthorized');
+    }
+
     const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
     if (!booking) throw new Error('Booking not found');
     if (booking.status !== 'CONFIRMED') throw new Error('Only Confirmed bookings can be refunded');

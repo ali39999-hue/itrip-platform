@@ -4,6 +4,13 @@ import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Sparkles, BedDouble, Ruler, Eye, Users, Check, Flame, Ban, Coffee, Clock, Wallet } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { fa, gShort } from '@/lib/hotel-format';
 import { ROOMS, PLANS } from '@/lib/hotel-mock';
 import { quote, NIGHTS, CHECKIN, CHECKOUT, ADULTS, CHILDREN, TAX, keyOf, type useHotelBooking } from '@/hooks/useHotelBooking';
@@ -136,17 +143,22 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
                         <div className="text-[11.5px] font-bold text-sub">{locale === 'fa' ? `جمع ${fa(NIGHTS.length)} شب:` : `Total ${NIGHTS.length} nights:`} <b>{fa(q.total)} TRY</b></div>
                       </div>
                       <div className="flex items-center justify-start md:justify-end gap-2">
-                        <select
-                          value={qty}
-                          onChange={(e) => { const v = +e.target.value; setSel((s) => { const n = { ...s }; if (v) n[k] = v; else delete n[k]; return n; }); }}
+                        <Select
+                          value={String(qty)}
+                          onValueChange={(v) => { if (!v) return; const val = +v; setSel((s) => { const n = { ...s }; if (val) n[k] = val; else delete n[k]; return n; }); }}
                           disabled={maxSel < 1}
-                          aria-label={t('Common.aria.roomQuantity')}
-                          className="min-h-10 px-2 border border-line rounded-[10px] bg-surface text-[12.5px] font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
                         >
-                          {Array.from({ length: maxSel + 1 }, (_, i) => (
-                            <option key={i} value={i}>{i ? `${fa(i)} ${lt(locale, { fa: 'اتاق', en: 'room', ar: 'غرفة', zh: '间', ru: 'номер' })}` : '—'}</option>
-                          ))}
-                        </select>
+                          <SelectTrigger className="w-24 min-h-10 border border-line rounded-[10px] bg-surface text-[12.5px] font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                            <SelectValue placeholder="—" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: maxSel + 1 }, (_, i) => (
+                              <SelectItem key={i} value={String(i)}>
+                                {i ? `${fa(i)} ${lt(locale, { fa: 'اتاق', en: 'room', ar: 'غرفة', zh: '间', ru: 'номер' })}` : '—'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       {isOpen && (
                         <div className="col-span-full mt-1 p-3 border border-line rounded-xl bg-soft/50">
@@ -160,7 +172,7 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
                                   <td className="py-1 text-end font-extrabold">{fa(n.price)} TRY</td>
                                 </tr>
                               ))}
-                              <tr><td className="py-1 font-bold">{locale === 'fa' ? `مالیات و عوارض (${fa(TAX * 100)}٪)` : `Taxes & Fees (${TAX * 100}%)`}</td><td className="py-1 text-end font-extrabold">{fa(q.tax)} TRY</td></tr>
+                              <tr><td className="py-1 font-bold">{lt(locale, { fa: `مالیات و عوارض (${fa(TAX * 100)}٪)`, en: `Taxes & Fees (${TAX * 100}%)`, ar: `الضرائب والرسوم (${TAX * 100}%)`, zh: `税费 (${TAX * 100}%)`, ru: `Налоги и сборы (${TAX * 100}%)` })}</td><td className="py-1 text-end font-extrabold">{fa(q.tax)} TRY</td></tr>
                               <tr><td className="pt-1 font-black">{lt(locale, { fa: 'جمع کل یک اتاق', en: 'Total per room', ar: 'الإجمالي لكل غرفة', zh: '每间房合计', ru: 'Итого за номер' })}</td><td className="pt-1 text-end font-black">{fa(q.total)} TRY</td></tr>
                             </tbody>
                           </table>

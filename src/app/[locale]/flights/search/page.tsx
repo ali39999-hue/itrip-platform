@@ -3,7 +3,7 @@
 import { Suspense, useMemo, useState } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { useTranslations, useLocale } from 'next-intl';
 import { FLIGHTS } from '@/lib/data';
 import type { Flight } from '@/lib/types';

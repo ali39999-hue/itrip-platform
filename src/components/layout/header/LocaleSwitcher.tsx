@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, usePathname } from '@/i18n/routing';
 import { useSearchParams } from 'next/navigation';
 import { Globe, ChevronDown, Check } from 'lucide-react';
@@ -16,6 +16,7 @@ export const LOCALES = [
 
 export function LocaleSwitcher() {
   const currentLocale = useLocale();
+  const t = useTranslations('Common.aria');
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -49,7 +50,7 @@ export function LocaleSwitcher() {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="listbox"
-        aria-label="Language / تغییر زبان"
+        aria-label={t('language')}
         className="min-h-[38px] inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-[13px] font-bold text-ink hover:bg-soft transition border border-line/80 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
       >
         <Globe size={14} className="text-sub" />

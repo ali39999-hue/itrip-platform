@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Heart, Share2, ArrowLeft, MapPin, User, Check } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { shimmerDataUrl } from '@/lib/image-utils';
@@ -60,6 +60,7 @@ const MOCK_TRAVELOGUES: Record<string, TravelogueItem> = {
 export default function TravelogueDetailPage() {
   const params = useParams();
   const locale = useLocale();
+  const commonT = useTranslations('Common.aria');
   const id = (params?.id as string) || '1';
   const t = MOCK_TRAVELOGUES[id];
 
@@ -139,7 +140,7 @@ export default function TravelogueDetailPage() {
             <Heart size={18} className={liked ? 'fill-rose-warm' : ''} />
           </button>
           <button 
-            aria-label="Share"
+            aria-label={commonT('share')}
             onClick={handleShare} 
             className="w-11 h-11 rounded-2xl bg-surface border border-line flex items-center justify-center text-ink hover:text-brand-dark hover:border-brand transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer relative"
           >
