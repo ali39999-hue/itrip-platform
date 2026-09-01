@@ -4,13 +4,13 @@ export interface TravelSupplier {
   type: 'HOTEL' | 'FLIGHT' | 'TOUR' | 'TRANSFER' | 'INSURANCE' | 'VISA' | 'MOCK';
 
   // Search inventory
-  search(params: any): Promise<any>;
+  search(params: Record<string, unknown>): Promise<unknown>;
   
   // Get latest price/availability
-  quote(id: string, params: any): Promise<{ price: number; currency: string; available: boolean }>;
+  quote(id: string, params: Record<string, unknown>): Promise<{ price: number; currency: string; available: boolean }>;
   
   // Finalize booking on supplier side
-  book(quoteId: string, passengers: any[]): Promise<{ success: boolean; externalPnr?: string; error?: string }>;
+  book(quoteId: string, passengers: Record<string, unknown>[]): Promise<{ success: boolean; externalPnr?: string; error?: string }>;
   
   // Cancel/Refund
   cancel(externalPnr: string): Promise<{ success: boolean; refundAmount: number }>;

@@ -6,7 +6,8 @@ export class MockFlightSupplier implements TravelSupplier {
   name = 'Mock Airline API';
   type = 'FLIGHT' as const;
 
-  async search(params: any) {
+  async search(_params: Record<string, unknown>) {
+    void _params;
     // Simulate delay
     await new Promise(r => setTimeout(r, 500));
     
@@ -16,7 +17,8 @@ export class MockFlightSupplier implements TravelSupplier {
     ];
   }
 
-  async quote(id: string, params: any) {
+  async quote(id: string, _params: Record<string, unknown>) {
+    void _params;
     return {
       price: id === 'f-1' ? 15000000 : 17000000,
       currency: 'IRR',
@@ -24,7 +26,9 @@ export class MockFlightSupplier implements TravelSupplier {
     };
   }
 
-  async book(quoteId: string, passengers: any[]) {
+  async book(_quoteId: string, _passengers: Record<string, unknown>[]) {
+    void _quoteId;
+    void _passengers;
     // 5% chance of failure to test the Operations Queue / Saga compensation
     if (Math.random() < 0.05) {
       return { success: false, error: 'Supplier API timed out' };
@@ -32,11 +36,12 @@ export class MockFlightSupplier implements TravelSupplier {
     
     return { 
       success: true, 
-      externalPnr: `PNR-${Math.random().toString(36).substring(7).toUpperCase()}` 
+      externalPnr: 'PNR-' + Math.random().toString(36).substring(7).toUpperCase()
     };
   }
 
-  async cancel(externalPnr: string) {
+  async cancel(_externalPnr: string) {
+    void _externalPnr;
     return { success: true, refundAmount: 15000000 };
   }
 }

@@ -5,6 +5,26 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 
+async function getOpsData() {
+  const cutoffTime = new Date(Date.now() - 1000 * 60 * 15);
+  const [pendingEvents, stuckBookings] = await Promise.all([
+    prisma.outboxEvent.findMany({
+      where: { status: { in: ['PENDING', 'FAILED'] } },
+      orderBy: { createdAt: 'asc' }
+    }),
+    prisma.booking.findMany({
+      where: { 
+        status: 'DRAFT',
+        createdAt: { lt: cutoffTime }
+      },
+      take: 10,
+      orderBy: { createdAt: 'desc' }
+    })
+  ]);
+
+  return { pendingEvents, stuckBookings };
+}
+
 export default async function AdminOpsPage() {
   const locale = await getLocale();
   const session = await auth();
@@ -13,28 +33,14 @@ export default async function AdminOpsPage() {
     redirect('/' + locale + '/account');
   }
 
-  // Fetch pending / failed events from Outbox
-  const pendingEvents = await prisma.outboxEvent.findMany({
-    where: { status: { in: ['PENDING', 'FAILED'] } },
-    orderBy: { createdAt: 'asc' }
-  });
-
-  // Fetch bookings that might need attention (e.g. DRAFT for too long, or PENDING_PAYMENT)
-  const stuckBookings = await prisma.booking.findMany({
-    where: { 
-      status: 'DRAFT',
-      createdAt: { lt: new Date(Date.now() - 1000 * 60 * 15) } // Older than 15 mins
-    },
-    take: 10,
-    orderBy: { createdAt: 'desc' }
-  });
+  const { pendingEvents, stuckBookings } = await getOpsData();
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-ink">{lt(locale, { fa: 'مرکز عملیات و صف وظایف', en: 'Action Center & Ops Queue', ar: 'مركز العمليات وقائمة المهام', zh: '操作中心与任务队列', ru: 'Центр действий и очередь задач' })}</h1>
-          <p className="text-sm text-sub mt-1">{lt(locale, { fa: 'بررسی رویدادهای ناموفق، رزروهای معلق و خطاهای سیستم', en: 'Review failed events, stuck bookings and system errors', ar: 'مراجعة الأحداث الفاشلة والحجوزات المعلقة وأخطاء النظام', zh: '检查失败的事件、卡住的预订和系统错误', ru: 'Просмотр неудачных событий, застрявших бронирований и системных ошибок' })}</p>
+          <h1 className="text-2xl font-bold text-ink">{lt(locale, { fa: 'مرکز عملیات و صف رویدادها', en: 'Action Center & Ops Queue', ar: 'مركز العمليات وقائمة المهام', zh: '操作中心与队列', ru: 'Центр операций и очередь' })}</h1>
+          <p className="text-sm text-sub mt-1">{lt(locale, { fa: 'بررسی رویدادهای ناموفق، رزروهای معلق و خطاهای سیستمی', en: 'Review failed events, stuck bookings and system errors', ar: 'مراجعة الأحداث الفاشلة والحجوزات المعلقة وأخطاء النظام', zh: '查看失败事件、搁置预订及系统异常', ru: 'Просмотр сбойных событий и зависших бронирований' })}</p>
         </div>
       </div>
 
@@ -43,13 +49,13 @@ export default async function AdminOpsPage() {
         <div className="bg-surface rounded-2xl border border-line overflow-hidden shadow-sm flex flex-col">
           <div className="p-4 border-b border-line bg-rose-warm/5 flex items-center gap-2 text-rose-warm">
              <AlertCircle size={18} />
-             <h2 className="font-bold">Failed / Pending Events (Outbox)</h2>
+             <h2 className="font-bold">{lt(locale, { fa: 'رویدادهای معلق / ناموفق (Outbox)', en: 'Failed / Pending Events (Outbox)', ar: 'الأحداث المعلقة / الفاشلة', zh: '待处理/失败事件', ru: 'Ожидающие/сбойные события' })}</h2>
           </div>
           <div className="p-0 flex-1">
             {pendingEvents.length === 0 ? (
                <div className="p-8 text-center text-sub flex flex-col items-center">
                   <CheckCircle2 size={32} className="text-success mb-2 opacity-50" />
-                  <p>All events processed successfully.</p>
+                  <p>{lt(locale, { fa: 'همه رویدادها با موفقیت پردازش شده‌اند.', en: 'All events processed successfully.', ar: 'تمت معالجة جميع الأحداث بنجاح.', zh: '所有事件均已成功处理。', ru: 'Все события успешно обработаны.' })}</p>
                </div>
             ) : (
                <div className="divide-y divide-line">
@@ -74,13 +80,13 @@ export default async function AdminOpsPage() {
         <div className="bg-surface rounded-2xl border border-line overflow-hidden shadow-sm flex flex-col">
           <div className="p-4 border-b border-line bg-warning/5 flex items-center gap-2 text-warning">
              <Clock size={18} />
-             <h2 className="font-bold">Stuck Bookings (Abandoned Drafts)</h2>
+             <h2 className="font-bold">{lt(locale, { fa: 'رزروهای معلق / رها شده', en: 'Stuck Bookings (Abandoned Drafts)', ar: 'الحجوزات المعلقة', zh: '搁置预订', ru: 'Зависшие бронирования' })}</h2>
           </div>
           <div className="p-0 flex-1">
             {stuckBookings.length === 0 ? (
                <div className="p-8 text-center text-sub flex flex-col items-center">
                   <CheckCircle2 size={32} className="text-success mb-2 opacity-50" />
-                  <p>No stuck bookings found.</p>
+                  <p>{lt(locale, { fa: 'هیچ رزرو معلقی وجود ندارد.', en: 'No stuck bookings found.', ar: 'لا توجد حجوزات معلقة.', zh: '没有搁置的预订。', ru: 'Зависших бронирований нет.' })}</p>
                </div>
             ) : (
                <div className="divide-y divide-line">

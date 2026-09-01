@@ -8,24 +8,37 @@ import {
   TrustMarquee, 
   SupportSection 
 } from '@/components/home/sections';
-import { getTranslations } from 'next-intl/server';
+import { lt } from '@/lib/lt';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
-  const resolvedParams = await params;
-  const t = await getTranslations({ locale: resolvedParams.locale, namespace: 'Common' });
-  // Since we don't have Metadata namespace, we fallback to static text for now or common translation.
+  const { locale } = await params;
+  const title = lt(locale, {
+    fa: 'فیروزه - پلتفرم یکپارچه سفر هوشمند',
+    en: 'Firuzo - Smart Unified Travel Platform',
+    ar: 'فيروزو - منصة السفر الذكية الموحدة',
+    zh: 'Firuzo - 智能综合旅游平台',
+    ru: 'Firuzo - Интеллектуальная платформа путешествий'
+  });
+  const description = lt(locale, {
+    fa: 'پلتفرم یکپارچه سفر فیروزه - رزرو پرواز، هتل، قطار، تور و خدمات مالی چند ارزی',
+    en: 'Firuzo unified travel platform - Book flights, hotels, trains, tours and multi-currency services',
+    ar: 'منصة فيروزو الموحدة للسفر - حجز رحلات طيران، فنادق، قطارات، جولات وخدمات مالية',
+    zh: 'Firuzo 综合旅游平台 - 预订机票、酒店、火车票、旅游团及多币种支付服务',
+    ru: 'Единая платформа путешествий Firuzo - бронирование авиабилетов, отелей, поездов, туров и мультивалютных услуг'
+  });
+
   return {
-    title: `فیروزو - Firuzo`,
-    description: `پلتفرم یکپارچه سفر فیروزو - سفر و اقامت، پرداخت ارزی و ریالی`,
+    title,
+    description,
     openGraph: {
-      title: `فیروزو - Firuzo`,
-      description: `پلتفرم یکپارچه سفر فیروزو`,
+      title,
+      description,
       images: ['/og-image.jpg'],
     },
     twitter: {
       card: 'summary_large_image',
-      title: `فیروزو - Firuzo`,
-      description: `پلتفرم یکپارچه سفر فیروزو`,
+      title,
+      description,
     },
   };
 }

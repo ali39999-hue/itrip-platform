@@ -39,13 +39,9 @@ export function HeroSection() {
             placeholder="blur"
             blurDataURL={shimmerDataUrl(1920, 1080)}
             className={`object-cover transition-all duration-700 ${imgError ? 'hidden' : 'block'}`}
-            onError={() => {
-               // using standard dom assignment because state is async above
-               const el = document.getElementById('hero-gradient');
-               if (el) el.classList.remove('hidden');
-            }}
+            onError={() => setImgError(true)}
           />
-          <div id="hero-gradient" className="absolute inset-0 bg-gradient-to-br from-brand-dark to-brand hidden" />
+          {imgError && <div className="absolute inset-0 bg-gradient-to-br from-brand-dark to-brand" />}
           <div className="absolute inset-0 bg-deep/30 pointer-events-none" />
         </div>
       </div>
@@ -64,4 +60,3 @@ export function HeroSection() {
     </section>
   );
 }
-

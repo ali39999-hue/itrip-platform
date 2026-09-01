@@ -8,10 +8,13 @@ import { lt } from '@/lib/lt';
 const STATUS_LT: Record<string, { fa: string; en: string; ar: string; zh: string; ru: string }> = {
   DRAFT: { fa: 'پیش‌نویس', en: 'Draft', ar: 'مسودة', zh: '草稿', ru: 'Черновик' },
   PENDING_PAYMENT: { fa: 'در انتظار پرداخت', en: 'Pending Payment', ar: 'في انتظار الدفع', zh: '待支付', ru: 'Ожидает оплаты' },
-  CONFIRMED: { fa: 'قطعی', en: 'Confirmed', ar: 'مؤكد', zh: '已确认', ru: 'Подтверждено' },
-  CANCELLED: { fa: 'کنسل شده', en: 'Cancelled', ar: 'ملغى', zh: '已取消', ru: 'Отменено' },
+  CONFIRMED: { fa: 'تایید شده', en: 'Confirmed', ar: 'مؤكد', zh: '已确认', ru: 'Подтверждено' },
+  CANCELLED: { fa: 'لغو شده', en: 'Cancelled', ar: 'ملغى', zh: '已取消', ru: 'Отменено' },
   REFUNDED: { fa: 'مسترد شده', en: 'Refunded', ar: 'مسترد', zh: '已退款', ru: 'Возвращено' },
 };
+
+type BookingItem = { type: string; details: string };
+type BookingWithItems = Booking & { items?: BookingItem[] };
 
 export default async function AdminBookingsPage({
   searchParams,
@@ -22,17 +25,17 @@ export default async function AdminBookingsPage({
   const sp = searchParams ? await searchParams : undefined;
   const q = sp?.q || '';
   const result = await getAdminBookings();
-  const bookings = result.success && result.bookings ? result.bookings : [];
+  const bookings = (result.success && result.bookings ? result.bookings : []) as BookingWithItems[];
   const numFmt = locale === 'fa' ? 'fa-IR' : 'en-US';
 
-  const filtered = bookings.filter((b: Booking) => {
+  const filtered = bookings.filter((b: BookingWithItems) => {
     if (!q) return true;
     let details: { title?: string; subtitle?: string; passengers?: { lastNameFa?: string }[] } = {};
-    const bookingDetails = (b as any).items?.[0]?.details || '{}';
+    const bookingDetails = b.items?.[0]?.details || '{}';
     try {
       details = JSON.parse(bookingDetails);
     } catch {}
-    const title = details.title || (b as any).items?.[0]?.type || b.status;
+    const title = details.title || b.items?.[0]?.type || b.status;
     return (
       title.includes(q) ||
       b.id.toLowerCase().includes(q.toLowerCase())
@@ -43,8 +46,8 @@ export default async function AdminBookingsPage({
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-ink">{lt(locale, { fa: 'مدیریت رزروها', en: 'Booking Management', ar: 'إدارة الحجوزات', zh: '预订管理', ru: 'Управление бронями' })}</h1>
-          <p className="text-sm text-sub mt-1">{lt(locale, { fa: `${bookings.length.toLocaleString(numFmt)} سفارش ثبت شده`, en: `${bookings.length.toLocaleString(numFmt)} orders recorded`, ar: `تم تسجيل ${bookings.length.toLocaleString(numFmt)} طلب`, zh: `已登记 ${bookings.length.toLocaleString(numFmt)} 笔订单`, ru: `Зарегистрировано заказов: ${bookings.length.toLocaleString(numFmt)}` })}</p>
+          <h1 className="text-2xl font-bold text-ink">{lt(locale, { fa: 'مدیریت رزروها', en: 'Booking Management', ar: 'إدارة الحجوزات', zh: '预订管理', ru: 'Управление бронированиями' })}</h1>
+          <p className="text-sm text-sub mt-1">{lt(locale, { fa: `${bookings.length.toLocaleString(numFmt)} سفارش ثبت شده`, en: `${bookings.length.toLocaleString(numFmt)} orders recorded`, ar: `تم تسجيل ${bookings.length.toLocaleString(numFmt)} طلب`, zh: `已记录 ${bookings.length.toLocaleString(numFmt)} 个订单`, ru: `Зарегистрировано заказов: ${bookings.length.toLocaleString(numFmt)}` })}</p>
         </div>
         <div className="relative">
           <form method="GET">
@@ -52,7 +55,7 @@ export default async function AdminBookingsPage({
             <input
               name="q"
               defaultValue={q}
-              placeholder={lt(locale, { fa: 'جستجوی کد رهگیری یا عنوان...', en: 'Search reference code or title...', ar: 'ابحث برمز التتبع أو العنوان...', zh: '搜索跟踪代码或标题…', ru: 'Поиск по коду или названию...' })}
+              placeholder={lt(locale, { fa: 'جستجوی کد پیگیری یا عنوان...', en: 'Search reference code or title...', ar: 'ابحث برقم التتبع أو العنوان...', zh: '搜索订单号或标题...', ru: 'Поиск по коду или названию...' })}
               className="h-10 w-full md:w-72 rounded-md border border-input bg-surface pe-9 ps-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             />
           </form>
@@ -61,7 +64,7 @@ export default async function AdminBookingsPage({
 
       <div className="bg-surface rounded-2xl border border-line overflow-x-auto">
         {filtered.length === 0 ? (
-          <p className="text-center text-sub py-16 text-sm">{lt(locale, { fa: 'رزروی یافت نشد', en: 'No bookings found', ar: 'لا توجد حجوزات', zh: '未找到预订', ru: 'Брони не найдены' })}</p>
+          <p className="text-center text-sub py-16 text-sm">{lt(locale, { fa: 'رزروی یافت نشد', en: 'No bookings found', ar: 'لا توجد حجوزات', zh: '未找到预订', ru: 'Бронирования не найдены' })}</p>
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-soft text-sub text-xs">
@@ -75,13 +78,13 @@ export default async function AdminBookingsPage({
               </tr>
             </thead>
             <tbody>
-              {filtered.map((b: Booking) => {
+              {filtered.map((b: BookingWithItems) => {
                 let details: { title?: string; subtitle?: string; passengers?: { lastNameFa?: string }[] } = {};
-                const bookingDetails = (b as any).items?.[0]?.details || '{}';
+                const bookingDetails = b.items?.[0]?.details || '{}';
                 try {
                   details = JSON.parse(bookingDetails);
                 } catch {}
-                const title = details.title || (b as any).items?.[0]?.type || 'Unknown';
+                const title = details.title || b.items?.[0]?.type || 'Unknown';
                 const subtitle = details.subtitle || '';
                 const passengers = details.passengers || [];
                 const passengerName = passengers[0]?.lastNameFa || '—';
