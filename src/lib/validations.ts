@@ -10,7 +10,7 @@ import { z } from "zod";
 
 // ─── Shared Enums (mirroring Prisma string fields) ───────────────────────────
 
-export const UserRole = z.enum(["USER", "AGENT", "ADMIN"]);
+export const UserRole = z.enum(["CUSTOMER", "SUPER_ADMIN", "FINANCE", "OPS"]);
 export type UserRole = z.infer<typeof UserRole>;
 
 export const BookingType = z.enum([
@@ -30,6 +30,7 @@ export const BookingStatus = z.enum([
   "PENDING_PAYMENT",
   "CONFIRMED",
   "CANCELLED",
+  "COMPLETED",
   "REFUNDED",
 ]);
 export type BookingStatus = z.infer<typeof BookingStatus>;

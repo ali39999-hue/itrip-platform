@@ -38,7 +38,7 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
         {[
           [t('checkIn'), gShort.format(new Date(CHECKIN + 'T00:00:00'))],
           [t('checkOut'), gShort.format(new Date(CHECKOUT + 'T00:00:00'))],
-          [t('duration'), t('nightsCount', { count: NIGHTS.length })],
+          [t('duration'), t('nightsCount', { nights: NIGHTS.length })],
           [t('capacity'), t('passengersSummary', { adults: ADULTS, children: CHILDREN })]
         ].map(([l, v]) => (
           <div key={l}>

@@ -28,10 +28,11 @@ export default async function AdminBookingsPage({
   const filtered = bookings.filter((b: Booking) => {
     if (!q) return true;
     let details: { title?: string; subtitle?: string; passengers?: { lastNameFa?: string }[] } = {};
+    const bookingDetails = (b as any).items?.[0]?.details || '{}';
     try {
-      details = JSON.parse(b.details || '{}');
+      details = JSON.parse(bookingDetails);
     } catch {}
-    const title = details.title || b.type;
+    const title = details.title || (b as any).items?.[0]?.type || b.status;
     return (
       title.includes(q) ||
       b.id.toLowerCase().includes(q.toLowerCase())
@@ -76,10 +77,11 @@ export default async function AdminBookingsPage({
             <tbody>
               {filtered.map((b: Booking) => {
                 let details: { title?: string; subtitle?: string; passengers?: { lastNameFa?: string }[] } = {};
+                const bookingDetails = (b as any).items?.[0]?.details || '{}';
                 try {
-                  details = JSON.parse(b.details || '{}');
+                  details = JSON.parse(bookingDetails);
                 } catch {}
-                const title = details.title || b.type;
+                const title = details.title || (b as any).items?.[0]?.type || 'Unknown';
                 const subtitle = details.subtitle || '';
                 const passengers = details.passengers || [];
                 const passengerName = passengers[0]?.lastNameFa || '—';

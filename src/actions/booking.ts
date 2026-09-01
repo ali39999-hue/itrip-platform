@@ -16,7 +16,7 @@ export async function createBookingDraft(data: unknown, totalAmount: number, cur
     // 1. Validate data
     const parsed = bookingSchema.parse(data);
 
-    // 2. Ensure user and wallet exist
+    // 2. Ensure user exists
     let user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       user = await prisma.user.create({
@@ -25,22 +25,30 @@ export async function createBookingDraft(data: unknown, totalAmount: number, cur
           email: session.user.email || 'user@firuzo.com',
           name: session.user.name || 'Firuzo User',
           passwordHash: 'dummy',
-          wallet: {
-            create: { balances: JSON.stringify({ IRR: 150000000, USDT: 250 }) }
-          }
         }
       });
     }
 
+    // Generate unique reference (e.g. ITR-Timestamp)
+    const reference = `ITR-${Date.now()}`;
+
     // 3. Create Booking in DRAFT state
     const booking = await prisma.booking.create({
       data: {
-        userId: userId,
-        type: parsed.type,
+        reference,
+        customerId: userId,
         status: 'DRAFT',
         totalAmount,
         currency,
-        details: JSON.stringify(parsed),
+        items: {
+          create: {
+            type: parsed.type,
+            netCost: totalAmount * 0.9, // mock 10% margin
+            markup: totalAmount * 0.1,
+            sellPrice: totalAmount,
+            details: JSON.stringify(parsed)
+          }
+        }
       }
     });
 
@@ -59,56 +67,111 @@ export async function payBooking(bookingId: string, method: 'wallet_irr' | 'gate
 
     const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
     if (!booking) throw new Error('Booking not found');
-    if (booking.userId !== userId) throw new Error('Unauthorized');
+    if (booking.customerId !== userId) throw new Error('Unauthorized');
     if (booking.status !== 'DRAFT') throw new Error('Booking already paid or cancelled');
-
-    const wallet = await prisma.wallet.findUnique({ where: { userId: userId } });
-    if (!wallet) throw new Error('Wallet not found');
-
-    const balances = JSON.parse(wallet.balances);
     
-    // Begin Transaction
+    // Double-entry accounting
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      
+      // Find or create Customer Account
+      let customerAccount = await tx.account.findFirst({
+        where: { ownerType: 'USER', ownerId: userId, currency: booking.currency }
+      });
+      
+      if (!customerAccount) {
+         // for demo purposes, assume we give them free money or they top up
+         customerAccount = await tx.account.create({
+            data: { ownerType: 'USER', ownerId: userId, currency: booking.currency }
+         });
+         
+         // Demo: fund the customer account with initial balance
+         await tx.ledgerEntry.create({
+           data: {
+             groupId: `demo_funding_${userId}`,
+             accountId: customerAccount.id,
+             direction: 'CREDIT',
+             amount: 150000000,
+             currency: booking.currency,
+             referenceType: 'TOPUP',
+           }
+         });
+      }
+
+      // 1. Calculate customer balance from ledger
+      const entries = await tx.ledgerEntry.findMany({
+        where: { accountId: customerAccount.id }
+      });
+      const balance = entries.reduce((acc, entry) => {
+        return entry.direction === 'CREDIT' ? acc + Number(entry.amount) : acc - Number(entry.amount);
+      }, 0);
+
       if (method === 'wallet_irr') {
-        if ((balances[booking.currency] || 0) < Number(booking.totalAmount)) {
+        if (balance < Number(booking.totalAmount)) {
           throw new Error('Insufficient wallet balance');
         }
-        balances[booking.currency] -= Number(booking.totalAmount);
         
-        // Update Wallet
-        await tx.wallet.update({
-          where: { id: wallet.id },
-          data: { balances: JSON.stringify(balances) }
+        // Find or create Platform Escrow Account
+        let escrowAccount = await tx.account.findFirst({
+          where: { ownerType: 'PLATFORM_ESCROW', currency: booking.currency }
         });
+        if (!escrowAccount) {
+          escrowAccount = await tx.account.create({
+            data: { ownerType: 'PLATFORM_ESCROW', currency: booking.currency }
+          });
+        }
 
-        // Create Wallet Transaction
-        await tx.transaction.create({
+        const idempotencyKey = `pay_${booking.id}_${Date.now()}`;
+
+        // 2. Debit Customer
+        await tx.ledgerEntry.create({
           data: {
-            walletId: wallet.id,
-            bookingId: booking.id,
-            type: 'PAYMENT',
+            groupId: idempotencyKey,
+            accountId: customerAccount.id,
+            direction: 'DEBIT',
             amount: booking.totalAmount,
             currency: booking.currency,
-            description: `Payment for booking ${booking.id}`,
-            idempotencyKey: `pay_${booking.id}`
+            referenceType: 'BOOKING',
+            referenceId: booking.id
+          }
+        });
+
+        // 3. Credit Escrow
+        await tx.ledgerEntry.create({
+          data: {
+            groupId: idempotencyKey,
+            accountId: escrowAccount.id,
+            direction: 'CREDIT',
+            amount: booking.totalAmount,
+            currency: booking.currency,
+            referenceType: 'BOOKING',
+            referenceId: booking.id
           }
         });
       }
 
-      // Mark Booking as Confirmed
+      // 4. State Machine Transition: DRAFT -> CONFIRMED
+      // (In real life, DRAFT -> PENDING_PAYMENT -> CONFIRMING_SUPPLIER -> CONFIRMED)
       await tx.booking.update({
         where: { id: booking.id },
         data: { status: 'CONFIRMED' }
       });
       
-      // Audit log
+      // 5. Outbox Event for async tasks (emails, ticketing)
+      await tx.outboxEvent.create({
+        data: {
+          eventType: 'BOOKING_PAID',
+          payload: JSON.stringify({ bookingId: booking.id })
+        }
+      });
+      
+      // 6. Audit log
       await tx.auditLog.create({
         data: {
           userId: userId,
-          action: 'booking_paid',
-          entity: 'Booking',
-          entityId: booking.id,
-          diff: JSON.stringify({ method, amount: booking.totalAmount })
+          action: 'BOOKING_PAID',
+          resource: 'Booking',
+          resourceId: booking.id,
+          newData: JSON.stringify({ method, amount: booking.totalAmount })
         }
       });
     });

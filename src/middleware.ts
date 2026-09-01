@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-// @ts-ignore
 import { getToken } from 'next-auth/jwt';
 import createMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 
 // Create the next-intl middleware
 const intlMiddleware = createMiddleware(routing);
-
-const SUPPORTED_LOCALES = ['fa', 'en', 'ar', 'zh', 'ru'];
 
 // Define route permissions mapped to required roles or permissions
 const ROUTE_PERMISSIONS: Record<string, string[]> = {
@@ -53,13 +50,13 @@ export async function middleware(request: NextRequest) {
     // Get next-auth token
     const token = await getToken({ 
       req: request, 
-      secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || 'fallback-secret' 
+      secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET 
     });
 
     if (!token) {
       // Redirect to localized /auth
       const authUrl = new URL('/' + locale + '/auth', request.url);
-      authUrl.searchParams.set('callbackUrl', encodeURI(pathname));
+      authUrl.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(authUrl);
     }
 

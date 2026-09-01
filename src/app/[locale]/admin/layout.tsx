@@ -6,15 +6,16 @@ import { useRouter, Link } from '@/i18n/routing';
 import { useAuthStore } from '@/stores/auth-store';
 import {
   LayoutDashboard, BriefcaseBusiness, Wallet, DatabaseZap,
-  PlaneTakeoff, Lock, Mail, Key, LogIn, ArrowRight, ExternalLink, ShieldCheck, UserCheck
+  PlaneTakeoff, Lock, Mail, Key, LogIn, ArrowRight, ExternalLink, ShieldCheck, UserCheck, Settings, Users, Activity
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
 const NAV = [
-  { href: '/admin', label: { fa: 'داشبورد', en: 'Dashboard', ar: 'لوحة التحكم', zh: '仪表板', ru: 'Панель управления' }, icon: LayoutDashboard },
-  { href: '/admin/bookings', label: { fa: 'رزروها', en: 'Bookings', ar: 'الحجوزات', zh: '预订管理', ru: 'Брони' }, icon: BriefcaseBusiness },
-  { href: '/admin/finance', label: { fa: 'مالی و تراکنش‌ها', en: 'Finance & Transactions', ar: 'المالية والمعاملات', zh: '财务与交易', ru: 'Финансы и операции' }, icon: Wallet },
-  { href: '/admin/content', label: { fa: 'محتوا و موجودی', en: 'Content & Inventory', ar: 'المحتوى والمخزون', zh: '内容与库存', ru: 'Контент и инвентарь' }, icon: DatabaseZap },
+  { href: '/admin', label: { fa: 'داشبورد', en: 'Dashboard', ar: 'لوحة القيادة', zh: '仪表板', ru: 'Дашборд' }, icon: LayoutDashboard },
+  { href: '/admin/ops', label: { fa: 'عملیات و پشتیبانی', en: 'Ops & Support', ar: 'العمليات والدعم', zh: '操作与支持', ru: 'Операции и поддержка' }, icon: Activity },
+  { href: '/admin/bookings', label: { fa: 'رزروها', en: 'Bookings', ar: 'الحجوزات', zh: '预订', ru: 'Бронирования' }, icon: BriefcaseBusiness },
+  { href: '/admin/finance', label: { fa: 'مالی و تراکنش‌ها', en: 'Finance & Transactions', ar: 'المالية والمعاملات', zh: '财务与交易', ru: 'Финансы и транзакции' }, icon: Wallet },
+  { href: '/admin/content', label: { fa: 'تامین‌کنندگان و انبار', en: 'Suppliers & Inventory', ar: 'الموردون والمخزون', zh: '供应商与库存', ru: 'Поставщики и инвентарь' }, icon: DatabaseZap },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

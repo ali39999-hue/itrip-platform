@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ['*.trycloudflare.com', 'localhost:3000', '127.0.0.1:3000'],
   experimental: {
     serverActions: {
-      allowedOrigins: ['http://localhost:3000', 'http://127.0.0.1:3000', '*.trycloudflare.com'],
+      allowedOrigins: ['localhost:3000', '127.0.0.1:3000', '*.trycloudflare.com'],
     },
   },
   images: {

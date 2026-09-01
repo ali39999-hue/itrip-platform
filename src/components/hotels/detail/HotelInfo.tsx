@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { MapPin, Coffee, Wallet, Headset, BarChart3, ShieldCheck, Waves, Users, KeyRound, Check, X, ThumbsUp, Ban, ChevronDown, BedDouble, type LucideIcon } from 'lucide-react';
+import { MapPin, Coffee, Wallet, Headset, BarChart3, ShieldCheck, Waves, Users, KeyRound, Check, X, ThumbsUp, Ban, ChevronDown, BedDouble, TrainFront, Building2, type LucideIcon } from 'lucide-react';
 import { fa1, gShort } from '@/lib/hotel-format';
 import { DISTS, CATS, REVIEWS, FAQS } from '@/lib/hotel-mock';
 import type { Hotel } from '@/lib/types';
@@ -22,6 +22,8 @@ function getHotelPos(id: string): [number, number] {
 }
 
 const BRAND = '#00a9a5';
+
+const distIconMap: Record<string, LucideIcon> = { MapPin, TrainFront, Building2 };
 const simplePin = (typeof window !== 'undefined') ? L.divIcon({
   className: 'firuzo-pin',
   html: `<div style="width:24px;height:24px;background:${BRAND};border-radius:50%;border:3px solid white;box-shadow:0 3px 8px rgba(0,0,0,0.3)"></div>`,
@@ -103,7 +105,9 @@ export function HotelLocation({ hotel }: { hotel: Hotel }) {
         </div>
 
         <div className="flex flex-col gap-2">
-          {DISTS.map(([p, IconComponent, distanceTime]) => (
+          {DISTS.map(([p, iconName, distanceTime]) => {
+            const IconComponent = distIconMap[iconName] ?? MapPin;
+            return (
             <div key={p} className="flex items-center justify-between p-2.5 rounded-lg border border-line/60 bg-soft/50 text-xs">
               <span className="font-bold text-ink flex items-center gap-1.5">
                 <IconComponent size={14} className="text-brand-dark" />
@@ -111,7 +115,8 @@ export function HotelLocation({ hotel }: { hotel: Hotel }) {
               </span>
               <span className="text-[11px] font-bold text-sub font-mono">{distanceTime}</span>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

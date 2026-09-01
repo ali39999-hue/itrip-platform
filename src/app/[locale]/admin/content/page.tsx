@@ -2,79 +2,62 @@
 
 import { useState } from 'react';
 import { useLocale } from 'next-intl';
-import { HOTELS, TOURS, CITIES } from '@/lib/data';
-import { DatabaseZap, Eye, EyeOff, Plus } from 'lucide-react';
+import { DatabaseZap, Plus, HardDrive, Wifi } from 'lucide-react';
 import { lt } from '@/lib/lt';
+
+// Hardcoded for now. In a real system, these would be fetched via Server Component / API
+const MOCK_SUPPLIERS = [
+  { id: 'sup-1', name: 'Amadeus (Mock)', type: 'GDS', status: 'Active', latency: '340ms' },
+  { id: 'sup-2', name: 'Iran Air Direct', type: 'AIRLINE', status: 'Active', latency: '120ms' },
+  { id: 'sup-3', name: 'SnappTrip (Hotels)', type: 'HOTEL', status: 'Degraded', latency: '850ms' },
+];
 
 export default function AdminContentPage() {
   const locale = useLocale();
   const numFmt = locale === 'fa' ? 'fa-IR' : 'en-US';
-  const [disabled, setDisabled] = useState<Record<string, boolean>>({});
-
-  function toggle(key: string) {
-    setDisabled((d) => ({ ...d, [key]: !d[key] }));
-  }
-
-  const rows = [
-    ...HOTELS.map((h) => ({ key: `hotel-${h.id}`, type: lt(locale, { fa: 'هتل', en: 'Hotel', ar: 'فندق', zh: '酒店', ru: 'Отель' }), name: h.name, city: h.city })),
-    ...TOURS.map((t) => ({ key: `tour-${t.id}`, type: lt(locale, { fa: 'تور', en: 'Tour', ar: 'جولة', zh: '旅游', ru: 'Тур' }), name: t.title, city: t.city })),
-    ...CITIES.map((c) => ({ key: `city-${c.id}`, type: lt(locale, { fa: 'مقصد', en: 'Destination', ar: 'وجهة', zh: '目的地', ru: 'Направление' }), name: c.fa, city: c.en })),
-  ];
-
-  const activeCount = rows.length - Object.values(disabled).filter(Boolean).length;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-ink">{lt(locale, { fa: 'محتوا و موجودی', en: 'Content & Inventory', ar: 'المحتوى والمخزون', zh: '内容与库存', ru: 'Контент и инвентарь' })}</h1>
-          <p className="text-sm text-sub mt-1">{lt(locale, { fa: 'فعال/غیرفعال کردن محصولات در ویترین', en: 'Enable/disable products in the storefront', ar: 'تنشيط/تعطيل المنتجات في الواجهة', zh: '在橱窗中启用/停用产品', ru: 'Включение/отключение товаров в витрине' })}</p>
+          <h1 className="text-2xl font-bold text-ink">{lt(locale, { fa: 'مدیریت تامین‌کنندگان و انبار', en: 'Suppliers & Inventory', ar: 'الموردون والمخزون', zh: '供应商与库存', ru: 'Поставщики и инвентарь' })}</h1>
+          <p className="text-sm text-sub mt-1">{lt(locale, { fa: 'مدیریت APIهای خارجی و سهمیه‌های اختصاصی (آلوتمنت)', en: 'Supplier APIs and Contract Allotments', ar: 'واجهات الموردين وحصص العقود', zh: '供应商 API 和合同配额', ru: 'API поставщиков и квоты контрактов' })}</p>
         </div>
-        <button className="hidden md:flex items-center gap-2 bg-brand hover:bg-brand-2 text-surface h-10 px-5 rounded-lg text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
-          <Plus size={16} aria-hidden="true" /> {lt(locale, { fa: 'افزودن محصول', en: 'Add Product', ar: 'إضافة منتج', zh: '添加产品', ru: 'Добавить товар' })}
+        <button className="h-10 px-4 bg-brand text-surface rounded-lg font-bold text-sm flex items-center gap-2 hover:bg-brand-2 transition shrink-0">
+          <Plus size={16} aria-hidden="true" /> {lt(locale, { fa: 'افزودن تامین‌کننده', en: 'Add Supplier', ar: 'إضافة مورد', zh: '添加供应商', ru: 'Добавить поставщика' })}
         </button>
       </div>
 
-      <div className="bg-surface rounded-2xl border border-line overflow-x-auto shadow-sm">
-        <p className="p-4 font-bold text-ink border-b border-line flex items-center gap-2 text-sm">
-          <DatabaseZap size={16} className="text-brand-dark" aria-hidden="true" />
-          {lt(locale, { fa: `${rows.length.toLocaleString(numFmt)} آیتم — ${activeCount.toLocaleString(numFmt)} فعال`, en: `${rows.length.toLocaleString(numFmt)} items — ${activeCount.toLocaleString(numFmt)} active`, ar: `${rows.length.toLocaleString(numFmt)} عنصر — ${activeCount.toLocaleString(numFmt)} نشط`, zh: `${rows.length.toLocaleString(numFmt)} 项 — ${activeCount.toLocaleString(numFmt)} 个启用`, ru: `Позиций: ${rows.length.toLocaleString(numFmt)} — активных: ${activeCount.toLocaleString(numFmt)}` })}
-        </p>
-        <table className="w-full text-sm">
-          <thead className="bg-soft text-sub text-xs">
-            <tr>
-              <th className="p-4 text-start font-medium">{lt(locale, { fa: 'نوع', en: 'Type', ar: 'النوع', zh: '类型', ru: 'Тип' })}</th>
-              <th className="p-4 text-start font-medium">{lt(locale, { fa: 'نام', en: 'Name', ar: 'الاسم', zh: '名称', ru: 'Название' })}</th>
-              <th className="p-4 text-start font-medium">{lt(locale, { fa: 'شهر / کشور', en: 'City / Country', ar: 'المدينة / الدولة', zh: '城市 / 国家', ru: 'Город / страна' })}</th>
-              <th className="p-4 text-center font-medium">{lt(locale, { fa: 'نمایش', en: 'Visibility', ar: 'العرض', zh: '显示', ru: 'Показ' })}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.key} className={`border-t border-line ${disabled[r.key] ? 'opacity-40' : ''}`}>
-                <td className="p-4">
-                  <span className="bg-soft text-sub text-xs px-2 py-1 rounded-full">{r.type}</span>
-                </td>
-                <td className="p-4 font-medium text-ink">{r.name}</td>
-                <td className="p-4 text-sub">{r.city}</td>
-                <td className="p-4 text-center">
-                  <button
-                    onClick={() => toggle(r.key)}
-                    aria-label={disabled[r.key] ? `${lt(locale, { fa: 'نمایش', en: 'Show', ar: 'إظهار', zh: '显示', ru: 'Показать' })} ${r.name}` : `${lt(locale, { fa: 'مخفی کردن', en: 'Hide', ar: 'إخفاء', zh: '隐藏', ru: 'Скрыть' })} ${r.name}`}
-                    className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                      disabled[r.key]
-                        ? 'bg-rose-warm/10 text-rose-warm'
-                        : 'bg-success/10 text-success'
-                    }`}
-                  >
-                    {disabled[r.key] ? <EyeOff size={13} aria-hidden="true" /> : <Eye size={13} aria-hidden="true" />}
-                    {disabled[r.key] ? lt(locale, { fa: 'مخفی', en: 'Hidden', ar: 'مخفي', zh: '已隐藏', ru: 'Скрыт' }) : lt(locale, { fa: 'فعال', en: 'Active', ar: 'نشط', zh: '启用', ru: 'Активен' })}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
+        <div className="bg-surface rounded-2xl border border-line p-5">
+           <h3 className="font-bold flex items-center gap-2 mb-2 text-ink"><Wifi size={16} className="text-brand"/> Live APIs (Supplier Hub)</h3>
+           <p className="text-sm text-sub">Connections to external GDS, NDCs, and Hotel Aggregators.</p>
+           
+           <div className="mt-4 space-y-3">
+             {MOCK_SUPPLIERS.map(s => (
+                <div key={s.id} className="flex items-center justify-between p-3 border border-line rounded-lg bg-soft/30 hover:bg-soft transition">
+                   <div>
+                     <p className="font-bold text-sm text-ink">{s.name}</p>
+                     <p className="text-xs text-sub">{s.type} • Latency: {s.latency}</p>
+                   </div>
+                   <span className={`text-xs px-2 py-1 rounded-full font-bold ${s.status === 'Active' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
+                     {s.status}
+                   </span>
+                </div>
+             ))}
+           </div>
+        </div>
+
+        <div className="bg-surface rounded-2xl border border-line p-5 flex flex-col">
+           <h3 className="font-bold flex items-center gap-2 mb-2 text-ink"><HardDrive size={16} className="text-cyan-500"/> Contracted Inventory (Allotments)</h3>
+           <p className="text-sm text-sub">Locally managed inventory (Charters, Pre-purchased hotel rooms, etc).</p>
+           
+           <div className="mt-4 flex-1 flex flex-col items-center justify-center border-2 border-dashed border-line rounded-lg bg-soft/30 p-8 text-center min-h-[200px]">
+              <DatabaseZap size={32} className="text-sub mb-3 opacity-50" />
+              <p className="text-sm font-medium text-ink">No active allotments found for this branch.</p>
+              <p className="text-xs text-sub mt-1">Add local inventory to bypass external APIs.</p>
+           </div>
+        </div>
       </div>
     </div>
   );

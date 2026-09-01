@@ -1,5 +1,5 @@
 // Prisma Schema for iTrip/Firuzo Travel Platform - V1 Backend
-// Provider: SQLite (dev); swap to PostgreSQL for production.
+// Provider: SQLite (Temporary for dev)
 
 generator client {
   provider = "prisma-client-js"
@@ -10,106 +10,151 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-// ─── Enums ────────────────────────────────────────────────────────────────────
-// SQLite doesn't support native enums, so we use string fields
-// with validation at the application layer (Zod / TS types).
-
-// ─── User ─────────────────────────────────────────────────────────────────────
+// ==================== 1. Identity & RBAC ====================
 
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
-  phone        String?
+  phone        String?  @unique
   name         String?
-  role         String   @default("USER") // USER | AGENT | ADMIN
+  role         String   @default("CUSTOMER") // SUPER_ADMIN, FINANCE, OPS, CUSTOMER
   passwordHash String
+  isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  wallet    Wallet?
-  bookings  Booking[]
-  auditLogs AuditLog[]
+  auditLogs    AuditLog[]
+  bookings     Booking[]
+  userRoles    UserRole[]
 }
 
-// ─── Wallet (multi-currency via JSON balances) ────────────────────────────────
-
-model Wallet {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  balances  String   @default("{}") // JSON string: { "IRR": 500000, "USD": 120 }
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user         User          @relation(fields: [userId], references: [id])
-  transactions Transaction[]
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique // e.g. SUPER_ADMIN, FINANCE_OPS
+  permissions String   // JSON array of permission strings
+  
+  userRoles   UserRole[]
 }
 
-// ─── Booking ──────────────────────────────────────────────────────────────────
+model UserRole {
+  userId String
+  roleId String
+  
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+// ==================== 2. Core: Double-Entry Ledger ====================
+
+model Account {
+  id          String        @id @default(cuid())
+  ownerType   String        // USER, PLATFORM_ESCROW, PLATFORM_FEE, SUPPLIER
+  ownerId     String?       // userId or supplierId
+  currency    String        @default("IRR")
+  
+  entries     LedgerEntry[]
+}
+
+model LedgerEntry {
+  id            String   @id @default(cuid())
+  groupId       String   // Idempotency / Transaction grouping
+  accountId     String
+  direction     String   // DEBIT, CREDIT
+  amount        Decimal  
+  currency      String
+  referenceType String?  // BOOKING, REFUND, TOPUP
+  referenceId   String?  
+  createdAt     DateTime @default(now())
+  
+  account       Account  @relation(fields: [accountId], references: [id])
+
+  @@index([groupId])
+  @@index([accountId])
+}
+
+// ==================== 3. Core: Booking State Machine ====================
 
 model Booking {
-  id          String    @id @default(cuid())
-  userId      String
-  type        String    // FLIGHT | HOTEL | TOUR | TRANSFER | TRAIN | INSURANCE | ESIM | VISA
-  status      String    @default("DRAFT") // DRAFT | PENDING_PAYMENT | CONFIRMED | CANCELLED | REFUNDED
-  details     String    @default("{}") // JSON payload (flight legs, hotel nights, etc.)
-  totalAmount Decimal
-  currency    String    @default("IRR")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  cancelledAt DateTime?
-
-  user         User          @relation(fields: [userId], references: [id])
-  transactions Transaction[]
-
-  @@index([userId])
+  id              String   @id @default(cuid())
+  reference       String   @unique // e.g., ITR-10023
+  customerId      String
+  status          String   @default("DRAFT") // DRAFT, PENDING_PAYMENT, CONFIRMED, CANCELLED, COMPLETED
+  totalAmount     Decimal  
+  currency        String   @default("IRR")
+  
+  supplierId      String?  
+  externalPnr     String?  // GDS reference
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  expiresAt       DateTime? // For payment deadline / Soft Lock
+  cancelledAt     DateTime?
+  
+  customer        User     @relation(fields: [customerId], references: [id])
+  items           BookingItem[]
+  
+  @@index([customerId])
   @@index([status])
 }
 
-// ─── Transaction ──────────────────────────────────────────────────────────────
-
-model Transaction {
-  id             String   @id @default(cuid())
-  walletId       String
-  bookingId      String?
-  type           String   // TOPUP | PAYMENT | REFUND | PENALTY
-  amount         Decimal
-  currency       String   @default("IRR")
-  description    String?
-  idempotencyKey String   @unique
-  createdAt      DateTime @default(now())
-
-  wallet  Wallet   @relation(fields: [walletId], references: [id])
-  booking Booking? @relation(fields: [bookingId], references: [id])
-
-  @@index([walletId])
-  @@index([bookingId])
+model BookingItem {
+  id              String   @id @default(cuid())
+  bookingId       String
+  type            String   // FLIGHT, HOTEL, VISA, TOUR, TRANSFER, etc
+  netCost         Decimal  // cost from supplier
+  markup          Decimal  // platform profit
+  sellPrice       Decimal  // final price for customer
+  details         String   @default("{}") // JSON details
+  
+  booking         Booking  @relation(fields: [bookingId], references: [id])
 }
 
-// ─── Cancellation Policy ──────────────────────────────────────────────────────
+// ==================== 4. Suppliers & Inventory ====================
 
-model CancellationPolicy {
-  id                    String @id @default(cuid())
-  bookingType           String // matches Booking.type
-  hoursBeforeDeparture  Int
-  penaltyPercent        Int
-  description           String?
-
-  @@unique([bookingType, hoursBeforeDeparture])
+model Supplier {
+  id       String @id @default(cuid())
+  name     String
+  type     String // HOTEL | AIRLINE | TOUR_OPERATOR | INSURANCE
+  contact  String?
+  
+  inventoryItems InventoryItem[]
 }
 
-// ─── Audit Log ────────────────────────────────────────────────────────────────
+model InventoryItem {
+  id          String   @id @default(cuid())
+  supplierId  String
+  type        String
+  basePrice   Decimal  
+  currency    String   @default("IRR")
+  lockedUntil DateTime? 
+  
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+}
+
+// ==================== 5. Reliability & Workflow ====================
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  userId    String
-  action    String   // e.g. "BOOKING_CREATED", "WALLET_TOPUP"
-  entity    String   // e.g. "Booking", "Wallet"
-  entityId  String
-  diff      String   @default("{}") // JSON diff of changes
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
-
+  id          String   @id @default(cuid())
+  userId      String?
+  action      String
+  resource    String
+  resourceId  String
+  oldData     String?  // JSON
+  newData     String?  // JSON
+  createdAt   DateTime @default(now())
+  
+  user        User?    @relation(fields: [userId], references: [id])
+  
   @@index([userId])
-  @@index([entity, entityId])
+  @@index([resource, resourceId])
+}
+
+model OutboxEvent {
+  id          String   @id @default(cuid())
+  eventType   String   // e.g., "BOOKING_PAID", "REFUND_REQUESTED"
+  payload     String   // JSON
+  status      String   @default("PENDING") // PENDING, PROCESSED, FAILED
+  createdAt   DateTime @default(now())
 }
