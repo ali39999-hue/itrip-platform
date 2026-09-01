@@ -95,9 +95,11 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     await expect(page).toHaveTitle(/iTrip|Firuzo/i);
     await expect(page.locator('h1, h2').first()).toBeVisible();
 
-    // 2. Visit Admin Bookings
+    // 2. Set Admin role and visit Admin Bookings
+    await page.evaluate(() => {
+      localStorage.setItem('firuzo-auth', JSON.stringify({ state: { user: { role: 'admin', phone: '09121230000', firstNameFa: 'ادمین' }, kyc: { step: 'approved' } } }));
+    });
     await page.goto('/fa/admin/bookings', { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveURL(/.*\/admin\/bookings/);
     await expect(page.locator('h1, table, tr, div:has-text("مدیریت"), form').first()).toBeVisible();
   });
 

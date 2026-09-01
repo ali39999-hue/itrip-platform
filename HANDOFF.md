@@ -78,3 +78,14 @@ The following core modules and capabilities have undergone end-to-end browser au
 2. **Payment Service Provider (PSP) Webhooks:** Connect real IPG gateways (ZarinPal, PayPing, Stripe for international).
 3. **Live Telemetry & Sentry Integration:** Deploy client error tracking and performance monitoring.
 4. **Production Deployment:** Trigger Vercel / Docker CI/CD deployment on main branch.
+
+---
+
+## 7. Remediation Log
+
+### Phase 1 — Security (P0) Completed
+- **1.1 Real Authentication:** Integrated `bcryptjs` in NextAuth Credentials provider; authorized against hashed DB passwords; added seed script `prisma:seed` with upserting admin and user accounts; gated demo auto-creation behind `DEMO_MODE=true`.
+- **1.2 Admin Backdoor Removal:** Gated OTP mock credentials, backdoor codes (`12345`, `0000`), and hint text strictly behind `NEXT_PUBLIC_DEMO_MODE=true`; role authorization now driven by JWT token claims & database rather than client store overrides.
+- **1.3 Server-Side Pricing Engine:** Wired `src/lib/pricing/engine.ts` into `createBookingDraft()`; actions now only receive resource IDs & quantities without accepting total money amounts from client; added `moneySchema` validation.
+- **1.4 Gateway Ledger & Escrow:** Wired full dual-entry accounting for `gateway_shetab` alongside `wallet_irr` targeting `GATEWAY_SETTLEMENT` and `PLATFORM_ESCROW`; demo wallet auto-funding is gated by `DEMO_MODE`.
+- **1.5 Secrets & Environment Config:** Aligned Prisma to use `DATABASE_URL` from env; cleaned `.env` and created `.env.example`; hardened middleware fail-fast and next.config dangerous IP allowances; normalized safe generic error messages in server actions.

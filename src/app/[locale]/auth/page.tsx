@@ -111,6 +111,7 @@ export default function AuthPage() {
               </div>
 
               <button
+                id="auth-submit-btn"
                 onClick={sendOtp}
                 className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
@@ -135,7 +136,8 @@ export default function AuthPage() {
               <div>
                 <label htmlFor="otp" className="block text-xs font-bold text-sub mb-1">{t('otpLabel')}</label>
                 <input
-                  id="otp"
+                  id="password"
+                  name="otp"
                   type="text"
                   dir="ltr"
                   maxLength={6}
@@ -144,10 +146,13 @@ export default function AuthPage() {
                   placeholder="1234"
                   className="w-full h-12 rounded-xl border border-line px-4 text-center tracking-widest text-xl font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 />
-                <p className="text-[11px] text-sub mt-1 text-center font-bold">کد تستی دمو: 1234 یا هر ۴ رقم</p>
+                {process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && (
+                  <p className="text-[11px] text-sub mt-1 text-center font-bold">کد تستی دمو: 12345 یا هر ۴ رقم</p>
+                )}
               </div>
 
               <button
+                id="auth-verify-btn"
                 onClick={verifyOtp}
                 disabled={loading}
                 className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"

@@ -34,15 +34,23 @@ export const useAuthStore = create<AuthState>()(
       kyc: { step: 'phone' },
       login: async (phone, otp) => {
         await new Promise((r) => setTimeout(r, 600));
-        if (otp !== OTP_CODE) return false;
+
+        const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
+        // In production / non-demo mode, mock OTP bypasses are completely disabled
+        if (!isDemo) {
+          return false;
+        }
+
+        if (otp !== OTP_CODE && otp !== '1234' && otp.length !== 4 && otp.length !== 5) return false;
         const isAdmin = phone.endsWith('0000');
-        
+
         // Sync with NextAuth (Server side)
         try {
-           const email = isAdmin ? 'admin@firuzo.com' : 'user@firuzo.com';
-           await loginWithCredentials(email, 'demo');
-        } catch(e) {
-           console.error("NextAuth login failed", e);
+          const email = isAdmin ? 'admin@firuzo.com' : 'user@firuzo.com';
+          await loginWithCredentials(email, 'demo');
+        } catch (e) {
+          console.error('NextAuth login failed', e);
         }
 
         set({
@@ -59,8 +67,8 @@ export const useAuthStore = create<AuthState>()(
         return true;
       },
       logout: () => {
-         logoutUser().catch(e => console.error("NextAuth logout failed", e));
-         set({ user: null, kyc: { step: 'phone' } });
+        logoutUser().catch((e) => console.error('NextAuth logout failed', e));
+        set({ user: null, kyc: { step: 'phone' } });
       },
       setKycStep: (step) => set((s) => ({ kyc: { ...s.kyc, step } })),
       updateKyc: (data) =>
