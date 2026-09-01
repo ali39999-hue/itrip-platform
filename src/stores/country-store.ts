@@ -21,6 +21,9 @@ export const useCountryStore = create<CountryState>()(
       partialize: (state) => ({
         country: state.country,
       }),
+      migrate: (persistedState: unknown) => {
+        return persistedState as CountryState;
+      },
     }
   )
 );
