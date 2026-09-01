@@ -314,3 +314,129 @@ export async function payBooking(bookingId: string, method: 'wallet_irr' | 'gate
     return { success: false, error: 'Payment processing failed' };
   }
 }
+
+export async function getMyBookings() {
+  try {
+    const session = await auth();
+    if (!session || !session.user) return { success: false, error: 'Unauthorized', bookings: [] };
+    const userId = session.user.id;
+
+    const bookings = await prisma.booking.findMany({
+      where: { customerId: userId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        items: true,
+      },
+    });
+
+    return { success: true, bookings };
+  } catch (err: unknown) {
+    console.error('getMyBookings server error:', err);
+    return { success: false, error: 'Failed to fetch bookings', bookings: [] };
+  }
+}
+
+export async function getBookingById(id: string) {
+  try {
+    const session = await auth();
+    if (!session || !session.user) return { success: false, error: 'Unauthorized', booking: null };
+    const userId = session.user.id;
+
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      include: {
+        items: true,
+        customer: { select: { id: true, name: true, email: true, phone: true } },
+      },
+    });
+
+    if (!booking) return { success: false, error: 'Booking not found', booking: null };
+    if (booking.customerId !== userId && session.user.role !== 'SUPER_ADMIN') {
+      return { success: false, error: 'Forbidden', booking: null };
+    }
+
+    return { success: true, booking };
+  } catch (err: unknown) {
+    console.error('getBookingById server error:', err);
+    return { success: false, error: 'Failed to fetch booking', booking: null };
+  }
+}
+
+export async function getWallet() {
+  try {
+    const session = await auth();
+    if (!session || !session.user) {
+      return {
+        success: false,
+        error: 'Unauthorized',
+        balances: { IRR: 0, USDT: 0, AED: 0 },
+        transactions: [],
+      };
+    }
+    const userId = session.user.id;
+
+    const accounts = await prisma.account.findMany({
+      where: { ownerType: 'USER', ownerId: userId },
+      include: {
+        entries: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    const balances: Record<string, number> = { IRR: 0, USDT: 0, AED: 0 };
+    const allEntries: Array<{
+      id: string;
+      groupId: string;
+      direction: string;
+      amount: number;
+      currency: string;
+      referenceType: string | null;
+      referenceId: string | null;
+      createdAt: Date;
+    }> = [];
+
+    accounts.forEach((acc) => {
+      let curBalance = 0;
+      acc.entries.forEach((e) => {
+        const amt = Number(e.amount);
+        if (e.direction === 'CREDIT') {
+          curBalance += amt;
+        } else {
+          curBalance -= amt;
+        }
+        allEntries.push({
+          id: e.id,
+          groupId: e.groupId,
+          direction: e.direction,
+          amount: amt,
+          currency: e.currency,
+          referenceType: e.referenceType,
+          referenceId: e.referenceId,
+          createdAt: e.createdAt,
+        });
+      });
+      balances[acc.currency] = curBalance;
+    });
+
+    allEntries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return {
+      success: true,
+      balances: {
+        IRR: balances.IRR ?? 0,
+        USDT: balances.USDT ?? 0,
+        AED: balances.AED ?? 0,
+      },
+      transactions: allEntries,
+    };
+  } catch (err: unknown) {
+    console.error('getWallet server error:', err);
+    return {
+      success: false,
+      error: 'Failed to fetch wallet',
+      balances: { IRR: 0, USDT: 0, AED: 0 },
+      transactions: [],
+    };
+  }
+}

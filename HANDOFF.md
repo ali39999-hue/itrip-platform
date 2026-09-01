@@ -89,3 +89,9 @@ The following core modules and capabilities have undergone end-to-end browser au
 - **1.3 Server-Side Pricing Engine:** Wired `src/lib/pricing/engine.ts` into `createBookingDraft()`; actions now only receive resource IDs & quantities without accepting total money amounts from client; added `moneySchema` validation.
 - **1.4 Gateway Ledger & Escrow:** Wired full dual-entry accounting for `gateway_shetab` alongside `wallet_irr` targeting `GATEWAY_SETTLEMENT` and `PLATFORM_ESCROW`; demo wallet auto-funding is gated by `DEMO_MODE`.
 - **1.5 Secrets & Environment Config:** Aligned Prisma to use `DATABASE_URL` from env; cleaned `.env` and created `.env.example`; hardened middleware fail-fast and next.config dangerous IP allowances; normalized safe generic error messages in server actions.
+
+### Phase 2 — Data Architecture & Split-Brain Removal Completed
+- **2.1 Database Connection for User Dashboard:** Implemented `getMyBookings()` and `getWallet()` server actions; connected `/my-trips`, `/wallet`, and `/account` directly to the live Prisma database and dual-entry ledger accounts.
+- **2.2 Dynamic Trip Details & AccountSidebar:** Refactored `my-trips/[id]` to dynamically query database bookings with strict user ownership checks (and 404 on missing bookings); extracted `AccountSidebar.tsx` into a reusable component.
+- **2.3 Live Admin Dashboard Server Component:** Converted `/admin` root to a server component querying live DB statistics (confirmed bookings, total ledger revenue, processed refunds, outbox queue).
+- **2.4 Dead Code Cleanup:** Removed unused `HotelService.ts`, `src/lib/suppliers`, and unneeded `@tanstack/react-query` dependency and providers.
