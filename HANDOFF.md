@@ -101,3 +101,8 @@ The following core modules and capabilities have undergone end-to-end browser au
 - **3.2 ICU Formatting Fixes & Full Russian/Chinese Localization:** Fixed ICU parameters across locales, eliminating `FORMATTING_ERROR` and runtime warnings in console.
 - **3.3 Multilingual Data Structure Harmonization:** Upgraded static data models (travelogues, interpreter specialties, hotel mock details) to structured 5-locale objects.
 - **3.4 Audited Inline Localizations:** Added report script `scripts/report-lt.ts` to monitor and track locale resolution consistency.
+
+### Phase 4 — SEO & Rendering Architecture Completed
+- **4.1 Dynamic Metadata & Static Generation:** Created `generateStaticParams` and dynamic `generateMetadata` for `hotels/[id]`, `my-trips/[id]`, and `travelogues/[id]`; replaced inline 200 mockup with genuine Next.js `notFound()` 404 handler for nonexistent hotels.
+- **4.2 Comprehensive Multi-locale Sitemap & Robots.txt:** Expanded `sitemap.ts` from 5 routes to all public and dynamic endpoints across all 5 supported locales; hardened `robots.ts` with strict disallows on `/admin`, `/checkout`, `/account`, `/wallet`, and `/api`.
+- **4.3 Assets & Tracking Cleanup:** Added OpenGraph asset `public/og-image.jpg`; replaced hardcoded Google Analytics ID with optional environment variable `NEXT_PUBLIC_GA_ID`.
