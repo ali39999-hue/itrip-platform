@@ -111,7 +111,9 @@
       "24hSupport": "24h Support",
       "openMenu": "Open Menu",
       "closeMenu": "Close Menu",
-      "homepage": "Firuzo Homepage"
+      "homepage": "Firuzo Homepage",
+      "error": "An error occurred",
+      "retry": "Try again"
     }
   },
   "NotFound": {

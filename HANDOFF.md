@@ -95,3 +95,9 @@ The following core modules and capabilities have undergone end-to-end browser au
 - **2.2 Dynamic Trip Details & AccountSidebar:** Refactored `my-trips/[id]` to dynamically query database bookings with strict user ownership checks (and 404 on missing bookings); extracted `AccountSidebar.tsx` into a reusable component.
 - **2.3 Live Admin Dashboard Server Component:** Converted `/admin` root to a server component querying live DB statistics (confirmed bookings, total ledger revenue, processed refunds, outbox queue).
 - **2.4 Dead Code Cleanup:** Removed unused `HotelService.ts`, `src/lib/suppliers`, and unneeded `@tanstack/react-query` dependency and providers.
+
+### Phase 3 — Unified i18n & Missing Messages Completed
+- **3.1 Missing Message Keys & Aria Handlers:** Added missing `Common.aria.error`, `Common.aria.retry`, `HotelDetail.roomQuantity`, `favorite` across all 5 language files (`fa`, `en`, `ar`, `zh`, `ru`).
+- **3.2 ICU Formatting Fixes & Full Russian/Chinese Localization:** Fixed ICU parameters across locales, eliminating `FORMATTING_ERROR` and runtime warnings in console.
+- **3.3 Multilingual Data Structure Harmonization:** Upgraded static data models (travelogues, interpreter specialties, hotel mock details) to structured 5-locale objects.
+- **3.4 Audited Inline Localizations:** Added report script `scripts/report-lt.ts` to monitor and track locale resolution consistency.

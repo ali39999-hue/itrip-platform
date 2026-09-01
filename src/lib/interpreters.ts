@@ -46,11 +46,11 @@ export const INTERPRETERS: InterpreterProfile[] = [
   { id: 'int8', name: 'فاطمه موسوی', nameEn: 'Fatemeh Mousavi', langs: ['فارسی', 'عربی', 'انگلیسی'], specialty: 'pilgrimage', rating: 5.0, reviews: 340, baseCity: 'مشهد', baseCityEn: 'Mashhad', countries: ['iran'] },
 ];
 
-export const SPECIALTY_LABEL: Record<InterpreterSpecialty, { fa: string; en: string }> = {
-  tourism: { fa: 'گردشگری', en: 'Tourism' },
-  business: { fa: 'تجاری', en: 'Business' },
-  medical: { fa: 'درمانی', en: 'Medical' },
-  pilgrimage: { fa: 'زیارتی', en: 'Pilgrimage' },
+export const SPECIALTY_LABEL: Record<InterpreterSpecialty, { fa: string; en: string; ar: string; zh: string; ru: string }> = {
+  tourism: { fa: 'گردشگری', en: 'Tourism', ar: 'السياحة', zh: '旅游观光', ru: 'Туризм' },
+  business: { fa: 'تجاری', en: 'Business', ar: 'الأعمال والتجارة', zh: '商务考察', ru: 'Бизнес' },
+  medical: { fa: 'درمانی', en: 'Medical', ar: 'العلاج والصحة', zh: '医疗看护', ru: 'Медицина' },
+  pilgrimage: { fa: 'زیارتی', en: 'Pilgrimage', ar: 'الزيارة الدينية', zh: '朝圣朝拜', ru: 'Паломничество' },
 };
 
 /* ------------------------------------------------------------
