@@ -18,7 +18,7 @@ export type DbTransaction = {
   id: string;
   referenceType?: string | null;
   referenceId?: string | null;
-  amount: number | string;
+  amount: number | string | { toString(): string };
   account?: {
     ownerType?: string | null;
     currency?: string | null;
@@ -54,7 +54,7 @@ export function FinanceClientPage({
     description: t.referenceType ? `${t.referenceType} - ${t.referenceId || ''}` : 'Transaction',
     wallet: t.account?.ownerType || undefined,
     resultWallet: t.account?.currency || undefined,
-    amount: Number(t.amount) || 0,
+    amount: Number(t.amount.toString()) || 0,
     status: 'completed'
   }));
 
