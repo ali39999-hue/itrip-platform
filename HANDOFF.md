@@ -106,3 +106,8 @@ The following core modules and capabilities have undergone end-to-end browser au
 - **4.1 Dynamic Metadata & Static Generation:** Created `generateStaticParams` and dynamic `generateMetadata` for `hotels/[id]`, `my-trips/[id]`, and `travelogues/[id]`; replaced inline 200 mockup with genuine Next.js `notFound()` 404 handler for nonexistent hotels.
 - **4.2 Comprehensive Multi-locale Sitemap & Robots.txt:** Expanded `sitemap.ts` from 5 routes to all public and dynamic endpoints across all 5 supported locales; hardened `robots.ts` with strict disallows on `/admin`, `/checkout`, `/account`, `/wallet`, and `/api`.
 - **4.3 Assets & Tracking Cleanup:** Added OpenGraph asset `public/og-image.jpg`; replaced hardcoded Google Analytics ID with optional environment variable `NEXT_PUBLIC_GA_ID`.
+
+### Phase 5 — Testing Suite & CI/CD Hardening Completed
+- **5.1 Incompatible Specs Resolved:** Synchronized `critical-flows.spec.ts`, `golden-journeys.spec.ts` (updated `dest=turkey`), and `planner.spec.ts` selectors and expectations with current UI.
+- **5.2 Vitest Unit Testing Suite:** Configured `vitest.config.ts`, added unit tests in `src/lib/domain-logic.test.ts` covering date calculations (`dualDate`), financial conversions (`toLocalCurrency`, `formatMoney`, `chargeContext`), number formatting, `CurrencyService`, and `BookingDomainService`.
+- **5.3 Test Scripts Integration:** Added `"typecheck": "tsc --noEmit"` and `"test:unit": "vitest run"` to `package.json`.

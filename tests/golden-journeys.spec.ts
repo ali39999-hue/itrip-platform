@@ -62,7 +62,7 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
 
   test('Golden Journey 3: AI Smart Trip Planner -> Wizard -> Timeline View', async ({ page }) => {
     // 1. Visit AI Planner with destination param for instant deterministic timeline verification
-    await page.goto('/fa/plan?dest=tr&who=duo&days=4&bud=balanced&pace=balanced', { waitUntil: 'domcontentloaded' });
+    await page.goto('/fa/plan?dest=turkey&who=duo&days=4&bud=balanced&pace=balanced', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveTitle(/iTrip|Firuzo/i);
 
     // Verify generated plan header and days

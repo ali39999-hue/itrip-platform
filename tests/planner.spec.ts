@@ -1,8 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('planner conversational flow e2e', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('http://localhost:3000/fa/plan', { waitUntil: 'networkidle' });
+  await page.goto('/fa/plan', { waitUntil: 'domcontentloaded' });
 
   // 1. Step 1: Destination Selection
   const step1Heading = page.locator('h1').first();
@@ -19,7 +18,7 @@ test('planner conversational flow e2e', async ({ page }) => {
 
   // 3. Step 3: Days / Duration
   const daysOption = page.locator('button').filter({ hasText: /^[۳-۷3-7]$/ }).first();
-  if (await daysOption.isVisible({ timeout: 3000 }).catch(() => false)) {
+  if (await daysOption.isVisible()) {
     await daysOption.click();
   } else {
     const nextBtn = page.getByRole('button', { name: /ادامه|بعدی|Skip|رد کن/i }).first();
@@ -28,7 +27,7 @@ test('planner conversational flow e2e', async ({ page }) => {
 
   // 4. Step 4: Interests
   const continueBtn = page.getByRole('button', { name: /ادامه|Continue/i }).first();
-  if (await continueBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+  if (await continueBtn.isVisible()) {
     await continueBtn.click();
   } else {
     const skipBtn = page.getByRole('button', { name: /رد کن|Skip/i }).first();
@@ -37,7 +36,7 @@ test('planner conversational flow e2e', async ({ page }) => {
 
   // 5. Step 5: Budget
   const budgetBtn = page.getByRole('button', { name: /اقتصادی|متعادل|لوکس|Balanced|Economy|Luxury/i }).first();
-  if (await budgetBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+  if (await budgetBtn.isVisible()) {
     await budgetBtn.click();
   } else {
     const skipBtn = page.getByRole('button', { name: /رد کن|Skip/i }).first();
@@ -46,7 +45,7 @@ test('planner conversational flow e2e', async ({ page }) => {
 
   // 6. Step 6: Pace
   const paceBtn = page.getByRole('button', { name: /آرام|متعادل|فشرده|Relaxed|Balanced|Packed/i }).first();
-  if (await paceBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+  if (await paceBtn.isVisible()) {
     await paceBtn.click();
   } else {
     const skipBtn = page.getByRole('button', { name: /رد کن|Skip/i }).first();
@@ -58,7 +57,7 @@ test('planner conversational flow e2e', async ({ page }) => {
   await expect(timelineResult).toBeVisible({ timeout: 10000 });
   
   // Verify Total Price and Action CTA
-  const bookAllBtn = page.getByRole('button', { name: /ثبت کل پکیج|ادامه پرداخت|رزرو|Book All/i });
-  await expect(bookAllBtn).toBeVisible();
+  const bookAllBtn = page.getByRole('button', { name: /ثبت کل پکیج|ادامه پرداخت|رزرو|Book All/i }).first();
+  await expect(bookAllBtn).toBeVisible({ timeout: 10000 });
 });
 
