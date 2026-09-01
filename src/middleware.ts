@@ -8,6 +8,8 @@ import { routing } from './i18n/routing';
 // Create the next-intl middleware
 const intlMiddleware = createMiddleware(routing);
 
+const SUPPORTED_LOCALES = ['fa', 'en', 'ar', 'zh', 'ru'];
+
 // Define route permissions mapped to required roles or permissions
 const ROUTE_PERMISSIONS: Record<string, string[]> = {
   '/admin/finance': ['SUPER_ADMIN', 'FINANCE'],
@@ -30,12 +32,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Extract locale if present
-  const localeMatch = pathname.match(/^\/([a-z]{2})/);
+  // Extract valid locale if present
+  const localeMatch = pathname.match(/^\/(fa|en|ar|zh|ru)(\/|$)/);
   const locale = localeMatch ? localeMatch[1] : 'fa';
 
   // 2. Handle /login or /[locale]/login alias -> redirect to /[locale]/auth
-  if (pathname === '/login' || pathname.match(/^\/[a-z]{2}\/login$/)) {
+  if (pathname === '/login' || pathname.match(/^\/(fa|en|ar|zh|ru)\/login$/)) {
     const callbackUrl = request.nextUrl.searchParams.get('callbackUrl');
     const authUrl = new URL('/' + locale + '/auth', request.url);
     if (callbackUrl) {
@@ -66,7 +68,7 @@ export async function middleware(request: NextRequest) {
     let hasAccess = false;
 
     // Check specific path requirements (strip locale for matching)
-    const normalizedPath = pathname.replace(/^\/[a-z]{2}/, '');
+    const normalizedPath = pathname.replace(/^\/(fa|en|ar|zh|ru)/, '');
     
     // First find the most specific matching route rule
     const matchingRoute = Object.keys(ROUTE_PERMISSIONS)
