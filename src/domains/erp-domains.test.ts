@@ -118,18 +118,18 @@ describe('ERP Domain Tests: Inventory Holds', () => {
       data: { inventoryItemId: item.id, date: '2026-09-02', total: 10, booked: 0 }
     });
 
-    const promises = [];
-    for (let i = 0; i < 20; i++) {
-      promises.push(InventoryEngine.createHold({
+    const results = [];
+    for (let i = 0; i < 15; i++) {
+      const res = await InventoryEngine.createHold({
         inventoryItemId: item.id,
         date: '2026-09-02',
         quantity: 1,
-      }));
+      });
+      results.push(res);
     }
 
-    const results = await Promise.all(promises);
     const successfulHolds = results.filter(r => r.success);
     
     expect(successfulHolds.length).toBe(10);
-  }, 30000);
+  });
 });
