@@ -6,7 +6,7 @@ import { useRouter, Link } from '@/i18n/routing';
 import { useAuthStore } from '@/stores/auth-store';
 import {
   LayoutDashboard, BriefcaseBusiness, Wallet, DatabaseZap,
-  PlaneTakeoff, Lock, Mail, Key, LogIn, ArrowRight, ExternalLink, ShieldCheck, UserCheck, Activity
+  PlaneTakeoff, Lock, LogIn, ArrowRight, ExternalLink, ShieldCheck, UserCheck, Activity
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
