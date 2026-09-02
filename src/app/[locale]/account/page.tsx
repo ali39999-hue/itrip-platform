@@ -1,32 +1,26 @@
 'use client';
 
-<<<<<<< HEAD
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { useAuthStore } from '@/stores/auth-store';
 import { useBookingStore } from '@/stores/booking-store';
 import { useLocalizedUserName } from '@/hooks/useLocalizedUserName';
-=======
-import { useEffect, useState } from 'react';
-import { useTranslations, useLocale } from 'next-intl';
-import { useRouter } from '@/i18n/routing';
-import { useAuthStore } from '@/stores/auth-store';
->>>>>>> 18d50a2e8c73fd47bf64739b52ba0272b11cc043
 import { Button } from '@/components/ui/button';
 import { getWallet } from '@/actions/booking';
 import { AccountSidebar } from '@/components/account/AccountSidebar';
 import {
-<<<<<<< HEAD
-  UserRound, Wallet, LogOut, BadgeCheck,
-  LayoutGrid, PlaneTakeoff, Settings, ShieldCheck, ShieldAlert, Edit2, X
-=======
   UserRound,
   Wallet,
+  LogOut,
   BadgeCheck,
+  LayoutGrid,
+  PlaneTakeoff,
+  Settings,
   ShieldCheck,
   ShieldAlert,
->>>>>>> 18d50a2e8c73fd47bf64739b52ba0272b11cc043
+  Edit2,
+  X
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
@@ -34,35 +28,22 @@ export default function AccountPage() {
   const t = useTranslations('Account');
   const locale = useLocale();
   const router = useRouter();
-<<<<<<< HEAD
   const { user, kyc, logout, updateKyc } = useAuthStore();
-  const wallet = useBookingStore((s) => s.wallet);
   const localizedUserName = useLocalizedUserName();
 
   const firstName = localizedUserName.split(' ')[0] || '';
   const localeTag = locale === 'fa' ? 'fa-IR' : locale;
 
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [editFirstName, setEditFirstName] = useState(user?.firstNameFa || '');
-  const [editLastName, setEditLastName] = useState(user?.lastNameFa || '');
-  const [editError, setEditError] = useState('');
-
-  const handleSaveName = () => {
-    if (!editFirstName.trim() || !editLastName.trim()) {
-      setEditError(lt(locale, { fa: 'نام و نام خانوادگی الزامی است', en: 'First and last name are required', ar: 'الاسم الأول والأخير مطلوبان', zh: '姓名和姓氏为必填项', ru: 'Имя и фамилия обязательны' }));
-      return;
-    }
-    setEditError('');
-    updateKyc({ firstNameFa: editFirstName, lastNameFa: editLastName });
-    setIsEditingName(false);
-  };
-=======
-  const { user, kyc } = useAuthStore();
   const [wallet, setWallet] = useState<{ IRR: number; USDT: number; AED: number }>({
     IRR: 0,
     USDT: 0,
     AED: 0,
   });
+
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editFirstName, setEditFirstName] = useState(user?.firstNameFa || '');
+  const [editLastName, setEditLastName] = useState(user?.lastNameFa || '');
+  const [editError, setEditError] = useState('');
 
   useEffect(() => {
     async function fetchWallet() {
@@ -79,7 +60,16 @@ export default function AccountPage() {
       fetchWallet();
     }
   }, [user]);
->>>>>>> 18d50a2e8c73fd47bf64739b52ba0272b11cc043
+
+  const handleSaveName = () => {
+    if (!editFirstName.trim() || !editLastName.trim()) {
+      setEditError(lt(locale, { fa: 'نام و نام خانوادگی الزامی است', en: 'First and last name are required', ar: 'الاسم الأول والأخير مطلوبان', zh: '姓名和姓氏为必填项', ru: 'Имя и фамилия обязательны' }));
+      return;
+    }
+    setEditError('');
+    updateKyc({ firstNameFa: editFirstName, lastNameFa: editLastName });
+    setIsEditingName(false);
+  };
 
   if (!user) {
     return (
@@ -123,57 +113,7 @@ export default function AccountPage() {
 
   return (
     <div className="flex flex-col md:flex-row w-full max-w-[1280px] mx-auto px-4 md:px-10 py-8 gap-8">
-<<<<<<< HEAD
-      {/* SideNavBar */}
-      <aside className="w-full md:w-72 shrink-0 bg-surface rounded-xl shadow-sm h-fit md:sticky md:top-24 border border-line/40 flex flex-col overflow-hidden">
-        <div className="p-6 border-b border-line/60 flex flex-col items-center gap-3 bg-soft/30">
-          <span className="w-20 h-20 rounded-full bg-brand/10 text-brand-dark flex items-center justify-center border-4 border-surface shadow-sm">
-            <UserRound size={36} />
-          </span>
-          <div className="text-center">
-            <h2 className="text-xl font-black text-brand-dark">
-              {lt(locale, {
-                fa: `سلام، ${firstName}`,
-                en: `Hello, ${firstName}`,
-                ar: `مرحبا، ${firstName}`,
-                zh: `你好，${firstName}`,
-                ru: `Привет, ${firstName}`,
-              })}
-            </h2>
-            <p className="text-[13px] font-bold text-sub mt-1">{lt(locale, { fa: 'امتیاز شما: ۲۵۰۰', en: 'Reward points: 2,500', ar: 'نقاطك: 2,500', zh: '您的积分：2,500', ru: 'Ваши баллы: 2 500' })}</p>
-          </div>
-        </div>
-      
-        <nav className="flex flex-col gap-1 p-4">
-          <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-black bg-brand text-surface shadow-sm text-start">
-            <LayoutGrid size={20} /> {lt(locale, { fa: 'داشبورد', en: 'Dashboard', ar: 'لوحة التحكم', zh: '仪表板', ru: 'Панель управления' })}
-          </button>
-          <button onClick={() => router.push('/my-trips')} className="flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-bold text-sub hover:bg-soft transition-colors text-start">
-            <PlaneTakeoff size={20} /> {lt(locale, { fa: 'سفرهای من', en: 'My Trips', ar: 'رحلاتي', zh: '我的旅行', ru: 'Мои поездки' })}
-          </button>
-          <button onClick={() => router.push('/wallet')} className="flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-bold text-sub hover:bg-soft transition-colors text-start">
-            <Wallet size={20} /> {lt(locale, { fa: 'کیف پول و امتیازات', en: 'Wallet & Rewards', ar: 'المحفظة والمكافآت', zh: '钱包与奖励', ru: 'Кошелёк и бонусы' })}
-          </button>
-          <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-bold text-sub hover:bg-soft transition-colors text-start">
-            <Settings size={20} /> {t('settings')}
-          </button>
-        </nav>
-        
-        <div className="p-4 mt-auto border-t border-line/60">
-          <button
-            onClick={() => {
-              logout();
-              router.push('/');
-            }}
-            className="w-full flex items-center justify-center gap-2 text-rose-warm hover:bg-rose-warm/10 px-4 py-3 rounded-xl transition-colors font-black text-[14px]"
-          >
-            <LogOut size={20} /> {t('logout')}
-          </button>
-        </div>
-      </aside>
-=======
       <AccountSidebar activeSection="profile" />
->>>>>>> 18d50a2e8c73fd47bf64739b52ba0272b11cc043
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col gap-6">
@@ -192,19 +132,8 @@ export default function AccountPage() {
               <Wallet size={18} className="text-brand" />
             </div>
             <div className="mt-4">
-<<<<<<< HEAD
               <span className="text-2xl font-black text-ink font-mono num">{wallet.IRR.toLocaleString(localeTag)}</span>
               <span className="text-xs font-bold text-sub ms-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
-=======
-              <span className="text-2xl font-black text-ink font-mono num">
-                {wallet.IRR.toLocaleString(
-                  lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })
-                )}
-              </span>
-              <span className="text-xs font-bold text-sub ms-1">
-                {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
-              </span>
->>>>>>> 18d50a2e8c73fd47bf64739b52ba0272b11cc043
             </div>
           </div>
 
@@ -222,16 +151,7 @@ export default function AccountPage() {
               <BadgeCheck size={18} className="text-brand-dark" />
             </div>
             <div className="mt-4">
-<<<<<<< HEAD
               <span className="text-2xl font-black text-ink font-mono num">${wallet.USDT.toLocaleString(localeTag)}</span>
-=======
-              <span className="text-2xl font-black text-ink font-mono num">
-                $
-                {wallet.USDT.toLocaleString(
-                  lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })
-                )}
-              </span>
->>>>>>> 18d50a2e8c73fd47bf64739b52ba0272b11cc043
               <span className="text-xs font-bold text-sub ms-1">USDT</span>
             </div>
           </div>
@@ -278,17 +198,10 @@ export default function AccountPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-<<<<<<< HEAD
-              <span className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'نام و نام خانوادگی', en: 'Full Name', ar: 'الاسم الكامل', zh: '姓名', ru: 'ФИО' })}</span>
-              <span className="text-base font-black text-ink">{localizedUserName}</span>
-=======
               <span className="block text-xs font-bold text-sub mb-1">
                 {lt(locale, { fa: 'نام و نام خانوادگی', en: 'Full Name', ar: 'الاسم الكامل', zh: '姓名', ru: 'ФИО' })}
               </span>
-              <span className="text-base font-black text-ink">
-                {user.firstNameFa} {user.lastNameFa}
-              </span>
->>>>>>> 18d50a2e8c73fd47bf64739b52ba0272b11cc043
+              <span className="text-base font-black text-ink">{localizedUserName}</span>
             </div>
 
             <div>
@@ -359,7 +272,7 @@ export default function AccountPage() {
                   type="text"
                   value={editLastName}
                   onChange={(e) => setEditLastName(e.target.value)}
-                  placeholder={lt(locale, { fa: 'نام خانوادگی خود را وارد کنید', en: 'Enter your last name', ar: 'أدخل اسم عائلتك', zh: '输入您的شيماسی', ru: 'Введите свою фамилию' })}
+                  placeholder={lt(locale, { fa: 'نام خانوادگی خود را وارد کنید', en: 'Enter your last name', ar: 'أدخل اسم عائلتك', zh: '输入您的姓氏', ru: 'Введите свою фамилию' })}
                   className="w-full h-11 rounded-xl border border-line px-4 font-bold text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 />
               </div>
