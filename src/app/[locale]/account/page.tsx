@@ -1,4 +1,4 @@
-س'use client';
+'use client';
 
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
@@ -75,7 +75,7 @@ export default function AccountPage() {
             <p className="text-[13px] font-bold text-sub mt-1">{lt(locale, { fa: 'امتیاز شما: ۲۵۰۰', en: 'Reward points: 2,500', ar: 'نقاطك: 2,500', zh: '您的积分：2,500', ru: 'Ваши баллы: 2 500' })}</p>
           </div>
         </div>
-        
+      
         <nav className="flex flex-col gap-1 p-4">
           <button className="flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-black bg-brand text-surface shadow-sm text-start">
             <LayoutGrid size={20} /> {lt(locale, { fa: 'داشبورد', en: 'Dashboard', ar: 'لوحة التحكم', zh: '仪表板', ru: 'Панель управления' })}
