@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { useAuthStore } from '@/stores/auth-store';
+import { useLocalizedUserName } from '@/hooks/useLocalizedUserName';
 import { Button } from '@/components/ui/button';
 import { getWallet, getMyBookings } from '@/actions/booking';
 import { updateProfileDetails } from '@/actions/auth';
@@ -16,17 +17,11 @@ import {
   ShieldAlert,
   Edit3,
   CheckCircle,
-  Clock,
-  Briefcase,
-  Layers,
   Sparkles,
   Plane,
   Building,
-  FileText,
-  Mail,
-  Phone,
-  Send,
-  MessageCircle,
+  Briefcase,
+  X,
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
@@ -35,6 +30,8 @@ export default function AccountPage() {
   const locale = useLocale();
   const router = useRouter();
   const { user, kyc, updateKyc } = useAuthStore();
+  const localizedUserName = useLocalizedUserName();
+
   const [wallet, setWallet] = useState<{ IRR: number; USDT: number; AED: number }>({
     IRR: 0,
     USDT: 0,
@@ -89,6 +86,8 @@ export default function AccountPage() {
       updateKyc({
         firstNameFa: formState.firstNameFa,
         lastNameFa: formState.lastNameFa,
+        firstNameEn: formState.firstNameEn,
+        lastNameEn: formState.lastNameEn,
         nationalId: formState.nationalId,
         passportNo: formState.passportNo,
         passportExpiry: formState.passportExpiry,
@@ -155,7 +154,7 @@ export default function AccountPage() {
               {lt(locale, { fa: 'سطح کاربری: مسافر طلایی', en: 'Tier: Gold Traveler', ar: 'المستوى: مسافر ذهبي', zh: '会员等级：黄金旅客', ru: 'Уровень: Золотой' })}
             </div>
             <h1 className="text-2xl md:text-3xl font-black">
-              {lt(locale, { fa: 'خوش آمدید،', en: 'Welcome back,', ar: 'أهلاً بك،', zh: '欢迎回来，', ru: 'Добро пожаловать,' })} {user.firstNameFa || user.phone}
+              {lt(locale, { fa: 'خوش آمدید،', en: 'Welcome back,', ar: 'أهلاً بك،', zh: '欢迎回来，', ru: 'Добро пожаловать,' })} {localizedUserName || user.firstNameFa || user.phone}
             </h1>
             <p className="text-surface/80 text-xs md:text-sm mt-1">
               {lt(locale, { fa: 'مدیریت یکپارچه سفرها، مدارک هویتی، کیف پول و خدمات ویژه فیروزه', en: 'Manage bookings, identity documents, wallet and services in one place', ar: 'إدارة رحلاتك ووثائقك ومحفظتك في مكان واحد', zh: '集中管理您的行程、身份凭证与多币种钱包', ru: 'Управление поездками, документами и кошельком' })}
@@ -288,7 +287,7 @@ export default function AccountPage() {
                   {lt(locale, { fa: 'نام و نام خانوادگی (فارسی)', en: 'Full Name (Persian/Local)', ar: 'الاسم الكامل', zh: '姓名', ru: 'ФИО' })}
                 </span>
                 <span className="text-sm font-black text-ink">
-                  {user.firstNameFa} {user.lastNameFa}
+                  {localizedUserName || `${user.firstNameFa} ${user.lastNameFa}`}
                 </span>
               </div>
 

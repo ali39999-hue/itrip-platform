@@ -22,7 +22,6 @@ if (!secret && process.env.NODE_ENV === 'production') {
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  trustHost: true,
   secret: secret || (process.env.DEMO_MODE === 'true' ? 'firuzo-dev-local-only-secret-2026' : undefined),
   providers: [
     CredentialsProvider({

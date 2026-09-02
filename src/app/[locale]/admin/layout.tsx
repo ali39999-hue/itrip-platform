@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useRouter, Link } from '@/i18n/routing';
 import { useAuthStore } from '@/stores/auth-store';
+import { useLocalizedUserName } from '@/hooks/useLocalizedUserName';
 import {
   LayoutDashboard, BriefcaseBusiness, Wallet, DatabaseZap,
   PlaneTakeoff, Lock, LogIn, ArrowRight, ExternalLink, ShieldCheck, UserCheck, Activity
@@ -23,6 +24,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname() || '';
   const user = useAuthStore((s) => s.user);
+  const localizedUserName = useLocalizedUserName();
 
   if (!user || !['admin', 'SUPER_ADMIN', 'FINANCE', 'OPS'].includes(user.role)) {
     return (
@@ -95,7 +97,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <UserCheck size={16} />
             </div>
             <div className="hidden sm:block text-start">
-              <span className="block text-xs font-black text-ink">{user.phone || lt(locale, { fa: 'مدیر سیستم', en: 'System Admin', ar: 'مسؤول النظام', zh: '系统管理员', ru: 'Системный администратор' })}</span>
+              <span className="block text-xs font-black text-ink">{localizedUserName || lt(locale, { fa: 'مدیر سیستم', en: 'System Admin', ar: 'مسؤول النظام', zh: '系统管理员', ru: 'Системный администратор' })}</span>
               <span className="block text-[10px] font-bold text-success flex items-center gap-1">
                 <ShieldCheck size={10} /> {lt(locale, { fa: 'ادمین فعال', en: 'Active Admin', ar: 'مسؤول نشط', zh: '管理员在线', ru: 'Активный админ' })}
               </span>

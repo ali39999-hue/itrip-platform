@@ -118,10 +118,12 @@ export interface WalletTransaction {
 }
 
 export interface KycProfile {
-  step: 'phone' | 'otp' | 'identity' | 'passport_scan' | 'approved';
+  step: 'phone' | 'otp' | 'name_info' | 'identity' | 'passport_scan' | 'approved';
   phone?: string;
   firstNameFa?: string;
   lastNameFa?: string;
+  firstNameEn?: string;
+  lastNameEn?: string;
   nationalId?: string;
   passportNo?: string;
   passportExpiry?: string;

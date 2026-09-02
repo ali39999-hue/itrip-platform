@@ -1,25 +1,24 @@
 'use server';
 
 import { signIn, signOut } from '@/auth';
-import { AuthError } from 'next-auth';
 import { prisma } from '@/lib/prisma';
 
 export type AuthChannel = 'phone' | 'email' | 'telegram' | 'whatsapp' | 'wechat';
 
 export async function loginWithCredentials(email: string, pass: string) {
   try {
-    await signIn('credentials', {
+    const res = await signIn('credentials', {
       identifier: email,
       password: pass,
       channel: 'email',
       redirect: false,
     });
-    return { success: true };
-  } catch (error) {
-    if (error instanceof AuthError) {
+    if (res?.error) {
       return { success: false, error: 'Invalid credentials' };
     }
-    throw error;
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error?.message || 'Invalid credentials' };
   }
 }
 
@@ -45,10 +44,8 @@ export async function verifyOtpAndLogin(identifier: string, otp: string, channel
     if (signInResult?.error) {
       return { success: false, error: signInResult.error };
     }
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return { success: false, error: 'Authentication failed' };
-    }
+  } catch (error: any) {
+    return { success: false, error: error?.message || 'Authentication failed' };
   }
 
   // Lookup or construct user data for client store
