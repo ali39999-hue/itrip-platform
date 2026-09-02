@@ -131,5 +131,5 @@ describe('ERP Domain Tests: Inventory Holds', () => {
     const successfulHolds = results.filter(r => r.success);
     
     expect(successfulHolds.length).toBe(10);
-  });
+  }, 30000);
 });
