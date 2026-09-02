@@ -151,6 +151,11 @@ export default async function RootLayout({
             </Script>
           </>
         )}
+        {/* اسکریپت مرکز تماس هوشمند فیروزو */}
+        <Script
+          src="https://call.firuzo.online/widget.js"
+          strategy="lazyOnload"
+        />
       </body>
     </html>
   );
