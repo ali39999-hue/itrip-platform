@@ -90,10 +90,26 @@ export class InventoryEngine {
     if (tx) {
       return execute(tx);
     }
-    return prisma.$transaction(execute, {
-      maxWait: 15000,
-      timeout: 20000,
-    });
+    
+    // Auto-retry on database locked (P1008/busy)
+    let retries = 5;
+    while (retries > 0) {
+      try {
+        return await prisma.$transaction(execute, {
+          maxWait: 15000,
+          timeout: 20000,
+        });
+      } catch (err: unknown) {
+        retries--;
+        const isLockError = (err as { code?: string })?.code === 'P1008' || String(err).includes('timed out');
+        if (isLockError && retries > 0) {
+          await new Promise((r) => setTimeout(r, 50 + Math.random() * 100));
+          continue;
+        }
+        throw err;
+      }
+    }
+    return { success: false, error: 'Database busy' };
   }
 
   /**
