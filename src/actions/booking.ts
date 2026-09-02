@@ -4,9 +4,9 @@ import { prisma } from '@/lib/prisma';
 import { bookingSchema } from '@/lib/validations';
 import { calculatePricing } from '@/lib/pricing/engine';
 import { FLIGHTS, HOTELS, TOURS, TRANSFERS, VISA_SERVICES, ESIM_PACKAGES, INSURANCE_PLANS } from '@/lib/data';
-import { Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
+import { BookingSagaOrchestrator } from '@/domains/booking/saga-orchestrator';
 
 const ESIM_PRICE_FALLBACK = 2800000;
 const INSURANCE_PRICE_FALLBACK = 1900000;
@@ -141,176 +141,19 @@ export async function payBooking(bookingId: string, method: 'wallet_irr' | 'gate
   try {
     const session = await auth();
     if (!session || !session.user) return { success: false, error: 'Unauthorized' };
-    const userId = session.user.id;
 
-    const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
-    if (!booking) return { success: false, error: 'Booking not found' };
-    if (booking.customerId !== userId) return { success: false, error: 'Unauthorized' };
-    if (booking.status !== 'DRAFT' && booking.status !== 'PENDING_PAYMENT') {
-      return { success: false, error: 'Booking already processed or cancelled' };
-    }
-
-    const isDemo = process.env.DEMO_MODE === 'true';
-
-    // Double-entry accounting
-    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // Find or create Platform Escrow Account
-      let escrowAccount = await tx.account.findFirst({
-        where: { ownerType: 'PLATFORM_ESCROW', currency: booking.currency },
-      });
-      if (!escrowAccount) {
-        escrowAccount = await tx.account.create({
-          data: { ownerType: 'PLATFORM_ESCROW', currency: booking.currency },
-        });
-      }
-
-      const idempotencyKey = `pay_${booking.id}_${Date.now()}`;
-
-      if (method === 'wallet_irr') {
-        // Find or create Customer Account
-        let customerAccount = await tx.account.findFirst({
-          where: { ownerType: 'USER', ownerId: userId, currency: booking.currency },
-        });
-
-        if (!customerAccount) {
-          customerAccount = await tx.account.create({
-            data: { ownerType: 'USER', ownerId: userId, currency: booking.currency },
-          });
-
-          // Demo funding only if DEMO_MODE is true
-          if (isDemo) {
-            await tx.ledgerEntry.create({
-              data: {
-                groupId: `demo_funding_${userId}`,
-                accountId: customerAccount.id,
-                direction: 'CREDIT',
-                amount: 150000000,
-                currency: booking.currency,
-                referenceType: 'TOPUP',
-              },
-            });
-          }
-        }
-
-        // Calculate customer balance from ledger
-        const entries = await tx.ledgerEntry.findMany({
-          where: { accountId: customerAccount.id },
-        });
-        const balance = entries.reduce((acc, entry) => {
-          return entry.direction === 'CREDIT' ? acc + Number(entry.amount) : acc - Number(entry.amount);
-        }, 0);
-
-        if (balance < Number(booking.totalAmount)) {
-          throw new Error('Insufficient wallet balance');
-        }
-
-        // 1. Debit Customer
-        await tx.ledgerEntry.create({
-          data: {
-            groupId: idempotencyKey,
-            accountId: customerAccount.id,
-            direction: 'DEBIT',
-            amount: booking.totalAmount,
-            currency: booking.currency,
-            referenceType: 'BOOKING',
-            referenceId: booking.id,
-          },
-        });
-
-        // 2. Credit Escrow
-        await tx.ledgerEntry.create({
-          data: {
-            groupId: idempotencyKey,
-            accountId: escrowAccount.id,
-            direction: 'CREDIT',
-            amount: booking.totalAmount,
-            currency: booking.currency,
-            referenceType: 'BOOKING',
-            referenceId: booking.id,
-          },
-        });
-      } else if (method === 'gateway_shetab') {
-        // Find or create Gateway Settlement Account
-        let gatewayAccount = await tx.account.findFirst({
-          where: { ownerType: 'GATEWAY_SETTLEMENT', currency: booking.currency },
-        });
-        if (!gatewayAccount) {
-          gatewayAccount = await tx.account.create({
-            data: { ownerType: 'GATEWAY_SETTLEMENT', currency: booking.currency },
-          });
-        }
-
-        // In simulated gateway settlement:
-        // 1. Credit Gateway Settlement (External bank inbound)
-        await tx.ledgerEntry.create({
-          data: {
-            groupId: idempotencyKey,
-            accountId: gatewayAccount.id,
-            direction: 'CREDIT',
-            amount: booking.totalAmount,
-            currency: booking.currency,
-            referenceType: 'BOOKING',
-            referenceId: booking.id,
-          },
-        });
-
-        // 2. Debit Gateway Settlement and Credit Escrow
-        await tx.ledgerEntry.create({
-          data: {
-            groupId: idempotencyKey,
-            accountId: gatewayAccount.id,
-            direction: 'DEBIT',
-            amount: booking.totalAmount,
-            currency: booking.currency,
-            referenceType: 'BOOKING',
-            referenceId: booking.id,
-          },
-        });
-
-        await tx.ledgerEntry.create({
-          data: {
-            groupId: idempotencyKey,
-            accountId: escrowAccount.id,
-            direction: 'CREDIT',
-            amount: booking.totalAmount,
-            currency: booking.currency,
-            referenceType: 'BOOKING',
-            referenceId: booking.id,
-          },
-        });
-      }
-
-      // State Machine Transition: -> CONFIRMED
-      await tx.booking.update({
-        where: { id: booking.id },
-        data: { status: 'CONFIRMED' },
-      });
-
-      // Outbox Event for async tasks
-      await tx.outboxEvent.create({
-        data: {
-          eventType: 'BOOKING_PAID',
-          payload: JSON.stringify({ bookingId: booking.id, method }),
-        },
-      });
-
-      // Audit log
-      await tx.auditLog.create({
-        data: {
-          userId: userId,
-          action: 'BOOKING_PAID',
-          resource: 'Booking',
-          resourceId: booking.id,
-          newData: JSON.stringify({ method, amount: Number(booking.totalAmount) }),
-        },
-      });
+    const idempotencyKey = `pay_${bookingId}_${Date.now()}`;
+    const result = await BookingSagaOrchestrator.confirmBookingSaga({
+      bookingId,
+      idempotencyKey,
+      paymentMethod: method,
     });
 
     revalidatePath('/my-trips');
     revalidatePath('/wallet');
-    return { success: true };
+    return { success: true, booking: result.booking };
   } catch (err: unknown) {
-    console.error('payBooking server error:', err);
+    console.error('payBooking saga error:', err);
     return { success: false, error: 'Payment processing failed' };
   }
 }

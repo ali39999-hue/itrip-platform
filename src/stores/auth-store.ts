@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { KycProfile } from '@/lib/types';
-import { loginWithCredentials, logoutUser } from '@/actions/auth';
+import { verifyOtpAndLogin, logoutUser } from '@/actions/auth';
 
 interface User {
   id: string;
@@ -25,43 +25,19 @@ interface AuthState {
   updateKyc: (data: Partial<KycProfile>) => void;
 }
 
-const OTP_CODE = '12345';
-
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
       kyc: { step: 'phone' },
       login: async (phone, otp) => {
-        await new Promise((r) => setTimeout(r, 600));
-
-        const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
-
-        // In production / non-demo mode, mock OTP bypasses are completely disabled
-        if (!isDemo) {
+        const res = await verifyOtpAndLogin(phone, otp);
+        if (!res.success || !res.user) {
           return false;
         }
 
-        if (otp !== OTP_CODE && otp !== '1234' && otp.length !== 4 && otp.length !== 5) return false;
-        const isAdmin = phone.endsWith('0000');
-
-        // Sync with NextAuth (Server side)
-        try {
-          const email = isAdmin ? 'admin@firuzo.com' : 'user@firuzo.com';
-          await loginWithCredentials(email, 'demo');
-        } catch (e) {
-          console.error('NextAuth login failed', e);
-        }
-
         set({
-          user: {
-            id: isAdmin ? 'clr_admin_123' : 'clr_mock_user_123',
-            phone,
-            firstNameFa: isAdmin ? 'ادمین' : 'کاربر',
-            lastNameFa: 'فیروز',
-            kycApproved: true,
-            role: isAdmin ? 'admin' : 'customer',
-          },
+          user: res.user,
           kyc: { step: 'approved', phone },
         });
         return true;

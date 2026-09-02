@@ -46,11 +46,11 @@ model UserRole {
   @@id([userId, roleId])
 }
 
-// ==================== 2. Core: Double-Entry Ledger ====================
+// ==================== 2. Core: Double-Entry Ledger & Payments ====================
 
 model Account {
   id          String        @id @default(cuid())
-  ownerType   String        // USER, PLATFORM_ESCROW, PLATFORM_FEE, SUPPLIER
+  ownerType   String        // USER, PLATFORM_ESCROW, PLATFORM_FEE, PLATFORM_REVENUE, GATEWAY_SETTLEMENT, SUPPLIER_PAYABLE
   ownerId     String?       // userId or supplierId
   currency    String        @default("IRR")
   
@@ -64,7 +64,9 @@ model LedgerEntry {
   direction     String   // DEBIT, CREDIT
   amount        Decimal  
   currency      String
-  referenceType String?  // BOOKING, REFUND, TOPUP
+  fxRate        Decimal  @default(1.0)
+  baseAmount    Decimal?
+  referenceType String?  // BOOKING, REFUND, TOPUP, SETTLEMENT
   referenceId   String?  
   createdAt     DateTime @default(now())
   
@@ -74,18 +76,38 @@ model LedgerEntry {
   @@index([accountId])
 }
 
+model Payment {
+  id              String   @id @default(cuid())
+  bookingId       String?
+  idempotencyKey  String   @unique
+  method          String   // wallet_irr, gateway_shetab, wallet_usdt, etc
+  gatewayRef      String?
+  amount          Decimal
+  currency        String   @default("IRR")
+  status          String   @default("PENDING") // PENDING, SUCCESS, FAILED, REFUNDED
+  rawPayload      String?  // JSON
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([bookingId])
+  @@index([idempotencyKey])
+}
+
 // ==================== 3. Core: Booking State Machine ====================
 
 model Booking {
   id              String   @id @default(cuid())
   reference       String   @unique // e.g., ITR-10023
   customerId      String
-  status          String   @default("DRAFT") // DRAFT, PENDING_PAYMENT, CONFIRMED, CANCELLED, COMPLETED
+  status          String   @default("DRAFT") // DRAFT, HELD, PENDING_PAYMENT, PAYMENT_CONFIRMED, CONFIRMING_SUPPLIER, CONFIRMED, CANCEL_REQUESTED, CANCELLING, CANCELLED, REFUND_INITIATED, REFUNDED, EXPIRED, FAILED
   totalAmount     Decimal  
   currency        String   @default("IRR")
   
   supplierId      String?  
   externalPnr     String?  // GDS reference
+  holdToken       String?  @unique
+  policySnapshot  String?  // JSON
+  stateHistory    String?  // JSON array of transitions
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -102,6 +124,7 @@ model Booking {
 model BookingItem {
   id              String   @id @default(cuid())
   bookingId       String
+  inventoryItemId String?
   type            String   // FLIGHT, HOTEL, VISA, TOUR, TRANSFER, etc
   netCost         Decimal  // cost from supplier
   markup          Decimal  // platform profit
@@ -109,28 +132,81 @@ model BookingItem {
   details         String   @default("{}") // JSON details
   
   booking         Booking  @relation(fields: [bookingId], references: [id])
+  inventoryItem   InventoryItem? @relation(fields: [inventoryItemId], references: [id])
 }
 
-// ==================== 4. Suppliers & Inventory ====================
+// ==================== 4. Suppliers & Inventory Engine ====================
 
 model Supplier {
-  id       String @id @default(cuid())
-  name     String
-  type     String // HOTEL | AIRLINE | TOUR_OPERATOR | INSURANCE
-  contact  String?
+  id          String   @id @default(cuid())
+  name        String
+  type        String   // HOTEL | AIRLINE | TOUR_OPERATOR | INSURANCE
+  mode        String   @default("ALLOTMENT") // REALTIME_API, ALLOTMENT, ON_REQUEST
+  contact     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
   
   inventoryItems InventoryItem[]
+  contracts      SupplierContract[]
+}
+
+model SupplierContract {
+  id           String   @id @default(cuid())
+  supplierId   String
+  pricingType  String   @default("NET_RATE") // NET_RATE, COMMISSION
+  commission   Decimal  @default(0.0)
+  creditLimit  Decimal  @default(0)
+  currency     String   @default("IRR")
+  termsJson    String   @default("{}")
+  createdAt    DateTime @default(now())
+
+  supplier     Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 }
 
 model InventoryItem {
   id          String   @id @default(cuid())
   supplierId  String
-  type        String
+  type        String   // HOTEL_ROOM, FLIGHT_SEAT, TOUR_SLOT
+  code        String?  // e.g. H1_ROOM_DELUXE
+  name        String
   basePrice   Decimal  
   currency    String   @default("IRR")
-  lockedUntil DateTime? 
   
   supplier    Supplier @relation(fields: [supplierId], references: [id])
+  allotments  Allotment[]
+  holds       InventoryHold[]
+  bookingItems BookingItem[]
+}
+
+model Allotment {
+  id            String   @id @default(cuid())
+  inventoryItemId String
+  date          String   // YYYY-MM-DD
+  total         Int      @default(1)
+  booked        Int      @default(0)
+  stopSell      Boolean  @default(false)
+
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+
+  @@unique([inventoryItemId, date])
+  @@index([date])
+}
+
+model InventoryHold {
+  id              String   @id @default(cuid())
+  inventoryItemId String
+  allotmentDate   String   // YYYY-MM-DD
+  token           String   @unique
+  quantity        Int      @default(1)
+  bookingId       String?
+  expiresAt       DateTime
+  status          String   @default("ACTIVE") // ACTIVE, CAPTURED, RELEASED, EXPIRED
+  createdAt       DateTime @default(now())
+
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([expiresAt])
 }
 
 // ==================== 5. Reliability & Workflow ====================

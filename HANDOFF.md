@@ -116,3 +116,13 @@ The following core modules and capabilities have undergone end-to-end browser au
 - **6.1 CSS & UI Refinements:** Aligned `globals.css` color variables (`--color-paper`, `--color-ink`); secured Hero image state machine without direct DOM manipulation; standardized precise `/admin` regex matching in `AppChrome.tsx`.
 - **6.2 State & Storage Hardening:** Configured `partialize`, schema `version`, and explicit migration on all Zustand stores (`firuzo-auth`, `firuzo-bookings`, `firuzo-country`) to ensure sensitive KYC data is never stored in unencrypted client localStorage.
 - **6.3 Technical Documentation Realignment:** Aligned README badges with real Vitest and Playwright test metrics; verified `tsconfig.json` compiler targets `"ES2022"`.
+
+---
+
+## 8. ERP Core Master Architecture (Phase 0 & Phase 1 Execution)
+- **Zero Client Backdoors:** Completely extracted demo authentication verification to secure server action `verifyOtpAndLogin()`, eliminating bundle-level mock credentials.
+- **Prisma Schema Core Activation:** Activated `Supplier`, `SupplierContract`, `InventoryItem`, `Allotment`, `InventoryHold`, `Payment`, and `Role/UserRole` RBAC relationships in Prisma database.
+- **Layered RBAC Permission Service:** Implemented `src/domains/identity/permission-service.ts` with granular string permissions (`booking:view:all`, `finance:settlement:match`, `inventory:manage`) enforced at the service layer.
+- **Atomic Inventory Hold Engine:** Implemented `src/domains/inventory/InventoryEngine.ts` preventing overselling via atomic allotment decrement, TTL hold tokens, and background sweeper.
+- **Formal State Machine & Saga Orchestration:** Implemented `src/domains/booking/state-machine.ts` with 13 deterministic lifecycle states and `BookingSagaOrchestrator.ts` handling dual-entry payments, hold capture, and realized revenue postings.
+- **Standard Double-Entry Posting Templates:** Created `src/domains/ledger/GeneralLedgerService.ts` for strictly balanced escrow, revenue, supplier liability, and refund journals.
