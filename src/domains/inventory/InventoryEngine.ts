@@ -90,7 +90,10 @@ export class InventoryEngine {
     if (tx) {
       return execute(tx);
     }
-    return prisma.$transaction(execute);
+    return prisma.$transaction(execute, {
+      maxWait: 15000,
+      timeout: 20000,
+    });
   }
 
   /**
@@ -145,7 +148,10 @@ export class InventoryEngine {
     };
 
     if (tx) return execute(tx);
-    return prisma.$transaction(execute);
+    return prisma.$transaction(execute, {
+      maxWait: 15000,
+      timeout: 20000,
+    });
   }
 
   /**
