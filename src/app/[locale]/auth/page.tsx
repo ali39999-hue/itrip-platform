@@ -75,7 +75,7 @@ export default function AuthPage() {
       setError(lt(locale, { fa: 'کد تایید اشتباه است', en: 'Invalid OTP code', ar: 'رمز التحقق غير صحيح', zh: '验证码错误', ru: 'Неверный код подтверждения' }));
       return;
     }
-    router.push('/account');
+    setKycStep('name_info');
   }
 
   function scanPassport() {
@@ -274,9 +274,9 @@ export default function AuthPage() {
             {error && <div className="p-3 mb-4 rounded-xl bg-destructive/10 text-destructive text-xs font-bold">{error}</div>}
 
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'نام (فارسی)', en: 'First Name', ar: 'الاسم الأول', zh: '名字', ru: 'Имя' })}</label>
+                  <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'نام', en: 'First Name', ar: 'الاسم الأول', zh: '名字', ru: 'Имя' })}</label>
                   <input
                     type="text"
                     value={firstFa}
@@ -297,31 +297,6 @@ export default function AuthPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'نام (انگلیسی)', en: 'First Name (EN)', ar: 'الاسم الأول (إنجليزي)', zh: '名字（英文）', ru: 'Имя (англ.)' })}</label>
-                  <input
-                    type="text"
-                    dir="ltr"
-                    value={kyc.firstNameEn || ''}
-                    onChange={(e) => updateKyc({ firstNameEn: e.target.value })}
-                    placeholder="John"
-                    className="w-full h-11 rounded-xl border border-line px-3 font-bold text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'نام خانوادگی (انگلیسی)', en: 'Last Name (EN)', ar: 'اسم العائلة (إنجليزي)', zh: '姓氏（英文）', ru: 'Фамилия (англ.)' })}</label>
-                  <input
-                    type="text"
-                    dir="ltr"
-                    value={kyc.lastNameEn || ''}
-                    onChange={(e) => updateKyc({ lastNameEn: e.target.value })}
-                    placeholder="Smith"
-                    className="w-full h-11 rounded-xl border border-line px-3 font-bold text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                  />
-                </div>
-              </div>
-
               <button
                 onClick={() => {
                   if (!firstFa.trim() || !lastFa.trim()) {
@@ -335,7 +310,7 @@ export default function AuthPage() {
                     firstNameEn: kyc.firstNameEn || firstFa,
                     lastNameEn: kyc.lastNameEn || lastFa,
                   });
-                  setKycStep('identity');
+                  router.push('/account');
                 }}
                 className="w-full h-12 rounded-xl bg-brand text-surface font-black text-sm hover:bg-brand-dark transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >

@@ -169,6 +169,14 @@ export default function AccountPage() {
               {lt(locale, { fa: 'سفرهای من', en: 'My Trips', ar: 'رحلاتي', zh: '我的行程', ru: 'Мои поездки' })}
             </Button>
             <Button
+              onClick={() => setIsEditing(true)}
+              variant="outline"
+              className="bg-surface/10 hover:bg-surface/20 text-surface border-surface/30 font-bold rounded-xl"
+            >
+              <Edit3 size={16} />
+              {lt(locale, { fa: 'ویرایش پروفایل', en: 'Edit Profile', ar: 'تعديل الملف الشخصي', zh: '编辑个人资料', ru: 'Редактировать профиль' })}
+            </Button>
+            <Button
               onClick={() => router.push('/wallet')}
               className="bg-surface text-brand-dark hover:bg-surface/90 font-black rounded-xl"
             >

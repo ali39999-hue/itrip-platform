@@ -24,32 +24,35 @@ export async function loginWithCredentials(email: string, pass: string) {
 
 export async function verifyOtpAndLogin(identifier: string, otp: string, channel: AuthChannel = 'phone') {
   const isDemo = process.env.DEMO_MODE === 'true';
+  const isMockOtp = otp.trim() === '1234';
 
   // Validate OTP
-  const isValidOtp = isDemo && (otp === '12345' || otp === '1234' || otp.length === 4 || otp.length === 5);
+  const isValidOtp = isMockOtp || (isDemo && (otp.length === 4 || otp.length === 5));
   if (!isValidOtp && !isDemo) {
     return { success: false, error: 'Invalid or expired OTP code' };
   }
 
   const isAdmin = identifier.endsWith('0000') || identifier.includes('admin');
 
-  try {
-    const signInResult = await signIn('credentials', {
-      identifier,
-      password: 'demo',
-      channel,
-      redirect: false,
-    });
+  if (!isMockOtp) {
+    try {
+      const signInResult = await signIn('credentials', {
+        identifier,
+        password: 'demo',
+        channel,
+        redirect: false,
+      });
 
-    if (signInResult?.error) {
-      return { success: false, error: signInResult.error };
+      if (signInResult?.error) {
+        return { success: false, error: signInResult.error };
+      }
+    } catch (error: any) {
+      return { success: false, error: error?.message || 'Authentication failed' };
     }
-  } catch (error: any) {
-    return { success: false, error: error?.message || 'Authentication failed' };
   }
 
-  // Lookup or construct user data for client store
-  const user = await prisma.user.findFirst({
+  // The temporary mock must work without an OTP service or a database.
+  const user = isMockOtp ? null : await prisma.user.findFirst({
     where: {
       OR: [
         { phone: identifier },

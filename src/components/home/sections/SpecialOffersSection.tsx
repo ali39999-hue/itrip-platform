@@ -7,7 +7,7 @@ import { useCountryStore } from '@/stores/country-store';
 import { useBookingStore } from '@/stores/booking-store';
 import { COUNTRIES, EXPERIENCE_CATEGORY_META, countryName } from '@/lib/countries';
 import { daysFromNow } from '@/lib/utils';
-import { num } from '@/lib/format';
+import { formatMoney, toLocalCurrency } from '@/lib/money';
 import { CATEGORY_ICONS } from '@/components/shared/CountryExperiences';
 import Image from 'next/image';
 import { CATEGORY_PHOTO_MAP, shimmerDataUrl } from '@/lib/image-utils';
@@ -45,7 +45,8 @@ export function SpecialOffersSection() {
       type: 'tours',
       title,
       subtitle: `${where} • ${countryName(country, locale)}`,
-      amount,
+      amount: toLocalCurrency(amount, c.currency),
+      currency: c.currency as 'IRR' | 'USDT' | 'AED',
       travelDate: daysFromNow(21),
     });
     router.push('/checkout');
@@ -83,7 +84,7 @@ export function SpecialOffersSection() {
           </div>
         </div>
 
-        <div ref={scrollRef} className="flex overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 gap-6 hide-scrollbar">
+        <div ref={scrollRef} className="flex overflow-x-auto snap-x snap-mandatory pb-5 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 hide-scrollbar">
           {offers.map((offer) => {
             const Icon = CATEGORY_ICONS[offer.category];
             const catLabel = locale === 'en'
@@ -97,36 +98,39 @@ export function SpecialOffersSection() {
               <button
                 key={offer.titleEn}
                 onClick={() => book(locale === 'en' ? offer.titleEn : offer.title, locale === 'en' ? offer.whereEn : offer.where, offer.fromPrice)}
-                className="shrink-0 w-[280px] md:w-auto snap-start bg-surface rounded-2xl shadow-sm overflow-hidden hover:shadow-elev-2 hover:-translate-y-1 transition-all group cursor-pointer border border-line/50 text-start focus-visible:ring-2 focus-visible:ring-brand flex flex-col"
+                className="shrink-0 w-[min(84vw,340px)] sm:w-[320px] md:w-auto snap-start bg-surface rounded-[22px] shadow-elev-1 overflow-hidden hover:shadow-elev-2 hover:-translate-y-1 transition-all duration-300 group cursor-pointer border border-line/70 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand flex flex-col"
               >
-                <div className="h-[160px] relative w-full overflow-hidden bg-brand-dark/20">
+                <div className="aspect-[16/10] min-h-[170px] relative w-full overflow-hidden bg-brand-dark/20">
                   <Image
                     src={photoUrl}
                     alt={title}
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="object-cover group-hover:scale-105 transition-transform duration-700"
                     placeholder="blur"
                     blurDataURL={shimmerDataUrl(400, 200)}
-                    sizes="(max-width: 768px) 280px, 33vw"
+                    sizes="(max-width: 640px) 84vw, (max-width: 768px) 320px, 33vw"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
-                  <div className="absolute top-3 start-3 z-10">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface/90 backdrop-blur-md text-[11px] font-black text-brand-dark shadow-sm">
+                  <div className="absolute inset-0 bg-gradient-to-t from-deep/95 via-deep/35 to-transparent" />
+                  <div className="absolute top-3 start-3 end-3 z-10 flex items-start justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface/95 backdrop-blur-md text-[11px] font-black text-brand-dark shadow-sm">
                       {Icon && <Icon size={12} />}
                       {catLabel}
                     </span>
+                    <span className="w-8 h-8 shrink-0 rounded-full bg-surface/90 text-brand-dark grid place-items-center shadow-sm transition-transform duration-300 group-hover:-translate-x-0.5 rtl:group-hover:translate-x-0.5">
+                      <ArrowLeft size={15} className="ltr:-scale-x-100" />
+                    </span>
                   </div>
                   <div className="absolute bottom-3 start-3 end-3 text-surface z-10">
-                    <p className="text-[11px] text-surface/80 font-bold m-0">{when}</p>
-                    <p className="text-[15px] font-black leading-tight m-0 truncate">{title}</p>
+                    <p className="text-[11px] text-mint-bright font-bold m-0 mb-1">{when}</p>
+                    <p className="text-[16px] font-black leading-snug m-0 line-clamp-2">{title}</p>
                   </div>
                 </div>
-                <div className="p-4 flex flex-col gap-3 flex-1 justify-between">
-                  <p className="text-xs text-sub leading-relaxed m-0 line-clamp-2">{desc}</p>
-                  <div className="flex items-center justify-between pt-2 border-t border-line/60">
-                    <span className="text-[11px] text-sub font-bold">{t('offersStarts')}</span>
-                    <span className="text-[15px] font-black text-brand-dark font-mono num">
-                      {num(offer.fromPrice, locale)} {t('offersToman')}
+                <div className="p-4 sm:p-5 flex flex-col gap-4 flex-1 justify-between">
+                  <p className="text-xs text-sub leading-6 m-0 line-clamp-2 min-h-12">{desc}</p>
+                  <div className="flex items-end justify-between gap-3 pt-3 border-t border-line/70">
+                    <span className="text-[11px] text-sub font-bold pb-1">{t('offersStarts')}</span>
+                    <span className="text-[17px] font-black text-brand-dark font-mono num text-end leading-tight">
+                      {formatMoney(offer.fromPrice, c.currency, locale)}
                     </span>
                   </div>
                 </div>

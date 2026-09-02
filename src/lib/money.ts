@@ -34,7 +34,14 @@ export function toLocalCurrency(amountToman: number, currency: string): number {
 
 export function formatMoney(amountToman: number, currency: string, locale = 'fa'): string {
   const v = toLocalCurrency(amountToman, currency);
-  const digits = v.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US');
+  const localeMap: Record<string, string> = {
+    fa: 'fa-IR',
+    en: 'en-US',
+    ar: 'ar-EG',
+    zh: 'zh-CN',
+    ru: 'ru-RU',
+  };
+  const digits = v.toLocaleString(localeMap[locale] || locale);
   const label = CURRENCY_LABEL[currency] ? lt(locale, CURRENCY_LABEL[currency]) : currency;
   return `${digits} ${label}`;
 }
