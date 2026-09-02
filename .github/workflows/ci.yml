@@ -10,6 +10,11 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "file:./dev.db"
+      AUTH_SECRET: "development-firuzo-auth-secret-key-32-chars-long-2026"
+      DEMO_MODE: "true"
+      NEXT_PUBLIC_DEMO_MODE: "true"
 
     steps:
     - uses: actions/checkout@v4
@@ -18,11 +23,8 @@ jobs:
       with:
         node-version: '20.x'
     - run: npm ci
+    - run: npx prisma db push
     - run: npm run typecheck
     - run: npm run lint
     - run: npm run test:unit
     - run: npm run build
-      env:
-        AUTH_SECRET: "development-firuzo-auth-secret-key-32-chars-long-2026"
-        DEMO_MODE: "true"
-        NEXT_PUBLIC_DEMO_MODE: "true"
