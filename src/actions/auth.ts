@@ -34,19 +34,19 @@ export async function verifyOtpAndLogin(identifier: string, otp: string, channel
 
   const isAdmin = identifier.endsWith('0000') || identifier.includes('admin');
 
-  if (!isMockOtp) {
-    try {
-      const signInResult = await signIn('credentials', {
-        identifier,
-        password: 'demo',
-        channel,
-        redirect: false,
-      });
-
-      if (signInResult?.error) {
-        return { success: false, error: signInResult.error };
-      }
-    } catch (error: any) {
+  try {
+    await signIn('credentials', {
+      identifier,
+      password: 'demo',
+      channel,
+      redirect: false,
+    });
+  } catch (error: any) {
+    if (error?.message?.includes('NEXT_REDIRECT') || error?.digest?.startsWith('NEXT_REDIRECT')) {
+      // Expected redirect on successful signIn
+    } else if (error?.type === 'CredentialsSignin' || error?.name === 'CredentialsSignin') {
+      return { success: false, error: 'Invalid credentials' };
+    } else if (!isDemo) {
       return { success: false, error: error?.message || 'Authentication failed' };
     }
   }
@@ -85,7 +85,7 @@ export async function verifyOtpAndLogin(identifier: string, otp: string, channel
       phone: user?.phone || (channel === 'phone' ? identifier : ''),
       email: user?.email || (channel === 'email' ? identifier : undefined),
       firstNameFa: user?.firstNameFa || (isAdmin ? 'ادمین' : 'کاربر'),
-      lastNameFa: user?.lastNameFa || 'فیروز',
+      lastNameFa: user?.lastNameFa || 'فیروزه',
       kycApproved: Boolean(user?.nationalId || isDemo),
       role: (user?.role === 'SUPER_ADMIN' || isAdmin) ? ('admin' as const) : ('customer' as const),
       channel,
