@@ -4,7 +4,7 @@ import { OutboxConsumer } from '@/domains/events/OutboxConsumer';
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     // 1. Start background hold sweeper (runs every 60s)
-    setInterval(async () => {
+    const sweeper = setInterval(async () => {
       try {
         const count = await InventoryEngine.sweepExpiredHolds();
         if (count > 0) {
@@ -14,9 +14,10 @@ export async function register() {
         console.error('[Sweeper] Error sweeping holds:', error);
       }
     }, 60000);
+    if (sweeper.unref) sweeper.unref();
 
     // 2. Start background Outbox Event Consumer (runs every 10s)
-    setInterval(async () => {
+    const consumer = setInterval(async () => {
       try {
         const processed = await OutboxConsumer.processPendingEvents();
         if (processed > 0) {
@@ -26,5 +27,6 @@ export async function register() {
         console.error('[Outbox Consumer] Error processing outbox events:', error);
       }
     }, 10000);
+    if (consumer.unref) consumer.unref();
   }
 }
