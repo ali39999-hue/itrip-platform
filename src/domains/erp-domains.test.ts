@@ -40,3 +40,73 @@ describe('ERP Domain Tests: RBAC Permissions', () => {
     expect(customerPerms).not.toContain('booking:refund:approve');
   });
 });
+
+import * as fs from 'fs';
+import * as path from 'path';
+
+describe('ERP Domain Tests: No direct assignment of status or Date.now() used in keys', () => {
+  function findFiles(dir: string, ext: string): string[] {
+    let results: string[] = [];
+    if (!fs.existsSync(dir)) return results;
+    const list = fs.readdirSync(dir);
+    list.forEach((file: string) => {
+        file = path.join(dir, file);
+        const stat = fs.statSync(file);
+        if (stat && stat.isDirectory()) { 
+            results = results.concat(findFiles(file, ext));
+        } else if (file.endsWith(ext)) {
+            results.push(file);
+        }
+    });
+    return results;
+  }
+
+  it('verifies that no Date.now() is used for idempotency keys or refund group ids', () => {
+    const allFiles = findFiles(path.join(__dirname, '..'), '.ts');
+    let hasDateNowInKey = false;
+    for (const file of allFiles) {
+      const content = fs.readFileSync(file, 'utf8');
+      if (content.match(/`pay_.*\${Date\.now\(\)}`/)) {
+        hasDateNowInKey = true;
+      }
+      if (content.match(/`refund_.*\${Date\.now\(\)}`/)) {
+        hasDateNowInKey = true;
+      }
+    }
+    expect(hasDateNowInKey).toBe(false);
+  });
+});
+
+import { InventoryEngine } from '@/domains/inventory/InventoryEngine';
+import { prisma } from '@/lib/prisma';
+
+describe('ERP Domain Tests: Inventory Holds', () => {
+  it('prevents overselling (Hold atomicity test)', async () => {
+    // Setup dummy inventory
+    const supplier = await prisma.supplier.create({
+      data: { name: 'Test Supplier', type: 'HOTEL' }
+    });
+    
+    const item = await prisma.inventoryItem.create({
+      data: { supplierId: supplier.id, type: 'HOTEL_ROOM', name: 'Deluxe Room', basePrice: 100 }
+    });
+
+    await prisma.allotment.create({
+      data: { inventoryItemId: item.id, date: '2026-09-02', total: 10, booked: 0 }
+    });
+
+    const promises = [];
+    for (let i = 0; i < 20; i++) {
+      promises.push(InventoryEngine.createHold({
+        inventoryItemId: item.id,
+        date: '2026-09-02',
+        quantity: 1,
+      }));
+    }
+
+    const results = await Promise.all(promises);
+    const successfulHolds = results.filter(r => r.success);
+    
+    expect(successfulHolds.length).toBe(10);
+  });
+});

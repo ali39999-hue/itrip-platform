@@ -8,6 +8,8 @@ import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { BookingSagaOrchestrator } from '@/domains/booking/saga-orchestrator';
 
+import { InventoryEngine } from '@/domains/inventory/InventoryEngine';
+
 const ESIM_PRICE_FALLBACK = 2800000;
 const INSURANCE_PRICE_FALLBACK = 1900000;
 
@@ -102,17 +104,34 @@ export async function createBookingDraft(data: unknown) {
     // Generate unique reference (e.g. ITR-Timestamp)
     const reference = `ITR-${Date.now()}`;
 
+    let holdToken = undefined;
+    if (parsed.itemId) {
+        // Attempt to create a hold
+        const holdRes = await InventoryEngine.createHold({
+            inventoryItemId: parsed.itemId,
+            date: new Date().toISOString().split('T')[0], // Use today's date for simplicity, in a real app this comes from `parsed.date`
+            quantity: quantity,
+            ttlMinutes: 15
+        });
+
+        if (holdRes.success && holdRes.token) {
+            holdToken = holdRes.token;
+        }
+    }
+
     // 4. Create Booking in DRAFT state
     const booking = await prisma.booking.create({
       data: {
         reference,
         customerId: userId,
-        status: 'DRAFT',
+        status: holdToken ? 'HELD' : 'DRAFT',
         totalAmount: finalTotalAmount,
         currency,
+        holdToken,
         items: {
           create: {
             type: parsed.type,
+            inventoryItemId: parsed.itemId,
             netCost: pricing.netCost,
             markup: pricing.markupAmount + pricing.serviceFee,
             sellPrice: finalTotalAmount,

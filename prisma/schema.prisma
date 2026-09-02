@@ -59,7 +59,7 @@ model Account {
 
 model LedgerEntry {
   id            String   @id @default(cuid())
-  groupId       String   // Idempotency / Transaction grouping
+  groupId       String   @unique// Idempotency / Transaction grouping
   accountId     String
   direction     String   // DEBIT, CREDIT
   amount        Decimal  
@@ -72,7 +72,6 @@ model LedgerEntry {
   
   account       Account  @relation(fields: [accountId], references: [id])
 
-  @@index([groupId])
   @@index([accountId])
 }
 

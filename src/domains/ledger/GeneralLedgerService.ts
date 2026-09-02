@@ -61,6 +61,23 @@ export class GeneralLedgerService {
     const customerAcc = await this.getOrCreateAccount('USER', params.userId, currency, client as Prisma.TransactionClient);
     const escrowAcc = await this.getOrCreateAccount('PLATFORM_ESCROW', null, currency, client as Prisma.TransactionClient);
 
+    // Check Wallet Balance Before DEBIT
+    const creditsAgg = await client.ledgerEntry.aggregate({
+      where: { accountId: customerAcc.id, direction: 'CREDIT' },
+      _sum: { amount: true },
+    });
+
+    const debitsAgg = await client.ledgerEntry.aggregate({
+      where: { accountId: customerAcc.id, direction: 'DEBIT' },
+      _sum: { amount: true },
+    });
+
+    const currentBalance = (Number(creditsAgg._sum.amount) || 0) - (Number(debitsAgg._sum.amount) || 0);
+
+    if (currentBalance < params.amount) {
+      throw new Error('Insufficient wallet balance');
+    }
+
     // DEBIT Customer
     await client.ledgerEntry.create({
       data: {

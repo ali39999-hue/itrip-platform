@@ -99,6 +99,10 @@ export async function getAdminBookings() {
   }
 }
 
+import { BookingStateMachine, BookingState } from '@/domains/booking/state-machine';
+import { GeneralLedgerService } from '@/domains/ledger/GeneralLedgerService';
+import { v4 as uuidv4 } from 'uuid';
+
 export async function refundBookingAdmin(bookingId: string) {
   try {
     const user = await checkPermission(['SUPER_ADMIN', 'FINANCE']);
@@ -108,61 +112,46 @@ export async function refundBookingAdmin(bookingId: string) {
     if (booking.status !== 'CONFIRMED') return { success: false, error: 'Only confirmed bookings can be refunded' };
 
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // 1. Mark as CANCELLED (State Machine)
+      // 1. Mark as CANCEL_REQUESTED (State Machine)
+      BookingStateMachine.assertTransition(booking.status as BookingState, 'CANCEL_REQUESTED');
+      BookingStateMachine.assertTransition('CANCEL_REQUESTED', 'CANCELLING');
+      BookingStateMachine.assertTransition('CANCELLING', 'CANCELLED');
+      BookingStateMachine.assertTransition('CANCELLED', 'REFUND_INITIATED');
+
+      let history = [];
+      try {
+        if (booking.stateHistory) {
+          history = JSON.parse(booking.stateHistory);
+        }
+      } catch (e) {
+        if (e instanceof Error) {
+            console.error(e);
+        }
+      }
+      history.push('CANCEL_REQUESTED', 'CANCELLING', 'CANCELLED', 'REFUND_INITIATED');
+
       await tx.booking.update({
         where: { id: bookingId },
-        data: { status: 'CANCELLED', cancelledAt: new Date() },
+        data: { status: 'REFUND_INITIATED', stateHistory: JSON.stringify(history), cancelledAt: new Date() },
       });
 
-      // 2. Double-Entry Ledger Refund Logic
-      // Find or create customer account
-      let customerAccount = await tx.account.findFirst({
-        where: { ownerType: 'USER', ownerId: booking.customerId, currency: booking.currency },
-      });
+      // 2. Double-Entry Ledger Refund Logic via Domain Service
+      const refundGroupId = uuidv4();
+      
+      await GeneralLedgerService.postRefund({
+        groupId: refundGroupId,
+        userId: booking.customerId,
+        amount: booking.totalAmount.toNumber(),
+        currency: booking.currency,
+        referenceId: booking.id
+      }, tx);
 
-      if (!customerAccount) {
-        customerAccount = await tx.account.create({
-          data: { ownerType: 'USER', ownerId: booking.customerId, currency: booking.currency },
-        });
-      }
+      BookingStateMachine.assertTransition('REFUND_INITIATED', 'REFUNDED');
+      history.push('REFUNDED');
 
-      // Find or create platform escrow account
-      let escrowAccount = await tx.account.findFirst({
-        where: { ownerType: 'PLATFORM_ESCROW', currency: booking.currency },
-      });
-
-      if (!escrowAccount) {
-        escrowAccount = await tx.account.create({
-          data: { ownerType: 'PLATFORM_ESCROW', currency: booking.currency },
-        });
-      }
-
-      const idempotencyKey = `refund_${booking.id}_${Date.now()}`;
-
-      // Debit Escrow (reduce platform hold)
-      await tx.ledgerEntry.create({
-        data: {
-          groupId: idempotencyKey,
-          accountId: escrowAccount.id,
-          direction: 'DEBIT',
-          amount: booking.totalAmount,
-          currency: booking.currency,
-          referenceType: 'REFUND',
-          referenceId: booking.id,
-        },
-      });
-
-      // Credit Customer (increase wallet)
-      await tx.ledgerEntry.create({
-        data: {
-          groupId: idempotencyKey,
-          accountId: customerAccount.id,
-          direction: 'CREDIT',
-          amount: booking.totalAmount,
-          currency: booking.currency,
-          referenceType: 'REFUND',
-          referenceId: booking.id,
-        },
+      await tx.booking.update({
+        where: { id: bookingId },
+        data: { status: 'REFUNDED', stateHistory: JSON.stringify(history) },
       });
 
       // 3. Audit Log

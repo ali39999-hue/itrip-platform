@@ -19,6 +19,8 @@ import { PaymentGatewaySelector } from '@/components/checkout/PaymentGatewaySele
 import { IssuingModal } from '@/components/checkout/IssuingModal';
 import { SuccessConfirmation } from '@/components/checkout/SuccessConfirmation';
 
+import { v4 as uuidv4 } from 'uuid';
+
 export default function CheckoutPage() {
   const locale = useLocale();
   const { country } = useCountryStore();
@@ -38,6 +40,7 @@ export default function CheckoutPage() {
   const [issueStep, setIssueStep] = useState(0);
   const [confirmedRef, setConfirmedRef] = useState('');
   const [confirmedTitle, setConfirmedTitle] = useState('');
+  const [idempotencyKey] = useState(() => uuidv4());
 
   const {
     register,
@@ -147,9 +150,16 @@ export default function CheckoutPage() {
 
       if (draftBookingId) {
         try {
-          await payBooking(draftBookingId, method === 'wallet_irr' ? 'wallet_irr' : 'gateway_shetab');
+          const res = await payBooking(draftBookingId, method === 'wallet_irr' ? 'wallet_irr' : 'gateway_shetab', idempotencyKey);
+          if (!res.success) {
+            setError(res.error || 'Payment failed');
+            setPhase('payment');
+            return;
+          }
         } catch {
-          // Fallback gracefully
+          setError('An unexpected error occurred during payment.');
+          setPhase('payment');
+          return;
         }
       }
 

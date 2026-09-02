@@ -29,8 +29,8 @@ export class InventoryEngine {
     const token = `hld_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
     const execute = async (client: Prisma.TransactionClient): Promise<HoldResult> => {
-      // 1. Find or create allotment for this date
-      let allotment = await client.allotment.findUnique({
+      // 1. Fetch allotment to check constraints
+      const allotment = await client.allotment.findUnique({
         where: {
           inventoryItemId_date: {
             inventoryItemId: params.inventoryItemId,
@@ -40,33 +40,27 @@ export class InventoryEngine {
       });
 
       if (!allotment) {
-        allotment = await client.allotment.create({
-          data: {
-            inventoryItemId: params.inventoryItemId,
-            date: params.date,
-            total: 10, // default availability allotment
-            booked: 0,
-            stopSell: false,
-          },
-        });
+        return { success: false, error: 'Allotment not found (ON_REQUEST)' };
       }
 
       if (allotment.stopSell) {
         return { success: false, error: 'Stop-sell active for this date' };
       }
 
-      // 2. Calculate active holds that haven't expired
+      // 2. Atomic Hold Creation: We rely on the DB's transactional guarantees for isolation.
+      // SQLite enforces serializable transactions.
       const now = new Date();
-      const activeHolds = await client.inventoryHold.findMany({
+      const activeHolds = await client.inventoryHold.aggregate({
         where: {
           inventoryItemId: params.inventoryItemId,
           allotmentDate: params.date,
           status: 'ACTIVE',
           expiresAt: { gt: now },
         },
+        _sum: { quantity: true },
       });
 
-      const heldQty = activeHolds.reduce((sum, h) => sum + h.quantity, 0);
+      const heldQty = activeHolds._sum.quantity || 0;
       const available = allotment.total - allotment.booked - heldQty;
 
       if (available < params.quantity) {
@@ -115,7 +109,20 @@ export class InventoryEngine {
       if (hold.status !== 'ACTIVE') return { success: false, error: `Hold already ${hold.status}` };
       if (new Date() > hold.expiresAt) return { success: false, error: 'Hold expired' };
 
-      // Mark hold captured
+      // Mark hold captured and atomically verify capacity
+      const allotment = await client.allotment.findUnique({
+        where: {
+          inventoryItemId_date: {
+            inventoryItemId: hold.inventoryItemId,
+            date: hold.allotmentDate,
+          },
+        },
+      });
+
+      if (!allotment || (allotment.total - allotment.booked < hold.quantity)) {
+        return { success: false, error: 'Insufficient capacity to capture hold (Oversell prevented)' };
+      }
+
       await client.inventoryHold.update({
         where: { id: hold.id },
         data: { status: 'CAPTURED' },
