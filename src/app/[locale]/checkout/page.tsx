@@ -89,7 +89,6 @@ export default function CheckoutPage() {
   const onSubmitPassenger = async (data: Passenger) => {
     setError('');
     const btype = (bookingContext?.type?.toUpperCase() || 'HOTEL') as BookingType;
-    const totalAmount = baseAmount + (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0);
 
     const bp: import('@/lib/types').BookingPassenger = {
       firstNameFa: data.firstName || 'کاربر',
@@ -103,23 +102,24 @@ export default function CheckoutPage() {
     };
 
     try {
-      const draft = await createBookingDraft(
-        {
-          type: btype,
-          details: {
-            title: itemTitle,
-            passengers: [data],
-            addons: { esim: addEsim, insurance: addInsurance },
-          },
+      const draft = await createBookingDraft({
+        type: btype,
+        itemId: bookingContext?.id,
+        itemTitle,
+        details: {
+          title: itemTitle,
           passengers: [data],
-          totalAmount,
-          currency: 'IRR',
-          contactEmail: 'user@firuzo.com',
-          contactPhone: '09123456789',
+          addons: { esim: addEsim, insurance: addInsurance },
         },
-        totalAmount,
-        'IRR'
-      );
+        addonIds: [
+          ...(addEsim ? ['esim'] : []),
+          ...(addInsurance ? ['insurance'] : []),
+        ],
+        addons: { esim: addEsim, insurance: addInsurance },
+        passengers: [data],
+        contactEmail: 'user@firuzo.com',
+        contactPhone: '09123456789',
+      });
 
       if (draft.success && draft.bookingId) {
         setDraftBookingId(draft.bookingId);

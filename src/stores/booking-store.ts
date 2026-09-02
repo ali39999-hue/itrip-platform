@@ -119,7 +119,7 @@ export const useBookingStore = create<BookingState>()(
       },
 
       addDirectBooking: (data) => {
-        const reference = 'IRP' + Math.floor(Math.random() * 900000 + 100000);
+        const reference = 'FIR-' + Math.floor(Math.random() * 900000 + 100000);
         const booking: Booking = {
           ...data,
           id: genId('bk'),
@@ -217,7 +217,30 @@ export const useBookingStore = create<BookingState>()(
         return true;
       },
     }),
-    { name: 'firuzo-bookings' }
+    {
+      name: 'firuzo-bookings',
+      version: 2,
+      partialize: (state) => ({
+        bookingContext: state.bookingContext,
+        passengers: state.passengers,
+        bookings: state.bookings,
+        wallet: state.wallet,
+        transactions: state.transactions,
+      }),
+      migrate: (persistedState: unknown, version: number) => {
+        const state = persistedState as { bookingContext?: BookingSummary; passengers?: BookingPassenger[] };
+        if (version < 2) {
+          return {
+            bookingContext: state?.bookingContext ?? null,
+            passengers: state?.passengers ?? [],
+            bookings: [],
+            wallet: { IRR: 0, USDT: 0, AED: 0 },
+            transactions: [],
+          } as unknown as BookingState;
+        }
+        return persistedState as BookingState;
+      },
+    }
   )
 );
 

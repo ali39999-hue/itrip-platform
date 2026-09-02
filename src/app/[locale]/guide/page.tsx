@@ -16,7 +16,7 @@ const ARTICLES = [
     gradient: 'from-rose-warm/80 to-rose-warm',
     excerpt: 'از بیمه مسافرتی اجباری تا رزرو هتل قابل استعلام — همه مدارکی که برای ورود به ترکیه لازم دارید.',
     body: 'برای سفر به ترکیه علاوه بر پاسپورت با حداقل ۵ ماه اعتبار، توصیه می‌کنیم بیمه مسافرتی معتبر تهیه کنید. رزرو هتل و بلیت برگشت نیز ممکن است در گیت ورودی بررسی شود. پول نقد دلار یا یورو همراه داشته باشید؛ کارت‌های ایرانی در ترکیه کاربردی ندارند.',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC9_AoIZZWjw_cWBgfaIoRRPbRX_FphKkUeRDnFQ5DkdJ7llkzCOxg01mXKRNJylSetW8MR_-VU9onAUo7oyDZBtSTSmyq-rNx6NIqNcJRgkQdYzFLY80ZWwwVvmvjlLW4AjQqz5UKLquN4ILmQthjB7LchL1mXpvkkHDjKuU0EGgpzOupo6IBfuZLTWnvC2ae-vkgNyZdCmOuWHVnzH1PFlXgFuFuXkMuOVibe5hSxeOMwvR-yH0eb2yrxuAjL4vNn1Q'
+    image: '/images/guide-turkey.jpg'
   },
   {
     id: 'a2',
@@ -36,7 +36,7 @@ const ARTICLES = [
     gradient: 'from-flight/80 to-flight',
     excerpt: 'چطور از ویزا تا بیمارستان و مترجم، یک سفر درمانی بی‌دغدغه بچینیم؟',
     body: 'استانبول یکی از قطب‌های گردشگری درمانی منطقه است. پیشنهاد ما ابتدا چکاپ کامل در بیمارستان‌های طرف قرارداد است. با بسته درمانی فیروز، ویزا، پرواز، اقامت نزدیک بیمارستان و مترجم فارسی‌زبان در قالب یک سفارش واحد ارائه می‌شود.',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBO1u66yynVHs71UnNdz7s6n_p1D7kZ-nzmWNL2nDkknPPrkm0KBcohb5dFlkudd28Q_uOA-BcstQYDOTvgsVa_46xngulIaw4pW5qxBLr7HOt3Vp7ueopEFrkUf5LeWpDc8am55_ntitKJhHboFzA-oyP3M1XHxk_TJHpLX-X6L7LDMnqgA113nAuirStO7smsfJq7WWwCb0HbyRKzEiQR3BfFkpgjhFNUqXf6bMBPwylSR0Gj4YLT'
+    image: '/images/guide-medical.jpg'
   },
   {
     id: 'a4',
@@ -68,7 +68,7 @@ export default function GuidePage() {
       <section className="relative rounded-3xl overflow-hidden mb-12 min-h-[400px] flex items-end p-8 shadow-elev-1 border border-line/80">
         <div 
           className="absolute inset-0 z-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDonc3pJALSi5oDUv59ZyawABTM2A-0tTlTHQ7mFXfTJl5zV9oDt9ngvykdwQfRlDyI-Lmdfjpdsld73NvUBXuEln_zEPV28DN4y6YFOWzdsrdW4Gr91NIlYYADD5PfFnwpYMVXie6V2NnLBjbu2LohUfi8kkM68xmT8fK7o69N1GSZnq_CZWIhDyZ6_tcxq5eYuGcggkjI19ryBd71_x5gzJzTVkuMP6t6NJDUj2xNdjq-HG9gI2XFxwJLPq3H_lOz2A')" }}
+          style={{ backgroundImage: "url('/images/guide-hero.jpg')" }}
         />
         <div className="absolute inset-0 z-0 bg-gradient-to-t from-deep/90 via-deep/40 to-transparent" />
         <div className="relative z-10 w-full max-w-2xl">

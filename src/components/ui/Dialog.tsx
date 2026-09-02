@@ -43,9 +43,11 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
 export function DialogContent({
   children,
   className = '',
+  closeAriaLabel = 'Close',
 }: {
   children: React.ReactNode;
   className?: string;
+  closeAriaLabel?: string;
 }) {
   const { open, onOpenChange } = React.useContext(DialogContext);
 
@@ -66,7 +68,7 @@ export function DialogContent({
           type="button"
           onClick={() => onOpenChange(false)}
           className="absolute top-4 end-4 w-8 h-8 rounded-full bg-soft text-sub hover:text-ink hover:bg-line/40 grid place-items-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-          aria-label="Close"
+          aria-label={closeAriaLabel}
         >
           <X size={16} />
         </button>

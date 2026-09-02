@@ -71,7 +71,7 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
           <div className="ms-auto flex items-center gap-2.5">
             <button
               onClick={() => setFav(!fav)}
-              aria-label={t('Common.aria.favorite')}
+              aria-label="علاقه‌مندی"
               className={`w-10 h-10 grid place-items-center border rounded-xl bg-surface ${
                 fav ? 'text-rose-warm border-destructive/30 bg-destructive/10' : 'border-line text-sub'
               }`}
@@ -141,14 +141,14 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
             <div className="flex items-center gap-2.5 mt-3 text-mint-bright text-[12.5px] font-extrabold">
               <button
                 onClick={() => setLbIndex((lbIndex + 4) % 5)}
-                aria-label={t('Common.aria.previous')}
+                aria-label="قبلی"
                 className="w-10 h-10 grid place-items-center border border-white/25 rounded-xl bg-surface/10 hover:bg-surface/20 transition"
               >
                 <ChevronRight size={18} />
               </button>
               <button
                 onClick={() => setLbIndex((lbIndex + 1) % 5)}
-                aria-label={t('Common.aria.next')}
+                aria-label="بعدی"
                 className="w-10 h-10 grid place-items-center border border-white/25 rounded-xl bg-surface/10 hover:bg-surface/20 transition"
               >
                 <ChevronLeft size={18} />
@@ -158,7 +158,7 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
               </span>
               <button
                 onClick={() => setLbIndex(null)}
-                aria-label={t('Common.aria.close')}
+                aria-label="بستن"
                 className="me-auto w-10 h-10 grid place-items-center border border-white/25 rounded-xl bg-surface/10 hover:bg-surface/20 transition"
               >
                 <X size={16} />

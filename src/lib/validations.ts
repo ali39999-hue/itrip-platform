@@ -10,7 +10,7 @@ import { z } from "zod";
 
 // ─── Shared Enums (mirroring Prisma string fields) ───────────────────────────
 
-export const UserRole = z.enum(["USER", "AGENT", "ADMIN"]);
+export const UserRole = z.enum(["CUSTOMER", "SUPER_ADMIN", "FINANCE", "OPS"]);
 export type UserRole = z.infer<typeof UserRole>;
 
 export const BookingType = z.enum([
@@ -30,6 +30,7 @@ export const BookingStatus = z.enum([
   "PENDING_PAYMENT",
   "CONFIRMED",
   "CANCELLED",
+  "COMPLETED",
   "REFUNDED",
 ]);
 export type BookingStatus = z.infer<typeof BookingStatus>;
@@ -71,8 +72,25 @@ export type Passenger = z.infer<typeof passengerSchema>;
 
 // ─── Booking Request ──────────────────────────────────────────────────────────
 
+export const moneySchema = z.object({
+  amount: z.number().nonnegative("Amount must be non-negative"),
+  currency: z.enum(["IRR", "USDT", "AED"]),
+});
+export type Money = z.infer<typeof moneySchema>;
+
 export const bookingSchema = z.object({
   type: BookingType,
+  itemId: z.string().optional(),
+  itemTitle: z.string().optional(),
+  count: z.number().int().positive().default(1),
+  nights: z.number().int().positive().optional(),
+  travelDate: z.string().optional(),
+  addonIds: z.array(z.string()).default([]),
+  addons: z.object({
+    esim: z.boolean().optional(),
+    insurance: z.boolean().optional(),
+  }).optional(),
+  details: z.record(z.string(), z.any()).optional(),
   passengers: z
     .array(passengerSchema)
     .min(1, "At least one passenger is required"),

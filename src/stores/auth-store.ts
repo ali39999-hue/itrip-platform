@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { KycProfile } from '@/lib/types';
+import { verifyOtpAndLogin, logoutUser } from '@/actions/auth';
 
 interface User {
   id: string;
@@ -32,18 +33,19 @@ interface AuthState {
   updateKyc: (data: Partial<KycProfile>) => void;
 }
 
-const OTP_CODE = '12345';
-
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
       kyc: { step: 'phone' },
       login: async (phone, otp) => {
-        await new Promise((r) => setTimeout(r, 600));
-        if (otp !== OTP_CODE) return false;
-        const isAdmin = phone.endsWith('0000');
+        const res = await verifyOtpAndLogin(phone, otp);
+        if (!res.success || !res.user) {
+          return false;
+        }
+
         set({
+<<<<<<< HEAD
           user: {
             id: 'u-' + phone.slice(-4),
             phone,
@@ -60,10 +62,17 @@ export const useAuthStore = create<AuthState>()(
             role: isAdmin ? 'admin' : 'customer',
           },
           kyc: { step: 'name_info', phone },
+=======
+          user: res.user,
+          kyc: { step: 'approved', phone },
+>>>>>>> 18d50a2e8c73fd47bf64739b52ba0272b11cc043
         });
         return true;
       },
-      logout: () => set({ user: null, kyc: { step: 'phone' } }),
+      logout: () => {
+        logoutUser().catch((e) => console.error('NextAuth logout failed', e));
+        set({ user: null, kyc: { step: 'phone' } });
+      },
       setKycStep: (step) => set((s) => ({ kyc: { ...s.kyc, step } })),
       updateKyc: (data) =>
         set((s) => {
@@ -97,6 +106,33 @@ export const useAuthStore = create<AuthState>()(
           return updates;
         }),
     }),
-    { name: 'firuzo-auth' }
+    {
+      name: 'firuzo-auth',
+      version: 2,
+      partialize: (state) => ({
+        user: state.user
+          ? {
+              id: state.user.id,
+              phone: state.user.phone,
+              firstNameFa: state.user.firstNameFa,
+              lastNameFa: state.user.lastNameFa,
+              firstNameEn: state.user.firstNameEn,
+              lastNameEn: state.user.lastNameEn,
+              kycApproved: state.user.kycApproved,
+              role: state.user.role,
+            }
+          : null,
+      }) as unknown as AuthState,
+      migrate: (persistedState: unknown, version: number) => {
+        const state = persistedState as { user?: User };
+        if (version < 2) {
+          return {
+            user: state?.user || null,
+            kyc: { step: 'phone' },
+          } as unknown as AuthState;
+        }
+        return persistedState as AuthState;
+      },
+    }
   )
 );

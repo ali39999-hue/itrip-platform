@@ -2,15 +2,11 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from '@/i18n/routing';
-import { useParams } from 'next/navigation';
+import { useParams, notFound } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { HOTELS } from '@/lib/data';
 import { useBookingStore } from '@/stores/booking-store';
-import { Building2 } from 'lucide-react';
-import { Link } from '@/i18n/routing';
 import { num } from '@/lib/format';
-
-// Hooks & Mocks
 import { useHotelBooking, CHECKIN, NIGHTS, keyOf, toman } from '@/hooks/useHotelBooking';
 
 // Components
@@ -51,20 +47,15 @@ export default function HotelDetailPage() {
   }, []);
 
   if (!hotel) {
-    return (
-      <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-24 text-center">
-        <Building2 size={52} className="mx-auto text-line mb-4" />
-        <h1 className="text-xl font-black mb-2 text-ink">{t('hotelNotFound')}</h1>
-        <Link href="/hotels/search" className="text-brand-dark font-extrabold hover:underline">{t('backToResults')}</Link>
-      </div>
-    );
+    notFound();
   }
 
   function handleBook() {
     setBookingContext({
       type: 'hotels',
+      id: hotel!.id,
       title: hotel!.name,
-      subtitle: `${num(capacity.n, locale)} ${t('navRooms')} • ${num(NIGHTS.length, locale)} ${t('nights') || 'شب'}`,
+      subtitle: `${num(capacity.n, locale)} ${t('navRooms')} • ${num(NIGHTS.length, locale)} ${t('duration')}`,
       amount: toman(totals.total),
       travelDate: CHECKIN,
     });

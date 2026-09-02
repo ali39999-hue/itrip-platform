@@ -91,23 +91,29 @@
   "Common": {
     "aria": {
       "close": "بستن",
+      "loading": "در حال بارگذاری...",
+      "language": "تغییر زبان",
+      "share": "اشتراک‌گذاری",
+      "fromCurrency": "از ارز",
+      "toCurrency": "به ارز",
       "previous": "قبلی",
       "next": "بعدی",
-      "favorite": "علاقه‌مندی",
+      "favorite": "نشان کردن",
       "remove": "حذف",
-      "share": "اشتراک‌گذاری",
-      "like": "پسندیدن",
-      "unlike": "نپسندیدن",
+      "like": "پسندیدم",
+      "unlike": "حذف پسند",
       "roomQuantity": "تعداد اتاق",
-      "reverseRoute": "معکوس کردن مسیر",
-      "scrollRight": "اسکرول به راست",
-      "scrollLeft": "اسکرول به چپ",
-      "mainNavigation": "ناوبری اصلی",
+      "reverseRoute": "جابجایی مبدا و مقصد",
+      "scrollRight": "پیمایش به راست",
+      "scrollLeft": "پیمایش به چپ",
+      "mainNavigation": "منوی اصلی",
       "destinationCountry": "انتخاب کشور مقصد",
       "24hSupport": "پشتیبانی ۲۴ ساعته",
       "openMenu": "باز کردن منو",
       "closeMenu": "بستن منو",
-      "homepage": "صفحه اصلی فیروزو"
+      "homepage": "صفحه اصلی فیروزه",
+      "error": "خطایی رخ داده است",
+      "retry": "تلاش مجدد"
     }
   },
   "NotFound": {
@@ -199,10 +205,10 @@
     "tourTypeLabel": "نوع تور",
     "tourTypeRecreational": "تفریحی و گردشگری",
     "tourTypeMedical": "سلامت و درمانی",
-      "tourTypeCommercial": "تجاری و نمایشگاهی",
-      "btnTours": "جستجوی تورها",
-      "dateReturn": "تاریخ برگشت (اختیاری)",
-      "dateCheckOut": "تاریخ خروج"
+    "tourTypeCommercial": "تجاری و نمایشگاهی",
+    "btnTours": "جستجوی تورها",
+    "dateReturn": "تاریخ برگشت (اختیاری)",
+    "dateCheckOut": "تاریخ خروج"
   },
   "Home": {
     "offersKicker": "ویژه مقصد شما",
@@ -487,6 +493,48 @@
     "statusCancelled": "لغو شده"
   },
   "HotelDetail": {
+    "highlights": [
+      {
+        "title": "قلب شهر قدیم",
+        "sub": "پیاده تا ایاصوفیه..."
+      },
+      {
+        "title": "صبحانه بوفه ترکی",
+        "sub": "در تراس رو به بسفر"
+      },
+      {
+        "title": "تسویه ریالی",
+        "sub": "بدون نیاز به کارت بین‌المللی"
+      },
+      {
+        "title": "پشتیبانی فارسی",
+        "sub": "۲۴ ساعته در طول اقامت"
+      }
+    ],
+    "amenityCategories": {
+      "accommodation": "امکانات اقامت",
+      "food": "غذا و نوشیدنی",
+      "services": "خدمات و رفاه",
+      "entertainment": "سرگرمی",
+      "family": "خانواده",
+      "accessibility": "دسترسی"
+    },
+    "amenityItems": {
+      "wifi": "وای‌فای رایگان",
+      "ac": "تهویه مطبوع",
+      "soundproof": "اتاق ضدصدا",
+      "smoking": "اتاق سیگار"
+    },
+    "policyItems": {
+      "checkin": "ورود و خروج",
+      "children": "کودک و تخت اضافه"
+    },
+    "cancelTimeline": {
+      "fullRefund": "بازگشت کامل وجه",
+      "partialRefund": "کسر یک شب، مابقی بازگردانده می‌شود",
+      "noRefund": "بدون بازگشت وجه"
+    },
+    "noReviewsForCategory": "هنوز نظری برای این دسته ثبت نشده است.",
     "backToResults": "بازگشت به نتایج",
     "backToSearch": "بازگشت به نتایج هتل‌ها",
     "destinations": "مقاصد",
@@ -556,6 +604,12 @@
     "childrenExtraBedDesc": "اقامت برای کودکان زیر دو سال رایگان محاسبه میشود. درخواست تخت اضافه بستگی به نوع اتاق انتخابی دارد."
   },
   "Flights": {
+    "valueProp1Title": "صدور آنی و کد رهگیری رسمی",
+    "valueProp1Desc": "صدور مستقیم بلیط و ثبت PNR...",
+    "valueProp2Title": "کنسلی و استرداد آنلاین",
+    "valueProp2Desc": "امکان استرداد آنی وجه...",
+    "valueProp3Title": "پشتیبانی ۲۴ ساعته فرودگاهی",
+    "valueProp3Desc": "تیم پشتیبانی اختصاصی...",
     "flightDetails": "جزئیات پرواز و بار",
     "selectTicket": "انتخاب بلیط و رزرو",
     "directFlight": "پرواز مستقیم",
@@ -664,17 +718,37 @@
   "Auth": {
     "welcome": "خوش آمدید به فیروز",
     "loginTitle": "ورود به فیروز",
+    "loginSubtitle": "شماره موبایل خود را برای دریافت کد تأیید وارد کنید",
     "phoneLabel": "شماره موبایل",
-    "otpLabel": "کد تایید یکبار مصرف",
+    "phone": "شماره موبایل",
     "sendOtp": "ارسال کد تأیید",
+    "otpTitle": "تأیید شماره موبایل",
+    "otpSubtitle": "کد تأیید ارسال شده به شماره",
+    "otpLabel": "کد تایید یکبار مصرف",
+    "enterOtp": "کد تأیید را وارد کنید",
+    "otp": "کد ۵ رقمی",
     "verifyOtp": "تایید و ورود",
+    "changePhone": "تغییر شماره موبایل",
+    "kycTitle": "اطلاعات هویتی",
+    "kycSubtitle": "لطفاً اطلاعات هویتی خود را جهت صدور بلیط وارد کنید",
+    "firstName": "نام",
+    "lastName": "نام خانوادگی",
+    "nationalId": "کد ملی",
+    "continue": "ادامه",
+    "passportTitle": "اسکن و اطلاعات پاسپورت",
+    "passportSubtitle": "اطلاعات گذرنامه خود را وارد کرده یا تصویر آن را اسکن کنید",
+    "scanPrompt": "اسکن هوشمند گذرنامه",
+    "scanHint": "تصویر صفحه اول پاسپورت را آپلود کنید",
+    "scanning": "در حال اسکن...",
+    "passportNo": "شماره گذرنامه",
+    "passportExpiry": "تاریخ انقضای گذرنامه",
+    "finishKyc": "تکمیل و ثبت نهایی",
+    "approvedTitle": "احراز هویت با موفقیت انجام شد",
+    "approvedSubtitle": "حساب کاربری شما فعال شد و آماده استفاده است",
+    "goToAccount": "ورود به حساب کاربری",
     "identityInfo": "اطلاعات هویتی",
     "passportScan": "اسکن هوشمند پاسپورت",
     "googleLogin": "ورود سریع با گوگل",
-    "loginSubtitle": "شماره موبایل خود را برای دریافت کد تأیید وارد کنید",
-    "phone": "شماره موبایل",
-    "enterOtp": "کد تأیید را وارد کنید",
-    "otp": "کد ۵ رقمی",
     "verify": "تأیید و ادامه"
   },
   "Account": {
@@ -789,18 +863,22 @@
   },
   "PassengerForm": {
     "title": "اطلاعات مسافر اصلی",
+    "scanOcr": "اسکن پاسپورت (OCR)",
     "scanning": "در حال اسکن...",
-    "scanComplete": "پاسپورت اسکن شد",
-    "scanPassport": "اسکن پاسپورت (OCR)",
-    "notice": "برای صدور بلیت، لطفاً اطلاعات را دقیقاً مطابق پاسپورت وارد کنید. استفاده از امکان اسکن خودکار (OCR) پیشنهاد می‌شود.",
-    "firstName": "نام (انگلیسی)",
-    "lastName": "نام خانوادگی (انگلیسی)",
+    "scanned": "پاسپورت اسکن شد",
+    "notice": "برای جلوگیری از خطای صدور بلیط، لطفاً اطلاعات را دقیق وارد کنید.",
+    "firstNameEn": "نام (انگلیسی)",
+    "lastNameEn": "نام خانوادگی (انگلیسی)",
     "passportNo": "شماره پاسپورت",
     "nationalId": "کد ملی",
     "birthDate": "تاریخ تولد میلادی",
     "gender": "جنسیت",
     "male": "مرد",
-    "female": "زن"
+    "female": "زن",
+    "scanComplete": "پاسپورت اسکن شد",
+    "scanPassport": "اسکن پاسپورت (OCR)",
+    "firstName": "نام (انگلیسی)",
+    "lastName": "نام خانوادگی (انگلیسی)"
   },
   "CityPassWidget": {
     "title": "خرید سیتی‌پس شهر",
@@ -828,5 +906,30 @@
     "shiraz": "شیراز",
     "unlimitedTouristPass": "سیتی پس توریستی نامحدود",
     "storedValueCard": "کارت اعتباری"
+  },
+  "CityPass": {
+    "title": "خرید فیروز پاس",
+    "selectCity": "شهر اقامت شما",
+    "cityNotice": "هر شهر شبکه مستقل خودش را دارد...",
+    "cardType": "نوع کارت",
+    "pass3Day": "پاس ۳ روزه نامحدود",
+    "storedCard": "کارت اعتباری",
+    "deliveryLocation": "محل تحویل کارت",
+    "deliveryPlaceholder": "نام هتل یا ترمینال فرودگاه",
+    "deliveryRequired": "لطفاً نام هتل یا محل تحویل را وارد کنید.",
+    "deliveryFee": "صدور کارت فیزیکی و تحویل هتل",
+    "routePanel": "پنل مسیریاب انگلیسی‌زبان",
+    "free": "رایگان",
+    "totalAmount": "مبلغ نهایی",
+    "submitOrder": "ثبت سفارش و پرداخت",
+    "paymentNotice": "پرداخت با ویزا یا مسترکارت..."
+  },
+  "RoutePlanner": {
+    "cardStatus": "وضعیت کارت: فعال",
+    "nearestStation": "نزدیک‌ترین ایستگاه",
+    "alternativeBrt": "ایستگاه BRT جایگزین",
+    "stepGuide": "راهنمای قدم‌به‌قدم",
+    "routeDiscoveries": "کشف‌های مسیر",
+    "routeStopsWorth": "در همین مسیر، توقف‌های کوتاه ارزشمند:"
   }
 }

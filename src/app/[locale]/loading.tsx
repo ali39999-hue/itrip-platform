@@ -1,9 +1,12 @@
+import { useTranslations } from 'next-intl';
+
 export default function RootLoading() {
+  const t = useTranslations('Common.aria');
   return (
     <div
       role="status"
       aria-live="polite"
-      aria-label="Loading..."
+      aria-label={t('loading')}
       className="min-h-[75vh] w-full max-w-[1280px] mx-auto px-4 md:px-10 py-10 space-y-8 animate-pulse"
     >
       {/* Top Banner Skeleton */}
@@ -26,7 +29,7 @@ export default function RootLoading() {
           </div>
         ))}
       </div>
-      <span className="sr-only">Loading travel content...</span>
+      <span className="sr-only">{t('loading')}</span>
     </div>
   );
 }

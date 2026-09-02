@@ -1,4 +1,3 @@
-import { MapPin, TrainFront, Building2 } from 'lucide-react';
 
 export type PlanId = 'flex' | 'bb' | 'saver';
 
@@ -39,13 +38,13 @@ export const GALLERY = [
   'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&q=70&w=800',
 ];
 
-export const DISTS = [
-  ['ایاصوفیه', MapPin, '۴۰۰ متر · ۵ دقیقه پیاده'],
-  ['مسجد آبی', MapPin, '۶۵۰ متر · ۸ دقیقه پیاده'],
-  ['ایستگاه تراموا', TrainFront, '۴۰۰ متر · ۵ دقیقه پیاده'],
-  ['بازار بزرگ', MapPin, '۱٫۲ کیلومتر · ۱۵ دقیقه پیاده'],
-  ['فرودگاه استانبول', Building2, '۵۲ کیلومتر · ۶۰ دقیقه با خودرو'],
-] as const;
+export const DISTS: [string, string, string][] = [
+  ['ایاصوفیه', 'MapPin', '۴۰۰ متر · ۵ دقیقه پیاده'],
+  ['مسجد آبی', 'MapPin', '۶۵۰ متر · ۸ دقیقه پیاده'],
+  ['ایستگاه تراموا', 'TrainFront', '۴۰۰ متر · ۵ دقیقه پیاده'],
+  ['بازار بزرگ', 'MapPin', '۱٫۲ کیلومتر · ۱۵ دقیقه پیاده'],
+  ['فرودگاه استانبول', 'Building2', '۵۲ کیلومتر · ۶۰ دقیقه با خودرو'],
+];
 
 export const CATS: [string, number][] = [
   ['نظافت', 9.4], ['موقعیت', 9.7], ['کارکنان', 9.3],

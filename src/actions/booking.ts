@@ -2,113 +2,288 @@
 
 import { prisma } from '@/lib/prisma';
 import { bookingSchema } from '@/lib/validations';
-import { Prisma } from '@prisma/client';
+import { calculatePricing } from '@/lib/pricing/engine';
+import { FLIGHTS, HOTELS, TOURS, TRANSFERS, VISA_SERVICES, ESIM_PACKAGES, INSURANCE_PLANS } from '@/lib/data';
 import { revalidatePath } from 'next/cache';
+import { auth } from '@/auth';
+import { BookingSagaOrchestrator } from '@/domains/booking/saga-orchestrator';
 
-	// Mock User ID for V1 since we don't have NextAuth yet
-const MOCK_USER_ID = 'clr_mock_user_123';
+const ESIM_PRICE_FALLBACK = 2800000;
+const INSURANCE_PRICE_FALLBACK = 1900000;
 
-export async function createBookingDraft(data: unknown, totalAmount: number, currency: string) {
+function resolveServerBasePrice(type: string, itemId?: string): number {
+  if (!itemId) {
+    if (type === 'FLIGHT') return FLIGHTS[0]?.price ?? 28500000;
+    if (type === 'HOTEL') return HOTELS[0]?.pricePerNight ?? 42000000;
+    if (type === 'TOUR') return TOURS[0]?.price ?? 85000000;
+    if (type === 'TRANSFER') return TRANSFERS[0]?.price ?? 3200000;
+    if (type === 'VISA') return VISA_SERVICES[0]?.price ?? 48000000;
+    if (type === 'ESIM') return ESIM_PACKAGES[0]?.price ?? 2800000;
+    if (type === 'INSURANCE') return INSURANCE_PLANS[0]?.price ?? 350000;
+    return 34500000;
+  }
+
+  const flight = FLIGHTS.find((f) => f.id === itemId);
+  if (flight) return flight.price;
+
+  const hotel = HOTELS.find((h) => h.id === itemId);
+  if (hotel) return hotel.pricePerNight;
+
+  const tour = TOURS.find((t) => t.id === itemId);
+  if (tour) return tour.price;
+
+  const transfer = TRANSFERS.find((tr) => tr.id === itemId);
+  if (transfer) return transfer.price;
+
+  const visa = VISA_SERVICES.find((v) => v.id === itemId);
+  if (visa) return visa.price;
+
+  const esim = ESIM_PACKAGES.find((e) => e.id === itemId);
+  if (esim) return esim.price;
+
+  const insurance = INSURANCE_PLANS.find((i) => i.id === itemId);
+  if (insurance) return insurance.price;
+
+  return 34500000;
+}
+
+export async function createBookingDraft(data: unknown) {
   try {
-    // 1. Validate data
+    const session = await auth();
+    if (!session || !session.user) {
+      return { success: false, error: 'Unauthorized' };
+    }
+    const userId = session.user.id;
+    const userRole = session.user.role || 'CUSTOMER';
+
+    // 1. Validate data structure purely based on IDs/quantities
     const parsed = bookingSchema.parse(data);
 
-    // 2. Ensure user and wallet exist
-    let user = await prisma.user.findUnique({ where: { id: MOCK_USER_ID } });
+    // 2. Compute canonical price strictly on the server using pricing engine
+    const baseUnitCost = resolveServerBasePrice(parsed.type, parsed.itemId);
+    const quantity = parsed.count || 1;
+    const nights = parsed.nights || 1;
+    const totalBaseItemCost = parsed.type === 'HOTEL' ? baseUnitCost * nights * quantity : baseUnitCost * quantity;
+
+    let totalAddonsCost = 0;
+    if (parsed.addons?.esim || parsed.addonIds?.includes('esim')) {
+      totalAddonsCost += ESIM_PRICE_FALLBACK;
+    }
+    if (parsed.addons?.insurance || parsed.addonIds?.includes('insurance')) {
+      totalAddonsCost += INSURANCE_PRICE_FALLBACK;
+    }
+
+    const rawNetCost = totalBaseItemCost + totalAddonsCost;
+
+    const pricing = calculatePricing({
+      userRole,
+      supplierId: 'sup_default_firuzo',
+      productType: parsed.type,
+      basePrice: rawNetCost,
+      currency: 'IRR',
+    });
+
+    const finalTotalAmount = pricing.sellPrice;
+    const currency = 'IRR';
+
+    // 3. Ensure user exists in DB
+    let user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       user = await prisma.user.create({
         data: {
-          id: MOCK_USER_ID,
-          email: 'user@firuzo.com',
-          name: 'Firuzo User',
+          id: userId,
+          email: session.user.email || 'user@firuzo.com',
+          name: session.user.name || 'Firuzo User',
           passwordHash: 'dummy',
-          wallet: {
-            create: { balances: JSON.stringify({ IRR: 150000000, USDT: 250 }) }
-          }
-        }
+        },
       });
     }
 
-    // 3. Create Booking in DRAFT state
+    // Generate unique reference (e.g. ITR-Timestamp)
+    const reference = `ITR-${Date.now()}`;
+
+    // 4. Create Booking in DRAFT state
     const booking = await prisma.booking.create({
       data: {
-        userId: MOCK_USER_ID,
-        type: parsed.type,
+        reference,
+        customerId: userId,
         status: 'DRAFT',
-        totalAmount,
+        totalAmount: finalTotalAmount,
         currency,
-        details: JSON.stringify(parsed),
-      }
+        items: {
+          create: {
+            type: parsed.type,
+            netCost: pricing.netCost,
+            markup: pricing.markupAmount + pricing.serviceFee,
+            sellPrice: finalTotalAmount,
+            details: JSON.stringify({
+              ...parsed,
+              pricingBreakdown: {
+                netCost: pricing.netCost,
+                markupAmount: pricing.markupAmount,
+                serviceFee: pricing.serviceFee,
+                sellPrice: pricing.sellPrice,
+              },
+            }),
+          },
+        },
+      },
     });
 
-    return { success: true, bookingId: booking.id };
+    return { success: true, bookingId: booking.id, totalAmount: finalTotalAmount, currency };
   } catch (err: unknown) {
-    const error = err instanceof Error ? err.message : 'An error occurred';
-    return { success: false, error };
+    console.error('createBookingDraft server error:', err);
+    return { success: false, error: 'Failed to create booking draft' };
   }
 }
 
-export async function payBooking(bookingId: string, method: 'wallet_irr' | 'gateway_shetab') {
+export async function payBooking(bookingId: string, method: 'wallet_irr' | 'gateway_shetab', idempotencyKey: string) {
   try {
-    const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
-    if (!booking) throw new Error('Booking not found');
-    if (booking.status !== 'DRAFT') throw new Error('Booking already paid or cancelled');
+    const session = await auth();
+    if (!session || !session.user) return { success: false, error: 'Unauthorized' };
 
-    const wallet = await prisma.wallet.findUnique({ where: { userId: MOCK_USER_ID } });
-    if (!wallet) throw new Error('Wallet not found');
+    // Validate idempotencyKey as a non-empty string
+    if (!idempotencyKey || typeof idempotencyKey !== 'string') {
+        return { success: false, error: 'Invalid idempotency key' };
+    }
 
-    const balances = JSON.parse(wallet.balances);
-    
-    // Begin Transaction
-    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      if (method === 'wallet_irr') {
-        if ((balances[booking.currency] || 0) < Number(booking.totalAmount)) {
-          throw new Error('Insufficient wallet balance');
-        }
-        balances[booking.currency] -= Number(booking.totalAmount);
-        
-        // Update Wallet
-        await tx.wallet.update({
-          where: { id: wallet.id },
-          data: { balances: JSON.stringify(balances) }
-        });
-
-        // Create Wallet Transaction
-        await tx.transaction.create({
-          data: {
-            walletId: wallet.id,
-            bookingId: booking.id,
-            type: 'PAYMENT',
-            amount: booking.totalAmount,
-            currency: booking.currency,
-            description: `Payment for booking ${booking.id}`,
-            idempotencyKey: `pay_${booking.id}`
-          }
-        });
-      }
-
-      // Mark Booking as Confirmed
-      await tx.booking.update({
-        where: { id: booking.id },
-        data: { status: 'CONFIRMED' }
-      });
-      
-      // Audit log
-      await tx.auditLog.create({
-        data: {
-          userId: MOCK_USER_ID,
-          action: 'booking_paid',
-          entity: 'Booking',
-          entityId: booking.id,
-          diff: JSON.stringify({ method, amount: booking.totalAmount })
-        }
-      });
+    const result = await BookingSagaOrchestrator.confirmBookingSaga({
+      bookingId,
+      idempotencyKey,
+      paymentMethod: method,
     });
 
     revalidatePath('/my-trips');
-    return { success: true };
+    revalidatePath('/wallet');
+    return { success: true, booking: result.booking };
   } catch (err: unknown) {
-    const error = err instanceof Error ? err.message : 'An error occurred';
-    return { success: false, error };
+    console.error('payBooking saga error:', err);
+    return { success: false, error: 'Payment processing failed' };
+  }
+}
+
+export async function getMyBookings() {
+  try {
+    const session = await auth();
+    if (!session || !session.user) return { success: false, error: 'Unauthorized', bookings: [] };
+    const userId = session.user.id;
+
+    const bookings = await prisma.booking.findMany({
+      where: { customerId: userId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        items: true,
+      },
+    });
+
+    return { success: true, bookings };
+  } catch (err: unknown) {
+    console.error('getMyBookings server error:', err);
+    return { success: false, error: 'Failed to fetch bookings', bookings: [] };
+  }
+}
+
+export async function getBookingById(id: string) {
+  try {
+    const session = await auth();
+    if (!session || !session.user) return { success: false, error: 'Unauthorized', booking: null };
+    const userId = session.user.id;
+
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      include: {
+        items: true,
+        customer: { select: { id: true, name: true, email: true, phone: true } },
+      },
+    });
+
+    if (!booking) return { success: false, error: 'Booking not found', booking: null };
+    if (booking.customerId !== userId && session.user.role !== 'SUPER_ADMIN') {
+      return { success: false, error: 'Forbidden', booking: null };
+    }
+
+    return { success: true, booking };
+  } catch (err: unknown) {
+    console.error('getBookingById server error:', err);
+    return { success: false, error: 'Failed to fetch booking', booking: null };
+  }
+}
+
+export async function getWallet() {
+  try {
+    const session = await auth();
+    if (!session || !session.user) {
+      return {
+        success: false,
+        error: 'Unauthorized',
+        balances: { IRR: 0, USDT: 0, AED: 0 },
+        transactions: [],
+      };
+    }
+    const userId = session.user.id;
+
+    const accounts = await prisma.account.findMany({
+      where: { ownerType: 'USER', ownerId: userId },
+      include: {
+        entries: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    const balances: Record<string, number> = { IRR: 0, USDT: 0, AED: 0 };
+    const allEntries: Array<{
+      id: string;
+      groupId: string;
+      direction: string;
+      amount: number;
+      currency: string;
+      referenceType: string | null;
+      referenceId: string | null;
+      createdAt: Date;
+    }> = [];
+
+    accounts.forEach((acc) => {
+      let curBalance = 0;
+      acc.entries.forEach((e) => {
+        const amt = Number(e.amount);
+        if (e.direction === 'CREDIT') {
+          curBalance += amt;
+        } else {
+          curBalance -= amt;
+        }
+        allEntries.push({
+          id: e.id,
+          groupId: e.groupId,
+          direction: e.direction,
+          amount: amt,
+          currency: e.currency,
+          referenceType: e.referenceType,
+          referenceId: e.referenceId,
+          createdAt: e.createdAt,
+        });
+      });
+      balances[acc.currency] = curBalance;
+    });
+
+    allEntries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return {
+      success: true,
+      balances: {
+        IRR: balances.IRR ?? 0,
+        USDT: balances.USDT ?? 0,
+        AED: balances.AED ?? 0,
+      },
+      transactions: allEntries,
+    };
+  } catch (err: unknown) {
+    console.error('getWallet server error:', err);
+    return {
+      success: false,
+      error: 'Failed to fetch wallet',
+      balances: { IRR: 0, USDT: 0, AED: 0 },
+      transactions: [],
+    };
   }
 }

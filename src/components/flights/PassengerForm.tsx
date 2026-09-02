@@ -91,11 +91,11 @@ export function PassengerForm({ onChange }: { onChange?: (p: Passenger) => void 
             </span>
           ) : scanComplete ? (
             <span className="flex items-center gap-2">
-              <CheckCircle2 size={18} /> {t('scanComplete')}
+              <CheckCircle2 size={18} /> {t('scanned')}
             </span>
           ) : (
             <span className="flex items-center gap-2">
-              <Camera size={18} /> {t('scanPassport')}
+              <Camera size={18} /> {t('scanOcr')}
             </span>
           )}
         </Button>
@@ -107,7 +107,7 @@ export function PassengerForm({ onChange }: { onChange?: (p: Passenger) => void 
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-ink">{t('firstName')}</label>
+          <label className="text-sm font-medium text-ink">{t('firstNameEn')}</label>
           <Input 
             {...register('firstName')}
             className="bg-soft uppercase" 
@@ -117,7 +117,7 @@ export function PassengerForm({ onChange }: { onChange?: (p: Passenger) => void 
           {errors.firstName && <span className="text-rose-warm text-xs font-medium">{errors.firstName.message}</span>}
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-ink">{t('lastName')}</label>
+          <label className="text-sm font-medium text-ink">{t('lastNameEn')}</label>
           <Input 
             {...register('lastName')}
             className="bg-soft uppercase" 

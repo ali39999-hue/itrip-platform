@@ -84,6 +84,7 @@ export function CityPassWidget({ locale }: { locale: string }) {
                       ? 'bg-brand border-brand text-surface' 
                       : 'bg-soft border-transparent text-ink hover:border-brand/40'
                   }`}
+                  aria-label={`${t('selectCity')} ${t(v.nameKey as "tehran" | "isfahan" | "mashhad" | "shiraz")}`}
                 >
                   {t(v.nameKey as "tehran" | "isfahan" | "mashhad" | "shiraz")}
                 </button>

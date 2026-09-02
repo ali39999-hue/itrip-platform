@@ -15,6 +15,15 @@ export const useCountryStore = create<CountryState>()(
       country: 'iran',
       setCountry: (country) => set({ country }),
     }),
-    { name: 'firuzo-country' }
+    {
+      name: 'firuzo-country',
+      version: 1,
+      partialize: (state) => ({
+        country: state.country,
+      }),
+      migrate: (persistedState: unknown) => {
+        return persistedState as CountryState;
+      },
+    }
   )
 );

@@ -7,15 +7,16 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useLocalizedUserName } from '@/hooks/useLocalizedUserName';
 import {
   LayoutDashboard, BriefcaseBusiness, Wallet, DatabaseZap,
-  PlaneTakeoff, Lock, Mail, Key, LogIn, ArrowRight, ExternalLink, ShieldCheck, UserCheck
+  PlaneTakeoff, Lock, LogIn, ArrowRight, ExternalLink, ShieldCheck, UserCheck, Activity
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
 const NAV = [
-  { href: '/admin', label: { fa: 'داشبورد', en: 'Dashboard', ar: 'لوحة التحكم', zh: '仪表板', ru: 'Панель управления' }, icon: LayoutDashboard },
-  { href: '/admin/bookings', label: { fa: 'رزروها', en: 'Bookings', ar: 'الحجوزات', zh: '预订管理', ru: 'Брони' }, icon: BriefcaseBusiness },
-  { href: '/admin/finance', label: { fa: 'مالی و تراکنش‌ها', en: 'Finance & Transactions', ar: 'المالية والمعاملات', zh: '财务与交易', ru: 'Финансы и операции' }, icon: Wallet },
-  { href: '/admin/content', label: { fa: 'محتوا و موجودی', en: 'Content & Inventory', ar: 'المحتوى والمخزون', zh: '内容与库存', ru: 'Контент и инвентарь' }, icon: DatabaseZap },
+  { href: '/admin', label: { fa: 'داشبورد', en: 'Dashboard', ar: 'لوحة القيادة', zh: '仪表盘', ru: 'Панель' }, icon: LayoutDashboard },
+  { href: '/admin/ops', label: { fa: 'عملیات و پشتیبانی', en: 'Ops & Support', ar: 'العمليات والدعم', zh: '运营与支持', ru: 'Операции и поддержка' }, icon: Activity },
+  { href: '/admin/bookings', label: { fa: 'رزروها', en: 'Bookings', ar: 'الحجوزات', zh: '预订', ru: 'Бронирования' }, icon: BriefcaseBusiness },
+  { href: '/admin/finance', label: { fa: 'مالی و تراکنش‌ها', en: 'Finance & Transactions', ar: 'المالية والمعاملات', zh: '财务与交易', ru: 'Финансы и транзакции' }, icon: Wallet },
+  { href: '/admin/content', label: { fa: 'تامین‌کنندگان و انبار', en: 'Suppliers & Inventory', ar: 'الموردون والمخزون', zh: '供应商与库存', ru: 'Поставщики и инвентарь' }, icon: DatabaseZap },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -39,52 +40,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
 
             <h1 className="font-black text-[28px] md:text-[32px] text-ink mb-4 tracking-tight">
-              {lt(locale, { fa: 'دسترسی مدیریت سازمانی', en: 'Enterprise Admin Access', ar: 'دخول الإدارة المؤسسية', zh: '企业管理入口', ru: 'Доступ к админ-панели' })}
+              {lt(locale, { fa: 'دسترسی محدود است', en: 'Restricted Access', ar: 'وصول مقيد', zh: '访问受限', ru: 'Доступ ограничен' })}
             </h1>
-            <p className="font-bold text-[14px] md:text-[15px] text-sub mb-8 max-w-[320px] mx-auto leading-relaxed">
-              {lt(locale, { fa: 'برای ورود به پنل مدیریت با حساب ادمین وارد شوید. (دمو: از منوی ورود با شماره 0000 وارد شوید)', en: 'Sign in with an admin account to access the management panel. (Demo: sign in from the login menu with number 0000)', ar: 'سجّل الدخول بحساب المسؤول للوصول إلى لوحة الإدارة. (تجريبي: من قائمة الدخول بالرقم 0000)', zh: '请使用管理员账户登录管理面板。（演示：在登录菜单中使用号码 0000 登录）', ru: 'Войдите с аккаунтом администратора. (Демо: номер 0000 в меню входа)' })}
+            <p className="text-sub font-medium text-[15px] max-w-sm mb-8 leading-relaxed">
+              {lt(locale, { fa: 'برای دسترسی به پنل مدیریت، ابتدا با حساب کاربری ادمین وارد شوید.', en: 'To access the admin panel, please log in with an administrator account.', ar: 'للوصول إلى لوحة الإدارة، يرجى تسجيل الدخول بحساب مسؤول.', zh: '要访问管理面板，请使用管理员帐户登录。', ru: 'Для доступа к панели управления войдите под учетной записью администратора.' })}
             </p>
 
-            {/* Mock Form */}
-            <form className="w-full flex flex-col gap-4 text-start mb-8" onSubmit={(e) => { e.preventDefault(); router.push('/auth'); }}>
-              <div className="flex flex-col gap-2">
-                <label className="font-bold text-[13px] text-ink" htmlFor="admin_email">{lt(locale, { fa: 'ایمیل سازمانی', en: 'Corporate Email', ar: 'البريد المؤسسي', zh: '企业邮箱', ru: 'Корпоративная почта' })}</label>
-                <div className="relative">
-                  <Mail size={18} className="absolute start-4 top-1/2 -translate-y-1/2 text-sub/70" />
-                  <input
-                    className="w-full bg-surface/80 border border-line/50 rounded-xl py-3 ps-12 pe-4 text-ink placeholder:text-sub/50 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition-all font-bold text-[14px]"
-                    dir="ltr"
-                    id="admin_email"
-                    placeholder="admin@firuzo.com"
-                    type="email"
-                  />
-                </div>
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="font-bold text-[13px] text-ink" htmlFor="admin_password">{lt(locale, { fa: 'رمز عبور', en: 'Password', ar: 'كلمة المرور', zh: '密码', ru: 'Пароль' })}</label>
-                <div className="relative">
-                  <Key size={18} className="absolute start-4 top-1/2 -translate-y-1/2 text-sub/70" />
-                  <input
-                    className="w-full bg-surface/80 border border-line/50 rounded-xl py-3 ps-12 pe-4 text-ink placeholder:text-sub/50 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition-all font-bold text-[14px]"
-                    dir="ltr"
-                    id="admin_password"
-                    placeholder="••••••••"
-                    type="password"
-                  />
-                </div>
-              </div>
+            <div className="w-full flex flex-col gap-4 text-start mb-8">
               <button
-                className="mt-4 w-full bg-brand text-surface font-black text-[15px] py-4 px-6 rounded-xl hover:bg-brand-dark hover:shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                type="submit"
+                onClick={() => router.push('/auth')}
+                className="w-full bg-brand text-surface font-black text-[15px] py-4 px-6 rounded-xl hover:bg-brand-dark hover:shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2"
               >
-                <LogIn size={20} /> {lt(locale, { fa: 'ورود به پنل مدیریت', en: 'Enter Admin Panel', ar: 'الدخول إلى لوحة الإدارة', zh: '进入管理面板', ru: 'Войти в админ-панель' })}
+                <LogIn size={20} /> {lt(locale, { fa: 'ورود به حساب کاربری', en: 'Sign In to Account', ar: 'تسجيل الدخول', zh: '登录账号', ru: 'Войти в аккаунт' })}
               </button>
-            </form>
+            </div>
 
             <div className="w-full border-t border-line/50 pt-6 mt-2">
               <Link className="inline-flex items-center justify-center gap-2 text-sub font-bold text-[14px] hover:text-ink transition-colors group w-full" href="/">
                 <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
-                {lt(locale, { fa: 'بازگشت به صفحه اصلی سایت', en: 'Back to Homepage', ar: 'العودة إلى الصفحة الرئيسية', zh: '返回网站首页', ru: 'Вернуться на главную' })}
+                {lt(locale, { fa: 'بازگشت به صفحه اصلی سایت', en: 'Back to Homepage', ar: 'العودة إلى الصفحة الرئيسية', zh: '返回首页', ru: 'Вернуться на главную' })}
               </Link>
             </div>
           </div>
@@ -103,7 +77,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
           <div>
             <div className="font-black text-[15px] text-ink flex items-center gap-2">
-              <span>{lt(locale, { fa: 'سامانه مدیریت یکپارچه فیروز', en: 'Firuzo Unified Management', ar: 'نظام إدارة فيروزو الموحد', zh: 'Firuzo 统一管理系统', ru: 'Единая система управления Firuzo' })}</span>
+              <span>{lt(locale, { fa: 'سامانه مدیریت یکپارچه فیروزه', en: 'Firuzo Unified Management', ar: 'نظام إدارة فيروزو الموحد', zh: 'Firuzo 统一管理系统', ru: 'Единая система управления Firuzo' })}</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-mint text-brand-dark font-extrabold">ERP v2.0</span>
             </div>
             <p className="text-[11px] text-sub font-bold leading-none mt-0.5">Enterprise Travel Operations</p>
@@ -115,7 +89,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             href="/"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line text-sub text-xs font-bold hover:text-brand-dark hover:border-brand/40 hover:bg-mint transition"
           >
-            <span>{lt(locale, { fa: 'سایت مسافران', en: 'Traveler Site', ar: 'موقع المسافرين', zh: '旅行者网站', ru: 'Сайт для путешественников' })}</span>
+            <span>{lt(locale, { fa: 'سایت مسافران', en: 'Traveler Site', ar: 'موقع المسافرين', zh: '旅客网站', ru: 'Сайт для путешественников' })}</span>
             <ExternalLink size={13} />
           </Link>
           <div className="flex items-center gap-2 ps-3 border-s border-line">
@@ -138,7 +112,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <aside className="lg:w-64 shrink-0">
             <div className="bg-surface rounded-2xl border border-line p-4 sticky top-24 shadow-sm">
               <div className="px-2 py-2 mb-2 text-xs font-bold text-sub border-b border-line">
-                {lt(locale, { fa: 'ماژول‌های عملیاتی', en: 'Operational Modules', ar: 'الوحدات التشغيلية', zh: '运营模块', ru: 'Операционные модули' })}
+                {lt(locale, { fa: 'ماژول‌های عملیاتی', en: 'Operational Modules', ar: 'الوحدات التشغيلية', zh: '业务模块', ru: 'Операционные модули' })}
               </div>
               <nav className="space-y-1">
                 {NAV.map((n) => {

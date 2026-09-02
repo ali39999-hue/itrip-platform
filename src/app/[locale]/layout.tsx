@@ -14,7 +14,7 @@ import {notFound} from 'next/navigation';
 import {Providers} from '@/providers';
 
 const vazirmatn = Vazirmatn({
-  variable: "--font-sans",
+  variable: "--font-vazirmatn",
   subsets: ["arabic", "latin"],
   weight: ["400", "500", "700", "800", "900"],
 });
@@ -31,19 +31,19 @@ const geistMono = Geist_Mono({
 });
 
 const plusJakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-sans",
+  variable: "--font-jakarta",
   subsets: ["latin"],
   weight: ["400", "500", "700", "800"],
 });
 
 const notoSans = Noto_Sans({
-  variable: "--font-sans",
+  variable: "--font-noto",
   subsets: ["latin", "cyrillic"],
   weight: ["400", "500", "700", "900"],
 });
 
 const notoSansSC = Noto_Sans_SC({
-  variable: "--font-sans",
+  variable: "--font-noto-sc",
   weight: ["400", "500", "700", "900"],
   preload: true,
 });
@@ -62,6 +62,8 @@ function localeFont(locale: string) {
 
 import { AppChrome } from '@/components/layout/AppChrome';
 import { PwaBoot } from '@/components/pwa/PwaBoot';
+import { Analytics } from '@vercel/analytics/next';
+import Script from 'next/script';
 
 export async function generateMetadata({
   params,
@@ -128,6 +130,23 @@ export default async function RootLayout({
           </Providers>
           <PwaBoot />
         </NextIntlClientProvider>
+        <Analytics />
+        {process.env.NEXT_PUBLIC_GA_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');
+              `}
+            </Script>
+          </>
+        )}
       </body>
     </html>
   );
