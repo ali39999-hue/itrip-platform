@@ -21,3 +21,8 @@ jobs:
     - run: npm run typecheck
     - run: npm run lint
     - run: npm run test:unit
+    - run: npm run build
+      env:
+        AUTH_SECRET: "development-firuzo-auth-secret-key-32-chars-long-2026"
+        DEMO_MODE: "true"
+        NEXT_PUBLIC_DEMO_MODE: "true"

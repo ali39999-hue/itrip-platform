@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const LOCALES = ['fa', 'en', 'ar'];
+const LOCALES = ['fa', 'en', 'ar', 'zh', 'ru'];
 
 const ROUTES = [
   '/',
@@ -33,6 +33,7 @@ const ROUTES = [
   '/admin',
   '/admin/bookings',
   '/admin/finance',
+  '/admin/ops',
   '/admin/content'
 ];
 

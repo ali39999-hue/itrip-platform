@@ -31,7 +31,6 @@ export function useLocalizedUserName(): string {
 }
 
 export function useLocalizedUserNameWithPhone(): { name: string; phone: string } {
-  const locale = useLocale() as 'en' | 'fa' | 'ar' | 'zh' | 'ru';
   const user = useAuthStore((s) => s.user);
   const name = useLocalizedUserName();
 

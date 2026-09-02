@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useTranslations, useLocale } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { useAuthStore } from '@/stores/auth-store';
 import { useLocalizedUserName } from '@/hooks/useLocalizedUserName';
@@ -21,12 +21,10 @@ import {
   Plane,
   Building,
   Briefcase,
-  X,
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
 export default function AccountPage() {
-  const t = useTranslations('Account');
   const locale = useLocale();
   const router = useRouter();
   const { user, kyc, updateKyc } = useAuthStore();
@@ -37,7 +35,15 @@ export default function AccountPage() {
     USDT: 0,
     AED: 0,
   });
-  const [recentBookings, setRecentBookings] = useState<any[]>([]);
+  const [recentBookings, setRecentBookings] = useState<Array<{
+    id: string;
+    reference: string;
+    status: string;
+    totalAmount: unknown;
+    currency: string;
+    createdAt: Date;
+    items?: Array<{ title?: string; type?: string }>;
+  }>>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 

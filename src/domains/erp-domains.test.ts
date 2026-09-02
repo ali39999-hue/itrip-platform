@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { BookingStateMachine, BookingState } from '@/domains/booking/state-machine';
 import { ROLE_DEFAULT_PERMISSIONS } from '@/domains/identity/permissions';
-import { GeneralLedgerService } from '@/domains/ledger/GeneralLedgerService';
 import { calculatePricing, roundCurrency } from '@/lib/pricing/engine';
 
 describe('ERP Domain Tests: State Machine Transitions', () => {

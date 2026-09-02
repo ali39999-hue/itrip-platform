@@ -17,8 +17,9 @@ export async function loginWithCredentials(email: string, pass: string) {
       return { success: false, error: 'Invalid credentials' };
     }
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error?.message || 'Invalid credentials' };
+  } catch (error: unknown) {
+    const err = error as { message?: string };
+    return { success: false, error: err?.message || 'Invalid credentials' };
   }
 }
 
@@ -41,13 +42,14 @@ export async function verifyOtpAndLogin(identifier: string, otp: string, channel
       channel,
       redirect: false,
     });
-  } catch (error: any) {
-    if (error?.message?.includes('NEXT_REDIRECT') || error?.digest?.startsWith('NEXT_REDIRECT')) {
+  } catch (error: unknown) {
+    const err = error as { message?: string; digest?: string; type?: string; name?: string };
+    if (err?.message?.includes('NEXT_REDIRECT') || err?.digest?.startsWith('NEXT_REDIRECT')) {
       // Expected redirect on successful signIn
-    } else if (error?.type === 'CredentialsSignin' || error?.name === 'CredentialsSignin') {
+    } else if (err?.type === 'CredentialsSignin' || err?.name === 'CredentialsSignin') {
       return { success: false, error: 'Invalid credentials' };
     } else if (!isDemo) {
-      return { success: false, error: error?.message || 'Authentication failed' };
+      return { success: false, error: err?.message || 'Authentication failed' };
     }
   }
 

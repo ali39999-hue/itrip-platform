@@ -8,7 +8,6 @@ import { lt } from '@/lib/lt';
 import {
   LayoutGrid,
   PlaneTakeoff,
-  User,
   Gift,
   LogOut,
   ShieldCheck,

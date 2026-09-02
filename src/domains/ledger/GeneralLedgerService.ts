@@ -158,7 +158,6 @@ export class GeneralLedgerService {
   static async postRevenueRealization(params: RevenueRealizationParams, tx?: Prisma.TransactionClient) {
     const client = tx || prisma;
     const currency = params.currency || 'IRR';
-    const tax = params.taxAmount || 0;
     const fee = params.feeAmount || 0;
 
     const escrowAcc = await this.getOrCreateAccount('PLATFORM_ESCROW', null, currency, client as Prisma.TransactionClient);
