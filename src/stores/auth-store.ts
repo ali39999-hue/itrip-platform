@@ -133,6 +133,7 @@ export const useAuthStore = create<AuthState>()(
                 names: state.user.names,
               }
             : null,
+          kyc: state.kyc || { step: 'phone' },
         }) as unknown as AuthState,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as { user?: User };

@@ -21,14 +21,14 @@ export default function AuthPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const [firstFa, setFirstFa] = useState(kyc.firstNameFa || '');
-  const [lastFa, setLastFa] = useState(kyc.lastNameFa || '');
-  const [nationalId, setNationalId] = useState(kyc.nationalId || '');
+  const [firstFa, setFirstFa] = useState(kyc?.firstNameFa || '');
+  const [lastFa, setLastFa] = useState(kyc?.lastNameFa || '');
+  const [nationalId, setNationalId] = useState(kyc?.nationalId || '');
   const [scanning, setScanning] = useState(false);
-  const [passportNo, setPassportNo] = useState(kyc.passportNo || '');
-  const [expiry, setExpiry] = useState(kyc.passportExpiry || '');
+  const [passportNo, setPassportNo] = useState(kyc?.passportNo || '');
+  const [expiry, setExpiry] = useState(kyc?.passportExpiry || '');
 
-  const step = kyc.step;
+  const step = kyc?.step || 'phone';
 
   function validateIdentifier(): boolean {
     if (channel === 'phone') {
@@ -75,7 +75,7 @@ export default function AuthPage() {
       setError(lt(locale, { fa: 'کد تایید اشتباه است', en: 'Invalid OTP code', ar: 'رمز التحقق غير صحيح', zh: '验证码错误', ru: 'Неверный код подтверждения' }));
       return;
     }
-    setKycStep('name_info');
+    router.push('/account');
   }
 
   function scanPassport() {
