@@ -23,6 +23,7 @@ interface User {
   kycApproved: boolean;
   role: "customer" | "admin";
 }
+
 interface AuthState {
   user: User | null;
   kyc: KycProfile;
