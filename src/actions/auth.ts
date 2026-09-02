@@ -28,7 +28,7 @@ export async function verifyOtpAndLogin(phone: string, otp: string) {
   }
 
   // Server-side demo validation
-  const isValidOtp = otp === '12345' || otp === '1234' || otp.length === 4 || otp.length === 5;
+  const isValidOtp = isDemo && (otp === '12345' || otp === '1234' || otp.length === 4 || otp.length === 5);
   if (!isValidOtp) {
     return { success: false, error: 'Invalid OTP code' };
   }

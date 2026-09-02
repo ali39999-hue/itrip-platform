@@ -137,12 +137,16 @@ export async function createBookingDraft(data: unknown) {
   }
 }
 
-export async function payBooking(bookingId: string, method: 'wallet_irr' | 'gateway_shetab') {
+export async function payBooking(bookingId: string, method: 'wallet_irr' | 'gateway_shetab', idempotencyKey: string) {
   try {
     const session = await auth();
     if (!session || !session.user) return { success: false, error: 'Unauthorized' };
 
-    const idempotencyKey = `pay_${bookingId}_${Date.now()}`;
+    // Validate idempotencyKey as a non-empty string
+    if (!idempotencyKey || typeof idempotencyKey !== 'string') {
+        return { success: false, error: 'Invalid idempotency key' };
+    }
+
     const result = await BookingSagaOrchestrator.confirmBookingSaga({
       bookingId,
       idempotencyKey,

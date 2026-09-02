@@ -134,7 +134,7 @@ export default function AuthPage() {
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="otp" className="block text-xs font-bold text-sub mb-1">{t('otpLabel')}</label>
+                <label htmlFor="password" className="block text-xs font-bold text-sub mb-1">{t('otpLabel')}</label>
                 <input
                   id="password"
                   name="otp"
@@ -146,9 +146,7 @@ export default function AuthPage() {
                   placeholder="1234"
                   className="w-full h-12 rounded-xl border border-line px-4 text-center tracking-widest text-xl font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 />
-                {process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && (
-                  <p className="text-[11px] text-sub mt-1 text-center font-bold">کد تستی دمو: 12345 یا هر ۴ رقم</p>
-                )}
+                <p className="text-[11px] text-sub mt-1 text-center font-bold">کد تستی دمو: 1234 یا هر ۴ رقم</p>
               </div>
 
               <button
@@ -161,17 +159,17 @@ export default function AuthPage() {
                 {t('verifyOtp')}
               </button>
 
-                <button
-                  onClick={() => setKycStep('phone')}
-                  className="w-full text-xs font-bold text-sub hover:text-ink text-center"
-                >
-                  {t('changePhone')}
-                </button>
-              </div>
+              <button
+                onClick={() => setKycStep('phone')}
+                className="w-full text-xs font-bold text-sub hover:text-ink text-center"
+              >
+                {t('changePhone')}
+              </button>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Step: Basic Identity */}
+        {/* Step: Basic Identity */}
         {step === 'identity' && (
           <div>
             <div className="w-12 h-12 bg-mint rounded-2xl grid place-items-center text-brand-dark mb-6">
