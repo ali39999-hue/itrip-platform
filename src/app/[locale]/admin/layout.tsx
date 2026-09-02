@@ -44,41 +44,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {lt(locale, { fa: 'برای دسترسی به پنل مدیریت، ابتدا با حساب کاربری ادمین وارد شوید.', en: 'To access the admin panel, please log in with an administrator account.', ar: 'للوصول إلى لوحة الإدارة، يرجى تسجيل الدخول بحساب مسؤول.', zh: '要访问管理面板，请使用管理员帐户登录。', ru: 'Для доступа к панели управления войдите под учетной записью администратора.' })}
             </p>
 
-            {/* Mock Form */}
-            <form className="w-full flex flex-col gap-4 text-start mb-8" onSubmit={(e) => { e.preventDefault(); router.push('/auth'); }}>
-              <div className="flex flex-col gap-2">
-                <label className="font-bold text-[13px] text-ink" htmlFor="admin_email">{lt(locale, { fa: 'ایمیل سازمانی', en: 'Corporate Email', ar: 'البريد المؤسسي', zh: '企业邮箱', ru: 'Корпоративная почта' })}</label>
-                <div className="relative">
-                  <Mail size={18} className="absolute start-4 top-1/2 -translate-y-1/2 text-sub/70" />
-                  <input
-                    className="w-full bg-surface/80 border border-line/50 rounded-xl py-3 ps-12 pe-4 text-ink placeholder:text-sub/50 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition-all font-bold text-[14px]"
-                    dir="ltr"
-                    id="admin_email"
-                    placeholder="admin@firuzo.com"
-                    type="email"
-                  />
-                </div>
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="font-bold text-[13px] text-ink" htmlFor="admin_password">{lt(locale, { fa: 'رمز عبور', en: 'Password', ar: 'كلمة المرور', zh: '密码', ru: 'Пароль' })}</label>
-                <div className="relative">
-                  <Key size={18} className="absolute start-4 top-1/2 -translate-y-1/2 text-sub/70" />
-                  <input
-                    className="w-full bg-surface/80 border border-line/50 rounded-xl py-3 ps-12 pe-4 text-ink placeholder:text-sub/50 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition-all font-bold text-[14px]"
-                    dir="ltr"
-                    id="admin_password"
-                    placeholder="••••••••"
-                    type="password"
-                  />
-                </div>
-              </div>
+            <div className="w-full flex flex-col gap-4 text-start mb-8">
               <button
-                className="mt-4 w-full bg-brand text-surface font-black text-[15px] py-4 px-6 rounded-xl hover:bg-brand-dark hover:shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                type="submit"
+                onClick={() => router.push('/auth')}
+                className="w-full bg-brand text-surface font-black text-[15px] py-4 px-6 rounded-xl hover:bg-brand-dark hover:shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2"
               >
-                <LogIn size={20} /> {lt(locale, { fa: 'ورود به پنل مدیریت', en: 'Enter Admin Panel', ar: 'الدخول إلى لوحة الإدارة', zh: '进入管理面板', ru: 'Войти в панель' })}
+                <LogIn size={20} /> {lt(locale, { fa: 'ورود به حساب کاربری', en: 'Sign In to Account', ar: 'تسجيل الدخول', zh: '登录账号', ru: 'Войти в аккаунт' })}
               </button>
-            </form>
+            </div>
 
             <div className="w-full border-t border-line/50 pt-6 mt-2">
               <Link className="inline-flex items-center justify-center gap-2 text-sub font-bold text-[14px] hover:text-ink transition-colors group w-full" href="/">

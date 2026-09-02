@@ -161,17 +161,17 @@ export default function AuthPage() {
                 {t('verifyOtp')}
               </button>
 
-              <button
-                onClick={() => setKycStep('phone')}
-                className="w-full text-xs font-bold text-sub hover:text-ink text-center"
-              >
-                {t('changePhone')}
-              </button>
+                <button
+                  onClick={() => setKycStep('phone')}
+                  className="w-full text-xs font-bold text-sub hover:text-ink text-center"
+                >
+                  {t('changePhone')}
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Step: Basic Identity */}
+          {/* Step: Basic Identity */}
         {step === 'identity' && (
           <div>
             <div className="w-12 h-12 bg-mint rounded-2xl grid place-items-center text-brand-dark mb-6">
