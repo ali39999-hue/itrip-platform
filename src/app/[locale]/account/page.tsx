@@ -1,13 +1,15 @@
-'use client';
+س'use client';
 
+import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { useAuthStore } from '@/stores/auth-store';
 import { useBookingStore } from '@/stores/booking-store';
+import { useLocalizedUserName } from '@/hooks/useLocalizedUserName';
 import { Button } from '@/components/ui/button';
 import {
   UserRound, Wallet, LogOut, BadgeCheck,
-  LayoutGrid, PlaneTakeoff, Settings, ShieldCheck, ShieldAlert
+  LayoutGrid, PlaneTakeoff, Settings, ShieldCheck, ShieldAlert, Edit2, X
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
@@ -15,8 +17,27 @@ export default function AccountPage() {
   const t = useTranslations('Account');
   const locale = useLocale();
   const router = useRouter();
-  const { user, kyc, logout } = useAuthStore();
+  const { user, kyc, logout, updateKyc } = useAuthStore();
   const wallet = useBookingStore((s) => s.wallet);
+  const localizedUserName = useLocalizedUserName();
+
+  const firstName = localizedUserName.split(' ')[0] || '';
+  const localeTag = locale === 'fa' ? 'fa-IR' : locale;
+
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editFirstName, setEditFirstName] = useState(user?.firstNameFa || '');
+  const [editLastName, setEditLastName] = useState(user?.lastNameFa || '');
+  const [editError, setEditError] = useState('');
+
+  const handleSaveName = () => {
+    if (!editFirstName.trim() || !editLastName.trim()) {
+      setEditError(lt(locale, { fa: 'نام و نام خانوادگی الزامی است', en: 'First and last name are required', ar: 'الاسم الأول والأخير مطلوبان', zh: '姓名和姓氏为必填项', ru: 'Имя и фамилия обязательны' }));
+      return;
+    }
+    setEditError('');
+    updateKyc({ firstNameFa: editFirstName, lastNameFa: editLastName });
+    setIsEditingName(false);
+  };
 
   if (!user) {
     return (
@@ -42,7 +63,15 @@ export default function AccountPage() {
             <UserRound size={36} />
           </span>
           <div className="text-center">
-            <h2 className="text-xl font-black text-brand-dark">{locale === 'fa' ? `سلام، ${user.firstNameFa}` : `Hello, ${user.firstNameEn || user.firstNameFa}`}</h2>
+            <h2 className="text-xl font-black text-brand-dark">
+              {lt(locale, {
+                fa: `سلام، ${firstName}`,
+                en: `Hello, ${firstName}`,
+                ar: `مرحبا، ${firstName}`,
+                zh: `你好，${firstName}`,
+                ru: `Привет, ${firstName}`,
+              })}
+            </h2>
             <p className="text-[13px] font-bold text-sub mt-1">{lt(locale, { fa: 'امتیاز شما: ۲۵۰۰', en: 'Reward points: 2,500', ar: 'نقاطك: 2,500', zh: '您的积分：2,500', ru: 'Ваши баллы: 2 500' })}</p>
           </div>
         </div>
@@ -84,7 +113,7 @@ export default function AccountPage() {
               <Wallet size={18} className="text-brand" />
             </div>
             <div className="mt-4">
-              <span className="text-2xl font-black text-ink font-mono num">{wallet.IRR.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}</span>
+              <span className="text-2xl font-black text-ink font-mono num">{wallet.IRR.toLocaleString(localeTag)}</span>
               <span className="text-xs font-bold text-sub ms-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
             </div>
           </div>
@@ -95,7 +124,7 @@ export default function AccountPage() {
               <BadgeCheck size={18} className="text-brand-dark" />
             </div>
             <div className="mt-4">
-              <span className="text-2xl font-black text-ink font-mono num">${wallet.USDT.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}</span>
+              <span className="text-2xl font-black text-ink font-mono num">${wallet.USDT.toLocaleString(localeTag)}</span>
               <span className="text-xs font-bold text-sub ms-1">USDT</span>
             </div>
           </div>
@@ -114,12 +143,26 @@ export default function AccountPage() {
         </div>
 
         <div className="bg-surface rounded-2xl border border-line p-6 md:p-8 shadow-sm">
-          <h2 className="text-xl font-black text-ink mb-6">{t('profile')}</h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-black text-ink">{t('profile')}</h2>
+            <button
+              onClick={() => {
+                setEditFirstName(user?.firstNameFa || '');
+                setEditLastName(user?.lastNameFa || '');
+                setEditError('');
+                setIsEditingName(true);
+              }}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-brand/10 text-brand-dark hover:bg-brand/20 transition font-bold text-sm"
+            >
+              <Edit2 size={16} />
+              {lt(locale, { fa: 'ویرایش', en: 'Edit', ar: 'تعديل', zh: '编辑', ru: 'Редактировать' })}
+            </button>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <span className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'نام و نام خانوادگی', en: 'Full Name', ar: 'الاسم الكامل', zh: '姓名', ru: 'ФИО' })}</span>
-              <span className="text-base font-black text-ink">{user.firstNameFa} {user.lastNameFa}</span>
+              <span className="text-base font-black text-ink">{localizedUserName}</span>
             </div>
 
             <div>
@@ -139,6 +182,71 @@ export default function AccountPage() {
           </div>
         </div>
       </main>
+
+      {/* Edit Name Modal */}
+      {isEditingName && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-surface border border-line rounded-3xl p-8 shadow-xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-black text-ink">{lt(locale, { fa: 'ویرایش نام', en: 'Edit Name', ar: 'تعديل الاسم', zh: '编辑姓名', ru: 'Редактировать имя' })}</h3>
+              <button
+                onClick={() => setIsEditingName(false)}
+                className="p-2 hover:bg-soft rounded-lg transition"
+              >
+                <X size={20} className="text-sub" />
+              </button>
+            </div>
+
+            {editError && (
+              <div className="p-3 mb-4 rounded-xl bg-destructive/10 text-destructive text-xs font-bold">
+                {editError}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-sub mb-2">
+                  {lt(locale, { fa: 'نام', en: 'First Name', ar: 'الاسم الأول', zh: '名', ru: 'Имя' })}
+                </label>
+                <input
+                  type="text"
+                  value={editFirstName}
+                  onChange={(e) => setEditFirstName(e.target.value)}
+                  placeholder={lt(locale, { fa: 'نام خود را وارد کنید', en: 'Enter your first name', ar: 'أدخل اسمك الأول', zh: '输入您的名字', ru: 'Введите свое имя' })}
+                  className="w-full h-11 rounded-xl border border-line px-4 font-bold text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-sub mb-2">
+                  {lt(locale, { fa: 'نام خانوادگی', en: 'Last Name', ar: 'اسم العائلة', zh: '姓', ru: 'Фамилия' })}
+                </label>
+                <input
+                  type="text"
+                  value={editLastName}
+                  onChange={(e) => setEditLastName(e.target.value)}
+                  placeholder={lt(locale, { fa: 'نام خانوادگی خود را وارد کنید', en: 'Enter your last name', ar: 'أدخل اسم عائلتك', zh: '输入您的شيماسی', ru: 'Введите свою фамилию' })}
+                  className="w-full h-11 rounded-xl border border-line px-4 font-bold text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setIsEditingName(false)}
+                  className="flex-1 h-11 rounded-xl border border-line text-ink font-black hover:bg-soft transition"
+                >
+                  {lt(locale, { fa: 'انصراف', en: 'Cancel', ar: 'إلغاء', zh: '取消', ru: 'Отмена' })}
+                </button>
+                <button
+                  onClick={handleSaveName}
+                  className="flex-1 h-11 rounded-xl bg-brand text-surface font-black hover:bg-brand-dark transition"
+                >
+                  {lt(locale, { fa: 'ثبت', en: 'Save', ar: 'حفظ', zh: '保存', ru: 'Сохранить' })}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

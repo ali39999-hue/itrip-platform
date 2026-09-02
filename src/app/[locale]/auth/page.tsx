@@ -167,6 +167,89 @@ export default function AuthPage() {
           </div>
         )}
 
+        {/* Step: Name Info */}
+        {step === 'name_info' && (
+          <div>
+            <div className="w-12 h-12 bg-mint rounded-2xl grid place-items-center text-brand-dark mb-6">
+              <User size={24} />
+            </div>
+            <h2 className="font-black text-2xl text-ink mb-2">{lt(locale, { fa: 'نام و نام خانوادگی', en: 'Your Name', ar: 'اسمك الكامل', zh: '您的姓名', ru: 'Ваше имя' })}</h2>
+            <p className="text-xs font-bold text-sub mb-6">{lt(locale, { fa: 'لطفاً نام و نام خانوادگی خود را دقیق وارد کنید', en: 'Please enter your first and last name accurately', ar: 'يرجى إدخال اسمك الأول والأخير بدقة', zh: '请准确输入您的名字和姓氏', ru: 'Пожалуйста, введите свое имя и фамилию' })}</p>
+
+            {error && <div className="p-3 mb-4 rounded-xl bg-destructive/10 text-destructive text-xs font-bold">{error}</div>}
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'نام (فارسی)', en: 'First Name', ar: 'الاسم الأول', zh: '名字', ru: 'Имя' })}</label>
+                  <input
+                    type="text"
+                    value={firstFa}
+                    onChange={(e) => setFirstFa(e.target.value)}
+                    placeholder={lt(locale, { fa: 'مثال: علی', en: 'e.g. John', ar: 'مثال: أحمد', zh: '例如：张', ru: 'напр. Иван' })}
+                    className="w-full h-11 rounded-xl border border-line px-3 font-bold text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'نام خانوادگی (فارسی)', en: 'Last Name', ar: 'اسم العائلة', zh: '姓氏', ru: 'Фамилия' })}</label>
+                  <input
+                    type="text"
+                    value={lastFa}
+                    onChange={(e) => setLastFa(e.target.value)}
+                    placeholder={lt(locale, { fa: 'مثال: محمدی', en: 'e.g. Smith', ar: 'مثال: الأحمد', zh: '例如：三', ru: 'напр. Иванов' })}
+                    className="w-full h-11 rounded-xl border border-line px-3 font-bold text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'نام (انگلیسی)', en: 'First Name (EN)', ar: 'الاسم الأول (إنجليزي)', zh: '名字（英文）', ru: 'Имя (англ.)' })}</label>
+                  <input
+                    type="text"
+                    dir="ltr"
+                    value={kyc.firstNameEn || ''}
+                    onChange={(e) => updateKyc({ firstNameEn: e.target.value })}
+                    placeholder="John"
+                    className="w-full h-11 rounded-xl border border-line px-3 font-bold text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'نام خانوادگی (انگلیسی)', en: 'Last Name (EN)', ar: 'اسم العائلة (إنجليزي)', zh: '姓氏（英文）', ru: 'Фамилия (англ.)' })}</label>
+                  <input
+                    type="text"
+                    dir="ltr"
+                    value={kyc.lastNameEn || ''}
+                    onChange={(e) => updateKyc({ lastNameEn: e.target.value })}
+                    placeholder="Smith"
+                    className="w-full h-11 rounded-xl border border-line px-3 font-bold text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  if (!firstFa.trim() || !lastFa.trim()) {
+                    setError(lt(locale, { fa: 'نام و نام خانوادگی الزامی است', en: 'First and last name are required', ar: 'الاسم الأول والأخير مطلوبان', zh: '姓名和姓氏为必填项', ru: 'Имя и фамилия обязательны' }));
+                    return;
+                  }
+                  setError('');
+                  updateKyc({ 
+                    firstNameFa, 
+                    lastNameFa,
+                    firstNameEn: kyc.firstNameEn || firstFa,
+                    lastNameEn: kyc.lastNameEn || lastFa,
+                  });
+                  setKycStep('identity');
+                }}
+                className="w-full h-12 rounded-xl bg-brand text-surface font-black text-sm hover:bg-brand-dark transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                {lt(locale, { fa: 'ادامه', en: 'Continue', ar: 'متابعة', zh: '继续', ru: 'Далее' })}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Step: Identity Info */}
         {step === 'identity' && (
           <div>

@@ -45,7 +45,7 @@ const notoSans = Noto_Sans({
 const notoSansSC = Noto_Sans_SC({
   variable: "--font-sans",
   weight: ["400", "500", "700", "900"],
-  preload: false,
+  preload: true,
 });
 
 const LOCALE_FONT: Record<string, { variable: string }> = {
