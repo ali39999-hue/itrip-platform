@@ -59,8 +59,10 @@ export class BookingSagaOrchestrator {
       // 4. Step 3: Dual-Entry Ledger Posting
       const totalAmt = Number(booking.totalAmount);
       const firstItem = booking.items[0];
-      const netCost = firstItem ? Number(firstItem.netCost) : totalAmt * 0.9;
-      const supplierId = booking.supplierId || 'sup_default';
+      const netCost = firstItem ? Number(firstItem.netCost) : Math.round(totalAmt * 0.88);
+      const taxAmount = firstItem ? Number(firstItem.taxAmount || 0) : Math.round(totalAmt * 0.08);
+      const feeAmount = firstItem ? Number(firstItem.feeAmount || 0) : 0;
+      const supplierId = booking.supplierId || firstItem?.inventoryItemId || 'sup_default_firuzo';
 
       if (params.paymentMethod === 'wallet_irr') {
         await GeneralLedgerService.postWalletPayment(
@@ -85,12 +87,14 @@ export class BookingSagaOrchestrator {
         );
       }
 
-      // 5. Step 4: Post Realized Revenue & Supplier Payable
+      // 5. Step 4: Post Realized Revenue, Supplier Liability & Fees
       await GeneralLedgerService.postRevenueRealization(
         {
           groupId: `saga_rev_${booking.id}`,
           amount: totalAmt,
           netCost,
+          taxAmount,
+          feeAmount,
           supplierId,
           currency: booking.currency,
           referenceId: booking.id,

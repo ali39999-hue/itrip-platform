@@ -5,9 +5,16 @@ import { LiveActivityFeed } from '@/components/admin/LiveActivityFeed';
 import { BriefcaseBusiness, Wallet as WalletIcon, ArrowDownRight, Percent } from 'lucide-react';
 import { getLocale } from 'next-intl/server';
 import { lt } from '@/lib/lt';
+import { auth } from '@/auth';
+import { redirect } from 'next/navigation';
 
 export default async function AdminDashboard() {
   const locale = await getLocale();
+  const session = await auth();
+
+  if (!session || !['SUPER_ADMIN', 'FINANCE', 'OPS', 'admin'].includes(session.user.role)) {
+    redirect('/' + locale + '/auth');
+  }
 
   // Live Database Queries
   const [confirmedBookingsCount, allBookings, ledgerEntries, pendingOutboxCount] = await Promise.all([

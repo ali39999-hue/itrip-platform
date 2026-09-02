@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 interface AccountSidebarProps {
-  activeSection?: 'dashboard' | 'trips' | 'profile' | 'wallet' | 'settings';
+  activeSection?: 'dashboard' | 'trips' | 'wallet' | 'profile';
 }
 
 export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps) {
@@ -59,22 +59,22 @@ export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps)
         </p>
       </div>
 
-      <nav className="flex flex-col gap-1.5 p-4">
+      <nav className="flex flex-col gap-1.5 p-4" aria-label={lt(locale, { fa: 'منوی حساب کاربری', en: 'Account menu', ar: 'قائمة الحساب', zh: '账户菜单', ru: 'Меню аккаунта' })}>
         <Link
           href="/account"
-          className={`flex items-center gap-3 px-4 py-3 font-bold text-[14px] rounded-xl transition-all ${
-            activeSection === 'dashboard'
+          className={`flex items-center gap-3 px-4 py-3 font-bold text-[14px] rounded-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+            activeSection === 'dashboard' || activeSection === 'profile'
               ? 'bg-brand text-surface font-black shadow-sm'
               : 'text-sub hover:bg-surface'
           }`}
         >
           <LayoutGrid size={18} />
-          {lt(locale, { fa: 'داشبورد', en: 'Dashboard', ar: 'لوحة التحكم', zh: '仪表板', ru: 'Панель управления' })}
+          {lt(locale, { fa: 'داشبورد و پروفایل', en: 'Dashboard & Profile', ar: 'لوحة التحكم والملف الشخصي', zh: '仪表板与个人资料', ru: 'Панель и профиль' })}
         </Link>
 
         <Link
           href="/my-trips"
-          className={`flex items-center gap-3 px-4 py-3 font-bold text-[14px] rounded-xl transition-all ${
+          className={`flex items-center gap-3 px-4 py-3 font-bold text-[14px] rounded-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
             activeSection === 'trips'
               ? 'bg-brand text-surface font-black shadow-sm'
               : 'text-sub hover:bg-surface'
@@ -86,7 +86,7 @@ export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps)
 
         <Link
           href="/wallet"
-          className={`flex items-center gap-3 px-4 py-3 font-bold text-[14px] rounded-xl transition-all ${
+          className={`flex items-center gap-3 px-4 py-3 font-bold text-[14px] rounded-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
             activeSection === 'wallet'
               ? 'bg-brand text-surface font-black shadow-sm'
               : 'text-sub hover:bg-surface'
@@ -96,22 +96,10 @@ export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps)
           {lt(locale, { fa: 'کیف پول و امتیازات', en: 'Wallet & Rewards', ar: 'المحفظة والمكافآت', zh: '钱包与奖励', ru: 'Кошелёк и бонусы' })}
         </Link>
 
-        <Link
-          href="/account"
-          className={`flex items-center gap-3 px-4 py-3 font-bold text-[14px] rounded-xl transition-all ${
-            activeSection === 'profile'
-              ? 'bg-brand text-surface font-black shadow-sm'
-              : 'text-sub hover:bg-surface'
-          }`}
-        >
-          <User size={18} />
-          {lt(locale, { fa: 'پروفایل و احراز هویت', en: 'Profile & KYC', ar: 'الملف الشخصي والتحقق', zh: '个人资料与验证', ru: 'Профиль и верификация' })}
-        </Link>
-
         {user?.role === 'admin' && (
           <Link
             href="/admin"
-            className="flex items-center gap-3 px-4 py-3 font-bold text-[14px] rounded-xl text-brand bg-mint/50 border border-brand/20 hover:bg-mint transition-all"
+            className="flex items-center gap-3 px-4 py-3 font-bold text-[14px] rounded-xl text-brand bg-mint/50 border border-brand/20 hover:bg-mint transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             <ShieldCheck size={18} />
             {lt(locale, { fa: 'پنل مدیریت (ERP)', en: 'Admin ERP Panel', ar: 'لوحة الإدارة', zh: '管理后台', ru: 'Панель администратора' })}
@@ -125,7 +113,7 @@ export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps)
             logout();
             router.push('/');
           }}
-          className="w-full flex items-center justify-center gap-2 text-rose-warm hover:bg-rose-warm/10 px-4 py-2.5 rounded-xl transition-colors font-bold text-[13px]"
+          className="w-full flex items-center justify-center gap-2 text-rose-warm hover:bg-rose-warm/10 px-4 py-2.5 rounded-xl transition-colors font-bold text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
           <LogOut size={16} />
           {lt(locale, { fa: 'خروج از حساب', en: 'Sign Out', ar: 'تسجيل الخروج', zh: '退出登录', ru: 'Выйти' })}

@@ -40,20 +40,58 @@ interface BookingRecordSummary {
   items: BookingRecordItem[];
 }
 
-const TYPE_META: Record<string, { label: string; icon: typeof Plane; image: string }> = {
-  FLIGHT: { label: 'پرواز', icon: Plane, image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&q=70&w=800' },
-  HOTEL: { label: 'اقامتگاه', icon: BedDouble, image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=70&w=800' },
-  TOUR: { label: 'تور', icon: MapPin, image: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=70&w=800' },
-  TRANSFER: { label: 'ترانسفر', icon: CarFront, image: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&q=70&w=800' },
-  TRAIN: { label: 'قطار', icon: TrainFront, image: 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&q=70&w=800' },
-  VISA: { label: 'ویزا', icon: FileCheck2, image: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&q=70&w=800' },
-  ESIM: { label: 'eSIM', icon: Wifi, image: 'https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&q=70&w=800' },
-  INSURANCE: { label: 'بیمه', icon: ShieldCheck, image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=70&w=800' },
-  'CITY-PASS': { label: 'فیروز پاس', icon: Award, image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&q=70&w=800' },
-  flights: { label: 'پرواز', icon: Plane, image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&q=70&w=800' },
-  hotels: { label: 'اقامتگاه', icon: BedDouble, image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=70&w=800' },
-  tours: { label: 'تور', icon: MapPin, image: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=70&w=800' },
-};
+function getTypeMeta(type: string, locale: string) {
+  const normalized = (type || 'HOTEL').toUpperCase();
+  const metaMap: Record<string, { label: string; icon: typeof Plane; image: string }> = {
+    FLIGHT: {
+      label: lt(locale, { fa: 'پرواز', en: 'Flight', ar: 'طيران', zh: '机票', ru: 'Авиабилет' }),
+      icon: Plane,
+      image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&q=70&w=800'
+    },
+    HOTEL: {
+      label: lt(locale, { fa: 'اقامتگاه', en: 'Hotel', ar: 'فندق', zh: '酒店', ru: 'Отель' }),
+      icon: BedDouble,
+      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=70&w=800'
+    },
+    TOUR: {
+      label: lt(locale, { fa: 'تور', en: 'Tour', ar: 'جولة', zh: '旅游', ru: 'Тур' }),
+      icon: MapPin,
+      image: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=70&w=800'
+    },
+    TRANSFER: {
+      label: lt(locale, { fa: 'ترانسفر', en: 'Transfer', ar: 'توصيل', zh: '接送', ru: 'Трансфер' }),
+      icon: CarFront,
+      image: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&q=70&w=800'
+    },
+    TRAIN: {
+      label: lt(locale, { fa: 'قطار', en: 'Train', ar: 'قطار', zh: '火车', ru: 'Поезд' }),
+      icon: TrainFront,
+      image: 'https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&q=70&w=800'
+    },
+    VISA: {
+      label: lt(locale, { fa: 'ویزا', en: 'Visa', ar: 'تأشيرة', zh: '签证', ru: 'Виза' }),
+      icon: FileCheck2,
+      image: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&q=70&w=800'
+    },
+    ESIM: {
+      label: 'eSIM',
+      icon: Wifi,
+      image: 'https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&q=70&w=800'
+    },
+    INSURANCE: {
+      label: lt(locale, { fa: 'بیمه', en: 'Insurance', ar: 'تأمين', zh: '保险', ru: 'Страховка' }),
+      icon: ShieldCheck,
+      image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=70&w=800'
+    },
+    'CITY-PASS': {
+      label: lt(locale, { fa: 'فیروز پاس', en: 'City Pass', ar: 'بطاقة المدينة', zh: '城市通票', ru: 'Сити Пасс' }),
+      icon: Award,
+      image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&q=70&w=800'
+    },
+  };
+
+  return metaMap[normalized] || metaMap.HOTEL;
+}
 
 export default function MyTripsPage() {
   const t = useTranslations('MyTrips');
@@ -193,14 +231,14 @@ export default function MyTripsPage() {
                 }
 
                 const title = (detailsObj.itemTitle as string) || (detailsObj.title as string) || `${bType} Booking`;
-                const meta = TYPE_META[bType] || TYPE_META.HOTEL;
+                const meta = getTypeMeta(bType, locale);
                 const Icon = meta.icon;
                 const totalAmt = Number(b.totalAmount || 0);
 
                 return (
                   <article
                     key={b.id}
-                    className="bg-surface rounded-xl shadow-sm hover:shadow-md transition-shadow border border-line overflow-hidden flex flex-col md:flex-row group"
+                    className="bg-surface rounded-xl shadow-elev-1 hover:shadow-elev-2 transition-shadow border border-line overflow-hidden flex flex-col md:flex-row group"
                   >
                     <div className="md:w-1/3 relative h-48 md:h-auto overflow-hidden bg-soft">
                       <Image
@@ -213,7 +251,7 @@ export default function MyTripsPage() {
                         blurDataURL={shimmerDataUrl(400, 300)}
                       />
                       <div
-                        className={`absolute top-4 end-4 px-3 py-1.5 rounded-full font-black text-[12px] shadow-sm ${
+                        className={`absolute top-4 end-4 px-3 py-1.5 rounded-full font-black text-[12px] shadow-elev-1 ${
                           b.status === 'CONFIRMED'
                             ? 'bg-brand text-surface'
                             : b.status === 'CANCELLED'
@@ -233,10 +271,12 @@ export default function MyTripsPage() {
                       <div>
                         <div className="flex justify-between items-start mb-3">
                           <span className="text-xs font-bold text-sub flex items-center gap-1.5 bg-soft px-3 py-1 rounded-full">
-                            <Icon size={14} className="text-brand-dark" />
+                            <Icon size={14} className="text-brand-dark" aria-hidden="true" />
                             {meta.label}
                           </span>
-                          <span className="font-mono text-xs font-bold text-sub">کد رزرو: #{b.reference || b.id.slice(0, 8)}</span>
+                          <span className="font-mono text-xs font-bold text-sub">
+                            {lt(locale, { fa: 'کد رزرو:', en: 'Booking Code:', ar: 'رمز الحجز:', zh: '预订码：', ru: 'Код бронирования:' })} #{b.reference || b.id.slice(0, 8)}
+                          </span>
                         </div>
 
                         <h3 className="font-black text-[20px] text-ink mb-1 group-hover:text-brand transition-colors">

@@ -38,6 +38,7 @@ export const NAV_CATEGORIES = [
       { key: 'myTrips', href: '/my-trips', icon: Briefcase },
       { key: 'wallet', href: '/wallet', icon: Wallet },
       { key: 'sos', href: '/interpreter', icon: LifeBuoy },
+      { key: 'admin', href: '/admin', icon: ShieldCheck },
     ],
   },
 ];

@@ -99,8 +99,10 @@ export default function WalletPage() {
         <>
           {/* Balance Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div className="bg-gradient-to-br from-brand to-brand-dark rounded-2xl p-6 text-surface shadow-md relative overflow-hidden">
-              <span className="text-xs font-black opacity-80 block mb-1">IRR (تومان)</span>
+            <div className="bg-gradient-to-br from-brand to-brand-dark rounded-2xl p-6 text-surface shadow-elev-2 relative overflow-hidden">
+              <span className="text-xs font-black opacity-80 block mb-1">
+                {lt(locale, { fa: 'IRR (تومان)', en: 'IRR (Toman)', ar: 'IRR (تومان)', zh: 'IRR (托曼)', ru: 'IRR (Томан)' })}
+              </span>
               <span className="text-3xl font-black font-mono num block mb-4">
                 {wallet.IRR.toLocaleString(
                   lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })
@@ -109,7 +111,7 @@ export default function WalletPage() {
               <span className="text-[11px] font-bold opacity-75">{t('primaryBalance')}</span>
             </div>
 
-            <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+            <div className="bg-surface border border-line rounded-2xl p-6 shadow-elev-1 flex flex-col justify-between">
               <div>
                 <span className="text-xs font-black text-sub block mb-1">USDT (Tether)</span>
                 <span className="text-2xl font-black text-ink font-mono num block mb-1">
@@ -127,11 +129,13 @@ export default function WalletPage() {
               </span>
             </div>
 
-            <div className="bg-surface border border-line rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+            <div className="bg-surface border border-line rounded-2xl p-6 shadow-elev-1 flex flex-col justify-between">
               <div>
-                <span className="text-xs font-black text-sub block mb-1">AED (درهم امارات)</span>
+                <span className="text-xs font-black text-sub block mb-1">
+                  {lt(locale, { fa: 'AED (درهم امارات)', en: 'AED (Emirati Dirham)', ar: 'AED (درهم إماراتي)', zh: 'AED (阿联酋迪拉姆)', ru: 'AED (Дирхам ОАЭ)' })}
+                </span>
                 <span className="text-2xl font-black text-ink font-mono num block mb-1">
-                  د.إ{' '}
+                  {lt(locale, { fa: 'درهم ', en: 'AED ', ar: 'د.إ ', zh: 'AED ', ru: 'AED ' })}
                   {wallet.AED.toLocaleString(
                     lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })
                   )}
@@ -245,7 +249,7 @@ export default function WalletPage() {
                       aria-label={commonT('fromCurrency')}
                       className="w-full h-11 border border-line rounded-xl px-3 font-bold text-sm bg-surface"
                     >
-                      <option value="IRR">IRR (تومان)</option>
+                      <option value="IRR">{lt(locale, { fa: 'IRR (تومان)', en: 'IRR (Toman)', ar: 'IRR (تومان)', zh: 'IRR (托曼)', ru: 'IRR (Томан)' })}</option>
                       <option value="USDT">USDT</option>
                       <option value="AED">AED</option>
                     </select>
@@ -262,7 +266,7 @@ export default function WalletPage() {
                     >
                       <option value="USDT">USDT</option>
                       <option value="AED">AED</option>
-                      <option value="IRR">IRR (تومان)</option>
+                      <option value="IRR">{lt(locale, { fa: 'IRR (تومان)', en: 'IRR (Toman)', ar: 'IRR (تومان)', zh: 'IRR (托曼)', ru: 'IRR (Томан)' })}</option>
                     </select>
                   </div>
                 </div>
@@ -346,7 +350,11 @@ export default function WalletPage() {
                         )}{' '}
                         {tx.currency === 'IRR' ? lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' }) : tx.currency}
                       </span>
-                      <span className="block text-[10.5px] text-sub">{tx.direction}</span>
+                      <span className="block text-[10.5px] text-sub">
+                        {tx.direction === 'CREDIT'
+                          ? lt(locale, { fa: 'واریز', en: 'Deposit / Inflow', ar: 'إيداع', zh: '入账', ru: 'Пополнение' })
+                          : lt(locale, { fa: 'برداشت', en: 'Payment / Outflow', ar: 'سحب', zh: '支出', ru: 'Списание' })}
+                      </span>
                     </div>
                   </div>
                 ))

@@ -87,7 +87,7 @@ export default function CityPassPage() {
 
       {/* Dashboard Preview Section */}
       <section className="py-16 bg-brand-dark text-surface relative overflow-hidden">
-        <div className="absolute top-0 right-[-10%] w-[800px] h-[800px] bg-[radial-gradient(circle,rgba(0,169,165,0.15),transparent_70%)] pointer-events-none" />
+        <div className="absolute top-0 end-[-10%] w-[800px] h-[800px] bg-[radial-gradient(circle,rgba(0,169,165,0.15),transparent_70%)] pointer-events-none" />
         <div className="max-w-[1020px] mx-auto px-6 relative z-10">
           <div className="text-center mb-12">
             <h2 className="text-[28px] font-black mb-3">

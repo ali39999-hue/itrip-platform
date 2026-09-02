@@ -13,11 +13,82 @@ import { shimmerDataUrl } from '@/lib/image-utils';
 import { TrainFront, BusFront, MapPin, CircleDot, Search } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
-const SERVICES = [
-  { id: 't1', kind: 'قطار', provider: 'رجاء', stars: '۴ ستاره', title: 'قطار پنج‌ستاره تهران ← مشهد', dep: '20:50', arr: '08:15', from: 'تهران', to: 'مشهد', duration: '۱۱ ساعت و ۲۵ دقیقه', cls: 'کوپه ۴ تخته', price: 9800000, tag: 'پیشنهاد فیروز' },
-  { id: 't2', kind: 'قطار اتوبوسی', provider: 'فدک', stars: '۵ ستاره', title: 'قطار تندرو تهران ← مشهد', dep: '06:30', arr: '14:00', from: 'تهران', to: 'مشهد', duration: '۷ ساعت و ۳۰ دقیقه', cls: 'سالنی', price: 12500000, tag: 'سریع‌ترین' },
-  { id: 't3', kind: 'اتوبوس', provider: 'رویال سفر', stars: 'VIP', title: 'اتوبوس VIP تهران ← شیراز', dep: '16:00', arr: '02:30', from: 'تهران', to: 'شیراز', duration: '۱۰ ساعت و ۳۰ دقیقه', cls: 'تخت‌خواب‌شو ۲۵ صندلی', price: 3400000, tag: 'ظرفیت محدود' },
-  { id: 't4', kind: 'اتوبوس', provider: 'همسفر', stars: 'VIP', title: 'اتوبوس VIP مشهد ← تهران', dep: '09:00', arr: '19:30', from: 'مشهد', to: 'تهران', duration: '۱۰ ساعت و ۳۰ دقیقه', cls: 'VIP ۲۵ نفره', price: 3100000, tag: '' },
+interface ServiceItem {
+  id: string;
+  kind: 'train' | 'bus';
+  provider: { fa: string; en: string; ar: string; zh: string; ru: string };
+  stars: { fa: string; en: string; ar: string; zh: string; ru: string };
+  title: { fa: string; en: string; ar: string; zh: string; ru: string };
+  dep: string;
+  arr: string;
+  from: { fa: string; en: string; ar: string; zh: string; ru: string };
+  to: { fa: string; en: string; ar: string; zh: string; ru: string };
+  duration: { fa: string; en: string; ar: string; zh: string; ru: string };
+  cls: { fa: string; en: string; ar: string; zh: string; ru: string };
+  price: number;
+  tag?: { fa: string; en: string; ar: string; zh: string; ru: string };
+}
+
+const RAW_SERVICES: ServiceItem[] = [
+  {
+    id: 't1',
+    kind: 'train',
+    provider: { fa: 'رجاء', en: 'Raja', ar: 'رجاء', zh: '拉贾铁路', ru: 'Раджа' },
+    stars: { fa: '۴ ستاره', en: '4-Star', ar: '4 نجوم', zh: '四星级', ru: '4 звезды' },
+    title: { fa: 'قطار پنج‌ستاره تهران ← مشهد', en: '5-Star Train Tehran → Mashhad', ar: 'قطار 5 نجوم طهران ← مشهد', zh: '五星特快 德黑兰 → 马什哈德', ru: 'Поезд 5 звезд Тегеран → Мешхед' },
+    dep: '20:50',
+    arr: '08:15',
+    from: { fa: 'تهران', en: 'Tehran', ar: 'طهران', zh: '德黑兰', ru: 'Тегеран' },
+    to: { fa: 'مشهد', en: 'Mashhad', ar: 'مشهد', zh: '马什哈德', ru: 'Мешхед' },
+    duration: { fa: '۱۱ ساعت و ۲۵ دقیقه', en: '11h 25m', ar: '11 ساعة و25 دقيقة', zh: '11小时25分', ru: '11 ч 25 мин' },
+    cls: { fa: 'کوپه ۴ تخته', en: '4-Berth Coupe', ar: 'مقصورة 4 أسرة', zh: '四人包厢', ru: '4-местное купе' },
+    price: 9800000,
+    tag: { fa: 'پیشنهاد فیروز', en: 'Firuzo Pick', ar: 'اختيار فيروز', zh: 'Firuzo 精选', ru: 'Выбор Firuzo' }
+  },
+  {
+    id: 't2',
+    kind: 'train',
+    provider: { fa: 'فدک', en: 'Fadak', ar: 'فدك', zh: '法达克特快', ru: 'Фадак' },
+    stars: { fa: '۵ ستاره', en: '5-Star', ar: '5 نجوم', zh: '五星级', ru: '5 звезд' },
+    title: { fa: 'قطار تندرو تهران ← مشهد', en: 'Express Train Tehran → Mashhad', ar: 'قطار سريع طهران ← مشهد', zh: '高速列车 德黑兰 → 马什哈德', ru: 'Скоростной поезд Тегеран → Мешхед' },
+    dep: '06:30',
+    arr: '14:00',
+    from: { fa: 'تهران', en: 'Tehran', ar: 'طهران', zh: '德黑兰', ru: 'Тегеран' },
+    to: { fa: 'مشهد', en: 'Mashhad', ar: 'مشهد', zh: '马什哈德', ru: 'Мешхед' },
+    duration: { fa: '۷ ساعت و ۳۰ دقیقه', en: '7h 30m', ar: '7 ساعات و30 دقيقة', zh: '7小时30分', ru: '7 ч 30 мин' },
+    cls: { fa: 'سالنی', en: 'Saloon Class', ar: 'درجة الصالون', zh: '商务座', ru: 'Сидячий вагон' },
+    price: 12500000,
+    tag: { fa: 'سریع‌ترین', en: 'Fastest', ar: 'الأسرع', zh: '最快', ru: 'Самый быстрый' }
+  },
+  {
+    id: 't3',
+    kind: 'bus',
+    provider: { fa: 'رویال سفر', en: 'Royal Safar', ar: 'رويال سفر', zh: '皇家快客', ru: 'Роял Сафар' },
+    stars: { fa: 'VIP', en: 'VIP', ar: 'VIP', zh: 'VIP', ru: 'VIP' },
+    title: { fa: 'اتوبوس VIP تهران ← شیراز', en: 'VIP Bus Tehran → Shiraz', ar: 'حافلة VIP طهران ← شيراز', zh: 'VIP 巴士 德黑兰 → 设拉子', ru: 'VIP Автобус Тегеран → Шираз' },
+    dep: '16:00',
+    arr: '02:30',
+    from: { fa: 'تهران', en: 'Tehran', ar: 'طهران', zh: '德黑兰', ru: 'Тегеран' },
+    to: { fa: 'شیراز', en: 'Shiraz', ar: 'شيراز', zh: '设拉子', ru: 'Шираз' },
+    duration: { fa: '۱۰ ساعت و ۳۰ دقیقه', en: '10h 30m', ar: '10 ساعات و30 دقيقة', zh: '10小时30分', ru: '10 ч 30 мин' },
+    cls: { fa: 'تخت‌خواب‌شو ۲۵ صندلی', en: 'Sleeper (25 Seats)', ar: 'سريرية 25 مقعد', zh: '卧铺 25 座', ru: 'Спальный 25 мест' },
+    price: 3400000,
+    tag: { fa: 'ظرفیت محدود', en: 'Limited Seats', ar: 'مقاعد محدودة', zh: '余票紧张', ru: 'Мало мест' }
+  },
+  {
+    id: 't4',
+    kind: 'bus',
+    provider: { fa: 'همسفر', en: 'Hamsafar', ar: 'همسفر', zh: '瀚萨法尔客运', ru: 'Хамсафар' },
+    stars: { fa: 'VIP', en: 'VIP', ar: 'VIP', zh: 'VIP', ru: 'VIP' },
+    title: { fa: 'اتوبوس VIP مشهد ← تهران', en: 'VIP Bus Mashhad → Tehran', ar: 'حافلة VIP مشهد ← طهران', zh: 'VIP 巴士 马什哈德 → 德黑兰', ru: 'VIP Автобус Мешхед → Тегеран' },
+    dep: '09:00',
+    arr: '19:30',
+    from: { fa: 'مشهد', en: 'Mashhad', ar: 'مشهد', zh: '马什哈德', ru: 'Мешхед' },
+    to: { fa: 'تهران', en: 'Tehran', ar: 'طهران', zh: '德黑兰', ru: 'Тегеран' },
+    duration: { fa: '۱۰ ساعت و ۳۰ دقیقه', en: '10h 30m', ar: '10 ساعات و30 دقيقة', zh: '10小时30分', ru: '10 ч 30 мин' },
+    cls: { fa: 'VIP ۲۵ نفره', en: 'VIP 25-Seat', ar: 'VIP 25 راكب', zh: 'VIP 25座', ru: 'VIP 25 мест' },
+    price: 3100000
+  },
 ];
 
 export default function TrainsPage() {
@@ -29,17 +100,17 @@ export default function TrainsPage() {
   const [filterTrain, setFilterTrain] = useState(true);
   const [filterBus, setFilterBus] = useState(true);
 
-  const list = SERVICES.filter((s) => {
-    if (s.kind === 'قطار' && filterTrain) return true;
-    if (s.kind === 'اتوبوس' && filterBus) return true;
+  const list = RAW_SERVICES.filter((s) => {
+    if (s.kind === 'train' && filterTrain) return true;
+    if (s.kind === 'bus' && filterBus) return true;
     return false;
   });
 
-  function reserve(service: (typeof SERVICES)[number]) {
+  function reserve(service: ServiceItem) {
     setBookingContext({
       type: 'trains',
-      title: service.title,
-      subtitle: `${service.cls} • ${service.dep}`,
+      title: lt(locale, service.title),
+      subtitle: `${lt(locale, service.cls)} • ${service.dep}`,
       amount: service.price,
       travelDate: daysFromNow(7),
     });
@@ -147,41 +218,41 @@ export default function TrainsPage() {
           {list.map((s) => (
             <article
               key={s.id}
-              className="bg-surface rounded-2xl border border-line p-5 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm hover:shadow-md transition-all hover:border-brand/40"
+              className="bg-surface rounded-2xl border border-line p-5 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-elev-1 hover:shadow-elev-2 transition-all hover:border-brand/40"
             >
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-3">
                   <span className="w-10 h-10 rounded-xl bg-mint grid place-items-center text-brand-dark">
-                    {s.kind.includes('قطار') ? <TrainFront size={20} /> : <BusFront size={20} />}
+                    {s.kind === 'train' ? <TrainFront size={20} aria-hidden="true" /> : <BusFront size={20} aria-hidden="true" />}
                   </span>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-black text-[16px] text-ink">{s.title}</h3>
+                      <h3 className="font-black text-[16px] text-ink">{lt(locale, s.title)}</h3>
                       {s.tag && (
                         <span className="bg-gold-soft text-[#14201f] text-[10.5px] font-black px-2 py-0.5 rounded-full">
-                          {s.tag}
+                          {lt(locale, s.tag)}
                         </span>
                       )}
                     </div>
                     <span className="text-xs font-bold text-sub">
-                      {s.provider} • {s.cls} • {s.stars}
+                      {lt(locale, s.provider)} • {lt(locale, s.cls)} • {lt(locale, s.stars)}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-6 mt-3 pt-3 border-t border-line/60">
                   <div className="flex items-center gap-2">
-                    <CircleDot size={14} className="text-brand" />
+                    <CircleDot size={14} className="text-brand" aria-hidden="true" />
                     <span className="font-mono font-black text-[16px] text-ink" dir="ltr">{s.dep}</span>
-                    <span className="text-xs font-bold text-sub">{s.from}</span>
+                    <span className="text-xs font-bold text-sub">{lt(locale, s.from)}</span>
                   </div>
                   <span className="text-xs font-bold text-sub bg-soft px-2.5 py-1 rounded-full">
-                    {s.duration}
+                    {lt(locale, s.duration)}
                   </span>
                   <div className="flex items-center gap-2">
-                    <CircleDot size={14} className="text-brand-dark" />
+                    <CircleDot size={14} className="text-brand-dark" aria-hidden="true" />
                     <span className="font-mono font-black text-[16px] text-ink" dir="ltr">{s.arr}</span>
-                    <span className="text-xs font-bold text-sub">{s.to}</span>
+                    <span className="text-xs font-bold text-sub">{lt(locale, s.to)}</span>
                   </div>
                 </div>
               </div>
@@ -196,8 +267,8 @@ export default function TrainsPage() {
                 </div>
                 <button
                   onClick={() => reserve(s)}
-                  aria-label={`انتخاب ${s.title}`}
-                  className="bg-action hover:bg-action-hover text-[#14201f] px-6 py-2.5 rounded-xl font-black text-[13px] transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  aria-label={`${t('selectTicket')}: ${lt(locale, s.title)}`}
+                  className="bg-action hover:bg-action-hover text-[#14201f] px-6 py-2.5 rounded-xl font-black text-[13px] transition-all shadow-elev-1 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   {t('selectTicket')}
                 </button>

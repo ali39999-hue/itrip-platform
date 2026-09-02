@@ -118,7 +118,7 @@ export function FinanceClientPage({
               saved ? 'bg-success/20 text-success' : 'bg-brand hover:bg-brand-2 text-surface'
             }`}
           >
-            <Save size={15} aria-hidden="true" /> {saved ? lt(locale, { fa: 'ذخیره شد', en: 'Saved', ar: 'تم الحفظ', zh: '已保存', ru: 'Сохранено' }) : lt(locale, { fa: 'ذخیره نرخ‌ها', en: 'Save Rates', ar: 'حفظ الأسعار', zh: '保存汇率', ru: 'Сохранить курс' })}
+            <Save size={15} aria-hidden="true" /> {saved ? lt(locale, { fa: 'ذخیره شد (پیش‌نمایش)', en: 'Saved (Preview)', ar: 'تم الحفظ (معاينة)', zh: '已保存（预览）', ru: 'Сохранено (превью)' }) : lt(locale, { fa: 'ذخیره نرخ‌ها (دمو)', en: 'Save Rates (Demo)', ar: 'حفظ الأسعار (تجريبي)', zh: '保存汇率（演示）', ru: 'Сохранить курс (демо)' })}
           </button>
         </div>
       </div>

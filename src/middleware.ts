@@ -11,6 +11,8 @@ const intlMiddleware = createMiddleware(routing);
 const ROUTE_PERMISSIONS: Record<string, string[]> = {
   '/admin/finance': ['SUPER_ADMIN', 'FINANCE'],
   '/admin/bookings': ['SUPER_ADMIN', 'FINANCE', 'OPS'],
+  '/admin/ops': ['SUPER_ADMIN', 'OPS'],
+  '/admin/content': ['SUPER_ADMIN', 'OPS'],
   '/admin': ['SUPER_ADMIN', 'FINANCE', 'OPS'], // general admin access
 };
 
@@ -42,10 +44,14 @@ export async function middleware(request: NextRequest) {
   }
 
   // 3. Handle /admin paths (with or without locale prefix)
-  const isAdminPath = pathname.match(/^\/([a-z]{2}\/)?admin/);
+  const isAdminPath = pathname.match(/^\/(?:fa|en|ar|zh|ru\/)?admin/);
   
   if (isAdminPath) {
-    const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'firuzo-enterprise-secret-key-32chars-long';
+    const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+    if (!secret) {
+      // No secret configured — block admin access entirely
+      return NextResponse.redirect(new URL('/' + locale + '/auth', request.url));
+    }
 
     // Get next-auth token safely without throwing
     try {
@@ -64,10 +70,15 @@ export async function middleware(request: NextRequest) {
 
         if (matchingRoute) {
           const allowedRoles = ROUTE_PERMISSIONS[matchingRoute];
-          if (!allowedRoles.includes(userRole)) {
+          // Also accept lowercase 'admin' role (client-side compat)
+          const hasAccess = allowedRoles.includes(userRole) || userRole === 'admin';
+          if (!hasAccess) {
             return NextResponse.redirect(new URL('/' + locale + '/account', request.url));
           }
         }
+      } else {
+        // Unauthenticated user trying to access admin — redirect to auth
+        return NextResponse.redirect(new URL('/' + locale + '/auth', request.url));
       }
     } catch {
       // Allow request to proceed to application layout where role gate UI handles unauthenticated users

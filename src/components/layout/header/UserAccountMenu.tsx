@@ -3,7 +3,7 @@
 import { useAuthStore } from '@/stores/auth-store';
 import { Link } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
-import { UserRound, Headset, Sparkles } from 'lucide-react';
+import { UserRound, Headset, Sparkles, ShieldCheck } from 'lucide-react';
 
 export function UserAccountMenu() {
   const { user } = useAuthStore();
@@ -12,6 +12,17 @@ export function UserAccountMenu() {
 
   return (
     <div className="flex items-center gap-2">
+      {/* Admin ERP Quick Badge */}
+      {user?.role === 'admin' && (
+        <Link
+          href="/admin"
+          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-mint text-brand-dark hover:bg-brand hover:text-surface text-[12px] font-black border border-brand/20 transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+        >
+          <ShieldCheck size={14} />
+          <span>ERP</span>
+        </Link>
+      )}
+
       {/* Support Icon Link */}
       <Link
         href="/support"

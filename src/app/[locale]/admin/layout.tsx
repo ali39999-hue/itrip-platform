@@ -24,7 +24,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname() || '';
   const user = useAuthStore((s) => s.user);
 
-  if (!user || user.role !== 'admin') {
+  if (!user || !['admin', 'SUPER_ADMIN', 'FINANCE', 'OPS'].includes(user.role)) {
     return (
       <div className="bg-surface min-h-screen flex flex-col relative overflow-hidden">
         {/* Background Overlay */}
@@ -76,9 +76,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div>
             <div className="font-black text-[15px] text-ink flex items-center gap-2">
               <span>{lt(locale, { fa: 'سامانه مدیریت یکپارچه فیروزه', en: 'Firuzo Unified Management', ar: 'نظام إدارة فيروزو الموحد', zh: 'Firuzo 统一管理系统', ru: 'Единая система управления Firuzo' })}</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-mint text-brand-dark font-extrabold">ERP v2.0</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-mint text-brand-dark font-extrabold">{lt(locale, { fa: 'ERP v2.0', en: 'ERP v2.0', ar: 'ERP v2.0', zh: 'ERP v2.0', ru: 'ERP v2.0' })}</span>
             </div>
-            <p className="text-[11px] text-sub font-bold leading-none mt-0.5">Enterprise Travel Operations</p>
+            <p className="text-[11px] text-sub font-bold leading-none mt-0.5">{lt(locale, { fa: 'عملیات سفر سازمانی', en: 'Enterprise Travel Operations', ar: 'عمليات السفر المؤسسية', zh: '企业旅行运营', ru: 'Корпоративные операции' })}</p>
           </div>
         </div>
 

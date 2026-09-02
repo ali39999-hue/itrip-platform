@@ -96,8 +96,8 @@ export default async function AdminOpsPage() {
                         <span className="font-bold text-sm text-ink">{booking.reference}</span>
                         <span className="text-xs font-bold text-ink">{Number(booking.totalAmount).toLocaleString()} {booking.currency}</span>
                       </div>
-                      <p className="text-xs text-sub">Customer ID: {booking.customerId}</p>
-                      <p className="text-[10px] text-sub mt-2">Created at: {new Date(booking.createdAt).toLocaleString()}</p>
+                      <p className="text-xs text-sub">{lt(locale, { fa: 'شناسه مشتری:', en: 'Customer ID:', ar: 'رقم العميل:', zh: '客户ID：', ru: 'ID клиента:' })} {booking.customerId}</p>
+                      <p className="text-[10px] text-sub mt-2">{lt(locale, { fa: 'تاریخ ایجاد:', en: 'Created at:', ar: 'تاريخ الإنشاء:', zh: '创建时间：', ru: 'Дата создания:' })} {new Date(booking.createdAt).toLocaleString(locale === 'fa' ? 'fa-IR' : locale)}</p>
                    </div>
                  ))}
                </div>

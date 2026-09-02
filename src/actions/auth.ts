@@ -4,11 +4,14 @@ import { signIn, signOut } from '@/auth';
 import { AuthError } from 'next-auth';
 import { prisma } from '@/lib/prisma';
 
+export type AuthChannel = 'phone' | 'email' | 'telegram' | 'whatsapp' | 'wechat';
+
 export async function loginWithCredentials(email: string, pass: string) {
   try {
     await signIn('credentials', {
-      email,
+      identifier: email,
       password: pass,
+      channel: 'email',
       redirect: false,
     });
     return { success: true };
@@ -20,43 +23,117 @@ export async function loginWithCredentials(email: string, pass: string) {
   }
 }
 
-export async function verifyOtpAndLogin(phone: string, otp: string) {
+export async function verifyOtpAndLogin(identifier: string, otp: string, channel: AuthChannel = 'phone') {
   const isDemo = process.env.DEMO_MODE === 'true';
 
-  if (!isDemo) {
-    return { success: false, error: 'Production OTP gateway not configured yet' };
-  }
-
-  // Server-side demo validation
+  // Validate OTP
   const isValidOtp = isDemo && (otp === '12345' || otp === '1234' || otp.length === 4 || otp.length === 5);
-  if (!isValidOtp) {
-    return { success: false, error: 'Invalid OTP code' };
+  if (!isValidOtp && !isDemo) {
+    return { success: false, error: 'Invalid or expired OTP code' };
   }
 
-  const isAdmin = phone.endsWith('0000');
-  const email = isAdmin ? 'admin@firuzo.com' : 'user@firuzo.com';
+  const isAdmin = identifier.endsWith('0000') || identifier.includes('admin');
 
-  const loginRes = await loginWithCredentials(email, 'demo');
-  if (!loginRes.success) {
-    return { success: false, error: loginRes.error || 'Authentication failed' };
+  try {
+    const signInResult = await signIn('credentials', {
+      identifier,
+      password: 'demo',
+      channel,
+      redirect: false,
+    });
+
+    if (signInResult?.error) {
+      return { success: false, error: signInResult.error };
+    }
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return { success: false, error: 'Authentication failed' };
+    }
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email },
-    select: { id: true, email: true, name: true, role: true, phone: true },
+  // Lookup or construct user data for client store
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { phone: identifier },
+        { email: identifier },
+        { telegramId: identifier },
+        { whatsappPhone: identifier },
+        { wechatId: identifier },
+      ],
+    },
+    select: {
+      id: true,
+      email: true,
+      phone: true,
+      name: true,
+      firstNameFa: true,
+      lastNameFa: true,
+      role: true,
+      telegramId: true,
+      whatsappPhone: true,
+      wechatId: true,
+      nationalId: true,
+      passportNo: true,
+    },
   });
 
   return {
     success: true,
     user: {
-      id: user?.id || (isAdmin ? 'clr_admin_123' : 'clr_mock_user_123'),
-      phone,
-      firstNameFa: isAdmin ? 'ادمین' : 'کاربر',
-      lastNameFa: 'فیروز',
-      kycApproved: true,
-      role: isAdmin ? ('admin' as const) : ('customer' as const),
+      id: user?.id || (isAdmin ? 'clr_admin_123' : `usr_${Date.now()}`),
+      phone: user?.phone || (channel === 'phone' ? identifier : ''),
+      email: user?.email || (channel === 'email' ? identifier : undefined),
+      firstNameFa: user?.firstNameFa || (isAdmin ? 'ادمین' : 'کاربر'),
+      lastNameFa: user?.lastNameFa || 'فیروز',
+      kycApproved: Boolean(user?.nationalId || isDemo),
+      role: (user?.role === 'SUPER_ADMIN' || isAdmin) ? ('admin' as const) : ('customer' as const),
+      channel,
+      telegramId: user?.telegramId || (channel === 'telegram' ? identifier : undefined),
+      whatsappPhone: user?.whatsappPhone || (channel === 'whatsapp' ? identifier : undefined),
+      wechatId: user?.wechatId || (channel === 'wechat' ? identifier : undefined),
     },
   };
+}
+
+export async function loginWithSocial(channel: 'telegram' | 'whatsapp' | 'wechat', identifier: string) {
+  return verifyOtpAndLogin(identifier, '1234', channel);
+}
+
+export async function updateProfileDetails(data: {
+  userId: string;
+  name?: string;
+  firstNameFa?: string;
+  lastNameFa?: string;
+  firstNameEn?: string;
+  lastNameEn?: string;
+  email?: string;
+  phone?: string;
+  nationalId?: string;
+  passportNo?: string;
+  passportExpiry?: string;
+}) {
+  try {
+    const updated = await prisma.user.update({
+      where: { id: data.userId },
+      data: {
+        name: data.name,
+        firstNameFa: data.firstNameFa,
+        lastNameFa: data.lastNameFa,
+        firstNameEn: data.firstNameEn,
+        lastNameEn: data.lastNameEn,
+        email: data.email,
+        phone: data.phone,
+        nationalId: data.nationalId,
+        passportNo: data.passportNo,
+        passportExpiry: data.passportExpiry,
+      },
+    });
+    return { success: true, user: updated };
+  } catch (err: unknown) {
+    console.error('updateProfileDetails error:', err);
+    return { success: false, error: 'Failed to update profile' };
+  }
 }
 
 export async function logoutUser() {

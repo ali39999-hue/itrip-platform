@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { useAuthStore } from '@/stores/auth-store';
-import { ScanLine, CheckCircle2, Loader2, User, Lock, LogIn } from 'lucide-react';
+import { ScanLine, CheckCircle2, Loader2, User, Lock, LogIn, Mail, Phone, Send, MessageCircle, QrCode } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { Logo } from '@/components/layout/Logo';
+import { AuthChannel } from '@/actions/auth';
 
 export default function AuthPage() {
   const t = useTranslations('Auth');
@@ -14,7 +15,8 @@ export default function AuthPage() {
   const router = useRouter();
   const { login, setKycStep, updateKyc, kyc } = useAuthStore();
 
-  const [phone, setPhone] = useState('');
+  const [channel, setChannel] = useState<AuthChannel>('phone');
+  const [identifier, setIdentifier] = useState('');
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,11 +30,38 @@ export default function AuthPage() {
 
   const step = kyc.step;
 
-  function sendOtp() {
-    if (!/^09\d{9}$/.test(phone)) {
-      setError(lt(locale, { fa: 'شماره موبایل معتبر نیست (۰۹xxxxxxxxx)', en: 'Invalid mobile number (09xxxxxxxxx)', ar: 'رقم جوال غير صالح (09xxxxxxxxx)', zh: '手机号无效（09xxxxxxxxx）', ru: 'Неверный номер телефона (09xxxxxxxxx)' }));
-      return;
+  function validateIdentifier(): boolean {
+    if (channel === 'phone') {
+      if (!/^09\d{9}$/.test(identifier) && !/^\+\d{10,14}$/.test(identifier)) {
+        setError(lt(locale, { fa: 'شماره موبایل معتبر نیست (۰۹xxxxxxxxx یا کد کشور)', en: 'Invalid phone number (09xxxxxxxxx or +...)', ar: 'رقم جوال غير صالح', zh: '手机号格式错误', ru: 'Неверный номер телефона' }));
+        return false;
+      }
+    } else if (channel === 'email') {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)) {
+        setError(lt(locale, { fa: 'آدرس ایمیل معتبر نیست', en: 'Invalid email address', ar: 'عنوان بريد إلكتروني غير صالح', zh: '邮箱格式错误', ru: 'Неверный адрес эл. почты' }));
+        return false;
+      }
+    } else if (channel === 'telegram') {
+      if (!identifier.trim() || identifier.length < 3) {
+        setError(lt(locale, { fa: 'شناسه تلگرام یا شماره موبایل را وارد کنید', en: 'Enter Telegram handle (@username) or phone', ar: 'أدخل معرّف تيليجرام أو الهاتف', zh: '请输入Telegram用户名或手机号', ru: 'Введите имя пользователя или номер' }));
+        return false;
+      }
+    } else if (channel === 'whatsapp') {
+      if (!/^\+?\d{9,15}$/.test(identifier.replace(/\s+/g, ''))) {
+        setError(lt(locale, { fa: 'شماره واتساپ همراه با پیش‌شماره کشور الزامی است', en: 'Valid WhatsApp number with country code is required', ar: 'رقم واتساب صالح مع رمز الدولة مطلوب', zh: '请输入带国家代码的WhatsApp号码', ru: 'Введите номер WhatsApp с кодом страны' }));
+        return false;
+      }
+    } else if (channel === 'wechat') {
+      if (!identifier.trim()) {
+        setError(lt(locale, { fa: 'شناسه وی‌چت (WeChat ID) یا شماره موبایل الزامی است', en: 'WeChat ID or mobile phone required', ar: 'معرف وي تشات أو الجوال مطلوب', zh: '微信号或绑定的手机号必填', ru: 'Введите WeChat ID или телефон' }));
+        return false;
+      }
     }
+    return true;
+  }
+
+  function sendOtp() {
+    if (!validateIdentifier()) return;
     setError('');
     setKycStep('otp');
   }
@@ -40,7 +69,7 @@ export default function AuthPage() {
   async function verifyOtp() {
     setLoading(true);
     setError('');
-    const ok = await login(phone, otp);
+    const ok = await login(identifier, otp, channel);
     setLoading(false);
     if (!ok) {
       setError(lt(locale, { fa: 'کد تایید اشتباه است', en: 'Invalid OTP code', ar: 'رمز التحقق غير صحيح', zh: '验证码错误', ru: 'Неверный код подтверждения' }));
@@ -85,27 +114,89 @@ export default function AuthPage() {
         <div className="flex justify-center mb-6">
           <Logo size="md" />
         </div>
-        {/* Step: Phone input */}
+
+        {/* Step: Multi-channel identifier input */}
         {step === 'phone' && (
           <div>
             <div className="w-12 h-12 bg-mint rounded-2xl grid place-items-center text-brand-dark mb-6">
               <LogIn size={24} />
             </div>
             <h1 className="font-black text-2xl text-ink mb-2">{t('loginTitle')}</h1>
-            <p className="text-xs font-bold text-sub mb-6">{t('loginSubtitle')}</p>
+            <p className="text-xs font-bold text-sub mb-4">{t('loginSubtitle')}</p>
+
+            {/* Channels Switcher */}
+            <div className="grid grid-cols-5 gap-1.5 p-1 bg-soft rounded-2xl mb-6">
+              <button
+                type="button"
+                onClick={() => { setChannel('phone'); setError(''); setIdentifier(''); }}
+                className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'phone' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
+                title="SMS / Phone"
+              >
+                <Phone size={16} />
+                <span className="text-[10px]">SMS</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setChannel('email'); setError(''); setIdentifier(''); }}
+                className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'email' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
+                title="Email"
+              >
+                <Mail size={16} />
+                <span className="text-[10px]">Email</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setChannel('telegram'); setError(''); setIdentifier(''); }}
+                className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'telegram' ? 'bg-[#229ED9]/15 text-[#229ED9] shadow-xs' : 'text-sub hover:text-ink'}`}
+                title="Telegram"
+              >
+                <Send size={16} />
+                <span className="text-[10px]">Telegram</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setChannel('whatsapp'); setError(''); setIdentifier(''); }}
+                className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'whatsapp' ? 'bg-[#25D366]/15 text-[#25D366] shadow-xs' : 'text-sub hover:text-ink'}`}
+                title="WhatsApp"
+              >
+                <MessageCircle size={16} />
+                <span className="text-[10px]">WhatsApp</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setChannel('wechat'); setError(''); setIdentifier(''); }}
+                className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'wechat' ? 'bg-[#07C160]/15 text-[#07C160] shadow-xs' : 'text-sub hover:text-ink'}`}
+                title="WeChat"
+              >
+                <QrCode size={16} />
+                <span className="text-[10px]">WeChat</span>
+              </button>
+            </div>
 
             {error && <div className="p-3 mb-4 rounded-xl bg-destructive/10 text-destructive text-xs font-bold">{error}</div>}
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="identifier" className="block text-xs font-bold text-sub mb-1">{t('phone')}</label>
+                <label htmlFor="identifier" className="block text-xs font-bold text-sub mb-1">
+                  {channel === 'phone' && lt(locale, { fa: 'شماره موبایل', en: 'Phone Number', ar: 'رقم الهاتف', zh: '手机号', ru: 'Номер телефона' })}
+                  {channel === 'email' && lt(locale, { fa: 'آدرس ایمیل', en: 'Email Address', ar: 'البريد الإلكتروني', zh: '电子邮箱', ru: 'Эл. почта' })}
+                  {channel === 'telegram' && lt(locale, { fa: 'شناسه تلگرام یا شماره', en: 'Telegram Username / Phone', ar: 'معرف تيليجرام أو الهاتف', zh: 'Telegram 用户名/手机号', ru: 'Telegram Username / Телефон' })}
+                  {channel === 'whatsapp' && lt(locale, { fa: 'شماره واتساپ بین‌المللی', en: 'WhatsApp Number (+...)', ar: 'رقم الواتساب الدولي', zh: 'WhatsApp 国际号码', ru: 'Номер WhatsApp (+...)' })}
+                  {channel === 'wechat' && lt(locale, { fa: 'شناسه وی‌چت / WeChat ID', en: 'WeChat ID / Mobile', ar: 'معرف وي تشات', zh: '微信号 / 手机号', ru: 'WeChat ID / Телефон' })}
+                </label>
                 <input
                   id="identifier"
-                  type="tel"
+                  type={channel === 'email' ? 'email' : 'text'}
                   dir="ltr"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="09123456789"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder={
+                    channel === 'phone' ? '09123456789' :
+                    channel === 'email' ? 'user@firuzo.com' :
+                    channel === 'telegram' ? '@traveler_user' :
+                    channel === 'whatsapp' ? '+971501234567' :
+                    'wxid_firuzo2026'
+                  }
                   className="w-full h-12 rounded-xl border border-line px-4 font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 />
               </div>
@@ -115,20 +206,22 @@ export default function AuthPage() {
                 onClick={sendOtp}
                 className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
-                {t('sendOtp')}
+                {channel === 'phone' ? t('sendOtp') : lt(locale, { fa: 'دریافت کد تأیید ورود', en: 'Send Login Code', ar: 'إرسال رمز الدخول', zh: '发送登录验证码', ru: 'Получить код входа' })}
               </button>
             </div>
           </div>
         )}
 
-        {/* Step: OTP */}
+        {/* Step: OTP Verification */}
         {step === 'otp' && (
           <div>
             <div className="w-12 h-12 bg-mint rounded-2xl grid place-items-center text-brand-dark mb-6">
               <Lock size={24} />
             </div>
             <h1 className="font-black text-2xl text-ink mb-2">{t('otpTitle')}</h1>
-            <p className="text-xs font-bold text-sub mb-6">{t('otpSubtitle')} {phone}</p>
+            <p className="text-xs font-bold text-sub mb-6">
+              {lt(locale, { fa: `کد یک‌بار مصرف ارسال شده به ${identifier} را وارد کنید`, en: `Enter the one-time code sent to ${identifier}`, ar: `أدخل الرمز المرسل إلى ${identifier}`, zh: `请输入发送至 ${identifier} 的验证码`, ru: `Введите код, отправленный на ${identifier}` })}
+            </p>
 
             {error && <div className="p-3 mb-4 rounded-xl bg-destructive/10 text-destructive text-xs font-bold">{error}</div>}
 
@@ -146,7 +239,7 @@ export default function AuthPage() {
                   placeholder="1234"
                   className="w-full h-12 rounded-xl border border-line px-4 text-center tracking-widest text-xl font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 />
-                <p className="text-[11px] text-sub mt-1 text-center font-bold">کد تستی دمو: 1234 یا هر ۴ رقم</p>
+                <p className="text-[11px] text-sub mt-1 text-center font-bold">{lt(locale, { fa: 'کد تستی دمو: 1234 یا هر ۴ رقم', en: 'Demo test code: 1234 or any 4 digits', ar: 'رمز تجريبي: 1234 أو أي 4 أرقام', zh: '演示验证码：1234 或任意4位数', ru: 'Демо-код: 1234 или любые 4 цифры' })}</p>
               </div>
 
               <button
@@ -163,7 +256,7 @@ export default function AuthPage() {
                 onClick={() => setKycStep('phone')}
                 className="w-full text-xs font-bold text-sub hover:text-ink text-center"
               >
-                {t('changePhone')}
+                {lt(locale, { fa: 'تغییر روش یا شناسه ورود', en: 'Change method or identifier', ar: 'تغيير الطريقة أو المعرّف', zh: '更换登录方式或账号', ru: 'Изменить метод или идентификатор' })}
               </button>
             </div>
           </div>

@@ -1,14 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Send, Camera, ShieldCheck, Clock, CreditCard, Sparkles, Check } from 'lucide-react';
 import { Logo } from './Logo';
 import { ShamseDivider } from '@/components/ui/Shamse';
+import { lt } from '@/lib/lt';
 
 export function Footer() {
   const t = useTranslations('Footer');
+  const locale = useLocale();
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -47,6 +49,7 @@ export function Footer() {
         { name: t('guidePage'), href: '/guide' },
         { name: t('myTrips'), href: '/my-trips' },
         { name: t('destinations'), href: '/destinations' },
+        { name: lt(locale, { fa: 'پنل مدیریت (ERP)', en: 'Admin ERP Panel', ar: 'لوحة الإدارة', zh: '管理后台', ru: 'Панель управления' }), href: '/admin' },
       ],
     },
   ];
@@ -87,7 +90,7 @@ export function Footer() {
           </div>
 
           <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-surface/80 border border-line/50">
-            <div className="w-11 h-11 rounded-xl bg-purple-50 text-tour flex items-center justify-center shrink-0">
+            <div className="w-11 h-11 rounded-xl bg-tour/10 text-tour flex items-center justify-center shrink-0">
               <Sparkles size={22} />
             </div>
             <div>
@@ -148,7 +151,7 @@ export function Footer() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full px-3 py-2 text-[12px] font-bold rounded-xl bg-soft border border-line focus:outline-none focus:ring-1 focus:ring-brand text-ink"
+                    className="w-full px-3 py-2 text-[12px] font-bold rounded-xl bg-soft border border-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand text-ink"
                   />
                 </div>
                 <button

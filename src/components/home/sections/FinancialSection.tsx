@@ -26,19 +26,19 @@ export function FinancialSection() {
           
           <ul className="grid sm:grid-cols-2 gap-4 mt-6">
             <li className="flex items-center gap-2 text-[13px] font-bold text-ink">
-              <span className="w-6 h-6 rounded-full bg-mint text-brand-dark grid place-items-center"><Zap size={12}/></span>
+              <span className="w-6 h-6 rounded-full bg-mint text-brand-dark grid place-items-center"><Zap size={12} aria-hidden="true" /></span>
               {lt(locale, { fa: 'فعال‌سازی آنی', en: 'Instant Activation', ar: 'تفعيل فوري', zh: '即时激活', ru: 'Мгновенная активация' })}
             </li>
             <li className="flex items-center gap-2 text-[13px] font-bold text-ink">
-              <span className="w-6 h-6 rounded-full bg-purple-50 text-tour grid place-items-center"><Ticket size={12}/></span>
+              <span className="w-6 h-6 rounded-full bg-tour/10 text-tour grid place-items-center"><Ticket size={12} aria-hidden="true" /></span>
               {lt(locale, { fa: 'گشت‌های اختصاصی', en: 'Exclusive Tours', ar: 'جولات خاصة', zh: '独家旅游', ru: 'Эксклюзивные туры' })}
             </li>
             <li className="flex items-center gap-2 text-[13px] font-bold text-ink">
-              <span className="w-6 h-6 rounded-full bg-action/10 text-action grid place-items-center"><ShieldCheck size={12}/></span>
+              <span className="w-6 h-6 rounded-full bg-action/10 text-action grid place-items-center"><ShieldCheck size={12} aria-hidden="true" /></span>
               {lt(locale, { fa: 'تضمین کمترین قیمت', en: 'Best Price Guarantee', ar: 'ضمان أقل سعر', zh: '最低价格保证', ru: 'Гарантия лучшей цены' })}
             </li>
             <li className="flex items-center gap-2 text-[13px] font-bold text-ink">
-              <span className="w-6 h-6 rounded-full bg-blue-50 text-flight grid place-items-center"><ShieldCheck size={12}/></span>
+              <span className="w-6 h-6 rounded-full bg-flight/10 text-flight grid place-items-center"><ShieldCheck size={12} aria-hidden="true" /></span>
               {lt(locale, { fa: 'پروازهای چارتری و سیستمی', en: 'Charter & Scheduled Flights', ar: 'رحلات طيران عارضة ومنتظمة', zh: '包机和定期航班', ru: 'Чартерные и регулярные рейсы' })}
             </li>
           </ul>
@@ -46,10 +46,10 @@ export function FinancialSection() {
           <div className="pt-4">
             <Link 
               href="/wallet" 
-              className="inline-flex items-center gap-2 min-h-[48px] px-6 bg-brand hover:bg-brand-dark transition-colors text-surface rounded-xl shadow-sm focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+              className="inline-flex items-center gap-2 min-h-[48px] px-6 bg-brand hover:bg-brand-dark transition-colors text-surface rounded-xl shadow-elev-1 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
             >
               <span className="font-bold text-[15px]">{lt(locale, { fa: 'مشاهده و مدیریت کیف پول', en: 'View & Manage Wallet', ar: 'عرض وإدارة المحفظة', zh: '查看和管理钱包', ru: 'Просмотр и управление кошельком' })}</span>
-              <ArrowLeft size={18} className="ltr:rotate-180" />
+              <ArrowLeft size={18} className="ltr:rotate-180" aria-hidden="true" />
             </Link>
           </div>
         </div>

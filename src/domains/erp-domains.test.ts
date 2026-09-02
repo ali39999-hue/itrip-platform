@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { BookingStateMachine, BookingState } from '@/domains/booking/state-machine';
 import { ROLE_DEFAULT_PERMISSIONS } from '@/domains/identity/permissions';
+import { GeneralLedgerService } from '@/domains/ledger/GeneralLedgerService';
+import { calculatePricing, roundCurrency } from '@/lib/pricing/engine';
 
 describe('ERP Domain Tests: State Machine Transitions', () => {
   it('allows valid state machine progressions', () => {
@@ -38,6 +40,29 @@ describe('ERP Domain Tests: RBAC Permissions', () => {
     expect(customerPerms).toContain('booking:create');
     expect(customerPerms).not.toContain('finance:reports:view');
     expect(customerPerms).not.toContain('booking:refund:approve');
+  });
+});
+
+describe('ERP Domain Tests: Pricing & Rounding Engine', () => {
+  it('correctly rounds IRR amounts to nearest 10,000 Rial increments', () => {
+    const { rounded } = roundCurrency(1234567, 'IRR');
+    expect(rounded % 10000).toBe(0);
+  });
+
+  it('applies custom markup, taxes and discounts for B2B vs Customer', () => {
+    const custPricing = calculatePricing({
+      userRole: 'CUSTOMER',
+      productType: 'HOTEL',
+      basePrice: 10000000,
+      currency: 'IRR',
+    });
+    const b2bPricing = calculatePricing({
+      userRole: 'B2B',
+      productType: 'HOTEL',
+      basePrice: 10000000,
+      currency: 'IRR',
+    });
+    expect(b2bPricing.sellPrice).toBeLessThan(custPricing.sellPrice);
   });
 });
 
@@ -82,7 +107,6 @@ import { prisma } from '@/lib/prisma';
 
 describe('ERP Domain Tests: Inventory Holds', () => {
   it('prevents overselling (Hold atomicity test)', async () => {
-    // Setup dummy inventory
     const supplier = await prisma.supplier.create({
       data: { name: 'Test Supplier', type: 'HOTEL' }
     });

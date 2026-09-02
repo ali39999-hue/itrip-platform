@@ -13,15 +13,28 @@ datasource db {
 // ==================== 1. Identity & RBAC ====================
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  phone        String?  @unique
-  name         String?
-  role         String   @default("CUSTOMER") // SUPER_ADMIN, FINANCE, OPS, CUSTOMER
-  passwordHash String
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String   @id @default(cuid())
+  email          String?  @unique
+  phone          String?  @unique
+  telegramId     String?  @unique
+  whatsappPhone   String?  @unique
+  wechatId       String?  @unique
+  name           String?
+  firstNameFa    String?
+  lastNameFa     String?
+  firstNameEn    String?
+  lastNameEn     String?
+  role           String   @default("CUSTOMER") // SUPER_ADMIN, FINANCE, OPS, CUSTOMER
+  passwordHash   String?
+  isActive       Boolean  @default(true)
+  avatar         String?
+  nationalId     String?
+  passportNo     String?
+  passportExpiry String?
+  language       String   @default("fa")
+  currency       String   @default("IRR")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   auditLogs    AuditLog[]
   bookings     Booking[]
@@ -59,27 +72,28 @@ model Account {
 
 model LedgerEntry {
   id            String   @id @default(cuid())
-  groupId       String   @unique// Idempotency / Transaction grouping
+  groupId       String   // Idempotency / Transaction grouping (Non-unique so double entry pairs share groupId)
   accountId     String
   direction     String   // DEBIT, CREDIT
   amount        Decimal  
   currency      String
   fxRate        Decimal  @default(1.0)
   baseAmount    Decimal?
-  referenceType String?  // BOOKING, REFUND, TOPUP, SETTLEMENT
+  referenceType String?  // BOOKING, REFUND, TOPUP, SETTLEMENT, TAX, FEE, FX_SPREAD
   referenceId   String?  
   createdAt     DateTime @default(now())
   
   account       Account  @relation(fields: [accountId], references: [id])
 
   @@index([accountId])
+  @@index([groupId])
 }
 
 model Payment {
   id              String   @id @default(cuid())
   bookingId       String?
   idempotencyKey  String   @unique
-  method          String   // wallet_irr, gateway_shetab, wallet_usdt, etc
+  method          String   // wallet_irr, gateway_shetab, wallet_usdt, wechat_pay, telegram_pay, etc
   gatewayRef      String?
   amount          Decimal
   currency        String   @default("IRR")
@@ -127,6 +141,8 @@ model BookingItem {
   type            String   // FLIGHT, HOTEL, VISA, TOUR, TRANSFER, etc
   netCost         Decimal  // cost from supplier
   markup          Decimal  // platform profit
+  taxAmount       Decimal  @default(0)
+  feeAmount       Decimal  @default(0)
   sellPrice       Decimal  // final price for customer
   details         String   @default("{}") // JSON details
   
@@ -221,15 +237,20 @@ model AuditLog {
   createdAt   DateTime @default(now())
   
   user        User?    @relation(fields: [userId], references: [id])
-  
+
   @@index([userId])
   @@index([resource, resourceId])
 }
 
 model OutboxEvent {
   id          String   @id @default(cuid())
-  eventType   String   // e.g., "BOOKING_PAID", "REFUND_REQUESTED"
+  eventType   String   // e.g., "BOOKING_PAID", "BOOKING_CONFIRMED", "REFUND_REQUESTED", "AUTH_OTP_REQUESTED", "VOUCHER_ISSUED", "NOTIFICATION_SENT"
   payload     String   // JSON
-  status      String   @default("PENDING") // PENDING, PROCESSED, FAILED
+  status      String   @default("PENDING") // PENDING, PROCESSING, PROCESSED, FAILED
+  retryCount  Int      @default(0)
+  lastError   String?
   createdAt   DateTime @default(now())
+  processedAt DateTime?
+
+  @@index([status])
 }

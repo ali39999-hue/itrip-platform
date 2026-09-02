@@ -20,8 +20,20 @@ export interface RevenueRealizationParams {
   groupId: string;
   amount: number;
   netCost: number;
+  taxAmount?: number;
+  feeAmount?: number;
   supplierId: string;
   currency?: string;
+  referenceId?: string;
+}
+
+export interface FXSpreadPostingParams {
+  groupId: string;
+  fromCurrency: string;
+  toCurrency: string;
+  fromAmount: number;
+  toAmount: number;
+  spreadAmount: number;
   referenceId?: string;
 }
 
@@ -141,15 +153,18 @@ export class GeneralLedgerService {
   }
 
   /**
-   * Template 3: Revenue Realization & Supplier Liability
+   * Template 3: Revenue Realization, Supplier Liability, Tax & Platform Fees
    */
   static async postRevenueRealization(params: RevenueRealizationParams, tx?: Prisma.TransactionClient) {
     const client = tx || prisma;
     const currency = params.currency || 'IRR';
+    const tax = params.taxAmount || 0;
+    const fee = params.feeAmount || 0;
 
     const escrowAcc = await this.getOrCreateAccount('PLATFORM_ESCROW', null, currency, client as Prisma.TransactionClient);
     const revenueAcc = await this.getOrCreateAccount('PLATFORM_REVENUE', null, currency, client as Prisma.TransactionClient);
     const supplierPayableAcc = await this.getOrCreateAccount('SUPPLIER_PAYABLE', params.supplierId, currency, client as Prisma.TransactionClient);
+    const feeAcc = await this.getOrCreateAccount('PLATFORM_FEE', null, currency, client as Prisma.TransactionClient);
 
     // 1. Release from Escrow to Revenue (DEBIT Escrow, CREDIT Revenue)
     await client.ledgerEntry.create({
@@ -200,10 +215,58 @@ export class GeneralLedgerService {
         referenceId: params.referenceId,
       },
     });
+
+    // 3. Tax & Gateway/Platform Fee posting if applicable
+    if (fee > 0) {
+      await client.ledgerEntry.create({
+        data: {
+          groupId: `${params.groupId}_fee`,
+          accountId: revenueAcc.id,
+          direction: 'DEBIT',
+          amount: fee,
+          currency,
+          referenceType: 'FEE',
+          referenceId: params.referenceId,
+        },
+      });
+      await client.ledgerEntry.create({
+        data: {
+          groupId: `${params.groupId}_fee`,
+          accountId: feeAcc.id,
+          direction: 'CREDIT',
+          amount: fee,
+          currency,
+          referenceType: 'FEE',
+          referenceId: params.referenceId,
+        },
+      });
+    }
   }
 
   /**
-   * Template 4: Refund (DEBIT Escrow -> CREDIT Customer)
+   * Template 4: FX Spread / Conversion Posting
+   */
+  static async postFXConversion(params: FXSpreadPostingParams, tx?: Prisma.TransactionClient) {
+    const client = tx || prisma;
+    const revenueAcc = await this.getOrCreateAccount('PLATFORM_REVENUE', null, params.fromCurrency, client as Prisma.TransactionClient);
+    
+    if (params.spreadAmount > 0) {
+      await client.ledgerEntry.create({
+        data: {
+          groupId: `${params.groupId}_fx`,
+          accountId: revenueAcc.id,
+          direction: 'CREDIT',
+          amount: params.spreadAmount,
+          currency: params.fromCurrency,
+          referenceType: 'FX_SPREAD',
+          referenceId: params.referenceId,
+        },
+      });
+    }
+  }
+
+  /**
+   * Template 5: Refund (DEBIT Escrow -> CREDIT Customer)
    */
   static async postRefund(params: RefundPostingParams, tx?: Prisma.TransactionClient) {
     const client = tx || prisma;

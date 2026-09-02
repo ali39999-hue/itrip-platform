@@ -69,9 +69,9 @@ export function FlightSearchForm({
           type="button"
           onClick={swap}
           aria-label={t('swap')}
-          className="hidden md:grid absolute top-1/2 -translate-y-1/2 rtl:-left-3.5 ltr:-right-3.5 z-20 w-7 h-7 place-items-center rounded-full bg-surface border border-line shadow-md text-brand-dark hover:bg-mint hover:scale-110 active:scale-95 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          className="hidden md:grid absolute top-1/2 -translate-y-1/2 -end-3.5 z-20 w-7 h-7 place-items-center rounded-full bg-surface border border-line shadow-elev-2 text-brand-dark hover:bg-mint hover:scale-110 active:scale-95 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
-          <ArrowLeftRight size={13} />
+          <ArrowLeftRight size={13} aria-hidden="true" />
         </button>
       </div>
 

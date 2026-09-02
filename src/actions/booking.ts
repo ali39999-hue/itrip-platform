@@ -79,7 +79,7 @@ export async function createBookingDraft(data: unknown) {
 
     const pricing = calculatePricing({
       userRole,
-      supplierId: 'sup_default_firuzo',
+      supplierId: parsed.itemId ? 'sup_dynamic' : 'sup_default_firuzo',
       productType: parsed.type,
       basePrice: rawNetCost,
       currency: 'IRR',
@@ -109,7 +109,7 @@ export async function createBookingDraft(data: unknown) {
         // Attempt to create a hold
         const holdRes = await InventoryEngine.createHold({
             inventoryItemId: parsed.itemId,
-            date: new Date().toISOString().split('T')[0], // Use today's date for simplicity, in a real app this comes from `parsed.date`
+            date: new Date().toISOString().split('T')[0],
             quantity: quantity,
             ttlMinutes: 15
         });
@@ -119,7 +119,7 @@ export async function createBookingDraft(data: unknown) {
         }
     }
 
-    // 4. Create Booking in DRAFT state
+    // 4. Create Booking in DRAFT or HELD state
     const booking = await prisma.booking.create({
       data: {
         reference,
@@ -133,15 +133,19 @@ export async function createBookingDraft(data: unknown) {
             type: parsed.type,
             inventoryItemId: parsed.itemId,
             netCost: pricing.netCost,
-            markup: pricing.markupAmount + pricing.serviceFee,
+            markup: pricing.markupAmount,
+            taxAmount: pricing.taxAmount,
+            feeAmount: pricing.serviceFee,
             sellPrice: finalTotalAmount,
             details: JSON.stringify({
               ...parsed,
               pricingBreakdown: {
                 netCost: pricing.netCost,
                 markupAmount: pricing.markupAmount,
+                taxAmount: pricing.taxAmount,
                 serviceFee: pricing.serviceFee,
                 sellPrice: pricing.sellPrice,
+                roundingDelta: pricing.roundingDelta,
               },
             }),
           },
