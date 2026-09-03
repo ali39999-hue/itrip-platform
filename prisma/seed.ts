@@ -14,13 +14,32 @@ async function main() {
     where: { email: 'admin@firuzo.com' },
     update: {
       passwordHash: adminPasswordHash,
+      phone: '09120000000',
       role: 'SUPER_ADMIN',
       isActive: true,
     },
     create: {
       id: 'clr_admin_123',
       email: 'admin@firuzo.com',
+      phone: '09120000000',
       name: 'Firuzo Admin',
+      passwordHash: adminPasswordHash,
+      role: 'SUPER_ADMIN',
+      isActive: true,
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { phone: '09123456789' },
+    update: {
+      passwordHash: adminPasswordHash,
+      role: 'SUPER_ADMIN',
+      isActive: true,
+    },
+    create: {
+      id: 'clr_admin_test_123',
+      phone: '09123456789',
+      name: 'Firuzo Test Admin',
       passwordHash: adminPasswordHash,
       role: 'SUPER_ADMIN',
       isActive: true,
