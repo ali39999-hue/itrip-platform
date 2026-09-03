@@ -224,7 +224,7 @@ export function searchFlights(params: FlightSearchParams): FlightSearchResponse 
   }));
 
   // 2. Facet filters (stops, airlines, price range)
-  let filtered = basePool.filter((f) => {
+  const filtered = basePool.filter((f) => {
     if (params.stops && params.stops.length > 0) {
       if (!params.stops.includes(Math.min(f.stops, 2))) return false;
     }

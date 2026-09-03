@@ -7,7 +7,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { HOTELS } from '@/lib/data';
 import { useBookingStore } from '@/stores/booking-store';
 import { num } from '@/lib/format';
-import { useHotelBooking, CHECKIN, NIGHTS, keyOf, toman } from '@/hooks/useHotelBooking';
+import { useHotelBooking, keyOf, toman } from '@/hooks/useHotelBooking';
 import type { DetailedHotelWithMeta } from '@/services/hotels-service';
 
 // Components
@@ -109,9 +109,9 @@ export default function HotelDetailPage() {
       type: 'hotels',
       id: hotel!.id,
       title: hotelTitle,
-      subtitle: `${num(capacity.n, locale)} ${t('navRooms')} • ${num(NIGHTS.length, locale)} ${t('duration')}`,
+      subtitle: `${num(capacity.n, locale)} ${t('navRooms')} • ${num(booking.nights.length, locale)} ${t('duration')} • ${t('passengersSummary', { adults: booking.adults, children: booking.children })}`,
       amount: toman(totals.total),
-      travelDate: CHECKIN,
+      travelDate: booking.checkin,
     });
     router.push('/checkout');
   }
@@ -160,7 +160,7 @@ export default function HotelDetailPage() {
           <HotelRooms booking={booking} onApplyCombo={handleApplyCombo} />
           <HotelAmenities />
           <HotelReviews hotel={hotel} />
-          <HotelPolicies checkinDate={CHECKIN} />
+          <HotelPolicies checkinDate={booking.checkin} />
         </div>
 
         {/* sticky booking summary */}

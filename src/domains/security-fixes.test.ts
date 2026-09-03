@@ -91,6 +91,12 @@ describe('Security: ledger balance guards', () => {
       prisma.ledgerEntry.aggregate({ where: { accountId: acc.id, direction: 'DEBIT' }, _sum: { amount: true } }),
     ]);
     expect((Number(credits._sum.amount) || 0) - (Number(debits._sum.amount) || 0)).toBe(100);
+
+    // Clean up created ledger entries for this test to keep test runs pure
+    await prisma.ledgerEntry.deleteMany({
+      where: { groupId: { in: [`sec_${suffix}_1`, `sec_${suffix}_2`, `sec_${suffix}_3`] } }
+    });
+    await prisma.user.delete({ where: { id: user.id } });
   });
 
   it('keeps account identity unique (upsert does not duplicate platform accounts)', async () => {

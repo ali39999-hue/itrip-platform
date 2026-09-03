@@ -166,8 +166,10 @@ export class BookingSagaOrchestrator {
       return { success: true, booking: updated };
     }, {
       // A multi-step interactive saga needs more headroom than the default 5s.
-      maxWait: 10000,
+      // Serializable ensures strict isolation on PostgreSQL migration while staying compatible with SQLite.
+      maxWait: 15000,
       timeout: 20000,
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
     });
   }
 }

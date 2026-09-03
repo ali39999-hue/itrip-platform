@@ -237,3 +237,157 @@ export async function refundBookingAdmin(bookingId: string) {
     return { success: false, error: 'Refund processing failed' };
   }
 }
+
+export async function getAdminSuppliers() {
+  await requirePermission('inventory:manage');
+  const suppliers = await prisma.supplier.findMany({
+    include: {
+      contracts: true,
+      _count: { select: { inventoryItems: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return suppliers.map((s) => ({
+    id: s.id,
+    name: s.name,
+    type: s.type,
+    mode: s.mode,
+    contact: s.contact,
+    isActive: s.isActive,
+    itemsCount: s._count.inventoryItems,
+    contracts: s.contracts.map((c) => ({
+      id: c.id,
+      pricingType: c.pricingType,
+      commission: Number(c.commission),
+      creditLimit: Number(c.creditLimit),
+      currency: c.currency,
+    })),
+  }));
+}
+
+export async function createAdminSupplier(data: {
+  name: string;
+  type: string;
+  mode?: string;
+  contact?: string;
+  commission?: number;
+}) {
+  await requirePermission('inventory:manage');
+  const supplier = await prisma.supplier.create({
+    data: {
+      name: data.name,
+      type: data.type,
+      mode: data.mode || 'ALLOTMENT',
+      contact: data.contact,
+      contracts: {
+        create: {
+          pricingType: 'NET_RATE',
+          commission: data.commission ?? 0,
+          currency: 'IRR',
+        },
+      },
+    },
+  });
+  revalidatePath('/admin/suppliers');
+  revalidatePath('/admin/inventory');
+  return { success: true, supplierId: supplier.id };
+}
+
+export async function getAdminInventory() {
+  await requirePermission('inventory:manage');
+  const items = await prisma.inventoryItem.findMany({
+    include: {
+      supplier: { select: { id: true, name: true, type: true } },
+      allotments: {
+        orderBy: { date: 'asc' },
+        take: 30,
+      },
+      _count: { select: { holds: true } },
+    },
+    orderBy: { id: 'desc' },
+  });
+
+  return items.map((item) => ({
+    id: item.id,
+    supplierId: item.supplierId,
+    supplierName: item.supplier.name,
+    type: item.type,
+    code: item.code,
+    name: item.name,
+    basePrice: Number(item.basePrice),
+    currency: item.currency,
+    activeHoldsCount: item._count.holds,
+    allotments: item.allotments.map((a) => ({
+      id: a.id,
+      date: a.date,
+      total: a.total,
+      booked: a.booked,
+      available: Math.max(0, a.total - a.booked),
+      stopSell: a.stopSell,
+    })),
+  }));
+}
+
+export async function createAdminInventoryItem(data: {
+  supplierId: string;
+  type: string;
+  name: string;
+  code?: string;
+  basePrice: number;
+  currency?: string;
+  initialAllotmentDays?: number;
+  dailyCapacity?: number;
+}) {
+  await requirePermission('inventory:manage');
+  const currency = data.currency || 'IRR';
+  const initialDays = data.initialAllotmentDays || 7;
+  const capacity = data.dailyCapacity || 10;
+
+  const item = await prisma.inventoryItem.create({
+    data: {
+      supplierId: data.supplierId,
+      type: data.type,
+      name: data.name,
+      code: data.code,
+      basePrice: data.basePrice,
+      currency,
+    },
+  });
+
+  // Automatically create allotments for the next N days
+  const allotmentsData = [];
+  const today = new Date();
+  for (let i = 0; i < initialDays; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() + i);
+    const dateStr = d.toISOString().split('T')[0];
+    allotmentsData.push({
+      inventoryItemId: item.id,
+      date: dateStr,
+      total: capacity,
+      booked: 0,
+      stopSell: false,
+    });
+  }
+
+  if (allotmentsData.length > 0) {
+    await prisma.allotment.createMany({
+      data: allotmentsData,
+    });
+  }
+
+  revalidatePath('/admin/inventory');
+  return { success: true, itemId: item.id };
+}
+
+export async function updateAllotment(id: string, data: { total?: number; stopSell?: boolean }) {
+  await requirePermission('inventory:manage');
+  await prisma.allotment.update({
+    where: { id },
+    data,
+  });
+  revalidatePath('/admin/inventory');
+  return { success: true };
+}
+

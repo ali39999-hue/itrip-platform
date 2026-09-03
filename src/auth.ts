@@ -51,7 +51,7 @@ export async function issueOtp(identifier: string, channel: string): Promise<{ s
   await prisma.outboxEvent.create({
     data: {
       eventType: 'AUTH_OTP_REQUESTED',
-      payload: JSON.stringify({ identifier, channel, expiresAt: expiresAt.toISOString() }),
+      payload: JSON.stringify({ identifier, channel, code, expiresAt: expiresAt.toISOString() }),
     },
   });
 

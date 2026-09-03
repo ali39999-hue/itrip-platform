@@ -24,6 +24,14 @@ export interface HotelSearchHeaderProps {
   onQueryChange: (val: string) => void;
   onSearchSubmit: () => void;
   resultsCount: number;
+  checkin?: string;
+  onCheckinChange?: (val: string) => void;
+  checkout?: string;
+  onCheckoutChange?: (val: string) => void;
+  adults?: number;
+  onAdultsChange?: (val: number) => void;
+  childrenCount?: number;
+  onChildrenCountChange?: (val: number) => void;
 }
 
 export interface HotelSearchToolbarProps {
@@ -78,6 +86,10 @@ export interface HotelCardProps {
   onCmp: () => void;
   nights?: number;
   priority?: boolean;
+  checkin?: string;
+  checkout?: string;
+  adults?: number;
+  childrenCount?: number;
 }
 
 export interface HotelCompareBarProps {

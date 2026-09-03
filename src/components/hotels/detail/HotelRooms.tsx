@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { Link } from '@/i18n/routing';
-import { Sparkles, BedDouble, Ruler, Eye, Users, Check, Flame, Ban, Coffee, Clock, Wallet } from 'lucide-react';
+import { Sparkles, BedDouble, Ruler, Eye, Users, Check, Flame, Ban, Coffee, Clock, Wallet, Minus, Plus } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -13,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { fa, gShort } from '@/lib/hotel-format';
 import { getRoomsForLocale, getPlansForLocale } from '@/lib/hotel-mock';
-import { quote, NIGHTS, CHECKIN, CHECKOUT, ADULTS, CHILDREN, TAX, keyOf, type useHotelBooking } from '@/hooks/useHotelBooking';
+import { quote, TAX, keyOf, type useHotelBooking } from '@/hooks/useHotelBooking';
 import { lt } from '@/lib/lt';
 
 interface HotelRoomsProps {
@@ -24,40 +23,139 @@ interface HotelRoomsProps {
 export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
   const t = useTranslations('HotelDetail');
   const locale = useLocale();
-  const { sel, setSel, takenOf, bestCombo, capacity } = booking;
+  const {
+    sel,
+    setSel,
+    takenOf,
+    bestCombo,
+    capacity,
+    adults,
+    setAdults,
+    children,
+    setChildren,
+    checkin,
+    checkout,
+    nights
+  } = booking;
   const [openBd, setOpenBd] = useState<string | null>(null);
+  const [guestPickerOpen, setGuestPickerOpen] = useState(false);
   const rooms = getRoomsForLocale(locale);
   const plans = getPlansForLocale(locale);
 
-  const canBook = capacity.n > 0 && capacity.a >= ADULTS && capacity.c >= CHILDREN;
+  const canBook = capacity.n > 0 && capacity.a >= adults && capacity.c >= children;
 
   return (
     <section id="rooms" className="p-5 border border-line rounded-xl bg-surface shadow-sm scroll-mt-32">
       <h2 className="m-0 mb-1 text-lg font-black">{t('selectRoom')}</h2>
       <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">{t('ratesIncludeTax')}</p>
 
-      <div className="flex items-center gap-3 flex-wrap p-3 border border-mint-bright/60 rounded-xl bg-mint/40 mb-4">
-        {[
-          [t('checkIn'), gShort.format(new Date(CHECKIN + 'T00:00:00'))],
-          [t('checkOut'), gShort.format(new Date(CHECKOUT + 'T00:00:00'))],
-          [t('duration'), t('nightsCount', { nights: NIGHTS.length })],
-          [t('capacity'), t('passengersSummary', { adults: ADULTS, children: CHILDREN })]
-        ].map(([l, v]) => (
-          <div key={l}>
-            <span className="block text-[10.5px] font-extrabold text-sub">{l}</span>
-            <b className="text-[13px] font-black">{v}</b>
+      {/* Interactive Booking Bar (Dates + Editable Guests) */}
+      <div className="flex items-center gap-4 flex-wrap p-3.5 border border-mint-bright/60 rounded-xl bg-mint/30 mb-4 justify-between">
+        <div className="flex items-center gap-4 flex-wrap">
+          <div>
+            <span className="block text-[10.5px] font-extrabold text-sub">{t('checkIn')}</span>
+            <b className="text-[13px] font-black">{gShort.format(new Date(checkin + 'T00:00:00'))}</b>
           </div>
-        ))}
-        <Link href="/hotels/search" className="me-auto min-h-[38px] px-3.5 inline-flex items-center border border-mint-bright/70 rounded-[10px] bg-surface text-brand-dark text-[12.5px] font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
-          {t('changeDates')}
-        </Link>
+          <div>
+            <span className="block text-[10.5px] font-extrabold text-sub">{t('checkOut')}</span>
+            <b className="text-[13px] font-black">{gShort.format(new Date(checkout + 'T00:00:00'))}</b>
+          </div>
+          <div>
+            <span className="block text-[10.5px] font-extrabold text-sub">{t('duration')}</span>
+            <b className="text-[13px] font-black">{t('nightsCount', { nights: nights.length })}</b>
+          </div>
+          <div className="relative">
+            <span className="block text-[10.5px] font-extrabold text-sub">{t('capacity')}</span>
+            <button
+              type="button"
+              onClick={() => setGuestPickerOpen(!guestPickerOpen)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-line bg-surface text-ink text-[12px] font-black hover:border-brand transition shadow-2xs"
+            >
+              <Users size={14} className="text-brand" />
+              <span>{t('passengersSummary', { adults, children })}</span>
+              <span className="text-[10px] text-brand-dark underline ms-1">
+                {lt(locale, { fa: '(تغییر نفرات)', en: '(Change)', ar: '(تعديل)', zh: '(修改人数)', ru: '(Изменить)' })}
+              </span>
+            </button>
+
+            {guestPickerOpen && (
+              <div className="absolute top-[calc(100%+6px)] start-0 z-50 w-64 p-3.5 rounded-2xl bg-surface border border-line shadow-elev-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-ink">
+                    {lt(locale, { fa: 'بزرگسال', en: 'Adults', ar: 'البالغين', zh: '成人', ru: 'Взрослые' })}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAdults(Math.max(1, adults - 1))}
+                      disabled={adults <= 1}
+                      className="w-7 h-7 rounded-lg bg-soft border border-line grid place-items-center disabled:opacity-40"
+                    >
+                      <Minus size={12} />
+                    </button>
+                    <span className="w-5 text-center text-xs font-bold font-mono">{adults}</span>
+                    <button
+                      type="button"
+                      onClick={() => setAdults(Math.min(9, adults + 1))}
+                      disabled={adults >= 9}
+                      className="w-7 h-7 rounded-lg bg-soft border border-line grid place-items-center disabled:opacity-40"
+                    >
+                      <Plus size={12} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-ink">
+                    {lt(locale, { fa: 'کودک', en: 'Children', ar: 'الأطفال', zh: '儿童', ru: 'Дети' })}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setChildren(Math.max(0, children - 1))}
+                      disabled={children <= 0}
+                      className="w-7 h-7 rounded-lg bg-soft border border-line grid place-items-center disabled:opacity-40"
+                    >
+                      <Minus size={12} />
+                    </button>
+                    <span className="w-5 text-center text-xs font-bold font-mono">{children}</span>
+                    <button
+                      type="button"
+                      onClick={() => setChildren(Math.min(6, children + 1))}
+                      disabled={children >= 6}
+                      className="w-7 h-7 rounded-lg bg-soft border border-line grid place-items-center disabled:opacity-40"
+                    >
+                      <Plus size={12} />
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setGuestPickerOpen(false)}
+                  className="w-full py-1.5 rounded-lg bg-brand text-surface text-xs font-bold hover:bg-brand-dark"
+                >
+                  {lt(locale, { fa: 'تایید نفرات', en: 'Done', ar: 'تأكيد', zh: '确定', ru: 'Готово' })}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setGuestPickerOpen(true)}
+          className="px-3 py-1.5 rounded-lg border border-brand/40 bg-surface text-brand-dark text-xs font-bold hover:bg-mint transition"
+        >
+          {lt(locale, { fa: 'ویرایش مسافران و تاریخ', en: 'Edit party & dates', ar: 'تعديل المسافرين والتاريخ', zh: '编辑人数和日期', ru: 'Изменить гостей и даты' })}
+        </button>
       </div>
 
       {bestCombo && !canBook && (
         <div className="flex items-center gap-3 p-3 border border-dashed border-gold/50 rounded-xl bg-gold-soft text-[12.5px] font-bold text-price mb-4">
           <Sparkles size={16} className="text-action-hover shrink-0" />
           <span>
-            {t('bestCombo', { adults: ADULTS, children: CHILDREN })}{' '}
+            {t('bestCombo', { adults, children })}{' '}
             <b>{bestCombo.pick.map((o) => `${o.r.name} — ${plans[o.p].name}`).join(' + ')}</b> — {t('totalLira', { cost: fa(bestCombo.cost) })}
           </span>
           <button onClick={onApplyCombo} className="me-auto min-h-9 px-3.5 rounded-[10px] bg-price text-surface text-xs font-black shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
@@ -69,7 +167,7 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
       <div className="flex flex-col gap-3">
         {rooms.map((room) => {
           const picked = takenOf(room.id);
-          const fits = room.capA >= ADULTS && room.capC >= CHILDREN;
+          const fits = room.capA >= adults && room.capC >= children;
           return (
             <div key={room.id} className={`rounded-[14px] overflow-hidden bg-surface transition ${picked ? 'border-mint-bright ring-[3px] ring-brand/[0.07]' : ''} border border-line`}>
               <div className="grid grid-cols-1 sm:grid-cols-[196px_1fr]">
@@ -113,14 +211,14 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
               <div className="border-t border-line">
                 {room.plans.map((pid) => {
                   const p = plans[pid];
-                  const cInRoom = Math.min(CHILDREN, room.capC);
-                  const q = quote(room, pid, cInRoom);
+                  const cInRoom = Math.min(children, room.capC);
+                  const q = quote(room, pid, nights, cInRoom);
                   const k = keyOf(room.id, pid);
                   const qty = sel[k] || 0;
-                  const ref = quote(room, 'bb', cInRoom).total;
+                  const ref = quote(room, 'bb', nights, cInRoom).total;
                   const maxSel = room.left - takenOf(room.id) + qty;
                   const isOpen = openBd === k;
-                  const dl = new Date(new Date(CHECKIN + 'T14:00:00').getTime() - 48 * 36e5);
+                  const dl = new Date(new Date(checkin + 'T14:00:00').getTime() - 48 * 36e5);
 
                   return (
                     <div key={pid} className={`grid grid-cols-1 md:grid-cols-[1fr_170px_150px] gap-3 items-center px-4 py-3 border-b border-line/70 last:border-0 ${qty ? 'bg-mint/40' : ''}`}>
@@ -136,13 +234,13 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
                           <span className="inline-flex items-center gap-1 text-[11px] font-bold text-sub"><Wallet size={12} /> {p.pay}</span>
                         </div>
                         <button onClick={() => setOpenBd(isOpen ? null : k)} className="self-start border-0 bg-transparent p-0 text-brand-dark text-[11px] font-extrabold underline underline-offset-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">
-                          {isOpen ? (lt(locale, { fa: 'بستن جزئیات', en: 'Hide details', ar: 'إخفاء التفاصيل', zh: '收起详情', ru: 'Скрыть детали' })) : (lt(locale, { fa: 'جزئیات قیمت هر شب', en: 'Nightly rate details', ar: 'تفاصيل سعر كل ليلة', zh: '每晚价格明细', ru: 'Детали тарифа за ночь' }))}
+                          {isOpen ? (lt(locale, { fa: 'بستن جزئیات', en: 'Hide details', ar: 'إخفاء التفاصيل', zh: '收起详情', ru: 'Скрыть детали' })) : (lt(locale, { fa: 'جزئیات قیمت هر شب', en: 'Nightly rate details', ar: 'تفاصيل سعر كل ليلة', zh: '每晚价格明细', ru: 'Детали тариفا за ночь' }))}
                         </button>
                       </div>
                       <div className="md:text-end">
                         {pid === 'saver' && <div className="text-sub text-xs font-bold line-through">{fa(ref)} TRY</div>}
                         <div className="text-lg font-black leading-snug text-price num">{fa(q.avg)} <small className="text-[11.5px] font-extrabold text-sub">TRY / {lt(locale, { fa: 'شب', en: 'night', ar: 'ليلة', zh: '晚', ru: 'ночь' })}</small></div>
-                        <div className="text-[11.5px] font-bold text-sub">{locale === 'fa' ? `جمع ${fa(NIGHTS.length)} شب:` : `Total ${NIGHTS.length} nights:`} <b>{fa(q.total)} TRY</b></div>
+                        <div className="text-[11.5px] font-bold text-sub">{locale === 'fa' ? `جمع ${fa(nights.length)} شب:` : `Total ${nights.length} nights:`} <b>{fa(q.total)} TRY</b></div>
                       </div>
                       <div className="flex items-center justify-start md:justify-end gap-2">
                         <Select

@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { MapPin, Star, Users, Search } from 'lucide-react';
+import React, { useState } from 'react';
+import { MapPin, Star, Users, Search, Minus, Plus } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { useCountryStore } from '@/stores/country-store';
@@ -15,10 +15,19 @@ export function HotelSearchHeader({
   onQueryChange,
   onSearchSubmit,
   resultsCount,
+  checkin = '2026-09-22',
+  onCheckinChange,
+  checkout = '2026-09-26',
+  onCheckoutChange,
+  adults = 2,
+  onAdultsChange,
+  childrenCount = 0,
+  onChildrenCountChange,
 }: HotelSearchHeaderProps) {
   const locale = useLocale();
   const { country } = useCountryStore();
   const c = COUNTRIES[country] || COUNTRIES['turkey'];
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
     <>
@@ -56,7 +65,8 @@ export function HotelSearchHeader({
               <input
                 id="hotel-date-input"
                 type="date"
-                defaultValue="2026-09-22"
+                value={checkin}
+                onChange={(e) => onCheckinChange?.(e.target.value)}
                 dir="ltr"
                 className="w-full border-0 outline-0 text-[13px] font-extrabold p-0 bg-transparent text-ink"
               />
@@ -64,17 +74,99 @@ export function HotelSearchHeader({
           </div>
 
           <div className="flex items-center gap-2.5 flex-1 min-h-[52px] px-3 border border-line rounded-xl bg-surface">
+            <Star size={18} className="text-brand-dark shrink-0" />
+            <div className="w-full">
+              <label htmlFor="hotel-checkout-input" className="block text-[10px] font-extrabold text-sub">
+                {lt(locale, { fa: 'خروج', en: 'Check-out', ar: 'تسجيل المغادرة', zh: '退房', ru: 'Выезд' })}
+              </label>
+              <input
+                id="hotel-checkout-input"
+                type="date"
+                value={checkout}
+                onChange={(e) => onCheckoutChange?.(e.target.value)}
+                dir="ltr"
+                className="w-full border-0 outline-0 text-[13px] font-extrabold p-0 bg-transparent text-ink"
+              />
+            </div>
+          </div>
+
+          <div className="relative flex items-center gap-2.5 flex-1 min-h-[52px] px-3 border border-line rounded-xl bg-surface">
             <Users size={18} className="text-brand-dark shrink-0" />
             <div className="w-full">
               <span className="block text-[10px] font-extrabold text-sub">
-                {num(2, locale)} {lt(locale, { fa: 'اتاق', en: 'Rooms', ar: 'غرف', zh: '间客房', ru: 'номера' })}
-                {' · '}
-                {num(3, locale)} {lt(locale, { fa: 'مسافر', en: 'Guests', ar: 'مسافرين', zh: '位客人', ru: 'гостей' })}
+                {num(adults, locale)} {lt(locale, { fa: 'بزرگسال', en: 'Adults', ar: 'بالغين', zh: '成人', ru: 'взрослых' })}
+                {childrenCount > 0 ? ` · ${num(childrenCount, locale)} ${lt(locale, { fa: 'کودک', en: 'Child', ar: 'أطفال', zh: '儿童', ru: 'детей' })}` : ''}
               </span>
-              <span className="text-[13px] font-extrabold text-ink cursor-pointer hover:text-brand-dark transition-colors">
-                {lt(locale, { fa: 'ویرایش', en: 'Edit', ar: 'تعديل', zh: '修改', ru: 'Изменить' })}
-              </span>
+              <button
+                type="button"
+                onClick={() => setPickerOpen(!pickerOpen)}
+                className="text-[13px] font-extrabold text-ink cursor-pointer hover:text-brand-dark transition-colors text-start p-0 bg-transparent border-0"
+              >
+                {lt(locale, { fa: 'تغییر مسافران', en: 'Change Guests', ar: 'تغيير الضيوف', zh: '修改人数', ru: 'Изменить гостей' })}
+              </button>
             </div>
+
+            {pickerOpen && (
+              <div className="absolute top-[calc(100%+8px)] end-0 z-100 w-64 p-3.5 rounded-2xl bg-surface border border-line shadow-elev-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-ink">
+                    {lt(locale, { fa: 'بزرگسال', en: 'Adults', ar: 'البالغين', zh: '成人', ru: 'Взрослые' })}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onAdultsChange?.(Math.max(1, adults - 1))}
+                      disabled={adults <= 1}
+                      className="w-7 h-7 rounded-lg bg-soft border border-line grid place-items-center disabled:opacity-40"
+                    >
+                      <Minus size={12} />
+                    </button>
+                    <span className="w-5 text-center text-xs font-bold font-mono">{adults}</span>
+                    <button
+                      type="button"
+                      onClick={() => onAdultsChange?.(Math.min(9, adults + 1))}
+                      disabled={adults >= 9}
+                      className="w-7 h-7 rounded-lg bg-soft border border-line grid place-items-center disabled:opacity-40"
+                    >
+                      <Plus size={12} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-ink">
+                    {lt(locale, { fa: 'کودک', en: 'Children', ar: 'الأطفال', zh: '儿童', ru: 'Дети' })}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onChildrenCountChange?.(Math.max(0, childrenCount - 1))}
+                      disabled={childrenCount <= 0}
+                      className="w-7 h-7 rounded-lg bg-soft border border-line grid place-items-center disabled:opacity-40"
+                    >
+                      <Minus size={12} />
+                    </button>
+                    <span className="w-5 text-center text-xs font-bold font-mono">{childrenCount}</span>
+                    <button
+                      type="button"
+                      onClick={() => onChildrenCountChange?.(Math.min(6, childrenCount + 1))}
+                      disabled={childrenCount >= 6}
+                      className="w-7 h-7 rounded-lg bg-soft border border-line grid place-items-center disabled:opacity-40"
+                    >
+                      <Plus size={12} />
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setPickerOpen(false)}
+                  className="w-full py-1.5 rounded-lg bg-brand text-surface text-xs font-bold hover:bg-brand-dark"
+                >
+                  {lt(locale, { fa: 'تایید', en: 'Done', ar: 'تأكيد', zh: '确定', ru: 'Готово' })}
+                </button>
+              </div>
+            )}
           </div>
 
           <button

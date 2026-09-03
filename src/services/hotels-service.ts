@@ -324,7 +324,7 @@ export function searchHotels(params: HotelSearchParams): HotelSearchResponse {
 
   const q = (params.query || params.city || '').trim().toLowerCase();
 
-  let filtered = pool.filter((h) => {
+  const filtered = pool.filter((h) => {
     if (q) {
       const match =
         h.name.toLowerCase().includes(q) ||

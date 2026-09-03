@@ -6,7 +6,8 @@ import { Link } from '@/i18n/routing';
 import { LocaleSwitcher } from '@/components/layout/header/LocaleSwitcher';
 import {
   LayoutDashboard, BriefcaseBusiness, Wallet, DatabaseZap,
-  PlaneTakeoff, ExternalLink, ShieldCheck, UserCheck, Activity
+  PlaneTakeoff, ExternalLink, ShieldCheck, UserCheck, Activity,
+  Building2, Boxes
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
@@ -15,7 +16,9 @@ const NAV = [
   { href: '/admin/ops', label: { fa: 'عملیات و پشتیبانی', en: 'Ops & Support', ar: 'العمليات والدعم', zh: '运营与支持', ru: 'Операции и поддержка' }, icon: Activity },
   { href: '/admin/bookings', label: { fa: 'رزروها', en: 'Bookings', ar: 'الحجوزات', zh: '预订', ru: 'Бронирования' }, icon: BriefcaseBusiness },
   { href: '/admin/finance', label: { fa: 'مالی و تراکنش‌ها', en: 'Finance & Transactions', ar: 'المالية والمعاملات', zh: '财务与交易', ru: 'Финансы и транзакции' }, icon: Wallet },
-  { href: '/admin/content', label: { fa: 'تامین‌کنندگان و انبار', en: 'Suppliers & Inventory', ar: 'الموردون والمخزون', zh: '供应商与库存', ru: 'Поставщики и инвентарь' }, icon: DatabaseZap },
+  { href: '/admin/suppliers', label: { fa: 'تامین‌کنندگان', en: 'Suppliers', ar: 'الموردون', zh: '供应商', ru: 'Поставщики' }, icon: Building2 },
+  { href: '/admin/inventory', label: { fa: 'انبار و سهمیه‌ها', en: 'Inventory & Allotments', ar: 'المخزون والحصص', zh: '库存与配额', ru: 'Инвентарь и квоты' }, icon: Boxes },
+  { href: '/admin/content', label: { fa: 'یکپارچه‌سازی خارجی', en: 'External Integrations', ar: 'التكامل الخارجي', zh: '外部集成', ru: 'Интеграции' }, icon: DatabaseZap },
 ];
 
 /**

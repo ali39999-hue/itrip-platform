@@ -4,7 +4,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { Ban, Check, ShieldCheck, X } from 'lucide-react';
 import { fa, gFmt } from '@/lib/hotel-format';
 import { ROOMS, PLANS, type PlanId } from '@/lib/hotel-mock';
-import { quote, CHECKIN, CHECKOUT, ADULTS, CHILDREN, NIGHTS, toman, type useHotelBooking, FREE_CANCEL_HOURS } from '@/hooks/useHotelBooking';
+import { quote, toman, type useHotelBooking, FREE_CANCEL_HOURS } from '@/hooks/useHotelBooking';
 import { lt } from '@/lib/lt';
 
 interface BookingPanelProps {
@@ -16,27 +16,37 @@ export function BookingPanel({ booking, onBook }: BookingPanelProps) {
   const t = useTranslations('HotelDetail');
   const ariaT = useTranslations('Common.aria');
   const locale = useLocale();
-  const { sel, setSel, totals, capacity } = booking;
+  const {
+    sel,
+    setSel,
+    totals,
+    capacity,
+    adults,
+    children,
+    checkin,
+    checkout,
+    nights,
+  } = booking;
 
-  const cheapest = Math.min(...ROOMS.flatMap((r) => r.plans.map((p) => quote(r, p).total)));
+  const cheapest = Math.min(...ROOMS.flatMap((r) => r.plans.map((p) => quote(r, p, nights, 0).total)));
   const panelAmount = capacity.n > 0 ? totals.total : cheapest;
 
   const needs: string[] = [];
   if (capacity.n > 0) {
-    if (capacity.a < ADULTS) needs.push(`${lt(locale, { fa: 'ظرفیت بزرگسال کافی نیست', en: 'Adult capacity insufficient', ar: 'سعة البالغين غير كافية', zh: '成人容量不足', ru: 'Недостаточно мест для взрослых' })} (${fa(capacity.a)} / ${fa(ADULTS)})`);
-    if (capacity.c < CHILDREN) needs.push(lt(locale, { fa: 'جای کودک در نرخ‌های انتخابی لحاظ نشده است', en: 'Child occupancy not covered', ar: 'لا تشمل الأسعار المختارة مقاعد الأطفال', zh: '所选价格未包含儿童床位', ru: 'Выбранные тарифы не учитывают детей' }));
+    if (capacity.a < adults) needs.push(`${lt(locale, { fa: 'ظرفیت بزرگسال کافی نیست', en: 'Adult capacity insufficient', ar: 'سعة البالغين غير كافية', zh: '成人容量不足', ru: 'Недостаточно мест для взрослых' })} (${fa(capacity.a)} / ${fa(adults)})`);
+    if (children > 0 && capacity.c < children) needs.push(lt(locale, { fa: 'جای کودک در نرخ‌های انتخابی لحاظ نشده است', en: 'Child occupancy not covered', ar: 'لا تشمل الأسعار المختارة مقاعد الأطفال', zh: '所选价格未包含儿童床位', ru: 'Выбранные тарифы не учитывают детей' }));
   }
 
   const chosenPlans = Object.keys(sel).map((k) => PLANS[k.split('|')[1] as PlanId].refund);
   const worst = chosenPlans.includes('none') ? 'none' : chosenPlans.includes('partial') ? 'partial' : 'free';
-  const dl = new Date(new Date(CHECKIN + 'T14:00:00').getTime() - FREE_CANCEL_HOURS * 36e5);
+  const dl = new Date(new Date(checkin + 'T14:00:00').getTime() - FREE_CANCEL_HOURS * 36e5);
   const canBook = capacity.n > 0 && needs.length === 0;
 
   return (
     <aside className="lg:sticky lg:top-[126px] border border-line rounded-xl bg-surface shadow-elev-2 overflow-hidden">
       <div className="p-4 border-b border-line bg-gradient-to-b from-mint/30 to-surface">
         <div className="text-[11.5px] font-extrabold text-sub">
-          {capacity.n ? `${locale === 'fa' ? `جمع ${fa(capacity.n)} اتاق برای ${fa(NIGHTS.length)} شب` : `Total ${capacity.n} rooms for ${NIGHTS.length} nights`}` : (lt(locale, { fa: 'شروع قیمت برای اقامت شما', en: 'Starting rate for your dates', ar: 'السعر الابتدائي لتواريخ إقامتك', zh: '您所选日期的起步价', ru: 'Стартовая цена на ваши даты' }))}
+          {capacity.n ? `${locale === 'fa' ? `جمع ${fa(capacity.n)} اتاق برای ${fa(nights.length)} شب` : `Total ${capacity.n} rooms for ${nights.length} nights`}` : (lt(locale, { fa: 'شروع قیمت برای اقامت شما', en: 'Starting rate for your dates', ar: 'السعر الابتدائي لتواريخ إقامتك', zh: '您所选日期的起步价', ru: 'Стартовая цена на ваши даты' }))}
         </div>
         <div className="flex items-baseline gap-1.5">
           <b className="text-[26px] font-black text-price num">{fa(panelAmount)}</b>
@@ -49,17 +59,17 @@ export function BookingPanel({ booking, onBook }: BookingPanelProps) {
         <div className="grid grid-cols-2 gap-2">
           <div className="p-2.5 border border-line rounded-xl">
             <span className="block text-[10px] font-extrabold text-sub">{t('checkIn')}</span>
-            <b className="text-[12.5px] font-black">{gFmt.format(new Date(CHECKIN + 'T00:00:00'))}</b>
+            <b className="text-[12.5px] font-black">{gFmt.format(new Date(checkin + 'T00:00:00'))}</b>
           </div>
           <div className="p-2.5 border border-line rounded-xl">
             <span className="block text-[10px] font-extrabold text-sub">{t('checkOut')}</span>
-            <b className="text-[12.5px] font-black">{gFmt.format(new Date(CHECKOUT + 'T00:00:00'))}</b>
+            <b className="text-[12.5px] font-black">{gFmt.format(new Date(checkout + 'T00:00:00'))}</b>
           </div>
         </div>
         
         <div className="p-2.5 border border-line rounded-xl">
           <span className="block text-[10px] font-extrabold text-sub">{t('capacity')}</span>
-          <b className="text-[12.5px] font-black">{t('passengersSummary', { adults: ADULTS, children: CHILDREN })}</b>
+          <b className="text-[12.5px] font-black">{t('passengersSummary', { adults, children })}</b>
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -71,7 +81,7 @@ export function BookingPanel({ booking, onBook }: BookingPanelProps) {
             Object.entries(sel).map(([k, q]) => {
               const [rid, pid] = k.split('|') as [string, PlanId];
               const r = ROOMS.find((x) => x.id === rid)!;
-              const qt = quote(r, pid, Math.min(CHILDREN, r.capC));
+              const qt = quote(r, pid, nights, Math.min(children, r.capC));
               return (
                 <div key={k} className="flex items-start gap-2 p-2.5 border border-mint-bright/60 rounded-xl bg-mint/30">
                   <div className="flex-1 min-w-0">

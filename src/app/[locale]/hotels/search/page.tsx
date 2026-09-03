@@ -47,6 +47,10 @@ function HotelsSearchInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialCity = searchParams.get('city') || '';
+  const [checkin, setCheckin] = useState(searchParams.get('checkin') || '2026-09-22');
+  const [checkout, setCheckout] = useState(searchParams.get('checkout') || '2026-09-26');
+  const [adults, setAdults] = useState(searchParams.get('adults') ? Number(searchParams.get('adults')) : 2);
+  const [childrenCount, setChildrenCount] = useState(searchParams.get('children') ? Number(searchParams.get('children')) : 0);
 
   const {
     query,
@@ -81,14 +85,23 @@ function HotelsSearchInner() {
           query={query}
           onQueryChange={setQuery}
           onSearchSubmit={() => {
-            const trimmed = query.trim();
-            if (trimmed) {
-              router.push(`/hotels/search?city=${encodeURIComponent(trimmed)}`);
-            } else {
-              router.push('/hotels/search');
-            }
+            const params = new URLSearchParams();
+            if (query.trim()) params.set('city', query.trim());
+            if (checkin) params.set('checkin', checkin);
+            if (checkout) params.set('checkout', checkout);
+            if (adults) params.set('adults', String(adults));
+            if (childrenCount) params.set('children', String(childrenCount));
+            router.push(`/hotels/search?${params.toString()}`);
           }}
           resultsCount={results.length}
+          checkin={checkin}
+          onCheckinChange={setCheckin}
+          checkout={checkout}
+          onCheckoutChange={setCheckout}
+          adults={adults}
+          onAdultsChange={setAdults}
+          childrenCount={childrenCount}
+          onChildrenCountChange={setChildrenCount}
         />
 
         <HotelSearchToolbar
@@ -136,6 +149,10 @@ function HotelsSearchInner() {
                     onFav={() => toggleFav(numericId)}
                     cmpChecked={cmp.has(numericId)}
                     onCmp={() => toggleCmp(numericId)}
+                    checkin={checkin}
+                    checkout={checkout}
+                    adults={adults}
+                    childrenCount={childrenCount}
                   />
                 );
               })

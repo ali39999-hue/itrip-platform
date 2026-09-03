@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { Suspense, useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
@@ -332,6 +332,7 @@ function FlightSearchInner() {
 
           <div className="flex items-center justify-between">
             <p className="text-[12px] text-sub font-bold">{num(totalCount, locale)} {t('flights')} (لایو)</p>
+            {error && <span className="text-xs text-destructive font-bold">{error}</span>}
             {loading && (
               <span className="flex items-center gap-1.5 text-xs text-brand font-bold">
                 <Loader2 size={14} className="animate-spin" />

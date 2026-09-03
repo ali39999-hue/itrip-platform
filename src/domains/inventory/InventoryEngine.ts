@@ -98,6 +98,7 @@ export class InventoryEngine {
         return await prisma.$transaction(execute, {
           maxWait: 15000,
           timeout: 20000,
+          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
         });
       } catch (err: unknown) {
         retries--;

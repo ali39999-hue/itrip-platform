@@ -42,9 +42,20 @@ export function HotelCard({
   cmpChecked,
   onCmp,
   nights = 4,
+  checkin,
+  checkout,
+  adults,
+  childrenCount,
 }: HotelCardProps) {
   const locale = useLocale();
   const t = useTranslations('HotelsSearch');
+
+  const queryParams = new URLSearchParams();
+  if (checkin) queryParams.set('checkin', checkin);
+  if (checkout) queryParams.set('checkout', checkout);
+  if (adults !== undefined) queryParams.set('adults', String(adults));
+  if (childrenCount !== undefined) queryParams.set('children', String(childrenCount));
+  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
 
   const img = getHotelImage(hotel);
   const priceMillion = num(hotel.pricePerNight / 10000000, locale, {
@@ -193,7 +204,7 @@ export function HotelCard({
               </div>
             </div>
             <Link
-              href={`/hotels/${hotel.id}`}
+              href={`/hotels/${hotel.id}${queryString}`}
               className="h-11 px-5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs sm:text-sm flex items-center justify-center transition shadow-sm hover:shadow-elev-1 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none active:scale-[0.98]"
             >
               {t('viewAndBook')}

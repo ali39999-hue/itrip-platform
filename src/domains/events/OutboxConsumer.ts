@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { getNotificationProvider } from './NotificationProvider';
 
 /** Events stuck in PROCESSING for longer than this are re-queued. */
 const PROCESSING_STALE_MS = 2 * 60 * 1000;
@@ -88,17 +89,48 @@ export class OutboxConsumer {
             }
 
             case 'REFUND_REQUESTED':
-            case 'BOOKING_REFUNDED':
-              // Refund notifications await a real notification channel; the
-              // ledger and booking state are already updated synchronously.
-              console.log(`[Outbox] Refund notification queued for booking ${payload.bookingId}`);
-              break;
+            case 'BOOKING_REFUNDED': {
+              const notificationProvider = getNotificationProvider();
+              const bookingId = payload.bookingId;
+              const booking = bookingId ? await prisma.booking.findUnique({
+                where: { id: bookingId },
+                include: { customer: true }
+              }) : null;
 
-            case 'AUTH_OTP_REQUESTED':
-              // Delivery via SMS/email provider goes here. The identifier is
-              // never logged in full (PII).
-              console.log(`[Outbox] OTP dispatch event handled for channel ${payload.channel}`);
+              if (booking?.customer?.phone) {
+                await notificationProvider.sendSms(
+                  booking.customer.phone,
+                  `درخواست استرداد رزرو ${booking.reference || booking.id} ثبت گردید و در حال بررسی مالی است.`
+                );
+              } else if (booking?.customer?.email) {
+                await notificationProvider.sendEmail(
+                  booking.customer.email,
+                  'اطلاعیه استرداد رزرو فیروزو',
+                  `درخواست استرداد برای رزرو شماره ${booking.reference || booking.id} ثبت گردید.`
+                );
+              }
               break;
+            }
+
+            case 'AUTH_OTP_REQUESTED': {
+              const notificationProvider = getNotificationProvider();
+              const { identifier, channel, code } = payload;
+              const otpMessage = `کد تایید ورود به فیروزو: ${code || '***'}\nاعتبار: ۵ دقیقه`;
+
+              if (channel === 'email' || (identifier && identifier.includes('@'))) {
+                await notificationProvider.sendEmail(
+                  identifier,
+                  'کد تایید ورود به فیروزو',
+                  otpMessage
+                );
+              } else {
+                await notificationProvider.sendSms(
+                  identifier,
+                  otpMessage
+                );
+              }
+              break;
+            }
 
             default:
               console.log(`[Outbox] Processed generic event ${event.eventType}`);
