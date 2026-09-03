@@ -38,6 +38,8 @@ export function useHotelFilters({
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  const starsKey = Array.from(stars).sort().join(',');
+
   const fetchLiveHotels = useCallback(async () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -99,7 +101,8 @@ export function useHotelFilters({
     } finally {
       setLoading(false);
     }
-  }, [query, initialCity, country, stars, minScore, freeCancel, maxPrice, sort]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, initialCity, country, starsKey, minScore, freeCancel, maxPrice, sort]);
 
   useEffect(() => {
     fetchLiveHotels();
@@ -154,8 +157,8 @@ export function useHotelFilters({
   }, []);
 
   const results = useMemo(() => {
-    return hotels;
-  }, [hotels]);
+    return hotels.slice(0, shown);
+  }, [hotels, shown]);
 
   const chips = useMemo<FilterChip[]>(() => {
     const out: FilterChip[] = [];

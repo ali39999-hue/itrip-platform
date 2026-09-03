@@ -68,6 +68,8 @@ function HotelsSearchInner() {
     toggleFreeCancel,
     resetAll,
     results,
+    totalCount,
+    loadMore,
     priceBuckets,
     chips,
     activeFiltersCount,
@@ -139,23 +141,37 @@ function HotelsSearchInner() {
             ) : results.length === 0 ? (
               <HotelEmptyState onResetFilters={resetAll} />
             ) : (
-              results.map((hotel: Hotel) => {
-                const numericId = Number(String(hotel.id).replace(/^h/, '')) || 0;
-                return (
-                  <HotelCard
-                    key={hotel.id}
-                    hotel={hotel}
-                    fav={favs.has(numericId)}
-                    onFav={() => toggleFav(numericId)}
-                    cmpChecked={cmp.has(numericId)}
-                    onCmp={() => toggleCmp(numericId)}
-                    checkin={checkin}
-                    checkout={checkout}
-                    adults={adults}
-                    childrenCount={childrenCount}
-                  />
-                );
-              })
+              <>
+                {results.map((hotel: Hotel) => {
+                  const numericId = Number(String(hotel.id).replace(/^h/, '')) || 0;
+                  return (
+                    <HotelCard
+                      key={hotel.id}
+                      hotel={hotel}
+                      fav={favs.has(numericId)}
+                      onFav={() => toggleFav(numericId)}
+                      cmpChecked={cmp.has(numericId)}
+                      onCmp={() => toggleCmp(numericId)}
+                      checkin={checkin}
+                      checkout={checkout}
+                      adults={adults}
+                      childrenCount={childrenCount}
+                    />
+                  );
+                })}
+
+                {/* Load More Button */}
+                {results.length < totalCount && (
+                  <div className="pt-4 text-center">
+                    <button
+                      onClick={loadMore}
+                      className="px-6 py-2.5 rounded-xl border border-line bg-surface hover:bg-soft text-ink text-xs sm:text-sm font-bold shadow-2xs transition"
+                    >
+                      بارگذاری اقامتگاه‌های بیشتر ({results.length} از {totalCount})
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
 

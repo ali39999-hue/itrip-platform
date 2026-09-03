@@ -65,6 +65,13 @@ function FlightSearchInner() {
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  const airlinesKey = airlines.join(',');
+  const stopsKey = stops.join(',');
+  const minPriceVal = price[0];
+  const maxPriceVal = price[1];
+  const minBound = priceBounds.min;
+  const maxBound = priceBounds.max;
+
   // Fetch live flights data
   const fetchFlights = useCallback(async () => {
     if (abortControllerRef.current) {
@@ -83,8 +90,8 @@ function FlightSearchInner() {
       if (sort) q.set('sort', sort);
       if (airlines.length) q.set('airlines', airlines.join(','));
       if (stops.length) q.set('stops', stops.join(','));
-      if (price[0] > priceBounds.min) q.set('minPrice', String(price[0]));
-      if (price[1] < priceBounds.max) q.set('maxPrice', String(price[1]));
+      if (minPriceVal > minBound) q.set('minPrice', String(minPriceVal));
+      if (maxPriceVal < maxBound) q.set('maxPrice', String(maxPriceVal));
       q.set('limit', '50');
 
       const res = await fetch(`/api/flights/search?${q.toString()}`, {
@@ -106,15 +113,11 @@ function FlightSearchInner() {
           setStopCounts(json.data.stopCounts);
         }
         if (json.data.priceBounds) {
+          const newBounds = json.data.priceBounds;
           setPriceBounds((prev) => {
-            const newBounds = json.data.priceBounds;
-            // Update current price slider only if uninitialized
-            setPrice((curr) => {
-              if (curr[0] === prev.min && curr[1] === prev.max) {
-                return [newBounds.min, newBounds.max];
-              }
-              return curr;
-            });
+            if (prev.min === newBounds.min && prev.max === newBounds.max) {
+              return prev;
+            }
             return newBounds;
           });
         }
@@ -127,7 +130,8 @@ function FlightSearchInner() {
     } finally {
       setLoading(false);
     }
-  }, [from, to, travelDate, sort, airlines, stops, price, priceBounds.min, priceBounds.max]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [from, to, travelDate, sort, airlinesKey, stopsKey, minPriceVal, maxPriceVal, minBound, maxBound]);
 
   useEffect(() => {
     fetchFlights();
