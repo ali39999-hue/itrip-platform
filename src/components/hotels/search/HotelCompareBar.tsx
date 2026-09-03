@@ -36,7 +36,7 @@ export function HotelCompareBar({
 
       <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-3">
         {Array.from(cmp).map((id) => {
-          const h = hotels.find((x) => (Number(String(x.id).replace(/^h/, '')) || x.id) === id);
+          const h = hotels.find((x) => x.id === id);
           return (
             <div
               key={id}

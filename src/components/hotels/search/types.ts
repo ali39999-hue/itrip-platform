@@ -93,9 +93,9 @@ export interface HotelCardProps {
 }
 
 export interface HotelCompareBarProps {
-  cmp: Set<number>;
+  cmp: Set<string>;
   hotels: Hotel[];
-  onToggleCmp: (id: number) => void;
+  onToggleCmp: (id: string) => void;
   onCompareAction?: () => void;
 }
 

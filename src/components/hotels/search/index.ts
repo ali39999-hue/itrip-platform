@@ -9,5 +9,6 @@ export * from './HotelFilterChips';
 export * from './HotelPriceHistogram';
 export * from './HotelCard';
 export * from './HotelCompareBar';
+export * from './HotelCompareModal';
 export * from './HotelEmptyState';
 export * from './HotelSkeletonList';

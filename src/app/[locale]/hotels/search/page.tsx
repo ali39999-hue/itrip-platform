@@ -4,7 +4,6 @@ import { Suspense, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/i18n/routing';
-import { HOTELS } from '@/lib/data';
 import type { Hotel } from '@/lib/types';
 import {
   HotelSearchHeader,
@@ -14,6 +13,7 @@ import {
   HotelFilterChips,
   HotelCard,
   HotelCompareBar,
+  HotelCompareModal,
   HotelEmptyState,
   HotelSkeletonList,
   useHotelFilters,
@@ -79,6 +79,9 @@ function HotelsSearchInner() {
 
   const [showMap, setShowMap] = useState(false);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [compareModalOpen, setCompareModalOpen] = useState(false);
+
+  const comparedHotels = results.filter((h) => cmp.has(h.id));
 
   return (
     <div className="min-h-screen bg-soft/40 py-6 px-4 md:px-8">
@@ -143,15 +146,14 @@ function HotelsSearchInner() {
             ) : (
               <>
                 {results.map((hotel: Hotel) => {
-                  const numericId = Number(String(hotel.id).replace(/^h/, '')) || 0;
                   return (
                     <HotelCard
                       key={hotel.id}
                       hotel={hotel}
-                      fav={favs.has(numericId)}
-                      onFav={() => toggleFav(numericId)}
-                      cmpChecked={cmp.has(numericId)}
-                      onCmp={() => toggleCmp(numericId)}
+                      fav={favs.has(hotel.id)}
+                      onFav={() => toggleFav(hotel.id)}
+                      cmpChecked={cmp.has(hotel.id)}
+                      onCmp={() => toggleCmp(hotel.id)}
                       checkin={checkin}
                       checkout={checkout}
                       adults={adults}
@@ -203,8 +205,21 @@ function HotelsSearchInner() {
         {/* Compare Bottom Bar */}
         <HotelCompareBar
           cmp={cmp}
-          hotels={HOTELS}
+          hotels={results}
           onToggleCmp={toggleCmp}
+          onCompareAction={() => setCompareModalOpen(true)}
+        />
+
+        {/* Side-by-Side Comparison Modal */}
+        <HotelCompareModal
+          isOpen={compareModalOpen}
+          onClose={() => setCompareModalOpen(false)}
+          comparedHotels={comparedHotels}
+          onRemove={toggleCmp}
+          checkin={checkin}
+          checkout={checkout}
+          adults={adults}
+          childrenCount={childrenCount}
         />
       </div>
     </div>

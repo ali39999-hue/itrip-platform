@@ -3,10 +3,10 @@
 import { useState, useCallback } from 'react';
 
 export function useHotelComparison() {
-  const [favs, setFavs] = useState<Set<number>>(new Set());
-  const [cmp, setCmp] = useState<Set<number>>(new Set());
+  const [favs, setFavs] = useState<Set<string>>(new Set());
+  const [cmp, setCmp] = useState<Set<string>>(new Set());
 
-  const toggleFav = useCallback((id: number) => {
+  const toggleFav = useCallback((id: string) => {
     setFavs((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -18,7 +18,7 @@ export function useHotelComparison() {
     });
   }, []);
 
-  const toggleCmp = useCallback((id: number) => {
+  const toggleCmp = useCallback((id: string) => {
     setCmp((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -34,8 +34,8 @@ export function useHotelComparison() {
     setCmp(new Set());
   }, []);
 
-  const isFav = useCallback((id: number) => favs.has(id), [favs]);
-  const isCmp = useCallback((id: number) => cmp.has(id), [cmp]);
+  const isFav = useCallback((id: string) => favs.has(id), [favs]);
+  const isCmp = useCallback((id: string) => cmp.has(id), [cmp]);
 
   return {
     favs,

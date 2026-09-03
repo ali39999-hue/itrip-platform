@@ -105,7 +105,7 @@ export function HotelOverview({ hotel }: { hotel: Hotel }) {
   );
 }
 
-export function HotelLocation({ hotel }: { hotel: Hotel }) {
+export function HotelLocation({ hotel }: { hotel: Hotel & { location?: { lat: number; lng: number } } }) {
   const t = useTranslations('HotelDetail');
   const locale = useLocale();
 
@@ -115,7 +115,7 @@ export function HotelLocation({ hotel }: { hotel: Hotel }) {
       <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">{t('walkingDistances')}</p>
       <div className="grid grid-cols-1 md:grid-cols-[1.05fr_.95fr] gap-3.5">
         <div className="relative min-h-[240px] rounded-xl overflow-hidden border border-line bg-soft z-0" dir="ltr">
-          <HotelMap hotelId={hotel.id} hotelName={hotel.name} />
+          <HotelMap hotelId={hotel.id} hotelName={hotel.name} city={hotel.city} location={hotel.location} />
         </div>
 
         <div className="flex flex-col gap-2">
