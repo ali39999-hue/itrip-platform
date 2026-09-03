@@ -77,7 +77,7 @@ async function verifyStoredOtp(identifier: string, code: string): Promise<boolea
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: resolvedSecret,
-  trustHost: true,
+  trustHost: process.env.NODE_ENV !== 'production',
   logger: {
     error(error) {
       // A stale session cookie (e.g. after an AUTH_SECRET rotation) surfaces as
@@ -117,7 +117,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           // Passwordless: the OTP itself is the credential, verified server-side.
           const otp = password;
           if (!otp) return null;
-          const isValid = DEMO_MODE && (otp === '1234' || otp.length === 4 || otp.length === 5)
+          const isValid = (DEMO_MODE && otp === '1234')
             ? true
             : await verifyStoredOtp(rawIdentifier, otp);
           if (!isValid) return null;

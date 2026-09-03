@@ -133,7 +133,17 @@ export const useAuthStore = create<AuthState>()(
                 names: state.user.names,
               }
             : null,
-          kyc: state.kyc || { step: 'phone' },
+          kyc: state.kyc
+            ? {
+                step: state.kyc.step,
+                phone: state.kyc.phone,
+                firstNameFa: state.kyc.firstNameFa,
+                lastNameFa: state.kyc.lastNameFa,
+                firstNameEn: state.kyc.firstNameEn,
+                lastNameEn: state.kyc.lastNameEn,
+                // Sensitive PII (nationalId, passportNo, passportExpiry) is strictly excluded from client localStorage
+              }
+            : { step: 'phone' },
         }) as unknown as AuthState,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as { user?: User };
