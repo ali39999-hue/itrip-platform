@@ -25,6 +25,31 @@ export const BookingType = z.enum([
 ]);
 export type BookingType = z.infer<typeof BookingType>;
 
+/**
+ * Client pages store plural, lowercase service types ('flights', 'hotels', …)
+ * while the booking schema (and the database) uses the singular enum above.
+ * Normalize every known client spelling to the canonical server value.
+ */
+export function normalizeBookingType(raw: string | null | undefined): BookingType | undefined {
+  if (!raw) return undefined;
+  const map: Record<string, BookingType> = {
+    FLIGHT: "FLIGHT",
+    FLIGHTS: "FLIGHT",
+    HOTEL: "HOTEL",
+    HOTELS: "HOTEL",
+    TOUR: "TOUR",
+    TOURS: "TOUR",
+    TRANSFER: "TRANSFER",
+    TRANSFERS: "TRANSFER",
+    TRAIN: "TRAIN",
+    TRAINS: "TRAIN",
+    INSURANCE: "INSURANCE",
+    ESIM: "ESIM",
+    VISA: "VISA",
+  };
+  return map[raw.trim().toUpperCase()];
+}
+
 export const BookingStatus = z.enum([
   "DRAFT",
   "PENDING_PAYMENT",
@@ -57,15 +82,35 @@ export const passengerSchema = z.object({
     .regex(nameRegex, "Only Latin and Persian characters are allowed"),
   nationalId: z
     .string()
-    .regex(/^\d{10}$/, "National ID must be exactly 10 digits"),
+    .regex(/^\d{10}$/, "National ID must be exactly 10 digits")
+    .optional()
+    .or(z.literal("")),
   passportNo: z
     .string()
     .min(5, "Passport number is too short")
-    .max(20, "Passport number is too long")
-    .optional(),
+    .max(20, "Passport number is too long"),
   birthDate: z
     .string()
-    .date("Birth date must be a valid YYYY-MM-DD string"),
+    .min(1, "Birth date is required")
+    .transform((v) => {
+      // Normalize MM/DD/YYYY to YYYY-MM-DD
+      const mdy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(v.trim());
+      if (mdy) {
+        const [, m, d, y] = mdy;
+        return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+      }
+      // Normalize YYYY/MM/DD to YYYY-MM-DD
+      const ymd = /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/.exec(v.trim());
+      if (ymd) {
+        const [, y, m, d] = ymd;
+        return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+      }
+      return v.trim();
+    })
+    .refine(
+      (v) => /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(new Date(v).getTime()),
+      "Please pick your date of birth from the calendar"
+    ),
   gender: Gender,
 });
 export type Passenger = z.infer<typeof passengerSchema>;
@@ -79,7 +124,7 @@ export const moneySchema = z.object({
 export type Money = z.infer<typeof moneySchema>;
 
 export const bookingSchema = z.object({
-  type: BookingType,
+  type: z.preprocess((v) => normalizeBookingType(typeof v === "string" ? v : undefined), BookingType),
   itemId: z.string().optional(),
   itemTitle: z.string().optional(),
   count: z.number().int().positive().default(1),
@@ -114,6 +159,34 @@ export const walletTopupSchema = z.object({
     .default("IRR"),
 });
 export type WalletTopup = z.infer<typeof walletTopupSchema>;
+
+// ─── Profile Update ──────────────────────────────────────────────────────────
+
+export const profileUpdateSchema = z.object({
+  name: z.string().trim().max(80).optional(),
+  firstNameFa: z.string().trim().max(40).optional(),
+  lastNameFa: z.string().trim().max(40).optional(),
+  firstNameEn: z.string().trim().max(40).regex(/^[A-Za-z\s'-]*$/, "Only Latin characters are allowed").optional(),
+  lastNameEn: z.string().trim().max(40).regex(/^[A-Za-z\s'-]*$/, "Only Latin characters are allowed").optional(),
+  email: z.string().trim().email("Invalid email address").optional(),
+  phone: z.string().trim().regex(/^\+?\d{7,15}$/, "Invalid phone number").optional(),
+  nationalId: z.string().trim().regex(/^\d{10}$/, "National ID must be exactly 10 digits").optional(),
+  passportNo: z.string().trim().min(5, "Passport number is too short").max(20, "Passport number is too long").optional(),
+  passportExpiry: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expiry must be YYYY-MM-DD").optional(),
+});
+export type ProfileUpdate = z.infer<typeof profileUpdateSchema>;
+
+// ─── OTP Request ─────────────────────────────────────────────────────────────
+
+export const otpRequestSchema = z.object({
+  identifier: z
+    .string()
+    .trim()
+    .min(5, "Identifier is too short")
+    .max(80, "Identifier is too long"),
+  channel: z.enum(["phone", "email", "telegram", "whatsapp", "wechat"]).default("phone"),
+});
+export type OtpRequest = z.infer<typeof otpRequestSchema>;
 
 // ─── Search ───────────────────────────────────────────────────────────────────
 

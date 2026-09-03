@@ -42,7 +42,12 @@ function genId(prefix: string) {
 export const useBookingStore = create<BookingState>()(
   persist(
     (set, get) => ({
-      wallet: { IRR: 150_000_000, USDT: 250, AED: 400 },
+      // Real balances come from the server (getWallet). The seeded demo wallet
+      // exists only when the public demo flag is on, so production always
+      // starts at zero.
+      wallet: process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
+        ? { IRR: 150_000_000, USDT: 250, AED: 400 }
+        : { IRR: 0, USDT: 0, AED: 0 },
       bookingContext: null,
       passengers: [],
       bookings: [],

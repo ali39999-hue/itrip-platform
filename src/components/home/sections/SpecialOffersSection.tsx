@@ -57,8 +57,8 @@ export function SpecialOffersSection() {
       <div className="max-w-[1280px] mx-auto flex flex-col gap-8">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="mb-2 text-brand-dark font-black tracking-wide text-xs">{c.flag} {t('offersKicker')}</p>
-            <h2 className="text-2xl md:text-[32px] font-black text-ink m-0 tracking-tight">
+            <p className="mb-2 text-brand-dark font-black text-xs">{c.flag} {t('offersKicker')}</p>
+            <h2 className="text-2xl md:text-[32px] font-black text-ink m-0">
               {t('offersTitle', { country: countryName(country, locale) })}
             </h2>
           </div>

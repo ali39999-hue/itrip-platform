@@ -91,7 +91,7 @@ export function AddonsSection({
               })}
             </p>
             <span className="text-[13px] font-black text-brand-dark font-mono">
-              +{formatMoney(ESIM_PRICE, 'IRR')}
+              +{formatMoney(ESIM_PRICE, 'IRR', locale)}
             </span>
           </div>
         </label>
@@ -133,7 +133,7 @@ export function AddonsSection({
               })}
             </p>
             <span className="text-[13px] font-black text-brand-dark font-mono">
-              +{formatMoney(INSURANCE_PRICE, 'IRR')}
+              +{formatMoney(INSURANCE_PRICE, 'IRR', locale)}
             </span>
           </div>
         </label>

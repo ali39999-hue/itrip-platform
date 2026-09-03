@@ -126,3 +126,46 @@ The following core modules and capabilities have undergone end-to-end browser au
 - **Atomic Inventory Hold Engine:** Implemented `src/domains/inventory/InventoryEngine.ts` preventing overselling via read-then-write approach effectively utilizing SQLite transaction capabilities, TTL hold tokens, and background sweeper worker.
 - **Formal State Machine & Saga Orchestration:** Implemented `src/domains/booking/state-machine.ts` with 13 deterministic lifecycle states and `BookingSagaOrchestrator.ts` handling dual-entry payments, hold capture, and realized revenue postings. (Saga = ACID Transaction).
 - **Standard Double-Entry Posting Templates:** Created `src/domains/ledger/GeneralLedgerService.ts` for strictly balanced escrow, revenue, supplier liability, and refund journals. Idempotency enforced via UUIDs.
+
+## 9. Security & Integrity Audit Round (2026-09-02)
+
+Full-stack audit executed with two independent exploration passes (backend/ERP + frontend/UX) followed by targeted fixes. Baseline before fixes: typecheck PASS, lint PASS, 18/18 unit tests, build PASS.
+
+### 9.1 P0 Security Fixes
+- **OTP master-code removed (actions/auth.ts, auth.ts):** the universal 1234 code is gone. A real server-issued OTP flow now exists: `requestOtp()` stores a hashed 6-digit code (5-min TTL, max 5 attempts, flood control 3/10min) in the new `OtpVerification` table; the credentials provider gained an `otp` channel that verifies server-side. Demo bypasses are strictly gated behind `DEMO_MODE=true`. Passwordless first login auto-creates a CUSTOMER account (never admin).
+- **Client-fabricated user/role objects removed:** `verifyOtpAndLogin` returns the user derived from the session JWT + DB row; the identifier pattern admin-role escalation is deleted.
+- **IDOR fixed in `payBooking`:** ownership check (`booking.customerId === session.user.id`, SUPER_ADMIN override) + payable-state guard before the saga runs.
+- **`updateProfileDetails` hardened:** requires an authenticated session, ignores client-sent userId, validates all fields via the new `profileUpdateSchema`.
+- **JWT secret:** hardcoded in-code fallback removed (throws at boot in production when AUTH_SECRET is missing); strong random secret rotated into .env/.env.local.
+- **Payment idempotency scoped to the booking:** replaying another booking's idempotency key is rejected (previously it confirmed the new booking for free); no blind FAILED->SUCCESS flips; gatewayRef no longer uses Date.now/Math.random.
+- **Middleware fail-closed:** unreadable admin token now redirects to auth (was fail-open); fake lowercase admin role acceptance removed; route matching requires path-boundary match.
+- **getBookingById:** FINANCE/OPS can now view bookings (matches the booking:view:all permission).
+
+### 9.2 Booking/Ledger Integrity
+- **State machine:** HELD -> PAYMENT_CONFIRMED added (inventory-backed bookings were unpayable); same-state transitions removed; stateHistory unified to one JSON shape ({from,to,at}) and always appended, never overwritten.
+- **Saga:** no fabricated cost/tax breakdowns; tx timeout raised (20s); wallet_usdt routed through wallet posting; hold linked to bookingId for traceability.
+- **Ledger:** `Account @@unique([ownerType, ownerId, currency])` + '#platform' sentinel (scripts/normalize-accounts.ts); getOrCreateAccount is a race-safe upsert; VAT posts to a dedicated TAX_PAYABLE account; postFXConversion is a balanced two-leg template with spread revenue; postRefund refuses to overdraw escrow; new postTopUp template (TOPUP referenceType feeds the admin inflow metric).
+- **Refund releases inventory:** refundBookingAdmin decrements allotment.booked for captured holds and releases them (refunds no longer consume capacity forever); permission enforced via requirePermission('booking:refund:approve').
+- **Fail-closed pricing:** unknown itemId/addons are rejected instead of silently priced at fallback constants; holds use parsed.travelDate; reference collision fixed with a random suffix; auto-created users get no dummy password hash.
+- **FX rates unified:** CurrencyService USDT_IRR was ~100x off and silently converted unknown pairs 1:1; single source of truth now (money.ts CURRENCY_TO_TOMAN in Toman, CurrencyService in IRR); unknown pairs throw.
+
+### 9.3 Outbox & Ops
+- **OutboxConsumer:** stale PROCESSING events (2min) are recovered; BOOKING_CONFIRMED/PAID handler stamps a real GDS-style PNR (externalPnr) + audit log entry; OTP identifiers no longer logged (PII).
+- **Admin finance stats:** SQL groupBy aggregation with per-currency balances and inflow/outflow (inflow was always 0 before: no TOPUP poster existed).
+
+### 9.4 Frontend Funnel & UX
+- **Checkout:** empty-state guard (no more fabricated order for direct visits); payment completes BEFORE the success screen shows; real server reference/PNR on the confirmation; draft errors surface or redirect to /auth; contact fields come from the signed-in user; the gateway selector uses the real server wallet balance.
+- **payment-status:** demo state-switcher removed; status derives from the ?status= callback param; fake tracking code/amount fallbacks removed.
+- **Wallet:** sign-in gate for anonymous users; deposit calls requestWalletTopUp (real ledger TOPUP in demo, honest 'not configured' in production); exchange calls exchangeWalletCurrency (balanced double-entry + 0.5% spread as revenue) with real balance checks.
+- **Flights checkout:** prices derive from the booking context/catalog (no magic constants), insurance is no longer pre-ticked, addon prices unified with the main funnel.
+- **my-trips:** sign-in prompt vs empty state distinguished; tabs fixed (upcoming/past/cancelled with correct filters and counts).
+- **i18n:** guide articles now localized in 5 locales; flights landing Persian leaks replaced; SosInterpreter modal fully localized; 4 broken aria t() namespaces fixed (they rendered raw keys into screen-reader labels).
+
+### 9.5 UI & SEO
+- Button component gained brand/action variants and touch-friendly default sizes (h-10, lg h-12).
+- 13 public routes got locale-aware metadata via the new src/lib/page-metadata.ts layouts; 6 private routes got noindex layouts; home title duplication fixed (absolute title).
+- hotels/search wrapped in Suspense (useSearchParams prerender crash risk); checkout/payment-status have hydrate-safe skeletons.
+
+### 9.6 Tests & Validation (post-fix)
+- typecheck PASS; eslint --max-warnings=0 PASS; next build PASS.
+- 24/24 unit tests pass including the new security-fixes.test.ts (idempotency scoping, HELD->paid regression, double-pay rejection, ledger balance guards, account uniqueness).

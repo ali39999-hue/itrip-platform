@@ -23,7 +23,7 @@ export const VALID_TRANSITIONS: StateTransitionRule[] = [
   { from: ['DRAFT'], to: 'HELD', description: 'Hold inventory allotment' },
   { from: ['DRAFT', 'HELD'], to: 'PENDING_PAYMENT', description: 'Final server price agreed' },
   { from: ['HELD', 'PENDING_PAYMENT'], to: 'EXPIRED', description: 'TTL expired before payment' },
-  { from: ['PENDING_PAYMENT', 'DRAFT'], to: 'PAYMENT_CONFIRMED', description: 'Payment authorized/captured' },
+  { from: ['HELD', 'PENDING_PAYMENT', 'DRAFT'], to: 'PAYMENT_CONFIRMED', description: 'Payment authorized/captured' },
   { from: ['PAYMENT_CONFIRMED'], to: 'CONFIRMING_SUPPLIER', description: 'Awaiting on-request supplier response' },
   { from: ['PAYMENT_CONFIRMED', 'CONFIRMING_SUPPLIER'], to: 'CONFIRMED', description: 'Instant or supplier confirmed' },
   { from: ['CONFIRMING_SUPPLIER'], to: 'REFUND_INITIATED', description: 'Supplier rejected on-request' },
@@ -38,7 +38,8 @@ export const VALID_TRANSITIONS: StateTransitionRule[] = [
 
 export class BookingStateMachine {
   static canTransition(current: BookingState, next: BookingState): boolean {
-    if (current === next) return true;
+    // Strict: even same-state "transitions" must go through the table so
+    // double-payment and stale re-submissions are rejected.
     return VALID_TRANSITIONS.some((r) => r.from.includes(current) && r.to === next);
   }
 

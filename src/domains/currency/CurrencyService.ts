@@ -1,6 +1,10 @@
 /**
  * Pure Currency Domain Service
  * Encapsulates exchange rates, conversions, and money formatting.
+ *
+ * Rate units: 1 unit of `from` buys X units of `to`, amounts in IRR (Rials).
+ * The canonical single source for Toman display rates lives in lib/money.ts
+ * (CURRENCY_TO_TOMAN); keep both tables in sync when updating rates.
  */
 
 export interface WalletBalances {
@@ -15,13 +19,14 @@ export interface CurrencyRateProvider {
   getRate(from: SupportedCurrency, to: SupportedCurrency): number;
 }
 
+/** 1 USDT = 550,000 IRR (55,000 Toman); 1 AED = 165,000 IRR (16,500 Toman). */
 export const DEFAULT_EXCHANGE_RATES: Record<string, number> = {
-  'IRR_USDT': 0.000000024,
-  'USDT_IRR': 41_800_000,
-  'IRR_AED': 0.00000088,
-  'AED_IRR': 1_140_000,
-  'USDT_AED': 3.67,
-  'AED_USDT': 0.2725,
+  'IRR_USDT': 1 / 550_000,
+  'USDT_IRR': 550_000,
+  'IRR_AED': 1 / 165_000,
+  'AED_IRR': 165_000,
+  'USDT_AED': 3.33,
+  'AED_USDT': 0.3,
 };
 
 export class StaticRateProvider implements CurrencyRateProvider {
@@ -29,8 +34,12 @@ export class StaticRateProvider implements CurrencyRateProvider {
 
   getRate(from: SupportedCurrency, to: SupportedCurrency): number {
     if (from === to) return 1;
-    const key = `${from}_${to}`;
-    return this.rates[key] ?? 1;
+    const rate = this.rates[`${from}_${to}`];
+    // Silent 1:1 conversion of unconfigured pairs corrupts money math — fail loudly.
+    if (rate === undefined) {
+      throw new Error(`No exchange rate configured for ${from} -> ${to}`);
+    }
+    return rate;
   }
 }
 

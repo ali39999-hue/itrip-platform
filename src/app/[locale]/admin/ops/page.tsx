@@ -2,7 +2,7 @@ import { getLocale } from 'next-intl/server';
 import { lt } from '@/lib/lt';
 import { AlertCircle, Clock, CheckCircle2 } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
-import { auth } from '@/auth';
+import { safeAuth } from '@/auth';
 import { redirect } from 'next/navigation';
 
 async function getOpsData() {
@@ -27,7 +27,7 @@ async function getOpsData() {
 
 export default async function AdminOpsPage() {
   const locale = await getLocale();
-  const session = await auth();
+  const session = await safeAuth();
   
   if (!session || !['SUPER_ADMIN', 'OPS', 'FINANCE'].includes(session.user.role)) {
     redirect('/' + locale + '/account');

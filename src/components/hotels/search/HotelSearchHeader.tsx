@@ -3,6 +3,7 @@
 import React from 'react';
 import { MapPin, Star, Users, Search } from 'lucide-react';
 import { useLocale } from 'next-intl';
+import { Link } from '@/i18n/routing';
 import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES } from '@/lib/countries';
 import { num } from '@/lib/format';
@@ -98,9 +99,12 @@ export function HotelSearchHeader({
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-surface/15 bg-surface/5">
             {lt(locale, { fa: 'درگاه پرداخت:', en: 'Payment gateway:', ar: 'بوابة الدفع:', zh: '支付网关：', ru: 'Платёжный шлюз:' })} <b className="text-mint-bright">{locale === 'fa' ? c.gateway : c.gatewayEn}</b>
           </span>
-          <span className="me-auto hidden md:inline-flex items-center gap-1 text-mint-bright font-extrabold cursor-pointer hover:underline">
+          <Link
+            href="/support"
+            className="me-auto hidden md:inline-flex items-center gap-1 text-mint-bright font-extrabold hover:underline"
+          >
             {lt(locale, { fa: 'شرایط پرداخت و لغو این کشور ←', en: 'Payment & cancellation terms for this country →', ar: 'شروط الدفع والإلغاء لهذا البلد ←', zh: '该国家/地区的支付与取消条款 →', ru: 'Условия оплаты и отмены для этой страны →' })}
-          </span>
+          </Link>
         </div>
       </div>
 

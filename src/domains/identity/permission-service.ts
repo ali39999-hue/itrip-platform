@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { auth } from '@/auth';
+import { safeAuth } from '@/auth';
 import { ERPPermission, ROLE_DEFAULT_PERMISSIONS } from './permissions';
 
 export type { ERPPermission };
@@ -39,7 +39,7 @@ export async function requirePermission(permission: ERPPermission): Promise<{
   email: string | null;
   role: string;
 }> {
-  const session = await auth();
+  const session = await safeAuth();
   if (!session || !session.user?.id) {
     throw new Error('Unauthorized');
   }

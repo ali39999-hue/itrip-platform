@@ -1,25 +1,45 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
+import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth-store';
 import { ScanLine, CheckCircle2, Loader2, User, Lock, LogIn, Mail, Phone, Send, MessageCircle, QrCode } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { Logo } from '@/components/layout/Logo';
-import { AuthChannel } from '@/actions/auth';
+import { AuthChannel, requestOtp } from '@/actions/auth';
+
+const DEMO_UI = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
 export default function AuthPage() {
   const t = useTranslations('Auth');
   const locale = useLocale();
   const router = useRouter();
-  const { login, setKycStep, updateKyc, kyc } = useAuthStore();
+  const searchParams = useSearchParams();
+  const { login, setKycStep, updateKyc, kyc, user } = useAuthStore();
+
+  // Return the visitor to where they came from (checkout, my-trips, wallet…).
+  // Only accept safe internal paths.
+  const rawCallback = searchParams.get('callbackUrl');
+  const callbackUrl =
+    rawCallback && rawCallback.startsWith('/') && !rawCallback.startsWith('//') ? rawCallback : '/account';
+
+  // Already signed-in users don't need the auth flow — send them on their way.
+  useEffect(() => {
+    if (kyc?.step === 'approved' && user) {
+      router.push(callbackUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kyc?.step, user]);
 
   const [channel, setChannel] = useState<AuthChannel>('phone');
   const [identifier, setIdentifier] = useState('');
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [devCode, setDevCode] = useState<string | null>(null);
 
   const [firstFa, setFirstFa] = useState(kyc?.firstNameFa || '');
   const [lastFa, setLastFa] = useState(kyc?.lastNameFa || '');
@@ -60,10 +80,31 @@ export default function AuthPage() {
     return true;
   }
 
-  function sendOtp() {
+  async function sendOtp() {
     if (!validateIdentifier()) return;
     setError('');
-    setKycStep('otp');
+    setSending(true);
+    try {
+      const res = await requestOtp({ identifier: identifier.trim(), channel });
+      if (!res.success) {
+        setError(
+          res.error
+            ? lt(locale, {
+                fa: 'ارسال کد ناموفق بود: ' + res.error,
+                en: 'Could not send the code: ' + res.error,
+                ar: 'فشل إرسال الرمز: ' + res.error,
+                zh: '验证码发送失败：' + res.error,
+                ru: 'Не удалось отправить код: ' + res.error,
+              })
+            : lt(locale, { fa: 'ارسال کد ناموفق بود', en: 'Could not send the code', ar: 'فشل إرسال الرمز', zh: '发送失败', ru: 'Ошибка отправки' })
+        );
+        return;
+      }
+      setDevCode(res.devCode ?? null);
+      setKycStep('otp');
+    } finally {
+      setSending(false);
+    }
   }
 
   async function verifyOtp() {
@@ -75,7 +116,7 @@ export default function AuthPage() {
       setError(lt(locale, { fa: 'کد تایید اشتباه است', en: 'Invalid OTP code', ar: 'رمز التحقق غير صحيح', zh: '验证码错误', ru: 'Неверный код подтверждения' }));
       return;
     }
-    router.push('/account');
+    router.push(callbackUrl);
   }
 
   function scanPassport() {
@@ -105,7 +146,7 @@ export default function AuthPage() {
     setError('');
     updateKyc({ passportNo, passportExpiry: expiry });
     setKycStep('approved');
-    router.push('/account');
+    router.push(callbackUrl);
   }
 
   return (
@@ -204,8 +245,10 @@ export default function AuthPage() {
               <button
                 id="auth-submit-btn"
                 onClick={sendOtp}
-                className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                disabled={sending}
+                className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60"
               >
+                {sending && <Loader2 size={16} className="animate-spin" />}
                 {channel === 'phone' ? t('sendOtp') : lt(locale, { fa: 'دریافت کد تأیید ورود', en: 'Send Login Code', ar: 'إرسال رمز الدخول', zh: '发送登录验证码', ru: 'Получить код входа' })}
               </button>
             </div>
@@ -239,7 +282,13 @@ export default function AuthPage() {
                   placeholder="1234"
                   className="w-full h-12 rounded-xl border border-line px-4 text-center tracking-widest text-xl font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 />
-                <p className="text-[11px] text-sub mt-1 text-center font-bold">{lt(locale, { fa: 'کد تستی دمو: 1234 یا هر ۴ رقم', en: 'Demo test code: 1234 or any 4 digits', ar: 'رمز تجريبي: 1234 أو أي 4 أرقام', zh: '演示验证码：1234 或任意4位数', ru: 'Демо-код: 1234 или любые 4 цифры' })}</p>
+                <p className="text-[11px] text-sub mt-1 text-center font-bold">{lt(locale, { fa: 'کد تأیید پیامک/ایمیل شد', en: 'The code was sent to you', ar: 'تم إرسال الرمز إليك', zh: '验证码已发送', ru: 'Код отправлен вам' })}</p>
+                {DEMO_UI && devCode && (
+                  <p className="text-[11px] text-brand-dark mt-1 text-center font-black bg-mint rounded-lg py-1.5 px-2">
+                    {lt(locale, { fa: 'کد دمو: ', en: 'Demo code: ', ar: 'رمز تجريبي: ', zh: '演示验证码：', ru: 'Демо-код: ' })}
+                    <span dir="ltr" className="font-mono">{devCode}</span>
+                  </p>
+                )}
               </div>
 
               <button
@@ -310,7 +359,7 @@ export default function AuthPage() {
                     firstNameEn: kyc.firstNameEn || firstFa,
                     lastNameEn: kyc.lastNameEn || lastFa,
                   });
-                  router.push('/account');
+                  router.push(callbackUrl);
                 }}
                 className="w-full h-12 rounded-xl bg-brand text-surface font-black text-sm hover:bg-brand-dark transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
@@ -338,7 +387,7 @@ export default function AuthPage() {
                   type="text"
                   value={firstFa}
                   onChange={(e) => setFirstFa(e.target.value)}
-                  placeholder="علی"
+                  placeholder={lt(locale, { fa: 'علی', en: 'Ali', ar: 'علي', zh: 'Ali', ru: 'Али' })}
                   className="w-full h-12 rounded-xl border border-line px-4 text-sm font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 />
               </div>
@@ -349,7 +398,7 @@ export default function AuthPage() {
                   type="text"
                   value={lastFa}
                   onChange={(e) => setLastFa(e.target.value)}
-                  placeholder="محمدی"
+                  placeholder={lt(locale, { fa: 'محمدی', en: 'Mohammadi', ar: 'محمدي', zh: 'Mohammadi', ru: 'Мохаммади' })}
                   className="w-full h-12 rounded-xl border border-line px-4 text-sm font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 />
               </div>
@@ -445,7 +494,7 @@ export default function AuthPage() {
             <h1 className="font-black text-2xl text-ink mb-2">{t('approvedTitle')}</h1>
             <p className="text-xs font-bold text-sub mb-6">{t('approvedSubtitle')}</p>
             <button
-              onClick={() => router.push('/account')}
+              onClick={() => router.push(callbackUrl)}
               className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               {t('goToAccount')}

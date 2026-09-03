@@ -79,17 +79,21 @@ export default async function AdminBookingsPage({
             </thead>
             <tbody>
               {filtered.map((b: BookingWithItems) => {
-                let details: { title?: string; subtitle?: string; passengers?: { lastNameFa?: string }[] } = {};
+                let details: {
+                  title?: string;
+                  subtitle?: string;
+                  passengers?: Array<{ lastNameFa?: string; lastNameEn?: string; lastName?: string }>;
+                } = {};
                 const bookingDetails = b.items?.[0]?.details || '{}';
                 try {
                   details = JSON.parse(bookingDetails);
                 } catch {}
-                const title = details.title || b.items?.[0]?.type || 'Unknown';
+                const title = details.title || b.items?.[0]?.type || lt(locale, { fa: 'سفارش سفر', en: 'Travel Order', ar: 'طلب سفر', zh: '旅行订单', ru: 'Заказ' });
                 const subtitle = details.subtitle || '';
                 const passengers = details.passengers || [];
-                const passengerName = passengers[0]?.lastNameFa || '—';
+                const passengerName = passengers[0]?.lastNameEn || passengers[0]?.lastNameFa || (passengers[0] as { lastName?: string })?.lastName || '—';
                 const amountStr = Number(b.totalAmount).toLocaleString(numFmt);
-                const reference = b.id.substring(0, 8).toUpperCase();
+                const reference = b.reference || b.id.substring(0, 8).toUpperCase();
 
                 return (
                   <tr key={b.id} className="border-t border-line hover:bg-soft/60">

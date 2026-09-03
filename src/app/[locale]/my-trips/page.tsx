@@ -101,7 +101,8 @@ export default function MyTripsPage() {
 
   const [dbBookings, setDbBookings] = useState<BookingRecordSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'upcoming' | 'past' | 'finance'>('upcoming');
+  const [unauthorized, setUnauthorized] = useState(false);
+  const [tab, setTab] = useState<'upcoming' | 'past' | 'cancelled'>('upcoming');
 
   useEffect(() => {
     let active = true;
@@ -110,6 +111,8 @@ export default function MyTripsPage() {
         const res = await getMyBookings();
         if (active && res.success && res.bookings) {
           setDbBookings(res.bookings as unknown as BookingRecordSummary[]);
+        } else if (active && res.error === 'Unauthorized') {
+          setUnauthorized(true);
         }
       } catch (e) {
         console.error('Failed to load trips:', e);
@@ -123,16 +126,17 @@ export default function MyTripsPage() {
     };
   }, []);
 
-  const upcoming = dbBookings.filter((b) => {
-    const isCancelled = b.status === 'CANCELLED' || b.status === 'refunded';
-    return !isCancelled;
-  });
+  // Terminal/cancellation states never count as upcoming.
+  const TERMINAL = new Set(['CANCELLED', 'REFUNDED', 'CANCEL_REQUESTED', 'CANCELLING', 'REFUND_INITIATED', 'FAILED', 'EXPIRED']);
+  const upcoming = dbBookings.filter((b) => !TERMINAL.has(b.status));
 
   let filtered = dbBookings;
   if (tab === 'upcoming') {
     filtered = upcoming;
   } else if (tab === 'past') {
-    filtered = dbBookings.filter((b) => b.status === 'CANCELLED' || b.status === 'COMPLETED' || b.status === 'refunded');
+    filtered = dbBookings.filter((b) => b.status === 'COMPLETED' || b.status === 'CONFIRMED');
+  } else if (tab === 'cancelled') {
+    filtered = dbBookings.filter((b) => TERMINAL.has(b.status) && b.status !== 'EXPIRED');
   }
 
   if (!isHydrated) return null;
@@ -179,18 +183,44 @@ export default function MyTripsPage() {
               {t('past')}
             </button>
             <button
-              onClick={() => setTab('finance')}
+              onClick={() => setTab('cancelled')}
               className={`px-6 py-4 font-black text-[15px] transition-colors border-b-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                tab === 'finance' ? 'border-brand text-brand' : 'border-transparent text-sub hover:text-ink'
+                tab === 'cancelled' ? 'border-brand text-brand' : 'border-transparent text-sub hover:text-ink'
               }`}
             >
-              {t('cancelled')}
+              {t('cancelled')} ({dbBookings.filter((b) => TERMINAL.has(b.status) && b.status !== 'EXPIRED').length})
             </button>
           </div>
 
           {loading ? (
             <div className="p-16 flex items-center justify-center text-brand">
               <Loader2 className="animate-spin" size={32} />
+            </div>
+          ) : unauthorized ? (
+            <div className="bg-surface rounded-xl border border-line p-14 text-center shadow-sm flex flex-col items-center justify-center">
+              <Luggage size={64} className="text-line mb-6" />
+              <p className="font-black text-[20px] text-ink mb-2">{t('noTrips')}</p>
+              <p className="font-bold text-[14px] text-sub mb-8">
+                {lt(locale, {
+                  fa: 'برای مشاهده سفرهای خود ابتدا وارد حساب کاربری شوید.',
+                  en: 'Sign in to view your trips.',
+                  ar: 'سجّل الدخول لعرض رحلاتك.',
+                  zh: '请登录以查看您的行程。',
+                  ru: 'Войдите, чтобы увидеть свои поездки.',
+                })}
+              </p>
+              <Button
+                onClick={() => router.push('/auth?callbackUrl=/my-trips')}
+                className="bg-brand hover:bg-brand-2 text-surface h-12 px-8 font-black rounded-xl text-[15px]"
+              >
+                {lt(locale, {
+                  fa: 'ورود / ثبت‌نام',
+                  en: 'Sign in',
+                  ar: 'تسجيل الدخول',
+                  zh: '登录',
+                  ru: 'Войти',
+                })}
+              </Button>
             </div>
           ) : filtered.length === 0 ? (
             <div className="bg-surface rounded-xl border border-line p-14 text-center shadow-sm flex flex-col items-center justify-center">

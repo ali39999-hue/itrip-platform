@@ -4,6 +4,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Latin numerals/labels inside RTL (fa/ar) locales — e.g. prices, phone numbers. */
+@utility font-en {
+  font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+}
+
 /*
  * Design system: FIRUZO v1.0 (Downloads/firuzo-tokens.css)
  * فیروزه‌ای #00A9A5 (brand) / #046E6B (brand-dark — تنها فیروزه‌ای مجاز برای متن روی سفید)
@@ -14,9 +19,11 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  /* --font-app-sans / --font-app-heading are set per-locale on <html>
+     ([locale]/layout.tsx); without a locale they fall back to the system stack. */
+  --font-sans: var(--font-app-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-heading-vazir), var(--font-sans);
+  --font-heading: var(--font-app-heading, var(--font-app-sans)), ui-sans-serif, system-ui, sans-serif;
   /* Elevation — سایه با ته‌مایه فیروزه deep rgba(5,63,62,…), نه خاکستری خام */
   --shadow-elev-1: 0 1px 2px rgba(5, 63, 62, 0.05), 0 4px 16px rgba(5, 63, 62, 0.06);
   --shadow-elev-2: 0 2px 6px rgba(5, 63, 62, 0.07), 0 14px 32px rgba(5, 63, 62, 0.11);

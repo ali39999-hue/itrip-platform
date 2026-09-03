@@ -44,7 +44,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // 3. Handle /admin paths (with or without locale prefix)
-  const isAdminPath = pathname.match(/^\/(?:fa|en|ar|zh|ru\/)?admin/);
+  const isAdminPath = pathname.match(/^\/(?:(?:fa|en|ar|zh|ru)\/)?admin(?:\/|$)/);
   
   if (isAdminPath) {
     const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
@@ -55,8 +55,8 @@ export async function middleware(request: NextRequest) {
 
     // Get next-auth token safely without throwing
     try {
-      const token = await getToken({ 
-        req: request, 
+      const token = await getToken({
+        req: request,
         secret
       });
 
@@ -66,13 +66,12 @@ export async function middleware(request: NextRequest) {
         const normalizedPath = pathname.replace(/^\/(fa|en|ar|zh|ru)/, '');
         const matchingRoute = Object.keys(ROUTE_PERMISSIONS)
           .sort((a, b) => b.length - a.length)
-          .find(route => normalizedPath.startsWith(route) || normalizedPath === route);
+          .find(route => normalizedPath === route || normalizedPath.startsWith(route + '/'));
 
         if (matchingRoute) {
           const allowedRoles = ROUTE_PERMISSIONS[matchingRoute];
-          // Also accept lowercase 'admin' role (client-side compat)
-          const hasAccess = allowedRoles.includes(userRole) || userRole === 'admin';
-          if (!hasAccess) {
+          // The JWT role is always the server-issued DB value.
+          if (!allowedRoles.includes(userRole)) {
             return NextResponse.redirect(new URL('/' + locale + '/account', request.url));
           }
         }
@@ -81,7 +80,8 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/' + locale + '/auth', request.url));
       }
     } catch {
-      // Allow request to proceed to application layout where role gate UI handles unauthenticated users
+      // Fail closed: an unreadable token never grants admin access.
+      return NextResponse.redirect(new URL('/' + locale + '/auth', request.url));
     }
   }
 

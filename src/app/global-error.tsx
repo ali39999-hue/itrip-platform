@@ -22,9 +22,11 @@ export default function GlobalError({
             <AlertTriangle size={32} />
           </div>
           <div>
-            <h1 className="text-xl md:text-2xl font-black mb-2 text-ink">خطای غیرمنتظره در بارگذاری سیستم</h1>
+            <h1 className="text-xl md:text-2xl font-black mb-2 text-ink">System Error · خطای موقت سیستم</h1>
             <p className="text-xs md:text-sm text-sub leading-relaxed break-words">
-              {error.message || 'سیستم با خطای فنی موقت روبرو شد. برای بارگذاری مجدد و بازیابی اطلاعات روی دکمه زیر کلیک کنید.'}
+              An unexpected error occurred while loading the page. Please click below to retry.
+              <br />
+              خطای فنی موقت در بارگذاری صفحه رخ داد. لطفاً برای بازیابی روی دکمه زیر کلیک کنید.
             </p>
           </div>
           <button
@@ -33,7 +35,7 @@ export default function GlobalError({
             className="w-full h-12 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-sm transition flex items-center justify-center gap-2 shadow-sm hover:shadow-elev-1 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer"
           >
             <RotateCcw size={16} />
-            تلاش مجدد و بارگذاری سیستم
+            Retry / تلاش مجدد
           </button>
         </div>
       </body>

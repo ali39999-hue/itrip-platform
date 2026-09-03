@@ -14,6 +14,7 @@ interface BookingPanelProps {
 
 export function BookingPanel({ booking, onBook }: BookingPanelProps) {
   const t = useTranslations('HotelDetail');
+  const ariaT = useTranslations('Common.aria');
   const locale = useLocale();
   const { sel, setSel, totals, capacity } = booking;
 
@@ -80,7 +81,7 @@ export function BookingPanel({ booking, onBook }: BookingPanelProps) {
                   <span className="text-xs font-black whitespace-nowrap">{fa(qt.total * q)} TRY</span>
                   <button
                     onClick={() => setSel((s) => { const n = { ...s }; delete n[k]; return n; })}
-                    aria-label={t('Common.aria.remove')}
+                    aria-label={ariaT('remove')}
                     className="w-[22px] h-[22px] grid place-items-center rounded-full bg-mint text-sub shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                   >
                     <X size={12} />

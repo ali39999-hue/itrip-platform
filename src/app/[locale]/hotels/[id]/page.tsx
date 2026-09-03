@@ -7,6 +7,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { HOTELS } from '@/lib/data';
 import { useBookingStore } from '@/stores/booking-store';
 import { num } from '@/lib/format';
+import { lt } from '@/lib/lt';
 import { useHotelBooking, CHECKIN, NIGHTS, keyOf, toman } from '@/hooks/useHotelBooking';
 
 // Components
@@ -51,10 +52,11 @@ export default function HotelDetailPage() {
   }
 
   function handleBook() {
+    const hotelTitle = locale === 'fa' ? hotel!.name : (hotel!.nameEn || hotel!.name);
     setBookingContext({
       type: 'hotels',
       id: hotel!.id,
-      title: hotel!.name,
+      title: hotelTitle,
       subtitle: `${num(capacity.n, locale)} ${t('navRooms')} • ${num(NIGHTS.length, locale)} ${t('duration')}`,
       amount: toman(totals.total),
       travelDate: CHECKIN,
@@ -122,9 +124,51 @@ export default function HotelDetailPage() {
         </div>
       </div>
 
+      {/* Mobile Sticky Booking Bar */}
+      <div className="lg:hidden fixed bottom-[62px] md:bottom-0 inset-x-0 z-70 bg-surface/95 backdrop-blur-xl border-t border-line shadow-elev-3 px-4 py-3">
+        <div className="max-w-[1280px] mx-auto flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            {totals.total > 0 ? (
+              <>
+                <div className="text-[11px] font-bold text-sub">
+                  {num(capacity.n, locale)} {t('navRooms')} • {num(NIGHTS.length, locale)} {t('duration')}
+                </div>
+                <div className="text-base sm:text-lg font-black text-price font-mono leading-tight">
+                  {num(totals.total, locale)} <span className="text-[11px] font-bold text-sub">TRY</span>
+                </div>
+              </>
+            ) : (
+              <div>
+                <span className="text-xs font-bold text-sub block">
+                  {t('selectRoom')}
+                </span>
+                <span className="text-[11px] text-brand-dark font-extrabold">
+                  {t('ratesIncludeTax')}
+                </span>
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (totals.total > 0) {
+                handleBook();
+              } else {
+                document.getElementById('rooms')?.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            className="shrink-0 min-h-[44px] px-6 rounded-xl bg-action hover:bg-action-hover text-ink text-xs sm:text-sm font-black shadow-md transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+          >
+            {totals.total > 0
+              ? lt(locale, { fa: 'ادامه به پرداخت', en: 'Continue to Payment', ar: 'المتابعة إلى الدفع', zh: '前往支付', ru: 'Перейти к оплате' })
+              : t('selectRoom')}
+          </button>
+        </div>
+      </div>
+
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed bottom-6 start-1/2 -translate-x-1/2 rtl:translate-x-1/2 z-95 bg-brand text-surface px-5 py-2.5 rounded-full shadow-elev-3 text-xs font-bold transition-all">
+        <div className="fixed bottom-24 md:bottom-16 start-1/2 -translate-x-1/2 rtl:translate-x-1/2 z-95 bg-brand text-surface px-5 py-2.5 rounded-full shadow-elev-3 text-xs font-bold transition-all">
           {toast}
         </div>
       )}

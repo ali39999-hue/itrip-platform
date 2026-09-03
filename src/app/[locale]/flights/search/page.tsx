@@ -5,7 +5,9 @@ import { useRouter } from '@/i18n/routing';
 import { useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { useTranslations, useLocale } from 'next-intl';
+import { lt } from '@/lib/lt';
 import { FLIGHTS } from '@/lib/data';
+import { resolveCityQuery, localizedAirportLabel } from '@/lib/cities';
 import type { Flight } from '@/lib/types';
 import { useBookingStore } from '@/stores/booking-store';
 import { daysFromNow } from '@/lib/utils';
@@ -25,9 +27,20 @@ function FlightSearchInner() {
   const t = useTranslations('Flights');
   const params = useSearchParams();
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
+  const ariaT = useTranslations('Common.aria');
 
   const from = params.get('from') ?? '';
   const to = params.get('to') ?? '';
+
+  // Honor the requested departure date; fall back to +7 days.
+  const departParam = params.get('depart');
+  const travelDate = departParam && /^\d{4}-\d{2}-\d{2}$/.test(departParam) ? departParam : daysFromNow(7);
+
+  // Resolve the requested origin/destination to canonical cities. Unrecognized
+  // values degrade gracefully to "all" rather than an empty result list.
+  const fromCity = resolveCityQuery(from);
+  const toCity = resolveCityQuery(to);
+  const searchFiltered = Boolean(fromCity || toCity);
 
   const sorts = [
     { id: 'price', label: t('sortCheapest') },
@@ -38,10 +51,23 @@ function FlightSearchInner() {
 
   type SortId = (typeof sorts)[number]['id'];
 
+  // Filter pool for the requested route — facets (airlines, price bounds) and
+  // their counts describe only the flights that could actually be booked.
+  const routePool = useMemo(
+    () =>
+      FLIGHTS.filter((f) => {
+        if (fromCity && resolveCityQuery(f.originCity)?.id !== fromCity.id) return false;
+        if (toCity && resolveCityQuery(f.destinationCity)?.id !== toCity.id) return false;
+        return true;
+      }),
+    [fromCity, toCity]
+  );
+
   const bounds = useMemo(() => {
-    const prices = FLIGHTS.map((f) => f.price);
+    const pool = routePool.length ? routePool : FLIGHTS;
+    const prices = pool.map((f) => f.price);
     return { min: Math.min(...prices), max: Math.max(...prices) };
-  }, []);
+  }, [routePool]);
 
   const [stops, setStops] = useState<number[]>([]);
   const [airlines, setAirlines] = useState<string[]>([]);
@@ -51,20 +77,22 @@ function FlightSearchInner() {
 
   const airlineOptions = useMemo(() => {
     const map = new Map<string, number>();
-    FLIGHTS.forEach((f) => {
+    routePool.forEach((f) => {
       map.set(f.airline, Math.min(map.get(f.airline) ?? Infinity, f.price));
     });
     return [...map.entries()].map(([name, minPrice]) => ({ name, minPrice }));
-  }, []);
+  }, [routePool]);
 
   const stopCounts = useMemo(() => {
     const c = [0, 0, 0];
-    FLIGHTS.forEach((f) => c[Math.min(f.stops, 2)] += 1);
+    routePool.forEach((f) => c[Math.min(f.stops, 2)] += 1);
     return c;
-  }, []);
+  }, [routePool]);
 
   const results = useMemo(() => {
     let list = FLIGHTS.filter((f) => {
+      if (fromCity && resolveCityQuery(f.originCity)?.id !== fromCity.id) return false;
+      if (toCity && resolveCityQuery(f.destinationCity)?.id !== toCity.id) return false;
       if (stops.length && !stops.includes(Math.min(f.stops, 2))) return false;
       if (airlines.length && !airlines.includes(f.airline)) return false;
       if (f.price < price[0] || f.price > price[1]) return false;
@@ -77,7 +105,7 @@ function FlightSearchInner() {
       return a.price / durationMinutes(a.duration) - b.price / durationMinutes(b.duration);
     });
     return list;
-  }, [stops, airlines, price, sort]);
+  }, [fromCity, toCity, stops, airlines, price, sort]);
 
   const activeFilters = stops.length + airlines.length + (price[0] > bounds.min || price[1] < bounds.max ? 1 : 0);
 
@@ -94,10 +122,10 @@ function FlightSearchInner() {
   function selectFlight(f: Flight) {
     setBookingContext({
       type: 'flights',
-      title: `${f.originCity} ✈ ${f.destinationCity} (${f.flightNo})`,
-      subtitle: `${f.airline} • ${f.departureTime}`,
+      title: `${localizedAirportLabel(f.origin, locale)} ✈ ${localizedAirportLabel(f.destination, locale)} (${f.flightNo})`,
+      subtitle: `${locale === 'fa' ? f.airline : (f.airlineEn || f.airline)} • ${f.departureTime}`,
       amount: f.price,
-      travelDate: daysFromNow(7),
+      travelDate,
     });
     router.push('/checkout');
   }
@@ -224,11 +252,17 @@ function FlightSearchInner() {
               </div>
               <span className="px-3 py-1.5 bg-line/60 rounded-full flex items-center gap-1.5 text-[11.5px] font-bold text-sub">
                 <CalendarDays size={14} />
-                {dualDate(daysFromNow(7)).j}
+                {dualDate(travelDate).j}
               </span>
             </div>
             <button
-              onClick={() => router.push('/')}
+              onClick={() => {
+                const q = new URLSearchParams();
+                if (from) q.set('from', from);
+                if (to) q.set('to', to);
+                if (departParam) q.set('depart', departParam);
+                router.push(`/flights${q.size ? `?${q.toString()}` : ''}`);
+              }}
               className="min-h-10 px-4 rounded-xl bg-soft hover:bg-line/60 text-ink text-[13px] font-black flex items-center gap-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-sm border border-line"
             >
               <PenLine size={15} />
@@ -266,16 +300,26 @@ function FlightSearchInner() {
             </button>
           </div>
 
-          <p className="text-[12px] text-sub font-bold">{num(results.length, locale)} {t('flights') || 'پرواز'}</p>
+          <p className="text-[12px] text-sub font-bold">{num(results.length, locale)} {t('flights')}</p>
 
           {/* Results list */}
           {results.length === 0 ? (
             <div className="bg-surface rounded-2xl border border-line p-14 text-center">
               <PlaneTakeoff size={32} className="mx-auto text-line mb-3" />
               <p className="text-sub font-bold text-sm">{t('noFlightsFound')}</p>
-              <button onClick={clearAll} className="mt-4 text-brand-dark text-[13px] font-black hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">
-                {t('clearFilters')}
-              </button>
+              <div className="mt-4 flex items-center justify-center gap-4">
+                <button onClick={clearAll} className="text-brand-dark text-[13px] font-black hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">
+                  {t('clearFilters')}
+                </button>
+                {searchFiltered && (
+                  <button
+                    onClick={() => router.push('/flights/search')}
+                    className="text-brand-dark text-[13px] font-black hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded"
+                  >
+                    {lt(locale, { fa: 'جستجوی همه مسیرها', en: 'Search all routes', ar: 'البحث في كل المسارات', zh: '搜索全部航线', ru: 'Искать все направления' })}
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <div className="flex flex-col gap-4">
@@ -322,7 +366,7 @@ function FlightSearchInner() {
               <b className="text-[15px] font-black">{t('filters')}</b>
               <div className="flex items-center gap-2">
                 <button onClick={clearAll} className="text-[12px] text-brand-dark font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">{t('clearAll')}</button>
-                <button onClick={() => setSheet(false)} aria-label={t('Common.aria.close')} className="grid place-items-center w-8 h-8 rounded-full bg-soft text-sub focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                <button onClick={() => setSheet(false)} aria-label={ariaT('close')} className="grid place-items-center w-8 h-8 rounded-full bg-soft text-sub focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
                   <X size={15} />
                 </button>
               </div>
@@ -332,7 +376,7 @@ function FlightSearchInner() {
               onClick={() => setSheet(false)}
               className="w-full mt-5 min-h-12 rounded-2xl bg-brand text-surface font-black text-sm sticky bottom-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
-              {t('showFlightsBtn', { count: num(results.length, locale) }) || `نمایش ${num(results.length, locale)} پرواز`}
+              {t('showFlightsBtn', { count: num(results.length, locale) })}
             </button>
           </div>
         </div>

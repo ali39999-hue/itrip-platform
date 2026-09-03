@@ -78,8 +78,20 @@ export function useHotelFilters({
 
   const results = useMemo(() => {
     const list = HOTELS.filter((h) => {
-      if (initialCity && !(h.city.includes(initialCity) || h.cityEn.toLowerCase().includes(initialCity.toLowerCase()))) {
-        return false;
+      const q = query.trim().toLowerCase();
+      if (q) {
+        const matchesQuery =
+          h.name.toLowerCase().includes(q) ||
+          h.nameEn.toLowerCase().includes(q) ||
+          h.city.includes(q) ||
+          h.cityEn.toLowerCase().includes(q);
+        if (!matchesQuery) return false;
+      } else if (initialCity) {
+        const ic = initialCity.trim().toLowerCase();
+        const matchesInitial =
+          h.city.includes(initialCity) ||
+          h.cityEn.toLowerCase().includes(ic);
+        if (!matchesInitial) return false;
       }
       if (h.pricePerNight / 1000000 > maxPrice + 0.001 && maxPrice < 160) {
         return false;
@@ -102,7 +114,7 @@ export function useHotelFilters({
       if (sort === 'stars') return b.stars - a.stars || b.rating - a.rating;
       return b.rating * 100 - a.rating * 100;
     });
-  }, [initialCity, maxPrice, stars, minScore, freeCancel, sort]);
+  }, [query, initialCity, maxPrice, stars, minScore, freeCancel, sort]);
 
   const priceBuckets = useMemo(() => {
     const buckets = new Array(14).fill(0);

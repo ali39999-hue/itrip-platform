@@ -32,11 +32,11 @@ export function SuccessConfirmation({ confirmedRef, confirmedTitle }: SuccessCon
         </h1>
         <p className="text-[14px] font-bold text-sub">
           {lt(locale, {
-            fa: 'واچر و کد رهگیری الکترونیکی به شماره موبایل شما پیامک شد.',
-            en: 'Voucher and electronic tracking code have been sent via SMS.',
-            ar: 'تم إرسال القسيمة ورمز التتبع عبر رسالة نصية.',
-            zh: '凭证和电子追踪码已发送至您的手机。',
-            ru: 'Ваучер и код отслеживания отправлены по SMS.'
+            fa: 'واچر و کد رهگیری شما صادر شد و در «سفرهای من» قابل مشاهده است.',
+            en: 'Your voucher and tracking code have been issued and are available in "My Trips".',
+            ar: 'تم إصدار القسيمة ورمز التتبع وهي متاحة في "رحلاتي".',
+            zh: '凭证和追踪码已生成，可在“我的行程”中查看。',
+            ru: 'Ваучер и код отслеживания сформированы и доступны в разделе «Мои поездки».'
           })}
         </p>
       </div>
@@ -54,7 +54,7 @@ export function SuccessConfirmation({ confirmedRef, confirmedTitle }: SuccessCon
           <span className="text-sub font-bold">
             {lt(locale, { fa: 'کد پیگیری (PNR):', en: 'Tracking Code (PNR):', ar: 'رمز التتبع (PNR):', zh: '追踪码 (PNR)：', ru: 'Код бронирования (PNR):' })}
           </span>
-          <span className="font-mono font-black text-brand-dark tracking-wider">{confirmedRef || 'FIR-948175'}</span>
+          <span className="font-mono font-black text-brand-dark tracking-wider" dir="ltr">{confirmedRef || '—'}</span>
         </div>
       </div>
 

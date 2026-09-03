@@ -1,38 +1,59 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { PassengerForm } from '@/components/flights/PassengerForm';
 import { Plane, ShieldCheck, Wifi, ArrowLeft, Info, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useBookingStore } from '@/stores/booking-store';
-import { daysFromNow } from '@/lib/utils';
 import { num } from '@/lib/format';
 import { useLocale, useTranslations } from 'next-intl';
+import { FLIGHTS } from '@/lib/data';
+import { ESIM_PRICE, INSURANCE_PRICE } from '@/components/checkout/AddonsSection';
 
-const BASE_FARE = 28500000;
-const TAX_FARE = 2150000;
-const ESIM_PRICE = 4500000;
-const INSURANCE_PRICE = 2100000;
+// Prices come from the selected booking context or the flight catalog —
+// never from magic numbers that drift from the rest of the funnel.
+const TAX_RATE = 0.09;
 
 export default function FlightCheckoutPage() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('FlightCheckout');
-  const [hasEsim, setHasEsim] = useState(false);
-  const [hasInsurance, setHasInsurance] = useState(true);
+  const bookingContext = useBookingStore((s) => s.bookingContext);
 
-  const subtotal = BASE_FARE + TAX_FARE;
+  const [hasEsim, setHasEsim] = useState(false);
+  // Opt-in, not pre-ticked: addons must never be silently added to the bill.
+  const [hasInsurance, setHasInsurance] = useState(false);
+
+  const flight = useMemo(() => {
+    const fromContext = bookingContext?.type === 'flights' ? bookingContext : null;
+    if (fromContext) return fromContext;
+    const f = FLIGHTS[0];
+    return f
+      ? {
+          type: 'flights' as const,
+          title: `${f.originCity} ✈ ${f.destinationCity} (${f.flightNo})`,
+          subtitle: `${f.airline} • ${f.departureTime}`,
+          amount: f.price,
+          travelDate: '',
+          id: f.id,
+        }
+      : null;
+  }, [bookingContext]);
+
+  const baseFare = flight?.amount ?? 0;
+  const taxFare = Math.round(baseFare * TAX_RATE);
+  const subtotal = baseFare + taxFare;
   const addonsTotal = (hasEsim ? ESIM_PRICE : 0) + (hasInsurance ? INSURANCE_PRICE : 0);
   const total = subtotal + addonsTotal;
 
   const handleProceed = () => {
     useBookingStore.getState().setBookingContext({
       type: 'flights',
-      title: `${t('flightToMashhad')} - Mahan Air`,
-      subtitle: 'IKA ✈ MHD • Economy Class',
+      title: flight?.title || t('flightToMashhad'),
+      subtitle: flight?.subtitle || 'Economy Class',
       amount: total,
-      travelDate: daysFromNow(7),
+      travelDate: flight?.travelDate || '',
     });
     router.push('/checkout');
   };
@@ -123,15 +144,15 @@ export default function FlightCheckoutPage() {
             <div className="mb-6 pb-6 border-b border-dashed border-line">
               <div className="flex items-center gap-2 font-bold mb-2 text-ink">
                 <Plane size={18} className="text-brand"/>
-                {t('flightToMashhad')}
+                <span className="line-clamp-1">{flight?.title || t('flightToMashhad')}</span>
               </div>
               <div className="flex justify-between text-sm text-sub mb-2">
                 <span>{t('adultPassengerCount')}</span>
-                <span className="num">{num(BASE_FARE, locale)} IRR</span>
+                <span className="num">{num(baseFare, locale)} IRR</span>
               </div>
               <div className="flex justify-between text-sm text-sub">
                 <span>{t('taxesAndFees')}</span>
-                <span className="num">{num(TAX_FARE, locale)} IRR</span>
+                <span className="num">{num(taxFare, locale)} IRR</span>
               </div>
             </div>
 

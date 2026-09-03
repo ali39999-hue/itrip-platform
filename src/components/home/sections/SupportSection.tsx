@@ -16,7 +16,7 @@ export function SupportSection() {
             <AlertCircle size={14} />
             <span>{lt(locale, { fa: 'پشتیبانی اضطراری و راهنمای لحظه‌ای', en: 'Emergency Support & Live Guide', ar: 'دعم الطوارئ ودليل مباشر', zh: '紧急支持与实时指南', ru: 'Экстренная поддержка и живой гид' })}</span>
           </div>
-          <h2 className="text-2xl md:text-3xl font-black text-ink tracking-tight">
+          <h2 className="text-2xl md:text-3xl font-black text-ink">
             {lt(locale, { fa: 'در تمام طول سفر کنار شما هستیم (۲۴ ساعته)', en: 'We are with you throughout the trip (24/7)', ar: 'نحن معك طوال الرحلة (على مدار الساعة)', zh: '整个旅程我们都在您身边 (全天候)', ru: 'Мы с вами на протяжении всей поездки (24/7)' })}
           </h2>
           <p className="text-xs sm:text-sm text-sub leading-relaxed">

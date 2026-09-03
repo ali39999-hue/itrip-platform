@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { fa, gShort } from '@/lib/hotel-format';
-import { ROOMS, PLANS } from '@/lib/hotel-mock';
+import { getRoomsForLocale, getPlansForLocale } from '@/lib/hotel-mock';
 import { quote, NIGHTS, CHECKIN, CHECKOUT, ADULTS, CHILDREN, TAX, keyOf, type useHotelBooking } from '@/hooks/useHotelBooking';
 import { lt } from '@/lib/lt';
 
@@ -26,6 +26,8 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
   const locale = useLocale();
   const { sel, setSel, takenOf, bestCombo, capacity } = booking;
   const [openBd, setOpenBd] = useState<string | null>(null);
+  const rooms = getRoomsForLocale(locale);
+  const plans = getPlansForLocale(locale);
 
   const canBook = capacity.n > 0 && capacity.a >= ADULTS && capacity.c >= CHILDREN;
 
@@ -56,7 +58,7 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
           <Sparkles size={16} className="text-action-hover shrink-0" />
           <span>
             {t('bestCombo', { adults: ADULTS, children: CHILDREN })}{' '}
-            <b>{bestCombo.pick.map((o) => `${o.r.name} — ${PLANS[o.p].name}`).join(' + ')}</b> — {t('totalLira', { cost: fa(bestCombo.cost) })}
+            <b>{bestCombo.pick.map((o) => `${o.r.name} — ${plans[o.p].name}`).join(' + ')}</b> — {t('totalLira', { cost: fa(bestCombo.cost) })}
           </span>
           <button onClick={onApplyCombo} className="me-auto min-h-9 px-3.5 rounded-[10px] bg-price text-surface text-xs font-black shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
             {t('applyCombo')}
@@ -65,7 +67,7 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
       )}
 
       <div className="flex flex-col gap-3">
-        {ROOMS.map((room) => {
+        {rooms.map((room) => {
           const picked = takenOf(room.id);
           const fits = room.capA >= ADULTS && room.capC >= CHILDREN;
           return (
@@ -110,7 +112,7 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
 
               <div className="border-t border-line">
                 {room.plans.map((pid) => {
-                  const p = PLANS[pid];
+                  const p = plans[pid];
                   const cInRoom = Math.min(CHILDREN, room.capC);
                   const q = quote(room, pid, cInRoom);
                   const k = keyOf(room.id, pid);

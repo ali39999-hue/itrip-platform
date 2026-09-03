@@ -6,6 +6,7 @@ import { Link } from '@/i18n/routing';
 import { Send, Camera, ShieldCheck, Clock, CreditCard, Sparkles, Check } from 'lucide-react';
 import { Logo } from './Logo';
 import { ShamseDivider } from '@/components/ui/Shamse';
+import { LocaleSwitcher } from './header/LocaleSwitcher';
 import { lt } from '@/lib/lt';
 
 export function Footer() {
@@ -119,6 +120,9 @@ export function Footer() {
                 <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-9 h-9 grid place-items-center rounded-full border border-line text-sub hover:text-brand-dark hover:border-brand/40 hover:bg-mint transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none">
                   <Camera size={16} />
                 </a>
+              </div>
+              <div className="mt-4">
+                <LocaleSwitcher />
               </div>
             </div>
 

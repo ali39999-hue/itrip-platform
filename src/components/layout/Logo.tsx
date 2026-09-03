@@ -38,10 +38,10 @@ export function Logo({ variant = 'full', size = 'md', className = '' }: LogoProp
 
       {variant === 'full' && (
         <div className="flex flex-col text-start leading-tight">
-          <span className={`font-black tracking-tight text-ink group-hover:text-brand-dark transition-colors ${dims.text}`}>
+          <span className={`font-black text-ink group-hover:text-brand-dark transition-colors ${dims.text}`}>
             {t('name')}
           </span>
-          <span className={`font-bold text-sub tracking-wider uppercase ${dims.sub}`}>
+          <span className={`font-bold text-sub uppercase ${dims.sub}`}>
             {t('tagline')}
           </span>
         </div>

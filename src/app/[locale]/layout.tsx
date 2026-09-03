@@ -60,10 +60,20 @@ function localeFont(locale: string) {
   return LOCALE_FONT[locale] ?? vazirmatn;
 }
 
+// CSS variables consumed by the --font-sans / --font-heading tokens in globals.css.
+const LOCALE_FONT_VAR: Record<string, { sans: string; heading: string }> = {
+  fa: { sans: 'var(--font-vazirmatn)', heading: 'var(--font-heading-vazir)' },
+  ar: { sans: 'var(--font-vazirmatn)', heading: 'var(--font-heading-vazir)' },
+  en: { sans: 'var(--font-jakarta)', heading: 'var(--font-jakarta)' },
+  ru: { sans: 'var(--font-noto)', heading: 'var(--font-noto)' },
+  zh: { sans: 'var(--font-noto-sc)', heading: 'var(--font-noto-sc)' },
+};
+
 import { AppChrome } from '@/components/layout/AppChrome';
 import { PwaBoot } from '@/components/pwa/PwaBoot';
 import { Analytics } from '@vercel/analytics/next';
 import Script from 'next/script';
+import { lt } from '@/lib/lt';
 
 export async function generateMetadata({
   params,
@@ -124,8 +134,26 @@ export default async function RootLayout({
       lang={locale}
       dir={dir}
       className={`${font.variable} ${vazirmatnHeading.variable} ${geistMono.variable} h-full antialiased`}
+      style={
+        {
+          '--font-app-sans': (LOCALE_FONT_VAR[locale] ?? LOCALE_FONT_VAR.fa).sans,
+          '--font-app-heading': (LOCALE_FONT_VAR[locale] ?? LOCALE_FONT_VAR.fa).heading,
+        } as React.CSSProperties
+      }
     >
       <body className="min-h-full flex flex-col bg-paper text-ink pb-[62px] md:pb-0">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:start-4 focus:z-[999] focus:px-4 focus:py-2.5 focus:bg-brand focus:text-surface focus:rounded-xl focus:font-black focus:shadow-elev-3 focus:outline-none"
+        >
+          {lt(locale, {
+            fa: 'پرش به محتوای اصلی',
+            en: 'Skip to main content',
+            ar: 'الانتقال إلى المحتوى الرئيسي',
+            zh: '跳至主要内容',
+            ru: 'Перейти к основному содержимому',
+          })}
+        </a>
         <NextIntlClientProvider messages={messages}>
           <Providers>
             <AppChrome>
@@ -151,11 +179,13 @@ export default async function RootLayout({
             </Script>
           </>
         )}
-        {/* اسکریپت مرکز تماس هوشمند فیروزو */}
-        <Script
-          src="https://call.firuzo.online/widget.js"
-          strategy="lazyOnload"
-        />
+        {/* اسکریپت مرکز تماس هوشمند فیروزو - فقط در زبان فارسی تا در سایر زبان‌ها متن فارسی تزریق نشود */}
+        {locale === 'fa' && (
+          <Script
+            src="https://call.firuzo.online/widget.js"
+            strategy="lazyOnload"
+          />
+        )}
       </body>
     </html>
   );

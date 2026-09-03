@@ -39,8 +39,8 @@ export function DestinationsSection() {
     <section className="w-full py-12 md:py-16 px-4 md:px-10">
       <div className="max-w-[1280px] mx-auto flex flex-col gap-8">
         <div>
-          <p className="mb-2 text-brand-dark font-black tracking-wide text-xs">{t('destKicker')}</p>
-          <h2 className="text-2xl md:text-[32px] font-black text-ink m-0 tracking-tight">
+          <p className="mb-2 text-brand-dark font-black text-xs">{t('destKicker')}</p>
+          <h2 className="text-2xl md:text-[32px] font-black text-ink m-0">
             {t('destTitle', { country: countryName(country, locale) })}
           </h2>
         </div>

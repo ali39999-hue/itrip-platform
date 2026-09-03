@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { HOTELS } from '@/lib/data';
 import type { Hotel } from '@/lib/types';
 import {
@@ -22,6 +23,28 @@ import {
 const MapPane = dynamic(() => import('@/components/hotels/MapPane'), { ssr: false });
 
 export default function HotelsSearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-soft/40 py-6 px-4 md:px-8" aria-busy="true" aria-live="polite">
+          <div className="max-w-[1400px] mx-auto space-y-6">
+            <div className="h-14 rounded-2xl bg-soft animate-pulse" />
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-72 rounded-3xl bg-soft animate-pulse" />
+              ))}
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <HotelsSearchInner />
+    </Suspense>
+  );
+}
+
+function HotelsSearchInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialCity = searchParams.get('city') || '';
 
@@ -57,7 +80,14 @@ export default function HotelsSearchPage() {
         <HotelSearchHeader
           query={query}
           onQueryChange={setQuery}
-          onSearchSubmit={() => {}}
+          onSearchSubmit={() => {
+            const trimmed = query.trim();
+            if (trimmed) {
+              router.push(`/hotels/search?city=${encodeURIComponent(trimmed)}`);
+            } else {
+              router.push('/hotels/search');
+            }
+          }}
           resultsCount={results.length}
         />
 

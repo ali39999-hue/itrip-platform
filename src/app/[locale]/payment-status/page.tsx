@@ -1,23 +1,47 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from '@/i18n/routing';
+import { Suspense, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, Clock, Wallet, RefreshCcw, Ticket, Headset, type LucideIcon } from 'lucide-react';
 import { useBookingStore } from '@/stores/booking-store';
 import { num } from '@/lib/format';
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
+import { useHydration } from '@/hooks/useHydration';
 
 type PayState = 'processing' | 'failed' | 'unknown' | 'paid_pending' | 'confirmed';
 
+const VALID_STATES: PayState[] = ['processing', 'failed', 'unknown', 'paid_pending', 'confirmed'];
+
 export default function PaymentStatusPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center py-12 px-4" aria-busy="true" aria-live="polite">
+          <div className="w-full max-w-[650px] h-80 rounded-3xl bg-soft animate-pulse" />
+        </div>
+      }
+    >
+      <PaymentStatusContent />
+    </Suspense>
+  );
+}
+
+function PaymentStatusContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const locale = useLocale();
+  const hydrated = useHydration();
   const bookings = useBookingStore((s) => s.bookings);
   const latestBooking = bookings[0];
 
-  const [state, setState] = useState<PayState>('confirmed');
+  // State comes from the gateway callback (?status=...); default is the
+  // pending-verification view — never a fabricated "success".
+  const state: PayState = useMemo(() => {
+    const param = searchParams.get('status');
+    return VALID_STATES.includes(param as PayState) ? (param as PayState) : 'processing';
+  }, [searchParams]);
 
   const statesConfig: Record<PayState, { 
     title: string; 
@@ -72,10 +96,27 @@ export default function PaymentStatusPage() {
   const s = statesConfig[state];
   const IconComponent = s.icon;
 
-  const trackingCode = latestBooking?.reference || 'FIR-892415';
-  const displayAmount = latestBooking ? latestBooking.amount : 12500000;
+  // Read from query params (e.g. gateway callback / direct redirection)
+  // or fall back to the most recent booking in the local store.
+  const queryRef = searchParams.get('ref') || searchParams.get('trackingCode') || '';
+  const queryAmountStr = searchParams.get('amount');
+  const queryAmount = queryAmountStr ? Number(queryAmountStr) : null;
+  const queryTitle = searchParams.get('title') || '';
+
+  const trackingCode = queryRef || latestBooking?.reference || '';
+  const displayAmount = queryAmount !== null && !Number.isNaN(queryAmount)
+    ? queryAmount
+    : (latestBooking?.amount ?? null);
   const displayCurrency = latestBooking?.currency || 'IRR';
-  const displayTitle = latestBooking?.title || lt(locale, { fa: 'سفارش خدمات مسافرتی فیروز', en: 'Firuzo Travel Services Booking', ar: 'طلب خدمات سفر فيروز', zh: 'Firuzo 旅行服务订单', ru: 'Заказ туристических услуг Firuzo' });
+  const displayTitle = queryTitle || latestBooking?.title || lt(locale, { fa: 'سفارش خدمات مسافرتی فیروز', en: 'Firuzo Travel Services Booking', ar: 'طلب خدمات سفر فيروز', zh: 'Firuzo 旅行服务订单', ru: 'Заказ туристических услуг Firuzo' });
+
+  if (!hydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center py-12 px-4" aria-busy="true" aria-live="polite">
+        <div className="w-full max-w-[650px] h-80 rounded-3xl bg-soft animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden py-12 px-4">
@@ -87,27 +128,6 @@ export default function PaymentStatusPage() {
       </div>
 
       <div className="w-full px-4 md:px-8 max-w-[650px] z-10 flex flex-col">
-        {/* Preview State Switcher */}
-        <div className="flex flex-wrap gap-1.5 justify-center mb-6 bg-surface/60 backdrop-blur-md p-1.5 rounded-2xl border border-line/60 shadow-sm">
-          {(['confirmed', 'paid_pending', 'processing', 'failed', 'unknown'] as PayState[]).map((st) => (
-            <button
-              key={st}
-              onClick={() => setState(st)}
-              className={`px-3 py-1 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                state === st
-                  ? 'bg-brand text-surface shadow-sm'
-                  : 'text-sub hover:text-ink hover:bg-soft'
-              }`}
-            >
-              {st === 'confirmed' ? '✓ ' + lt(locale, { fa: 'موفق', en: 'Success', ar: 'ناجح', zh: '成功', ru: 'Успешно' })
-                : st === 'paid_pending' ? '⏳ ' + lt(locale, { fa: 'در انتظار', en: 'Pending', ar: 'قيد الانتظار', zh: '待处理', ru: 'В ожидании' })
-                : st === 'processing' ? '⚙️ ' + lt(locale, { fa: 'پردازش', en: 'Processing', ar: 'معالجة', zh: '处理中', ru: 'Обработка' })
-                : st === 'failed' ? '✕ ' + lt(locale, { fa: 'ناموفق', en: 'Failed', ar: 'فاشل', zh: '失败', ru: 'Ошибка' })
-                : '❓ ' + lt(locale, { fa: 'نامشخص', en: 'Unknown', ar: 'غير معروف', zh: '未知', ru: 'Неизвестно' })}
-            </button>
-          ))}
-        </div>
-
         {/* Main Status Card */}
         <div className="bg-surface/95 backdrop-blur-xl rounded-3xl p-8 md:p-10 shadow-elev-3 border border-line/80 relative overflow-hidden text-center flex flex-col items-center">
           
@@ -136,15 +156,21 @@ export default function PaymentStatusPage() {
 
             <div className="flex justify-between items-center pb-3 border-b border-line/50">
               <span className="text-xs font-bold text-sub">{lt(locale, { fa: 'کد پیگیری PNR', en: 'Tracking Ref / PNR', ar: 'رمز التتبع PNR', zh: '追踪码 PNR', ru: 'Код PNR' })}</span>
-              <span className="text-sm font-black text-brand-dark font-mono bg-mint/50 px-3 py-0.5 rounded-lg border border-brand/20">
-                {trackingCode}
+              <span className="text-sm font-black text-brand-dark font-mono bg-mint/50 px-3 py-0.5 rounded-lg border border-brand/20" dir="ltr">
+                {trackingCode || '—'}
               </span>
             </div>
 
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-sub">{lt(locale, { fa: 'مبلغ پرداختی', en: 'Paid Amount', ar: 'المبلغ المدفوع', zh: '支付金额', ru: 'Сумма оплаты' })}</span>
               <span className="text-lg font-black text-price font-mono num">
-                {num(displayAmount, locale)} <span className="text-xs font-bold text-sub">{displayCurrency}</span>
+                {displayAmount !== null ? (
+                  <>
+                    {num(displayAmount, locale)} <span className="text-xs font-bold text-sub">{displayCurrency}</span>
+                  </>
+                ) : (
+                  '—'
+                )}
               </span>
             </div>
           </div>

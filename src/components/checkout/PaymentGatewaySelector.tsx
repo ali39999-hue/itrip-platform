@@ -64,7 +64,7 @@ export function PaymentGatewaySelector({
                 </strong>
               </div>
               <span className="text-[12px] font-bold font-mono text-sub">
-                {lt(locale, { fa: 'موجودی:', en: 'Balance:', ar: 'الرصيد:', zh: '余额：', ru: 'Баланс:' })} {formatMoney(walletBalance, 'IRR')}
+                {lt(locale, { fa: 'موجودی:', en: 'Balance:', ar: 'الرصيد:', zh: '余额：', ru: 'Баланс:' })} {formatMoney(walletBalance, 'IRR', locale)}
               </span>
             </div>
             <p className="text-[12px] text-sub">
@@ -77,13 +77,22 @@ export function PaymentGatewaySelector({
                     ru: 'Мгновенная оплата и прямое списание с кошелька'
                   })
                 : lt(locale, {
-                    fa: 'موجودی ناکافی است — باقی‌مانده از درگاه بانکی پرداخت خواهد شد.',
-                    en: 'Insufficient balance — remaining amount will be paid via gateway.',
-                    ar: 'الرصيد غير كافٍ — سيتم دفع المبلغ المتبقي عبر بوابة الدفع.',
-                    zh: '余额不足 — 剩余部分将通过网关支付。',
-                    ru: 'Недостаточно средств — остаток будет оплачен через шлюз.'
+                    fa: 'موجودی کیف‌پول برای این پرداخت کافی نیست. گزینه درگاه بانکی را انتخاب کنید یا ابتدا کیف پول را شارژ کنید.',
+                    en: 'Wallet balance is not enough for this total. Pay with the banking gateway below, or top up your wallet first.',
+                    ar: 'رصيد المحفظة غير كافٍ لهذا المبلغ. ادفع عبر بوابة الدفع أو اشحن محفظتك أولاً.',
+                    zh: '钱包余额不足。请使用下方银行网关支付，或先充值钱包。',
+                    ru: 'Баланса кошелька недостаточно. Оплатите через банковский шлюз или сначала пополните кошелёк.'
                   })}
             </p>
+            {!hasEnoughWallet && (
+              <button
+                type="button"
+                onClick={() => setMethod('gateway')}
+                className="mt-1 text-[12px] font-black text-brand-dark underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded"
+              >
+                {lt(locale, { fa: 'انتخاب درگاه بانکی', en: 'Use banking gateway instead', ar: 'استخدم بوابة الدفع', zh: '改用银行网关', ru: 'Оплатить через шлюз' })}
+              </button>
+            )}
           </div>
         </label>
 

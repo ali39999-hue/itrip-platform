@@ -36,21 +36,21 @@ export function CityPassWidget({ locale }: { locale: string }) {
       useBookingStore.getState().addDirectBooking({
         type: 'city-pass',
         title: `${t('title')} (${t(c.nameKey)} - ${type === 'pass' ? t('unlimitedTouristPass') : t('storedValueCard')})`,
-        subtitle: `OO-U^UOU, O"U U_OUOOO': ${delivery} ? U.O"U,O ,${total.toFixed(2)}`,
+        subtitle: `تحویل به نشانی: ${delivery} • مبلغ: ${total.toFixed(2)} Toman`,
         amount: Math.round(total * 650000),
         currency: 'IRR',
         status: 'confirmed',
         travelDate: new Date().toISOString().slice(0, 10),
         passengers: [{
-          firstNameFa: 'O_O OU+O_U',
-          lastNameFa: 'UcO OO',
-          firstNameEn: 'Pass',
+          firstNameFa: 'دارنده',
+          lastNameFa: 'کارت',
+          firstNameEn: 'Card',
           lastNameEn: 'Holder',
           passportNo: 'DELIVERY-' + city.toUpperCase(),
           birthDate: '1990-01-01',
           gender: 'male',
         }],
-        addOns: ['U_U+U, U.O3UOOUOO O" O U+U_U,UOO3UO?OOO"O U+', `OO-U^UOU, UOU, O_O ${t(c.nameKey)}`],
+        addOns: ['تحویل اکسپرس درب هتل', `کارت شهروندی ${t(c.nameKey)}`],
         paymentMethod: 'wallet_irr',
       });
       router.push('/payment-status');
@@ -116,7 +116,7 @@ export function CityPassWidget({ locale }: { locale: string }) {
               >
                 <strong className="block text-[14px] mb-1 text-ink">{t('cityPass')}</strong>
                 <span className="block text-[12px] text-sub mb-2">{t('cityPassDesc')}</span>
-                <span className="block font-en text-[16px] font-bold text-price">, {num(c.pass, locale, { minimumFractionDigits: 2 })}</span>
+                <span className="block font-en text-[16px] font-bold text-price">{num(c.pass, locale, { minimumFractionDigits: 2 })}</span>
               </button>
               <button
                 type="button"
@@ -129,7 +129,7 @@ export function CityPassWidget({ locale }: { locale: string }) {
               >
                 <strong className="block text-[14px] mb-1 text-ink">{t('storedValue')}</strong>
                 <span className="block text-[12px] text-sub mb-2">{t('storedValueDesc')}</span>
-                <span className="block font-en text-[16px] font-bold text-price">, {num(c.stored, locale, { minimumFractionDigits: 2 })}</span>
+                <span className="block font-en text-[16px] font-bold text-price">{num(c.stored, locale, { minimumFractionDigits: 2 })}</span>
               </button>
             </div>
           </div>
@@ -156,11 +156,11 @@ export function CityPassWidget({ locale }: { locale: string }) {
         <div className="p-6 bg-surface flex flex-col">
           <div className="flex justify-between items-center py-2 text-[14px]">
             <span>{type === 'pass' ? t('touristPassOf') : t('storedCardOf')} {t(c.nameKey as "tehran" | "isfahan" | "mashhad" | "shiraz")}</span>
-            <span className="font-en font-bold">, {num(base, locale, { minimumFractionDigits: 2 })}</span>
+            <span className="font-en font-bold">{num(base, locale, { minimumFractionDigits: 2 })}</span>
           </div>
           <div className="flex justify-between items-center py-2 text-[14px]">
             <span>{t('issueDeliveryFee')}</span>
-            <span className="font-en font-bold">, {num(c.deliv, locale, { minimumFractionDigits: 2 })}</span>
+            <span className="font-en font-bold">{num(c.deliv, locale, { minimumFractionDigits: 2 })}</span>
           </div>
 
           <div className="flex justify-between items-center py-3 mt-2 border-t border-dashed border-line text-[13px] text-brand-dark font-bold">
@@ -170,7 +170,7 @@ export function CityPassWidget({ locale }: { locale: string }) {
 
           <div className="flex justify-between items-center py-4 mt-4 border-t-2 border-line">
             <span className="text-[18px] font-bold">{t('totalAmount')}</span>
-            <span className="font-en text-[24px] font-bold text-price">, {num(total, locale, { minimumFractionDigits: 2 })}</span>
+            <span className="font-en text-[24px] font-bold text-price">{num(total, locale, { minimumFractionDigits: 2 })}</span>
           </div>
 
           <button 

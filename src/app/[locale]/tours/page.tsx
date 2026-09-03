@@ -43,7 +43,20 @@ function ToursContent() {
   ] as const;
 
   const qParam = searchParams.get('category');
-  const category = CATEGORIES.some((c) => c.id === qParam) ? qParam! : 'all';
+  const typeParam = searchParams.get('type');
+  const cityParam = searchParams.get('city');
+
+  // Map search widget's "type" param to a category id if category is absent.
+  const mappedType = typeParam === 'medical'
+    ? 'medical'
+    : typeParam === 'commercial'
+      ? 'signature'
+      : typeParam === 'recreational'
+        ? 'cultural'
+        : undefined;
+
+  const effectiveCategory = qParam || mappedType;
+  const category = CATEGORIES.some((c) => c.id === effectiveCategory) ? effectiveCategory! : 'all';
   function setCategory(id: string) {
     router.replace(id === 'all' ? '/tours' : `/tours?category=${id}`, { scroll: false });
   }
@@ -52,11 +65,18 @@ function ToursContent() {
 
   const filtered = useMemo(() => {
     let list = category === 'all' ? TOURS : TOURS.filter((tour) => tour.category === category);
+    if (cityParam) {
+      const q = cityParam.trim().toLowerCase();
+      const byCity = list.filter(
+        (tour) => tour.city.includes(cityParam) || (tour.titleEn && tour.titleEn.toLowerCase().includes(q))
+      );
+      if (byCity.length) list = byCity;
+    }
     if (sort === 'cheap') list = [...list].sort((a, b) => a.price - b.price);
     if (sort === 'expensive') list = [...list].sort((a, b) => b.price - a.price);
     if (sort === 'rec') list = [...list].sort((a, b) => b.rating - a.rating);
     return list;
-  }, [category, sort]);
+  }, [category, cityParam, sort]);
 
   function book(tour: Tour) {
     setBookingContext({

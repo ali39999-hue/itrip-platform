@@ -198,6 +198,8 @@ export function formatIRR(amount: number): string {
   return amount.toLocaleString('fa-IR');
 }
 
+export { resolveCityQuery, localizedAirportLabel } from './cities';
+
 /* نگاشت مقصد → داده‌های پایه برای پیشنهادساز هوشمند */
 export const PLANNER_MAP: Record<CountryId, {
   flightCity: string;

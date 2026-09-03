@@ -2,21 +2,25 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
+import { useRouter } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { getWallet } from '@/actions/booking';
+import { getWallet, requestWalletTopUp, exchangeWalletCurrency } from '@/actions/booking';
 import {
   Wallet as WalletIcon,
   ArrowDownRight,
   ArrowUpRight,
   Loader2,
+  LogIn,
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
+import { CURRENCY_TO_TOMAN } from '@/lib/money';
 
 export default function WalletPage() {
   const t = useTranslations('Wallet');
   const commonT = useTranslations('Common.aria');
   const locale = useLocale();
+  const router = useRouter();
 
   const [wallet, setWallet] = useState<{ IRR: number; USDT: number; AED: number }>({
     IRR: 0,
@@ -32,6 +36,8 @@ export default function WalletPage() {
     createdAt: Date;
   }>>([]);
   const [loading, setLoading] = useState(true);
+  const [unauthorized, setUnauthorized] = useState(false);
+  const [actionError, setActionError] = useState('');
 
   const [depositAmount, setDepositAmount] = useState('');
   const [charging, setCharging] = useState(false);
@@ -40,6 +46,11 @@ export default function WalletPage() {
   const [exTo, setExTo] = useState<'IRR' | 'USDT' | 'AED'>('USDT');
   const [exAmount, setExAmount] = useState('');
   const [exMsg, setExMsg] = useState('');
+  const [exError, setExError] = useState('');
+  const [exchanging, setExchanging] = useState(false);
+
+  // Bumping this counter re-fetches the wallet from the server.
+  const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -50,6 +61,9 @@ export default function WalletPage() {
         if (res.success && res.balances) {
           setWallet(res.balances);
           setTransactions(res.transactions || []);
+          setUnauthorized(false);
+        } else if (res.error === 'Unauthorized') {
+          setUnauthorized(true);
         }
       } catch (e) {
         console.error('Failed to load wallet:', e);
@@ -61,21 +75,84 @@ export default function WalletPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [reloadTick]);
 
-  function doExchange() {
+  async function doDeposit() {
+    const amt = Number(depositAmount);
+    if (!amt || amt <= 0) return;
+    setCharging(true);
+    setActionError('');
+    try {
+      const res = await requestWalletTopUp(amt);
+      if (res.success) {
+        setDepositAmount('');
+        setReloadTick((tick) => tick + 1);
+      } else if (res.error === 'Unauthorized') {
+        setUnauthorized(true);
+      } else {
+        setActionError(res.error || lt(locale, { fa: 'شارژ ناموفق بود', en: 'Top-up failed', ar: 'فشل الشحن', zh: '充值失败', ru: 'Ошибка пополнения' }));
+      }
+    } finally {
+      setCharging(false);
+    }
+  }
+
+  async function doExchange() {
     const amt = Number(exAmount);
     if (!amt || amt <= 0) return;
-    setExMsg(
-      lt(locale, {
-        fa: 'تبدیل ارز با موفقیت انجام شد',
-        en: 'Exchange completed successfully',
-        ar: 'تم تحويل العملة بنجاح',
-        zh: '货币兑换成功',
-        ru: 'Обмен валюты выполнен',
-      })
+    setExchanging(true);
+    setExMsg('');
+    setExError('');
+    try {
+      const res = await exchangeWalletCurrency(exFrom, exTo, amt);
+      if (res.success) {
+        setExMsg(
+          lt(locale, {
+            fa: `تبدیل ${amt.toLocaleString()} ${exFrom} به ${exTo} با موفقیت انجام شد`,
+            en: `Exchanged ${amt.toLocaleString()} ${exFrom} to ${exTo} successfully`,
+            ar: `تم تحويل ${amt.toLocaleString()} ${exFrom} إلى ${exTo} بنجاح`,
+            zh: `成功将 ${amt.toLocaleString()} ${exFrom} 兑换为 ${exTo}`,
+            ru: `Обмен ${amt.toLocaleString()} ${exFrom} на ${exTo} выполнен`,
+          })
+        );
+        setExAmount('');
+        setReloadTick((tick) => tick + 1);
+      } else if (res.error === 'Unauthorized') {
+        setUnauthorized(true);
+      } else {
+        setExError(res.error || lt(locale, { fa: 'تبدیل ناموفق بود', en: 'Exchange failed', ar: 'فشل التحويل', zh: '兑换失败', ru: 'Ошибка обмена' }));
+      }
+    } finally {
+      setExchanging(false);
+    }
+  }
+
+  if (unauthorized && !loading) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-20">
+        <div className="bg-surface border border-line rounded-3xl p-10 text-center shadow-sm">
+          <div className="w-16 h-16 rounded-full bg-mint grid place-items-center mx-auto mb-5 text-brand-dark">
+            <LogIn size={28} />
+          </div>
+          <h1 className="text-xl font-black text-ink mb-2">{t('title')}</h1>
+          <p className="text-[13px] font-bold text-sub mb-6 leading-relaxed">
+            {lt(locale, {
+              fa: 'برای مشاهده کیف پول خود ابتدا وارد حساب شوید.',
+              en: 'Sign in to view your wallet.',
+              ar: 'سجّل الدخول لعرض محفظتك.',
+              zh: '请登录以查看您的钱包。',
+              ru: 'Войдите, чтобы посмотреть свой кошелёк.',
+            })}
+          </p>
+          <Button
+            onClick={() => router.push('/auth?callbackUrl=/wallet')}
+            className="w-full h-12 bg-brand hover:bg-brand-dark text-surface font-black rounded-xl text-sm"
+          >
+            {lt(locale, { fa: 'ورود / ثبت‌نام', en: 'Sign in', ar: 'تسجيل الدخول', zh: '登录', ru: 'Войти' })}
+          </Button>
+        </div>
+      </div>
     );
-    setExAmount('');
   }
 
   return (
@@ -122,7 +199,7 @@ export default function WalletPage() {
                 </span>
               </div>
               <span className="text-[11px] font-bold text-sub">
-                ≈ {(wallet.USDT * 60000).toLocaleString(
+                ≈ {(wallet.USDT * CURRENCY_TO_TOMAN.USDT).toLocaleString(
                   lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })
                 )}{' '}
                 {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
@@ -142,7 +219,7 @@ export default function WalletPage() {
                 </span>
               </div>
               <span className="text-[11px] font-bold text-sub">
-                ≈ {(wallet.AED * 16000).toLocaleString(
+                ≈ {(wallet.AED * CURRENCY_TO_TOMAN.AED).toLocaleString(
                   lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })
                 )}{' '}
                 {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
@@ -164,6 +241,12 @@ export default function WalletPage() {
                   ru: 'Мгновенно пополните риалевый баланс картами Shetab',
                 })}
               </p>
+
+              {actionError && (
+                <div className="p-3 mb-4 rounded-xl bg-rose-warm/10 border border-rose-warm/30 text-rose-warm text-xs font-bold">
+                  {actionError}
+                </div>
+              )}
 
               <div className="space-y-4">
                 <div>
@@ -199,17 +282,7 @@ export default function WalletPage() {
                 </div>
 
                 <Button
-                  onClick={() => {
-                    const amt = Number(depositAmount);
-                    if (amt > 0) {
-                      setCharging(true);
-                      setTimeout(() => {
-                        setWallet((prev) => ({ ...prev, IRR: prev.IRR + amt }));
-                        setDepositAmount('');
-                        setCharging(false);
-                      }, 600);
-                    }
-                  }}
+                  onClick={doDeposit}
                   disabled={charging || !depositAmount}
                   className="w-full h-12 bg-brand hover:bg-brand-dark text-surface font-black rounded-xl text-sm"
                 >
@@ -234,6 +307,11 @@ export default function WalletPage() {
               {exMsg && (
                 <div className="p-3 mb-4 rounded-xl bg-mint/50 border border-brand/20 text-brand-dark text-xs font-bold">
                   {exMsg}
+                </div>
+              )}
+              {exError && (
+                <div className="p-3 mb-4 rounded-xl bg-rose-warm/10 border border-rose-warm/30 text-rose-warm text-xs font-bold">
+                  {exError}
                 </div>
               )}
 
@@ -286,10 +364,10 @@ export default function WalletPage() {
 
                 <Button
                   onClick={doExchange}
-                  disabled={!exAmount || Number(exAmount) <= 0}
+                  disabled={exchanging || !exAmount || Number(exAmount) <= 0 || exFrom === exTo}
                   className="w-full h-12 bg-action hover:bg-action-hover text-[#14201f] font-black rounded-xl text-sm"
                 >
-                  {t('exchange')}
+                  {exchanging ? <Loader2 className="animate-spin" size={18} /> : t('exchange')}
                 </Button>
               </div>
             </div>
@@ -330,6 +408,8 @@ export default function WalletPage() {
                             ? lt(locale, { fa: 'پرداخت رزرو سفر', en: 'Trip Booking Payment', ar: 'دفع حجز الرحلة', zh: '行程预订支付', ru: 'Оплата бронирования' })
                             : tx.referenceType === 'REFUND'
                             ? lt(locale, { fa: 'استرداد وجه رزرو', en: 'Booking Refund', ar: 'استرداد قيمة الحجز', zh: '预订退款', ru: 'Возврат средств' })
+                            : tx.referenceType === 'FX_SPREAD' || tx.referenceType === 'WALLET_EXCHANGE'
+                            ? lt(locale, { fa: 'تبدیل ارز کیف پول', en: 'Wallet Currency Exchange', ar: 'تحويل عملة المحفظة', zh: '钱包货币兑换', ru: 'Обмен валюты кошелька' })
                             : lt(locale, { fa: 'شارژ کیف پول', en: 'Wallet Top-up', ar: 'شحن المحفظة', zh: '钱包充值', ru: 'Пополнение кошелька' })}
                         </h3>
                         <span className="text-[11px] font-mono text-sub">

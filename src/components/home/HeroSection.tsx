@@ -48,7 +48,8 @@ export function HeroSection() {
 
       {/* Hero content + glass search */}
       <div className="relative z-[70] w-full max-w-[1280px] px-4 md:px-10 mx-auto flex flex-col items-center pt-14 pb-16 md:pt-20 md:pb-24">
-        <h1 className="text-surface text-center mb-4 max-w-3xl text-[32px] md:text-[40px] leading-[1.25] md:leading-[1.3] font-black tracking-tight drop-shadow-lg">
+        {/* No letter-spacing utilities here: tracking breaks Persian/Arabic cursive joining. */}
+        <h1 className="text-surface text-center mb-4 max-w-3xl text-[32px] md:text-[40px] leading-[1.25] md:leading-[1.3] font-black drop-shadow-lg">
           {t('titleA')} <span className="text-mint-bright">{t('titleB')}</span> {t('titleC')}
         </h1>
         <p className="text-surface/90 text-center font-bold mb-10 max-w-xl text-[15px] md:text-lg leading-relaxed drop-shadow-md">

@@ -28,7 +28,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   });
 
   return {
-    title,
+    // absolute: the root layout template already appends the brand name.
+    title: { absolute: title },
     description,
     openGraph: {
       title,

@@ -1,10 +1,14 @@
 import type { CountryId } from './countries';
 import { lt, LText } from './lt';
 
+// Toman display rates — single source of truth for UI conversions.
+// Keep in sync with DEFAULT_EXCHANGE_RATES in domains/currency/CurrencyService.ts
+// (those values are in IRR/Rials; these are Toman = IRR / 10).
 export const CURRENCY_TO_TOMAN: Record<string, number> = {
   IRR: 1,
+  USDT: 55000,
   TRY: 2900,
-  AED: 27000,
+  AED: 16500,
   GEL: 37000,
   RUB: 1200,
   OMR: 260000,

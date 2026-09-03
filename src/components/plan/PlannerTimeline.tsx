@@ -26,13 +26,13 @@ export function PlannerTimeline({ plan, days, locale, isEn, onRegenerate, onEdit
       <article className="rounded-xl bg-surface border border-line shadow-sm p-5">
         <div className="flex items-center gap-2.5 mb-4">
           <span className="w-9 h-9 rounded-full bg-brand text-surface grid place-items-center shrink-0"><Plane size={16} /></span>
-          <h3 className="text-[15px] font-black m-0">{t('arrivalDay')} â€” {t('flight')}</h3>
+          <h3 className="text-[15px] font-black m-0">{t('arrivalDay')} — {t('flight')}</h3>
         </div>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[12.5px] font-bold text-sub">
-          <span className="text-ink font-black">{plan.flight.airline} Â· {plan.flight.flightNo}</span>
-          <span dir="ltr">{plan.flight.departureTime} â†’ {plan.flight.arrivalTime}</span>
-          <span>{plan.flight.origin} â†’ {plan.flight.destination}</span>
-          <span className="text-price font-black num">{num(plan.flightTotal, locale)} <span className="text-[10px]">ØªÙˆÙ…Ø§Ù†</span></span>
+          <span className="text-ink font-black">{plan.flight.airline} · {plan.flight.flightNo}</span>
+          <span dir="ltr">{plan.flight.departureTime} → {plan.flight.arrivalTime}</span>
+          <span>{plan.flight.origin} → {plan.flight.destination}</span>
+          <span className="text-price font-black num">{num(plan.flightTotal, locale)} <span className="text-[10px]">تومان</span></span>
         </div>
       </article>
 
@@ -45,7 +45,7 @@ export function PlannerTimeline({ plan, days, locale, isEn, onRegenerate, onEdit
           <span className="text-ink font-black">{isEn ? plan.hotel.nameEn : plan.hotel.name}</span>
           <span className="inline-flex items-center gap-1"><MapPin size={13} /> {isEn ? plan.hotel.cityEn : plan.hotel.city}</span>
           <span>{t('hotelNights', { nights: num(plan.nights, locale), rooms: num(plan.rooms, locale) })}</span>
-          <span className="text-price font-black num">{num(plan.hotelTotal, locale)} <span className="text-[10px]">ØªÙˆÙ…Ø§Ù†</span></span>
+          <span className="text-price font-black num">{num(plan.hotelTotal, locale)} <span className="text-[10px]">تومان</span></span>
         </div>
       </article>
 

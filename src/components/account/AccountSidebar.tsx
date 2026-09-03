@@ -24,8 +24,12 @@ export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps)
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
 
+  const userFullName = locale === 'fa'
+    ? `${user?.firstNameFa || ''} ${user?.lastNameFa || ''}`.trim()
+    : `${user?.firstNameEn || user?.firstNameFa || ''} ${user?.lastNameEn || user?.lastNameFa || ''}`.trim();
+
   const userName = user
-    ? `${user.firstNameFa || ''} ${user.lastNameFa || ''}`.trim() || user.phone
+    ? userFullName || user.phone
     : lt(locale, {
         fa: 'کاربر فیروزه',
         en: 'Firuzo Traveler',

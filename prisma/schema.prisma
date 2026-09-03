@@ -63,11 +63,15 @@ model UserRole {
 
 model Account {
   id          String        @id @default(cuid())
-  ownerType   String        // USER, PLATFORM_ESCROW, PLATFORM_FEE, PLATFORM_REVENUE, GATEWAY_SETTLEMENT, SUPPLIER_PAYABLE
-  ownerId     String?       // userId or supplierId
+  ownerType   String        // USER, PLATFORM_ESCROW, PLATFORM_FEE, PLATFORM_REVENUE, GATEWAY_SETTLEMENT, SUPPLIER_PAYABLE, TAX_PAYABLE
+  ownerId     String?       // userId, supplierId, or '#platform' sentinel for platform-owned accounts
   currency    String        @default("IRR")
-  
+
   entries     LedgerEntry[]
+
+  // Platform accounts share the '#platform' sentinel so the unique rule also
+  // covers them (SQLite treats NULLs as distinct in unique indexes).
+  @@unique([ownerType, ownerId, currency])
 }
 
 model LedgerEntry {
@@ -222,6 +226,7 @@ model InventoryHold {
 
   @@index([token])
   @@index([expiresAt])
+  @@index([bookingId])
 }
 
 // ==================== 5. Reliability & Workflow ====================
@@ -250,7 +255,24 @@ model OutboxEvent {
   retryCount  Int      @default(0)
   lastError   String?
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   processedAt DateTime?
 
   @@index([status])
+  @@index([status, updatedAt])
+}
+
+// Server-issued one-time passcodes for passwordless login.
+// The code itself is never stored in plaintext.
+model OtpVerification {
+  id         String    @id @default(cuid())
+  identifier String
+  channel    String    // phone, email, telegram, whatsapp, wechat
+  codeHash   String
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+
+  @@index([identifier, createdAt])
 }

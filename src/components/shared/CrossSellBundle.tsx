@@ -3,6 +3,8 @@
 import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES, CountryId } from '@/lib/countries';
 import { useRouter } from '@/i18n/routing';
+import { useLocale } from 'next-intl';
+import { lt } from '@/lib/lt';
 import {
   Plane, BedDouble, Compass, CarTaxiFront, TrainFront,
   ShieldCheck, Wallet, Wifi, ArrowLeft
@@ -27,6 +29,7 @@ interface CrossSellBundleProps {
 }
 
 export function CrossSellBundle({ currentService, destination }: CrossSellBundleProps) {
+  const locale = useLocale();
   const { country } = useCountryStore();
   const router = useRouter();
   
@@ -47,6 +50,8 @@ export function CrossSellBundle({ currentService, destination }: CrossSellBundle
   }
 
   const c = COUNTRIES[targetCountryId];
+  const cName = locale === 'fa' ? c.nameFa : c.nameEn;
+  const destName = destination || cName;
   
   // Filter out the service they are currently looking at, and only show a max of 4 tailored cross-sells
   const crossSells = c.services
@@ -63,18 +68,38 @@ export function CrossSellBundle({ currentService, destination }: CrossSellBundle
       <div className="flex flex-col md:flex-row gap-5 items-center justify-between mb-5">
         <div>
           <h3 className="text-lg font-black text-ink flex items-center gap-2">
-            سفر خود به {destination ? destination : c.nameFa} را کامل کنید
-            <span className="px-2 py-0.5 rounded text-[10px] bg-action text-ink">پیشنهاد هوشمند</span>
+            {lt(locale, {
+              fa: `سفر خود به ${destName} را کامل کنید`,
+              en: `Complete your trip to ${destName}`,
+              ar: `أكمل رحلتك إلى ${destName}`,
+              zh: `完善您的${destName}之行`,
+              ru: `Дополните вашу поездку в ${destName}`,
+            })}
+            <span className="px-2 py-0.5 rounded text-[10px] bg-action text-ink">
+              {lt(locale, { fa: 'پیشنهاد هوشمند', en: 'Smart Bundle', ar: 'عرض ذكي', zh: '智能推荐', ru: 'Умное предложение' })}
+            </span>
           </h3>
           <p className="text-[13px] text-sub mt-1 max-w-lg">
-            تمامی خدمات {c.nameFa} بدون نیاز به تغییر پلتفرم در دسترس شماست. خدمات ضروری برای ورود و اقامت را همزمان تهیه کنید.
+            {lt(locale, {
+              fa: `تمامی خدمات ${cName} بدون نیاز به تغییر پلتفرم در دسترس شماست. خدمات ضروری برای ورود و اقامت را همزمان تهیه کنید.`,
+              en: `All services in ${cName} under one roof. Bundle essential arrival and stay ancillaries with a single checkout.`,
+              ar: `جميع خدمات ${cName} في مكان واحد دون مغادرة المنصة. احصل على خدمات الوصول والإقامة معاً.`,
+              zh: `一站式享受${cName}各项出行服务，在结账时随心搭配抵离与入住保障。`,
+              ru: `Все услуги в ${cName} на одной платформе. Оформите всё необходимое для въезда и пребывания в один шаг.`,
+            })}
           </p>
         </div>
         <button 
           onClick={() => router.push('/services')} 
           className="shrink-0 hidden md:inline-flex items-center gap-1.5 text-brand-dark text-[13px] font-bold hover:gap-2.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded"
         >
-          مشاهده تمام خدمات {c.nameFa} <ArrowLeft size={14} className="ltr:-scale-x-100" />
+          {lt(locale, {
+            fa: `مشاهده تمام خدمات ${cName}`,
+            en: `Explore all ${cName} services`,
+            ar: `عرض كل خدمات ${cName}`,
+            zh: `查看${cName}全部服务`,
+            ru: `Все услуги в ${cName}`,
+          })} <ArrowLeft size={14} className="ltr:-scale-x-100" />
         </button>
       </div>
 

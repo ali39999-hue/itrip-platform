@@ -13,12 +13,12 @@ export default function FlightsLandingPage() {
   const locale = useLocale();
 
   const popularRoutes = [
-    { from: 'THR', fromName: 'Tehran', fromFa: 'تهران', to: 'IST', toName: 'Istanbul', toFa: 'استانبول', price: 8500000, img: 'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&w=800&q=80', duration: '۳ ساعت' },
-    { from: 'THR', fromName: 'Tehran', fromFa: 'تهران', to: 'DXB', toName: 'Dubai', toFa: 'دبی', price: 9800000, img: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80', duration: '۲ ساعت' },
-    { from: 'MHD', fromName: 'Mashhad', fromFa: 'مشهد', to: 'THR', toName: 'Tehran', toFa: 'تهران', price: 2350000, img: 'https://images.unsplash.com/photo-1579762715118-a6f1d4b934f1?auto=format&fit=crop&w=800&q=80', duration: '۱.۵ ساعت' },
-    { from: 'THR', fromName: 'Tehran', fromFa: 'تهران', to: 'TBS', toName: 'Tbilisi', toFa: 'تفلیس', price: 6500000, img: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80', duration: '۱.۸ ساعت' },
-    { from: 'SYZ', fromName: 'Shiraz', fromFa: 'شیراز', to: 'IST', toName: 'Istanbul', toFa: 'استانبول', price: 8200000, img: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80', duration: '۳.۵ ساعت' },
-    { from: 'KIH', fromName: 'Kish', fromFa: 'کیش', to: 'THR', toName: 'Tehran', toFa: 'تهران', price: 2800000, img: 'https://images.unsplash.com/photo-1549488344-1f9b8d2bd1f3?auto=format&fit=crop&w=800&q=80', duration: '۱.۶ ساعت' },
+    { from: 'THR', fromName: 'Tehran', fromFa: 'تهران', to: 'IST', toName: 'Istanbul', toFa: 'استانبول', price: 8500000, img: 'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&w=800&q=80', duration: '۳ ساعت', durationEn: '3h' },
+    { from: 'THR', fromName: 'Tehran', fromFa: 'تهران', to: 'DXB', toName: 'Dubai', toFa: 'دبی', price: 9800000, img: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80', duration: '۲ ساعت', durationEn: '2h' },
+    { from: 'MHD', fromName: 'Mashhad', fromFa: 'مشهد', to: 'THR', toName: 'Tehran', toFa: 'تهران', price: 2350000, img: 'https://images.unsplash.com/photo-1579762715118-a6f1d4b934f1?auto=format&fit=crop&w=800&q=80', duration: '۱.۵ ساعت', durationEn: '1.5h' },
+    { from: 'THR', fromName: 'Tehran', fromFa: 'تهران', to: 'TBS', toName: 'Tbilisi', toFa: 'تفلیس', price: 6500000, img: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80', duration: '۱.۸ ساعت', durationEn: '1.8h' },
+    { from: 'SYZ', fromName: 'Shiraz', fromFa: 'شیراز', to: 'IST', toName: 'Istanbul', toFa: 'استانبول', price: 8200000, img: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80', duration: '۳.۵ ساعت', durationEn: '3.5h' },
+    { from: 'KIH', fromName: 'Kish', fromFa: 'کیش', to: 'THR', toName: 'Tehran', toFa: 'تهران', price: 2800000, img: 'https://images.unsplash.com/photo-1549488344-1f9b8d2bd1f3?auto=format&fit=crop&w=800&q=80', duration: '۱.۶ ساعت', durationEn: '1.6h' },
   ];
 
   return (
@@ -68,7 +68,7 @@ export default function FlightsLandingPage() {
             >
               <Image
                 src={route.img}
-                alt={`${route.fromFa} به ${route.toFa}`}
+                alt={`${route.fromName} to ${route.toName}`}
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 placeholder="blur"
@@ -80,16 +80,19 @@ export default function FlightsLandingPage() {
               <div className="absolute bottom-4 start-4 end-4 text-surface">
                 <div className="flex items-center justify-between mb-1">
                   <h3 className="text-lg font-black">
-                    {route.fromFa} <span className="text-mint-bright">←</span> {route.toFa}
+                    {lt(locale, { fa: route.fromFa, en: route.fromName, ar: route.fromFa, zh: route.fromName, ru: route.fromName })}
+                    {' '}
+                    <span className="text-mint-bright">←</span>{' '}
+                    {lt(locale, { fa: route.toFa, en: route.toName, ar: route.toFa, zh: route.toName, ru: route.toName })}
                   </h3>
                   <span className="px-2 py-0.5 rounded-full bg-surface/20 backdrop-blur-sm text-xs font-bold">
-                    {route.duration}
+                    {lt(locale, { fa: route.duration, en: route.durationEn, ar: route.duration, zh: route.durationEn, ru: route.durationEn })}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-surface/80">شروع از</span>
+                  <span className="text-xs text-surface/80">{lt(locale, { fa: 'شروع از', en: 'From', ar: 'يبدأ من', zh: '起价', ru: 'от' })}</span>
                   <span className="text-base font-black font-mono">
-                    {num(route.price, locale)} <span className="text-xs font-normal">تومان</span>
+                    {num(route.price, locale)} <span className="text-xs font-normal">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томан' })}</span>
                   </span>
                 </div>
               </div>
@@ -105,9 +108,9 @@ export default function FlightsLandingPage() {
             <div className="w-12 h-12 rounded-2xl bg-mint text-brand-dark grid place-items-center">
               <ShieldCheck size={24} />
             </div>
-            <h3 className="text-base font-black text-ink">صدور آنی و کد رهگیری رسمی</h3>
+            <h3 className="text-base font-black text-ink">{lt(locale, { fa: 'صدور آنی و کد رهگیری رسمی', en: 'Instant Ticketing & Official PNR', ar: 'إصدار فوري ورمز تتبع رسمي', zh: '即时出票与官方追踪码', ru: 'Мгновенное оформление и официальный PNR' })}</h3>
             <p className="text-xs text-sub font-bold leading-relaxed">
-              صدور مستقیم بلیط و ثبت PNR رسمی در شبکه ایرلاین‌ها بدون کوچکترین تاخیر
+              {lt(locale, { fa: 'صدور مستقیم بلیط و ثبت PNR رسمی در شبکه ایرلاین‌ها بدون کوچکترین تاخیر', en: 'Direct ticket issuance with an official PNR registered across airline networks — zero delay.', ar: 'إصدار التذاكر مباشرة مع تسجيل PNR رسمي في شبكات شركات الطيران دون تأخير.', zh: '直接出票并在航空公司网络中登记官方 PNR，零延迟。', ru: 'Прямое оформление билета с официальным PNR в сетях авиакомпаний — без задержек.' })}
             </p>
           </div>
 
@@ -115,9 +118,9 @@ export default function FlightsLandingPage() {
             <div className="w-12 h-12 rounded-2xl bg-gold-soft text-price grid place-items-center">
               <RefreshCcw size={24} />
             </div>
-            <h3 className="text-base font-black text-ink">کنسلی و استرداد آنلاین</h3>
+            <h3 className="text-base font-black text-ink">{lt(locale, { fa: 'کنسلی و استرداد آنلاین', en: 'Online Cancellation & Refund', ar: 'إلغاء واسترداد عبر الإنترنت', zh: '在线取消与退款', ru: 'Онлайн-отмена и возврат' })}</h3>
             <p className="text-xs text-sub font-bold leading-relaxed">
-              امکان استرداد آنی وجه طبق قوانین کنسلی پرواز و شارژ مستقیم به حساب یا کیف پول
+              {lt(locale, { fa: 'امکان استرداد آنی وجه طبق قوانین کنسلی پرواز و شارژ مستقیم به حساب یا کیف پول', en: 'Instant refunds per the fare cancellation rules, credited straight to your account or wallet.', ar: 'استرداد فوري وفق قواعد إلغاء الرحلة، يُضاف مباشرة إلى حسابك أو محفظتك.', zh: '按退票规则即时退款，直接存入您的账户或钱包。', ru: 'Мгновенный возврат по правилам тарифа — прямо на счет или в кошелек.' })}
             </p>
           </div>
 
@@ -125,9 +128,9 @@ export default function FlightsLandingPage() {
             <div className="w-12 h-12 rounded-2xl bg-mint text-brand-dark grid place-items-center">
               <Clock size={24} />
             </div>
-            <h3 className="text-base font-black text-ink">پشتیبانی ۲۴ ساعته فرودگاهی</h3>
+            <h3 className="text-base font-black text-ink">{lt(locale, { fa: 'پشتیبانی ۲۴ ساعته فرودگاهی', en: '24/7 Airport Support', ar: 'دعم مطارئ على مدار الساعة', zh: '全天候机场支持', ru: 'Поддержка в аэропорту 24/7' })}</h3>
             <p className="text-xs text-sub font-bold leading-relaxed">
-              تیم پشتیبانی اختصاصی فیروزو در کلیه ساعات پرواز و ترانزیت همراه شماست
+              {lt(locale, { fa: 'تیم پشتیبانی اختصاصی فیروزو در کلیه ساعات پرواز و ترانزیت همراه شماست', en: 'The dedicated Firuzo support team is with you throughout every flight and transit.', ar: 'فريق دعم فيروزو المخصص معك في جميع ساعات الطيران والترانزيت.', zh: 'Firuzo 专属支持团队在您所有航班和中转时段全程陪伴。', ru: 'Выделенная команда поддержки Firuzo с вами на протяжении всех рейсов и транзитов.' })}
             </p>
           </div>
         </div>

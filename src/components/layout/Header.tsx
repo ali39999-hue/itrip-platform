@@ -19,11 +19,13 @@ export function Header() {
     <header className="sticky top-0 z-[80] bg-surface/90 backdrop-blur-md border-b border-line/80">
       <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between gap-4">
         {/* Brand Logo & Switchers */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Logo size="md" />
 
           <div className="hidden sm:flex items-center gap-2">
             <CountrySwitcher />
+          </div>
+          <div className="flex items-center">
             <LocaleSwitcher />
           </div>
         </div>
@@ -59,7 +61,7 @@ export function Header() {
           <div className="space-y-4">
             {NAV_CATEGORIES.map((cat) => (
               <div key={cat.key} className="space-y-1.5">
-                <h4 className="text-[11px] font-black uppercase text-sub tracking-wider px-1">
+                <h4 className="text-[11px] font-black uppercase text-sub px-1">
                   {t(cat.key)}
                 </h4>
                 <div className="grid grid-cols-2 gap-2">

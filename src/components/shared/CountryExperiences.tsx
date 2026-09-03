@@ -146,10 +146,10 @@ export function CountryExperiencesSection({
       <div className="max-w-[1280px] mx-auto px-4 md:px-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
           <div>
-            <p className="mb-2 text-brand-dark font-black tracking-wide text-[11px]">
+            <p className="mb-2 text-brand-dark font-black text-[11px]">
               {c.flag} {t('kicker', { country: countryName(c.id, locale) })}
             </p>
-            <h2 className="m-0 text-2xl md:text-[30px] font-black tracking-tight">
+            <h2 className="m-0 text-2xl md:text-[30px] font-black">
               {t('title')}
             </h2>
             <p className="m-0 mt-2 text-sub text-xs max-w-xl">

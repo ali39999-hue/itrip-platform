@@ -160,9 +160,19 @@ export function PassengerSection({
               <JalaliDatePicker
                 value={field.value}
                 onChange={(val) => field.onChange(val || '')}
+                error={Boolean(errors.birthDate)}
               />
             )}
           />
+          <span className="text-[10.5px] text-sub mt-1 block">
+            {lt(locale, {
+              fa: 'از تقویم انتخاب کنید یا به شکل ۱۳۷۰/۰۳/۱۵ وارد کنید',
+              en: 'Pick from the calendar or type MM/DD/YYYY',
+              ar: 'اختر من التقويم أو اكتب MM/DD/YYYY',
+              zh: '从日历中选择，或输入 MM/DD/YYYY',
+              ru: 'Выберите в календаре или введите MM/DD/YYYY',
+            })}
+          </span>
           {errors.birthDate && (
             <span className="text-rose-warm text-[11px] font-bold mt-1 block">
               {errors.birthDate.message}

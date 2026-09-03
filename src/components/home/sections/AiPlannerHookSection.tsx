@@ -22,7 +22,7 @@ export function AiPlannerHookSection() {
           <span>{t('aiPlannerBadge')}</span>
         </div>
 
-        <h2 className="text-2xl md:text-4xl font-black text-ink tracking-tight max-w-2xl mx-auto">
+        <h2 className="text-2xl md:text-4xl font-black text-ink max-w-2xl mx-auto">
           {t('aiPlannerTitle')}
         </h2>
 

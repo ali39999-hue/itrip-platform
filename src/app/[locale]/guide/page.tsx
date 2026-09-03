@@ -7,45 +7,107 @@ import { Button } from '@/components/ui/button';
 import { Headset, ArrowLeft, ShieldCheck, PlaneTakeoff, X } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
-const ARTICLES = [
+import type { LText } from '@/lib/lt';
+
+interface GuideArticle {
+  id: string;
+  category: LText;
+  title: LText;
+  readTime: LText;
+  gradient?: string;
+  excerpt: LText;
+  body: LText;
+  image?: string;
+  icon?: typeof ShieldCheck;
+}
+
+const ARTICLES: GuideArticle[] = [
   {
     id: 'a1',
-    category: 'ویزا',
-    title: 'چک‌لیست سفر به ترکیه',
-    readTime: '۵ دقیقه',
+    category: { fa: 'ویزا', en: 'Visa', ar: 'تأشيرة', zh: '签证', ru: 'Виза' },
+    title: { fa: 'چک‌لیست سفر به ترکیه', en: 'Turkey Travel Checklist', ar: 'قائمة التحقق للسفر إلى تركيا', zh: '土耳其旅行清单', ru: 'Чек-лист поездки в Турцию' },
+    readTime: { fa: '۵ دقیقه', en: '5 min', ar: '٥ دقائق', zh: '5 分钟', ru: '5 мин' },
     gradient: 'from-rose-warm/80 to-rose-warm',
-    excerpt: 'از بیمه مسافرتی اجباری تا رزرو هتل قابل استعلام — همه مدارکی که برای ورود به ترکیه لازم دارید.',
-    body: 'برای سفر به ترکیه علاوه بر پاسپورت با حداقل ۵ ماه اعتبار، توصیه می‌کنیم بیمه مسافرتی معتبر تهیه کنید. رزرو هتل و بلیت برگشت نیز ممکن است در گیت ورودی بررسی شود. پول نقد دلار یا یورو همراه داشته باشید؛ کارت‌های ایرانی در ترکیه کاربردی ندارند.',
+    excerpt: {
+      fa: 'از بیمه مسافرتی اجباری تا رزرو هتل قابل استعلام — همه مدارکی که برای ورود به ترکیه لازم دارید.',
+      en: 'From mandatory travel insurance to a verifiable hotel booking — every document you need to enter Turkey.',
+      ar: 'من تأمين السفر الإلزامي إلى حجز فندق قابل للتحقق — كل المستندات التي تحتاجها للدخول إلى تركيا.',
+      zh: '从强制旅行保险到可核验的酒店预订——进入土耳其所需的全部文件。',
+      ru: 'От обязательной туристической страховки до подтвержденной брони отеля — все документы для въезда в Турцию.',
+    },
+    body: {
+      fa: 'برای سفر به ترکیه علاوه بر پاسپورت با حداقل ۵ ماه اعتبار، توصیه می‌کنیم بیمه مسافرتی معتبر تهیه کنید. رزرو هتل و بلیت برگشت نیز ممکن است در گیت ورودی بررسی شود. پول نقد دلار یا یورو همراه داشته باشید؛ کارت‌های ایرانی در ترکیه کاربردی ندارند.',
+      en: 'For travel to Turkey, besides a passport with at least 5 months of validity, we recommend holding valid travel insurance. Hotel reservations and a return ticket may also be checked at immigration. Carry US dollars or euros in cash; Iranian cards are not usable in Turkey.',
+      ar: 'للسفر إلى تركيا، بالإضافة إلى جواز سفر صالح لمدة 5 أشهر على الأقل، نوصي بتأمين سفر ساري المفعول. قد يتم التحقق من حجز الفندق وتذكرة العودة عند الوصول. احمل دولارات أو يورو نقداً؛ البطاقات الإيرانية لا تعمل في تركيا.',
+      zh: '前往土耳其时，除有效期至少 5 个月的护照外，建议持有有效的旅行保险。入境时可能核查酒店预订和回程机票。请携带美元或欧元现金；伊朗银行卡在土耳其无法使用。',
+      ru: 'Для поездки в Турцию, помимо паспорта со сроком действия не менее 5 месяцев, рекомендуем оформить действующую туристическую страховку. Бронь отеля и обратный билет могут проверить на границе. Возьмите наличные доллары или евро; иранские карты в Турции не работают.',
+    },
     image: '/images/guide-turkey.jpg'
   },
   {
     id: 'a2',
-    category: 'مالی',
-    title: 'راهنمای کیف پول چندارزی فیروز',
-    readTime: '۷ دقیقه',
+    category: { fa: 'مالی', en: 'Finance', ar: 'مالية', zh: '金融', ru: 'Финансы' },
+    title: { fa: 'راهنمای کیف پول چندارزی فیروز', en: 'Firuzo Multi-Currency Wallet Guide', ar: 'دليل محفظة فيروز متعددة العملات', zh: 'Firuzo 多币种钱包指南', ru: 'Руководство по мультивалютному кошельку Firuzo' },
+    readTime: { fa: '۷ دقیقه', en: '7 min', ar: '٧ دقائق', zh: '7 分钟', ru: '7 мин' },
     gradient: 'from-brand to-brand-dark',
-    excerpt: 'شارژ ریالی با شتاب، نگهداری تتر و درهم، و تبدیل لحظه‌ای با قفل نرخ ۳۰ ثانیه‌ای چگونه کار می‌کند؟',
-    body: 'کیف پول فیروز از سه ارز ریال، تتر و درهم پشتیبانی می‌کند. شارژ ریالی از طریق درگاه شتاب انجام می‌شود و تبدیل بین ارزها با نرخ لحظه‌ای و قفل ۳۰ ثانیه‌ای صورت می‌گیرد. تمام تراکنش‌ها در دفتر کل (Ledger) ثبت و قابل دریافت است.',
+    excerpt: {
+      fa: 'شارژ ریالی با شتاب، نگهداری تتر و درهم، و تبدیل لحظه‌ای با قفل نرخ ۳۰ ثانیه‌ای چگونه کار می‌کند؟',
+      en: 'How Shetab rial top-ups, USDT & AED balances, and instant exchange with a 30-second rate lock work.',
+      ar: 'كيف تعمل الشحن بالريال عبر شتاب، والاحتفاظ بالتether والدرهم، والتحويل الفوري بتثبيت السعر 30 ثانية؟',
+      zh: 'Shetab 里亚尔充值、USDT 与 AED 余额，以及 30 秒锁价的即时兑换如何运作？',
+      ru: 'Как работают пополнение в риалах через Shetab, хранение USDT и дирхам и мгновенный обмен с фиксацией курса на 30 секунд.',
+    },
+    body: {
+      fa: 'کیف پول فیروز از سه ارز ریال، تتر و درهم پشتیبانی می‌کند. شارژ ریالی از طریق درگاه شتاب انجام می‌شود و تبدیل بین ارزها با نرخ لحظه‌ای و قفل ۳۰ ثانیه‌ای صورت می‌گیرد. تمام تراکنش‌ها در دفتر کل (Ledger) ثبت و قابل دریافت است.',
+      en: 'The Firuzo wallet supports three currencies: IRR, USDT and AED. Rial top-ups go through the Shetab gateway, and exchanges between currencies use live rates with a 30-second lock. Every transaction is recorded in the ledger and available for download.',
+      ar: 'تدعم محفظة فيروز ثلاث عملات: الريال والتether والدرهم. يتم الشحن بالريال عبر بوابة شتاب، ويتم التحويل بين العملات بأسعار فورية مع تثبيت 30 ثانية. تُسجَّل جميع المعاملات في دفتر الأستاذ وتكون قابلة للاسترجاع.',
+      zh: 'Firuzo 钱包支持 IRR、USDT 和 AED 三种货币。里亚尔充值通过 Shetab 网关完成，币种间兑换采用实时汇率并锁定 30 秒。所有交易均记录在账本中，可随时查询。',
+      ru: 'Кошелек Firuzo поддерживает три валюты: IRR, USDT и AED. Пополнение в риалах проходит через шлюз Shetab, обмен между валютами — по живому курсу с фиксацией на 30 секунд. Все операции фиксируются в учетной книге и доступны для выгрузки.',
+    },
     icon: ShieldCheck
   },
   {
     id: 'a3',
-    category: 'درمانی',
-    title: 'سفر درمانی به استانبول',
-    readTime: '۹ دقیقه',
+    category: { fa: 'درمانی', en: 'Medical', ar: 'علاجية', zh: '医疗', ru: 'Медицина' },
+    title: { fa: 'سفر درمانی به استانبول', en: 'Medical Travel to Istanbul', ar: 'السفر العلاجي إلى إسطنبول', zh: '伊斯坦布尔医疗之旅', ru: 'Медицинская поездка в Стамбул' },
+    readTime: { fa: '۹ دقیقه', en: '9 min', ar: '٩ دقائق', zh: '9 分钟', ru: '9 мин' },
     gradient: 'from-flight/80 to-flight',
-    excerpt: 'چطور از ویزا تا بیمارستان و مترجم، یک سفر درمانی بی‌دغدغه بچینیم؟',
-    body: 'استانبول یکی از قطب‌های گردشگری درمانی منطقه است. پیشنهاد ما ابتدا چکاپ کامل در بیمارستان‌های طرف قرارداد است. با بسته درمانی فیروز، ویزا، پرواز، اقامت نزدیک بیمارستان و مترجم فارسی‌زبان در قالب یک سفارش واحد ارائه می‌شود.',
+    excerpt: {
+      fa: 'چطور از ویزا تا بیمارستان و مترجم، یک سفر درمانی بی‌دغدغه بچینیم؟',
+      en: 'How to arrange a hassle-free medical trip — from visa to hospital and interpreter.',
+      ar: 'كيف ترتب رحلة علاجية بلا عناء — من التأشيرة إلى المستشفى والمترجم؟',
+      zh: '如何安排一次无忧的医疗之旅——从签证到医院和翻译。',
+      ru: 'Как организовать медицинскую поездку без хлопот — от визы до больницы и переводчика.',
+    },
+    body: {
+      fa: 'استانبول یکی از قطب‌های گردشگری درمانی منطقه است. پیشنهاد ما ابتدا چکاپ کامل در بیمارستان‌های طرف قرارداد است. با بسته درمانی فیروز، ویزا، پرواز، اقامت نزدیک بیمارستان و مترجم فارسی‌زبان در قالب یک سفارش واحد ارائه می‌شود.',
+      en: 'Istanbul is one of the region\'s leading medical tourism hubs. We recommend starting with a full check-up at partner hospitals. The Firuzo medical bundle covers visa, flights, accommodation near the hospital and a Persian-speaking interpreter in a single order.',
+      ar: 'إسطنبول واحدة من أهم محطات السياحة العلاجية في المنطقة. نوصي بالبدء بفحص شامل في المستشفيات الشريكة. تشمل حزمة فيروز العلاجية التأشيرة والرحلات والإقامة قرب المستشفى ومترجماً فارسياً في طلب واحد.',
+      zh: '伊斯坦布尔是该地区领先的医疗旅游中心。我们建议先在合作医院进行全面体检。Firuzo 医疗套餐将签证、机票、医院附近住宿和波斯语翻译整合为一笔订单。',
+      ru: 'Стамбул — один из ведущих центров медицинского туризма региона. Мы рекомендуем начать с полного обследования в больницах-партнерах. Медицинский пакет Firuzo включает визу, перелеты, проживание рядом с больницей и переводчика в одном заказе.',
+    },
     image: '/images/guide-medical.jpg'
   },
   {
     id: 'a4',
-    category: 'نکات خرید',
-    title: '۷ نکته خرید بلیت ارزان چارتری',
-    readTime: '۴ دقیقه',
+    category: { fa: 'نکات خرید', en: 'Booking Tips', ar: 'نصائح الحجز', zh: '购票技巧', ru: 'Советы по бронированию' },
+    title: { fa: '۷ نکته خرید بلیت ارزان چارتری', en: '7 Tips for Cheap Charter Tickets', ar: '٧ نصائح لتذاكر شارتر رخيصة', zh: '购买廉价包机机票的 7 个技巧', ru: '7 советов по дешевым чартерным билетам' },
+    readTime: { fa: '۴ دقیقه', en: '4 min', ar: '٤ دقائق', zh: '4 分钟', ru: '4 мин' },
     gradient: 'from-tour/80 to-tour',
-    excerpt: 'بلیت چارتری بخریم یا سیستمی؟ کدام برای سفر من مناسب‌تر است؟',
-    body: 'بلیت‌های چارتری معمولاً ۲۰ تا ۴۰ درصد ارزان‌ترند اما غیرقابل کنسلی هستند. اگر تاریخ سفر شما قطعی است، چارتری بخرید؛ در غیر این صورت سیستمی با جریمه کم انتخاب بهتری است. با ابزار مقایسه قیمت فیروز می‌توانید قیمت‌ها را در تقویم دوگانه شمسی/میلادی ببینید.',
+    excerpt: {
+      fa: 'بلیت چارتری بخریم یا سیستمی؟ کدام برای سفر من مناسب‌تر است؟',
+      en: 'Charter or scheduled? Which one fits your trip better?',
+      ar: 'شارتر أم نظامي؟ أيهما أنسب لرحلتك؟',
+      zh: '包机还是定期航班？哪个更适合你的行程？',
+      ru: 'Чартер или регулярный рейс? Что лучше подходит для вашей поездки?',
+    },
+    body: {
+      fa: 'بلیت‌های چارتری معمولاً ۲۰ تا ۴۰ درصد ارزان‌ترند اما غیرقابل کنسلی هستند. اگر تاریخ سفر شما قطعی است، چارتری بخرید؛ در غیر این صورت سیستمی با جریمه کم انتخاب بهتری است. با ابزار مقایسه قیمت فیروز می‌توانید قیمت‌ها را در تقویم دوگانه شمسی/میلادی ببینید.',
+      en: 'Charter tickets are usually 20–40% cheaper but non-refundable. If your travel dates are fixed, buy charter; otherwise a scheduled fare with low penalties is the safer choice. Use Firuzo\'s price comparison to see fares across a dual Jalali/Gregorian calendar.',
+      ar: 'تذاكر الشارتر عادة أرخص بنسبة 20-40% لكنها غير قابلة للاسترداد. إذا كانت تواريخ سفرك ثابتة، اشترِ شارتر؛ وإلا فالتذاكر النظامية بغرامات أقل خيار أفضل. استخدم أداة مقارنة الأسعار من فيروز لعرض الأسعار في تقويم مزدوج هجري/ميلادي.',
+      zh: '包机票通常便宜 20–40%，但不可退票。如果行程日期已确定，选包机票；否则选择罚金较低的定期航班更稳妥。使用 Firuzo 比价工具可在双历（波斯/公历）日历中查看票价。',
+      ru: 'Чартерные билеты обычно на 20–40% дешевле, но невозвратные. Если даты поездки фиксированы — берите чартер; иначе надежнее регулярный рейс с низкими штрафами. Сравнивайте цены в Firuzo с календарем Джалали/Григорианскому.',
+    },
     icon: PlaneTakeoff
   },
 ];
@@ -55,7 +117,7 @@ import { useTranslations } from 'next-intl';
 export default function GuidePage() {
   const router = useRouter();
   const locale = useLocale();
-  const t = useTranslations('Common');
+  const ariaT = useTranslations('Common.aria');
   
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -65,10 +127,10 @@ export default function GuidePage() {
     <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-8">
       
       {/* Hero Section */}
-      <section className="relative rounded-3xl overflow-hidden mb-12 min-h-[400px] flex items-end p-8 shadow-elev-1 border border-line/80">
-        <div 
-          className="absolute inset-0 z-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('/images/guide-hero.jpg')" }}
+      <section className="relative rounded-3xl overflow-hidden mb-12 min-h-[400px] flex items-end p-8 shadow-elev-1 border border-line/80 bg-gradient-to-br from-deep via-brand-dark to-brand">
+        <div
+          className="absolute inset-0 z-0 opacity-20"
+          style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }}
         />
         <div className="absolute inset-0 z-0 bg-gradient-to-t from-deep/90 via-deep/40 to-transparent" />
         <div className="relative z-10 w-full max-w-2xl">
@@ -120,13 +182,13 @@ export default function GuidePage() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent transition-opacity group-hover:opacity-90" />
             <div className="absolute bottom-0 start-0 end-0 p-8">
               <span className="inline-block px-3 py-1.5 bg-surface/20 backdrop-blur-md text-surface font-bold text-[12px] rounded-lg mb-4">
-                {ARTICLES[0].category}
+                {lt(locale, ARTICLES[0].category)}
               </span>
               <h3 className="font-black text-[24px] md:text-[28px] text-surface mb-3 group-hover:text-brand transition-colors">
-                {ARTICLES[0].title}
+                {lt(locale, ARTICLES[0].title)}
               </h3>
               <p className="font-bold text-[14px] text-surface/80 line-clamp-2 leading-relaxed">
-                {ARTICLES[0].excerpt}
+                {lt(locale, ARTICLES[0].excerpt)}
               </p>
             </div>
           </div>
@@ -141,35 +203,38 @@ export default function GuidePage() {
                 {(() => { const Icon = ARTICLES[1].icon; return Icon && <Icon size={28} />; })()}
               </div>
               <span className="text-sub font-bold text-[12px] bg-soft px-3 py-1 rounded-full">
-                {ARTICLES[1].readTime}
+                {lt(locale, ARTICLES[1].readTime)}
               </span>
             </div>
             <div>
               <h3 className="font-black text-[20px] text-ink mb-2 group-hover:text-brand-dark transition-colors">
-                {ARTICLES[1].title}
+                {lt(locale, ARTICLES[1].title)}
               </h3>
               <p className="font-bold text-[14px] text-sub leading-7 line-clamp-2">
-                {ARTICLES[1].excerpt}
+                {lt(locale, ARTICLES[1].excerpt)}
               </p>
             </div>
           </div>
 
-          {/* Article 3: Small Image Block (1x1) */}
+          {/* Article 3: Small Image Block (1x1) — gradient fallback keeps the
+              tile intact when the article has no photo asset. */}
           <div 
             onClick={() => setOpenId(ARTICLES[2].id)}
-            className="rounded-3xl overflow-hidden relative group cursor-pointer shadow-sm hover:shadow-elev-1 transition-all border border-line/80"
+            className={`rounded-3xl overflow-hidden relative group cursor-pointer shadow-sm hover:shadow-elev-1 transition-all border border-line/80 bg-gradient-to-br ${ARTICLES[2].gradient || 'from-brand to-brand-dark'}`}
           >
-            <div 
-              className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-              style={{ backgroundImage: `url('${ARTICLES[2].image}')` }}
-            />
+            {ARTICLES[2].image && (
+              <div 
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+                style={{ backgroundImage: `url('${ARTICLES[2].image}')` }}
+              />
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent group-hover:bg-black/60 transition-colors" />
             <div className="absolute inset-0 p-6 flex flex-col justify-end">
               <span className="inline-block px-2.5 py-1 bg-brand text-surface font-black text-[11px] rounded-lg mb-2 w-fit">
-                {ARTICLES[2].category}
+                {lt(locale, ARTICLES[2].category)}
               </span>
               <h4 className="font-black text-[16px] text-surface leading-tight">
-                {ARTICLES[2].title}
+                {lt(locale, ARTICLES[2].title)}
               </h4>
             </div>
           </div>
@@ -181,7 +246,7 @@ export default function GuidePage() {
           >
             {(() => { const Icon = ARTICLES[3].icon; return Icon && <Icon size={48} className="mb-4 opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-transform" />; })()}
             <h4 className="font-black text-[18px] leading-tight">
-              {ARTICLES[3].title}
+              {lt(locale, ARTICLES[3].title)}
             </h4>
           </div>
 
@@ -229,7 +294,7 @@ export default function GuidePage() {
                 style={{ backgroundImage: `url('${selectedArticle.image}')` }}
               >
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <button aria-label={t('Common.aria.close')}
+                <button aria-label={ariaT('close')}
                   onClick={() => setOpenId(null)}
                   className="absolute top-4 end-4 w-8 h-8 bg-black/40 hover:bg-black/60 text-surface rounded-full flex items-center justify-center transition-colors backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
@@ -239,8 +304,8 @@ export default function GuidePage() {
             )}
             {!selectedArticle.image && (
               <div className="flex justify-between items-center p-4 border-b border-line">
-                <span className="font-bold text-sub text-[12px] bg-soft px-3 py-1 rounded-full">{selectedArticle.category}</span>
-                <button aria-label={t('Common.aria.close')}
+                <span className="font-bold text-sub text-[12px] bg-soft px-3 py-1 rounded-full">{lt(locale, selectedArticle.category)}</span>
+                <button aria-label={ariaT('close')}
                   onClick={() => setOpenId(null)}
                   className="w-8 h-8 bg-soft hover:bg-line/50 text-sub rounded-full flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
@@ -252,17 +317,17 @@ export default function GuidePage() {
             <div className="p-8">
               <div className="flex items-center gap-3 mb-4">
                 {selectedArticle.image && (
-                  <span className="font-bold text-surface bg-brand text-[11px] px-3 py-1 rounded-full shadow-sm">{selectedArticle.category}</span>
+                  <span className="font-bold text-surface bg-brand text-[11px] px-3 py-1 rounded-full shadow-sm">{lt(locale, selectedArticle.category)}</span>
                 )}
                 <span className="text-sub font-bold text-[12px] flex items-center gap-1">
-                   {selectedArticle.readTime}
+                   {lt(locale, selectedArticle.readTime)}
                 </span>
               </div>
               <h2 className="font-black text-[24px] text-ink mb-6 leading-tight">
-                {selectedArticle.title}
+                {lt(locale, selectedArticle.title)}
               </h2>
               <div className="font-bold text-[15px] text-sub leading-8 whitespace-pre-wrap">
-                {selectedArticle.body}
+                {lt(locale, selectedArticle.body)}
               </div>
               
               <div className="mt-8 pt-6 border-t border-line flex justify-end">

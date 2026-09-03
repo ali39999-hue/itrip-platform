@@ -29,6 +29,7 @@ export interface RevenueRealizationParams {
 
 export interface FXSpreadPostingParams {
   groupId: string;
+  userId: string;
   fromCurrency: string;
   toCurrency: string;
   fromAmount: number;
@@ -45,6 +46,9 @@ export interface RefundPostingParams {
   referenceId?: string;
 }
 
+/** Sentinel ownerId for platform-owned accounts so the unique constraint covers them. */
+const PLATFORM = '#platform';
+
 export class GeneralLedgerService {
   private static async getOrCreateAccount(
     ownerType: string,
@@ -52,15 +56,71 @@ export class GeneralLedgerService {
     currency: string,
     client: Prisma.TransactionClient
   ) {
-    let account = await client.account.findFirst({
-      where: { ownerType, ownerId: ownerId ?? undefined, currency },
+    const resolvedOwnerId = ownerId ?? PLATFORM;
+    const where = {
+      ownerType_ownerId_currency: { ownerType, ownerId: resolvedOwnerId, currency },
+    } as const;
+    // Race-safe upsert against @@unique([ownerType, ownerId, currency]).
+    const account = await client.account.upsert({
+      where,
+      update: {},
+      create: { ownerType, ownerId: resolvedOwnerId, currency },
     });
-    if (!account) {
-      account = await client.account.create({
-        data: { ownerType, ownerId, currency },
-      });
-    }
     return account;
+  }
+
+  private static async getAccountBalance(
+    accountId: string,
+    currency: string,
+    client: Prisma.TransactionClient
+  ): Promise<number> {
+    const credits = await client.ledgerEntry.aggregate({
+      where: { accountId, currency, direction: 'CREDIT' },
+      _sum: { amount: true },
+    });
+    const debits = await client.ledgerEntry.aggregate({
+      where: { accountId, currency, direction: 'DEBIT' },
+      _sum: { amount: true },
+    });
+    return (Number(credits._sum.amount) || 0) - (Number(debits._sum.amount) || 0);
+  }
+
+  /**
+   * Template 0: Wallet Top-Up (CREDIT Customer from Gateway/Settlement)
+   * Records money entering the platform wallet (PSP or demo seed).
+   */
+  static async postTopUp(params: WalletPostingParams, tx?: Prisma.TransactionClient) {
+    const client = tx || prisma;
+    const currency = params.currency || 'IRR';
+
+    const customerAcc = await this.getOrCreateAccount('USER', params.userId, currency, client as Prisma.TransactionClient);
+    const gatewayAcc = await this.getOrCreateAccount('GATEWAY_SETTLEMENT', null, currency, client as Prisma.TransactionClient);
+
+    // DEBIT Gateway settlement (PSP owes the platform this inflow)
+    await client.ledgerEntry.create({
+      data: {
+        groupId: params.groupId,
+        accountId: gatewayAcc.id,
+        direction: 'DEBIT',
+        amount: params.amount,
+        currency,
+        referenceType: 'TOPUP',
+        referenceId: params.referenceId,
+      },
+    });
+
+    // CREDIT Customer wallet
+    await client.ledgerEntry.create({
+      data: {
+        groupId: params.groupId,
+        accountId: customerAcc.id,
+        direction: 'CREDIT',
+        amount: params.amount,
+        currency,
+        referenceType: 'TOPUP',
+        referenceId: params.referenceId,
+      },
+    });
   }
 
   /**
@@ -74,17 +134,7 @@ export class GeneralLedgerService {
     const escrowAcc = await this.getOrCreateAccount('PLATFORM_ESCROW', null, currency, client as Prisma.TransactionClient);
 
     // Check Wallet Balance Before DEBIT
-    const creditsAgg = await client.ledgerEntry.aggregate({
-      where: { accountId: customerAcc.id, direction: 'CREDIT' },
-      _sum: { amount: true },
-    });
-
-    const debitsAgg = await client.ledgerEntry.aggregate({
-      where: { accountId: customerAcc.id, direction: 'DEBIT' },
-      _sum: { amount: true },
-    });
-
-    const currentBalance = (Number(creditsAgg._sum.amount) || 0) - (Number(debitsAgg._sum.amount) || 0);
+    const currentBalance = await this.getAccountBalance(customerAcc.id, currency, client);
 
     if (currentBalance < params.amount) {
       throw new Error('Insufficient wallet balance');
@@ -119,6 +169,9 @@ export class GeneralLedgerService {
 
   /**
    * Template 2: Gateway Payment (DEBIT Gateway -> CREDIT Escrow)
+   * NOTE: the gateway settlement account is not funded by a real PSP yet —
+   * reconciliation against the actual PSP statement is required before
+   * these entries represent real money.
    */
   static async postGatewayPayment(params: GatewayPostingParams, tx?: Prisma.TransactionClient) {
     const client = tx || prisma;
@@ -153,17 +206,19 @@ export class GeneralLedgerService {
   }
 
   /**
-   * Template 3: Revenue Realization, Supplier Liability, Tax & Platform Fees
+   * Template 3: Revenue Realization, Supplier Liability, Tax Liability & Platform Fees
    */
   static async postRevenueRealization(params: RevenueRealizationParams, tx?: Prisma.TransactionClient) {
     const client = tx || prisma;
     const currency = params.currency || 'IRR';
     const fee = params.feeAmount || 0;
+    const tax = params.taxAmount || 0;
 
     const escrowAcc = await this.getOrCreateAccount('PLATFORM_ESCROW', null, currency, client as Prisma.TransactionClient);
     const revenueAcc = await this.getOrCreateAccount('PLATFORM_REVENUE', null, currency, client as Prisma.TransactionClient);
     const supplierPayableAcc = await this.getOrCreateAccount('SUPPLIER_PAYABLE', params.supplierId, currency, client as Prisma.TransactionClient);
     const feeAcc = await this.getOrCreateAccount('PLATFORM_FEE', null, currency, client as Prisma.TransactionClient);
+    const taxAcc = await this.getOrCreateAccount('TAX_PAYABLE', null, currency, client as Prisma.TransactionClient);
 
     // 1. Release from Escrow to Revenue (DEBIT Escrow, CREDIT Revenue)
     await client.ledgerEntry.create({
@@ -191,31 +246,59 @@ export class GeneralLedgerService {
     });
 
     // 2. Accrue Supplier Liability (DEBIT Revenue expense, CREDIT Supplier Payable)
-    await client.ledgerEntry.create({
-      data: {
-        groupId: `${params.groupId}_payable`,
-        accountId: revenueAcc.id,
-        direction: 'DEBIT',
-        amount: params.netCost,
-        currency,
-        referenceType: 'SETTLEMENT',
-        referenceId: params.referenceId,
-      },
-    });
+    if (params.netCost > 0) {
+      await client.ledgerEntry.create({
+        data: {
+          groupId: `${params.groupId}_payable`,
+          accountId: revenueAcc.id,
+          direction: 'DEBIT',
+          amount: params.netCost,
+          currency,
+          referenceType: 'SETTLEMENT',
+          referenceId: params.referenceId,
+        },
+      });
 
-    await client.ledgerEntry.create({
-      data: {
-        groupId: `${params.groupId}_payable`,
-        accountId: supplierPayableAcc.id,
-        direction: 'CREDIT',
-        amount: params.netCost,
-        currency,
-        referenceType: 'SETTLEMENT',
-        referenceId: params.referenceId,
-      },
-    });
+      await client.ledgerEntry.create({
+        data: {
+          groupId: `${params.groupId}_payable`,
+          accountId: supplierPayableAcc.id,
+          direction: 'CREDIT',
+          amount: params.netCost,
+          currency,
+          referenceType: 'SETTLEMENT',
+          referenceId: params.referenceId,
+        },
+      });
+    }
 
-    // 3. Tax & Gateway/Platform Fee posting if applicable
+    // 3. Tax liability: collected VAT must sit in its own account, not revenue.
+    if (tax > 0) {
+      await client.ledgerEntry.create({
+        data: {
+          groupId: `${params.groupId}_tax`,
+          accountId: revenueAcc.id,
+          direction: 'DEBIT',
+          amount: tax,
+          currency,
+          referenceType: 'TAX',
+          referenceId: params.referenceId,
+        },
+      });
+      await client.ledgerEntry.create({
+        data: {
+          groupId: `${params.groupId}_tax`,
+          accountId: taxAcc.id,
+          direction: 'CREDIT',
+          amount: tax,
+          currency,
+          referenceType: 'TAX',
+          referenceId: params.referenceId,
+        },
+      });
+    }
+
+    // 4. Gateway/Platform Fee posting if applicable
     if (fee > 0) {
       await client.ledgerEntry.create({
         data: {
@@ -243,20 +326,92 @@ export class GeneralLedgerService {
   }
 
   /**
-   * Template 4: FX Spread / Conversion Posting
+   * Template 4: FX Conversion (balanced two-leg posting)
+   * Leg 1: DEBIT user (fromCurrency) -> CREDIT FX_POOL (fromCurrency)
+   * Leg 2: DEBIT FX_POOL (toCurrency, minus spread) -> CREDIT user (toCurrency)
+   * Spread: CREDIT PLATFORM_REVENUE (toCurrency)
    */
   static async postFXConversion(params: FXSpreadPostingParams, tx?: Prisma.TransactionClient) {
     const client = tx || prisma;
-    const revenueAcc = await this.getOrCreateAccount('PLATFORM_REVENUE', null, params.fromCurrency, client as Prisma.TransactionClient);
-    
+
+    const userFromAcc = await this.getOrCreateAccount('USER', params.userId, params.fromCurrency, client as Prisma.TransactionClient);
+    const userToAcc = await this.getOrCreateAccount('USER', params.userId, params.toCurrency, client as Prisma.TransactionClient);
+    const fxPoolFromAcc = await this.getOrCreateAccount('FX_POOL', null, params.fromCurrency, client as Prisma.TransactionClient);
+    const fxPoolToAcc = await this.getOrCreateAccount('FX_POOL', null, params.toCurrency, client as Prisma.TransactionClient);
+    const revenueAcc = await this.getOrCreateAccount('PLATFORM_REVENUE', null, params.toCurrency, client as Prisma.TransactionClient);
+
+    const netToAmount = params.toAmount - params.spreadAmount;
+    if (netToAmount < 0) {
+      throw new Error('Invalid FX conversion: spread exceeds converted amount');
+    }
+
+    // Leg 1: take the source currency from the user
+    await client.ledgerEntry.create({
+      data: {
+        groupId: `${params.groupId}_fx_from`,
+        accountId: userFromAcc.id,
+        direction: 'DEBIT',
+        amount: params.fromAmount,
+        currency: params.fromCurrency,
+        referenceType: 'FX_SPREAD',
+        referenceId: params.referenceId,
+      },
+    });
+    await client.ledgerEntry.create({
+      data: {
+        groupId: `${params.groupId}_fx_from`,
+        accountId: fxPoolFromAcc.id,
+        direction: 'CREDIT',
+        amount: params.fromAmount,
+        currency: params.fromCurrency,
+        referenceType: 'FX_SPREAD',
+        referenceId: params.referenceId,
+      },
+    });
+
+    // Leg 2: deliver the target currency (spread retained as revenue)
+    await client.ledgerEntry.create({
+      data: {
+        groupId: `${params.groupId}_fx_to`,
+        accountId: fxPoolToAcc.id,
+        direction: 'DEBIT',
+        amount: netToAmount,
+        currency: params.toCurrency,
+        referenceType: 'FX_SPREAD',
+        referenceId: params.referenceId,
+      },
+    });
+    await client.ledgerEntry.create({
+      data: {
+        groupId: `${params.groupId}_fx_to`,
+        accountId: userToAcc.id,
+        direction: 'CREDIT',
+        amount: netToAmount,
+        currency: params.toCurrency,
+        referenceType: 'FX_SPREAD',
+        referenceId: params.referenceId,
+      },
+    });
+
     if (params.spreadAmount > 0) {
       await client.ledgerEntry.create({
         data: {
-          groupId: `${params.groupId}_fx`,
+          groupId: `${params.groupId}_fx_to`,
+          accountId: fxPoolToAcc.id,
+          direction: 'DEBIT',
+          amount: params.spreadAmount,
+          currency: params.toCurrency,
+          referenceType: 'FX_SPREAD',
+          referenceId: params.referenceId,
+        },
+      });
+      await client.ledgerEntry.create({
+        data: {
+          groupId: `${params.groupId}_fx_to`,
           accountId: revenueAcc.id,
           direction: 'CREDIT',
           amount: params.spreadAmount,
-          currency: params.fromCurrency,
+          currency: params.toCurrency,
           referenceType: 'FX_SPREAD',
           referenceId: params.referenceId,
         },
@@ -273,6 +428,12 @@ export class GeneralLedgerService {
 
     const escrowAcc = await this.getOrCreateAccount('PLATFORM_ESCROW', null, currency, client as Prisma.TransactionClient);
     const customerAcc = await this.getOrCreateAccount('USER', params.userId, currency, client as Prisma.TransactionClient);
+
+    // Escrow must never go negative: refunds are covered by collected funds.
+    const escrowBalance = await this.getAccountBalance(escrowAcc.id, currency, client);
+    if (escrowBalance < params.amount) {
+      throw new Error('Insufficient escrow balance for refund');
+    }
 
     await client.ledgerEntry.create({
       data: {

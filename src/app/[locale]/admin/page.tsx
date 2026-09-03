@@ -4,15 +4,16 @@ import { ActionWidgets } from '@/components/admin/ActionWidgets';
 import { LiveActivityFeed } from '@/components/admin/LiveActivityFeed';
 import { BriefcaseBusiness, Wallet as WalletIcon, ArrowDownRight, Percent } from 'lucide-react';
 import { getLocale } from 'next-intl/server';
+import { Link } from '@/i18n/routing';
 import { lt } from '@/lib/lt';
-import { auth } from '@/auth';
+import { safeAuth } from '@/auth';
 import { redirect } from 'next/navigation';
 
 export default async function AdminDashboard() {
   const locale = await getLocale();
-  const session = await auth();
+  const session = await safeAuth();
 
-  if (!session || !['SUPER_ADMIN', 'FINANCE', 'OPS', 'admin'].includes(session.user.role)) {
+  if (!session || !['SUPER_ADMIN', 'FINANCE', 'OPS'].includes(session.user.role)) {
     redirect('/' + locale + '/auth');
   }
 
@@ -40,8 +41,9 @@ export default async function AdminDashboard() {
       value: confirmedBookingsCount.toLocaleString(numFmt),
       icon: BriefcaseBusiness,
       bg: 'bg-brand/10 text-brand',
-      delta: lt(locale, { fa: 'زنده', en: 'Live', ar: 'مباشر', zh: '实时', ru: 'Онлайн' }),
+      delta: lt(locale, { fa: 'مشاهده لیست', en: 'View List', ar: 'عرض القائمة', zh: '查看列表', ru: 'Открыть список' }),
       up: true,
+      href: '/admin/bookings',
     },
     {
       title: lt(locale, { fa: 'درآمد کل (تومان)', en: 'Total Revenue (Toman)', ar: 'إجمالي الإيرادات', zh: '总收入（图曼）', ru: 'Общий доход' }),
@@ -50,6 +52,7 @@ export default async function AdminDashboard() {
       bg: 'bg-flight/10 text-flight',
       delta: lt(locale, { fa: 'دفتر کل', en: 'Ledger', ar: 'دفتر الأستاذ', zh: '总账', ru: 'Главная книга' }),
       up: true,
+      href: '/admin/finance',
     },
     {
       title: lt(locale, { fa: 'استردادهای ثبت‌شده', en: 'Processed Refunds', ar: 'الاستردادات المسجلة', zh: '已处理退款', ru: 'Возвраты' }),
@@ -58,6 +61,7 @@ export default async function AdminDashboard() {
       bg: 'bg-rose-warm/10 text-rose-warm',
       delta: lt(locale, { fa: 'ثبت DB', en: 'DB Log', ar: 'سجل', zh: '数据库记录', ru: 'База данных' }),
       up: false,
+      href: '/admin/bookings',
     },
     {
       title: lt(locale, { fa: 'رویدادهای معلق (Outbox)', en: 'Pending Outbox Events', ar: 'أحداث معلقة', zh: '待处理事件', ru: 'События Outbox' }),
@@ -66,6 +70,7 @@ export default async function AdminDashboard() {
       bg: 'bg-tour/10 text-tour',
       delta: lt(locale, { fa: 'صف کارها', en: 'Queue', ar: 'طابور', zh: '队列', ru: 'Очередь' }),
       up: pendingOutboxCount === 0,
+      href: '/admin/ops',
     },
   ];
 
@@ -105,17 +110,21 @@ export default async function AdminDashboard() {
             ))}
           </div>
 
-          {/* Real KPI Cards */}
+          {/* Real KPI Cards with Drill-down Links */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {kpis.map((k) => {
               const Icon = k.icon;
               return (
-                <div key={k.title} className="bg-surface rounded-xl border border-line p-4 shadow-sm flex flex-col justify-between">
+                <Link
+                  key={k.title}
+                  href={k.href}
+                  className="bg-surface rounded-xl border border-line p-4 shadow-sm flex flex-col justify-between hover:border-brand/40 hover:shadow-elev-1 transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
                   <div className="flex items-center gap-2 mb-2">
-                    <span className={`p-2 rounded-lg ${k.bg}`}>
+                    <span className={`p-2 rounded-lg ${k.bg} group-hover:scale-105 transition-transform`}>
                       <Icon size={14} />
                     </span>
-                    <span className="text-[10px] font-bold text-sub truncate">{k.title}</span>
+                    <span className="text-[10px] font-bold text-sub truncate group-hover:text-brand-dark transition-colors">{k.title}</span>
                   </div>
                   <div className="flex items-end justify-between gap-2">
                     <p className="font-black text-[15px] text-ink truncate" dir="auto">
@@ -125,7 +134,7 @@ export default async function AdminDashboard() {
                       {k.delta}
                     </span>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

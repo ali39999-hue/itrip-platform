@@ -12,6 +12,37 @@ export interface ConfirmBookingSagaParams {
   holdToken?: string;
 }
 
+interface HistoryEntry {
+  from: string;
+  to: string;
+  at: string;
+}
+
+/**
+ * Appends transitions to the booking's stateHistory without destroying prior
+ * history, and normalizes legacy string-form entries to the object shape.
+ */
+function appendHistory(rawHistory: string | null, entries: Array<{ from: string; to: string }>): HistoryEntry[] {
+  let history: unknown[] = [];
+  if (rawHistory) {
+    try {
+      const parsed = JSON.parse(rawHistory);
+      if (Array.isArray(parsed)) history = parsed;
+    } catch {
+      // Corrupt history is never fatal: start a fresh array.
+      history = [];
+    }
+  }
+  const normalized: HistoryEntry[] = history.map((item) =>
+    typeof item === 'string'
+      ? { from: 'UNKNOWN', to: item, at: new Date(0).toISOString() }
+      : (item as HistoryEntry)
+  );
+  const now = new Date().toISOString();
+  entries.forEach((e) => normalized.push({ from: e.from, to: e.to, at: now }));
+  return normalized;
+}
+
 export class BookingSagaOrchestrator {
   /**
    * Orchestrates the multi-step saga of booking confirmation with automatic rollback compensations
@@ -57,14 +88,15 @@ export class BookingSagaOrchestrator {
       }
 
       // 4. Step 3: Dual-Entry Ledger Posting
+      // Breakdown comes from the stored booking items; never invented here.
       const totalAmt = Number(booking.totalAmount);
       const firstItem = booking.items[0];
-      const netCost = firstItem ? Number(firstItem.netCost) : Math.round(totalAmt * 0.88);
-      const taxAmount = firstItem ? Number(firstItem.taxAmount || 0) : Math.round(totalAmt * 0.08);
+      const netCost = firstItem ? Number(firstItem.netCost) : 0;
+      const taxAmount = firstItem ? Number(firstItem.taxAmount || 0) : 0;
       const feeAmount = firstItem ? Number(firstItem.feeAmount || 0) : 0;
-      const supplierId = booking.supplierId || firstItem?.inventoryItemId || 'sup_default_firuzo';
+      const supplierId = firstItem?.inventoryItemId || 'sup_default_firuzo';
 
-      if (params.paymentMethod === 'wallet_irr') {
+      if (params.paymentMethod === 'wallet_irr' || params.paymentMethod === 'wallet_usdt') {
         await GeneralLedgerService.postWalletPayment(
           {
             groupId: `saga_pay_${booking.id}`,
@@ -87,7 +119,7 @@ export class BookingSagaOrchestrator {
         );
       }
 
-      // 5. Step 4: Post Realized Revenue, Supplier Liability & Fees
+      // 5. Step 4: Post Realized Revenue, Supplier Liability, Tax & Fees
       await GeneralLedgerService.postRevenueRealization(
         {
           groupId: `saga_rev_${booking.id}`,
@@ -109,10 +141,12 @@ export class BookingSagaOrchestrator {
         where: { id: booking.id },
         data: {
           status: 'CONFIRMED',
-          stateHistory: JSON.stringify([
-            { from: booking.status, to: 'PAYMENT_CONFIRMED', at: new Date() },
-            { from: 'PAYMENT_CONFIRMED', to: 'CONFIRMED', at: new Date() },
-          ]),
+          stateHistory: JSON.stringify(
+            appendHistory(booking.stateHistory, [
+              { from: booking.status, to: 'PAYMENT_CONFIRMED' },
+              { from: 'PAYMENT_CONFIRMED', to: 'CONFIRMED' },
+            ])
+          ),
         },
       });
 
@@ -130,6 +164,10 @@ export class BookingSagaOrchestrator {
       });
 
       return { success: true, booking: updated };
+    }, {
+      // A multi-step interactive saga needs more headroom than the default 5s.
+      maxWait: 10000,
+      timeout: 20000,
     });
   }
 }

@@ -39,7 +39,7 @@ export function PriceBreakdownTable({
             <Luggage size={15} className="text-brand-dark" aria-hidden="true" />
             <span>{itemTitle || lt(locale, { fa: 'سرویس اصلی', en: 'Main Service', ar: 'الخدمة الأساسية', zh: '主服务', ru: 'Основная услуга' })}</span>
           </span>
-          <span className="font-bold text-ink font-mono">{formatMoney(baseAmount, currency)}</span>
+          <span className="font-bold text-ink font-mono">{formatMoney(baseAmount, currency, locale)}</span>
         </div>
 
         {/* 2. Add-ons */}
@@ -48,7 +48,7 @@ export function PriceBreakdownTable({
             <span className="text-sub font-bold flex items-center gap-1.5">
               <span>+ {lt(locale, { fa: 'سیم‌کارت eSIM', en: 'eSIM Card', ar: 'شريحة eSIM', zh: 'eSIM 卡', ru: 'eSIM карта' })}</span>
             </span>
-            <span className="font-bold text-ink font-mono">+{formatMoney(ESIM_PRICE, 'IRR')}</span>
+            <span className="font-bold text-ink font-mono">+{formatMoney(ESIM_PRICE, 'IRR', locale)}</span>
           </div>
         )}
 
@@ -58,7 +58,7 @@ export function PriceBreakdownTable({
               <ShieldCheck size={14} className="text-brand-dark" aria-hidden="true" />
               <span>+ {lt(locale, { fa: 'بیمه مسافرتی', en: 'Travel Insurance', ar: 'تأمين السفر', zh: '旅行保险', ru: 'Туристическая страховка' })}</span>
             </span>
-            <span className="font-bold text-ink font-mono">+{formatMoney(INSURANCE_PRICE, 'IRR')}</span>
+            <span className="font-bold text-ink font-mono">+{formatMoney(INSURANCE_PRICE, 'IRR', locale)}</span>
           </div>
         )}
 
@@ -68,7 +68,7 @@ export function PriceBreakdownTable({
               <Tag size={14} aria-hidden="true" />
               <span>{lt(locale, { fa: 'تخفیف ویژه', en: 'Special Discount', ar: 'خصم خاص', zh: '特别折扣', ru: 'Специальная скидка' })}</span>
             </span>
-            <span className="font-bold font-mono">-{formatMoney(discountAmount, currency)}</span>
+            <span className="font-bold font-mono">-{formatMoney(discountAmount, currency, locale)}</span>
           </div>
         )}
 
@@ -90,7 +90,7 @@ export function PriceBreakdownTable({
           </span>
         </div>
         <span className="text-[20px] md:text-[22px] font-black text-price font-mono">
-          {formatMoney(totalPayable, currency)}
+          {formatMoney(totalPayable, currency, locale)}
         </span>
       </div>
     </div>

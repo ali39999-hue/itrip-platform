@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import crypto from 'crypto';
 
 export interface InitiatePaymentParams {
   bookingId?: string;
@@ -18,10 +19,13 @@ export interface PaymentResult {
   error?: string;
 }
 
+/**
+ * Simulated PSP. The gateway call itself is a stub (no real PSP is wired),
+ * but idempotency, scoping and state handling are production-grade:
+ * a key is permanently bound to one booking — replaying it for another
+ * booking is rejected instead of confirming it for free.
+ */
 export class PaymentDomainService {
-  /**
-   * Process payment with strict idempotency and dual-entry ledger posting
-   */
   static async processPayment(
     params: InitiatePaymentParams,
     tx?: Prisma.TransactionClient
@@ -34,6 +38,16 @@ export class PaymentDomainService {
     });
 
     if (existing) {
+      // Idempotency keys are booking-scoped: replaying another booking's key
+      // must never confirm this booking.
+      if (params.bookingId && existing.bookingId && existing.bookingId !== params.bookingId) {
+        return {
+          success: false,
+          paymentId: existing.id,
+          status: 'FAILED',
+          error: 'Idempotency key is bound to a different booking',
+        };
+      }
       if (existing.status === 'SUCCESS') {
         return {
           success: true,
@@ -50,11 +64,30 @@ export class PaymentDomainService {
           error: 'Payment previously failed',
         };
       }
+      // PENDING: fall through and confirm below (gateway confirmation path).
     }
 
-    const gatewayRef = `GW-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`.toUpperCase();
+    const gatewayRef = `GW-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
 
-    // 2. Create Payment Record
+    if (existing && existing.status === 'PENDING') {
+      const payment = await client.payment.update({
+        where: { idempotencyKey: params.idempotencyKey },
+        data: {
+          status: 'SUCCESS',
+          gatewayRef,
+          amount: params.amount,
+          method: params.method,
+        },
+      });
+      return {
+        success: true,
+        paymentId: payment.id,
+        gatewayRef: payment.gatewayRef || undefined,
+        status: 'SUCCESS',
+      };
+    }
+
+    // 2. Create Payment Record (no blind status flip on upsert)
     const payment = await client.payment.upsert({
       where: { idempotencyKey: params.idempotencyKey },
       update: {

@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { useTranslations, useLocale } from 'next-intl';
 import { MapPin, Coffee, Wallet, Headset, BarChart3, ShieldCheck, Waves, Users, KeyRound, Check, X, ThumbsUp, Ban, ChevronDown, BedDouble, TrainFront, Building2, type LucideIcon } from 'lucide-react';
 import { fa1, gShort } from '@/lib/hotel-format';
-import { DISTS, CATS, REVIEWS, FAQS } from '@/lib/hotel-mock';
+import { getDistsForLocale, getCatsForLocale, getReviewsForLocale, getFaqsForLocale } from '@/lib/hotel-mock';
 import type { Hotel } from '@/lib/types';
 import { FREE_CANCEL_HOURS } from '@/hooks/useHotelBooking';
 import { lt } from '@/lib/lt';
@@ -25,13 +25,32 @@ const HotelMap = dynamic(() => import('./HotelMap'), {
 
 export function HotelOverview({ hotel }: { hotel: Hotel }) {
   const t = useTranslations('HotelDetail');
+  const locale = useLocale();
   const [descOpen, setDescOpen] = useState(false);
 
+  const city = locale === 'fa' ? hotel.city : (hotel.cityEn || hotel.city);
+
   const highlights: [LucideIcon, string, string][] = [
-    [MapPin, 'قلب شهر قدیم', 'پیاده تا ایاصوفیه و بازار بزرگ'],
-    [Coffee, 'صبحانه بوفه ترکی', 'در تراس رو به بسفر'],
-    [Wallet, 'تسویه ریالی', 'بدون نیاز به کارت بین‌المللی'],
-    [Headset, 'پشتیبانی فارسی', '۲۴ ساعته در طول اقامت'],
+    [
+      MapPin,
+      lt(locale, { fa: 'قلب شهر قدیم', en: 'Heart of Old Town', ar: 'قلب المدينة القديمة', zh: '老城中心', ru: 'Сердце старого города' }),
+      lt(locale, { fa: 'پیاده تا ایاصوفیه و بازار بزرگ', en: 'Walking distance to Hagia Sophia & Grand Bazaar', ar: 'مسافة قصيرة سيراً إلى آيا صوفيا والبازار الكبير', zh: '步行可达圣索菲亚大教堂与大巴扎', ru: 'В пешей доступности от собора Святой Софии' }),
+    ],
+    [
+      Coffee,
+      lt(locale, { fa: 'صبحانه بوفه ترکی', en: 'Turkish Buffet Breakfast', ar: 'إفطار بوفيه تركي', zh: '土耳其式自助早餐', ru: 'Турецкий завтрак «шведский стол»' }),
+      lt(locale, { fa: 'در تراس رو به بسفر', en: 'Served on terrace overlooking Bosphorus', ar: 'يُقدم على التراس المطل على البوسفور', zh: '在露台享用，饱览博斯普鲁斯海景', ru: 'На террасе с панорамой Босфора' }),
+    ],
+    [
+      Wallet,
+      lt(locale, { fa: 'تسویه ریالی / چندارزی', en: 'Multi-Currency Settlement', ar: 'تسوية متعددة العملات', zh: '支持多币种灵活结算', ru: 'Мультивалютная оплата' }),
+      lt(locale, { fa: 'بدون نیاز به کارت بین‌المللی', en: 'No foreign card required', ar: 'دون الحاجة لبطاقة دولية', zh: '无需国际信用卡', ru: 'Без иностранной карты' }),
+    ],
+    [
+      Headset,
+      lt(locale, { fa: 'پشتیبانی شبانه‌روزی', en: '24/7 Concierge Support', ar: 'دعم على مدار الساعة', zh: '24/7 全天候管家服务', ru: 'Круглосуточная поддержка 24/7' }),
+      lt(locale, { fa: 'پاسخگویی سریع در طول اقامت', en: 'Dedicated assistance throughout your stay', ar: 'مساعدة مخصصة طوال إقامتك', zh: '入住全程贴心协助', ru: 'Помощь на протяжении всего визита' }),
+    ],
   ];
 
   return (
@@ -50,8 +69,24 @@ export function HotelOverview({ hotel }: { hotel: Hotel }) {
         ))}
       </div>
       <div className={`relative text-ink/80 text-[13.5px] leading-8 ${descOpen ? '' : 'max-h-[88px] overflow-hidden'}`}>
-        <p className="mt-0">این اقامتگاه در بهترین موقعیت {hotel.city} قرار دارد و دسترسی پیاده به اصلی‌ترین جاذبه‌ها را ممکن می‌کند. اتاق‌های رو به حیاط آرام و بدون صدای خیابان هستند و تراس روف‌گاردن صبحانه بوفه سرو می‌کند.</p>
-        <p className="mb-0">پذیرش ۲۴ ساعته با پشتیبانی فارسی، ترانسفر فرودگاهی با نرخ ثابت و امکان افزودن خدمات تکمیلی فیروز (ترانسفر، eSIM و بیمه) در مرحله پرداخت.</p>
+        <p className="mt-0">
+          {lt(locale, {
+            fa: `این اقامتگاه در بهترین موقعیت ${city} قرار دارد و دسترسی پیاده به اصلی‌ترین جاذبه‌ها را ممکن می‌کند. اتاق‌های رو به حیاط آرام و بدون صدای خیابان هستند و تراس روف‌گاردن صبحانه بوفه سرو می‌کند.`,
+            en: `Ideally situated in prime ${city}, this property puts top attractions within an easy walk. Courtyard-facing rooms offer a quiet retreat from city sounds, while the rooftop terrace serves daily buffet breakfast.`,
+            ar: `يقع هذا المكان في موقع متميز في ${city}، مما يتيح الوصول السهل سيراً إلى أهم المعالم. الغرف المطلة على الفناء هادئة، بينما يقدم تراس السطح بوفيه الإفطار اليومي.`,
+            zh: `酒店位于${city}核心位置，轻松步行即可打卡地标景点。庭院景观房安静私密，顶楼露台每日供应丰盛自助早餐。`,
+            ru: `Отель расположен в центре ${city}, в нескольких минутах ходьбы от главных достопримечательностей. Номера с видом на тихий внутренний двор, а на террасе подают завтрак.`,
+          })}
+        </p>
+        <p className="mb-0">
+          {lt(locale, {
+            fa: 'پذیرش ۲۴ ساعته با پشتیبانی شبانه‌روزی، ترانسفر فرودگاهی با نرخ ثابت و امکان افزودن خدمات تکمیلی فیروز (ترانسفر، eSIM و بیمه) در مرحله پرداخت.',
+            en: '24-hour reception, fixed-rate airport transfer, and optional travel ancillaries (transfer, eSIM, and comprehensive insurance) available at checkout.',
+            ar: 'استقبال على مدار 24 ساعة، ونقل من المطار بسعر ثابت، مع إمكانية إضافة خدمات السفر التكميلية (نقل، شريحة eSIM، وتأمين) عند الدفع.',
+            zh: '24 小时前台服务，一口价机场接送，并可在结账时随心选购 eSIM 与旅行保险等出行保障。',
+            ru: 'Круглосуточная стойка регистрации, трансфер из аэропорта по фиксированному тарифу и возможность добавить eSIM или страховку при бронировании.',
+          })}
+        </p>
         {!descOpen && <span className="absolute inset-x-0 bottom-0 h-[34px] bg-gradient-to-t from-surface to-transparent" />}
       </div>
       <button onClick={() => setDescOpen(!descOpen)} className="mt-2 border-0 bg-transparent text-brand-dark text-[12.5px] font-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded cursor-pointer">
@@ -72,6 +107,7 @@ export function HotelOverview({ hotel }: { hotel: Hotel }) {
 
 export function HotelLocation({ hotel }: { hotel: Hotel }) {
   const t = useTranslations('HotelDetail');
+  const locale = useLocale();
 
   return (
     <section id="location" className="p-5 border border-line rounded-xl bg-surface shadow-sm scroll-mt-32">
@@ -83,7 +119,7 @@ export function HotelLocation({ hotel }: { hotel: Hotel }) {
         </div>
 
         <div className="flex flex-col gap-2">
-          {DISTS.map(([p, iconName, distanceTime]) => {
+          {getDistsForLocale(locale).map(([p, iconName, distanceTime]) => {
             const IconComponent = distIconMap[iconName] ?? MapPin;
             return (
             <div key={p} className="flex items-center justify-between p-2.5 rounded-lg border border-line/60 bg-soft/50 text-xs">
@@ -104,13 +140,16 @@ export function HotelLocation({ hotel }: { hotel: Hotel }) {
 export function HotelAmenities() {
   const t = useTranslations('HotelDetail');
 
+  const locale = useLocale();
+  const L = (tObj: { fa: string; en: string }) => lt(locale, tObj);
+
   const sections: [string, LucideIcon, [string, number][]][] = [
-    ['امکانات اقامت', BedDouble, [['وای‌فای رایگان', 1], ['تهویه مطبوع', 1], ['اتاق ضدصدا', 1], ['اتاق سیگار', 0]]],
-    ['غذا و نوشیدنی', Coffee, [['صبحانه بوفه ترکی', 1], ['رستوران تراس', 1], ['روم‌سرویس ۲۴ ساعته', 1], ['کافه لابی', 1]]],
-    ['خدمات و رفاه', ShieldCheck, [['پذیرش ۲۴ ساعته', 1], ['ترانسفر فرودگاه', 1], ['نگهداری چمدان', 1], ['پارکینگ', 0]]],
-    ['سرگرمی', Waves, [['استخر سرپوشیده', 1], ['حمام ترکی و سونا', 1], ['باشگاه بدنسازی', 1], ['استخر روباز', 0]]],
-    ['خانواده', Users, [['تخت کودک زیر ۶ سال رایگان', 1], ['منوی کودک', 1], ['اتاق به‌هم‌پیوسته', 1], ['زمین بازی', 0]]],
-    ['دسترسی', KeyRound, [['آسانسور', 1], ['اتاق مناسب ویلچر', 1], ['ورودی بدون پله', 1], ['ویلچر رایگان', 0]]],
+    [L({ fa: 'امکانات اقامت', en: 'Room Comforts' }), BedDouble, [[L({ fa: 'وای‌فای رایگان', en: 'Free Wi-Fi' }), 1], [L({ fa: 'تهویه مطبوع', en: 'Air Conditioning' }), 1], [L({ fa: 'اتاق ضدصدا', en: 'Soundproof Rooms' }), 1], [L({ fa: 'اتاق سیگار', en: 'Smoking Room' }), 0]]],
+    [L({ fa: 'غذا و نوشیدنی', en: 'Food & Dining' }), Coffee, [[L({ fa: 'صبحانه بوفه ترکی', en: 'Buffet Breakfast' }), 1], [L({ fa: 'رستوران تراس', en: 'Terrace Restaurant' }), 1], [L({ fa: 'روم‌سرویس ۲۴ ساعته', en: '24/7 Room Service' }), 1], [L({ fa: 'کافه لابی', en: 'Lobby Cafe' }), 1]]],
+    [L({ fa: 'خدمات و رفاه', en: 'Services & Comfort' }), ShieldCheck, [[L({ fa: 'پذیرش ۲۴ ساعته', en: '24h Front Desk' }), 1], [L({ fa: 'ترانسفر فرودگاه', en: 'Airport Transfer' }), 1], [L({ fa: 'نگهداری چمدان', en: 'Luggage Storage' }), 1], [L({ fa: 'پارکینگ اختصاصی', en: 'On-site Parking' }), 0]]],
+    [L({ fa: 'تندرستی و آبگرم', en: 'Wellness & Spa' }), Waves, [[L({ fa: 'استخر سرپوشیده', en: 'Indoor Pool' }), 1], [L({ fa: 'حمام ترکی و سونا', en: 'Turkish Bath & Sauna' }), 1], [L({ fa: 'باشگاه بدنسازی', en: 'Fitness Center' }), 1], [L({ fa: 'استخر روباز', en: 'Outdoor Pool' }), 0]]],
+    [L({ fa: 'امکانات خانواده', en: 'Family Amenities' }), Users, [[L({ fa: 'تخت کودک زیر ۶ سال رایگان', en: 'Free Crib for Under 6' }), 1], [L({ fa: 'منوی ویژه کودک', en: 'Kids Menu' }), 1], [L({ fa: 'اتاق‌های متصل', en: 'Connecting Rooms' }), 1], [L({ fa: 'زمین بازی اختصاصی', en: 'Play Area' }), 0]]],
+    [L({ fa: 'دسترسی‌پذیری', en: 'Accessibility' }), KeyRound, [[L({ fa: 'آسانسور', en: 'Elevator' }), 1], [L({ fa: 'اتاق مناسب ویلچر', en: 'Wheelchair Accessible' }), 1], [L({ fa: 'ورودی هم‌سطح', en: 'Step-free Entrance' }), 1], [L({ fa: 'ویلچر رایگان', en: 'Complimentary Wheelchair' }), 0]]],
   ];
 
   return (
@@ -138,16 +177,18 @@ export function HotelAmenities() {
 export function HotelReviews({ hotel }: { hotel: Hotel }) {
   const t = useTranslations('HotelDetail');
   const locale = useLocale();
-  const [revType, setRevType] = useState('همه');
-  const revList = revType === 'همه' ? REVIEWS : REVIEWS.filter((r) => r.t === revType);
-  const overall = CATS.reduce((s, c) => s + c[1], 0) / CATS.length;
+  const cats = getCatsForLocale(locale);
+  const allReviews = getReviewsForLocale(locale);
+  const [revType, setRevType] = useState('all');
+  const revList = revType === 'all' ? allReviews : allReviews.filter((r) => r.t === revType || (revType === 'family' && (r.t === 'خانواده' || r.t === 'Family')) || (revType === 'couple' && (r.t === 'زوج' || r.t === 'Couple')) || (revType === 'business' && (r.t === 'کاری' || r.t === 'Business')) || (revType === 'solo' && (r.t === 'تنها' || r.t === 'Solo')));
+  const overall = cats.reduce((s, c) => s + c[1], 0) / cats.length;
 
   const filters = [
-    { key: 'همه', label: t('reviewFilterAll') },
-    { key: 'خانواده', label: t('reviewFilterFamily') },
-    { key: 'زوج', label: t('reviewFilterCouple') },
-    { key: 'کاری', label: t('reviewFilterBusiness') },
-    { key: 'تنها', label: t('reviewFilterSolo') },
+    { key: 'all', label: t('reviewFilterAll') },
+    { key: 'family', label: t('reviewFilterFamily') },
+    { key: 'couple', label: t('reviewFilterCouple') },
+    { key: 'business', label: t('reviewFilterBusiness') },
+    { key: 'solo', label: t('reviewFilterSolo') },
   ];
 
   return (
@@ -163,7 +204,7 @@ export function HotelReviews({ hotel }: { hotel: Hotel }) {
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 content-center">
-          {CATS.map(([n, v]) => (
+          {cats.map(([n, v]) => (
             <div key={n} className="grid grid-cols-[74px_1fr_34px] items-center gap-2 text-xs font-extrabold text-sub">
               <span>{n}</span>
               <span className="h-[7px] rounded-full bg-line overflow-hidden block">
@@ -183,7 +224,7 @@ export function HotelReviews({ hotel }: { hotel: Hotel }) {
               revType === f.key ? 'border-brand text-surface bg-brand' : 'border-line text-sub bg-surface'
             }`}
           >
-            {f.label}{f.key !== 'همه' && ` (${REVIEWS.filter((r) => r.t === f.key).length.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))})`}
+            {f.label}{f.key !== 'all' && ` (${allReviews.length.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))})`}
           </button>
         ))}
       </div>
@@ -213,6 +254,7 @@ export function HotelReviews({ hotel }: { hotel: Hotel }) {
 
 export function HotelPolicies({ checkinDate }: { checkinDate: string }) {
   const t = useTranslations('HotelDetail');
+  const locale = useLocale();
   const dl = new Date(new Date(checkinDate + 'T14:00:00').getTime() - FREE_CANCEL_HOURS * 36e5);
 
   const policyItems: [LucideIcon, string, string][] = [
@@ -223,7 +265,15 @@ export function HotelPolicies({ checkinDate }: { checkinDate: string }) {
   return (
     <section id="policies" className="p-5 border border-line rounded-xl bg-surface shadow-sm scroll-mt-32">
       <h2 className="m-0 mb-1 text-lg font-black">{t('policies')}</h2>
-      <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">شرایط لغو بر اساس نرخ انتخابی متفاوت است.</p>
+      <p className="m-0 mb-4 text-[12.5px] font-semibold text-sub">
+        {lt(locale, {
+          fa: 'شرایط لغو بر اساس نرخ انتخابی متفاوت است.',
+          en: 'Cancellation conditions vary depending on the chosen rate plan.',
+          ar: 'تختلف شروط الإلغاء حسب خطة السعر المختارة.',
+          zh: '退订条件取决于所选的价格计划。',
+          ru: 'Условия отмены зависят от выбранного тарифа.',
+        })}
+      </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {policyItems.map(([Icon, title, desc]) => (
           <div key={title} className="p-3.5 border border-line rounded-xl bg-soft/50">
@@ -252,7 +302,7 @@ export function HotelPolicies({ checkinDate }: { checkinDate: string }) {
       </div>
 
       <h3 className="mt-5 mb-1 text-[15px] font-black">{t('faq')}</h3>
-      {FAQS.map(([qq, aa]) => (
+      {getFaqsForLocale(locale).map(([qq, aa]: [string, string]) => (
         <details key={qq} className="group border-b border-line/70 last:border-0">
           <summary className="flex items-center gap-2.5 py-3 cursor-pointer list-none [&::-webkit-details-marker]:hidden text-[13px] font-extrabold text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">
             {qq}

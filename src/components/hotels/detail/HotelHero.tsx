@@ -18,6 +18,28 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
   const [fav, setFav] = useState(false);
   const [lbIndex, setLbIndex] = useState<number | null>(null);
 
+  // Localized hotel name, city and distance
+  const displayName = locale === 'fa' ? hotel.name : (hotel.nameEn || hotel.name);
+  const displayCity = locale === 'fa' ? hotel.city : (hotel.cityEn || hotel.city);
+
+  // Approximate localized distance for the 7 demo hotels
+  const distanceMap: Record<string, { en: string; fa: string }> = {
+    h1: { fa: '۵۰۰ متر تا حرم', en: '500 m to Holy Shrine' },
+    h2: { fa: '۱ کیلومتر تا میدان نقش جهان', en: '1 km to Naqsh-e Jahan Square' },
+    h3: { fa: '۳۰۰ متر از ساحل جبرعلی', en: '300 m from JBR Beach' },
+    h4: { fa: 'قلب شهر قدیم', en: 'Heart of Old Town' },
+    h5: { fa: '۵۰۰ متر تا تاکسیم', en: '500 m to Taksim Square' },
+    h6: { fa: '۲۰۰ متر تا میدان سرخ', en: '200 m to Red Square' },
+    h7: { fa: 'ساحل القرم', en: 'Qurum Beachfront' },
+  };
+  const displayDist = locale === 'fa'
+    ? hotel.distanceFromCenter
+    : (distanceMap[hotel.id]?.en || hotel.distanceFromCenter);
+
+  const displayRating = locale === 'fa'
+    ? fa1(hotel.rating)
+    : hotel.rating.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
   const galleryLabels = [
     t('exteriorView'),
     t('lobby'),
@@ -36,9 +58,9 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
           <span className="me-auto flex items-center gap-1.5 flex-wrap">
             <Link href="/destinations" className="hover:text-brand">{t('destinations')}</Link>
             <ChevronLeft size={11} className="text-line rtl:rotate-180" />
-            <span>{hotel.city}</span>
+            <span>{displayCity}</span>
             <ChevronLeft size={11} className="text-line rtl:rotate-180" />
-            <span className="font-extrabold text-ink">{hotel.name}</span>
+            <span className="font-extrabold text-ink">{displayName}</span>
           </span>
         </div>
       </div>
@@ -59,10 +81,10 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
                 <Check size={12} /> {t('verifiedByFiruzo')}
               </span>
             </div>
-            <h1 className="m-0 mb-1.5 text-[clamp(22px,3vw,30px)] font-black tracking-tight">{hotel.name}</h1>
+            <h1 className="m-0 mb-1.5 text-[clamp(22px,3vw,30px)] font-black tracking-tight">{displayName}</h1>
             <div className="flex items-center gap-2 text-[13px] font-semibold text-sub flex-wrap">
               <MapPin size={15} className="text-brand" />
-              {hotel.city} — {hotel.distanceFromCenter}
+              {displayCity} — {displayDist}
               <a href="#location" className="text-brand-dark font-extrabold underline underline-offset-[3px]">
                 {t('showOnMap')}
               </a>
@@ -71,7 +93,7 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
           <div className="ms-auto flex items-center gap-2.5">
             <button
               onClick={() => setFav(!fav)}
-              aria-label="علاقه‌مندی"
+              aria-label={lt(locale, { fa: 'علاقه‌مندی', en: 'Add to favorites', ar: 'المفضلة', zh: '收藏', ru: 'В избранное' })}
               className={`w-10 h-10 grid place-items-center border rounded-xl bg-surface ${
                 fav ? 'text-rose-warm border-destructive/30 bg-destructive/10' : 'border-line text-sub'
               }`}
@@ -86,7 +108,7 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
                 </span>
               </div>
               <span className="min-w-[52px] h-[42px] grid place-items-center rounded-full rounded-es-sm text-surface bg-brand text-[17px] font-black">
-                {fa1(hotel.rating)}
+                {displayRating}
               </span>
             </div>
           </div>

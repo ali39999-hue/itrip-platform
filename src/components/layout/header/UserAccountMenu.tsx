@@ -2,10 +2,11 @@
 
 import { useAuthStore } from '@/stores/auth-store';
 import { Link } from '@/i18n/routing';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { UserRound, Headset, Sparkles, ShieldCheck } from 'lucide-react';
 
 export function UserAccountMenu() {
+  const locale = useLocale();
   const { user } = useAuthStore();
   const t = useTranslations('Nav');
   const ct = useTranslations('Common');
@@ -48,7 +49,9 @@ export function UserAccountMenu() {
           className="min-h-[38px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-brand text-surface hover:bg-brand-dark text-[13px] font-black shadow-sm transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
         >
           <UserRound size={15} />
-          <span>{user.firstNameFa || user.phone}</span>
+          <span>
+            {(locale === 'fa' ? user.firstNameFa : (user.firstNameEn || user.firstNameFa)) || user.phone}
+          </span>
         </Link>
       ) : (
         <Link
