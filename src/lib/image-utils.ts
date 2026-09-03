@@ -55,7 +55,10 @@ const DIVERSE_HOTEL_FALLBACKS = [
   'https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=800&q=80',
 ];
 
-export function getHotelImage(hotel: { id?: string; imageQuery?: string; name?: string }) {
+export function getHotelImage(hotel: { id?: string; imageQuery?: string; name?: string; galleryImages?: string[] }) {
+  if (hotel.galleryImages && hotel.galleryImages.length > 0 && hotel.galleryImages[0].startsWith('http')) {
+    return hotel.galleryImages[0];
+  }
   if (hotel.id && HOTEL_IMAGE_MAP[hotel.id]) {
     return HOTEL_IMAGE_MAP[hotel.id];
   }

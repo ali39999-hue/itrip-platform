@@ -28,6 +28,22 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'upload.wikimedia.org',
       },
+      {
+        protocol: 'https',
+        hostname: 'cdn.alibaba.ir',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.grschannel.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.eghamat24.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ak-d.tripcdn.com',
+      },
     ],
   },
 };

@@ -31,17 +31,20 @@ export function CityAutocomplete({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const currentCountryCities = CITIES.filter(
-    (c) => c.countryId === country || !c.countryId
-  );
+  const currentCountryCities = country
+    ? CITIES.filter((c) => c.countryId === country)
+    : CITIES;
+
+  const candidateCities = currentCountryCities.length > 0 ? currentCountryCities : CITIES;
 
   const filteredCities = value.trim()
-    ? currentCountryCities.filter(
+    ? CITIES.filter(
         (c) =>
           c.nameFa.includes(value.trim()) ||
-          c.nameEn.toLowerCase().includes(value.trim().toLowerCase())
+          c.nameEn.toLowerCase().includes(value.trim().toLowerCase()) ||
+          c.airportCode.toLowerCase().includes(value.trim().toLowerCase())
       )
-    : currentCountryCities;
+    : candidateCities;
 
   useEffect(() => {
     function onDoc(e: MouseEvent) {

@@ -11,10 +11,17 @@ import type { Hotel } from '@/lib/types';
 const CENTER: L.LatLngExpression = [41.008, 28.978];
 const BRAND = 'var(--color-brand)';
 
-function hotelPos(h: Hotel): L.LatLngExpression {
+interface HotelWithCoord extends Hotel {
+  location?: { lat: number; lng: number };
+}
+
+function hotelPos(h: HotelWithCoord): L.LatLngExpression {
+  if (h.location?.lat && h.location?.lng) {
+    return [h.location.lat, h.location.lng];
+  }
   const seed = [...h.id].reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7) >>> 0;
-  const lat = 41.042 - ((seed % 97) / 97) * 0.062;
-  const lng = 28.936 + (((seed >> 7) % 113) / 113) * 0.098;
+  const lat = 35.6892 - ((seed % 97) / 97) * 0.08;
+  const lng = 51.3890 + (((seed >> 7) % 113) / 113) * 0.12;
   return [lat, lng];
 }
 

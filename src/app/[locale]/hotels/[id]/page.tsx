@@ -7,14 +7,15 @@ import { useTranslations, useLocale } from 'next-intl';
 import { HOTELS } from '@/lib/data';
 import { useBookingStore } from '@/stores/booking-store';
 import { num } from '@/lib/format';
-import { lt } from '@/lib/lt';
 import { useHotelBooking, CHECKIN, NIGHTS, keyOf, toman } from '@/hooks/useHotelBooking';
+import type { DetailedHotelWithMeta } from '@/services/hotels-service';
 
 // Components
 import { HotelHero } from '@/components/hotels/detail/HotelHero';
 import { HotelOverview, HotelLocation, HotelAmenities, HotelReviews, HotelPolicies } from '@/components/hotels/detail/HotelInfo';
 import { HotelRooms } from '@/components/hotels/detail/HotelRooms';
 import { BookingPanel } from '@/components/hotels/detail/BookingPanel';
+import { Loader2 } from 'lucide-react';
 
 export default function HotelDetailPage() {
   const params = useParams<{ id: string }>();
@@ -22,7 +23,10 @@ export default function HotelDetailPage() {
   const locale = useLocale();
   const t = useTranslations('HotelDetail');
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
-  const hotel = HOTELS.find((h) => h.id === params.id);
+
+  const [hotel, setHotel] = useState<DetailedHotelWithMeta | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFoundState, setNotFoundState] = useState(false);
 
   const booking = useHotelBooking();
   const { setSel, bestCombo, capacity, totals } = booking;
@@ -37,6 +41,45 @@ export default function HotelDetailPage() {
     toastTimer.current = setTimeout(() => setToast(''), 2200);
   }
 
+  // Fetch live hotel details from API
+  useEffect(() => {
+    async function loadDetail() {
+      if (!params.id) return;
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/hotels/${params.id}`);
+        if (!res.ok) {
+          // Fallback to static mock if id matches demo mock
+          const staticMatch = HOTELS.find((h) => h.id === params.id);
+          if (staticMatch) {
+            setHotel({
+              ...staticMatch,
+              countryId: 'iran',
+              galleryImages: [staticMatch.imageQuery || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'],
+              detailedRooms: staticMatch.roomTypes,
+            });
+            return;
+          }
+          setNotFoundState(true);
+          return;
+        }
+        const json = await res.json();
+        if (json.success && json.data) {
+          setHotel(json.data);
+        } else {
+          setNotFoundState(true);
+        }
+      } catch (e) {
+        console.error('Failed to load hotel detail:', e);
+        setNotFoundState(true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadDetail();
+  }, [params.id]);
+
   useEffect(() => {
     const ids = ['overview', 'location', 'rooms', 'amenities', 'reviews', 'policies'];
     const io = new IntersectionObserver(
@@ -47,8 +90,17 @@ export default function HotelDetailPage() {
     return () => io.disconnect();
   }, []);
 
-  if (!hotel) {
+  if (notFoundState) {
     notFound();
+  }
+
+  if (loading || !hotel) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 bg-paper p-10">
+        <Loader2 size={36} className="animate-spin text-brand" />
+        <span className="text-sm font-bold text-sub">در حال بارگذاری اطلاعات لایو هتل و اتاق‌ها...</span>
+      </div>
+    );
   }
 
   function handleBook() {
@@ -101,74 +153,24 @@ export default function HotelDetailPage() {
         </div>
       </div>
 
-      {/* Main Layout */}
-      <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-6 md:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
-          {/* Main Sections */}
-          <div className="space-y-10 min-w-0">
-            <HotelOverview hotel={hotel} />
-            <HotelLocation hotel={hotel} />
-            <HotelRooms booking={booking} onApplyCombo={handleApplyCombo} />
-            <HotelAmenities />
-            <HotelReviews hotel={hotel} />
-            <HotelPolicies checkinDate={CHECKIN} />
-          </div>
+      <div className="max-w-[1280px] mx-auto px-4 md:px-10 mt-6 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
+        <div className="flex flex-col gap-6 min-w-0">
+          <HotelOverview hotel={hotel} />
+          <HotelLocation hotel={hotel} />
+          <HotelRooms booking={booking} onApplyCombo={handleApplyCombo} />
+          <HotelAmenities />
+          <HotelReviews hotel={hotel} />
+          <HotelPolicies checkinDate={CHECKIN} />
+        </div>
 
-          {/* Sticky Booking Panel */}
-          <div className="hidden lg:block sticky top-32">
-            <BookingPanel
-              booking={booking}
-              onBook={handleBook}
-            />
-          </div>
+        {/* sticky booking summary */}
+        <div className="lg:sticky lg:top-36">
+          <BookingPanel booking={booking} onBook={handleBook} />
         </div>
       </div>
 
-      {/* Mobile Sticky Booking Bar */}
-      <div className="lg:hidden fixed bottom-[62px] md:bottom-0 inset-x-0 z-70 bg-surface/95 backdrop-blur-xl border-t border-line shadow-elev-3 px-4 py-3">
-        <div className="max-w-[1280px] mx-auto flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            {totals.total > 0 ? (
-              <>
-                <div className="text-[11px] font-bold text-sub">
-                  {num(capacity.n, locale)} {t('navRooms')} • {num(NIGHTS.length, locale)} {t('duration')}
-                </div>
-                <div className="text-base sm:text-lg font-black text-price font-mono leading-tight">
-                  {num(totals.total, locale)} <span className="text-[11px] font-bold text-sub">TRY</span>
-                </div>
-              </>
-            ) : (
-              <div>
-                <span className="text-xs font-bold text-sub block">
-                  {t('selectRoom')}
-                </span>
-                <span className="text-[11px] text-brand-dark font-extrabold">
-                  {t('ratesIncludeTax')}
-                </span>
-              </div>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              if (totals.total > 0) {
-                handleBook();
-              } else {
-                document.getElementById('rooms')?.scrollIntoView({ behavior: 'smooth' });
-              }
-            }}
-            className="shrink-0 min-h-[44px] px-6 rounded-xl bg-action hover:bg-action-hover text-ink text-xs sm:text-sm font-black shadow-md transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
-          >
-            {totals.total > 0
-              ? lt(locale, { fa: 'ادامه به پرداخت', en: 'Continue to Payment', ar: 'المتابعة إلى الدفع', zh: '前往支付', ru: 'Перейти к оплате' })
-              : t('selectRoom')}
-          </button>
-        </div>
-      </div>
-
-      {/* Toast Notification */}
       {toast && (
-        <div className="fixed bottom-24 md:bottom-16 start-1/2 -translate-x-1/2 rtl:translate-x-1/2 z-95 bg-brand text-surface px-5 py-2.5 rounded-full shadow-elev-3 text-xs font-bold transition-all">
+        <div className="fixed bottom-6 start-1/2 -translate-x-1/2 z-150 px-5 py-3 rounded-xl bg-ink text-surface text-sm font-extrabold shadow-2xl animate-in fade-in slide-in-from-bottom-2">
           {toast}
         </div>
       )}

@@ -1,22 +1,21 @@
 'use client';
 
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { useTranslations, useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
-import { FLIGHTS } from '@/lib/data';
 import { resolveCityQuery, localizedAirportLabel } from '@/lib/cities';
 import type { Flight } from '@/lib/types';
 import { useBookingStore } from '@/stores/booking-store';
 import { daysFromNow } from '@/lib/utils';
 import { dualDate } from '@/lib/jalali';
 import { num } from '@/lib/format';
-import { BentoFlightCard, durationMinutes } from '@/components/flights/BentoFlightCard';
+import { BentoFlightCard } from '@/components/flights/BentoFlightCard';
 import { CrossSellBundle } from '@/components/shared/CrossSellBundle';
 import {
-  PlaneTakeoff, PlaneLanding, CalendarDays, PenLine, SlidersHorizontal, X, Check, ArrowLeft,
+  PlaneTakeoff, PlaneLanding, CalendarDays, PenLine, SlidersHorizontal, X, Check, ArrowLeft, Loader2,
 } from 'lucide-react';
 
 const STEP = 1_000_000;
@@ -36,8 +35,6 @@ function FlightSearchInner() {
   const departParam = params.get('depart');
   const travelDate = departParam && /^\d{4}-\d{2}-\d{2}$/.test(departParam) ? departParam : daysFromNow(7);
 
-  // Resolve the requested origin/destination to canonical cities. Unrecognized
-  // values degrade gracefully to "all" rather than an empty result list.
   const fromCity = resolveCityQuery(from);
   const toCity = resolveCityQuery(to);
   const searchFiltered = Boolean(fromCity || toCity);
@@ -51,68 +48,100 @@ function FlightSearchInner() {
 
   type SortId = (typeof sorts)[number]['id'];
 
-  // Filter pool for the requested route — facets (airlines, price bounds) and
-  // their counts describe only the flights that could actually be booked.
-  const routePool = useMemo(
-    () =>
-      FLIGHTS.filter((f) => {
-        if (fromCity && resolveCityQuery(f.originCity)?.id !== fromCity.id) return false;
-        if (toCity && resolveCityQuery(f.destinationCity)?.id !== toCity.id) return false;
-        return true;
-      }),
-    [fromCity, toCity]
-  );
-
-  const bounds = useMemo(() => {
-    const pool = routePool.length ? routePool : FLIGHTS;
-    const prices = pool.map((f) => f.price);
-    return { min: Math.min(...prices), max: Math.max(...prices) };
-  }, [routePool]);
-
   const [stops, setStops] = useState<number[]>([]);
   const [airlines, setAirlines] = useState<string[]>([]);
-  const [price, setPrice] = useState<[number, number]>([bounds.min, bounds.max]);
+  const [priceBounds, setPriceBounds] = useState<{ min: number; max: number }>({ min: 20_000_000, max: 150_000_000 });
+  const [price, setPrice] = useState<[number, number]>([20_000_000, 150_000_000]);
   const [sort, setSort] = useState<SortId>('price');
   const [sheet, setSheet] = useState(false);
 
-  const airlineOptions = useMemo(() => {
-    const map = new Map<string, number>();
-    routePool.forEach((f) => {
-      map.set(f.airline, Math.min(map.get(f.airline) ?? Infinity, f.price));
-    });
-    return [...map.entries()].map(([name, minPrice]) => ({ name, minPrice }));
-  }, [routePool]);
+  // Live state
+  const [flights, setFlights] = useState<Flight[]>([]);
+  const [airlineOptions, setAirlineOptions] = useState<Array<{ name: string; minPrice: number }>>([]);
+  const [stopCounts, setStopCounts] = useState<[number, number, number]>([0, 0, 0]);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const stopCounts = useMemo(() => {
-    const c = [0, 0, 0];
-    routePool.forEach((f) => c[Math.min(f.stops, 2)] += 1);
-    return c;
-  }, [routePool]);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const results = useMemo(() => {
-    let list = FLIGHTS.filter((f) => {
-      if (fromCity && resolveCityQuery(f.originCity)?.id !== fromCity.id) return false;
-      if (toCity && resolveCityQuery(f.destinationCity)?.id !== toCity.id) return false;
-      if (stops.length && !stops.includes(Math.min(f.stops, 2))) return false;
-      if (airlines.length && !airlines.includes(f.airline)) return false;
-      if (f.price < price[0] || f.price > price[1]) return false;
-      return true;
-    });
-    list = [...list].sort((a, b) => {
-      if (sort === 'price') return a.price - b.price;
-      if (sort === 'fast') return durationMinutes(a.duration) - durationMinutes(b.duration);
-      if (sort === 'time') return a.departureTime.localeCompare(b.departureTime);
-      return a.price / durationMinutes(a.duration) - b.price / durationMinutes(b.duration);
-    });
-    return list;
-  }, [fromCity, toCity, stops, airlines, price, sort]);
+  // Fetch live flights data
+  const fetchFlights = useCallback(async () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
 
-  const activeFilters = stops.length + airlines.length + (price[0] > bounds.min || price[1] < bounds.max ? 1 : 0);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const q = new URLSearchParams();
+      if (from) q.set('from', from);
+      if (to) q.set('to', to);
+      if (travelDate) q.set('depart', travelDate);
+      if (sort) q.set('sort', sort);
+      if (airlines.length) q.set('airlines', airlines.join(','));
+      if (stops.length) q.set('stops', stops.join(','));
+      if (price[0] > priceBounds.min) q.set('minPrice', String(price[0]));
+      if (price[1] < priceBounds.max) q.set('maxPrice', String(price[1]));
+      q.set('limit', '50');
+
+      const res = await fetch(`/api/flights/search?${q.toString()}`, {
+        signal: abortControllerRef.current.signal,
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}`);
+      }
+
+      const json = await res.json();
+      if (json.success && json.data) {
+        setFlights(json.data.flights || []);
+        setTotalCount(json.data.total || 0);
+        if (json.data.airlineFacets) {
+          setAirlineOptions(json.data.airlineFacets);
+        }
+        if (json.data.stopCounts) {
+          setStopCounts(json.data.stopCounts);
+        }
+        if (json.data.priceBounds) {
+          setPriceBounds((prev) => {
+            const newBounds = json.data.priceBounds;
+            // Update current price slider only if uninitialized
+            setPrice((curr) => {
+              if (curr[0] === prev.min && curr[1] === prev.max) {
+                return [newBounds.min, newBounds.max];
+              }
+              return curr;
+            });
+            return newBounds;
+          });
+        }
+      }
+    } catch (err: unknown) {
+      if ((err as Error).name !== 'AbortError') {
+        console.error('Failed to fetch live flights:', err);
+        setError('خطا در دریافت لیست پروازهای لایو');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [from, to, travelDate, sort, airlines, stops, price, priceBounds.min, priceBounds.max]);
+
+  useEffect(() => {
+    fetchFlights();
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, [fetchFlights]);
+
+  const activeFilters = stops.length + airlines.length + (price[0] > priceBounds.min || price[1] < priceBounds.max ? 1 : 0);
 
   function clearAll() {
     setStops([]);
     setAirlines([]);
-    setPrice([bounds.min, bounds.max]);
+    setPrice([priceBounds.min, priceBounds.max]);
   }
 
   function toggle<T>(arr: T[], v: T, set: (x: T[]) => void) {
@@ -130,8 +159,9 @@ function FlightSearchInner() {
     router.push('/checkout');
   }
 
-  const minPct = ((price[0] - bounds.min) / (bounds.max - bounds.min)) * 100;
-  const maxPct = ((price[1] - bounds.min) / (bounds.max - bounds.min)) * 100;
+  const rangeSpan = Math.max(priceBounds.max - priceBounds.min, 1);
+  const minPct = ((price[0] - priceBounds.min) / rangeSpan) * 100;
+  const maxPct = ((price[1] - priceBounds.min) / rangeSpan) * 100;
 
   const stopLabels = [t('directOnly'), t('oneStop'), t('twoOrMoreStops')];
 
@@ -148,8 +178,8 @@ function FlightSearchInner() {
           />
           <input
             type="range"
-            min={bounds.min}
-            max={bounds.max}
+            min={priceBounds.min}
+            max={priceBounds.max}
             step={STEP}
             value={price[0]}
             onChange={(e) => setPrice([Math.min(Number(e.target.value), price[1] - STEP), price[1]])}
@@ -158,8 +188,8 @@ function FlightSearchInner() {
           />
           <input
             type="range"
-            min={bounds.min}
-            max={bounds.max}
+            min={priceBounds.min}
+            max={priceBounds.max}
             step={STEP}
             value={price[1]}
             onChange={(e) => setPrice([price[0], Math.max(Number(e.target.value), price[0] + STEP)])}
@@ -180,7 +210,7 @@ function FlightSearchInner() {
         <h3 className="font-black text-[13px] text-ink mb-4">{t('stopsCount')}</h3>
         <div className="flex flex-col gap-3">
           {stopLabels.map((label, i) => {
-            const count = stopCounts[i];
+            const count = stopCounts[i] || 0;
             const checked = stops.includes(i);
             return (
               <label key={label} className={`flex items-center gap-3 group ${count === 0 ? 'opacity-40 pointer-events-none' : 'cursor-pointer'}`}>
@@ -202,16 +232,16 @@ function FlightSearchInner() {
       <div>
         <h3 className="font-black text-[13px] text-ink mb-4">{t('airlines')}</h3>
         <div className="flex flex-col gap-3">
-          {airlineOptions.map((a) => {
-            const checked = airlines.includes(a.name);
+          {airlineOptions.map(({ name, minPrice }) => {
+            const checked = airlines.includes(name);
             return (
-              <label key={a.name} className="flex items-center gap-3 group cursor-pointer">
+              <label key={name} className="flex items-center gap-3 cursor-pointer group">
                 <span className={`w-5 h-5 rounded-md grid place-items-center border transition-colors group-has-[:focus-visible]:ring-2 group-has-[:focus-visible]:ring-brand ${checked ? 'bg-brand border-brand' : 'border-line group-hover:border-brand'}`}>
                   {checked && <Check size={13} className="text-surface" strokeWidth={3} />}
                 </span>
-                <input type="checkbox" className="sr-only focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" checked={checked} onChange={() => toggle(airlines, a.name, setAirlines)} />
-                <span className="text-[13px] font-bold text-ink">{a.name}</span>
-                <span className="me-auto text-[11px] text-sub whitespace-nowrap num">{num(a.minPrice, locale)}</span>
+                <input type="checkbox" className="sr-only focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" checked={checked} onChange={() => toggle(airlines, name, setAirlines)} />
+                <span className="text-[13px] font-bold text-ink truncate">{name}</span>
+                <span className="me-auto text-[11px] text-sub num">{num(minPrice, locale)}</span>
               </label>
             );
           })}
@@ -221,23 +251,23 @@ function FlightSearchInner() {
   );
 
   return (
-    <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-6 md:py-8">
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Sidebar filters — desktop */}
-        <aside className="hidden lg:block w-72 shrink-0">
-          <div className="bg-surface/95 backdrop-blur-xl rounded-3xl shadow-elev-1 p-6 sticky top-24 border border-line/80">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-black text-ink">{t('filters')}</h2>
-              <button onClick={clearAll} className="text-[12px] text-brand-dark hover:underline font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">
-                {t('clearAll')}
+    <div className="min-h-screen bg-paper pb-20">
+      <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-6 flex flex-col lg:flex-row gap-6 items-start">
+        {/* Sidebar desktop */}
+        <aside className="w-72 shrink-0 hidden lg:block bg-surface rounded-2xl border border-line p-5 shadow-sm sticky top-24">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="font-black text-sm text-ink">{t('filters')}</h2>
+            {activeFilters > 0 && (
+              <button onClick={clearAll} className="text-[11.5px] font-black text-brand-dark hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">
+                {t('clearFilters')}
               </button>
-            </div>
-            {filtersBody}
+            )}
           </div>
+          {filtersBody}
         </aside>
 
-        {/* Results */}
-        <div className="flex-grow flex flex-col gap-4 min-w-0">
+        {/* Content */}
+        <div className="flex-grow flex flex-col gap-4 min-w-0 w-full">
           {/* Search summary */}
           <div className="bg-surface/95 backdrop-blur-xl rounded-2xl p-4 flex flex-col md:flex-row justify-between items-center gap-3 shadow-sm border border-line/80">
             <div className="flex items-center gap-3 md:gap-4 flex-wrap justify-center">
@@ -270,8 +300,8 @@ function FlightSearchInner() {
             </button>
           </div>
 
-          {/* Sorting */}
-          <div className="flex overflow-x-auto pb-1 gap-2 scrollbar-none">
+          {/* Sorting & mobile trigger */}
+          <div className="flex overflow-x-auto pb-1 gap-2 scrollbar-none items-center">
             {sorts.map((s) => (
               <button
                 key={s.id}
@@ -300,10 +330,24 @@ function FlightSearchInner() {
             </button>
           </div>
 
-          <p className="text-[12px] text-sub font-bold">{num(results.length, locale)} {t('flights')}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[12px] text-sub font-bold">{num(totalCount, locale)} {t('flights')} (لایو)</p>
+            {loading && (
+              <span className="flex items-center gap-1.5 text-xs text-brand font-bold">
+                <Loader2 size={14} className="animate-spin" />
+                در حال به‌روزرسانی نتایج لایو...
+              </span>
+            )}
+          </div>
 
           {/* Results list */}
-          {results.length === 0 ? (
+          {loading && flights.length === 0 ? (
+            <div className="flex flex-col gap-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-44 bg-surface rounded-2xl border border-line animate-pulse p-6" />
+              ))}
+            </div>
+          ) : flights.length === 0 ? (
             <div className="bg-surface rounded-2xl border border-line p-14 text-center">
               <PlaneTakeoff size={32} className="mx-auto text-line mb-3" />
               <p className="text-sub font-bold text-sm">{t('noFlightsFound')}</p>
@@ -323,7 +367,7 @@ function FlightSearchInner() {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-              {results.map((f) => (
+              {flights.map((f) => (
                 <BentoFlightCard key={f.id} flight={f} onSelect={() => selectFlight(f)} />
               ))}
             </div>
@@ -356,28 +400,26 @@ function FlightSearchInner() {
       {sheet && (
         <div className="lg:hidden">
           <div className="fixed inset-0 z-90 bg-ink/45 fade-soft" onClick={() => setSheet(false)} />
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="fixed inset-x-0 bottom-0 z-95 sheet-up rounded-t-[28px] bg-surface px-5 pt-3 pb-[calc(18px+env(safe-area-inset-bottom))] shadow-elev-3 max-h-[82vh] overflow-y-auto"
-          >
-            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-line" />
-            <div className="flex items-center justify-between mb-4">
-              <b className="text-[15px] font-black">{t('filters')}</b>
-              <div className="flex items-center gap-2">
-                <button onClick={clearAll} className="text-[12px] text-brand-dark font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">{t('clearAll')}</button>
-                <button onClick={() => setSheet(false)} aria-label={ariaT('close')} className="grid place-items-center w-8 h-8 rounded-full bg-soft text-sub focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
-                  <X size={15} />
-                </button>
-              </div>
+          <div className="fixed bottom-0 inset-x-0 z-100 bg-surface rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl">
+            <div className="flex justify-between items-center p-5 border-b border-line">
+              <h2 className="font-black text-sm text-ink">{t('filters')}</h2>
+              <button
+                onClick={() => setSheet(false)}
+                aria-label={ariaT('close')}
+                className="w-8 h-8 rounded-full bg-soft text-sub flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                <X size={17} />
+              </button>
             </div>
-            {filtersBody}
-            <button
-              onClick={() => setSheet(false)}
-              className="w-full mt-5 min-h-12 rounded-2xl bg-brand text-surface font-black text-sm sticky bottom-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-            >
-              {t('showFlightsBtn', { count: num(results.length, locale) })}
-            </button>
+            <div className="overflow-y-auto p-5">{filtersBody}</div>
+            <div className="p-4 border-t border-line bg-surface">
+              <button
+                onClick={() => setSheet(false)}
+                className="w-full min-h-11 rounded-xl bg-brand hover:bg-brand-dark text-surface text-sm font-black transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                {t('apply')}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -387,7 +429,7 @@ function FlightSearchInner() {
 
 export default function FlightSearchPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<div className="min-h-screen bg-paper p-10 text-center"><Loader2 className="animate-spin mx-auto text-brand" size={32} /></div>}>
       <FlightSearchInner />
     </Suspense>
   );
