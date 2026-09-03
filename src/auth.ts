@@ -58,7 +58,7 @@ export async function issueOtp(identifier: string, channel: string): Promise<{ s
   return { sent: true, devCode: DEMO_MODE ? code : undefined };
 }
 
-/** Verifies and consumes a stored OTP. Returns true when the code is valid. */
+/** Verifies and consumes a stored OTP. Returns true when f the code is valid. */
 async function verifyStoredOtp(identifier: string, code: string): Promise<boolean> {
   const record = await prisma.otpVerification.findFirst({
     where: { identifier, consumedAt: null, expiresAt: { gt: new Date() } },
