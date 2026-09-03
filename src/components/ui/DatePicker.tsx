@@ -1,13 +1,18 @@
 'use client';
 
 import React from 'react';
-import DatePicker, { DateObject } from 'react-multi-date-picker';
+import dynamic from 'next/dynamic';
+import type { DateObject } from 'react-multi-date-picker';
 import persian from 'react-date-object/calendars/persian';
 import persian_fa from 'react-date-object/locales/persian_fa';
 import gregorian from 'react-date-object/calendars/gregorian';
 import gregorian_en from 'react-date-object/locales/gregorian_en';
 import { CalendarDays } from 'lucide-react';
 import { useLocale } from 'next-intl';
+
+const DatePicker = dynamic(() => import('react-multi-date-picker'), {
+  ssr: false,
+});
 
 interface JalaliDatePickerProps {
   value?: string | undefined;
