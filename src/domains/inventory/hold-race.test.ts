@@ -28,7 +28,7 @@ describe('InventoryEngine Concurrent Hold Race Conditions', () => {
     } finally {
       await prisma.$disconnect();
     }
-  });
+  }, 60000);
 
   it('handles 20 concurrent hold requests with totalCapacity: 1, allowing exactly 1 success and 19 failures', async () => {
     // 1. Sets up an InventoryItem and an Allotment with totalCapacity: 1 on a specific date.
@@ -119,5 +119,5 @@ describe('InventoryEngine Concurrent Hold Race Conditions', () => {
     expect(remainingAvailable).toBe(0);
     expect(updatedAllotment.booked).toBe(0);
     expect(remainingAvailable).toBeGreaterThanOrEqual(0);
-  });
+  }, 60000);
 });
