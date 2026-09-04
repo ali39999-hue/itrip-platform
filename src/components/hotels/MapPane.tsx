@@ -6,6 +6,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Star } from 'lucide-react';
 import { Link } from '@/i18n/routing';
+import { useLocale, useTranslations } from 'next-intl';
 import type { Hotel } from '@/lib/types';
 
 const DEFAULT_CENTER: L.LatLngExpression = [35.6892, 51.3890];
@@ -70,8 +71,11 @@ function hotelPos(h: HotelWithCoord): L.LatLngExpression {
   return [lat, lng];
 }
 
-function pricePin(h: Hotel): L.DivIcon {
-  const label = `${(h.pricePerNight / 1000000).toLocaleString('fa-IR', { maximumFractionDigits: 1 })}م`;
+function pricePin(h: Hotel, locale: string): L.DivIcon {
+  const isRtl = ['fa', 'ar'].includes(locale);
+  const localeTag = isRtl ? 'fa-IR' : 'en-US';
+  const suffix: Record<string, string> = { fa: 'م', ar: 'م', en: 'M', zh: 'M', ru: 'М' };
+  const label = `${(h.pricePerNight / 1000000).toLocaleString(localeTag, { maximumFractionDigits: 1 })}${suffix[locale] || 'M'}`;
   return L.divIcon({
     className: 'firuzo-pin',
     html: `<span style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:52px;height:30px;border-radius:9px;background:${BRAND};color:var(--color-surface);font-weight:800;font-size:12px;font-family:inherit;white-space:nowrap;box-shadow:0 4px 12px rgba(10,50,54,.35);cursor:pointer"><span style="position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border:7px solid transparent;border-top-color:${BRAND};border-bottom:0"></span>${label}</span>`,
@@ -91,14 +95,19 @@ function FitToPins({ points }: { points: L.LatLngExpression[] }) {
 }
 
 export default function MapPane({ hotels }: { hotels: Hotel[] }) {
+  const locale = useLocale();
+  const t = useTranslations('HotelDetail');
+  const isRtl = ['fa', 'ar'].includes(locale);
+  const localeTag = isRtl ? 'fa-IR' : 'en-US';
+
   const pins = useMemo(
     () =>
       hotels.map((h) => ({
         hotel: h,
         pos: hotelPos(h),
-        icon: pricePin(h),
+        icon: pricePin(h, locale),
       })),
-    [hotels]
+    [hotels, locale]
   );
   const points = useMemo(() => pins.map((p) => p.pos), [pins]);
 
@@ -123,9 +132,9 @@ export default function MapPane({ hotels }: { hotels: Hotel[] }) {
         {pins.map(({ hotel, pos, icon }) => (
           <Marker key={hotel.id} position={pos} icon={icon}>
             <Popup className="firuzo-map-popup">
-              <div dir="rtl" className="min-w-[180px] font-sans p-1">
+              <div dir={isRtl ? 'rtl' : 'ltr'} className="min-w-[180px] font-sans p-1">
                 <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                  <b className="text-xs font-black text-ink">{hotel.name}</b>
+                  <b className="text-xs font-black text-ink">{isRtl ? hotel.name : (hotel.nameEn || hotel.name)}</b>
                   <span className="inline-flex text-gold">
                     {Array.from({ length: hotel.stars }).map((_, i) => (
                       <Star key={i} size={11} className="fill-gold text-gold" />
@@ -133,16 +142,16 @@ export default function MapPane({ hotels }: { hotels: Hotel[] }) {
                   </span>
                 </div>
                 <div className="text-[11px] text-sub mb-1.5 font-medium">
-                  {hotel.city} · {hotel.distanceFromCenter}
+                  {isRtl ? hotel.city : (hotel.cityEn || hotel.city)} · {hotel.distanceFromCenter}
                 </div>
                 <div className="text-xs font-black text-ink mb-2 font-mono">
-                  {(hotel.pricePerNight / 1000000).toLocaleString('fa-IR')} میلیون تومان / شب
+                  {(hotel.pricePerNight / 1000000).toLocaleString(localeTag)} {t('millionPerNight')}
                 </div>
                 <Link
                   href={`/hotels/${hotel.id}`}
                   className="inline-flex items-center justify-center h-8 px-3 rounded-lg bg-brand hover:bg-brand-dark text-surface text-xs font-black transition shadow-xs"
                 >
-                  مشاهده اتاق‌ها ←
+                  {t('viewRooms')}
                 </Link>
               </div>
             </Popup>

@@ -88,13 +88,27 @@ export class BookingSagaOrchestrator {
       }
 
       // 4. Step 3: Dual-Entry Ledger Posting
-      // Breakdown comes from the stored booking items; never invented here.
+      // Aggregate costs across ALL booking items, not just the first one.
       const totalAmt = Number(booking.totalAmount);
-      const firstItem = booking.items[0];
-      const netCost = firstItem ? Number(firstItem.netCost) : 0;
-      const taxAmount = firstItem ? Number(firstItem.taxAmount || 0) : 0;
-      const feeAmount = firstItem ? Number(firstItem.feeAmount || 0) : 0;
-      const supplierId = firstItem?.inventoryItemId || 'sup_default_firuzo';
+      let netCost = 0;
+      let taxAmount = 0;
+      let feeAmount = 0;
+      for (const item of booking.items) {
+        netCost += Number(item.netCost || 0);
+        taxAmount += Number(item.taxAmount || 0);
+        feeAmount += Number(item.feeAmount || 0);
+      }
+
+      // Resolve supplier ID from the inventory item's actual supplier, not the item ID.
+      const primaryItem = booking.items[0];
+      let supplierId = 'sup_default_firuzo';
+      if (primaryItem?.inventoryItemId) {
+        const inv = await tx.inventoryItem.findUnique({
+          where: { id: primaryItem.inventoryItemId },
+          select: { supplierId: true },
+        });
+        if (inv?.supplierId) supplierId = inv.supplierId;
+      }
 
       if (params.paymentMethod === 'wallet_irr' || params.paymentMethod === 'wallet_usdt') {
         await GeneralLedgerService.postWalletPayment(

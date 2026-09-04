@@ -23,19 +23,19 @@ if (!secret && process.env.NODE_ENV === 'production') {
 // Dev-only fallback so a missing .env never silently degrades session security in prod.
 const resolvedSecret = secret || 'dev-only-insecure-secret-never-use-in-production';
 
-const DEMO_MODE = process.env.DEMO_MODE === 'true';
+const DEMO_MODE = process.env.DEMO_MODE === 'true' && process.env.NODE_ENV !== 'production';
 const OTP_TTL_MINUTES = 5;
 const OTP_MAX_ATTEMPTS = 5;
 
 function hashOtp(code: string): string {
-  return crypto.createHash('sha256').update(`${code}:${process.env.AUTH_SECRET ?? resolvedSecret}`).digest('hex');
+  return crypto.createHmac('sha256', process.env.AUTH_SECRET ?? resolvedSecret).update(code).digest('hex');
 }
 
 /**
  * Issues a one-time passcode for the given identifier.
  * Returns the plaintext code ONLY in demo mode so the dev UI can display it.
  */
-export async function issueOtp(identifier: string, channel: string): Promise<{ sent: boolean; devCode?: string }> {
+export async function issueOtp(identifier: string, channel: string): Promise<{ sent: boolean }> {
   const code = String(crypto.randomInt(100000, 999999));
   const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
 
@@ -51,11 +51,15 @@ export async function issueOtp(identifier: string, channel: string): Promise<{ s
   await prisma.outboxEvent.create({
     data: {
       eventType: 'AUTH_OTP_REQUESTED',
-      payload: JSON.stringify({ identifier, channel, code, expiresAt: expiresAt.toISOString() }),
+      payload: JSON.stringify({ identifier, channel, codeHash: hashOtp(code), expiresAt: expiresAt.toISOString() }),
     },
   });
 
-  return { sent: true, devCode: DEMO_MODE ? code : undefined };
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`[AUTH-DEV] Issued OTP for ${identifier} via ${channel}: ${code}`);
+  }
+
+  return { sent: true };
 }
 
 /** Verifies and consumes a stored OTP. Returns true when f the code is valid. */
@@ -117,9 +121,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           // Passwordless: the OTP itself is the credential, verified server-side.
           const otp = password;
           if (!otp) return null;
-          const isValid = (DEMO_MODE && otp === '1234')
-            ? true
-            : await verifyStoredOtp(rawIdentifier, otp);
+          const isValid = await verifyStoredOtp(rawIdentifier, otp);
           if (!isValid) return null;
 
           user = await prisma.user.findFirst({
@@ -200,18 +202,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!user || !user.isActive) return null;
 
-        // Demo convenience: any active user may sign in without a password.
-        // Never active in production.
-        if (DEMO_MODE) {
-          return {
-            id: user.id,
-            email: user.email || `${user.id}@firuzo.com`,
-            name: user.name || user.firstNameFa || 'User',
-            role: user.role,
-          };
-        }
-
-        // Standard production verification with bcrypt
+        // Standard verification with bcrypt
         if (!user.passwordHash || !password) return null;
         const isValid = await bcrypt.compare(password, user.passwordHash);
         if (!isValid) return null;

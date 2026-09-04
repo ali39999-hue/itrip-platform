@@ -45,7 +45,7 @@ export default function CityPassPage() {
       {/* Scope / Manual Ops */}
       <section className="py-12 max-w-[1180px] mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="flex gap-4 items-start p-6 bg-gold-soft/50 border border-gold/30 rounded-3xl">
-          <span className="flex-shrink-0 w-10 h-10 grid place-items-center rounded-full bg-action text-[#14201f] shadow-sm">
+          <span className="flex-shrink-0 w-10 h-10 grid place-items-center rounded-full bg-action text-ink shadow-sm">
             <Check size={21} />
           </span>
           <div>

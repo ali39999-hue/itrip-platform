@@ -133,7 +133,7 @@ export default function InsurancePage() {
                     aria-label={`انتخاب طرح ${plan.name}`}
                     className={`mt-8 w-full py-3.5 rounded-xl font-black text-[14px] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                       isPremium 
-                        ? 'bg-action hover:bg-action-hover text-[#14201f] shadow-md' 
+                        ? 'bg-action hover:bg-action-hover text-ink shadow-md' 
                         : 'bg-mint hover:bg-mint-bright text-brand-dark'
                     }`}
                   >

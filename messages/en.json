@@ -115,6 +115,11 @@
       "homepage": "Firuzo Homepage",
       "error": "An error occurred",
       "retry": "Try again"
+    },
+    "pwa": {
+      "installTitle": "Install Firuzo App",
+      "installSubtitle": "Faster access without a browser",
+      "install": "Install"
     }
   },
   "NotFound": {
@@ -602,7 +607,14 @@
     "checkinOut": "Check-in and Check-out",
     "checkinOutDesc": "Check-in from 14:00, check-out until 12:00. Early check-in or late check-out requires coordination.",
     "childrenExtraBed": "Children and Extra Bed",
-    "childrenExtraBedDesc": "Accommodation for children under two years is free. Request for an extra bed depends on the selected room type."
+    "childrenExtraBedDesc": "Accommodation for children under two years is free. Request for an extra bed depends on the selected room type.",
+    "millionPerNight": "M Toman / night",
+    "viewRooms": "View rooms",
+    "aria": {
+      "previous": "Previous",
+      "next": "Next",
+      "close": "Close"
+    }
   },
   "Flights": {
     "valueProp1Title": "Instant Issuance & Official PNR",

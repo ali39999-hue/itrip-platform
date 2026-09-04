@@ -28,15 +28,6 @@ function resolveAddonPrice(kind: 'esim' | 'insurance'): number | null {
  */
 function resolveServerBasePrice(type: string, itemId?: string): number | null {
   if (!itemId) {
-    // Catalog default per product type (first entry), used when the UI
-    // passes no explicit item id.
-    if (type === 'FLIGHT') return FLIGHTS[0]?.price ?? null;
-    if (type === 'HOTEL') return HOTELS[0]?.pricePerNight ?? null;
-    if (type === 'TOUR') return TOURS[0]?.price ?? null;
-    if (type === 'TRANSFER') return TRANSFERS[0]?.price ?? null;
-    if (type === 'VISA') return VISA_SERVICES[0]?.price ?? null;
-    if (type === 'ESIM') return ESIM_PACKAGES[0]?.price ?? null;
-    if (type === 'INSURANCE') return INSURANCE_PLANS[0]?.price ?? null;
     return null;
   }
 
@@ -297,7 +288,7 @@ export async function requestWalletTopUp(amountIrr: number) {
 
     // Real PSP (Shetab IPG) is not wired yet; in demo mode the top-up is
     // recorded through the real ledger so balances stay consistent.
-    if (process.env.DEMO_MODE !== 'true') {
+    if (process.env.DEMO_MODE !== 'true' || process.env.NODE_ENV === 'production') {
       return { success: false, error: 'Payment gateway is not configured yet' };
     }
 
@@ -382,7 +373,7 @@ export async function getWallet() {
 
     // Demo convenience: seed a starter wallet through the real ledger (TOPUP
     // entries) so wallet payments work in DEMO_MODE. Never runs in production.
-    const DEMO_MODE = process.env.DEMO_MODE === 'true';
+    const DEMO_MODE = process.env.DEMO_MODE === 'true' && process.env.NODE_ENV !== 'production';
     if (DEMO_MODE) {
       const existingAccounts = await prisma.account.count({ where: { ownerType: 'USER', ownerId: userId } });
       if (existingAccounts === 0) {

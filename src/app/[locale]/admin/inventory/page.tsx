@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import {
   Boxes, Plus, RefreshCw, AlertCircle, Calendar,
@@ -52,7 +52,7 @@ export default function AdminInventoryPage() {
   const [capacity, setCapacity] = useState('5');
   const [days, setDays] = useState('14');
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -62,19 +62,19 @@ export default function AdminInventoryPage() {
       ]);
       setItems(invData);
       setSuppliers(supData);
-      if (supData.length > 0 && !supplierId) {
-        setSupplierId(supData[0].id);
+      if (supData.length > 0) {
+        setSupplierId((prev) => prev || supData[0].id);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load inventory');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   const handleCreateItem = async (e: React.FormEvent) => {
     e.preventDefault();

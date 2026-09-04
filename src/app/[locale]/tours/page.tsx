@@ -212,7 +212,7 @@ function ToursContent() {
                 <button
                   onClick={() => book(tour)}
                   aria-label={`رزرو ${locale === 'fa' ? tour.title : tour.titleEn}`}
-                  className="mt-3 bg-action hover:bg-action-hover text-[#14201f] px-4 py-2 rounded-xl font-black text-xs transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand flex items-center gap-1 cursor-pointer"
+                  className="mt-3 bg-action hover:bg-action-hover text-ink px-4 py-2 rounded-xl font-black text-xs transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand flex items-center gap-1 cursor-pointer"
                 >
                   <span>{t('bookTour')}</span>
                   <ArrowLeft size={14} className="rtl:hidden" />

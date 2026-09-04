@@ -4,8 +4,12 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@Firuzo2026!';
-  const userPassword = process.env.USER_PASSWORD || 'User@Firuzo2026!';
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  const userPassword = process.env.USER_PASSWORD;
+
+  if (!adminPassword || !userPassword) {
+    throw new Error('ADMIN_PASSWORD and USER_PASSWORD environment variables are strictly required for database seeding.');
+  }
 
   const adminPasswordHash = await bcrypt.hash(adminPassword, 10);
   const userPasswordHash = await bcrypt.hash(userPassword, 10);

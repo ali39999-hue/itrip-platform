@@ -99,26 +99,45 @@ export class ProductionNotificationProvider implements NotificationProvider {
   }
 
   async sendEmail(to: string, subject: string, body: string): Promise<NotificationResult> {
-    const emailKey = process.env.RESEND_API_KEY || process.env.SMTP_KEY || this.apiKey;
-    if (!emailKey) {
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (!resendApiKey) {
       console.warn('[Notification:Email] Missing email provider API key; falling back to simulation.');
       return new ConsoleNotificationProvider().sendEmail(to, subject, body);
     }
 
     try {
-      // Generic production email dispatch endpoint
-      console.log(`[Notification:Email] Dispatching to ${to} with subject "${subject}"`);
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: process.env.EMAIL_FROM || 'Firuzo <noreply@firuzo.com>',
+          to: [to],
+          subject,
+          html: body,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => '');
+        throw new Error(`Resend API returned HTTP ${res.status}${errorText ? `: ${errorText}` : ''}`);
+      }
+
+      const data = (await res.json()) as { id?: string };
       return {
         success: true,
-        messageId: `email-${Date.now()}`,
-        provider: this.name,
+        messageId: data.id,
+        provider: 'resend',
       };
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
+      console.error('[Notification:Email] Failed to send email via Resend:', errorMsg);
       return {
         success: false,
         error: errorMsg,
-        provider: this.name,
+        provider: 'resend',
       };
     }
   }

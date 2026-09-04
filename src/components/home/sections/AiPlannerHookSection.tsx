@@ -45,7 +45,7 @@ export function AiPlannerHookSection() {
         <div className="pt-4">
           <Link
             href="/plan"
-            className="inline-flex items-center gap-2 h-12 px-8 rounded-2xl bg-action hover:bg-action-hover text-[#14201f] text-sm font-black shadow-md hover:shadow-elev-2 transition-all"
+            className="inline-flex items-center gap-2 h-12 px-8 rounded-2xl bg-action hover:bg-action-hover text-ink text-sm font-black shadow-md hover:shadow-elev-2 transition-all"
           >
             <span>{t('aiPlannerCta')}</span>
             <ArrowLeft size={16} className="ltr:rotate-180" />

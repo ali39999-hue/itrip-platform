@@ -188,7 +188,7 @@ export default function FlightCheckoutPage() {
 
             <Button 
               onClick={handleProceed}
-              className="w-full h-14 text-base font-black bg-action hover:bg-action-hover text-[#14201f] mb-4 shadow-elev-2 rounded-2xl transition-all"
+              className="w-full h-14 text-base font-black bg-action hover:bg-action-hover text-ink mb-4 shadow-elev-2 rounded-2xl transition-all"
             >
               {t('confirmAndProceed')}
             </Button>

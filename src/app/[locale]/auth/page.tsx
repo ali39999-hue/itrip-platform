@@ -10,8 +10,6 @@ import { lt } from '@/lib/lt';
 import { Logo } from '@/components/layout/Logo';
 import { AuthChannel, requestOtp } from '@/actions/auth';
 
-const DEMO_UI = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
-
 export default function AuthPage() {
   const t = useTranslations('Auth');
   const locale = useLocale();
@@ -39,7 +37,6 @@ export default function AuthPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
-  const [devCode, setDevCode] = useState<string | null>(null);
 
   const [firstFa, setFirstFa] = useState(kyc?.firstNameFa || '');
   const [lastFa, setLastFa] = useState(kyc?.lastNameFa || '');
@@ -100,7 +97,6 @@ export default function AuthPage() {
         );
         return;
       }
-      setDevCode(res.devCode ?? null);
       setKycStep('otp');
     } finally {
       setSending(false);
@@ -279,16 +275,10 @@ export default function AuthPage() {
                   maxLength={6}
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
-                  placeholder="1234"
+                  placeholder="••••••"
                   className="w-full h-12 rounded-xl border border-line px-4 text-center tracking-widest text-xl font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 />
                 <p className="text-[11px] text-sub mt-1 text-center font-bold">{lt(locale, { fa: 'کد تأیید پیامک/ایمیل شد', en: 'The code was sent to you', ar: 'تم إرسال الرمز إليك', zh: '验证码已发送', ru: 'Код отправлен вам' })}</p>
-                {DEMO_UI && devCode && (
-                  <p className="text-[11px] text-brand-dark mt-1 text-center font-black bg-mint rounded-lg py-1.5 px-2">
-                    {lt(locale, { fa: 'کد دمو: ', en: 'Demo code: ', ar: 'رمز تجريبي: ', zh: '演示验证码：', ru: 'Демо-код: ' })}
-                    <span dir="ltr" className="font-mono">{devCode}</span>
-                  </p>
-                )}
               </div>
 
               <button

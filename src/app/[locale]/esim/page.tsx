@@ -112,8 +112,8 @@ export default function EsimPage() {
 
                   <button 
                     onClick={() => buy(pkg)}
-                    aria-label={`خرید بسته ${pkg.country}`}
-                    className="w-full py-3 rounded-xl bg-action hover:bg-action-hover text-[#14201f] font-black text-[13px] flex items-center justify-center gap-2 transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
+                    aria-label={lt(locale, { fa: `خرید بسته ${pkg.country}`, en: `Buy ${pkg.country} package`, ar: `شراء باقة ${pkg.country}`, zh: `购买${pkg.country}套餐`, ru: `Купить пакет ${pkg.country}` })}
+                    className="w-full py-3 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-[13px] flex items-center justify-center gap-2 transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
                   >
                     <ShoppingCart size={16} />
                     <span>{t('buyEsim')}</span>

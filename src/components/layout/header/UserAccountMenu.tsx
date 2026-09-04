@@ -56,7 +56,7 @@ export function UserAccountMenu() {
       ) : (
         <Link
           href="/auth"
-          className="min-h-[38px] inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-action hover:bg-action-hover text-[#14201f] text-[13px] font-black shadow-sm transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none active:scale-95"
+          className="min-h-[38px] inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-action hover:bg-action-hover text-ink text-[13px] font-black shadow-sm transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none active:scale-95"
         >
           <UserRound size={15} />
           <span>{t('signin')}</span>

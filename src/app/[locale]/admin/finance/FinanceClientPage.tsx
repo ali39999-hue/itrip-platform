@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Wallet, RefreshCcw, Save } from 'lucide-react';
+import { Wallet, RefreshCcw, Save, ShieldCheck, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import { lt } from '@/lib/lt';
+import { runLedgerReconciliation } from '@/actions/admin';
+import type { ReconciliationReport } from '@/domains/ledger/ReconciliationService';
 
 type Transaction = {
    id: string;
@@ -42,10 +44,26 @@ export function FinanceClientPage({
 
   const [rates, setRates] = useState({ USDT: '41800', AED: '1140', EUR: '45500' });
   const [saved, setSaved] = useState(false);
+  const [reconciling, setReconciling] = useState(false);
+  const [reconciliationReport, setReconciliationReport] = useState<ReconciliationReport | null>(null);
+  const [reconciliationError, setReconciliationError] = useState<string | null>(null);
 
   function saveRates() {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  }
+
+  async function handleReconciliation() {
+    try {
+      setReconciling(true);
+      setReconciliationError(null);
+      const report = await runLedgerReconciliation();
+      setReconciliationReport(report);
+    } catch (err: unknown) {
+      setReconciliationError(err instanceof Error ? err.message : 'Failed to run reconciliation');
+    } finally {
+      setReconciling(false);
+    }
   }
 
   // Transform db transactions to UI model
@@ -60,10 +78,87 @@ export function FinanceClientPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-ink">{lt(locale, { fa: 'مدیریت مالی و خزانه‌داری', en: 'Finance & Treasury Management', ar: 'الإدارة المالية والخزينة', zh: '财务与国库管理', ru: 'Управление финансами и казначейством' })}</h1>
-        <p className="text-sm text-sub mt-1">{lt(locale, { fa: 'نظارت بر ترازهای چند ارزی، تراکنش‌ها و تعیین نرخ تسویه', en: 'Multi-currency balances, transactions, and settlement exchange rates', ar: 'أرصدة متعددة العملات والمعاملات وأسعار صرف التسوية', zh: '多币种余额、交易记录及结算汇率监控', ru: 'Мультивалютные балансы, транзакции и курсы взаиморасчетов' })}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-ink">{lt(locale, { fa: 'مدیریت مالی و خزانه‌داری', en: 'Finance & Treasury Management', ar: 'الإدارة المالية والخزينة', zh: '财务与国库管理', ru: 'Управление финансами и казначейством' })}</h1>
+          <p className="text-sm text-sub mt-1">{lt(locale, { fa: 'نظارت بر ترازهای چند ارزی، تراکنش‌ها و تعیین نرخ تسویه', en: 'Multi-currency balances, transactions, and settlement exchange rates', ar: 'أرصدة متعددة العملات والمعاملات وأسعار صرف التسویه', zh: '多币种余额、交易记录及结算汇率监控', ru: 'Мультивалютные балансы, транзакции и курсы взаиморасчетов' })}</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleReconciliation}
+          disabled={reconciling}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm bg-brand text-surface hover:bg-brand-2 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm shrink-0"
+        >
+          {reconciling ? (
+            <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+          ) : (
+            <ShieldCheck size={16} aria-hidden="true" />
+          )}
+          <span>{lt(locale, { fa: 'اجرای تطبیق مالی', en: 'Run Reconciliation', ar: 'تشغيل المطابقة المالية', zh: '执行对账', ru: 'Запустить сверку' })}</span>
+        </button>
       </div>
+
+      {reconciliationError && (
+        <div className="p-4 rounded-xl bg-danger/10 border border-danger/20 text-danger text-sm flex items-center gap-3">
+          <AlertTriangle size={18} className="shrink-0" aria-hidden="true" />
+          <span>{reconciliationError}</span>
+        </div>
+      )}
+
+      {reconciliationReport && (
+        <div className="p-4 rounded-2xl bg-surface border border-line shadow-sm space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-line">
+            <div className="flex items-center gap-2.5">
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                reconciliationReport.isBalanced
+                  ? 'bg-success/15 text-success'
+                  : 'bg-rose-500/15 text-rose-600'
+              }`}>
+                {reconciliationReport.isBalanced ? (
+                  <>
+                    <CheckCircle2 size={14} aria-hidden="true" />
+                    <span>{lt(locale, { fa: 'تراز متوازن', en: 'Balanced', ar: 'متوازن', zh: '已平衡', ru: 'Сбалансировано' })}</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle size={14} aria-hidden="true" />
+                    <span>{lt(locale, { fa: 'عدم تطابق تراز', en: 'Unbalanced', ar: 'غير متوازن', zh: '不平衡', ru: 'Дисбаланс' })}</span>
+                  </>
+                )}
+              </span>
+              <span className="text-xs text-sub">
+                {new Date(reconciliationReport.timestamp).toLocaleTimeString(numFmt)}
+              </span>
+            </div>
+            <div className="flex items-center gap-4 text-xs text-sub">
+              <div>
+                <span>{lt(locale, { fa: 'گروه‌های بررسی شده: ', en: 'Total groups checked: ', ar: 'إجمالي المجموعات المدققة: ', zh: '已核对分组：', ru: 'Проверено групп: ' })}</span>
+                <b className="text-ink font-semibold" dir="ltr">{reconciliationReport.totalGroupsChecked.toLocaleString(numFmt)}</b>
+              </div>
+              <div>
+                <span>{lt(locale, { fa: 'موارد عدم تطابق: ', en: 'Mismatches: ', ar: 'حالات عدم التطابق: ', zh: '不匹配项：', ru: 'Несоответствий: ' })}</span>
+                <b className={`font-semibold ${reconciliationReport.unbalancedGroupsCount > 0 ? 'text-rose-600' : 'text-success'}`} dir="ltr">
+                  {reconciliationReport.unbalancedGroupsCount.toLocaleString(numFmt)}
+                </b>
+              </div>
+            </div>
+          </div>
+
+          {reconciliationReport.mismatches.length > 0 && (
+            <div className="text-xs text-rose-600 space-y-1">
+              <p className="font-semibold">{lt(locale, { fa: 'گروه‌های نامتوازن:', en: 'Unbalanced Groups:', ar: 'المجموعات غير المتطابقة:', zh: '不平衡分组：', ru: 'Несбалансированные группы:' })}</p>
+              <div className="max-h-32 overflow-y-auto space-y-1">
+                {reconciliationReport.mismatches.map((m) => (
+                  <div key={m.groupId} className="flex justify-between border-b border-line/50 pb-1" dir="ltr">
+                    <span className="font-mono">{m.groupId}</span>
+                    <span>Debit: {m.totalDebit} | Credit: {m.totalCredit} | Diff: {m.diff} {m.currency}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {([

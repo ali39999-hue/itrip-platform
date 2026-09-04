@@ -115,6 +115,11 @@
       "homepage": "Главная страница Firuzo",
       "error": "Произошла ошибка",
       "retry": "Повторить попытку"
+    },
+    "pwa": {
+      "installTitle": "Установить Firuzo",
+      "installSubtitle": "Быстрый доступ без браузера",
+      "install": "Установить"
     }
   },
   "NotFound": {
@@ -602,7 +607,14 @@
     "checkinOut": "Check-in and Check-out",
     "checkinOutDesc": "Check-in from 14:00, check-out until 12:00. Early check-in or late check-out requires coordination.",
     "childrenExtraBed": "Children and Extra Bed",
-    "childrenExtraBedDesc": "Accommodation for children under two years is free. Request for an extra bed depends on the selected room type."
+    "childrenExtraBedDesc": "Accommodation for children under two years is free. Request for an extra bed depends on the selected room type.",
+    "millionPerNight": "млн томан / ночь",
+    "viewRooms": "Смотреть номера",
+    "aria": {
+      "previous": "Предыдущий",
+      "next": "Следующий",
+      "close": "Закрыть"
+    }
   },
   "Flights": {
     "valueProp1Title": "Instant Issuance & Official PNR",

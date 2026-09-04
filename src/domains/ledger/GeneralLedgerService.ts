@@ -90,37 +90,44 @@ export class GeneralLedgerService {
    * Records money entering the platform wallet (PSP or demo seed).
    */
   static async postTopUp(params: WalletPostingParams, tx?: Prisma.TransactionClient) {
-    const client = tx || prisma;
-    const currency = params.currency || 'IRR';
+    const runner = async (client: Prisma.TransactionClient) => {
+      const currency = params.currency || 'IRR';
 
-    const customerAcc = await this.getOrCreateAccount('USER', params.userId, currency, client as Prisma.TransactionClient);
-    const gatewayAcc = await this.getOrCreateAccount('GATEWAY_SETTLEMENT', null, currency, client as Prisma.TransactionClient);
+      const customerAcc = await this.getOrCreateAccount('USER', params.userId, currency, client);
+      const gatewayAcc = await this.getOrCreateAccount('GATEWAY_SETTLEMENT', null, currency, client);
 
-    // DEBIT Gateway settlement (PSP owes the platform this inflow)
-    await client.ledgerEntry.create({
-      data: {
-        groupId: params.groupId,
-        accountId: gatewayAcc.id,
-        direction: 'DEBIT',
-        amount: params.amount,
-        currency,
-        referenceType: 'TOPUP',
-        referenceId: params.referenceId,
-      },
-    });
+      // DEBIT Gateway settlement (PSP owes the platform this inflow)
+      await client.ledgerEntry.create({
+        data: {
+          groupId: params.groupId,
+          accountId: gatewayAcc.id,
+          direction: 'DEBIT',
+          amount: params.amount,
+          currency,
+          referenceType: 'TOPUP',
+          referenceId: params.referenceId,
+        },
+      });
 
-    // CREDIT Customer wallet
-    await client.ledgerEntry.create({
-      data: {
-        groupId: params.groupId,
-        accountId: customerAcc.id,
-        direction: 'CREDIT',
-        amount: params.amount,
-        currency,
-        referenceType: 'TOPUP',
-        referenceId: params.referenceId,
-      },
-    });
+      // CREDIT Customer wallet
+      await client.ledgerEntry.create({
+        data: {
+          groupId: params.groupId,
+          accountId: customerAcc.id,
+          direction: 'CREDIT',
+          amount: params.amount,
+          currency,
+          referenceType: 'TOPUP',
+          referenceId: params.referenceId,
+        },
+      });
+    };
+
+    if (tx) {
+      await runner(tx);
+    } else {
+      await prisma.$transaction(runner);
+    }
   }
 
   /**
@@ -332,74 +339,49 @@ export class GeneralLedgerService {
    * Spread: CREDIT PLATFORM_REVENUE (toCurrency)
    */
   static async postFXConversion(params: FXSpreadPostingParams, tx?: Prisma.TransactionClient) {
-    const client = tx || prisma;
+    const runner = async (client: Prisma.TransactionClient) => {
+      const userFromAcc = await this.getOrCreateAccount('USER', params.userId, params.fromCurrency, client);
+      const userToAcc = await this.getOrCreateAccount('USER', params.userId, params.toCurrency, client);
+      const fxPoolFromAcc = await this.getOrCreateAccount('FX_POOL', null, params.fromCurrency, client);
+      const fxPoolToAcc = await this.getOrCreateAccount('FX_POOL', null, params.toCurrency, client);
+      const revenueAcc = await this.getOrCreateAccount('PLATFORM_REVENUE', null, params.toCurrency, client);
 
-    const userFromAcc = await this.getOrCreateAccount('USER', params.userId, params.fromCurrency, client as Prisma.TransactionClient);
-    const userToAcc = await this.getOrCreateAccount('USER', params.userId, params.toCurrency, client as Prisma.TransactionClient);
-    const fxPoolFromAcc = await this.getOrCreateAccount('FX_POOL', null, params.fromCurrency, client as Prisma.TransactionClient);
-    const fxPoolToAcc = await this.getOrCreateAccount('FX_POOL', null, params.toCurrency, client as Prisma.TransactionClient);
-    const revenueAcc = await this.getOrCreateAccount('PLATFORM_REVENUE', null, params.toCurrency, client as Prisma.TransactionClient);
+      const netToAmount = params.toAmount - params.spreadAmount;
+      if (netToAmount < 0) {
+        throw new Error('Invalid FX conversion: spread exceeds converted amount');
+      }
 
-    const netToAmount = params.toAmount - params.spreadAmount;
-    if (netToAmount < 0) {
-      throw new Error('Invalid FX conversion: spread exceeds converted amount');
-    }
+      // Leg 1: take the source currency from the user
+      await client.ledgerEntry.create({
+        data: {
+          groupId: `${params.groupId}_fx_from`,
+          accountId: userFromAcc.id,
+          direction: 'DEBIT',
+          amount: params.fromAmount,
+          currency: params.fromCurrency,
+          referenceType: 'FX_SPREAD',
+          referenceId: params.referenceId,
+        },
+      });
+      await client.ledgerEntry.create({
+        data: {
+          groupId: `${params.groupId}_fx_from`,
+          accountId: fxPoolFromAcc.id,
+          direction: 'CREDIT',
+          amount: params.fromAmount,
+          currency: params.fromCurrency,
+          referenceType: 'FX_SPREAD',
+          referenceId: params.referenceId,
+        },
+      });
 
-    // Leg 1: take the source currency from the user
-    await client.ledgerEntry.create({
-      data: {
-        groupId: `${params.groupId}_fx_from`,
-        accountId: userFromAcc.id,
-        direction: 'DEBIT',
-        amount: params.fromAmount,
-        currency: params.fromCurrency,
-        referenceType: 'FX_SPREAD',
-        referenceId: params.referenceId,
-      },
-    });
-    await client.ledgerEntry.create({
-      data: {
-        groupId: `${params.groupId}_fx_from`,
-        accountId: fxPoolFromAcc.id,
-        direction: 'CREDIT',
-        amount: params.fromAmount,
-        currency: params.fromCurrency,
-        referenceType: 'FX_SPREAD',
-        referenceId: params.referenceId,
-      },
-    });
-
-    // Leg 2: deliver the target currency (spread retained as revenue)
-    await client.ledgerEntry.create({
-      data: {
-        groupId: `${params.groupId}_fx_to`,
-        accountId: fxPoolToAcc.id,
-        direction: 'DEBIT',
-        amount: netToAmount,
-        currency: params.toCurrency,
-        referenceType: 'FX_SPREAD',
-        referenceId: params.referenceId,
-      },
-    });
-    await client.ledgerEntry.create({
-      data: {
-        groupId: `${params.groupId}_fx_to`,
-        accountId: userToAcc.id,
-        direction: 'CREDIT',
-        amount: netToAmount,
-        currency: params.toCurrency,
-        referenceType: 'FX_SPREAD',
-        referenceId: params.referenceId,
-      },
-    });
-
-    if (params.spreadAmount > 0) {
+      // Leg 2: deliver the target currency (spread retained as revenue)
       await client.ledgerEntry.create({
         data: {
           groupId: `${params.groupId}_fx_to`,
           accountId: fxPoolToAcc.id,
           direction: 'DEBIT',
-          amount: params.spreadAmount,
+          amount: netToAmount,
           currency: params.toCurrency,
           referenceType: 'FX_SPREAD',
           referenceId: params.referenceId,
@@ -408,14 +390,45 @@ export class GeneralLedgerService {
       await client.ledgerEntry.create({
         data: {
           groupId: `${params.groupId}_fx_to`,
-          accountId: revenueAcc.id,
+          accountId: userToAcc.id,
           direction: 'CREDIT',
-          amount: params.spreadAmount,
+          amount: netToAmount,
           currency: params.toCurrency,
           referenceType: 'FX_SPREAD',
           referenceId: params.referenceId,
         },
       });
+
+      if (params.spreadAmount > 0) {
+        await client.ledgerEntry.create({
+          data: {
+            groupId: `${params.groupId}_fx_to`,
+            accountId: fxPoolToAcc.id,
+            direction: 'DEBIT',
+            amount: params.spreadAmount,
+            currency: params.toCurrency,
+            referenceType: 'FX_SPREAD',
+            referenceId: params.referenceId,
+          },
+        });
+        await client.ledgerEntry.create({
+          data: {
+            groupId: `${params.groupId}_fx_to`,
+            accountId: revenueAcc.id,
+            direction: 'CREDIT',
+            amount: params.spreadAmount,
+            currency: params.toCurrency,
+            referenceType: 'FX_SPREAD',
+            referenceId: params.referenceId,
+          },
+        });
+      }
+    };
+
+    if (tx) {
+      await runner(tx);
+    } else {
+      await prisma.$transaction(runner);
     }
   }
 

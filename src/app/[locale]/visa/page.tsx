@@ -222,7 +222,7 @@ export default function VisaPage() {
             <Button
               onClick={submit}
               disabled={step === 3}
-              className="w-full mt-2 bg-action hover:bg-action-hover text-[#14201f] font-black h-12 rounded-xl text-sm"
+              className="w-full mt-2 bg-action hover:bg-action-hover text-ink font-black h-12 rounded-xl text-sm"
             >
               {step === 3 ? (
                 <span className="flex items-center gap-2">

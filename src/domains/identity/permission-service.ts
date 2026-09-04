@@ -34,7 +34,7 @@ export async function getUserPermissions(userId: string): Promise<ERPPermission[
   return Array.from(perms);
 }
 
-export async function requirePermission(permission: ERPPermission): Promise<{
+export async function requirePermission(permission: ERPPermission | ERPPermission[]): Promise<{
   id: string;
   email: string | null;
   role: string;
@@ -45,8 +45,11 @@ export async function requirePermission(permission: ERPPermission): Promise<{
   }
 
   const userPerms = await getUserPermissions(session.user.id);
-  if (!userPerms.includes(permission)) {
-    throw new Error(`Forbidden: Missing required permission '${permission}'`);
+  const required = Array.isArray(permission) ? permission : [permission];
+  const hasPermission = required.some((p) => userPerms.includes(p));
+
+  if (!hasPermission) {
+    throw new Error(`Forbidden: Missing required permission '${Array.isArray(permission) ? permission.join(' or ') : permission}'`);
   }
 
   return {

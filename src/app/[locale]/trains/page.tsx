@@ -229,7 +229,7 @@ export default function TrainsPage() {
                     <div className="flex items-center gap-2">
                       <h3 className="font-black text-[16px] text-ink">{lt(locale, s.title)}</h3>
                       {s.tag && (
-                        <span className="bg-gold-soft text-[#14201f] text-[10.5px] font-black px-2 py-0.5 rounded-full">
+                        <span className="bg-gold-soft text-ink text-[10.5px] font-black px-2 py-0.5 rounded-full">
                           {lt(locale, s.tag)}
                         </span>
                       )}
@@ -268,7 +268,7 @@ export default function TrainsPage() {
                 <button
                   onClick={() => reserve(s)}
                   aria-label={`${t('selectTicket')}: ${lt(locale, s.title)}`}
-                  className="bg-action hover:bg-action-hover text-[#14201f] px-6 py-2.5 rounded-xl font-black text-[13px] transition-all shadow-elev-1 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  className="bg-action hover:bg-action-hover text-ink px-6 py-2.5 rounded-xl font-black text-[13px] transition-all shadow-elev-1 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   {t('selectTicket')}
                 </button>

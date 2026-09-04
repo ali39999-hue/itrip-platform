@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import {
   Building2, Plus, CheckCircle2,
@@ -41,7 +41,7 @@ export default function AdminSuppliersPage() {
   const [contact, setContact] = useState('');
   const [commission, setCommission] = useState('5');
 
-  const loadSuppliers = async () => {
+  const loadSuppliers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -52,11 +52,11 @@ export default function AdminSuppliersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadSuppliers();
-  }, []);
+  }, [loadSuppliers]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();

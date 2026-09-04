@@ -145,7 +145,7 @@ export default function GuidePage() {
           </p>
           <Button 
             onClick={() => router.push('/tours')}
-            className="bg-action hover:bg-action-hover text-[#14201f] px-8 h-12 rounded-2xl font-black text-[15px] transition-all shadow-md"
+            className="bg-action hover:bg-action-hover text-ink px-8 h-12 rounded-2xl font-black text-[15px] transition-all shadow-md"
           >
             {lt(locale, { fa: 'مشاهده تورهای ویژه', en: 'Explore Featured Tours', ar: 'استكشف الجولات المميزة', zh: '查看特色旅游', ru: 'Смотреть туры' })}
           </Button>

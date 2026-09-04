@@ -365,7 +365,7 @@ export default function WalletPage() {
                 <Button
                   onClick={doExchange}
                   disabled={exchanging || !exAmount || Number(exAmount) <= 0 || exFrom === exTo}
-                  className="w-full h-12 bg-action hover:bg-action-hover text-[#14201f] font-black rounded-xl text-sm"
+                  className="w-full h-12 bg-action hover:bg-action-hover text-ink font-black rounded-xl text-sm"
                 >
                   {exchanging ? <Loader2 className="animate-spin" size={18} /> : t('exchange')}
                 </Button>

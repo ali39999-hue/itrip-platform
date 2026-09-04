@@ -171,7 +171,7 @@ export default function SupportPage() {
 
                 <button
                   type="submit"
-                  className="w-full h-12 rounded-xl bg-action hover:bg-action-hover text-[#14201f] font-black text-sm transition flex items-center justify-center gap-2 shadow-sm"
+                  className="w-full h-12 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-sm transition flex items-center justify-center gap-2 shadow-sm"
                 >
                   <Send size={16} />
                   <span>{t('sendMessage')}</span>

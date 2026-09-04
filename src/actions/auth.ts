@@ -6,8 +6,6 @@ import { profileUpdateSchema, otpRequestSchema } from '@/lib/validations';
 
 export type AuthChannel = 'phone' | 'email' | 'telegram' | 'whatsapp' | 'wechat';
 
-const DEMO_MODE = process.env.DEMO_MODE === 'true';
-
 export async function loginWithCredentials(email: string, pass: string) {
   try {
     const res = await signIn('credentials', {
@@ -44,8 +42,8 @@ export async function requestOtp(data: unknown) {
     if (recent >= 3) {
       return { success: false, error: 'Too many codes requested. Please try again later.' };
     }
-    const result = await issueOtp(parsed.identifier, parsed.channel);
-    return { success: true, sent: true, devCode: result.devCode };
+    await issueOtp(parsed.identifier, parsed.channel);
+    return { success: true, sent: true };
   } catch (err: unknown) {
     if (err && typeof err === 'object' && 'issues' in err) {
       return { success: false, error: 'Invalid phone number or email' };
@@ -78,9 +76,9 @@ export async function verifyOtpAndLogin(identifier: string, otp: string, channel
     if (err?.message?.includes('NEXT_REDIRECT') || err?.digest?.startsWith('NEXT_REDIRECT')) {
       // Expected redirect on successful signIn
     } else if (err?.type === 'CredentialsSignin' || err?.name === 'CredentialsSignin') {
-      return { success: false, error: DEMO_MODE ? 'Invalid code (demo: any 4-5 digit code works)' : 'Invalid or expired code' };
+      return { success: false, error: 'Invalid or expired code' };
     }
-    return { success: false, error: err?.message || 'Authentication failed' };
+    return { success: false, error: 'Authentication failed' };
   }
 
   // The session cookie set by signIn is not readable via auth() within this

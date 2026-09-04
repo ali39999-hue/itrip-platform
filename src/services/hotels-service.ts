@@ -210,7 +210,6 @@ function loadChinaHotels(): DetailedHotelWithMeta[] {
   for (const ch of chinaRawList) {
     // Generate realistic names and attributes from POIs and hotel id
     const topPoi = ch.location?.pois?.[0]?.name;
-    const secondPoi = ch.location?.pois?.[1]?.name;
     const cleanPoiName = topPoi ? topPoi.replace(/[()]/g, '') : 'Wangfujing';
 
     const cleanHotelName = `هتل بین‌المللی ${cleanPoiName} پکن`;

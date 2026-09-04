@@ -1,5 +1,6 @@
 import { InventoryEngine } from '@/domains/inventory/InventoryEngine';
 import { OutboxConsumer } from '@/domains/events/OutboxConsumer';
+import { ReconciliationService } from '@/domains/ledger/ReconciliationService';
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
@@ -28,5 +29,25 @@ export async function register() {
       }
     }, 10000);
     if (consumer.unref) consumer.unref();
+
+    // 3. Periodic ledger reconciliation health check (runs every 30 minutes)
+    const reconciliationInterval = setInterval(async () => {
+      try {
+        const report = await ReconciliationService.reconcileLedger();
+        if (!report.isBalanced || report.unbalancedGroupsCount > 0) {
+          console.warn(
+            `[Reconciliation Health Check] Ledger is UNBALANCED! ${report.unbalancedGroupsCount} groups mismatched.`,
+            report.mismatches
+          );
+        } else {
+          console.log(
+            `[Reconciliation Health Check] Ledger balanced. Checked ${report.totalGroupsChecked} groups successfully.`
+          );
+        }
+      } catch (error) {
+        console.error('[Reconciliation Health Check] Error during ledger reconciliation:', error);
+      }
+    }, 30 * 60 * 1000);
+    if (reconciliationInterval.unref) reconciliationInterval.unref();
   }
 }

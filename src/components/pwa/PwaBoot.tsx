@@ -35,8 +35,8 @@ export function PwaBoot() {
         <Download size={17} />
       </span>
       <div className="min-w-0">
-        <b className="block text-[12px] font-black text-ink leading-snug">نصب اپلیکیشن Firuzo</b>
-        <span className="block text-[10.5px] font-bold text-sub">دسترسی سریع‌تر بدون مرورگر</span>
+        <b className="block text-[12px] font-black text-ink leading-snug">{t('pwa.installTitle')}</b>
+        <span className="block text-[10.5px] font-bold text-sub">{t('pwa.installSubtitle')}</span>
       </div>
       <button
         onClick={async () => {
@@ -45,7 +45,7 @@ export function PwaBoot() {
         }}
         className="min-h-[34px] px-3.5 rounded-xl bg-action hover:bg-action-hover text-ink text-[12px] font-black shrink-0 transition shadow-sm"
       >
-        نصب
+        {t('pwa.install')}
       </button>
       <button
         onClick={() => setHidden(true)}

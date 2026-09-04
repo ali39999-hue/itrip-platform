@@ -87,11 +87,13 @@ export class PaymentDomainService {
       };
     }
 
-    // 2. Create Payment Record (no blind status flip on upsert)
+    // 2. Create Payment Record — gateway payments start as PENDING until
+    //    a verified callback from the PSP confirms success.
+    const initialStatus = params.method === 'gateway_shetab' ? 'PENDING' : 'SUCCESS';
     const payment = await client.payment.upsert({
       where: { idempotencyKey: params.idempotencyKey },
       update: {
-        status: 'SUCCESS',
+        status: initialStatus,
         gatewayRef,
         amount: params.amount,
       },
@@ -102,16 +104,16 @@ export class PaymentDomainService {
         gatewayRef,
         amount: params.amount,
         currency: params.currency || 'IRR',
-        status: 'SUCCESS',
+        status: initialStatus,
         rawPayload: params.rawPayload ? JSON.stringify(params.rawPayload) : null,
       },
     });
 
     return {
-      success: true,
+      success: initialStatus === 'SUCCESS',
       paymentId: payment.id,
       gatewayRef: payment.gatewayRef || undefined,
-      status: 'SUCCESS',
+      status: initialStatus as PaymentResult['status'],
     };
   }
 }

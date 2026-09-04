@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Star, MapPin, Heart, Wallet, Check, ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { fa1, fa } from '@/lib/hotel-format';
+import { fa1 } from '@/lib/hotel-format';
 import { shimmerDataUrl } from '@/lib/image-utils';
 import { GALLERY } from '@/lib/hotel-mock';
 import type { Hotel } from '@/lib/types';
@@ -57,9 +57,9 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
           </Link>
           <span className="me-auto flex items-center gap-1.5 flex-wrap">
             <Link href="/destinations" className="hover:text-brand">{t('destinations')}</Link>
-            <ChevronLeft size={11} className="text-line rtl:rotate-180" />
+            <ChevronLeft size={11} className="text-line ltr:rotate-180" />
             <span>{displayCity}</span>
-            <ChevronLeft size={11} className="text-line rtl:rotate-180" />
+            <ChevronLeft size={11} className="text-line ltr:rotate-180" />
             <span className="font-extrabold text-ink">{displayName}</span>
           </span>
         </div>
@@ -163,24 +163,24 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
             <div className="flex items-center gap-2.5 mt-3 text-mint-bright text-[12.5px] font-extrabold">
               <button
                 onClick={() => setLbIndex((lbIndex + 4) % 5)}
-                aria-label="قبلی"
+                aria-label={t('aria.previous')}
                 className="w-10 h-10 grid place-items-center border border-white/25 rounded-xl bg-surface/10 hover:bg-surface/20 transition"
               >
-                <ChevronRight size={18} />
+                {isRtl ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
               </button>
               <button
                 onClick={() => setLbIndex((lbIndex + 1) % 5)}
-                aria-label="بعدی"
+                aria-label={t('aria.next')}
                 className="w-10 h-10 grid place-items-center border border-white/25 rounded-xl bg-surface/10 hover:bg-surface/20 transition"
               >
-                <ChevronLeft size={18} />
+                {isRtl ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
               </button>
               <span>
-                {galleryLabels[lbIndex]} — {fa(lbIndex + 1)} / {fa(5)}
+                {galleryLabels[lbIndex]} — {lbIndex + 1} / {5}
               </span>
               <button
                 onClick={() => setLbIndex(null)}
-                aria-label="بستن"
+                aria-label={t('aria.close')}
                 className="me-auto w-10 h-10 grid place-items-center border border-white/25 rounded-xl bg-surface/10 hover:bg-surface/20 transition"
               >
                 <X size={16} />

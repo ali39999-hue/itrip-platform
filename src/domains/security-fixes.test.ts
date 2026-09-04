@@ -50,16 +50,19 @@ describe('Security: payment idempotency is booking-scoped', () => {
     createdIds.bookings.push(bookingA.id, bookingB.id);
 
     const key = `sec_idem_${suffix}`;
-    const first = await PaymentDomainService.processPayment({ bookingId: bookingA.id, idempotencyKey: key, method: 'gateway_shetab', amount: 1000 });
+    // gateway_shetab payments start as PENDING (awaiting PSP callback), so
+    // the first call returns success=false, status=PENDING. Use wallet_irr
+    // for the idempotency test since it settles immediately.
+    const first = await PaymentDomainService.processPayment({ bookingId: bookingA.id, idempotencyKey: key, method: 'wallet_irr', amount: 1000 });
     expect(first.success).toBe(true);
     createdIds.payments.push(first.paymentId!);
 
-    const replay = await PaymentDomainService.processPayment({ bookingId: bookingB.id, idempotencyKey: key, method: 'gateway_shetab', amount: 1000 });
+    const replay = await PaymentDomainService.processPayment({ bookingId: bookingB.id, idempotencyKey: key, method: 'wallet_irr', amount: 1000 });
     expect(replay.success).toBe(false);
     expect(replay.error).toMatch(/different booking/i);
 
     // Same booking replay stays idempotent (returns the same payment).
-    const sameBooking = await PaymentDomainService.processPayment({ bookingId: bookingA.id, idempotencyKey: key, method: 'gateway_shetab', amount: 1000 });
+    const sameBooking = await PaymentDomainService.processPayment({ bookingId: bookingA.id, idempotencyKey: key, method: 'wallet_irr', amount: 1000 });
     expect(sameBooking.success).toBe(true);
     expect(sameBooking.paymentId).toBe(first.paymentId);
   });

@@ -193,7 +193,7 @@ export default function TransfersPage() {
                     className="object-cover"
                   />
                   {tr.vehicleType.includes('VIP') && (
-                    <span className="absolute top-2 start-2 bg-gold text-[#14201f] text-[11px] font-black px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                    <span className="absolute top-2 start-2 bg-gold text-ink text-[11px] font-black px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
                       <Crown size={12} /> VIP
                     </span>
                   )}
@@ -241,7 +241,7 @@ export default function TransfersPage() {
                     <button
                       onClick={() => reserve(tr)}
                       aria-label={`رزرو ${tr.vehicleType}`}
-                      className="bg-action hover:bg-action-hover text-[#14201f] px-6 py-3 rounded-xl font-black text-[13px] transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                      className="bg-action hover:bg-action-hover text-ink px-6 py-3 rounded-xl font-black text-[13px] transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                     >
                       {t('bookTransfer')}
                     </button>

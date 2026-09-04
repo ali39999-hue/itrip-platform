@@ -4,6 +4,12 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { requirePermission } from '@/domains/identity/permission-service';
+import { ReconciliationService, ReconciliationReport } from '@/domains/ledger/ReconciliationService';
+
+export async function runLedgerReconciliation(): Promise<ReconciliationReport> {
+  await requirePermission(['finance:reports:view', 'finance:settlement:match']);
+  return ReconciliationService.reconcileLedger();
+}
 
 export async function getAdminFinanceStats() {
   try {
