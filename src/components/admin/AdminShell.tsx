@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { LocaleSwitcher } from '@/components/layout/header/LocaleSwitcher';
+import { AdminGlobalSearch } from './AdminGlobalSearch';
 import {
   LayoutDashboard, BriefcaseBusiness, Wallet, DatabaseZap,
   PlaneTakeoff, ExternalLink, ShieldCheck, UserCheck, Activity,
@@ -13,8 +14,10 @@ import { lt } from '@/lib/lt';
 
 const NAV = [
   { href: '/admin', label: { fa: 'داشبورد', en: 'Dashboard', ar: 'لوحة القيادة', zh: '仪表盘', ru: 'Панель' }, icon: LayoutDashboard },
+  { href: '/admin/travel-files', label: { fa: 'پرونده‌های سفر', en: 'Travel Files', ar: 'ملفات السفر', zh: '行程档案', ru: 'Файлы поездок' }, icon: BriefcaseBusiness },
+  { href: '/admin/exceptions', label: { fa: 'مرکز خطا و استثنائات', en: 'Exception Center', ar: 'مركز الاستثناءات', zh: '异常中心', ru: 'Центр исключений' }, icon: ShieldCheck },
   { href: '/admin/ops', label: { fa: 'عملیات و پشتیبانی', en: 'Ops & Support', ar: 'العمليات والدعم', zh: '运营与支持', ru: 'Операции и поддержка' }, icon: Activity },
-  { href: '/admin/bookings', label: { fa: 'رزروها', en: 'Bookings', ar: 'الحجوزات', zh: '预订', ru: 'Бронирования' }, icon: BriefcaseBusiness },
+  { href: '/admin/bookings', label: { fa: 'رزروها', en: 'Bookings', ar: 'الحجوزات', zh: '预订', ru: 'Бронирования' }, icon: PlaneTakeoff },
   { href: '/admin/finance', label: { fa: 'مالی و تراکنش‌ها', en: 'Finance & Transactions', ar: 'المالية والمعاملات', zh: '财务与交易', ru: 'Финансы и транзакции' }, icon: Wallet },
   { href: '/admin/suppliers', label: { fa: 'تامین‌کنندگان', en: 'Suppliers', ar: 'الموردون', zh: '供应商', ru: 'Поставщики' }, icon: Building2 },
   { href: '/admin/inventory', label: { fa: 'انبار و سهمیه‌ها', en: 'Inventory & Allotments', ar: 'المخزون والحصص', zh: '库存与配额', ru: 'Инвентарь и квоты' }, icon: Boxes },
@@ -55,6 +58,7 @@ export function AdminShell({
         </div>
 
         <div className="flex items-center gap-3">
+          <AdminGlobalSearch />
           <LocaleSwitcher />
           <Link
             href="/"

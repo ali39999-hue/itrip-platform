@@ -1,12 +1,12 @@
-// Prisma Schema for iTrip/Firuzo Travel Platform - V1 Backend
-// Provider: SQLite (Temporary for dev)
+// Prisma Schema for iTrip/Firuzo Travel Platform - PostgreSQL Master Model v2
+// Single Source of Truth for Production, Staging, CI and Development
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -36,17 +36,132 @@ model User {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  auditLogs    AuditLog[]
-  bookings     Booking[]
-  userRoles    UserRole[]
+  auditLogs               AuditLog[]
+  bookings                Booking[]
+  trips                   Trip[]
+  userRoles               UserRole[]
+  organizationMemberships OrganizationMembership[]
+  travelerProfiles        TravelerProfile[]
+}
+
+// B2B & Organization Structure (IAM-003)
+model Organization {
+  id              String                   @id @default(cuid())
+  type            String                   @default("AGENCY") // AGENCY, CORPORATE, PARTNER, INTERNAL
+  legalName       String
+  displayName     String
+  registrationNo  String?
+  taxNo           String?
+  status          String                   @default("ACTIVE") // ACTIVE, SUSPENDED, PENDING
+  defaultCurrency String                   @default("IRR")
+  timezone        String                   @default("Asia/Tehran")
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+
+  memberships     OrganizationMembership[]
+  branches        OrganizationBranch[]
+
+  @@index([status])
+}
+
+model OrganizationBranch {
+  id              String       @id @default(cuid())
+  organizationId  String
+  name            String
+  code            String?
+  timezone        String       @default("Asia/Tehran")
+  status          String       @default("ACTIVE")
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model OrganizationMembership {
+  id              String       @id @default(cuid())
+  organizationId  String
+  userId          String
+  roleId          String?
+  status          String       @default("ACTIVE") // ACTIVE, INVITED, SUSPENDED
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+// Traveler Profiles & Travel Documents (IAM-002)
+model TravelerProfile {
+  id              String           @id @default(cuid())
+  userId          String
+  firstName       String
+  lastName        String
+  nationalId      String?
+  dateOfBirth     String?          // YYYY-MM-DD
+  gender          String?          // MALE, FEMALE, OTHER
+  nationality     String           @default("IR")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents       TravelDocument[]
+
+  @@index([userId])
+}
+
+model TravelDocument {
+  id                String          @id @default(cuid())
+  travelerProfileId String
+  type              String          // PASSPORT, NATIONAL_ID, VISA, DRIVER_LICENSE
+  documentNumber    String
+  issuingCountry    String          @default("IR")
+  issuedAt          String?         // YYYY-MM-DD
+  expiresAt         String?         // YYYY-MM-DD
+  holderName        String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  travelerProfile   TravelerProfile @relation(fields: [travelerProfileId], references: [id], onDelete: Cascade)
+
+  @@index([travelerProfileId])
+  @@index([documentNumber])
 }
 
 model Role {
-  id          String   @id @default(cuid())
-  name        String   @unique // e.g. SUPER_ADMIN, FINANCE_OPS
-  permissions String   // JSON array of permission strings
+  id              String           @id @default(cuid())
+  name            String           @unique // e.g. SUPER_ADMIN, FINANCE_OPS
+  permissions     String           // JSON array of permission strings (backward compatibility)
+  description     String?
   
-  userRoles   UserRole[]
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+}
+
+model Permission {
+  id              String           @id @default(cuid())
+  code            String           @unique // e.g. "booking.read", "booking.refund.approve"
+  name            String
+  module          String           // "BOOKING", "FINANCE", "INVENTORY", "SUPPLIER", "OPS"
+  description     String?
+
+  rolePermissions RolePermission[]
+
+  @@index([module])
+}
+
+model RolePermission {
+  roleId          String
+  permissionId    String
+
+  role            Role             @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission      Permission       @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
 }
 
 model UserRole {
@@ -60,6 +175,52 @@ model UserRole {
 }
 
 // ==================== 2. Core: Double-Entry Ledger & Payments ====================
+
+// Chart of Accounts & Journals (FIN-001, FIN-002)
+model ChartOfAccounts {
+  id          String    @id @default(cuid())
+  code        String    @unique // e.g. "1010", "2010", "4010"
+  name        String    // e.g. "Cash & Bank", "Customer Escrow", "Service Revenue"
+  category    String    // ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
+  currency    String    @default("IRR")
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  journals    JournalEntry[]
+
+  @@index([category])
+}
+
+model JournalEntry {
+  id              String         @id @default(cuid())
+  entryNumber     String         @unique // e.g. JE-2026-0001
+  chartOfAccountId String
+  date            DateTime       @default(now())
+  description     String
+  referenceType   String?        // BOOKING, REFUND, SETTLEMENT, ADJUSTMENT
+  referenceId     String?
+  createdAt       DateTime       @default(now())
+
+  account         ChartOfAccounts @relation(fields: [chartOfAccountId], references: [id])
+  lines           JournalLine[]
+
+  @@index([date])
+  @@index([referenceType, referenceId])
+}
+
+model JournalLine {
+  id              String       @id @default(cuid())
+  journalEntryId  String
+  direction       String       // DEBIT, CREDIT
+  amount          Decimal
+  currency        String       @default("IRR")
+  memo            String?
+
+  journalEntry    JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+
+  @@index([journalEntryId])
+}
 
 model Account {
   id          String        @id @default(cuid())
@@ -93,6 +254,43 @@ model LedgerEntry {
   @@index([groupId])
 }
 
+model PaymentIntent {
+  id             String           @id @default(cuid())
+  bookingId      String
+  amount         Decimal
+  currency       String           @default("IRR")
+  status         String           @default("INITIATED") // INITIATED, AUTHORIZED, CAPTURED, FAILED, VOIDED, PARTIALLY_REFUNDED, REFUNDED
+  idempotencyKey String           @unique
+  expiresAt      DateTime
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  attempts       PaymentAttempt[]
+
+  @@index([bookingId])
+  @@index([status])
+}
+
+model PaymentAttempt {
+  id              String         @id @default(cuid())
+  paymentIntentId String
+  gatewayName     String         // e.g. "SHETAB_SAMAN", "STRIPE", "WECHAT_PAY"
+  method          String         // card, wallet, qr
+  amount          Decimal
+  currency        String         @default("IRR")
+  status          String         @default("INITIATED") // INITIATED, PENDING_CUSTOMER, SUCCESS, FAILED
+  gatewayRef      String?
+  rawPayload      String?        // JSON
+  errorMessage    String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  paymentIntent   PaymentIntent  @relation(fields: [paymentIntentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentIntentId])
+  @@index([gatewayRef])
+}
+
 model Payment {
   id              String   @id @default(cuid())
   bookingId       String?
@@ -110,11 +308,30 @@ model Payment {
   @@index([idempotencyKey])
 }
 
-// ==================== 3. Core: Booking State Machine ====================
+// ==================== 3. Core: Trip & Booking State Machine ====================
+
+model Trip {
+  id          String    @id @default(cuid())
+  reference   String    @unique // e.g., TRP-10021
+  userId      String
+  title       String    @default("My Journey")
+  status      String    @default("PLANNING") // PLANNING, BOOKED, IN_PROGRESS, COMPLETED, CANCELLED
+  startDate   String?   // YYYY-MM-DD
+  endDate     String?   // YYYY-MM-DD
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings    Booking[]
+
+  @@index([userId])
+  @@index([status])
+}
 
 model Booking {
   id              String   @id @default(cuid())
   reference       String   @unique // e.g., ITR-10023
+  tripId          String?
   customerId      String
   status          String   @default("DRAFT") // DRAFT, HELD, PENDING_PAYMENT, PAYMENT_CONFIRMED, CONFIRMING_SUPPLIER, CONFIRMED, CANCEL_REQUESTED, CANCELLING, CANCELLED, REFUND_INITIATED, REFUNDED, EXPIRED, FAILED
   totalAmount     Decimal  
@@ -132,9 +349,127 @@ model Booking {
   cancelledAt     DateTime?
   
   customer        User     @relation(fields: [customerId], references: [id])
+  trip            Trip?    @relation(fields: [tripId], references: [id], onDelete: SetNull)
   items           BookingItem[]
+  refunds         Refund[]
   
   @@index([customerId])
+  @@index([tripId])
+  @@index([status])
+}
+
+// Refund Domain & Reconciliation (REF-001, REF-002)
+model Refund {
+  id              String         @id @default(cuid())
+  refundNumber    String         @unique // e.g. RFD-2026-0001
+  bookingId       String
+  amount          Decimal
+  penaltyAmount   Decimal        @default(0)
+  netRefundAmount Decimal
+  currency        String         @default("IRR")
+  status          String         @default("REQUESTED") // REQUESTED, ELIGIBILITY_CHECKED, APPROVED, SETTLED, COMPLETED, REJECTED
+  reason          String?
+  idempotencyKey  String         @unique
+  approvedBy      String?
+  settledAt       DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  booking         Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  items           RefundItem[]
+
+  @@index([bookingId])
+  @@index([status])
+}
+
+model RefundItem {
+  id              String         @id @default(cuid())
+  refundId        String
+  bookingItemId   String
+  amount          Decimal
+  penalty         Decimal        @default(0)
+  netAmount       Decimal
+  currency        String         @default("IRR")
+
+  refund          Refund         @relation(fields: [refundId], references: [id], onDelete: Cascade)
+  bookingItem     BookingItem    @relation(fields: [bookingItemId], references: [id], onDelete: Cascade)
+
+  @@index([refundId])
+}
+
+// Invoicing & Commercial Billing (FIN-006)
+model Invoice {
+  id              String         @id @default(cuid())
+  invoiceNumber   String         @unique // e.g. INV-2026-0001
+  bookingId       String
+  customerId      String
+  totalAmount     Decimal
+  taxAmount       Decimal        @default(0)
+  netAmount       Decimal
+  currency        String         @default("IRR")
+  status          String         @default("ISSUED") // ISSUED, PAID, VOIDED, REFUNDED
+  issuedAt        DateTime       @default(now())
+  dueAt           DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  lines           InvoiceLine[]
+
+  @@index([bookingId])
+  @@index([customerId])
+  @@index([status])
+}
+
+model InvoiceLine {
+  id              String         @id @default(cuid())
+  invoiceId       String
+  description     String
+  quantity        Int            @default(1)
+  unitPrice       Decimal
+  totalPrice      Decimal
+  taxAmount       Decimal        @default(0)
+
+  invoice         Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+// Commission Engine & Multi-Tier Partner Rules (COMM-001)
+model CommissionRule {
+  id              String         @id @default(cuid())
+  name            String
+  targetType      String         // "AGENCY", "AGENT", "AFFILIATE", "PARTNER"
+  targetId        String?        // Specific organizationId or null for global
+  productType     String         // "FLIGHT", "HOTEL", "TOUR", "ALL"
+  ratePercentage  Decimal        @default(0.0) // e.g. 0.05 for 5%
+  fixedFee        Decimal        @default(0.0)
+  currency        String         @default("IRR")
+  validFrom       DateTime       @default(now())
+  validTo         DateTime?
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([targetType, targetId])
+  @@index([productType])
+}
+
+// Supplier Settlement Batches (SET-001)
+model SettlementBatch {
+  id              String         @id @default(cuid())
+  batchNumber     String         @unique // e.g. STLB-2026-W36
+  supplierId      String
+  periodStart     DateTime
+  periodEnd       DateTime
+  totalPayable    Decimal
+  totalDeductions Decimal        @default(0)
+  netSettlement   Decimal
+  currency        String         @default("IRR")
+  status          String         @default("OPEN") // OPEN, SUBMITTED, RECONCILED, COMPLETED
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([supplierId])
   @@index([status])
 }
 
@@ -152,21 +487,90 @@ model BookingItem {
   
   booking         Booking  @relation(fields: [bookingId], references: [id])
   inventoryItem   InventoryItem? @relation(fields: [inventoryItemId], references: [id])
+  refundItems     RefundItem[]
 }
 
 // ==================== 4. Suppliers & Inventory Engine ====================
 
 model Supplier {
-  id          String   @id @default(cuid())
-  name        String
-  type        String   // HOTEL | AIRLINE | TOUR_OPERATOR | INSURANCE
-  mode        String   @default("ALLOTMENT") // REALTIME_API, ALLOTMENT, ON_REQUEST
-  contact     String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  id              String               @id @default(cuid())
+  name            String
+  type            String               // HOTEL | AIRLINE | TOUR_OPERATOR | INSURANCE
+  mode            String               @default("ALLOTMENT") // REALTIME_API, ALLOTMENT, ON_REQUEST
+  contact         String?
+  isActive        Boolean              @default(true)
+  createdAt       DateTime             @default(now())
   
-  inventoryItems InventoryItem[]
-  contracts      SupplierContract[]
+  inventoryItems  InventoryItem[]
+  contracts       SupplierContract[]
+  connections     SupplierConnection[]
+  healthRecords   SupplierHealth[]
+  statements      SupplierStatement[]
+
+  @@index([type])
+}
+
+// Supplier Connection & Credential Reference (SUP-001)
+model SupplierConnection {
+  id              String               @id @default(cuid())
+  supplierId      String
+  productType     String               // "FLIGHT", "HOTEL", "TRANSFER"
+  baseUrl         String
+  environment     String               @default("PRODUCTION") // PRODUCTION, SANDBOX, DEMO
+  timeoutMs       Int                  @default(5000)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  supplier        Supplier             @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  credentials     SupplierCredential[]
+
+  @@index([supplierId])
+}
+
+model SupplierCredential {
+  id                   String             @id @default(cuid())
+  supplierConnectionId String
+  credentialRef        String             // Secret vault key reference (never plaintext)
+  expiresAt            DateTime?
+  rotationState        String             @default("ACTIVE") // ACTIVE, ROTATING, DEPRECATED
+  createdAt            DateTime           @default(now())
+
+  connection           SupplierConnection @relation(fields: [supplierConnectionId], references: [id], onDelete: Cascade)
+
+  @@index([supplierConnectionId])
+}
+
+model SupplierHealth {
+  id          String   @id @default(cuid())
+  supplierId  String
+  successRate Float    @default(100.0) // Percentage 0 - 100
+  timeoutRate Float    @default(0.0)
+  latencyP50  Int      @default(350)   // Milliseconds
+  latencyP95  Int      @default(900)
+  errorRate   Float    @default(0.0)
+  windowStart DateTime @default(now())
+  windowEnd   DateTime @default(now())
+
+  supplier    Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId])
+}
+
+model SupplierStatement {
+  id              String   @id @default(cuid())
+  supplierId      String
+  statementNumber String   @unique // e.g. STMT-MAHAN-2026-09
+  periodStart     DateTime
+  periodEnd       DateTime
+  totalAmount     Decimal
+  currency        String   @default("IRR")
+  status          String   @default("PENDING") // PENDING, RECONCILED, DISCREPANCY, SETTLED
+  rawJson         String?  // Statement lines snapshot
+  createdAt       DateTime @default(now())
+
+  supplier        Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId])
 }
 
 model SupplierContract {
@@ -232,34 +636,89 @@ model InventoryHold {
 // ==================== 5. Reliability & Workflow ====================
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  userId      String?
-  action      String
-  resource    String
-  resourceId  String
-  oldData     String?  // JSON
-  newData     String?  // JSON
-  createdAt   DateTime @default(now())
+  id             String    @id @default(cuid())
+  userId         String?
+  organizationId String?
+  action         String
+  resource       String
+  resourceId     String
+  oldData        String?   // JSON
+  newData        String?   // JSON
+  reason         String?   // Mandatory for sensitive actions (AUD-001)
+  requestId      String?
+  correlationId  String?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime  @default(now())
   
-  user        User?    @relation(fields: [userId], references: [id])
+  user           User?     @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([resource, resourceId])
+  @@index([correlationId])
+  @@index([organizationId])
 }
 
 model OutboxEvent {
-  id          String   @id @default(cuid())
-  eventType   String   // e.g., "BOOKING_PAID", "BOOKING_CONFIRMED", "REFUND_REQUESTED", "AUTH_OTP_REQUESTED", "VOUCHER_ISSUED", "NOTIFICATION_SENT"
-  payload     String   // JSON
-  status      String   @default("PENDING") // PENDING, PROCESSING, PROCESSED, FAILED
-  retryCount  Int      @default(0)
-  lastError   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  processedAt DateTime?
+  id            String    @id @default(cuid())
+  eventType     String    // e.g., "BOOKING_PAID", "BOOKING_CONFIRMED", "REFUND_REQUESTED", "AUTH_OTP_REQUESTED", "VOUCHER_ISSUED", "NOTIFICATION_SENT"
+  aggregateType String?   // e.g., "BOOKING", "PAYMENT", "INVENTORY", "REFUND"
+  aggregateId   String?
+  correlationId String?
+  causationId   String?
+  payload       String    // JSON
+  status        String    @default("PENDING") // PENDING, CLAIMED, PROCESSING, PROCESSED, FAILED, DEAD_LETTER
+  availableAt   DateTime  @default(now())
+  lockedAt      DateTime?
+  workerId      String?
+  retryCount    Int       @default(0)
+  lastError     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  processedAt   DateTime?
 
+  @@index([status, availableAt])
+  @@index([aggregateType, aggregateId])
+  @@index([correlationId])
+}
+
+// Durable Saga Execution Engine (ASYNC-003)
+model SagaExecution {
+  id            String    @id @default(cuid())
+  sagaType      String    // e.g., "CONFIRM_BOOKING_SAGA", "CANCEL_REFUND_SAGA"
+  aggregateType String    // "BOOKING"
+  aggregateId   String
+  correlationId String?
+  status        String    @default("PENDING") // PENDING, RUNNING, SUCCEEDED, FAILED, COMPENSATING, COMPENSATED
+  currentStep   String?
+  contextJson   String    @default("{}") // JSON
+  startedAt     DateTime  @default(now())
+  finishedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  steps         SagaStep[]
+
+  @@index([aggregateId])
   @@index([status])
-  @@index([status, updatedAt])
+}
+
+model SagaStep {
+  id             String         @id @default(cuid())
+  sagaId         String
+  stepType       String         // e.g., "LOCK_INVENTORY", "CAPTURE_PAYMENT", "CALL_SUPPLIER", "POST_LEDGER"
+  status         String         @default("PENDING") // PENDING, RUNNING, SUCCEEDED, FAILED, COMPENSATED
+  attempts       Int            @default(0)
+  inputSnapshot  String?        // JSON
+  resultSnapshot String?        // JSON
+  error          String?
+  startedAt      DateTime?
+  finishedAt     DateTime?
+
+  saga           SagaExecution  @relation(fields: [sagaId], references: [id], onDelete: Cascade)
+
+  @@index([sagaId])
+  @@index([status])
 }
 
 // Server-issued one-time passcodes for passwordless login.
@@ -275,4 +734,26 @@ model OtpVerification {
   createdAt  DateTime  @default(now())
 
   @@index([identifier, createdAt])
+}
+
+// Exception Center & Discrepancy Registry (RECON-003, Section 24)
+model OperationalException {
+  id          String    @id @default(cuid())
+  type        String    // PRICE_MISMATCH, PAYMENT_MISMATCH, SUPPLIER_TIMEOUT, TICKET_NOT_ISSUED, REFUND_TIMEOUT, FX_VARIANCE, DUPLICATE_BOOKING
+  severity    String    @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  entityType  String    // "BOOKING", "PAYMENT", "SUPPLIER", "INVENTORY"
+  entityId    String
+  title       String
+  description String?
+  status      String    @default("OPEN") // OPEN, ACKNOWLEDGED, IN_PROGRESS, RESOLVED, CLOSED
+  ownerId     String?
+  slaDueAt    DateTime?
+  detectedAt  DateTime  @default(now())
+  resolution  String?
+  closedAt    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, severity])
+  @@index([entityType, entityId])
 }

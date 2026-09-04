@@ -164,16 +164,50 @@ export class BookingSagaOrchestrator {
         },
       });
 
-      // 7. Step 6: Outbox Event for async voucher issuing & email notification
+      // 7. Step 6: Durable Outbox Event & Saga Persistence (ASYNC-001, ASYNC-003)
+      const correlationId = `corr_bkg_${booking.id}_${Date.now().toString(36)}`;
       await tx.outboxEvent.create({
         data: {
           eventType: 'BOOKING_CONFIRMED',
+          aggregateType: 'BOOKING',
+          aggregateId: booking.id,
+          correlationId,
           payload: JSON.stringify({
             bookingId: booking.id,
             customerId: booking.customerId,
             paymentId: paymentRes.paymentId,
             reference: booking.reference,
           }),
+          status: 'PENDING',
+        },
+      });
+
+      // Persist Saga Execution Record
+      await tx.sagaExecution.create({
+        data: {
+          sagaType: 'CONFIRM_BOOKING_SAGA',
+          aggregateType: 'BOOKING',
+          aggregateId: booking.id,
+          correlationId,
+          status: 'SUCCEEDED',
+          currentStep: 'COMPLETED',
+          contextJson: JSON.stringify({
+            paymentId: paymentRes.paymentId,
+            totalAmount: totalAmt,
+            currency: booking.currency,
+          }),
+          finishedAt: new Date(),
+          steps: {
+            create: [
+              { stepType: 'VALIDATE_TRANSITION', status: 'SUCCEEDED' },
+              { stepType: 'CAPTURE_PAYMENT', status: 'SUCCEEDED' },
+              { stepType: 'CAPTURE_INVENTORY_HOLD', status: 'SUCCEEDED' },
+              { stepType: 'POST_GENERAL_LEDGER', status: 'SUCCEEDED' },
+              { stepType: 'POST_REVENUE_REALIZATION', status: 'SUCCEEDED' },
+              { stepType: 'TRANSITION_CONFIRMED', status: 'SUCCEEDED' },
+              { stepType: 'EMIT_OUTBOX_EVENT', status: 'SUCCEEDED' },
+            ],
+          },
         },
       });
 

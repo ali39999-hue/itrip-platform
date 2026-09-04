@@ -81,7 +81,7 @@ async function verifyStoredOtp(identifier: string, code: string): Promise<boolea
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: resolvedSecret,
-  trustHost: process.env.NODE_ENV !== 'production',
+  trustHost: true,
   logger: {
     error(error) {
       // A stale session cookie (e.g. after an AUTH_SECRET rotation) surfaces as

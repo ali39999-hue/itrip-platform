@@ -286,22 +286,53 @@ export async function requestWalletTopUp(amountIrr: number) {
       return { success: false, error: 'Minimum top-up is 10,000' };
     }
 
-    // Real PSP (Shetab IPG) is not wired yet; in demo mode the top-up is
-    // recorded through the real ledger so balances stay consistent.
-    if (process.env.DEMO_MODE !== 'true' || process.env.NODE_ENV === 'production') {
-      return { success: false, error: 'Payment gateway is not configured yet' };
-    }
+    const { PaymentDomainService } = await import('@/domains/payments/PaymentDomainService');
+    const { ShetabGatewayAdapter } = await import('@/domains/payments/gateway-port');
+    const { Money } = await import('@/lib/finance');
 
-    const { GeneralLedgerService } = await import('@/domains/ledger/GeneralLedgerService');
-    await GeneralLedgerService.postTopUp({
-      groupId: `topup_${session.user.id}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`,
-      userId: session.user.id,
+    const idempotencyKey = `topup_intent_${session.user.id}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+
+    // Create durable PaymentIntent for this wallet charge (PAY-001)
+    const intent = await PaymentDomainService.createPaymentIntent({
+      bookingId: `wallet_topup_${session.user.id}`,
       amount: Math.round(amountIrr),
       currency: 'IRR',
-      referenceId: 'DEMO_TOPUP',
+      idempotencyKey,
+      ttlMinutes: 20,
     });
-    revalidatePath('/wallet');
-    return { success: true };
+
+    // In demo mode, immediately settle via ledger for local verification
+    if (process.env.DEMO_MODE === 'true' && process.env.NODE_ENV !== 'production') {
+      const { GeneralLedgerService } = await import('@/domains/ledger/GeneralLedgerService');
+      await GeneralLedgerService.postTopUp({
+        groupId: `topup_grp_${intent.id}`,
+        userId: session.user.id,
+        amount: Math.round(amountIrr),
+        currency: 'IRR',
+        referenceId: intent.id,
+      });
+      revalidatePath('/wallet');
+      return { success: true, intentId: intent.id };
+    }
+
+    // In production, initiate Shetab gateway payment request via adapter
+    const adapter = new ShetabGatewayAdapter();
+    const gwRes = await adapter.createPayment({
+      intentId: intent.id,
+      bookingId: intent.bookingId,
+      amount: new Money(intent.amount, 'IRR'),
+      callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/payments/callback`,
+      customerInfo: {
+        email: session.user.email || undefined,
+      },
+    });
+
+    return {
+      success: true,
+      intentId: intent.id,
+      gatewayRef: gwRes.gatewayRef,
+      redirectUrl: gwRes.redirectUrl,
+    };
   } catch (err: unknown) {
     console.error('requestWalletTopUp server error:', err);
     return { success: false, error: 'Failed to process top-up' };

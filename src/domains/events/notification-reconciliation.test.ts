@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { prisma } from '@/lib/prisma';
 import {
   ConsoleNotificationProvider,
   ProductionNotificationProvider,
@@ -135,5 +136,68 @@ describe('ReconciliationService Unit Tests', () => {
     // Any properly posted double-entry group should have debit === credit
     expect(report.unbalancedGroupsCount).toBe(0);
     expect(report.isBalanced).toBe(true);
+  });
+
+  it('reconciles booking financials against payments and flags exceptions on mismatch (RECON-001, RECON-003)', async () => {
+    const suffix = Date.now().toString(36);
+    const user = await prisma.user.create({
+      data: { id: `recon_user_${suffix}`, email: `recon_${suffix}@firuzo.test`, name: 'Recon Test' },
+    });
+
+    // 1. Matched booking: Total 300,000, Payment 300,000
+    const matchedBooking = await prisma.booking.create({
+      data: { reference: `REC-M-${suffix}`, customerId: user.id, status: 'CONFIRMED', totalAmount: 300_000, currency: 'IRR' },
+    });
+    await prisma.payment.create({
+      data: {
+        bookingId: matchedBooking.id,
+        idempotencyKey: `pay_m_${suffix}`,
+        amount: 300_000,
+        currency: 'IRR',
+        method: 'wallet_irr',
+        status: 'SUCCESS',
+      },
+    });
+
+    const matchRes = await ReconciliationService.reconcileBookingFinancials(matchedBooking.id);
+    expect(matchRes.matched).toBe(true);
+    expect(matchRes.status).toBe('MATCHED');
+    expect(matchRes.confidenceScore).toBe(100);
+    expect(matchRes.exceptionId).toBeUndefined();
+
+    // 2. Mismatched booking: Total 500,000, Payment only 200,000
+    const mismatchedBooking = await prisma.booking.create({
+      data: { reference: `REC-MIS-${suffix}`, customerId: user.id, status: 'CONFIRMED', totalAmount: 500_000, currency: 'IRR' },
+    });
+    await prisma.payment.create({
+      data: {
+        bookingId: mismatchedBooking.id,
+        idempotencyKey: `pay_mis_${suffix}`,
+        amount: 200_000,
+        currency: 'IRR',
+        method: 'wallet_irr',
+        status: 'SUCCESS',
+      },
+    });
+
+    const mismatchRes = await ReconciliationService.reconcileBookingFinancials(mismatchedBooking.id);
+    expect(mismatchRes.matched).toBe(false);
+    expect(mismatchRes.status).toBe('MISMATCH');
+    expect(mismatchRes.confidenceScore).toBeLessThan(80);
+    expect(mismatchRes.exceptionId).toBeDefined();
+
+    // Verify exception recorded in Exception Center
+    const recordedException = await prisma.operationalException.findUniqueOrThrow({
+      where: { id: mismatchRes.exceptionId },
+    });
+    expect(recordedException.type).toBe('PAYMENT_MISMATCH');
+    expect(recordedException.severity).toBe('HIGH');
+    expect(recordedException.status).toBe('OPEN');
+
+    // Cleanup
+    await prisma.operationalException.delete({ where: { id: mismatchRes.exceptionId } });
+    await prisma.payment.deleteMany({ where: { bookingId: { in: [matchedBooking.id, mismatchedBooking.id] } } });
+    await prisma.booking.deleteMany({ where: { id: { in: [matchedBooking.id, mismatchedBooking.id] } } });
+    await prisma.user.delete({ where: { id: user.id } });
   });
 });

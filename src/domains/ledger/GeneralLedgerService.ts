@@ -69,11 +69,12 @@ export class GeneralLedgerService {
     return account;
   }
 
-  private static async getAccountBalance(
+  static async getAccountBalance(
     accountId: string,
     currency: string,
-    client: Prisma.TransactionClient
+    tx?: Prisma.TransactionClient
   ): Promise<number> {
+    const client = tx || prisma;
     const credits = await client.ledgerEntry.aggregate({
       where: { accountId, currency, direction: 'CREDIT' },
       _sum: { amount: true },
@@ -471,5 +472,37 @@ export class GeneralLedgerService {
         referenceId: params.referenceId,
       },
     });
+  }
+
+  /**
+   * Verify Balanced Invariant (FIN-004): Asserts SUM(DEBIT) === SUM(CREDIT) for any groupId
+   */
+  static async assertBalancedPostingGroup(groupId: string, tx?: Prisma.TransactionClient): Promise<boolean> {
+    const client = tx || prisma;
+    const entries = await client.ledgerEntry.findMany({
+      where: { groupId },
+      select: { direction: true, amount: true, currency: true },
+    });
+
+    if (entries.length === 0) return true;
+
+    let totalDebit = new Prisma.Decimal(0);
+    let totalCredit = new Prisma.Decimal(0);
+
+    for (const e of entries) {
+      if (e.direction === 'DEBIT') {
+        totalDebit = totalDebit.add(e.amount);
+      } else if (e.direction === 'CREDIT') {
+        totalCredit = totalCredit.add(e.amount);
+      }
+    }
+
+    if (!totalDebit.equals(totalCredit)) {
+      throw new Error(
+        `Ledger integrity error: Unbalanced posting group ${groupId}. Debit (${totalDebit.toString()}) != Credit (${totalCredit.toString()})`
+      );
+    }
+
+    return true;
   }
 }

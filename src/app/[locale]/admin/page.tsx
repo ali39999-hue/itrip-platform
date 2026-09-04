@@ -18,11 +18,24 @@ export default async function AdminDashboard() {
   }
 
   // Live Database Queries
-  const [confirmedBookingsCount, allBookings, ledgerEntries, pendingOutboxCount] = await Promise.all([
+  const [
+    confirmedBookingsCount,
+    allBookings,
+    ledgerEntries,
+    pendingOutboxCount,
+    openExceptionsCount,
+    pendingRefundsCount,
+    paymentExceptionsCount,
+    supplierExceptionsCount,
+  ] = await Promise.all([
     prisma.booking.count({ where: { status: 'CONFIRMED' } }),
     prisma.booking.findMany({ select: { totalAmount: true, status: true } }),
     prisma.ledgerEntry.findMany({ select: { direction: true, amount: true, referenceType: true, currency: true } }),
     prisma.outboxEvent.count({ where: { status: 'PENDING' } }),
+    prisma.operationalException.count({ where: { status: 'OPEN' } }),
+    prisma.refund.count({ where: { status: 'REQUESTED' } }),
+    prisma.operationalException.count({ where: { type: 'PAYMENT_MISMATCH', status: 'OPEN' } }),
+    prisma.operationalException.count({ where: { type: 'SUPPLIER_TIMEOUT', status: 'OPEN' } }),
   ]);
 
   const totalRevenue = allBookings
@@ -93,20 +106,21 @@ export default async function AdminDashboard() {
           {/* Action counts */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {[
-              { label: lt(locale, { fa: 'خطای پرداخت', en: 'Payment Error', ar: 'خطأ في الدفع', zh: '支付错误', ru: 'Ошибка оплаты' }), count: 0, color: 'bg-rose-warm/10 text-rose-warm border-rose-warm/20' },
-              { label: lt(locale, { fa: 'در انتظار استرداد', en: 'Refund Pending', ar: 'استرداد معلق', zh: '待退款', ru: 'Возврат в ожидании' }), count: 0, color: 'bg-action/10 text-action border-action/20' },
-              { label: lt(locale, { fa: 'صدور بلیط (دستی)', en: 'Manual Ticketing', ar: 'إصدار يدوي للتذاكر', zh: '手动出票', ru: 'Ручная выдача билетов' }), count: pendingOutboxCount, color: 'bg-gold/10 text-gold border-gold/20' },
-              { label: lt(locale, { fa: 'بررسی KYC', en: 'KYC Review', ar: 'مراجعة KYC', zh: 'KYC 审核', ru: 'Проверка KYC' }), count: 0, color: 'bg-brand/10 text-brand border-brand/20' },
-              { label: lt(locale, { fa: 'خطای تامین‌کننده', en: 'Supplier Error', ar: 'خطأ في المورّد', zh: '供应商错误', ru: 'Ошибка поставщика' }), count: 0, color: 'bg-rose-warm/10 text-rose-warm border-rose-warm/20' },
+              { label: lt(locale, { fa: 'خطای پرداخت', en: 'Payment Error', ar: 'خطأ في الدفع', zh: '支付错误', ru: 'Ошибка оплаты' }), count: paymentExceptionsCount, href: '/admin/exceptions', color: 'bg-rose-warm/10 text-rose-warm border-rose-warm/20' },
+              { label: lt(locale, { fa: 'در انتظار استرداد', en: 'Refund Pending', ar: 'استرداد معلق', zh: '待退款', ru: 'Возврат в ожидании' }), count: pendingRefundsCount, href: '/admin/travel-files', color: 'bg-action/10 text-action border-action/20' },
+              { label: lt(locale, { fa: 'صدور بلیط (دستی)', en: 'Manual Ticketing', ar: 'إصدار يدوي للتذاكر', zh: '手动出票', ru: 'Ручная выдача билетов' }), count: pendingOutboxCount, href: '/admin/ops', color: 'bg-gold/10 text-gold border-gold/20' },
+              { label: lt(locale, { fa: 'مغایرت باز', en: 'Open Exceptions', ar: 'استثناءات مفتوحة', zh: '未结异常', ru: 'Открытые исключения' }), count: openExceptionsCount, href: '/admin/exceptions', color: 'bg-brand/10 text-brand border-brand/20' },
+              { label: lt(locale, { fa: 'خطای تامین‌کننده', en: 'Supplier Error', ar: 'خطأ في المورّد', zh: '供应商错误', ru: 'Ошибка поставщика' }), count: supplierExceptionsCount, href: '/admin/exceptions', color: 'bg-rose-warm/10 text-rose-warm border-rose-warm/20' },
             ].map((item) => (
-              <div
+              <Link
                 key={item.label}
+                href={item.href}
                 aria-label={`${item.label} - ${item.count}`}
-                className={`flex flex-col justify-center p-3 rounded-xl border shadow-sm transition text-start ${item.color}`}
+                className={`flex flex-col justify-center p-3 rounded-xl border shadow-sm transition text-start hover:scale-[1.02] ${item.color}`}
               >
                 <span className="text-2xl font-black mb-1">{item.count}</span>
                 <span className="text-[10px] font-bold">{item.label}</span>
-              </div>
+              </Link>
             ))}
           </div>
 

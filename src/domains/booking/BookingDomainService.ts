@@ -6,6 +6,7 @@
 
 import type { Booking, BookingPassenger } from '@/lib/types';
 import type { SupportedCurrency } from '../currency/CurrencyService';
+import { TaxEngine } from '@/lib/finance/tax-engine';
 
 export type LockState = 'LOCKED' | 'CAPTURED' | 'RELEASED' | 'EXPIRED';
 
@@ -53,7 +54,15 @@ export class BookingDomainService {
     const gross = baseAmount + addonsTotal;
     const discountAmount = Math.round(gross * discountRate);
     const taxable = gross - discountAmount;
-    const taxAmount = Math.round(taxable * 0.09); // Standard 9% VAT
+    
+    // Use dynamic TaxEngine instead of hardcoded 9% calculation
+    const taxCalc = TaxEngine.calculateTax({
+      taxableAmount: taxable,
+      currency,
+      jurisdiction: 'IR',
+      serviceType: 'GENERAL',
+    });
+    const taxAmount = taxCalc.taxAmount.toNumber();
     const totalAmount = taxable + taxAmount;
 
     return {

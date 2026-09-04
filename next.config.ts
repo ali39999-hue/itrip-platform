@@ -5,7 +5,6 @@ const withNextIntl = createNextIntlPlugin();
 const isDev = process.env.NODE_ENV !== 'production';
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
   ...(isDev
     ? {
         allowedDevOrigins: ['localhost:3000', '127.0.0.1:3000'],
@@ -18,7 +17,7 @@ const nextConfig: NextConfig = {
     : {}),
   images: {
     formats: ['image/avif', 'image/webp'],
-    dangerouslyAllowLocalIP: isDev,
+    dangerouslyAllowLocalIP: true,
     remotePatterns: [
       {
         protocol: 'https',

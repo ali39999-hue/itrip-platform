@@ -89,6 +89,7 @@ export async function generateMetadata({
   const brand = await getTranslations({ locale, namespace: 'Logo' });
 
   return {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
     title: {
       default: t('title'),
       template: `%s | ${brand('name')}`,

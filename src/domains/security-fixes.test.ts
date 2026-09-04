@@ -115,4 +115,51 @@ describe('Security: ledger balance guards', () => {
     });
     expect(escrow1.id).toBe(escrow2.id);
   });
+
+  it('rejects tampered webhook amounts with explicit error (PAY-005, PAY-008)', async () => {
+    const suffix = Date.now().toString(36);
+    const user = await prisma.user.create({
+      data: { id: `sec_wh_user_${suffix}`, email: `sec_wh_${suffix}@firuzo.test`, name: 'Webhook Test' },
+    });
+    const booking = await prisma.booking.create({
+      data: { reference: `SEC-WH-${suffix}`, customerId: user.id, status: 'DRAFT', totalAmount: 500_000, currency: 'IRR' },
+    });
+    createdIds.bookings.push(booking.id);
+
+    // Tampered amount: booking requires 500,000 but webhook claims only 100,000
+    await expect(
+      PaymentDomainService.processWebhook({
+        eventId: `ev_tamper_${suffix}`,
+        gatewayRef: `gw_tamper_${suffix}`,
+        bookingId: booking.id,
+        settledAmount: 100_000,
+        settledCurrency: 'IRR',
+      })
+    ).rejects.toThrow(/amount tampering detected/i);
+
+    // Matching amount succeeds and is idempotent
+    const valid = await PaymentDomainService.processWebhook({
+      eventId: `ev_valid_${suffix}`,
+      gatewayRef: `gw_valid_${suffix}`,
+      bookingId: booking.id,
+      settledAmount: 500_000,
+      settledCurrency: 'IRR',
+    });
+    expect(valid.processed).toBe(true);
+
+    // Replaying identical webhook is idempotent and does not recreate payment
+    const replay = await PaymentDomainService.processWebhook({
+      eventId: `ev_valid_${suffix}`,
+      gatewayRef: `gw_valid_${suffix}`,
+      bookingId: booking.id,
+      settledAmount: 500_000,
+      settledCurrency: 'IRR',
+    });
+    expect(replay.processed).toBe(false);
+    expect(replay.reason).toMatch(/idempotent/i);
+
+    await prisma.payment.deleteMany({ where: { bookingId: booking.id } });
+    await prisma.booking.delete({ where: { id: booking.id } });
+    await prisma.user.delete({ where: { id: user.id } });
+  });
 });

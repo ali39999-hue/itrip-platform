@@ -10,7 +10,15 @@ export async function getUserPermissions(userId: string): Promise<ERPPermission[
     where: { id: userId },
     include: {
       userRoles: {
-        include: { role: true },
+        include: {
+          role: {
+            include: {
+              rolePermissions: {
+                include: { permission: true },
+              },
+            },
+          },
+        },
       },
     },
   });
@@ -19,12 +27,20 @@ export async function getUserPermissions(userId: string): Promise<ERPPermission[
 
   const perms = new Set<ERPPermission>();
 
-  // 1. Direct role mapping
+  // 1. Direct role mapping (system role defaults)
   const roleDefaults = ROLE_DEFAULT_PERMISSIONS[user.role] || [];
   roleDefaults.forEach((p) => perms.add(p));
 
-  // 2. Dynamic DB RBAC roles
+  // 2. Dynamic DB RBAC roles (both relational RolePermission and JSON fallback)
   user.userRoles.forEach((ur) => {
+    // 2.1 Relational permissions (IAM-004)
+    if (ur.role.rolePermissions && ur.role.rolePermissions.length > 0) {
+      ur.role.rolePermissions.forEach((rp) => {
+        perms.add(rp.permission.code as ERPPermission);
+      });
+    }
+
+    // 2.2 JSON string fallback for backward compatibility
     try {
       const rolePerms = JSON.parse(ur.role.permissions || '[]') as ERPPermission[];
       rolePerms.forEach((p) => perms.add(p));

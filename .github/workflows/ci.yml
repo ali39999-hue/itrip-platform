@@ -8,13 +8,30 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: itrip_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
-      DATABASE_URL: "file:./dev.db"
+      DATABASE_URL: "postgresql://postgres:postgrespassword@localhost:5432/itrip_test?schema=public"
       AUTH_SECRET: "development-firuzo-auth-secret-key-32-chars-long-2026"
-      DEMO_MODE: "true"
-      NEXT_PUBLIC_DEMO_MODE: "true"
+      ADMIN_PASSWORD: "Admin@Firuzo2026!"
+      USER_PASSWORD: "User@Firuzo2026!"
+      DEMO_MODE: "false"
+      NEXT_PUBLIC_DEMO_MODE: "false"
 
     steps:
     - uses: actions/checkout@v4
@@ -23,7 +40,10 @@ jobs:
       with:
         node-version: '20.x'
     - run: npm ci
-    - run: npx prisma db push
+    - name: Run Prisma Migrations
+      run: npx prisma migrate deploy
+    - name: Seed Test Database
+      run: npm run prisma:seed
     - run: npm run typecheck
     - run: npm run lint
     - run: npm run test:unit

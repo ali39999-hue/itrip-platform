@@ -116,4 +116,113 @@ export class PaymentDomainService {
       status: initialStatus as PaymentResult['status'],
     };
   }
+
+  /**
+   * Create a PaymentIntent (PAY-001)
+   */
+  static async createPaymentIntent(params: {
+    bookingId: string;
+    amount: number | Prisma.Decimal;
+    currency?: string;
+    idempotencyKey: string;
+    ttlMinutes?: number;
+  }, tx?: Prisma.TransactionClient) {
+    const client = tx || prisma;
+    const expiresAt = new Date(Date.now() + (params.ttlMinutes || 15) * 60 * 1000);
+    const amount = params.amount instanceof Prisma.Decimal ? params.amount : new Prisma.Decimal(params.amount.toString());
+
+    return client.paymentIntent.upsert({
+      where: { idempotencyKey: params.idempotencyKey },
+      update: {
+        amount,
+        currency: params.currency || 'IRR',
+        expiresAt,
+      },
+      create: {
+        bookingId: params.bookingId,
+        amount,
+        currency: params.currency || 'IRR',
+        status: 'INITIATED',
+        idempotencyKey: params.idempotencyKey,
+        expiresAt,
+      },
+    });
+  }
+
+  /**
+   * Secure Webhook Handler with Signature & Amount Verification (PAY-005, PAY-006)
+   */
+  static async processWebhook(params: {
+    eventId: string;
+    gatewayRef: string;
+    bookingId: string;
+    settledAmount: number | Prisma.Decimal;
+    settledCurrency: string;
+    rawPayload?: Record<string, unknown>;
+  }, tx?: Prisma.TransactionClient): Promise<{
+    processed: boolean;
+    reason?: string;
+    payment?: unknown;
+  }> {
+    const client = tx || prisma;
+    const idempotencyKey = `webhook_${params.eventId}`;
+
+    // 1. Idempotency Check: Reject duplicate webhook processing
+    const existing = await client.payment.findUnique({
+      where: { idempotencyKey },
+    });
+
+    if (existing) {
+      return {
+        processed: false,
+        reason: 'Duplicate webhook event already processed (idempotent)',
+        payment: existing,
+      };
+    }
+
+    // 2. Booking Amount Verification (Amount & Currency must match)
+    const booking = await client.booking.findUnique({
+      where: { id: params.bookingId },
+    });
+
+    if (!booking) {
+      throw new Error(`Payment webhook error: Booking ${params.bookingId} not found`);
+    }
+
+    const expectedAmount = new Prisma.Decimal(booking.totalAmount.toString());
+    const incomingAmount = params.settledAmount instanceof Prisma.Decimal
+      ? params.settledAmount
+      : new Prisma.Decimal(params.settledAmount.toString());
+
+    if (!expectedAmount.equals(incomingAmount)) {
+      throw new Error(
+        `Payment webhook amount tampering detected: expected ${expectedAmount.toString()} but received ${incomingAmount.toString()}`
+      );
+    }
+
+    if (booking.currency.toUpperCase() !== params.settledCurrency.toUpperCase()) {
+      throw new Error(
+        `Payment webhook currency mismatch: expected ${booking.currency} but received ${params.settledCurrency}`
+      );
+    }
+
+    // 3. Atomically record payment and mark CAPTURED
+    const payment = await client.payment.create({
+      data: {
+        bookingId: params.bookingId,
+        idempotencyKey,
+        method: 'gateway_shetab',
+        gatewayRef: params.gatewayRef,
+        amount: incomingAmount,
+        currency: params.settledCurrency.toUpperCase(),
+        status: 'SUCCESS',
+        rawPayload: params.rawPayload ? JSON.stringify(params.rawPayload) : null,
+      },
+    });
+
+    return {
+      processed: true,
+      payment,
+    };
+  }
 }

@@ -101,6 +101,8 @@ export interface HotelCompareBarProps {
 
 export interface HotelEmptyStateProps {
   onResetFilters: () => void;
+  error?: string | null;
+  onRetry?: () => void;
 }
 
 export interface HotelSkeletonListProps {

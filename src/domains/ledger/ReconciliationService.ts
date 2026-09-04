@@ -134,4 +134,80 @@ export class ReconciliationService {
 
     return report;
   }
+
+  /**
+   * Cross-Entity Reconciliation (RECON-001): Reconciles Booking ↔ Payment ↔ Invoice ↔ Ledger
+   * Automatically files an OperationalException if a mismatch is detected (RECON-003).
+   */
+  static async reconcileBookingFinancials(bookingId: string): Promise<{
+    matched: boolean;
+    confidenceScore: number; // 0 - 100
+    bookingAmount: number;
+    paidAmount: number;
+    invoicedAmount: number;
+    status: 'MATCHED' | 'REVIEW' | 'MISMATCH';
+    exceptionId?: string;
+  }> {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+    });
+
+    if (!booking) {
+      throw new Error(`Booking ${bookingId} not found`);
+    }
+
+    const bookingTotal = Number(booking.totalAmount);
+
+    // Aggregate successful payments for this booking
+    const payments = await prisma.payment.aggregate({
+      where: { bookingId, status: 'SUCCESS' },
+      _sum: { amount: true },
+    });
+    const paidTotal = Number(payments._sum.amount || 0);
+
+    // Aggregate issued invoices for this booking
+    const invoices = await prisma.invoice.aggregate({
+      where: { bookingId, status: { in: ['ISSUED', 'PAID'] } },
+      _sum: { totalAmount: true },
+    });
+    const invoicedTotal = Number(invoices._sum.totalAmount || 0);
+
+    const paymentDiff = Math.abs(bookingTotal - paidTotal);
+    const invoiceDiff = Math.abs(bookingTotal - invoicedTotal);
+
+    let confidenceScore = 100;
+    if (paymentDiff > 0.01) confidenceScore -= 50;
+    if (invoiceDiff > 0.01 && invoicedTotal > 0) confidenceScore -= 25;
+
+    const isMatch = paymentDiff <= 0.01;
+    const status = confidenceScore >= 95 ? 'MATCHED' : confidenceScore >= 80 ? 'REVIEW' : 'MISMATCH';
+
+    let exceptionId: string | undefined;
+
+    // If payment mismatch detected, automatically record into Exception Center (RECON-003)
+    if (!isMatch && (booking.status === 'CONFIRMED' || booking.status === 'PAYMENT_CONFIRMED')) {
+      const exc = await prisma.operationalException.create({
+        data: {
+          type: 'PAYMENT_MISMATCH',
+          severity: 'HIGH',
+          entityType: 'BOOKING',
+          entityId: booking.id,
+          title: `Payment discrepancy on booking ${booking.reference}`,
+          description: `Expected booking total ${bookingTotal} ${booking.currency}, but recorded payments total ${paidTotal} ${booking.currency}. Difference: ${paymentDiff}`,
+          status: 'OPEN',
+        },
+      });
+      exceptionId = exc.id;
+    }
+
+    return {
+      matched: isMatch,
+      confidenceScore,
+      bookingAmount: bookingTotal,
+      paidAmount: paidTotal,
+      invoicedAmount: invoicedTotal,
+      status,
+      exceptionId,
+    };
+  }
 }

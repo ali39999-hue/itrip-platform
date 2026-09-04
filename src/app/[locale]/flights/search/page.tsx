@@ -352,6 +352,22 @@ function FlightSearchInner() {
                 <div key={i} className="h-44 bg-surface rounded-2xl border border-line animate-pulse p-6" />
               ))}
             </div>
+          ) : error ? (
+            <div className="bg-surface rounded-2xl border border-rose-200 p-10 text-center shadow-sm">
+              <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 grid place-items-center mx-auto mb-3">
+                <SlidersHorizontal size={24} />
+              </div>
+              <h3 className="text-base font-black text-ink mb-1">
+                {lt(locale, { fa: 'اختلال موقت در ارتباط با تأمین‌کننده پرواز', en: 'Flight supplier connection issue', ar: 'مشكلة مؤقتة في الاتصال بمورد الطيران', zh: '航班供应商连接问题', ru: 'Временная ошибка поставщика рейсов' })}
+              </h3>
+              <p className="text-sub font-bold text-xs max-w-md mx-auto mb-4">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-5 py-2 rounded-xl bg-brand text-surface font-black text-xs hover:bg-brand-dark transition"
+              >
+                {lt(locale, { fa: 'تلاش مجدد استعلام', en: 'Retry query', ar: 'إعادة المحاولة', zh: '重试查询', ru: 'Повторить запрос' })}
+              </button>
+            </div>
           ) : flights.length === 0 ? (
             <div className="bg-surface rounded-2xl border border-line p-14 text-center">
               <PlaneTakeoff size={32} className="mx-auto text-line mb-3" />

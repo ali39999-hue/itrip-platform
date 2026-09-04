@@ -36,10 +36,14 @@ export class OutboxConsumer {
         console.warn(`[Outbox] Recovered ${recovered.count} stale PROCESSING events`);
       }
 
+      const now = new Date();
       const pendingEvents = await prisma.outboxEvent.findMany({
-        where: { status: 'PENDING' },
+        where: {
+          status: 'PENDING',
+          availableAt: { lte: now },
+        },
         take: 20,
-        orderBy: { createdAt: 'asc' },
+        orderBy: { availableAt: 'asc' },
       });
 
       if (pendingEvents.length === 0) {
@@ -47,13 +51,18 @@ export class OutboxConsumer {
       }
 
       let processedCount = 0;
+      const workerId = `worker_${Math.random().toString(36).slice(2, 8)}_${Date.now().toString(36)}`;
 
       for (const event of pendingEvents) {
         try {
-          // Mark as PROCESSING
+          // Atomically CLAIM event with worker lock (ASYNC-002)
           await prisma.outboxEvent.update({
             where: { id: event.id },
-            data: { status: 'PROCESSING' },
+            data: {
+              status: 'PROCESSING',
+              lockedAt: new Date(),
+              workerId,
+            },
           });
 
           const payload = JSON.parse(event.payload || '{}');
@@ -149,11 +158,21 @@ export class OutboxConsumer {
         } catch (eventErr: unknown) {
           console.error(`[Outbox] Failed processing event ${event.id}:`, eventErr);
           const errorMessage = eventErr instanceof Error ? eventErr.message : String(eventErr);
+          const nextRetry = event.retryCount + 1;
+          const isDeadLetter = nextRetry >= 5;
+
+          // Exponential backoff: 2^retry * 10 seconds (10s, 20s, 40s, 80s)
+          const backoffSeconds = Math.min(Math.pow(2, nextRetry) * 10, 600);
+          const nextAvailableAt = new Date(Date.now() + backoffSeconds * 1000);
+
           await prisma.outboxEvent.update({
             where: { id: event.id },
             data: {
-              status: event.retryCount >= 3 ? 'FAILED' : 'PENDING',
-              retryCount: { increment: 1 },
+              status: isDeadLetter ? 'DEAD_LETTER' : 'PENDING',
+              retryCount: nextRetry,
+              availableAt: nextAvailableAt,
+              lockedAt: null,
+              workerId: null,
               lastError: errorMessage,
             },
           });
