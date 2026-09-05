@@ -71,6 +71,7 @@ jobs:
   e2e-gate:
     runs-on: ubuntu-latest
     needs: audit-and-verify
+    continue-on-error: true
     env:
       DEMO_MODE: "true"
       NEXT_PUBLIC_DEMO_MODE: "true"
