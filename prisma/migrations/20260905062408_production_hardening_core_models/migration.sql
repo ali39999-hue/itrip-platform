@@ -8,6 +8,9 @@ ADD COLUMN     "ticketStatus" TEXT NOT NULL DEFAULT 'NOT_ISSUED';
 -- AlterTable
 ALTER TABLE "JournalLine" ADD COLUMN     "chartOfAccountId" TEXT;
 
+-- AlterTable
+ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "paymentIntentId" TEXT;
+
 -- CreateTable
 CREATE TABLE "GatewayTransaction" (
     "id" TEXT NOT NULL,
@@ -156,3 +159,16 @@ ALTER TABLE "PriceSnapshot" ADD CONSTRAINT "PriceSnapshot_bookingId_fkey" FOREIG
 
 -- AddForeignKey
 ALTER TABLE "TaxRule" ADD CONSTRAINT "TaxRule_jurisdictionId_fkey" FOREIGN KEY ("jurisdictionId") REFERENCES "TaxJurisdiction"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "Payment_paymentIntentId_idx" ON "Payment"("paymentIntentId");
+
+-- AddForeignKey
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'Payment_paymentIntentId_fkey'
+    ) THEN
+        ALTER TABLE "Payment" ADD CONSTRAINT "Payment_paymentIntentId_fkey" FOREIGN KEY ("paymentIntentId") REFERENCES "PaymentIntent"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+    END IF;
+END $$;

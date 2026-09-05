@@ -80,12 +80,16 @@ export async function getUserPermissions(userId: string): Promise<ERPPermission[
 export async function getTenantAuthContext(userId?: string): Promise<TenantAuthContext> {
   let uid = userId;
   if (!uid) {
-    const { safeAuth } = await import('@/auth');
-    const session = await safeAuth();
-    if (!session?.user?.id) {
+    try {
+      const { safeAuth } = await import('@/auth');
+      const session = await safeAuth();
+      if (!session?.user?.id) {
+        throw new Error('Unauthorized: No active authenticated principal');
+      }
+      uid = session.user.id;
+    } catch {
       throw new Error('Unauthorized: No active authenticated principal');
     }
-    uid = session.user.id;
   }
 
   const user = await prisma.user.findUnique({

@@ -171,6 +171,19 @@ export class RefundDomainService {
         client
       );
 
+      // 6b. Record the execution attempt of the actual money movement (REF-006)
+      await client.refundAttempt.create({
+        data: {
+          refundId: refund.id,
+          attemptNumber: 1,
+          channel: 'WALLET',
+          amount: netMoney.toDecimal(),
+          currency: booking.currency,
+          status: 'SUCCESS',
+          gatewayRef: `ledger:rfd_grp_${refund.id}`,
+        },
+      });
+
       // 7. Emit Outbox Event for notification
       await client.outboxEvent.create({
         data: {
