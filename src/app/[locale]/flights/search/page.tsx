@@ -60,6 +60,8 @@ function FlightSearchInner() {
   const [airlineOptions, setAirlineOptions] = useState<Array<{ name: string; minPrice: number }>>([]);
   const [stopCounts, setStopCounts] = useState<[number, number, number]>([0, 0, 0]);
   const [totalCount, setTotalCount] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -92,7 +94,8 @@ function FlightSearchInner() {
       if (stops.length) q.set('stops', stops.join(','));
       if (minPriceVal > minBound) q.set('minPrice', String(minPriceVal));
       if (maxPriceVal < maxBound) q.set('maxPrice', String(maxPriceVal));
-      q.set('limit', '50');
+      q.set('page', String(currentPage));
+      q.set('limit', '10');
 
       const res = await fetch(`/api/flights/search?${q.toString()}`, {
         signal: abortControllerRef.current.signal,
@@ -106,6 +109,7 @@ function FlightSearchInner() {
       if (json.success && json.data) {
         setFlights(json.data.flights || []);
         setTotalCount(json.data.total || 0);
+        setTotalPages(json.data.totalPages || 1);
         if (json.data.airlineFacets) {
           setAirlineOptions(json.data.airlineFacets);
         }
@@ -131,7 +135,7 @@ function FlightSearchInner() {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [from, to, travelDate, sort, airlinesKey, stopsKey, minPriceVal, maxPriceVal, minBound, maxBound]);
+  }, [from, to, travelDate, sort, airlinesKey, stopsKey, minPriceVal, maxPriceVal, minBound, maxBound, currentPage]);
 
   useEffect(() => {
     fetchFlights();
@@ -139,6 +143,10 @@ function FlightSearchInner() {
       abortControllerRef.current?.abort();
     };
   }, [fetchFlights]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [sort, airlinesKey, stopsKey, minPriceVal, maxPriceVal]);
 
   const activeFilters = stops.length + airlines.length + (price[0] > priceBounds.min || price[1] < priceBounds.max ? 1 : 0);
 
@@ -166,8 +174,17 @@ function FlightSearchInner() {
   const rangeSpan = Math.max(priceBounds.max - priceBounds.min, 1);
   const minPct = ((price[0] - priceBounds.min) / rangeSpan) * 100;
   const maxPct = ((price[1] - priceBounds.min) / rangeSpan) * 100;
+  
 
   const stopLabels = [t('directOnly'), t('oneStop'), t('twoOrMoreStops')];
+
+  const pageItems = totalPages <= 5
+    ? Array.from({ length: totalPages }, (_, index) => index + 1)
+    : currentPage <= 3
+      ? [1, 2, 3, 'ellipsis', totalPages]
+      : currentPage >= totalPages - 2
+        ? [1, 'ellipsis', totalPages - 2, totalPages - 1, totalPages]
+        : [1, 'ellipsis', currentPage - 1, currentPage, currentPage + 1, 'ellipsis-end', totalPages];
 
   const filtersBody = (
     <>
@@ -392,6 +409,51 @@ function FlightSearchInner() {
                 <BentoFlightCard key={f.id} flight={f} onSelect={() => selectFlight(f)} />
               ))}
             </div>
+          )}
+
+          {!loading && !error && totalPages > 1 && (
+            <nav className="flex flex-wrap items-center justify-center gap-2 mt-2" aria-label={t('pagination')}>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={currentPage === 1}
+                className="min-h-10 px-3 rounded-xl border border-line bg-surface text-sub text-[13px] font-black transition-colors hover:bg-soft disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                {t('previousPage')}
+              </button>
+              {pageItems.map((pageItem, index) => pageItem === 'ellipsis' || pageItem === 'ellipsis-end' ? (
+                <span key={`${pageItem}-${index}`} className="px-1 text-sub font-black" aria-hidden="true">...</span>
+              ) : (
+                <button
+                  key={pageItem}
+                  type="button"
+                  onClick={() => {
+                    setCurrentPage(pageItem);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  aria-label={t('goToPage', { page: pageItem })}
+                  aria-current={currentPage === pageItem ? 'page' : undefined}
+                  className={`min-h-10 min-w-10 px-3 rounded-xl text-[13px] font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                    currentPage === pageItem
+                      ? 'bg-brand text-surface'
+                      : 'border border-line bg-surface text-sub hover:bg-soft'
+                  }`}
+                >
+                  {num(pageItem, locale)}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                disabled={currentPage === totalPages}
+                className="min-h-10 px-3 rounded-xl border border-line bg-surface text-sub text-[13px] font-black transition-colors hover:bg-soft disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                {t('nextPage')}
+              </button>
+              <span className="basis-full text-center text-[11px] font-bold text-sub">
+                {t('pageOf', { current: num(currentPage, locale), total: num(totalPages, locale) })}
+              </span>
+            </nav>
           )}
 
           <div className="mt-4">
