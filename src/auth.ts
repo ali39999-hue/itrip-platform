@@ -3,6 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
+import { ROLE_DEFAULT_PERMISSIONS } from '@/domains/identity/permissions';
 
 declare module 'next-auth' {
   interface Session {
@@ -79,6 +80,28 @@ async function verifyStoredOtp(identifier: string, code: string): Promise<boolea
   return true;
 }
 
+/**
+ * Ensures a user holds the given role in relational RBAC (IAM-001).
+ * The relational chain User → UserRole → Role → RolePermission → Permission is
+ * the sole permission authority; `User.role` stays a display/compat field.
+ */
+async function ensureUserRole(userId: string, roleName: string): Promise<void> {
+  const role = await prisma.role.upsert({
+    where: { name: roleName },
+    update: {},
+    create: {
+      name: roleName,
+      permissions: JSON.stringify(ROLE_DEFAULT_PERMISSIONS[roleName] || []),
+      description: `${roleName} Role`,
+    },
+  });
+  await prisma.userRole.upsert({
+    where: { userId_roleId: { userId, roleId: role.id } },
+    update: {},
+    create: { userId, roleId: role.id },
+  });
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: resolvedSecret,
   trustHost: true,
@@ -151,6 +174,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 isActive: true,
               },
             });
+            await ensureUserRole(user.id, 'CUSTOMER');
           }
           return { id: user.id, email: user.email || `${user.id}@firuzo.com`, name: user.name || 'User', role: user.role };
         }
@@ -198,6 +222,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               role: 'CUSTOMER',
             },
           });
+          await ensureUserRole(user.id, 'CUSTOMER');
         }
 
         if (!user || !user.isActive) return null;
@@ -222,8 +247,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = user.role;
-        const { ROLE_DEFAULT_PERMISSIONS } = await import('@/domains/identity/permissions');
-        token.permissions = ROLE_DEFAULT_PERMISSIONS[user.role] || [];
+        // Session permissions mirror the relational RBAC authority (IAM-001).
+        // ROLE_DEFAULT_PERMISSIONS is only a bootstrap for brand-new users whose
+        // relational assignment could not be created (e.g. degraded DB access).
+        const memberships = await prisma.userRole.findMany({
+          where: { userId: user.id },
+          include: { role: { include: { rolePermissions: { include: { permission: true } } } } },
+        });
+        const perms = new Set<string>();
+        memberships.forEach((ur) =>
+          ur.role.rolePermissions.forEach((rp) => perms.add(rp.permission.code))
+        );
+        if (perms.size === 0) {
+          (ROLE_DEFAULT_PERMISSIONS[user.role] || []).forEach((p) => perms.add(p));
+        }
+        token.permissions = Array.from(perms);
       }
       return token;
     },

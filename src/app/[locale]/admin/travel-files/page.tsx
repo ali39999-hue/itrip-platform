@@ -1,6 +1,5 @@
 import { prisma } from '@/lib/prisma';
 import { requirePermission } from '@/domains/identity/permission-service';
-import { AdminShell } from '@/components/admin/AdminShell';
 import { getLocale } from 'next-intl/server';
 import { lt } from '@/lib/lt';
 import { Link } from '@/i18n/routing';
@@ -9,7 +8,7 @@ import { Briefcase, User, Calendar, ExternalLink } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 export default async function TravelFilesPage() {
-  const user = await requirePermission(['booking:view:all', 'ops:override:cancel']);
+  await requirePermission(['booking:view:all', 'ops:override:cancel']);
   const locale = await getLocale();
 
   // Query Trips (Travel Files) with aggregated Bookings and Users
@@ -29,8 +28,8 @@ export default async function TravelFilesPage() {
   });
 
   return (
-    <AdminShell userName={user.email || 'Admin'} role={user.role}>
-      <div className="space-y-6">
+    // AdminShell is provided by the admin layout; wrapping here renders a duplicate shell.
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface p-6 rounded-2xl border border-line shadow-sm">
           <div>
@@ -124,7 +123,6 @@ export default async function TravelFilesPage() {
             })}
           </div>
         )}
-      </div>
-    </AdminShell>
+    </div>
   );
 }

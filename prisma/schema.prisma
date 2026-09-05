@@ -75,6 +75,7 @@ model OrganizationBranch {
   updatedAt       DateTime     @updatedAt
 
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members         OrganizationMembership[]
 
   @@index([organizationId])
 }
@@ -84,15 +85,18 @@ model OrganizationMembership {
   organizationId  String
   userId          String
   roleId          String?
+  branchId        String?      // Optional branch-level scoping (IAM-003)
   status          String       @default("ACTIVE") // ACTIVE, INVITED, SUSPENDED
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch          OrganizationBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
 
   @@unique([organizationId, userId])
   @@index([userId])
+  @@index([branchId])
 }
 
 // Traveler Profiles & Travel Documents (IAM-002)
@@ -213,7 +217,7 @@ model JournalEntry {
 model JournalLine {
   id              String       @id @default(cuid())
   journalEntryId  String
-  chartOfAccountId String?
+  chartOfAccountId String
   direction       String       // DEBIT, CREDIT
   debit           Decimal      @default(0)
   credit          Decimal      @default(0)
@@ -222,7 +226,7 @@ model JournalLine {
   memo            String?
 
   journalEntry    JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
-  account         ChartOfAccounts? @relation(fields: [chartOfAccountId], references: [id])
+  account         ChartOfAccounts @relation(fields: [chartOfAccountId], references: [id])
 
   @@index([journalEntryId])
   @@index([chartOfAccountId])
@@ -271,6 +275,7 @@ model PaymentIntent {
   updatedAt      DateTime         @updatedAt
 
   attempts       PaymentAttempt[]
+  payments       Payment[]
 
   @@index([bookingId])
   @@index([status])
@@ -333,9 +338,10 @@ model WebhookEvent {
 }
 
 model Payment {
-  id              String   @id @default(cuid())
+  id              String         @id @default(cuid())
   bookingId       String?
-  idempotencyKey  String   @unique
+  paymentIntentId String?        // Canonical trace chain: Payment → PaymentIntent → Attempts (PAY-004)
+  idempotencyKey  String         @unique
   method          String   // wallet_irr, gateway_shetab, wallet_usdt, wechat_pay, telegram_pay, etc
   gatewayRef      String?
   amount          Decimal
@@ -345,7 +351,10 @@ model Payment {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  paymentIntent   PaymentIntent? @relation(fields: [paymentIntentId], references: [id], onDelete: SetNull)
+
   @@index([bookingId])
+  @@index([paymentIntentId])
   @@index([idempotencyKey])
 }
 
@@ -463,9 +472,61 @@ model Refund {
 
   booking         Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   items           RefundItem[]
+  policySnapshot  RefundPolicySnapshot?
+  approvals       RefundApproval[]
+  attempts        RefundAttempt[]
 
   @@index([bookingId])
   @@index([status])
+}
+
+// Immutable policy inputs captured when the refund was requested (REF-004)
+model RefundPolicySnapshot {
+  id                     String   @id @default(cuid())
+  refundId               String   @unique
+  bookingId              String
+  bookingStatusAtRequest String
+  penaltyPercentage      Decimal
+  policyVersion          String   @default("v1")
+  rulesJson              String   @default("{}") // Immutable rule inputs (gross, penalty, net, reason)
+  capturedAt             DateTime @default(now())
+
+  refund                 Refund   @relation(fields: [refundId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+}
+
+// Human/automated approval trail (REF-005)
+model RefundApproval {
+  id          String   @id @default(cuid())
+  refundId    String
+  approverId  String   // User id or SYSTEM
+  decision    String   // APPROVED, REJECTED
+  note        String?
+  decidedAt   DateTime @default(now())
+
+  refund      Refund   @relation(fields: [refundId], references: [id], onDelete: Cascade)
+
+  @@index([refundId])
+}
+
+// Execution attempts of the actual money movement (REF-006)
+model RefundAttempt {
+  id            String   @id @default(cuid())
+  refundId      String
+  attemptNumber Int      @default(1)
+  channel       String   // WALLET, GATEWAY, MANUAL
+  amount        Decimal
+  currency      String   @default("IRR")
+  status        String   @default("PENDING") // PENDING, SUCCESS, FAILED
+  gatewayRef    String?
+  errorMessage  String?
+  attemptedAt   DateTime @default(now())
+
+  refund        Refund   @relation(fields: [refundId], references: [id], onDelete: Cascade)
+
+  @@unique([refundId, attemptNumber])
+  @@index([refundId])
 }
 
 model RefundItem {

@@ -1,6 +1,5 @@
 import { prisma } from '@/lib/prisma';
 import { requirePermission } from '@/domains/identity/permission-service';
-import { AdminShell } from '@/components/admin/AdminShell';
 import { getLocale } from 'next-intl/server';
 import { lt } from '@/lib/lt';
 import {
@@ -10,7 +9,7 @@ import {
 export const dynamic = 'force-dynamic';
 
 export default async function ExceptionCenterPage() {
-  const user = await requirePermission(['booking:view:all', 'ops:override:cancel']);
+  await requirePermission(['booking:view:all', 'ops:override:cancel']);
   const locale = await getLocale();
 
   const exceptions = await prisma.operationalException.findMany({
@@ -25,8 +24,8 @@ export default async function ExceptionCenterPage() {
   const criticalCount = exceptions.filter((e) => e.severity === 'CRITICAL' || e.severity === 'HIGH').length;
 
   return (
-    <AdminShell userName={user.email || 'Admin'} role={user.role}>
-      <div className="space-y-6">
+    // AdminShell is provided by the admin layout; wrapping here renders a duplicate shell.
+    <div className="space-y-6">
         {/* Exception Center Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface p-6 rounded-2xl border border-line shadow-sm">
           <div>
@@ -133,7 +132,6 @@ export default async function ExceptionCenterPage() {
             </div>
           </div>
         )}
-      </div>
-    </AdminShell>
+    </div>
   );
 }

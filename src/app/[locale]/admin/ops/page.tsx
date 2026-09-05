@@ -3,6 +3,7 @@ import { lt } from '@/lib/lt';
 import { AlertCircle, Clock, CheckCircle2 } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import { safeAuth } from '@/auth';
+import { hasErpRole } from '@/domains/identity/permission-service';
 import { redirect } from 'next/navigation';
 
 async function getOpsData() {
@@ -29,7 +30,9 @@ export default async function AdminOpsPage() {
   const locale = await getLocale();
   const session = await safeAuth();
   
-  if (!session || !['SUPER_ADMIN', 'OPS', 'FINANCE'].includes(session.user.role)) {
+  // Relational RBAC gate (IAM-001): the legacy role string never grants access.
+  const authorized = session ? await hasErpRole(session.user.id) : false;
+  if (!session || !authorized) {
     redirect('/' + locale + '/account');
   }
 

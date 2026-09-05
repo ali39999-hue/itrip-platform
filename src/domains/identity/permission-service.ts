@@ -13,8 +13,35 @@ export interface TenantAuthContext {
   permissions: Set<ERPPermission>;
 }
 
+/** Role names that grant ERP back-office access (checked relationally via UserRole). */
+export const ERP_STAFF_ROLES = ['SUPER_ADMIN', 'FINANCE', 'OPS'] as const;
+
 /**
- * Resolves user permissions strictly preferring relational DB records (IAM-001)
+ * ERP gate resolved strictly from the relational chain (IAM-001).
+ * Replaces the legacy `['SUPER_ADMIN','FINANCE','OPS'].includes(user.role)`
+ * string check on server-side admin surfaces.
+ */
+export async function hasErpRole(userId?: string): Promise<boolean> {
+  let uid = userId;
+  if (!uid) {
+    const { safeAuth } = await import('@/auth');
+    const session = await safeAuth();
+    uid = session?.user?.id;
+  }
+  if (!uid) return false;
+
+  const assignments = await prisma.userRole.findMany({
+    where: { userId: uid },
+    select: { role: { select: { name: true } } },
+  });
+  return assignments.some((ur) => (ERP_STAFF_ROLES as readonly string[]).includes(ur.role.name));
+}
+
+/**
+ * Resolves user permissions strictly from relational RBAC records (IAM-001).
+ * The relational chain User → UserRole → Role → RolePermission → Permission is
+ * the SOLE authority. The legacy `User.role` string and `Role.permissions` JSON
+ * are display/compat fields only and never grant permissions.
  */
 export async function getUserPermissions(userId: string): Promise<ERPPermission[]> {
   const user = await prisma.user.findUnique({
@@ -37,26 +64,18 @@ export async function getUserPermissions(userId: string): Promise<ERPPermission[
   if (!user) return [];
 
   const perms = new Set<ERPPermission>();
-
-  // 1. Relational DB RBAC roles are the sole authority (IAM-001)
   user.userRoles.forEach((ur) => {
-    if (ur.role.rolePermissions && ur.role.rolePermissions.length > 0) {
-      ur.role.rolePermissions.forEach((rp) => {
-        perms.add(rp.permission.code as ERPPermission);
-      });
-    }
+    ur.role.rolePermissions.forEach((rp) => {
+      perms.add(rp.permission.code as ERPPermission);
+    });
   });
-
-  // 2. Direct system role defaults (SUPER_ADMIN, FINANCE, OPS, CUSTOMER)
-  const roleDefaults = ROLE_DEFAULT_PERMISSIONS[user.role] || [];
-  roleDefaults.forEach((p) => perms.add(p));
 
   return Array.from(perms);
 }
 
 /**
- * Builds an authoritative Tenant Authorization Context (IAM-002)
- * Principal -> Organization -> Branch -> Policy
+ * Builds an authoritative Tenant Authorization Context (IAM-002, IAM-003)
+ * Principal → Organization → Branch → Policy
  */
 export async function getTenantAuthContext(userId?: string): Promise<TenantAuthContext> {
   let uid = userId;
@@ -72,9 +91,11 @@ export async function getTenantAuthContext(userId?: string): Promise<TenantAuthC
   const user = await prisma.user.findUnique({
     where: { id: uid },
     include: {
+      userRoles: { include: { role: true } },
       organizationMemberships: {
         where: { status: 'ACTIVE' },
         include: {
+          branch: true,
           organization: {
             include: { branches: true },
           },
@@ -89,7 +110,8 @@ export async function getTenantAuthContext(userId?: string): Promise<TenantAuthC
 
   const permissionsList = await getUserPermissions(user.id);
   const permissions = new Set<ERPPermission>(permissionsList);
-  const isSuperAdmin = user.role === 'SUPER_ADMIN';
+  // Authority comes from the relational role assignment, not the legacy string.
+  const isSuperAdmin = user.userRoles.some((ur) => ur.role.name === 'SUPER_ADMIN');
 
   const activeMembership = user.organizationMemberships[0];
 
@@ -97,7 +119,7 @@ export async function getTenantAuthContext(userId?: string): Promise<TenantAuthC
     userId: user.id,
     role: user.role,
     organizationId: activeMembership?.organizationId,
-    branchId: activeMembership?.organization?.branches?.[0]?.id,
+    branchId: activeMembership?.branchId ?? activeMembership?.organization?.branches?.[0]?.id,
     isSuperAdmin,
     permissions,
   };

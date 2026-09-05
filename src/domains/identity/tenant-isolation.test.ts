@@ -13,6 +13,7 @@ describe('Tenant Isolation & RBAC Security Suite (IAM-001 to IAM-003, SEC-001)',
   let userAId = '';
   let userBId = '';
   let superAdminId = '';
+  let superAdminRoleId = '';
   let roleId = '';
   let permId = '';
 
@@ -23,6 +24,13 @@ describe('Tenant Isolation & RBAC Security Suite (IAM-001 to IAM-003, SEC-001)',
         await prisma.userRole.deleteMany({ where: { roleId } });
         await prisma.permission.deleteMany({ where: { id: permId } });
         await prisma.role.deleteMany({ where: { id: roleId } });
+      }
+      // Detach the admin's relational role link without deleting the shared
+      // SUPER_ADMIN role row itself (other fixtures depend on it).
+      if (superAdminRoleId) {
+        await prisma.userRole.deleteMany({
+          where: { roleId: superAdminRoleId, userId: superAdminId },
+        });
       }
       await prisma.organizationMembership.deleteMany({
         where: { userId: { in: [userAId, userBId, superAdminId] } },
@@ -108,7 +116,8 @@ describe('Tenant Isolation & RBAC Security Suite (IAM-001 to IAM-003, SEC-001)',
       },
     });
 
-    // Super Admin
+    // Super Admin — authority is granted relationally (IAM-001); the legacy
+    // `role` string alone never grants permissions.
     const admin = await prisma.user.create({
       data: {
         id: `adm_${suffix}`,
@@ -117,6 +126,16 @@ describe('Tenant Isolation & RBAC Security Suite (IAM-001 to IAM-003, SEC-001)',
       },
     });
     superAdminId = admin.id;
+
+    const superAdminRole = await prisma.role.upsert({
+      where: { name: 'SUPER_ADMIN' },
+      update: {},
+      create: { name: 'SUPER_ADMIN', permissions: '[]' },
+    });
+    superAdminRoleId = superAdminRole.id;
+    await prisma.userRole.create({
+      data: { userId: superAdminId, roleId: superAdminRole.id },
+    });
 
     expect(orgAId).not.toBe(orgBId);
   });

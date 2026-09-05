@@ -7,13 +7,16 @@ import { getLocale } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
 import { lt } from '@/lib/lt';
 import { safeAuth } from '@/auth';
+import { hasErpRole } from '@/domains/identity/permission-service';
 import { redirect } from 'next/navigation';
 
 export default async function AdminDashboard() {
   const locale = await getLocale();
   const session = await safeAuth();
 
-  if (!session || !['SUPER_ADMIN', 'FINANCE', 'OPS'].includes(session.user.role)) {
+  // Relational RBAC gate (IAM-001): the legacy role string never grants access.
+  const authorized = session ? await hasErpRole(session.user.id) : false;
+  if (!session || !authorized) {
     redirect('/' + locale + '/auth');
   }
 

@@ -1,6 +1,5 @@
 import { prisma } from '@/lib/prisma';
 import { requirePermission } from '@/domains/identity/permission-service';
-import { AdminShell } from '@/components/admin/AdminShell';
 import { getLocale } from 'next-intl/server';
 import { lt } from '@/lib/lt';
 import { notFound } from 'next/navigation';
@@ -18,7 +17,7 @@ export default async function TravelFileDetailPage({
   params: Promise<{ locale: string; id: string }>;
 }) {
   const { id } = await params;
-  const user = await requirePermission(['booking:view:all', 'ops:override:cancel']);
+  await requirePermission(['booking:view:all', 'ops:override:cancel']);
   const locale = await getLocale();
 
   const trip = await prisma.trip.findUnique({
@@ -54,8 +53,8 @@ export default async function TravelFileDetailPage({
   const totalAmount = allBookings.reduce((sum, b) => sum + Number(b.totalAmount), 0);
 
   return (
-    <AdminShell userName={user.email || 'Admin'} role={user.role}>
-      <div className="space-y-6 max-w-6xl mx-auto">
+    // AdminShell is provided by the admin layout; wrapping here renders a duplicate shell.
+    <div className="space-y-6 max-w-6xl mx-auto">
         {/* Navigation Breadcrumb */}
         <div className="flex items-center justify-between">
           <Link
@@ -222,7 +221,6 @@ export default async function TravelFileDetailPage({
             </div>
           </div>
         </div>
-      </div>
-    </AdminShell>
+    </div>
   );
 }

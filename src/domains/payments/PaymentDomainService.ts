@@ -220,7 +220,9 @@ export class PaymentDomainService {
       },
     });
 
-    // 7. Upsert Payment record for backward compatibility & direct query tracking
+    // 7. Upsert Payment record for backward compatibility & direct query tracking,
+    // explicitly linked to its PaymentIntent so the trace chain
+    // Gateway → Attempt → Intent → Payment → Booking stays queryable (PAY-004).
     const initialStatus = params.method === 'gateway_shetab' ? 'PENDING' : 'SUCCESS';
     const payment = await client.payment.upsert({
       where: { idempotencyKey: params.idempotencyKey },
@@ -229,9 +231,11 @@ export class PaymentDomainService {
         gatewayRef,
         amount: decimalAmount,
         method: params.method,
+        paymentIntentId: intent.id,
       },
       create: {
         bookingId: params.bookingId,
+        paymentIntentId: intent.id,
         idempotencyKey: params.idempotencyKey,
         method: params.method,
         gatewayRef,
@@ -400,9 +404,17 @@ export class PaymentDomainService {
     // 5. Atomic Capture Execution (PAY-002, PAY-007)
     const idempotencyKey = `webhook_${gatewayName}_${params.eventId}`;
 
+    // Link the captured payment back to the booking's most recent intent so the
+    // Payment → PaymentIntent → Attempt chain stays traceable (PAY-004).
+    const linkedIntent = await client.paymentIntent.findFirst({
+      where: { bookingId: booking.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
     const payment = await client.payment.create({
       data: {
         bookingId: params.bookingId,
+        paymentIntentId: linkedIntent?.id,
         idempotencyKey,
         method: 'gateway_shetab',
         gatewayRef: params.gatewayRef,

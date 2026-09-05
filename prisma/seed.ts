@@ -35,7 +35,7 @@ async function main() {
     },
   });
 
-  await prisma.user.upsert({
+  const testAdmin = await prisma.user.upsert({
     where: { phone: '09123456789' },
     update: {
       passwordHash: adminPasswordHash,
@@ -112,24 +112,33 @@ async function main() {
     }
   }
 
-  // Link admin to SUPER_ADMIN role
-  const superAdminRole = await prisma.role.findUnique({ where: { name: 'SUPER_ADMIN' } });
-  if (superAdminRole) {
-    await prisma.userRole.upsert({
-      where: { userId_roleId: { userId: admin.id, roleId: superAdminRole.id } },
-      update: {},
-      create: { userId: admin.id, roleId: superAdminRole.id },
-    });
+  // Link every seeded user to its relational role (IAM-001: relational RBAC is
+  // the sole permission authority; legacy User.role is display-only).
+  for (const [u, roleName] of [
+    [admin, 'SUPER_ADMIN'],
+    [testAdmin, 'SUPER_ADMIN'],
+    [user, 'CUSTOMER'],
+  ] as const) {
+    const role = await prisma.role.findUnique({ where: { name: roleName } });
+    if (role) {
+      await prisma.userRole.upsert({
+        where: { userId_roleId: { userId: u.id, roleId: role.id } },
+        update: {},
+        create: { userId: u.id, roleId: role.id },
+      });
+    }
   }
 
   // 3. Seed Canonical Chart of Accounts (FIN-001)
   const chartAccounts = [
     { code: '1010', name: 'Operating Cash & Bank', category: 'ASSET' },
     { code: '1020', name: 'Customer Wallet Liability', category: 'LIABILITY' },
+    { code: '1030', name: 'FX Liquidity Pool', category: 'ASSET' },
     { code: '2010', name: 'Platform Customer Escrow', category: 'LIABILITY' },
     { code: '2020', name: 'Supplier Accounts Payable', category: 'LIABILITY' },
     { code: '2030', name: 'Tax & VAT Payable', category: 'LIABILITY' },
     { code: '4010', name: 'Platform Service Revenue', category: 'REVENUE' },
+    { code: '4020', name: 'Fee Revenue', category: 'REVENUE' },
     { code: '5010', name: 'Supplier Travel Expense', category: 'EXPENSE' },
   ];
 

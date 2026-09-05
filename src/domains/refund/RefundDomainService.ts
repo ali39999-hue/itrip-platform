@@ -78,7 +78,7 @@ export class RefundDomainService {
 
       const refundNumber = `RFD-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
-      // 4. Create Refund Record
+      // 4. Create Refund Record with immutable policy & approval trail (REF-004, REF-005)
       const refund = await client.refund.create({
         data: {
           refundNumber,
@@ -105,6 +105,29 @@ export class RefundDomainService {
                 currency: booking.currency,
               };
             }),
+          },
+          // Immutable snapshot of the policy inputs at request time (REF-004)
+          policySnapshot: {
+            create: {
+              bookingId: booking.id,
+              bookingStatusAtRequest: booking.status,
+              penaltyPercentage: penaltyRate,
+              rulesJson: JSON.stringify({
+                grossAmount: grossMoney.toNumber(),
+                penaltyPercentage: params.penaltyPercentage || 0,
+                penaltyAmount: penaltyMoney.toNumber(),
+                netRefundAmount: netMoney.toNumber(),
+                reason: params.reason || 'Customer cancellation',
+                capturedBy: params.approvedBy || 'SYSTEM',
+              }),
+            },
+          },
+          approvals: {
+            create: {
+              approverId: params.approvedBy || 'SYSTEM',
+              decision: 'APPROVED',
+              note: params.reason || 'Customer cancellation',
+            },
           },
         },
       });

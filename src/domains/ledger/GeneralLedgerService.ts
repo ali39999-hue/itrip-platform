@@ -52,6 +52,26 @@ export interface RefundPostingParams {
 
 const PLATFORM = '#platform';
 
+/**
+ * Canonical mapping from operational ledger accounts (Account.ownerType) to
+ * ChartOfAccounts codes. Every JournalLine must reference the ChartOfAccounts
+ * account that truly corresponds to its leg (FIN-002, FIN-005) — never a shared
+ * placeholder account.
+ */
+const OWNER_TYPE_TO_CHART_ACCOUNT: Record<
+  string,
+  { code: string; name: string; category: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE' }
+> = {
+  USER: { code: '1020', name: 'Customer Wallet Liability', category: 'LIABILITY' },
+  PLATFORM_ESCROW: { code: '2010', name: 'Platform Customer Escrow', category: 'LIABILITY' },
+  PLATFORM_REVENUE: { code: '4010', name: 'Platform Service Revenue', category: 'REVENUE' },
+  PLATFORM_FEE: { code: '4020', name: 'Fee Revenue', category: 'REVENUE' },
+  GATEWAY_SETTLEMENT: { code: '1010', name: 'Operating Cash & Bank', category: 'ASSET' },
+  SUPPLIER_PAYABLE: { code: '2020', name: 'Supplier Accounts Payable', category: 'LIABILITY' },
+  TAX_PAYABLE: { code: '2030', name: 'Tax & VAT Payable', category: 'LIABILITY' },
+  FX_POOL: { code: '1030', name: 'FX Liquidity Pool', category: 'ASSET' },
+};
+
 export class GeneralLedgerService {
   /**
    * Helper to ensure Account exists with unique constraint
@@ -143,7 +163,7 @@ export class GeneralLedgerService {
       currency: string;
       memo?: string;
       legs: Array<{
-        account: { id: string; code?: string; name?: string; category?: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE' };
+        account: { id: string; ownerType: string; ownerId: string | null };
         direction: 'DEBIT' | 'CREDIT';
         amount: Prisma.Decimal;
       }>;
@@ -191,14 +211,30 @@ export class GeneralLedgerService {
       });
     }
 
-    // 4. Mirror to Chart of Accounts JournalEntry & JournalLine (FIN-001)
-    const headerAccount = await this.getOrCreateChartAccount(
-      '1010',
-      'Operating Cash & Bank',
-      'ASSET',
-      params.currency,
-      client
-    );
+    // 4. Mirror to Chart of Accounts JournalEntry & JournalLine (FIN-001, FIN-005).
+    // Each line references the ChartOfAccounts account matching its leg's ownerType.
+    const legChartAccounts = new Map<string, { id: string }>();
+    for (const leg of params.legs) {
+      const mapping = OWNER_TYPE_TO_CHART_ACCOUNT[leg.account.ownerType];
+      if (!mapping) {
+        throw new Error(
+          `Accounting mapping error: no ChartOfAccounts mapping for Account.ownerType '${leg.account.ownerType}' (group ${params.groupId})`
+        );
+      }
+      if (!legChartAccounts.has(mapping.code)) {
+        const chartAccount = await this.getOrCreateChartAccount(
+          mapping.code,
+          mapping.name,
+          mapping.category,
+          params.currency,
+          client
+        );
+        legChartAccounts.set(mapping.code, chartAccount);
+      }
+    }
+
+    const firstLegMapping = OWNER_TYPE_TO_CHART_ACCOUNT[params.legs[0].account.ownerType];
+    const headerChartAccount = legChartAccounts.get(firstLegMapping.code)!;
 
     const entryNumber = `JE-${params.groupId}`;
     await client.journalEntry.upsert({
@@ -206,20 +242,24 @@ export class GeneralLedgerService {
       update: {},
       create: {
         entryNumber,
-        chartOfAccountId: headerAccount.id,
+        chartOfAccountId: headerChartAccount.id,
         description: params.memo || `Journal entry for ${params.referenceType}`,
         referenceType: params.referenceType,
         referenceId: params.referenceId,
         lines: {
-          create: params.legs.map((leg) => ({
-            chartOfAccountId: headerAccount.id,
-            direction: leg.direction,
-            debit: leg.direction === 'DEBIT' ? leg.amount : new Prisma.Decimal(0),
-            credit: leg.direction === 'CREDIT' ? leg.amount : new Prisma.Decimal(0),
-            amount: leg.amount,
-            currency: params.currency,
-            memo: params.memo,
-          })),
+          create: params.legs.map((leg) => {
+            const mapping = OWNER_TYPE_TO_CHART_ACCOUNT[leg.account.ownerType];
+            const chartAccount = legChartAccounts.get(mapping.code)!;
+            return {
+              chartOfAccountId: chartAccount.id,
+              direction: leg.direction,
+              debit: leg.direction === 'DEBIT' ? leg.amount : new Prisma.Decimal(0),
+              credit: leg.direction === 'CREDIT' ? leg.amount : new Prisma.Decimal(0),
+              amount: leg.amount,
+              currency: params.currency,
+              memo: params.memo,
+            };
+          }),
         },
       },
     });
