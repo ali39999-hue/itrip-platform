@@ -178,7 +178,7 @@ function FlightSearchInner() {
 
   const stopLabels = [t('directOnly'), t('oneStop'), t('twoOrMoreStops')];
 
-  const pageItems = totalPages <= 5
+  const pageItems: Array<number | 'ellipsis' | 'ellipsis-end'> = totalPages <= 5
     ? Array.from({ length: totalPages }, (_, index) => index + 1)
     : currentPage <= 3
       ? [1, 2, 3, 'ellipsis', totalPages]
@@ -275,7 +275,7 @@ function FlightSearchInner() {
     <div className="min-h-screen bg-paper pb-20">
       <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-6 flex flex-col lg:flex-row gap-6 items-start">
         {/* Sidebar desktop */}
-        <aside className="w-72 shrink-0 hidden lg:block bg-surface rounded-2xl border border-line p-5 shadow-sm sticky top-24">
+        <aside className="w-72 max-h-[calc(100vh-6rem)] shrink-0 hidden lg:block overflow-y-auto overscroll-contain bg-surface rounded-2xl border border-line p-5 shadow-sm sticky top-24">
           <div className="flex justify-between items-center mb-6">
             <h2 className="font-black text-sm text-ink">{t('filters')}</h2>
             {activeFilters > 0 && (
@@ -421,27 +421,31 @@ function FlightSearchInner() {
               >
                 {t('previousPage')}
               </button>
-              {pageItems.map((pageItem, index) => pageItem === 'ellipsis' || pageItem === 'ellipsis-end' ? (
-                <span key={`${pageItem}-${index}`} className="px-1 text-sub font-black" aria-hidden="true">...</span>
-              ) : (
-                <button
-                  key={pageItem}
-                  type="button"
-                  onClick={() => {
-                    setCurrentPage(pageItem);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  aria-label={t('goToPage', { page: pageItem })}
-                  aria-current={currentPage === pageItem ? 'page' : undefined}
-                  className={`min-h-10 min-w-10 px-3 rounded-xl text-[13px] font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                    currentPage === pageItem
-                      ? 'bg-brand text-surface'
-                      : 'border border-line bg-surface text-sub hover:bg-soft'
-                  }`}
-                >
-                  {num(pageItem, locale)}
-                </button>
-              ))}
+              {pageItems.map((pageItem, index) => {
+                if (typeof pageItem !== 'number') {
+                  return <span key={`${pageItem}-${index}`} className="px-1 text-sub font-black" aria-hidden="true">...</span>;
+                }
+
+                return (
+                  <button
+                    key={pageItem}
+                    type="button"
+                    onClick={() => {
+                      setCurrentPage(pageItem);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    aria-label={t('goToPage', { page: pageItem })}
+                    aria-current={currentPage === pageItem ? 'page' : undefined}
+                    className={`min-h-10 min-w-10 px-3 rounded-xl text-[13px] font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                      currentPage === pageItem
+                        ? 'bg-brand text-surface'
+                        : 'border border-line bg-surface text-sub hover:bg-soft'
+                    }`}
+                  >
+                    {num(pageItem, locale)}
+                  </button>
+                );
+              })}
               <button
                 type="button"
                 onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
