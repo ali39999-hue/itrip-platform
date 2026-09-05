@@ -25,7 +25,7 @@ export function useHotelFilters({
   const [query, setQuery] = useState(initialCity);
   const [sort, setSortState] = useState<SortKey>(initialSort);
   const [loading, setLoading] = useState(true);
-  const [shown, setShown] = useState(12);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [maxPrice, setMaxPriceState] = useState(initialMaxPrice);
   const [stars, setStars] = useState<Set<number>>(new Set());
@@ -34,6 +34,7 @@ export function useHotelFilters({
 
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [priceBuckets, setPriceBuckets] = useState<number[]>(new Array(14).fill(20));
 
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -78,7 +79,8 @@ export function useHotelFilters({
       if (sort) {
         q.set('sort', sort);
       }
-      q.set('limit', '50');
+      q.set('page', String(currentPage));
+      q.set('limit', '10');
 
       const res = await fetch(`/api/hotels/search?${q.toString()}`, {
         signal: abortControllerRef.current.signal,
@@ -90,6 +92,7 @@ export function useHotelFilters({
       if (json.success && json.data) {
         setHotels(json.data.hotels || []);
         setTotalCount(json.data.total || 0);
+        setTotalPages(json.data.totalPages || 1);
         if (json.data.priceBuckets) {
           setPriceBuckets(json.data.priceBuckets);
         }
@@ -102,7 +105,7 @@ export function useHotelFilters({
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, initialCity, country, starsKey, minScore, freeCancel, maxPrice, sort]);
+  }, [query, initialCity, country, starsKey, minScore, freeCancel, maxPrice, sort, currentPage]);
 
   useEffect(() => {
     fetchLiveHotels();
@@ -111,14 +114,19 @@ export function useHotelFilters({
     };
   }, [fetchLiveHotels]);
 
+  const setQueryValue = useCallback((value: string) => {
+    setQuery(value);
+    setCurrentPage(1);
+  }, []);
+
   const setSort = useCallback((newSort: SortKey) => {
     setSortState(newSort);
-    setShown(12);
+    setCurrentPage(1);
   }, []);
 
   const setMaxPrice = useCallback((price: number) => {
     setMaxPriceState(price);
-    setShown(12);
+    setCurrentPage(1);
   }, []);
 
   const toggleStar = useCallback((s: number) => {
@@ -131,17 +139,17 @@ export function useHotelFilters({
       }
       return next;
     });
-    setShown(12);
+    setCurrentPage(1);
   }, []);
 
   const setMinScore = useCallback((score: number) => {
     setMinScoreState(score);
-    setShown(12);
+    setCurrentPage(1);
   }, []);
 
   const toggleFreeCancel = useCallback(() => {
     setFreeCancelState((prev) => !prev);
-    setShown(12);
+    setCurrentPage(1);
   }, []);
 
   const resetAll = useCallback(() => {
@@ -149,16 +157,10 @@ export function useHotelFilters({
     setStars(new Set());
     setMinScoreState(0);
     setFreeCancelState(false);
-    setShown(12);
+    setCurrentPage(1);
   }, []);
 
-  const loadMore = useCallback(() => {
-    setShown((prev) => prev + 12);
-  }, []);
-
-  const results = useMemo(() => {
-    return hotels.slice(0, shown);
-  }, [hotels, shown]);
+  const results = hotels;
 
   const chips = useMemo<FilterChip[]>(() => {
     const out: FilterChip[] = [];
@@ -201,13 +203,12 @@ export function useHotelFilters({
 
   return {
     query,
-    setQuery,
+    setQuery: setQueryValue,
     sort,
     setSort,
     loading,
-    shown,
-    setShown,
-    loadMore,
+    currentPage,
+    setCurrentPage,
     maxPrice,
     setMaxPrice,
     stars,
@@ -219,6 +220,7 @@ export function useHotelFilters({
     resetAll,
     results,
     totalCount,
+    totalPages,
     priceBuckets,
     chips,
     activeFiltersCount: chips.length,
