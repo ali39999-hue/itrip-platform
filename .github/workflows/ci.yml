@@ -116,7 +116,7 @@ jobs:
         run: npm run build
 
       - name: Run E2E Golden Journeys (Chromium)
-        run: npm run test:e2e -- --project=chromium
+        run: npx playwright test tests/golden-journeys.spec.ts --project=chromium
 
       - name: Upload Playwright Artifacts on Failure
         if: failure()

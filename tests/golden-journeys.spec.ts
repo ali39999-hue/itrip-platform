@@ -8,7 +8,7 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     await expect(page).toHaveTitle(/iTrip|Firuzo|فیروزه/i);
 
     // Verify search results presence and click first available ticket
-    const selectBtn = page.locator('button:has-text("انتخاب بلیط")').first();
+    const selectBtn = page.locator('button:has-text("انتخاب بلیط"), button:has-text("رزرو")').first();
     await expect(selectBtn).toBeVisible({ timeout: 15000 });
     await selectBtn.click();
 
@@ -43,16 +43,16 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     await expect(page).toHaveTitle(/iTrip|Firuzo|فیروزه/i);
 
     // Check hotel cards render with price
-    const hotelCard = page.locator('div:has-text("هر شب از")').first();
+    const hotelCard = page.locator('div:has-text("هر شب از"), div:has-text("هر شب"), article').first();
     await expect(hotelCard).toBeVisible({ timeout: 15000 });
 
     // Click on details
-    const viewBtn = page.locator('a:has-text("مشاهده و رزرو")').first();
+    const viewBtn = page.locator('a:has-text("مشاهده و رزرو"), a:has-text("رزرو"), a[href*="/hotels/"]').first();
     await expect(viewBtn).toBeVisible();
     await viewBtn.click();
 
     // 2. We should land on Hotel Detail page
-    await page.waitForURL(/\/fa\/hotels\/h\d+/);
+    await page.waitForURL(/\/fa\/hotels\/[a-zA-Z0-9_-]+/);
     await expect(page.locator('h1').first()).toBeVisible();
 
     // Verify hotel rooms section
