@@ -72,7 +72,6 @@ function HotelsSearchInner() {
     toggleFreeCancel,
     resetAll,
     results,
-    totalCount,
     currentPage,
     setCurrentPage,
     totalPages,
