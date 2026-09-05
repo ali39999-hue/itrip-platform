@@ -60,7 +60,7 @@ export function BentoFlightCard({ flight, onSelect, isCheapest = false }: BentoF
 
   return (
     <article
-      className="relative bg-[#FDF6EE] dark:bg-surface border border-[#F0E9DD] dark:border-line rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] hover:border-amber-400/60 transition-all group overflow-hidden"
+      className="relative bg-[#FDF6EE] dark:bg-surface rounded-2xl shadow-[0_2px_14px_rgba(64,50,30,0.07)] hover:shadow-[0_6px_22px_rgba(64,50,30,0.11)] transition-all group overflow-hidden"
     >
       <div className="flex flex-col md:flex-row items-stretch">
         {/* ================= MAIN TICKET BODY (در RTL: سمت راست — بدنه پرواز) ================= */}
