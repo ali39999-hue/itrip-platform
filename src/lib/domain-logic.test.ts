@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { dualDate } from '@/lib/jalali';
 import { toLocalCurrency, formatMoney, chargeContext } from '@/lib/money';
-import { num } from '@/lib/format';
+import { num, formatDistance } from '@/lib/format';
 import { CurrencyService } from '@/domains/currency/CurrencyService';
 import { BookingDomainService } from '@/domains/booking/BookingDomainService';
 
@@ -55,6 +55,24 @@ describe('Unit Tests: Format Utilities', () => {
 
     const enNum = num(12345, 'en');
     expect(enNum).toBe('12,345');
+  });
+
+  it('formats distances under 1 km in meters and 1 km or more in kilometers', () => {
+    // 0.2199999988079071 km -> 220 meters
+    const faMeters = formatDistance('0.2199999988079071', 'Wangfujing', 'fa');
+    expect(faMeters).toContain('متر تا Wangfujing');
+    expect(faMeters).toContain('۲۲۰');
+
+    const enMeters = formatDistance('0.2199999988079071', 'Wangfujing', 'en');
+    expect(enMeters).toBe('220m to Wangfujing');
+
+    // 3.5999999046325684 km -> 3.6 km
+    const faKm = formatDistance('3.5999999046325684', 'Terminal 2', 'fa');
+    expect(faKm).toContain('کیلومتر تا Terminal 2');
+    expect(faKm).toContain('۳٫۶');
+
+    const enKm = formatDistance('3.5999999046325684', 'Terminal 2', 'en');
+    expect(enKm).toBe('3.6 km to Terminal 2');
   });
 });
 
