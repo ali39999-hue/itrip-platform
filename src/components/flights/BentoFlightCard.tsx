@@ -284,10 +284,10 @@ export function BentoFlightCard({ flight, onSelect, isCheapest = false }: BentoF
           {/* Price display with large crisp numbers */}
           <div className="my-auto py-2">
             <div className="flex items-baseline justify-center gap-1.5" dir="ltr">
-              <span className="text-[26px] md:text-[30px] font-black tracking-tight text-neutral-900 dark:text-ink font-mono leading-none">
+              <span className="text-[23px] md:text-[26px] font-black tracking-tight text-neutral-900 dark:text-ink leading-none tabular-nums">
                 {num(flight.price, locale)}
               </span>
-              <span className="text-xs font-bold text-neutral-500 dark:text-sub" dir={['fa', 'ar'].includes(locale) ? 'rtl' : 'ltr'}>
+              <span className="text-[13px] font-bold text-neutral-500 dark:text-sub" dir={['fa', 'ar'].includes(locale) ? 'rtl' : 'ltr'}>
                 {t('toman')}
               </span>
             </div>
