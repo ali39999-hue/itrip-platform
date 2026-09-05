@@ -7,9 +7,13 @@ describe('Unit & Integration Tests: RefundDomainService (REF-001, REF-002, REF-0
   const suffix = `rfd_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
   let userId: string;
   let bookingId: string;
+  let refundLedgerGroupId: string;
 
   afterAll(async () => {
     try {
+      if (refundLedgerGroupId) {
+        await prisma.ledgerEntry.deleteMany({ where: { groupId: refundLedgerGroupId } });
+      }
       await prisma.refundItem.deleteMany({ where: { refund: { bookingId } } });
       await prisma.refund.deleteMany({ where: { bookingId } });
       await prisma.bookingItem.deleteMany({ where: { bookingId } });
@@ -106,6 +110,7 @@ describe('Unit & Integration Tests: RefundDomainService (REF-001, REF-002, REF-0
     expect(result.penaltyAmount).toBe(100_000);
     expect(result.netRefundAmount).toBe(900_000);
     expect(result.status).toBe('SETTLED');
+    refundLedgerGroupId = `rfd_grp_${result.refundId}`;
 
     // 3. Verify Booking status transitioned to REFUNDED
     const updatedBooking = await prisma.booking.findUniqueOrThrow({
@@ -131,5 +136,28 @@ describe('Unit & Integration Tests: RefundDomainService (REF-001, REF-002, REF-0
 
     const balance = await GeneralLedgerService.getAccountBalance(customerAcc.id, 'IRR');
     expect(balance).toBe(900_000);
+
+    // 6. Verify immutable policy snapshot, approval trail and execution attempt (REF-004..006)
+    const snapshot = await prisma.refundPolicySnapshot.findUniqueOrThrow({
+      where: { refundId: result.refundId },
+    });
+    expect(snapshot.bookingId).toBe(booking.id);
+    expect(snapshot.bookingStatusAtRequest).toBe('CONFIRMED');
+    expect(Number(snapshot.penaltyPercentage)).toBe(0.10);
+    expect(JSON.parse(snapshot.rulesJson).netRefundAmount).toBe(900_000);
+
+    const approvals = await prisma.refundApproval.findMany({
+      where: { refundId: result.refundId },
+    });
+    expect(approvals).toHaveLength(1);
+    expect(approvals[0].decision).toBe('APPROVED');
+
+    const attempts = await prisma.refundAttempt.findMany({
+      where: { refundId: result.refundId },
+    });
+    expect(attempts).toHaveLength(1);
+    expect(attempts[0].status).toBe('SUCCESS');
+    expect(attempts[0].channel).toBe('WALLET');
+    expect(Number(attempts[0].amount)).toBe(900_000);
   });
 });

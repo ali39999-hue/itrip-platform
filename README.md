@@ -4,7 +4,7 @@
 > Built with Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, next-intl (5 Languages), Zustand, and Playwright E2E.
 
 [![Playwright Tests](https://img.shields.io/badge/Playwright-52%20Tests%20E2E-brightgreen)](https://playwright.dev/)
-[![Vitest](https://img.shields.io/badge/Vitest-24%20Unit%20Tests%20Passed-brightgreen)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Vitest-106%20Unit%20Tests%20Passed-brightgreen)](https://vitest.dev/)
 [![Next.js](https://img.shields.io/badge/Next.js-16.3-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2-blue)](https://react.dev/)
 [![PWA Ready](https://img.shields.io/badge/PWA-Offline%20Ready-teal)](public/manifest.json)
@@ -14,7 +14,7 @@
 
 ## 🌟 Overview & Architecture
 
-**iTrip / Firuzo** is a full-featured, localized travel marketplace designed for effortless booking of flights, hotels, curated tours, and cross-border ancillary services (eSIM, travel insurance, on-demand live interpreter, visa processing, airport transfers).
+**iTrip / Firuzo** is a localized travel marketplace designed for effortless booking of flights, hotels, curated tours, and cross-border ancillary services (eSIM, travel insurance, on-demand live interpreter, visa processing, airport transfers). Core commerce, financial and operational subsystems are production-grade; external provider integrations (PSP, GDS, FX feed) are clearly marked as simulated until live merchant contracts are wired — see the status matrix below.
 
 ```mermaid
 graph TD
@@ -35,7 +35,7 @@ graph TD
   Checkout --> Passengers[Passport OCR & Passenger Form]
   Checkout --> Addons[eSIM + Insurance Addons]
   Checkout --> Payment[Shetab / USDT / Card Gateway]
-  Payment --> Voucher[Instant GDS Voucher & PNR]
+  Payment --> Voucher[Voucher & PNR — Demo GDS]
   
   User --> Wallet[/wallet Multi-Currency]
   User --> MyTrips[/my-trips Management]
@@ -53,13 +53,17 @@ graph TD
 | **Financial Kernel & Money** | `PRODUCTION-READY` | Zero JavaScript floating-point arithmetic. 100% `Prisma.Decimal` Money kernel. |
 | **12-Stage Pricing Pipeline** | `PRODUCTION-READY` | Server-side authoritative calculations generating immutable `PriceSnapshot` audit records. |
 | **Versioned Tax Engine** | `PRODUCTION-READY` | Date-effective multi-jurisdiction rules (IR 9%, CN 6%, AE 5%, TR 10%, Global exempt). |
-| **Payment Integrity & Gateways** | `PRODUCTION-READY` | Canonical `PaymentIntent` lifecycle, HMAC-SHA256 signatures, 5m replay window, fail-closed. |
+| **Payment Integrity & Gateways** | `PRODUCTION-READY` (rails) / `SIMULATED` (PSP) | Canonical `PaymentIntent` lifecycle, HMAC-SHA256 signatures, 5m replay window, fail-closed. No live PSP merchant credentials wired yet — demo adapter only with `DEMO_MODE=true`. |
 | **Double-Entry General Ledger** | `PRODUCTION-READY` | Strict `SUM(DEBIT) === SUM(CREDIT)` balance invariant. Chart of Accounts mapped. |
 | **Server-Authoritative Wallet** | `PRODUCTION-READY` | Row-locked atomic balance verification preventing concurrent overdrafts. |
 | **Saga & Outbox Workers** | `PRODUCTION-READY` | PostgreSQL `SELECT ... FOR UPDATE SKIP LOCKED` claiming, reverse-order compensation. |
 | **B2B Tenant Isolation** | `PRODUCTION-READY` | Prisma Client Extension (`$extends`) auto-scoping queries to `activeOrganizationId`. |
 | **PII & Data Vault** | `PRODUCTION-READY` | AES-256-GCM field-level encryption for passport and national IDs with read audit logging. |
 | **Three-Way Reconciliation** | `PRODUCTION-READY` | Automated reconciliation between Bank Statements ↔ PaymentIntents ↔ Supplier Invoices. |
+| **Refund Domain** | `PRODUCTION-READY` (wallet channel) | Immutable `RefundPolicySnapshot`, approval trail (`RefundApproval`), execution `RefundAttempt` records, ledger reversal. |
+| **GDS Voucher & PNR Issuance** | `SIMULATED` | Mock supplier adapters; requires live GDS contract before marketing as instant issuance. |
+| **Live FX Rate Feed** | `SIMULATED` | ERP-editable demo rates; no live FX provider wired. |
+| **Live Interpreter / Snapp / eSIM Activation** | `COMING_SOON` | UI and flows exist; external providers not integrated. |
 | **Supplier GDS / BedBanks** | `BETA` | Normalized `FlightSupplier` & `HotelSupplier` ports with Circuit Breaker and fallback mocks. |
 | **AI Planner Engine** | `BETA` | Dynamic timeline and bundle generator with client-side refinement. |
 
