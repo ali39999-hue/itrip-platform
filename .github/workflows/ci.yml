@@ -9,6 +9,13 @@ on:
 jobs:
   audit-and-verify:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://itrip_user:itrip_secure_password@localhost:5432/itrip_test_db
+      AUTH_SECRET: production_audit_dummy_secret_32_chars_min
+      ADMIN_PASSWORD: Admin@Firuzo2026!Secure
+      USER_PASSWORD: User@Firuzo2026!Secure
+      DEMO_MODE: "false"
+      NEXT_PUBLIC_DEMO_MODE: "false"
     services:
       postgres:
         image: postgres:16-alpine
@@ -44,17 +51,11 @@ jobs:
         run: npm run typecheck
 
       - name: Validate Prisma Database Migrations
-        env:
-          DATABASE_URL: postgresql://itrip_user:itrip_secure_password@localhost:5432/itrip_test_db
         run: |
           npx prisma migrate deploy
           npm run prisma:seed
 
       - name: Execute Unit & Financial Invariant Tests
-        env:
-          DATABASE_URL: postgresql://itrip_user:itrip_secure_password@localhost:5432/itrip_test_db
-          AUTH_SECRET: production_audit_dummy_secret_32_chars_min
-          DEMO_MODE: "false"
         run: npm run test:unit
 
       - name: Next.js Production Build
