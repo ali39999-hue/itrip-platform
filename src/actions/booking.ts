@@ -143,39 +143,72 @@ export async function createBookingDraft(data: unknown) {
       if (dbItem) validInventoryItemId = dbItem.id;
     }
 
-    // 4. Create Booking in DRAFT or HELD state
-    const booking = await prisma.booking.create({
-      data: {
-        reference,
-        customerId: userId,
-        status: holdToken ? 'HELD' : 'DRAFT',
-        totalAmount: finalTotalAmount,
-        currency,
-        holdToken,
-        items: {
-          create: {
-            type: parsed.type,
-            inventoryItemId: validInventoryItemId,
-            netCost: pricing.netCost,
-            markup: pricing.markupAmount,
-            taxAmount: pricing.taxAmount,
-            feeAmount: pricing.serviceFee,
-            sellPrice: finalTotalAmount,
-            details: JSON.stringify({
-              ...parsed,
-              pricingBreakdown: {
-                netCost: pricing.netCost,
-                markupAmount: pricing.markupAmount,
-                taxAmount: pricing.taxAmount,
-                serviceFee: pricing.serviceFee,
-                sellPrice: pricing.sellPrice,
-                roundingDelta: pricing.roundingDelta,
-              },
-            }),
+    // 4. Create Booking in DRAFT or HELD state with hold rollback compensation (BOOK-005)
+    let booking;
+    try {
+      booking = await prisma.booking.create({
+        data: {
+          reference,
+          customerId: userId,
+          status: holdToken ? 'HELD' : 'DRAFT',
+          paymentStatus: 'INITIATED',
+          fulfillmentStatus: 'PENDING',
+          ticketStatus: 'NOT_ISSUED',
+          totalAmount: finalTotalAmount,
+          currency,
+          holdToken,
+          items: {
+            create: {
+              type: parsed.type,
+              inventoryItemId: validInventoryItemId,
+              netCost: pricing.netCost,
+              markup: pricing.markupAmount,
+              taxAmount: pricing.taxAmount,
+              feeAmount: pricing.serviceFee,
+              sellPrice: finalTotalAmount,
+              details: JSON.stringify({
+                ...parsed,
+                pricingBreakdown: {
+                  netCost: pricing.netCost,
+                  markupAmount: pricing.markupAmount,
+                  taxAmount: pricing.taxAmount,
+                  serviceFee: pricing.serviceFee,
+                  sellPrice: pricing.sellPrice,
+                  roundingDelta: pricing.roundingDelta,
+                },
+              }),
+            },
+          },
+          priceSnapshots: {
+            create: {
+              baseAmount: pricing.snapshot.baseAmount,
+              markupAmount: pricing.snapshot.markupAmount,
+              serviceFee: pricing.snapshot.serviceFee,
+              taxAmount: pricing.snapshot.taxAmount,
+              discountAmount: pricing.snapshot.discountAmount,
+              sellPrice: pricing.snapshot.sellPrice,
+              currency: pricing.snapshot.currency,
+              fxRate: pricing.snapshot.fxRate,
+              baseCurrency: pricing.snapshot.baseCurrency,
+              breakdownJson: pricing.snapshot.breakdownJson,
+            },
+          },
+          statusHistory: {
+            create: {
+              fromStatus: 'INITIAL',
+              toStatus: holdToken ? 'HELD' : 'DRAFT',
+              actor: userId,
+              reason: 'Booking draft created',
+            },
           },
         },
-      },
-    });
+      });
+    } catch (createErr) {
+      if (holdToken) {
+        await InventoryEngine.releaseHold(holdToken).catch(() => null);
+      }
+      throw createErr;
+    }
 
     // Link the hold back to the booking for release/refund traceability.
     if (holdToken) {

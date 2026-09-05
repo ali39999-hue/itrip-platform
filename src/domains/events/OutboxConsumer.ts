@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getNotificationProvider } from './NotificationProvider';
+import crypto from 'crypto';
 
 /** Events stuck in PROCESSING for longer than this are re-queued. */
 const PROCESSING_STALE_MS = 2 * 60 * 1000;
@@ -18,53 +19,60 @@ export class OutboxConsumer {
   private static isRunning = false;
 
   /**
-   * Processes pending outbox events asynchronously
+   * Concurrency-safe atomic outbox worker claim and execution (OUTBOX-001, OUTBOX-002)
+   * Uses PostgreSQL "SELECT ... FOR UPDATE SKIP LOCKED" to guarantee zero race conditions across worker instances.
    */
-  static async processPendingEvents(): Promise<number> {
+  static async processPendingEvents(customWorkerId?: string): Promise<number> {
     if (this.isRunning) return 0;
     this.isRunning = true;
 
+    const workerId = customWorkerId || `worker_${crypto.randomBytes(3).toString('hex')}_${Date.now().toString(36)}`;
+
     try {
-      // Recover events stranded in PROCESSING by a crash between
-      // PROCESSING and PROCESSED updates.
+      // 1. Recover events stranded in PROCESSING by a crash (Crash Recovery, Section 18)
       const staleCutoff = new Date(Date.now() - PROCESSING_STALE_MS);
       const recovered = await prisma.outboxEvent.updateMany({
-        where: { status: 'PROCESSING', updatedAt: { lt: staleCutoff } },
-        data: { status: 'PENDING' },
+        where: { status: 'PROCESSING', lockedAt: { lt: staleCutoff } },
+        data: { status: 'PENDING', lockedAt: null, workerId: null },
       });
       if (recovered.count > 0) {
         console.warn(`[Outbox] Recovered ${recovered.count} stale PROCESSING events`);
       }
 
-      const now = new Date();
-      const pendingEvents = await prisma.outboxEvent.findMany({
-        where: {
-          status: 'PENDING',
-          availableAt: { lte: now },
-        },
-        take: 20,
-        orderBy: { availableAt: 'asc' },
-      });
+      // 2. Concurrency-Safe Claim using SELECT ... FOR UPDATE SKIP LOCKED (Section 19)
+      const claimedEvents: Array<{
+        id: string;
+        eventType: string;
+        aggregateType: string | null;
+        aggregateId: string | null;
+        correlationId: string | null;
+        payload: string;
+        retryCount: number;
+      }> = await prisma.$queryRaw`
+        UPDATE "OutboxEvent"
+        SET "status" = 'PROCESSING',
+            "lockedAt" = NOW(),
+            "workerId" = ${workerId}
+        WHERE "id" IN (
+          SELECT "id"
+          FROM "OutboxEvent"
+          WHERE "status" = 'PENDING'
+            AND "availableAt" <= NOW()
+          ORDER BY "availableAt" ASC
+          LIMIT 20
+          FOR UPDATE SKIP LOCKED
+        )
+        RETURNING "id", "eventType", "aggregateType", "aggregateId", "correlationId", "payload", "retryCount"
+      `;
 
-      if (pendingEvents.length === 0) {
+      if (!claimedEvents || claimedEvents.length === 0) {
         return 0;
       }
 
       let processedCount = 0;
-      const workerId = `worker_${Math.random().toString(36).slice(2, 8)}_${Date.now().toString(36)}`;
 
-      for (const event of pendingEvents) {
+      for (const event of claimedEvents) {
         try {
-          // Atomically CLAIM event with worker lock (ASYNC-002)
-          await prisma.outboxEvent.update({
-            where: { id: event.id },
-            data: {
-              status: 'PROCESSING',
-              lockedAt: new Date(),
-              workerId,
-            },
-          });
-
           const payload = JSON.parse(event.payload || '{}');
 
           // Process based on eventType
@@ -103,7 +111,7 @@ export class OutboxConsumer {
               const bookingId = payload.bookingId;
               const booking = bookingId ? await prisma.booking.findUnique({
                 where: { id: bookingId },
-                include: { customer: true }
+                include: { customer: true },
               }) : null;
 
               if (booking?.customer?.phone) {
@@ -158,7 +166,7 @@ export class OutboxConsumer {
         } catch (eventErr: unknown) {
           console.error(`[Outbox] Failed processing event ${event.id}:`, eventErr);
           const errorMessage = eventErr instanceof Error ? eventErr.message : String(eventErr);
-          const nextRetry = event.retryCount + 1;
+          const nextRetry = (event.retryCount || 0) + 1;
           const isDeadLetter = nextRetry >= 5;
 
           // Exponential backoff: 2^retry * 10 seconds (10s, 20s, 40s, 80s)

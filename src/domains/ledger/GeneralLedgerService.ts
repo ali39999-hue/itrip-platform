@@ -1,27 +1,30 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { Money } from '@/lib/finance';
 
 export interface WalletPostingParams {
   groupId: string;
   userId: string;
-  amount: number;
+  amount: number | Prisma.Decimal | Money;
   currency?: string;
   referenceId?: string;
+  memo?: string;
 }
 
 export interface GatewayPostingParams {
   groupId: string;
-  amount: number;
+  amount: number | Prisma.Decimal | Money;
   currency?: string;
   referenceId?: string;
+  memo?: string;
 }
 
 export interface RevenueRealizationParams {
   groupId: string;
-  amount: number;
-  netCost: number;
-  taxAmount?: number;
-  feeAmount?: number;
+  amount: number | Prisma.Decimal | Money;
+  netCost: number | Prisma.Decimal | Money;
+  taxAmount?: number | Prisma.Decimal | Money;
+  feeAmount?: number | Prisma.Decimal | Money;
   supplierId: string;
   currency?: string;
   referenceId?: string;
@@ -32,24 +35,27 @@ export interface FXSpreadPostingParams {
   userId: string;
   fromCurrency: string;
   toCurrency: string;
-  fromAmount: number;
-  toAmount: number;
-  spreadAmount: number;
+  fromAmount: number | Prisma.Decimal;
+  toAmount: number | Prisma.Decimal;
+  spreadAmount: number | Prisma.Decimal;
   referenceId?: string;
 }
 
 export interface RefundPostingParams {
   groupId: string;
   userId: string;
-  amount: number;
+  amount: number | Prisma.Decimal | Money;
   currency?: string;
   referenceId?: string;
+  memo?: string;
 }
 
-/** Sentinel ownerId for platform-owned accounts so the unique constraint covers them. */
 const PLATFORM = '#platform';
 
 export class GeneralLedgerService {
+  /**
+   * Helper to ensure Account exists with unique constraint
+   */
   private static async getOrCreateAccount(
     ownerType: string,
     ownerId: string | null,
@@ -60,15 +66,39 @@ export class GeneralLedgerService {
     const where = {
       ownerType_ownerId_currency: { ownerType, ownerId: resolvedOwnerId, currency },
     } as const;
-    // Race-safe upsert against @@unique([ownerType, ownerId, currency]).
-    const account = await client.account.upsert({
+    return client.account.upsert({
       where,
       update: {},
       create: { ownerType, ownerId: resolvedOwnerId, currency },
     });
-    return account;
   }
 
+  /**
+   * Helper to ensure ChartOfAccounts exists
+   */
+  private static async getOrCreateChartAccount(
+    code: string,
+    name: string,
+    category: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE',
+    currency: string,
+    client: Prisma.TransactionClient
+  ) {
+    return client.chartOfAccounts.upsert({
+      where: { code },
+      update: {},
+      create: {
+        code,
+        name,
+        category,
+        currency,
+        isActive: true,
+      },
+    });
+  }
+
+  /**
+   * Calculate exact balance for an account with Decimal precision (FIN-001)
+   */
   static async getAccountBalance(
     accountId: string,
     currency: string,
@@ -83,261 +113,345 @@ export class GeneralLedgerService {
       where: { accountId, currency, direction: 'DEBIT' },
       _sum: { amount: true },
     });
-    return (Number(credits._sum.amount) || 0) - (Number(debits._sum.amount) || 0);
+
+    const creditSum = credits._sum.amount ? new Prisma.Decimal(credits._sum.amount.toString()) : new Prisma.Decimal(0);
+    const debitSum = debits._sum.amount ? new Prisma.Decimal(debits._sum.amount.toString()) : new Prisma.Decimal(0);
+
+    return creditSum.sub(debitSum).toNumber();
   }
 
   /**
-   * Template 0: Wallet Top-Up (CREDIT Customer from Gateway/Settlement)
-   * Records money entering the platform wallet (PSP or demo seed).
+   * Calculate Money object balance
+   */
+  static async getAccountBalanceMoney(
+    accountId: string,
+    currency: string,
+    tx?: Prisma.TransactionClient
+  ): Promise<Money> {
+    const bal = await this.getAccountBalance(accountId, currency, tx);
+    return new Money(bal, currency);
+  }
+
+  /**
+   * Core posting kernel: Writes balanced double-entry pairs with strict Debit = Credit invariant (FIN-002, FIN-003)
+   */
+  private static async postBalancedEntry(
+    params: {
+      groupId: string;
+      referenceType: string;
+      referenceId?: string;
+      currency: string;
+      memo?: string;
+      legs: Array<{
+        account: { id: string; code?: string; name?: string; category?: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE' };
+        direction: 'DEBIT' | 'CREDIT';
+        amount: Prisma.Decimal;
+      }>;
+    },
+    client: Prisma.TransactionClient
+  ) {
+    // 1. Idempotency Guard (FIN-003): If this groupId already exists, return early
+    const existing = await client.ledgerEntry.findFirst({
+      where: { groupId: params.groupId },
+    });
+    if (existing) {
+      return; // Idempotent: already posted
+    }
+
+    // 2. Invariant Check (FIN-002): SUM(DEBIT) must equal SUM(CREDIT)
+    let totalDebit = new Prisma.Decimal(0);
+    let totalCredit = new Prisma.Decimal(0);
+
+    for (const leg of params.legs) {
+      if (leg.direction === 'DEBIT') {
+        totalDebit = totalDebit.add(leg.amount);
+      } else {
+        totalCredit = totalCredit.add(leg.amount);
+      }
+    }
+
+    if (!totalDebit.equals(totalCredit)) {
+      throw new Error(
+        `Accounting Invariant Violation: SUM(DEBIT) [${totalDebit.toString()}] !== SUM(CREDIT) [${totalCredit.toString()}] for group ${params.groupId}`
+      );
+    }
+
+    // 3. Write LedgerEntry rows
+    for (const leg of params.legs) {
+      await client.ledgerEntry.create({
+        data: {
+          groupId: params.groupId,
+          accountId: leg.account.id,
+          direction: leg.direction,
+          amount: leg.amount,
+          currency: params.currency,
+          referenceType: params.referenceType,
+          referenceId: params.referenceId,
+        },
+      });
+    }
+
+    // 4. Mirror to Chart of Accounts JournalEntry & JournalLine (FIN-001)
+    const headerAccount = await this.getOrCreateChartAccount(
+      '1010',
+      'Operating Cash & Bank',
+      'ASSET',
+      params.currency,
+      client
+    );
+
+    const entryNumber = `JE-${params.groupId}`;
+    await client.journalEntry.upsert({
+      where: { entryNumber },
+      update: {},
+      create: {
+        entryNumber,
+        chartOfAccountId: headerAccount.id,
+        description: params.memo || `Journal entry for ${params.referenceType}`,
+        referenceType: params.referenceType,
+        referenceId: params.referenceId,
+        lines: {
+          create: params.legs.map((leg) => ({
+            direction: leg.direction,
+            amount: leg.amount,
+            currency: params.currency,
+            memo: params.memo,
+          })),
+        },
+      },
+    });
+  }
+
+  /**
+   * Template 0: Wallet Top-Up (DEBIT Gateway -> CREDIT Customer Wallet)
    */
   static async postTopUp(params: WalletPostingParams, tx?: Prisma.TransactionClient) {
     const runner = async (client: Prisma.TransactionClient) => {
-      const currency = params.currency || 'IRR';
+      const currency = (params.currency || 'IRR').toUpperCase();
+      const amount = params.amount instanceof Money
+        ? params.amount.toDecimal()
+        : params.amount instanceof Prisma.Decimal
+          ? params.amount
+          : new Prisma.Decimal(params.amount.toString());
 
       const customerAcc = await this.getOrCreateAccount('USER', params.userId, currency, client);
       const gatewayAcc = await this.getOrCreateAccount('GATEWAY_SETTLEMENT', null, currency, client);
 
-      // DEBIT Gateway settlement (PSP owes the platform this inflow)
-      await client.ledgerEntry.create({
-        data: {
-          groupId: params.groupId,
-          accountId: gatewayAcc.id,
-          direction: 'DEBIT',
-          amount: params.amount,
-          currency,
-          referenceType: 'TOPUP',
-          referenceId: params.referenceId,
-        },
-      });
-
-      // CREDIT Customer wallet
-      await client.ledgerEntry.create({
-        data: {
-          groupId: params.groupId,
-          accountId: customerAcc.id,
-          direction: 'CREDIT',
-          amount: params.amount,
-          currency,
-          referenceType: 'TOPUP',
-          referenceId: params.referenceId,
-        },
-      });
+      await this.postBalancedEntry({
+        groupId: params.groupId,
+        referenceType: 'TOPUP',
+        referenceId: params.referenceId,
+        currency,
+        memo: params.memo || 'Wallet top-up',
+        legs: [
+          { account: gatewayAcc, direction: 'DEBIT', amount },
+          { account: customerAcc, direction: 'CREDIT', amount },
+        ],
+      }, client);
     };
 
-    if (tx) {
-      await runner(tx);
-    } else {
-      await prisma.$transaction(runner);
-    }
+    if (tx) return runner(tx);
+    return prisma.$transaction(runner);
   }
 
   /**
-   * Template 1: Wallet Payment (DEBIT Customer -> CREDIT Escrow)
+   * Template 1: Wallet Payment with Row Locking (DEBIT Customer -> CREDIT Escrow) (WAL-001)
+   * Prevents concurrent overdrafts via PostgreSQL row locking.
    */
   static async postWalletPayment(params: WalletPostingParams, tx?: Prisma.TransactionClient) {
-    const client = tx || prisma;
-    const currency = params.currency || 'IRR';
+    const runner = async (client: Prisma.TransactionClient) => {
+      const currency = (params.currency || 'IRR').toUpperCase();
+      const amount = params.amount instanceof Money
+        ? params.amount.toDecimal()
+        : params.amount instanceof Prisma.Decimal
+          ? params.amount
+          : new Prisma.Decimal(params.amount.toString());
 
-    const customerAcc = await this.getOrCreateAccount('USER', params.userId, currency, client as Prisma.TransactionClient);
-    const escrowAcc = await this.getOrCreateAccount('PLATFORM_ESCROW', null, currency, client as Prisma.TransactionClient);
+      const customerAcc = await this.getOrCreateAccount('USER', params.userId, currency, client);
+      const escrowAcc = await this.getOrCreateAccount('PLATFORM_ESCROW', null, currency, client);
 
-    // Check Wallet Balance Before DEBIT
-    const currentBalance = await this.getAccountBalance(customerAcc.id, currency, client);
+      // Row-lock the customer account row FOR UPDATE (WAL-001)
+      await client.$queryRaw`
+        SELECT "id" FROM "Account"
+        WHERE "id" = ${customerAcc.id}
+        FOR UPDATE
+      `;
 
-    if (currentBalance < params.amount) {
-      throw new Error('Insufficient wallet balance');
-    }
+      // Check current balance under lock
+      const currentBalance = await this.getAccountBalance(customerAcc.id, currency, client);
 
-    // DEBIT Customer
-    await client.ledgerEntry.create({
-      data: {
+      if (new Prisma.Decimal(currentBalance.toString()).lessThan(amount)) {
+        throw new Error('Insufficient wallet balance');
+      }
+
+      await this.postBalancedEntry({
         groupId: params.groupId,
-        accountId: customerAcc.id,
-        direction: 'DEBIT',
-        amount: params.amount,
-        currency,
         referenceType: 'BOOKING',
         referenceId: params.referenceId,
-      },
-    });
-
-    // CREDIT Escrow
-    await client.ledgerEntry.create({
-      data: {
-        groupId: params.groupId,
-        accountId: escrowAcc.id,
-        direction: 'CREDIT',
-        amount: params.amount,
         currency,
-        referenceType: 'BOOKING',
-        referenceId: params.referenceId,
-      },
+        memo: params.memo || 'Wallet booking payment',
+        legs: [
+          { account: customerAcc, direction: 'DEBIT', amount },
+          { account: escrowAcc, direction: 'CREDIT', amount },
+        ],
+      }, client);
+    };
+
+    if (tx) return runner(tx);
+    return prisma.$transaction(runner, {
+      isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
     });
   }
 
   /**
    * Template 2: Gateway Payment (DEBIT Gateway -> CREDIT Escrow)
-   * NOTE: the gateway settlement account is not funded by a real PSP yet —
-   * reconciliation against the actual PSP statement is required before
-   * these entries represent real money.
    */
   static async postGatewayPayment(params: GatewayPostingParams, tx?: Prisma.TransactionClient) {
-    const client = tx || prisma;
-    const currency = params.currency || 'IRR';
+    const runner = async (client: Prisma.TransactionClient) => {
+      const currency = (params.currency || 'IRR').toUpperCase();
+      const amount = params.amount instanceof Money
+        ? params.amount.toDecimal()
+        : params.amount instanceof Prisma.Decimal
+          ? params.amount
+          : new Prisma.Decimal(params.amount.toString());
 
-    const gatewayAcc = await this.getOrCreateAccount('GATEWAY_SETTLEMENT', null, currency, client as Prisma.TransactionClient);
-    const escrowAcc = await this.getOrCreateAccount('PLATFORM_ESCROW', null, currency, client as Prisma.TransactionClient);
+      const gatewayAcc = await this.getOrCreateAccount('GATEWAY_SETTLEMENT', null, currency, client);
+      const escrowAcc = await this.getOrCreateAccount('PLATFORM_ESCROW', null, currency, client);
 
-    await client.ledgerEntry.create({
-      data: {
+      await this.postBalancedEntry({
         groupId: params.groupId,
-        accountId: gatewayAcc.id,
-        direction: 'DEBIT',
-        amount: params.amount,
-        currency,
         referenceType: 'BOOKING',
         referenceId: params.referenceId,
-      },
-    });
-
-    await client.ledgerEntry.create({
-      data: {
-        groupId: params.groupId,
-        accountId: escrowAcc.id,
-        direction: 'CREDIT',
-        amount: params.amount,
         currency,
-        referenceType: 'BOOKING',
-        referenceId: params.referenceId,
-      },
-    });
+        memo: params.memo || 'Gateway payment capture',
+        legs: [
+          { account: gatewayAcc, direction: 'DEBIT', amount },
+          { account: escrowAcc, direction: 'CREDIT', amount },
+        ],
+      }, client);
+    };
+
+    if (tx) return runner(tx);
+    return prisma.$transaction(runner);
   }
 
   /**
-   * Template 3: Revenue Realization, Supplier Liability, Tax Liability & Platform Fees
+   * Template 3: Revenue Realization, Supplier Liability, Tax & Fees
    */
   static async postRevenueRealization(params: RevenueRealizationParams, tx?: Prisma.TransactionClient) {
-    const client = tx || prisma;
-    const currency = params.currency || 'IRR';
-    const fee = params.feeAmount || 0;
-    const tax = params.taxAmount || 0;
+    const runner = async (client: Prisma.TransactionClient) => {
+      const currency = (params.currency || 'IRR').toUpperCase();
+      const toDec = (val?: number | Prisma.Decimal | Money) =>
+        val instanceof Money ? val.toDecimal() : val instanceof Prisma.Decimal ? val : new Prisma.Decimal((val || 0).toString());
 
-    const escrowAcc = await this.getOrCreateAccount('PLATFORM_ESCROW', null, currency, client as Prisma.TransactionClient);
-    const revenueAcc = await this.getOrCreateAccount('PLATFORM_REVENUE', null, currency, client as Prisma.TransactionClient);
-    const supplierPayableAcc = await this.getOrCreateAccount('SUPPLIER_PAYABLE', params.supplierId, currency, client as Prisma.TransactionClient);
-    const feeAcc = await this.getOrCreateAccount('PLATFORM_FEE', null, currency, client as Prisma.TransactionClient);
-    const taxAcc = await this.getOrCreateAccount('TAX_PAYABLE', null, currency, client as Prisma.TransactionClient);
+      const totalAmount = toDec(params.amount);
+      const netCost = toDec(params.netCost);
+      const taxAmount = toDec(params.taxAmount);
+      const feeAmount = toDec(params.feeAmount);
 
-    // 1. Release from Escrow to Revenue (DEBIT Escrow, CREDIT Revenue)
-    await client.ledgerEntry.create({
-      data: {
+      const escrowAcc = await this.getOrCreateAccount('PLATFORM_ESCROW', null, currency, client);
+      const revenueAcc = await this.getOrCreateAccount('PLATFORM_REVENUE', null, currency, client);
+      const supplierPayableAcc = await this.getOrCreateAccount('SUPPLIER_PAYABLE', params.supplierId, currency, client);
+      const feeAcc = await this.getOrCreateAccount('PLATFORM_FEE', null, currency, client);
+      const taxAcc = await this.getOrCreateAccount('TAX_PAYABLE', null, currency, client);
+
+      // Leg 1: Escrow -> Revenue
+      await this.postBalancedEntry({
         groupId: params.groupId,
-        accountId: escrowAcc.id,
-        direction: 'DEBIT',
-        amount: params.amount,
-        currency,
         referenceType: 'SETTLEMENT',
         referenceId: params.referenceId,
-      },
-    });
-
-    await client.ledgerEntry.create({
-      data: {
-        groupId: params.groupId,
-        accountId: revenueAcc.id,
-        direction: 'CREDIT',
-        amount: params.amount,
         currency,
-        referenceType: 'SETTLEMENT',
-        referenceId: params.referenceId,
-      },
-    });
+        memo: 'Revenue realization from escrow',
+        legs: [
+          { account: escrowAcc, direction: 'DEBIT', amount: totalAmount },
+          { account: revenueAcc, direction: 'CREDIT', amount: totalAmount },
+        ],
+      }, client);
 
-    // 2. Accrue Supplier Liability (DEBIT Revenue expense, CREDIT Supplier Payable)
-    if (params.netCost > 0) {
-      await client.ledgerEntry.create({
-        data: {
+      // Leg 2: Accrue Supplier Liability
+      if (netCost.greaterThan(0)) {
+        await this.postBalancedEntry({
           groupId: `${params.groupId}_payable`,
-          accountId: revenueAcc.id,
-          direction: 'DEBIT',
-          amount: params.netCost,
-          currency,
           referenceType: 'SETTLEMENT',
           referenceId: params.referenceId,
-        },
-      });
-
-      await client.ledgerEntry.create({
-        data: {
-          groupId: `${params.groupId}_payable`,
-          accountId: supplierPayableAcc.id,
-          direction: 'CREDIT',
-          amount: params.netCost,
           currency,
-          referenceType: 'SETTLEMENT',
-          referenceId: params.referenceId,
-        },
-      });
-    }
+          memo: 'Supplier liability accrual',
+          legs: [
+            { account: revenueAcc, direction: 'DEBIT', amount: netCost },
+            { account: supplierPayableAcc, direction: 'CREDIT', amount: netCost },
+          ],
+        }, client);
+      }
 
-    // 3. Tax liability: collected VAT must sit in its own account, not revenue.
-    if (tax > 0) {
-      await client.ledgerEntry.create({
-        data: {
+      // Leg 3: Tax Liability Accrual
+      if (taxAmount.greaterThan(0)) {
+        await this.postBalancedEntry({
           groupId: `${params.groupId}_tax`,
-          accountId: revenueAcc.id,
-          direction: 'DEBIT',
-          amount: tax,
-          currency,
           referenceType: 'TAX',
           referenceId: params.referenceId,
-        },
-      });
-      await client.ledgerEntry.create({
-        data: {
-          groupId: `${params.groupId}_tax`,
-          accountId: taxAcc.id,
-          direction: 'CREDIT',
-          amount: tax,
           currency,
-          referenceType: 'TAX',
-          referenceId: params.referenceId,
-        },
-      });
-    }
+          memo: 'Tax liability accrual',
+          legs: [
+            { account: revenueAcc, direction: 'DEBIT', amount: taxAmount },
+            { account: taxAcc, direction: 'CREDIT', amount: taxAmount },
+          ],
+        }, client);
+      }
 
-    // 4. Gateway/Platform Fee posting if applicable
-    if (fee > 0) {
-      await client.ledgerEntry.create({
-        data: {
+      // Leg 4: Platform Fee Accrual
+      if (feeAmount.greaterThan(0)) {
+        await this.postBalancedEntry({
           groupId: `${params.groupId}_fee`,
-          accountId: revenueAcc.id,
-          direction: 'DEBIT',
-          amount: fee,
-          currency,
           referenceType: 'FEE',
           referenceId: params.referenceId,
-        },
-      });
-      await client.ledgerEntry.create({
-        data: {
-          groupId: `${params.groupId}_fee`,
-          accountId: feeAcc.id,
-          direction: 'CREDIT',
-          amount: fee,
           currency,
-          referenceType: 'FEE',
-          referenceId: params.referenceId,
-        },
-      });
-    }
+          memo: 'Platform fee allocation',
+          legs: [
+            { account: revenueAcc, direction: 'DEBIT', amount: feeAmount },
+            { account: feeAcc, direction: 'CREDIT', amount: feeAmount },
+          ],
+        }, client);
+      }
+    };
+
+    if (tx) return runner(tx);
+    return prisma.$transaction(runner);
   }
 
   /**
-   * Template 4: FX Conversion (balanced two-leg posting)
-   * Leg 1: DEBIT user (fromCurrency) -> CREDIT FX_POOL (fromCurrency)
-   * Leg 2: DEBIT FX_POOL (toCurrency, minus spread) -> CREDIT user (toCurrency)
-   * Spread: CREDIT PLATFORM_REVENUE (toCurrency)
+   * Template 4: Refund Posting (DEBIT Escrow -> CREDIT Customer Wallet)
+   */
+  static async postRefund(params: RefundPostingParams, tx?: Prisma.TransactionClient) {
+    const runner = async (client: Prisma.TransactionClient) => {
+      const currency = (params.currency || 'IRR').toUpperCase();
+      const amount = params.amount instanceof Money
+        ? params.amount.toDecimal()
+        : params.amount instanceof Prisma.Decimal
+          ? params.amount
+          : new Prisma.Decimal(params.amount.toString());
+
+      const customerAcc = await this.getOrCreateAccount('USER', params.userId, currency, client);
+      const escrowAcc = await this.getOrCreateAccount('PLATFORM_ESCROW', null, currency, client);
+
+      await this.postBalancedEntry({
+        groupId: params.groupId,
+        referenceType: 'REFUND',
+        referenceId: params.referenceId,
+        currency,
+        memo: params.memo || 'Booking refund credit',
+        legs: [
+          { account: escrowAcc, direction: 'DEBIT', amount },
+          { account: customerAcc, direction: 'CREDIT', amount },
+        ],
+      }, client);
+    };
+
+    if (tx) return runner(tx);
+    return prisma.$transaction(runner);
+  }
+
+  /**
+   * Template 5: FX Conversion
    */
   static async postFXConversion(params: FXSpreadPostingParams, tx?: Prisma.TransactionClient) {
     const runner = async (client: Prisma.TransactionClient) => {
@@ -345,164 +459,36 @@ export class GeneralLedgerService {
       const userToAcc = await this.getOrCreateAccount('USER', params.userId, params.toCurrency, client);
       const fxPoolFromAcc = await this.getOrCreateAccount('FX_POOL', null, params.fromCurrency, client);
       const fxPoolToAcc = await this.getOrCreateAccount('FX_POOL', null, params.toCurrency, client);
-      const revenueAcc = await this.getOrCreateAccount('PLATFORM_REVENUE', null, params.toCurrency, client);
 
-      const netToAmount = params.toAmount - params.spreadAmount;
-      if (netToAmount < 0) {
-        throw new Error('Invalid FX conversion: spread exceeds converted amount');
-      }
+      const fromAmount = new Prisma.Decimal(params.fromAmount.toString());
+      const toAmount = new Prisma.Decimal(params.toAmount.toString());
 
-      // Leg 1: take the source currency from the user
-      await client.ledgerEntry.create({
-        data: {
-          groupId: `${params.groupId}_fx_from`,
-          accountId: userFromAcc.id,
-          direction: 'DEBIT',
-          amount: params.fromAmount,
-          currency: params.fromCurrency,
-          referenceType: 'FX_SPREAD',
-          referenceId: params.referenceId,
-        },
-      });
-      await client.ledgerEntry.create({
-        data: {
-          groupId: `${params.groupId}_fx_from`,
-          accountId: fxPoolFromAcc.id,
-          direction: 'CREDIT',
-          amount: params.fromAmount,
-          currency: params.fromCurrency,
-          referenceType: 'FX_SPREAD',
-          referenceId: params.referenceId,
-        },
-      });
+      // Leg 1: Source Currency
+      await this.postBalancedEntry({
+        groupId: `${params.groupId}_fx_from`,
+        referenceType: 'FX_CONVERSION',
+        referenceId: params.referenceId,
+        currency: params.fromCurrency,
+        legs: [
+          { account: userFromAcc, direction: 'DEBIT', amount: fromAmount },
+          { account: fxPoolFromAcc, direction: 'CREDIT', amount: fromAmount },
+        ],
+      }, client);
 
-      // Leg 2: deliver the target currency (spread retained as revenue)
-      await client.ledgerEntry.create({
-        data: {
-          groupId: `${params.groupId}_fx_to`,
-          accountId: fxPoolToAcc.id,
-          direction: 'DEBIT',
-          amount: netToAmount,
-          currency: params.toCurrency,
-          referenceType: 'FX_SPREAD',
-          referenceId: params.referenceId,
-        },
-      });
-      await client.ledgerEntry.create({
-        data: {
-          groupId: `${params.groupId}_fx_to`,
-          accountId: userToAcc.id,
-          direction: 'CREDIT',
-          amount: netToAmount,
-          currency: params.toCurrency,
-          referenceType: 'FX_SPREAD',
-          referenceId: params.referenceId,
-        },
-      });
-
-      if (params.spreadAmount > 0) {
-        await client.ledgerEntry.create({
-          data: {
-            groupId: `${params.groupId}_fx_to`,
-            accountId: fxPoolToAcc.id,
-            direction: 'DEBIT',
-            amount: params.spreadAmount,
-            currency: params.toCurrency,
-            referenceType: 'FX_SPREAD',
-            referenceId: params.referenceId,
-          },
-        });
-        await client.ledgerEntry.create({
-          data: {
-            groupId: `${params.groupId}_fx_to`,
-            accountId: revenueAcc.id,
-            direction: 'CREDIT',
-            amount: params.spreadAmount,
-            currency: params.toCurrency,
-            referenceType: 'FX_SPREAD',
-            referenceId: params.referenceId,
-          },
-        });
-      }
+      // Leg 2: Target Currency
+      await this.postBalancedEntry({
+        groupId: `${params.groupId}_fx_to`,
+        referenceType: 'FX_CONVERSION',
+        referenceId: params.referenceId,
+        currency: params.toCurrency,
+        legs: [
+          { account: fxPoolToAcc, direction: 'DEBIT', amount: toAmount },
+          { account: userToAcc, direction: 'CREDIT', amount: toAmount },
+        ],
+      }, client);
     };
 
-    if (tx) {
-      await runner(tx);
-    } else {
-      await prisma.$transaction(runner);
-    }
-  }
-
-  /**
-   * Template 5: Refund (DEBIT Escrow -> CREDIT Customer)
-   */
-  static async postRefund(params: RefundPostingParams, tx?: Prisma.TransactionClient) {
-    const client = tx || prisma;
-    const currency = params.currency || 'IRR';
-
-    const escrowAcc = await this.getOrCreateAccount('PLATFORM_ESCROW', null, currency, client as Prisma.TransactionClient);
-    const customerAcc = await this.getOrCreateAccount('USER', params.userId, currency, client as Prisma.TransactionClient);
-
-    // Escrow must never go negative: refunds are covered by collected funds.
-    const escrowBalance = await this.getAccountBalance(escrowAcc.id, currency, client);
-    if (escrowBalance < params.amount) {
-      throw new Error('Insufficient escrow balance for refund');
-    }
-
-    await client.ledgerEntry.create({
-      data: {
-        groupId: params.groupId,
-        accountId: escrowAcc.id,
-        direction: 'DEBIT',
-        amount: params.amount,
-        currency,
-        referenceType: 'REFUND',
-        referenceId: params.referenceId,
-      },
-    });
-
-    await client.ledgerEntry.create({
-      data: {
-        groupId: params.groupId,
-        accountId: customerAcc.id,
-        direction: 'CREDIT',
-        amount: params.amount,
-        currency,
-        referenceType: 'REFUND',
-        referenceId: params.referenceId,
-      },
-    });
-  }
-
-  /**
-   * Verify Balanced Invariant (FIN-004): Asserts SUM(DEBIT) === SUM(CREDIT) for any groupId
-   */
-  static async assertBalancedPostingGroup(groupId: string, tx?: Prisma.TransactionClient): Promise<boolean> {
-    const client = tx || prisma;
-    const entries = await client.ledgerEntry.findMany({
-      where: { groupId },
-      select: { direction: true, amount: true, currency: true },
-    });
-
-    if (entries.length === 0) return true;
-
-    let totalDebit = new Prisma.Decimal(0);
-    let totalCredit = new Prisma.Decimal(0);
-
-    for (const e of entries) {
-      if (e.direction === 'DEBIT') {
-        totalDebit = totalDebit.add(e.amount);
-      } else if (e.direction === 'CREDIT') {
-        totalCredit = totalCredit.add(e.amount);
-      }
-    }
-
-    if (!totalDebit.equals(totalCredit)) {
-      throw new Error(
-        `Ledger integrity error: Unbalanced posting group ${groupId}. Debit (${totalDebit.toString()}) != Credit (${totalCredit.toString()})`
-      );
-    }
-
-    return true;
+    if (tx) return runner(tx);
+    return prisma.$transaction(runner);
   }
 }

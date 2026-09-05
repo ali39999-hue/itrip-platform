@@ -1,15 +1,16 @@
-import { InventoryEngine } from '@/domains/inventory/InventoryEngine';
-import { OutboxConsumer } from '@/domains/events/OutboxConsumer';
-import { ReconciliationService } from '@/domains/ledger/ReconciliationService';
-
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
+    const { HoldExpirationWorker } = await import('@/workers/hold-expiration-worker');
+    const { OutboxConsumer } = await import('@/domains/events/OutboxConsumer');
+    const { SagaWorker } = await import('@/workers/saga-worker');
+    const { ReconciliationService } = await import('@/domains/ledger/ReconciliationService');
+
     // 1. Start background hold sweeper (runs every 60s)
     const sweeper = setInterval(async () => {
       try {
-        const count = await InventoryEngine.sweepExpiredHolds();
-        if (count > 0) {
-          console.log(`[Sweeper] Swept ${count} expired holds.`);
+        const report = await HoldExpirationWorker.runSweep();
+        if (report.sweptCount > 0) {
+          console.log(`[Sweeper] Swept ${report.sweptCount} expired holds in ${report.durationMs}ms.`);
         }
       } catch (error) {
         console.error('[Sweeper] Error sweeping holds:', error);
@@ -30,7 +31,20 @@ export async function register() {
     }, 10000);
     if (consumer.unref) consumer.unref();
 
-    // 3. Periodic ledger reconciliation health check (runs every 30 minutes)
+    // 3. Start background Saga Execution Worker (runs every 15s)
+    const sagaInterval = setInterval(async () => {
+      try {
+        const res = await SagaWorker.runSagaCycle();
+        if (res.processedSagas > 0) {
+          console.log(`[Saga Worker] Processed ${res.processedSagas} sagas (completed: ${res.completedSteps}, failed: ${res.failedSteps}).`);
+        }
+      } catch (error) {
+        console.error('[Saga Worker] Error processing sagas:', error);
+      }
+    }, 15000);
+    if (sagaInterval.unref) sagaInterval.unref();
+
+    // 4. Periodic ledger reconciliation health check (runs every 30 minutes)
     const reconciliationInterval = setInterval(async () => {
       try {
         const report = await ReconciliationService.reconcileLedger();

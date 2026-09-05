@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import crypto from 'crypto';
 
 export interface CreateHoldParams {
   inventoryItemId: string;
@@ -18,7 +19,8 @@ export interface HoldResult {
 
 export class InventoryEngine {
   /**
-   * Atomic Hold Creation without overselling
+   * Atomic Hold Creation with PostgreSQL Concurrency Control (INV-001)
+   * Prevents oversell under extreme concurrency (oversell = 0 invariant).
    */
   static async createHold(
     params: CreateHoldParams,
@@ -26,18 +28,19 @@ export class InventoryEngine {
   ): Promise<HoldResult> {
     const ttl = params.ttlMinutes || 10;
     const expiresAt = new Date(Date.now() + ttl * 60 * 1000);
-    const token = `hld_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    const token = `hld_${Date.now().toString(36)}_${crypto.randomBytes(4).toString('hex')}`;
 
     const execute = async (client: Prisma.TransactionClient): Promise<HoldResult> => {
-      // 1. Fetch allotment to check constraints
-      const allotment = await client.allotment.findUnique({
-        where: {
-          inventoryItemId_date: {
-            inventoryItemId: params.inventoryItemId,
-            date: params.date,
-          },
-        },
-      });
+      // 1. In PostgreSQL, lock the allotment row FOR UPDATE to prevent race conditions (P0)
+      const rows: Array<{ id: string; total: number; booked: number; stopSell: boolean }> =
+        await client.$queryRaw`
+          SELECT "id", "total", "booked", "stopSell"
+          FROM "Allotment"
+          WHERE "inventoryItemId" = ${params.inventoryItemId} AND "date" = ${params.date}
+          FOR UPDATE
+        `;
+
+      const allotment = rows[0];
 
       if (!allotment) {
         return { success: false, error: 'Allotment not found (ON_REQUEST)' };
@@ -47,8 +50,7 @@ export class InventoryEngine {
         return { success: false, error: 'Stop-sell active for this date' };
       }
 
-      // 2. Atomic Hold Creation: We rely on the DB's transactional guarantees for isolation.
-      // SQLite enforces serializable transactions.
+      // 2. Aggregate active non-expired holds for this allotment
       const now = new Date();
       const activeHolds = await client.inventoryHold.aggregate({
         where: {
@@ -64,10 +66,10 @@ export class InventoryEngine {
       const available = allotment.total - allotment.booked - heldQty;
 
       if (available < params.quantity) {
-        return { success: false, error: 'Insufficient inventory available' };
+        return { success: false, error: 'Insufficient inventory available (Oversell prevented)' };
       }
 
-      // 3. Create the hold record
+      // 3. Persist the hold record
       await client.inventoryHold.create({
         data: {
           inventoryItemId: params.inventoryItemId,
@@ -90,75 +92,95 @@ export class InventoryEngine {
     if (tx) {
       return execute(tx);
     }
-    
-    // Auto-retry on database locked (P1008/busy)
+
+    // Auto-retry with backoff on serialization failure or lock contention
     let retries = 5;
     while (retries > 0) {
       try {
         return await prisma.$transaction(execute, {
           maxWait: 15000,
-          timeout: 20000,
-          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+          timeout: 25000,
+          isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
         });
       } catch (err: unknown) {
         retries--;
-        const isLockError = (err as { code?: string })?.code === 'P1008' || String(err).includes('timed out');
+        const isLockError =
+          (err as { code?: string })?.code === 'P2034' ||
+          (err as { code?: string })?.code === 'P1008' ||
+          String(err).includes('could not serialize') ||
+          String(err).includes('deadlock') ||
+          String(err).includes('timed out');
         if (isLockError && retries > 0) {
-          await new Promise((r) => setTimeout(r, 50 + Math.random() * 100));
+          await new Promise((r) => setTimeout(r, 20 + Math.random() * 50));
           continue;
         }
         throw err;
       }
     }
-    return { success: false, error: 'Database busy' };
+    return { success: false, error: 'Database concurrency timeout' };
   }
 
   /**
-   * Capture a valid hold when booking is confirmed
+   * Concurrency-safe Hold Capture (INV-002)
+   * Duplicate capture returns idempotent success without double booking allotment.
    */
   static async captureHold(
     token: string,
     tx?: Prisma.TransactionClient
   ): Promise<{ success: boolean; error?: string }> {
     const execute = async (client: Prisma.TransactionClient) => {
-      const hold = await client.inventoryHold.findUnique({
-        where: { token },
-      });
+      // Find and lock the hold record FOR UPDATE so concurrent captures on the same hold serialize
+      const holds: Array<{
+        id: string;
+        inventoryItemId: string;
+        allotmentDate: string;
+        token: string;
+        quantity: number;
+        status: string;
+        expiresAt: Date;
+      }> = await client.$queryRaw`
+        SELECT "id", "inventoryItemId", "allotmentDate", "token", "quantity", "status", "expiresAt"
+        FROM "InventoryHold"
+        WHERE "token" = ${token}
+        FOR UPDATE
+      `;
+
+      const hold = holds[0];
 
       if (!hold) return { success: false, error: 'Hold not found' };
-      if (hold.status !== 'ACTIVE') return { success: false, error: `Hold already ${hold.status}` };
-      if (new Date() > hold.expiresAt) return { success: false, error: 'Hold expired' };
 
-      // Mark hold captured and atomically verify capacity
-      const allotment = await client.allotment.findUnique({
-        where: {
-          inventoryItemId_date: {
-            inventoryItemId: hold.inventoryItemId,
-            date: hold.allotmentDate,
-          },
-        },
-      });
+      // Duplicate capture idempotency: already CAPTURED returns true
+      if (hold.status === 'CAPTURED') {
+        return { success: true };
+      }
 
-      if (!allotment || (allotment.total - allotment.booked < hold.quantity)) {
+      if (hold.status !== 'ACTIVE') {
+        return { success: false, error: `Hold already ${hold.status}` };
+      }
+
+      if (new Date() > new Date(hold.expiresAt)) {
+        return { success: false, error: 'Hold expired' };
+      }
+
+      // Atomic conditional update on allotment: booked + quantity <= total (Section 6)
+      const updatedAllotments: Array<{ id: string; booked: number; total: number }> =
+        await client.$queryRaw`
+          UPDATE "Allotment"
+          SET "booked" = "booked" + ${hold.quantity}
+          WHERE "inventoryItemId" = ${hold.inventoryItemId}
+            AND "date" = ${hold.allotmentDate}
+            AND ("booked" + ${hold.quantity}) <= "total"
+          RETURNING "id", "booked", "total"
+        `;
+
+      if (!updatedAllotments || updatedAllotments.length === 0) {
         return { success: false, error: 'Insufficient capacity to capture hold (Oversell prevented)' };
       }
 
+      // Mark hold captured
       await client.inventoryHold.update({
         where: { id: hold.id },
         data: { status: 'CAPTURED' },
-      });
-
-      // Increment booked quantity in allotment
-      await client.allotment.update({
-        where: {
-          inventoryItemId_date: {
-            inventoryItemId: hold.inventoryItemId,
-            date: hold.allotmentDate,
-          },
-        },
-        data: {
-          booked: { increment: hold.quantity },
-        },
       });
 
       return { success: true };
@@ -167,12 +189,13 @@ export class InventoryEngine {
     if (tx) return execute(tx);
     return prisma.$transaction(execute, {
       maxWait: 15000,
-      timeout: 20000,
+      timeout: 25000,
     });
   }
 
   /**
-   * Release hold upon cancellation or TTL expiry
+   * Release hold upon cancellation or TTL expiry (INV-002)
+   * Idempotent: duplicate release is safe.
    */
   static async releaseHold(
     token: string,
@@ -187,7 +210,7 @@ export class InventoryEngine {
   }
 
   /**
-   * Sweeper worker to expire stale holds
+   * Sweeper worker to expire stale holds (INV-003)
    */
   static async sweepExpiredHolds(): Promise<number> {
     const now = new Date();

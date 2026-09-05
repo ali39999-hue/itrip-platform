@@ -151,10 +151,15 @@ export class BookingSagaOrchestrator {
       // 6. Step 5: Transition to CONFIRMED
       BookingStateMachine.assertTransition('PAYMENT_CONFIRMED', 'CONFIRMED');
 
+      const correlationId = `corr_bkg_${booking.id}_${Date.now().toString(36)}`;
+
       const updated = await tx.booking.update({
         where: { id: booking.id },
         data: {
           status: 'CONFIRMED',
+          paymentStatus: 'CAPTURED',
+          fulfillmentStatus: 'CONFIRMED',
+          ticketStatus: 'ISSUING',
           stateHistory: JSON.stringify(
             appendHistory(booking.stateHistory, [
               { from: booking.status, to: 'PAYMENT_CONFIRMED' },
@@ -164,8 +169,30 @@ export class BookingSagaOrchestrator {
         },
       });
 
+      // Relational Booking Status History (BOOK-004)
+      await tx.bookingStatusHistory.create({
+        data: {
+          bookingId: booking.id,
+          fromStatus: booking.status,
+          toStatus: 'PAYMENT_CONFIRMED',
+          actor: 'SAGA_ORCHESTRATOR',
+          reason: 'Payment confirmed via saga',
+          correlationId,
+        },
+      });
+
+      await tx.bookingStatusHistory.create({
+        data: {
+          bookingId: booking.id,
+          fromStatus: 'PAYMENT_CONFIRMED',
+          toStatus: 'CONFIRMED',
+          actor: 'SAGA_ORCHESTRATOR',
+          reason: 'Booking confirmed via saga',
+          correlationId,
+        },
+      });
+
       // 7. Step 6: Durable Outbox Event & Saga Persistence (ASYNC-001, ASYNC-003)
-      const correlationId = `corr_bkg_${booking.id}_${Date.now().toString(36)}`;
       await tx.outboxEvent.create({
         data: {
           eventType: 'BOOKING_CONFIRMED',

@@ -188,6 +188,7 @@ model ChartOfAccounts {
   updatedAt   DateTime  @updatedAt
 
   journals    JournalEntry[]
+  lines       JournalLine[]
 
   @@index([category])
 }
@@ -212,14 +213,17 @@ model JournalEntry {
 model JournalLine {
   id              String       @id @default(cuid())
   journalEntryId  String
+  chartOfAccountId String?
   direction       String       // DEBIT, CREDIT
   amount          Decimal
   currency        String       @default("IRR")
   memo            String?
 
   journalEntry    JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  account         ChartOfAccounts? @relation(fields: [chartOfAccountId], references: [id])
 
   @@index([journalEntryId])
+  @@index([chartOfAccountId])
 }
 
 model Account {
@@ -272,23 +276,59 @@ model PaymentIntent {
 }
 
 model PaymentAttempt {
-  id              String         @id @default(cuid())
+  id              String               @id @default(cuid())
   paymentIntentId String
-  gatewayName     String         // e.g. "SHETAB_SAMAN", "STRIPE", "WECHAT_PAY"
-  method          String         // card, wallet, qr
+  gatewayName     String               // e.g. "SHETAB_SAMAN", "STRIPE", "WECHAT_PAY"
+  method          String               // card, wallet, qr
   amount          Decimal
-  currency        String         @default("IRR")
-  status          String         @default("INITIATED") // INITIATED, PENDING_CUSTOMER, SUCCESS, FAILED
+  currency        String               @default("IRR")
+  status          String               @default("INITIATED") // INITIATED, PENDING_CUSTOMER, SUCCESS, FAILED
   gatewayRef      String?
-  rawPayload      String?        // JSON
+  rawPayload      String?              // JSON
   errorMessage    String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
 
-  paymentIntent   PaymentIntent  @relation(fields: [paymentIntentId], references: [id], onDelete: Cascade)
+  paymentIntent   PaymentIntent        @relation(fields: [paymentIntentId], references: [id], onDelete: Cascade)
+  transactions    GatewayTransaction[]
 
   @@index([paymentIntentId])
   @@index([gatewayRef])
+}
+
+model GatewayTransaction {
+  id              String         @id @default(cuid())
+  attemptId       String
+  gatewayName     String
+  gatewayRef      String
+  transactionType String         // SALE, CAPTURE, VOID, REFUND, VERIFY
+  amount          Decimal
+  currency        String         @default("IRR")
+  status          String         // SUCCESS, FAILED, PENDING
+  responseCode    String?
+  rawResponse     String?        // JSON
+  createdAt       DateTime       @default(now())
+
+  attempt         PaymentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+  @@index([gatewayRef])
+}
+
+model WebhookEvent {
+  id              String    @id @default(cuid())
+  gatewayName     String
+  eventId         String
+  eventType       String
+  signature       String?
+  payload         String    // JSON
+  status          String    @default("RECEIVED") // RECEIVED, VERIFIED, PROCESSED, REJECTED, DUPLICATE
+  processedAt     DateTime?
+  rejectionReason String?
+  createdAt       DateTime  @default(now())
+
+  @@unique([gatewayName, eventId])
+  @@index([status])
 }
 
 model Payment {
@@ -333,7 +373,12 @@ model Booking {
   reference       String   @unique // e.g., ITR-10023
   tripId          String?
   customerId      String
+  organizationId  String?  // B2B Multi-tenancy (IAM-002)
+  branchId        String?  // B2B Branch Scoping
   status          String   @default("DRAFT") // DRAFT, HELD, PENDING_PAYMENT, PAYMENT_CONFIRMED, CONFIRMING_SUPPLIER, CONFIRMED, CANCEL_REQUESTED, CANCELLING, CANCELLED, REFUND_INITIATED, REFUNDED, EXPIRED, FAILED
+  paymentStatus   String   @default("INITIATED") // INITIATED, AUTHORIZED, CAPTURED, FAILED, VOIDED, PARTIALLY_REFUNDED, REFUNDED
+  fulfillmentStatus String @default("PENDING")   // PENDING, IN_PROGRESS, CONFIRMED, FAILED
+  ticketStatus    String   @default("NOT_ISSUED") // NOT_ISSUED, ISSUING, ISSUED, VOIDED, REFUND_PENDING, REFUNDED
   totalAmount     Decimal  
   currency        String   @default("IRR")
   
@@ -341,7 +386,7 @@ model Booking {
   externalPnr     String?  // GDS reference
   holdToken       String?  @unique
   policySnapshot  String?  // JSON
-  stateHistory    String?  // JSON array of transitions
+  stateHistory    String?  // Legacy JSON array of transitions (retained for backward compat)
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -352,10 +397,50 @@ model Booking {
   trip            Trip?    @relation(fields: [tripId], references: [id], onDelete: SetNull)
   items           BookingItem[]
   refunds         Refund[]
+  statusHistory   BookingStatusHistory[]
+  priceSnapshots  PriceSnapshot[]
   
   @@index([customerId])
+  @@index([organizationId])
   @@index([tripId])
   @@index([status])
+  @@index([paymentStatus])
+}
+
+model BookingStatusHistory {
+  id            String   @id @default(cuid())
+  bookingId     String
+  fromStatus    String
+  toStatus      String
+  actor         String   @default("SYSTEM") // User ID or SYSTEM
+  reason        String?
+  correlationId String?
+  createdAt     DateTime @default(now())
+
+  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([createdAt])
+}
+
+model PriceSnapshot {
+  id             String   @id @default(cuid())
+  bookingId      String
+  baseAmount     Decimal
+  markupAmount   Decimal  @default(0)
+  serviceFee     Decimal  @default(0)
+  taxAmount      Decimal  @default(0)
+  discountAmount Decimal  @default(0)
+  sellPrice      Decimal
+  currency       String   @default("IRR")
+  fxRate         Decimal  @default(1.0)
+  baseCurrency   String?  @default("IRR")
+  breakdownJson  String?  // Detailed line items and rules applied
+  createdAt      DateTime @default(now())
+
+  booking        Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
 }
 
 // Refund Domain & Reconciliation (REF-001, REF-002)
@@ -756,4 +841,33 @@ model OperationalException {
 
   @@index([status, severity])
   @@index([entityType, entityId])
+}
+
+// Versioned Tax Engine (MONEY-003, Section 4)
+model TaxJurisdiction {
+  id          String    @id @default(cuid())
+  code        String    @unique // e.g. "IR", "CN", "AE", "TR"
+  name        String
+  countryCode String
+  rules       TaxRule[]
+
+  @@index([countryCode])
+}
+
+model TaxRule {
+  id              String          @id @default(cuid())
+  jurisdictionId  String
+  category        String          // "GENERAL", "FLIGHT", "HOTEL", "TOUR", "TRANSFER", "EXEMPT"
+  ratePercentage  Decimal         // e.g. 0.09 for 9%
+  effectiveFrom   DateTime        @default(now())
+  effectiveTo     DateTime?
+  isActive        Boolean         @default(true)
+  description     String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  jurisdiction    TaxJurisdiction @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+
+  @@index([jurisdictionId, category])
+  @@index([effectiveFrom, effectiveTo])
 }
