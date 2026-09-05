@@ -38,19 +38,13 @@ export async function getUserPermissions(userId: string): Promise<ERPPermission[
 
   const perms = new Set<ERPPermission>();
 
-  // 1. Relational DB RBAC roles take primary authority (IAM-001)
+  // 1. Relational DB RBAC roles are the sole authority (IAM-001)
   user.userRoles.forEach((ur) => {
     if (ur.role.rolePermissions && ur.role.rolePermissions.length > 0) {
       ur.role.rolePermissions.forEach((rp) => {
         perms.add(rp.permission.code as ERPPermission);
       });
     }
-
-    // JSON fallback for backwards compatibility
-    try {
-      const rolePerms = JSON.parse(ur.role.permissions || '[]') as ERPPermission[];
-      rolePerms.forEach((p) => perms.add(p));
-    } catch {}
   });
 
   // 2. Direct system role defaults (SUPER_ADMIN, FINANCE, OPS, CUSTOMER)

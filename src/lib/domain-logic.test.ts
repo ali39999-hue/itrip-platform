@@ -93,33 +93,4 @@ describe('Unit Tests: Currency & Booking Domain Services', () => {
     expect(breakdown.discountAmount).toBe(120000);
     expect(breakdown.totalAmount).toBeGreaterThan(1000000);
   });
-
-  it('generates confirmed bookings with BookingDomainService', () => {
-    const booking = BookingDomainService.createConfirmedBooking(
-      {
-        type: 'hotels',
-        title: 'Farvardin Hotel',
-        subtitle: '2 nights',
-        amount: 5000000,
-        travelDate: '2026-04-01',
-      },
-      [
-        {
-          firstNameFa: 'علی',
-          lastNameFa: 'محمدی',
-          firstNameEn: 'Ali',
-          lastNameEn: 'Mohammadi',
-          passportNo: 'A12345678',
-          gender: 'male',
-          nationalId: '0012345678',
-          birthDate: '1990-01-01',
-        },
-      ],
-      'wallet_irr'
-    );
-
-    expect(booking.id).toBeDefined();
-    expect(booking.reference).toMatch(/^FIR-\d+/);
-    expect(booking.status).toBe('confirmed');
-  });
 });

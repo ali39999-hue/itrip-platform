@@ -238,4 +238,55 @@ describe('Payment Hardening Suite (PAY-001 to PAY-008)', () => {
       })
     ).rejects.toThrow(/currency mismatch/i);
   });
+
+  it('PAY-005 Fail-Closed: Missing signature in production mode strictly rejects webhook', async () => {
+    const oldEnv = process.env.DEMO_MODE;
+    process.env.DEMO_MODE = 'false';
+
+    const eventId = `evt_missing_sig_${suffix}`;
+    await expect(
+      PaymentDomainService.processWebhook({
+        gatewayName: 'SHETAB_GATEWAY',
+        eventId,
+        eventType: 'payment.captured',
+        bookingId: testBookingId,
+        gatewayRef: `ref_nosig_${suffix}`,
+        settledAmount: testAmount,
+        settledCurrency: testCurrency,
+        timestamp: Date.now(),
+        // signature is omitted!
+      })
+    ).rejects.toThrow(/WEBHOOK_FAIL_CLOSED/i);
+
+    process.env.DEMO_MODE = oldEnv;
+  });
+
+  it('HTTP Route: POST /api/payments/webhook processes webhook requests', async () => {
+    const { POST } = await import('@/app/api/payments/webhook/route');
+    const { NextRequest } = await import('next/server');
+
+    const eventId = `evt_http_${suffix}`;
+    const reqBody = JSON.stringify({
+      eventId,
+      bookingId: testBookingId,
+      gatewayRef: `ref_http_${suffix}`,
+      amount: testAmount,
+      currency: testCurrency,
+      timestamp: Date.now(),
+    });
+
+    const request = new NextRequest('http://localhost:3000/api/payments/webhook', {
+      method: 'POST',
+      body: reqBody,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(200);
+
+    const data = await response.json();
+    expect(data.processed).toBe(true);
+  });
 });

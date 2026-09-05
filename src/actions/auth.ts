@@ -3,6 +3,7 @@
 import { signIn, signOut, safeAuth, issueOtp } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { profileUpdateSchema, otpRequestSchema } from '@/lib/validations';
+import { RateLimiter } from '@/lib/security/rate-limiter';
 
 export type AuthChannel = 'phone' | 'email' | 'telegram' | 'whatsapp' | 'wechat';
 
@@ -32,15 +33,10 @@ export async function loginWithCredentials(email: string, pass: string) {
 export async function requestOtp(data: unknown) {
   try {
     const parsed = otpRequestSchema.parse(data);
-    // Cheap flood control: at most 3 outstanding codes per identifier.
-    const recent = await prisma.otpVerification.count({
-      where: {
-        identifier: parsed.identifier,
-        createdAt: { gt: new Date(Date.now() - 10 * 60 * 1000) },
-      },
-    });
-    if (recent >= 3) {
-      return { success: false, error: 'Too many codes requested. Please try again later.' };
+    // Multi-layered token-bucket rate limiting (Section 35)
+    const rateCheck = await RateLimiter.checkOtpRateLimit(parsed.identifier);
+    if (!rateCheck.allowed) {
+      return { success: false, error: rateCheck.reason || 'Too many codes requested. Please try again later.' };
     }
     await issueOtp(parsed.identifier, parsed.channel);
     return { success: true, sent: true };

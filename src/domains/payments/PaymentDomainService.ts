@@ -333,10 +333,19 @@ export class PaymentDomainService {
       },
     });
 
-    // 3. Cryptographic Signature Verification (PAY-005)
+    // 3. Cryptographic Signature Verification (PAY-005: Strictly Fail-Closed)
+    const isDemo = process.env.DEMO_MODE === 'true';
+    if (!isDemo && !params.signature) {
+      await client.webhookEvent.update({
+        where: { id: webhookRecord.id },
+        data: { status: 'REJECTED', rejectionReason: 'WEBHOOK_FAIL_CLOSED: Missing cryptographic signature in production' },
+      });
+      throw new Error('WEBHOOK_FAIL_CLOSED: Missing required cryptographic signature in production mode');
+    }
+
     const adapter = gatewayName === 'SHETAB_GATEWAY'
       ? new ShetabGatewayAdapter()
-      : process.env.DEMO_MODE === 'true'
+      : isDemo
         ? new DemoPaymentAdapter()
         : new ShetabGatewayAdapter();
 
@@ -348,11 +357,7 @@ export class PaymentDomainService {
           where: { id: webhookRecord.id },
           data: { status: 'REJECTED', rejectionReason: verifyRes.error || 'Invalid cryptographic signature' },
         });
-        return {
-          processed: false,
-          status: 'REJECTED',
-          reason: verifyRes.error || 'Cryptographic signature verification failed',
-        };
+        throw new Error(`WEBHOOK_FAIL_CLOSED: ${verifyRes.error || 'Cryptographic signature verification failed'}`);
       }
     }
 

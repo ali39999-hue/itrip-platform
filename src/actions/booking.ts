@@ -7,6 +7,7 @@ import { FLIGHTS, HOTELS, TOURS, TRANSFERS, VISA_SERVICES, ESIM_PACKAGES, INSURA
 import { revalidatePath } from 'next/cache';
 import { safeAuth } from '@/auth';
 import { BookingSagaOrchestrator } from '@/domains/booking/saga-orchestrator';
+import { getTenantAuthContext, assertTenantAccess } from '@/domains/identity/permission-service';
 
 import { InventoryEngine } from '@/domains/inventory/InventoryEngine';
 import crypto from 'crypto';
@@ -63,6 +64,7 @@ export async function createBookingDraft(data: unknown) {
     }
     const userId = session.user.id;
     const userRole = session.user.role || 'CUSTOMER';
+    const tenantCtx = await getTenantAuthContext(userId).catch(() => null);
 
     // 1. Validate data structure purely based on IDs/quantities
     const parsed = bookingSchema.parse(data);
@@ -150,6 +152,8 @@ export async function createBookingDraft(data: unknown) {
         data: {
           reference,
           customerId: userId,
+          organizationId: tenantCtx?.organizationId || null,
+          branchId: tenantCtx?.branchId || null,
           status: holdToken ? 'HELD' : 'DRAFT',
           paymentStatus: 'INITIATED',
           fulfillmentStatus: 'PENDING',
@@ -232,17 +236,19 @@ export async function payBooking(bookingId: string, method: 'wallet_irr' | 'gate
       return { success: false, error: 'Invalid idempotency key' };
     }
 
-    // Ownership check: a user may only pay for their own booking.
+    // Ownership & Tenant Isolation check (IAM-002)
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      select: { id: true, customerId: true, status: true },
+      select: { id: true, customerId: true, organizationId: true, branchId: true, status: true },
     });
     if (!booking) return { success: false, error: 'Booking not found' };
 
-    const isPrivileged = session.user.role === 'SUPER_ADMIN';
-    if (booking.customerId !== session.user.id && !isPrivileged) {
-      return { success: false, error: 'Forbidden' };
-    }
+    const tenantCtx = await getTenantAuthContext(session.user.id);
+    assertTenantAccess(tenantCtx, {
+      customerId: booking.customerId,
+      organizationId: booking.organizationId,
+      branchId: booking.branchId,
+    });
     if (['CONFIRMED', 'CANCELLED', 'REFUNDED', 'REFUND_INITIATED', 'CANCEL_REQUESTED', 'CANCELLING'].includes(booking.status)) {
       return { success: false, error: 'Booking is not payable in its current state' };
     }
@@ -298,10 +304,17 @@ export async function getBookingById(id: string) {
     });
 
     if (!booking) return { success: false, error: 'Booking not found', booking: null };
-    // FINANCE/OPS hold booking:view:all; customers only see their own bookings.
-    const canViewAll = ['SUPER_ADMIN', 'FINANCE', 'OPS'].includes(session.user.role);
-    if (booking.customerId !== userId && !canViewAll) {
-      return { success: false, error: 'Forbidden', booking: null };
+    
+    // Strict Tenant Isolation & IDOR Check (IAM-002, IAM-003)
+    const tenantCtx = await getTenantAuthContext(userId);
+    try {
+      assertTenantAccess(tenantCtx, {
+        customerId: booking.customerId,
+        organizationId: booking.organizationId,
+        branchId: booking.branchId,
+      });
+    } catch {
+      return { success: false, error: 'Forbidden: Access denied to booking', booking: null };
     }
 
     return { success: true, booking };

@@ -3,11 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Booking, BookingPassenger, WalletTransaction } from '@/lib/types';
-import {
-  BookingDomainService,
-  type BookingSummary,
-  type BookingFundLock,
-} from '@/domains/booking/BookingDomainService';
+import type { BookingSummary } from '@/domains/booking/BookingDomainService';
 import {
   defaultCurrencyService,
   type WalletBalances,
@@ -20,13 +16,10 @@ interface BookingState {
   passengers: BookingPassenger[];
   bookings: Booking[];
   transactions: WalletTransaction[];
-  lockedAmounts: BookingFundLock[];
 
   setBookingContext: (item: BookingSummary | null) => void;
   setPassengers: (p: BookingPassenger[]) => void;
 
-  lockFunds: (amount: number, currency: SupportedCurrency, bookingId: string) => boolean;
-  confirmBooking: (paymentMethod: Booking['paymentMethod'], addOns?: string[]) => Booking | null;
   addDirectBooking: (booking: Omit<Booking, 'id' | 'reference' | 'createdAt'>) => Booking;
   refundBooking: (bookingId: string) => void;
   deposit: (wallet: SupportedCurrency, amount: number, method: string) => void;
@@ -52,157 +45,89 @@ export const useBookingStore = create<BookingState>()(
       passengers: [],
       bookings: [],
       transactions: [],
-      lockedAmounts: [],
 
       setBookingContext: (item) => set({ bookingContext: item ? { ...item, id: item.id || genId('ctx') } : null }),
       setPassengers: (passengers) => set({ passengers }),
 
-      lockFunds: (amount, currency, bookingId) => {
-        const { wallet } = get();
-        const result = BookingDomainService.createFundLock(bookingId, amount, currency, wallet[currency]);
-        if (!result) return false;
-
-        set({
-          wallet: { ...wallet, [currency]: result.newBalance },
-          lockedAmounts: [...get().lockedAmounts, result.lock],
-          transactions: [
-            {
-              id: genId('tx'),
-              type: 'withdraw',
-              wallet: currency as WalletTransaction['wallet'],
-              amount,
-              description: `قفل وجه تراکنش ${bookingId}`,
-              createdAt: new Date().toISOString(),
-              status: 'locked',
-            },
-            ...get().transactions,
-          ],
-        });
-        return true;
-      },
-
-      confirmBooking: (paymentMethod, addOns = []) => {
-        const { bookingContext, passengers, lockedAmounts } = get();
-        if (!bookingContext || !bookingContext.id) return null;
-
-        // Deterministic Lock resolution by exact context ID
-        const lockIndex = lockedAmounts.findIndex((l) => l.bookingId === bookingContext.id && l.state === 'LOCKED');
-        let updatedLocks = [...lockedAmounts];
-        const newTransactions = [...get().transactions];
-
-        if (lockIndex !== -1) {
-          const currentLock = lockedAmounts[lockIndex];
-          const capturedLock = BookingDomainService.captureLock(currentLock);
-          updatedLocks = lockedAmounts.filter((_, idx) => idx !== lockIndex);
-
-          newTransactions.unshift({
-            id: genId('tx'),
-            type: 'payment',
-            wallet: capturedLock.currency,
-            amount: capturedLock.amount,
-            description: `پرداخت نهایی رزرو ${bookingContext.title}`,
-            createdAt: new Date().toISOString(),
-            status: 'completed',
-          });
-        }
-
-        const booking = BookingDomainService.createConfirmedBooking(
-          bookingContext,
-          passengers,
-          paymentMethod,
-          addOns
-        );
-
-        set({
-          bookings: [booking, ...get().bookings],
-          bookingContext: null,
-          lockedAmounts: updatedLocks,
-          transactions: newTransactions,
-        });
-
-        return booking;
-      },
-
       addDirectBooking: (data) => {
-        const reference = 'FIR-' + Math.floor(Math.random() * 900000 + 100000);
+        const reference = `DIR-${Math.floor(Math.random() * 900000 + 100000)}`;
         const booking: Booking = {
           ...data,
           id: genId('bk'),
           reference,
           createdAt: new Date().toISOString(),
-          qrPayload: data.qrPayload || `FIRUZO|${reference}|${data.type.toUpperCase()}`,
+          status: 'confirmed',
+          qrPayload: `FIRUZO|${reference}|${data.type.toUpperCase()}`,
         };
         set({
           bookings: [booking, ...get().bookings],
-          transactions: [
-            {
-              id: genId('tx'),
-              type: 'payment',
-              wallet: (data.currency as SupportedCurrency) || 'IRR',
-              amount: data.amount,
-              description: `پرداخت سفارش ${data.title}`,
-              createdAt: new Date().toISOString(),
-              status: 'completed',
-            },
-            ...get().transactions,
-          ],
         });
         return booking;
       },
 
       refundBooking: (bookingId) => {
-        const booking = get().bookings.find((b) => b.id === bookingId);
-        if (!booking || booking.status !== 'confirmed') return;
+        const { bookings, wallet, transactions } = get();
+        const booking = bookings.find((b) => b.id === bookingId);
+        if (!booking || booking.status === 'cancelled') return;
 
-        // Staged refund workflow simulation
+        const currency = (booking.currency || 'IRR') as SupportedCurrency;
+        const refundAmount = booking.amount;
+
         set({
-          bookings: get().bookings.map((b) =>
-            b.id === bookingId ? { ...b, status: 'refunded' as const } : b
-          ),
-          wallet: { ...get().wallet, IRR: get().wallet.IRR + booking.amount },
+          bookings: bookings.map((b) => (b.id === bookingId ? { ...b, status: 'cancelled' as const } : b)),
+          wallet: {
+            ...wallet,
+            [currency]: (wallet[currency] || 0) + refundAmount,
+          },
           transactions: [
             {
               id: genId('tx'),
               type: 'refund',
-              wallet: 'IRR',
-              amount: booking.amount,
-              description: `استرداد و بازگشت وجه ${booking.reference}`,
+              wallet: currency,
+              amount: refundAmount,
+              description: `استرداد وجه رزرو ${booking.title}`,
               createdAt: new Date().toISOString(),
               status: 'completed',
             },
-            ...get().transactions,
+            ...transactions,
           ],
         });
       },
 
-      deposit: (walletName, amount, method) => {
+      deposit: (wallet, amount, method) => {
+        const { wallet: currentWallet, transactions } = get();
         set({
-          wallet: { ...get().wallet, [walletName]: get().wallet[walletName] + amount },
+          wallet: {
+            ...currentWallet,
+            [wallet]: (currentWallet[wallet] || 0) + amount,
+          },
           transactions: [
             {
               id: genId('tx'),
               type: 'deposit',
-              wallet: walletName,
+              wallet,
               amount,
-              description: `شارژ کیف پول از طریق ${method}`,
+              description: `شارژ کیف پول (${method})`,
               createdAt: new Date().toISOString(),
               status: 'completed',
             },
-            ...get().transactions,
+            ...transactions,
           ],
         });
       },
 
       exchange: (from, to, amount) => {
-        const { wallet } = get();
-        if (wallet[from] < amount) return false;
+        const { wallet, transactions } = get();
+        if ((wallet[from] || 0) < amount) return false;
 
         const converted = defaultCurrencyService.convert(amount, from, to);
+        if (converted === null) return false;
+
         set({
           wallet: {
             ...wallet,
             [from]: wallet[from] - amount,
-            [to]: wallet[to] + converted,
+            [to]: (wallet[to] || 0) + converted,
           },
           transactions: [
             {
@@ -210,42 +135,23 @@ export const useBookingStore = create<BookingState>()(
               type: 'exchange',
               wallet: from,
               amount,
-              resultAmount: converted,
-              resultWallet: to,
-              description: `تبدیل ${amount.toLocaleString()} ${from} به ${to}`,
+              description: `تبدیل ${amount} ${from} به ${converted} ${to}`,
               createdAt: new Date().toISOString(),
               status: 'completed',
             },
-            ...get().transactions,
+            ...transactions,
           ],
         });
         return true;
       },
     }),
     {
-      name: 'firuzo-bookings',
-      version: 2,
+      name: 'firuzo-booking-storage',
       partialize: (state) => ({
-        bookingContext: state.bookingContext,
-        passengers: state.passengers,
         bookings: state.bookings,
         wallet: state.wallet,
         transactions: state.transactions,
       }),
-      migrate: (persistedState: unknown, version: number) => {
-        const state = persistedState as { bookingContext?: BookingSummary; passengers?: BookingPassenger[] };
-        if (version < 2) {
-          return {
-            bookingContext: state?.bookingContext ?? null,
-            passengers: state?.passengers ?? [],
-            bookings: [],
-            wallet: { IRR: 0, USDT: 0, AED: 0 },
-            transactions: [],
-          } as unknown as BookingState;
-        }
-        return persistedState as BookingState;
-      },
     }
   )
 );
-
