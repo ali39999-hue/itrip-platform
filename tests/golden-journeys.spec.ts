@@ -80,6 +80,7 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     // 2. We should land on Hotel Detail page (the URL wait must exclude the
     // search page itself, which also matches /hotels/<word>).
     await page.waitForURL(/\/fa\/hotels\/(?!search($|\?))[a-zA-Z0-9_-]+/);
+    await expect(page.locator('h1').first()).toBeVisible({ timeout: 15000 });
     const hotelTitle = ((await page.locator('h1').first().textContent()) || '').trim();
     expect(hotelTitle.length).toBeGreaterThan(3);
     expect(hotelTitle).not.toContain('هتل‌های همه مقاصد');
