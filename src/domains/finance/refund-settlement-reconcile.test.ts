@@ -175,4 +175,43 @@ describe('Refund, Settlement & Reconciliation Suite (REF-001, SET-001, RECON-001
     expect(exception.status).toBe('OPEN');
     expect(exception.type).toBe('SUPPLIER_STATEMENT_MISMATCH');
   });
+
+  it('Three-Way Reconciliation: Detects bank statement discrepancy and files SLA exception', async () => {
+    const { FinancialReconciliationEngine } = await import('./three-way-reconciliation');
+    const { Money } = await import('@/lib/finance');
+
+    const intent = await prisma.paymentIntent.create({
+      data: {
+        bookingId: testBookingId,
+        amount: 14_000_000,
+        currency: 'IRR',
+        idempotencyKey: `intent_recon_${suffix}`,
+        expiresAt: new Date(Date.now() + 600_000),
+      },
+    });
+
+    // 1. Mismatched amount
+    const mismatchRecon = await FinancialReconciliationEngine.reconcilePaymentWithStatement({
+      paymentIntentId: intent.id,
+      bankStatementAmount: new Money('13500000', 'IRR'),
+      bankReference: `BANK_REF_${suffix}`,
+    });
+
+    expect(mismatchRecon.status).toBe('DISCREPANCY');
+    expect(mismatchRecon.discrepancyAmount?.toString()).toBe('500000');
+    expect(mismatchRecon.exceptionId).toBeDefined();
+
+    // 2. Matched amount
+    const matchedRecon = await FinancialReconciliationEngine.reconcilePaymentWithStatement({
+      paymentIntentId: intent.id,
+      bankStatementAmount: new Money('14000000', 'IRR'),
+      bankReference: `BANK_REF_${suffix}_2`,
+    });
+
+    expect(matchedRecon.status).toBe('MATCHED');
+
+    // Cleanup
+    await prisma.operationalException.deleteMany({ where: { entityId: intent.id } });
+    await prisma.paymentIntent.delete({ where: { id: intent.id } });
+  });
 });

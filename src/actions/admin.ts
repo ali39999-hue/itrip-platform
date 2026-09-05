@@ -1,9 +1,9 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
+import { prisma, getTenantScopedPrisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
-import { requirePermission } from '@/domains/identity/permission-service';
+import { requirePermission, getTenantAuthContext } from '@/domains/identity/permission-service';
 import { ReconciliationService, ReconciliationReport } from '@/domains/ledger/ReconciliationService';
 
 export async function runLedgerReconciliation(): Promise<ReconciliationReport> {
@@ -109,9 +109,11 @@ export async function getAdminFinanceStats() {
 
 export async function getAdminBookings() {
   try {
-    await requirePermission('booking:view:all');
+    const user = await requirePermission('booking:view:all');
+    const tenantCtx = await getTenantAuthContext(user.id);
+    const db = getTenantScopedPrisma(tenantCtx.organizationId, tenantCtx.isSuperAdmin);
 
-    const bookings = await prisma.booking.findMany({
+    const bookings = await db.booking.findMany({
       orderBy: { createdAt: 'desc' },
       take: 50,
       include: {
