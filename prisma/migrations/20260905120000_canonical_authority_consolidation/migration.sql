@@ -27,9 +27,16 @@ CREATE INDEX "OrganizationMembership_branchId_idx" ON "OrganizationMembership"("
 ALTER TABLE "OrganizationMembership" ADD CONSTRAINT "OrganizationMembership_branchId_fkey" FOREIGN KEY ("branchId") REFERENCES "OrganizationBranch"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- ============ PAY-004: Payment → PaymentIntent trace chain ============
-ALTER TABLE "Payment" ADD COLUMN "paymentIntentId" TEXT;
-CREATE INDEX "Payment_paymentIntentId_idx" ON "Payment"("paymentIntentId");
-ALTER TABLE "Payment" ADD CONSTRAINT "Payment_paymentIntentId_fkey" FOREIGN KEY ("paymentIntentId") REFERENCES "PaymentIntent"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "paymentIntentId" TEXT;
+CREATE INDEX IF NOT EXISTS "Payment_paymentIntentId_idx" ON "Payment"("paymentIntentId");
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'Payment_paymentIntentId_fkey'
+    ) THEN
+        ALTER TABLE "Payment" ADD CONSTRAINT "Payment_paymentIntentId_fkey" FOREIGN KEY ("paymentIntentId") REFERENCES "PaymentIntent"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+    END IF;
+END $$;
 
 -- ============ IAM-001: bootstrap relational RBAC from legacy columns ============
 -- 1. Ensure a Role row exists for every legacy User.role value.
