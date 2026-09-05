@@ -10,6 +10,7 @@ import { shimmerDataUrl } from '@/lib/image-utils';
 import { GALLERY } from '@/lib/hotel-mock';
 import type { Hotel } from '@/lib/types';
 import { lt } from '@/lib/lt';
+import { formatDistance } from '@/lib/format';
 
 export function HotelHero({ hotel }: { hotel: Hotel }) {
   const t = useTranslations('HotelDetail');
@@ -32,9 +33,11 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
     h6: { fa: '۲۰۰ متر تا میدان سرخ', en: '200 m to Red Square' },
     h7: { fa: 'ساحل القرم', en: 'Qurum Beachfront' },
   };
-  const displayDist = locale === 'fa'
-    ? hotel.distanceFromCenter
-    : (distanceMap[hotel.id]?.en || hotel.distanceFromCenter);
+  const displayDist = hotel.distanceKm !== undefined
+    ? formatDistance(hotel.distanceKm, hotel.nearestPoiName, locale)
+    : (locale === 'fa'
+        ? hotel.distanceFromCenter
+        : (distanceMap[hotel.id]?.en || hotel.distanceFromCenterEn || hotel.distanceFromCenter));
 
   const displayRating = locale === 'fa'
     ? fa1(hotel.rating)

@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import type { Hotel, RoomType } from '@/lib/types';
+import { formatDistance } from '@/lib/format';
 
 export interface RawIranHotel {
   hotel_id: string;
@@ -240,9 +241,11 @@ function loadChinaHotels(): DetailedHotelWithMeta[] {
     const galleryUrls = (ch.images || []).map((img) => img.url).filter(Boolean);
 
     // Nearby landmarks description
-    const landmarks = ch.location?.pois?.slice(0, 3).map(p => `${p.name} (${p.distance}km)`).join('، ') || 'میدان تیان‌آن‌من و شهر ممنوعه';
+    const landmarks = ch.location?.pois?.slice(0, 3).map(p => `${p.name} (${formatDistance(p.distance, undefined, 'fa')})`).join('، ') || 'میدان تیان‌آن‌من و شهر ممنوعه';
     const firstPoi = ch.location?.pois?.[0];
-    const distText = firstPoi ? `${firstPoi.distance} کیلومتر تا ${firstPoi.name}` : 'مرکز شهر پکن';
+    const poiDistanceKm = firstPoi?.distance ? parseFloat(firstPoi.distance) : undefined;
+    const distText = firstPoi ? formatDistance(firstPoi.distance, firstPoi.name, 'fa') : 'مرکز شهر پکن';
+    const distTextEn = firstPoi ? formatDistance(firstPoi.distance, firstPoi.name, 'en') : 'Downtown Beijing';
 
     const lat = ch.location?.lat || (firstPoi?.lat ? firstPoi.lat - 0.005 : 39.9042);
     const lng = ch.location?.lng || (firstPoi?.lng ? firstPoi.lng + 0.005 : 116.4074);
@@ -260,6 +263,9 @@ function loadChinaHotels(): DetailedHotelWithMeta[] {
       imageQuery: 'beijing-hotel',
       amenities: ['wifi', 'restaurant', 'spa', 'gym', 'shuttle'],
       distanceFromCenter: distText,
+      distanceFromCenterEn: distTextEn,
+      distanceKm: isNaN(poiDistanceKm as number) ? undefined : poiDistanceKm,
+      nearestPoiName: firstPoi?.name,
       freeCancellation: true,
       roomTypes: roomTypes.length > 0 ? roomTypes : [
         { id: 'r_std', name: 'Deluxe King Room', capacity: 2, breakfast: true, pricePerNight: defaultPrice, available: 6 },

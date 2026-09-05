@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Star, Heart, MapPin, CheckCircle2 } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { shimmerDataUrl, getHotelImage } from '@/lib/image-utils';
-import { num } from '@/lib/format';
+import { num, formatDistance } from '@/lib/format';
 import { lt, LText } from '@/lib/lt';
 import type { HotelCardProps } from './types';
 
@@ -67,10 +67,15 @@ export function HotelCard({
     maximumFractionDigits: 1,
   });
 
-  const distanceText = lt(
-    locale,
-    DISTANCE_MAP[hotel.distanceFromCenter] ?? { fa: hotel.distanceFromCenter, en: hotel.distanceFromCenter }
-  );
+  const distanceText = hotel.distanceKm !== undefined
+    ? formatDistance(hotel.distanceKm, hotel.nearestPoiName, locale)
+    : lt(
+        locale,
+        DISTANCE_MAP[hotel.distanceFromCenter] ?? {
+          fa: hotel.distanceFromCenter,
+          en: hotel.distanceFromCenterEn || hotel.distanceFromCenter,
+        }
+      );
 
   return (
     <article className="bg-surface border border-line rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row gap-5 hover:border-brand/40 transition-all shadow-elev-1 hover:shadow-elev-2 group">

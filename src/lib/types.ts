@@ -32,6 +32,9 @@ export interface Hotel {
   imageQuery: string;
   amenities: string[];
   distanceFromCenter: string;
+  distanceFromCenterEn?: string;
+  distanceKm?: number;
+  nearestPoiName?: string;
   freeCancellation: boolean;
   roomTypes: RoomType[];
 }
