@@ -405,8 +405,13 @@ function FlightSearchInner() {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-              {flights.map((f) => (
-                <BentoFlightCard key={f.id} flight={f} onSelect={() => selectFlight(f)} />
+              {flights.map((f, idx) => (
+                <BentoFlightCard
+                  key={f.id}
+                  flight={f}
+                  onSelect={() => selectFlight(f)}
+                  isCheapest={idx === 0}
+                />
               ))}
             </div>
           )}
