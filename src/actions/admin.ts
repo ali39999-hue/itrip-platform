@@ -132,27 +132,6 @@ import { BookingStateMachine, BookingState } from '@/domains/booking/state-machi
 import { GeneralLedgerService } from '@/domains/ledger/GeneralLedgerService';
 import { v4 as uuidv4 } from 'uuid';
 
-interface HistoryEntry {
-  from: string;
-  to: string;
-  at: string;
-}
-
-function parseHistory(raw: string | null): HistoryEntry[] {
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map((item) =>
-      typeof item === 'string'
-        ? { from: 'UNKNOWN', to: item, at: new Date(0).toISOString() }
-        : (item as HistoryEntry)
-    );
-  } catch {
-    return [];
-  }
-}
-
 export async function refundBookingAdmin(bookingId: string) {
   try {
     const user = await requirePermission('booking:refund:approve');
@@ -171,18 +150,24 @@ export async function refundBookingAdmin(bookingId: string) {
       BookingStateMachine.assertTransition('CANCELLING', 'CANCELLED');
       BookingStateMachine.assertTransition('CANCELLED', 'REFUND_INITIATED');
 
-      const history = parseHistory(booking.stateHistory);
-      const now = new Date().toISOString();
-      history.push(
-        { from: booking.status, to: 'CANCEL_REQUESTED', at: now },
-        { from: 'CANCEL_REQUESTED', to: 'CANCELLING', at: now },
-        { from: 'CANCELLING', to: 'CANCELLED', at: now },
-        { from: 'CANCELLED', to: 'REFUND_INITIATED', at: now }
-      );
-
       await tx.booking.update({
         where: { id: bookingId },
-        data: { status: 'REFUND_INITIATED', stateHistory: JSON.stringify(history), cancelledAt: new Date() },
+        data: {
+          status: 'REFUND_INITIATED',
+          paymentStatus: 'PARTIALLY_REFUNDED',
+          cancelledAt: new Date(),
+        },
+      });
+
+      // Relational Booking Status History (BOOK-004)
+      await tx.bookingStatusHistory.create({
+        data: {
+          bookingId,
+          fromStatus: booking.status,
+          toStatus: 'REFUND_INITIATED',
+          actor: user.id,
+          reason: 'Admin initiated refund workflow',
+        },
       });
 
       // 2. Double-Entry Ledger Refund Logic via Domain Service
@@ -193,15 +178,27 @@ export async function refundBookingAdmin(bookingId: string) {
         userId: booking.customerId,
         amount: booking.totalAmount.toNumber(),
         currency: booking.currency,
-        referenceId: booking.id
+        referenceId: booking.id,
       }, tx);
 
       BookingStateMachine.assertTransition('REFUND_INITIATED', 'REFUNDED');
-      history.push({ from: 'REFUND_INITIATED', to: 'REFUNDED', at: new Date().toISOString() });
 
       await tx.booking.update({
         where: { id: bookingId },
-        data: { status: 'REFUNDED', stateHistory: JSON.stringify(history) },
+        data: {
+          status: 'REFUNDED',
+          paymentStatus: 'REFUNDED',
+        },
+      });
+
+      await tx.bookingStatusHistory.create({
+        data: {
+          bookingId,
+          fromStatus: 'REFUND_INITIATED',
+          toStatus: 'REFUNDED',
+          actor: user.id,
+          reason: 'Admin refund completed and ledger posted',
+        },
       });
 
       // 3. Release inventory so refunded bookings stop consuming capacity.

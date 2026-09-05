@@ -215,6 +215,8 @@ model JournalLine {
   journalEntryId  String
   chartOfAccountId String?
   direction       String       // DEBIT, CREDIT
+  debit           Decimal      @default(0)
+  credit          Decimal      @default(0)
   amount          Decimal
   currency        String       @default("IRR")
   memo            String?
@@ -234,8 +236,7 @@ model Account {
 
   entries     LedgerEntry[]
 
-  // Platform accounts share the '#platform' sentinel so the unique rule also
-  // covers them (SQLite treats NULLs as distinct in unique indexes).
+  // Platform accounts share the '#platform' sentinel for clean uniqueness scoping.
   @@unique([ownerType, ownerId, currency])
 }
 
