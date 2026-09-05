@@ -395,6 +395,7 @@ model RefundItem {
   bookingItem     BookingItem    @relation(fields: [bookingItemId], references: [id], onDelete: Cascade)
 
   @@index([refundId])
+  @@index([bookingItemId])
 }
 
 // Invoicing & Commercial Billing (FIN-006)
@@ -488,6 +489,9 @@ model BookingItem {
   booking         Booking  @relation(fields: [bookingId], references: [id])
   inventoryItem   InventoryItem? @relation(fields: [inventoryItemId], references: [id])
   refundItems     RefundItem[]
+
+  @@index([bookingId])
+  @@index([inventoryItemId])
 }
 
 // ==================== 4. Suppliers & Inventory Engine ====================
@@ -599,6 +603,8 @@ model InventoryItem {
   allotments  Allotment[]
   holds       InventoryHold[]
   bookingItems BookingItem[]
+
+  @@index([supplierId])
 }
 
 model Allotment {
@@ -734,6 +740,7 @@ model OtpVerification {
   createdAt  DateTime  @default(now())
 
   @@index([identifier, createdAt])
+  @@index([identifier, consumedAt, expiresAt, createdAt])
 }
 
 // Exception Center & Discrepancy Registry (RECON-003, Section 24)
