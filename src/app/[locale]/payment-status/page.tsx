@@ -98,7 +98,7 @@ function PaymentStatusContent() {
 
   // Read from query params (e.g. gateway callback / direct redirection)
   // or fall back to the most recent booking in the local store.
-  const queryRef = searchParams.get('ref') || searchParams.get('trackingCode') || '';
+  const queryRef = searchParams.get('ref') || searchParams.get('trackingCode') || searchParams.get('bookingId') || '';
   const queryAmountStr = searchParams.get('amount');
   const queryAmount = queryAmountStr ? Number(queryAmountStr) : null;
   const queryTitle = searchParams.get('title') || '';

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "JournalLine" ADD COLUMN     "credit" DECIMAL(65,30) NOT NULL DEFAULT 0,
+ADD COLUMN     "debit" DECIMAL(65,30) NOT NULL DEFAULT 0;

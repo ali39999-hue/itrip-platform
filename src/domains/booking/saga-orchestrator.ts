@@ -12,37 +12,6 @@ export interface ConfirmBookingSagaParams {
   holdToken?: string;
 }
 
-interface HistoryEntry {
-  from: string;
-  to: string;
-  at: string;
-}
-
-/**
- * Appends transitions to the booking's stateHistory without destroying prior
- * history, and normalizes legacy string-form entries to the object shape.
- */
-function appendHistory(rawHistory: string | null, entries: Array<{ from: string; to: string }>): HistoryEntry[] {
-  let history: unknown[] = [];
-  if (rawHistory) {
-    try {
-      const parsed = JSON.parse(rawHistory);
-      if (Array.isArray(parsed)) history = parsed;
-    } catch {
-      // Corrupt history is never fatal: start a fresh array.
-      history = [];
-    }
-  }
-  const normalized: HistoryEntry[] = history.map((item) =>
-    typeof item === 'string'
-      ? { from: 'UNKNOWN', to: item, at: new Date(0).toISOString() }
-      : (item as HistoryEntry)
-  );
-  const now = new Date().toISOString();
-  entries.forEach((e) => normalized.push({ from: e.from, to: e.to, at: now }));
-  return normalized;
-}
-
 export class BookingSagaOrchestrator {
   /**
    * Orchestrates the multi-step saga of booking confirmation with automatic rollback compensations
@@ -160,12 +129,6 @@ export class BookingSagaOrchestrator {
           paymentStatus: 'CAPTURED',
           fulfillmentStatus: 'CONFIRMED',
           ticketStatus: 'ISSUING',
-          stateHistory: JSON.stringify(
-            appendHistory(booking.stateHistory, [
-              { from: booking.status, to: 'PAYMENT_CONFIRMED' },
-              { from: 'PAYMENT_CONFIRMED', to: 'CONFIRMED' },
-            ])
-          ),
         },
       });
 
@@ -241,7 +204,7 @@ export class BookingSagaOrchestrator {
       return { success: true, booking: updated };
     }, {
       // A multi-step interactive saga needs more headroom than the default 5s.
-      // Serializable ensures strict isolation on PostgreSQL migration while staying compatible with SQLite.
+      // Serializable ensures strict isolation on PostgreSQL.
       maxWait: 15000,
       timeout: 20000,
       isolationLevel: Prisma.TransactionIsolationLevel.Serializable,

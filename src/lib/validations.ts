@@ -2,8 +2,7 @@
  * Zod validation schemas for Firuzo/Firuzo travel platform.
  *
  * These schemas validate API request bodies and are the single source
- * of truth for the allowed values of the string-based "enums" used in
- * the Prisma schema (SQLite doesn't support native enums).
+ * of truth for the allowed values of string fields in the PostgreSQL schema.
  */
 
 import { z } from "zod";

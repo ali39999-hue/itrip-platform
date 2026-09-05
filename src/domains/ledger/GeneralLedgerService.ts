@@ -212,7 +212,10 @@ export class GeneralLedgerService {
         referenceId: params.referenceId,
         lines: {
           create: params.legs.map((leg) => ({
+            chartOfAccountId: headerAccount.id,
             direction: leg.direction,
+            debit: leg.direction === 'DEBIT' ? leg.amount : new Prisma.Decimal(0),
+            credit: leg.direction === 'CREDIT' ? leg.amount : new Prisma.Decimal(0),
             amount: leg.amount,
             currency: params.currency,
             memo: params.memo,

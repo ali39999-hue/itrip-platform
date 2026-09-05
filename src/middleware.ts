@@ -7,13 +7,13 @@ import { routing } from './i18n/routing';
 // Create the next-intl middleware
 const intlMiddleware = createMiddleware(routing);
 
-// Define route permissions mapped to required roles or permissions
+// Define coarse route permissions mapped to required roles or permissions (IAM-001)
 const ROUTE_PERMISSIONS: Record<string, string[]> = {
-  '/admin/finance': ['SUPER_ADMIN', 'FINANCE'],
-  '/admin/bookings': ['SUPER_ADMIN', 'FINANCE', 'OPS'],
-  '/admin/ops': ['SUPER_ADMIN', 'OPS'],
-  '/admin/content': ['SUPER_ADMIN', 'OPS'],
-  '/admin': ['SUPER_ADMIN', 'FINANCE', 'OPS'], // general admin access
+  '/admin/finance': ['SUPER_ADMIN', 'FINANCE', 'finance:reports:view'],
+  '/admin/bookings': ['SUPER_ADMIN', 'FINANCE', 'OPS', 'booking:view:all'],
+  '/admin/ops': ['SUPER_ADMIN', 'OPS', 'ops:override:cancel'],
+  '/admin/content': ['SUPER_ADMIN', 'OPS', 'catalog:hotels:edit'],
+  '/admin': ['SUPER_ADMIN', 'FINANCE', 'OPS', 'booking:view:all'], // general admin access
 };
 
 export async function middleware(request: NextRequest) {
@@ -60,18 +60,20 @@ export async function middleware(request: NextRequest) {
         secret
       });
 
-      // Check if logged in user has sufficient role for specific admin sub-routes
+      // Check if logged in user has sufficient role or permission for specific admin sub-routes
       if (token) {
         const userRole = (token.role as string) || 'CUSTOMER';
+        const userPerms = (token.permissions as string[]) || [];
         const normalizedPath = pathname.replace(/^\/(fa|en|ar|zh|ru)/, '');
         const matchingRoute = Object.keys(ROUTE_PERMISSIONS)
           .sort((a, b) => b.length - a.length)
           .find(route => normalizedPath === route || normalizedPath.startsWith(route + '/'));
 
         if (matchingRoute) {
-          const allowedRoles = ROUTE_PERMISSIONS[matchingRoute];
-          // The JWT role is always the server-issued DB value.
-          if (!allowedRoles.includes(userRole)) {
+          const allowed = ROUTE_PERMISSIONS[matchingRoute];
+          // User has access if role matches or any relational permission is granted
+          const hasAccess = userRole === 'SUPER_ADMIN' || allowed.some(p => p === userRole || userPerms.includes(p));
+          if (!hasAccess) {
             return NextResponse.redirect(new URL('/' + locale + '/account', request.url));
           }
         }

@@ -222,6 +222,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        const { ROLE_DEFAULT_PERMISSIONS } = await import('@/domains/identity/permissions');
+        token.permissions = ROLE_DEFAULT_PERMISSIONS[user.role] || [];
       }
       return token;
     },

@@ -58,6 +58,17 @@ describe('Financial Kernel & Precision Suite (MONEY-001, MONEY-002)', () => {
     expect(r2 % 10000).toBe(0);
     expect(r2).toBe(1240000);
   });
+
+  it('converts currencies via CurrencyService with zero floating-point error and preserves FX snapshot', async () => {
+    const { defaultCurrencyService } = await import('@/domains/currency/CurrencyService');
+    const usdtMoney = new Money('100', 'USDT');
+    const { converted, snapshot } = defaultCurrencyService.convertMoney(usdtMoney, 'IRR');
+
+    expect(converted.currency).toBe('IRR');
+    expect(converted.toNumber()).toBe(55000000); // 100 * 550,000 = 55,000,000 IRR
+    expect(snapshot.fxRate.toString()).toBe('550000');
+    expect(snapshot.fxSource).toBe('CENTRAL_BANK_RATE');
+  });
 });
 
 describe('Versioned Tax Engine Suite (MONEY-003)', () => {
