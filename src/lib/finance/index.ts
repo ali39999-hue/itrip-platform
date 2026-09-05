@@ -2,6 +2,35 @@ import { Prisma } from '@prisma/client';
 
 export type DecimalValue = Prisma.Decimal | string | number;
 
+export interface MoneyLine {
+  description: string;
+  amount: Money;
+  category?: 'SUPPLIER_COST' | 'MARKUP' | 'TAX' | 'FEE' | 'DISCOUNT' | 'ADDON';
+}
+
+export interface MoneyBreakdown {
+  baseCost: Money;
+  supplierFee: Money;
+  markupAmount: Money;
+  taxAmount: Money;
+  platformFee: Money;
+  discountAmount: Money;
+  roundingDelta: Money;
+  sellPrice: Money;
+  currency: string;
+  lines?: MoneyLine[];
+}
+
+export interface FxSnapshot {
+  transactionCurrency: string;
+  transactionAmount: Money;
+  baseCurrency: string;
+  baseAmount: Money;
+  fxRate: Prisma.Decimal;
+  fxSource: string;
+  fxTimestamp: Date;
+}
+
 export class Money {
   public readonly amount: Prisma.Decimal;
   public readonly currency: string;
@@ -54,6 +83,44 @@ export class Money {
 
   round(decimalPlaces: number = 0): Money {
     return new Money(this.amount.toDecimalPlaces(decimalPlaces, Prisma.Decimal.ROUND_HALF_UP), this.currency);
+  }
+
+  /**
+   * Currency-aware rounding:
+   * IRR: Round to nearest 10,000 Rials (1,000 Tomans) without JS float division
+   * Others (USD, EUR, USDT, AED): 2 decimal places
+   */
+  roundForCurrency(): { rounded: Money; delta: Money } {
+    if (this.currency === 'IRR') {
+      const step = new Prisma.Decimal(10000);
+      const units = this.amount.dividedBy(step).toDecimalPlaces(0, Prisma.Decimal.ROUND_HALF_UP);
+      const roundedAmount = units.mul(step);
+      const rounded = new Money(roundedAmount, this.currency);
+      const delta = rounded.sub(this);
+      return { rounded, delta };
+    }
+    const rounded = this.round(2);
+    const delta = rounded.sub(this);
+    return { rounded, delta };
+  }
+
+  convert(rate: DecimalValue, targetCurrency: string, source: string = 'CENTRAL_BANK'): FxSnapshot {
+    const dRate = rate instanceof Prisma.Decimal ? rate : new Prisma.Decimal(rate.toString());
+    if (dRate.lessThanOrEqualTo(0)) {
+      throw new Error(`Invalid FX rate: must be strictly positive, got ${dRate.toString()}`);
+    }
+    const convertedAmount = this.amount.mul(dRate);
+    const targetMoney = new Money(convertedAmount, targetCurrency);
+
+    return {
+      transactionCurrency: this.currency,
+      transactionAmount: this,
+      baseCurrency: targetCurrency.toUpperCase(),
+      baseAmount: targetMoney,
+      fxRate: dRate,
+      fxSource: source,
+      fxTimestamp: new Date(),
+    };
   }
 
   isPositive(): boolean {

@@ -1,4 +1,4 @@
-export type BookingState =
+export type BookingStatus =
   | 'DRAFT'
   | 'HELD'
   | 'PENDING_PAYMENT'
@@ -13,13 +13,40 @@ export type BookingState =
   | 'EXPIRED'
   | 'FAILED';
 
-export interface StateTransitionRule {
-  from: BookingState[];
-  to: BookingState;
+// Alias for backwards compatibility
+export type BookingState = BookingStatus;
+
+export type PaymentStatus =
+  | 'INITIATED'
+  | 'PENDING_CUSTOMER'
+  | 'AUTHORIZED'
+  | 'CAPTURED'
+  | 'FAILED'
+  | 'VOIDED'
+  | 'PARTIALLY_REFUNDED'
+  | 'REFUNDED';
+
+export type FulfillmentStatus =
+  | 'PENDING'
+  | 'IN_PROGRESS'
+  | 'CONFIRMED'
+  | 'FAILED';
+
+export type TicketStatus =
+  | 'NOT_ISSUED'
+  | 'ISSUING'
+  | 'ISSUED'
+  | 'VOIDED'
+  | 'REFUND_PENDING'
+  | 'REFUNDED';
+
+export interface StateTransitionRule<T extends string> {
+  from: T[];
+  to: T;
   description: string;
 }
 
-export const VALID_TRANSITIONS: StateTransitionRule[] = [
+export const VALID_BOOKING_TRANSITIONS: StateTransitionRule<BookingStatus>[] = [
   { from: ['DRAFT'], to: 'HELD', description: 'Hold inventory allotment' },
   { from: ['DRAFT', 'HELD'], to: 'PENDING_PAYMENT', description: 'Final server price agreed' },
   { from: ['HELD', 'PENDING_PAYMENT'], to: 'EXPIRED', description: 'TTL expired before payment' },
@@ -36,16 +63,70 @@ export const VALID_TRANSITIONS: StateTransitionRule[] = [
   { from: ['REFUND_INITIATED'], to: 'REFUNDED', description: 'Refund completed and funds settled' },
 ];
 
+export const VALID_PAYMENT_TRANSITIONS: StateTransitionRule<PaymentStatus>[] = [
+  { from: ['INITIATED'], to: 'PENDING_CUSTOMER', description: 'Redirected to gateway' },
+  { from: ['INITIATED', 'PENDING_CUSTOMER'], to: 'AUTHORIZED', description: 'Funds authorized on card' },
+  { from: ['INITIATED', 'PENDING_CUSTOMER', 'AUTHORIZED'], to: 'CAPTURED', description: 'Funds settled/captured' },
+  { from: ['INITIATED', 'PENDING_CUSTOMER', 'AUTHORIZED'], to: 'FAILED', description: 'Payment declined or cancelled' },
+  { from: ['AUTHORIZED'], to: 'VOIDED', description: 'Authorization voided before capture' },
+  { from: ['CAPTURED'], to: 'PARTIALLY_REFUNDED', description: 'Partial refund processed' },
+  { from: ['CAPTURED', 'PARTIALLY_REFUNDED'], to: 'REFUNDED', description: 'Full refund settled' },
+];
+
+export const VALID_FULFILLMENT_TRANSITIONS: StateTransitionRule<FulfillmentStatus>[] = [
+  { from: ['PENDING'], to: 'IN_PROGRESS', description: 'Supplier reservation requested' },
+  { from: ['PENDING', 'IN_PROGRESS'], to: 'CONFIRMED', description: 'Supplier issued voucher/booking' },
+  { from: ['PENDING', 'IN_PROGRESS'], to: 'FAILED', description: 'Supplier rejected or timed out' },
+];
+
+export const VALID_TICKET_TRANSITIONS: StateTransitionRule<TicketStatus>[] = [
+  { from: ['NOT_ISSUED'], to: 'ISSUING', description: 'Queued to GDS/Airline issuing robot' },
+  { from: ['ISSUING'], to: 'ISSUED', description: 'Ticket e-ticket number generated' },
+  { from: ['ISSUED'], to: 'VOIDED', description: 'Voided within 24hr ticketing window' },
+  { from: ['ISSUED'], to: 'REFUND_PENDING', description: 'Refund requested on ticket' },
+  { from: ['REFUND_PENDING'], to: 'REFUNDED', description: 'Airline coupon marked refunded' },
+];
+
+export const VALID_TRANSITIONS = VALID_BOOKING_TRANSITIONS;
+
 export class BookingStateMachine {
-  static canTransition(current: BookingState, next: BookingState): boolean {
-    // Strict: even same-state "transitions" must go through the table so
-    // double-payment and stale re-submissions are rejected.
-    return VALID_TRANSITIONS.some((r) => r.from.includes(current) && r.to === next);
+  static canTransition(current: BookingStatus, next: BookingStatus): boolean {
+    return VALID_BOOKING_TRANSITIONS.some((r) => r.from.includes(current) && r.to === next);
   }
 
-  static assertTransition(current: BookingState, next: BookingState): void {
+  static assertTransition(current: BookingStatus, next: BookingStatus): void {
     if (!this.canTransition(current, next)) {
       throw new Error(`Invalid state transition: Cannot transition booking from ${current} to ${next}`);
+    }
+  }
+
+  static canTransitionPayment(current: PaymentStatus, next: PaymentStatus): boolean {
+    return VALID_PAYMENT_TRANSITIONS.some((r) => r.from.includes(current) && r.to === next);
+  }
+
+  static assertPaymentTransition(current: PaymentStatus, next: PaymentStatus): void {
+    if (!this.canTransitionPayment(current, next)) {
+      throw new Error(`Invalid payment state transition: Cannot transition payment from ${current} to ${next}`);
+    }
+  }
+
+  static canTransitionFulfillment(current: FulfillmentStatus, next: FulfillmentStatus): boolean {
+    return VALID_FULFILLMENT_TRANSITIONS.some((r) => r.from.includes(current) && r.to === next);
+  }
+
+  static assertFulfillmentTransition(current: FulfillmentStatus, next: FulfillmentStatus): void {
+    if (!this.canTransitionFulfillment(current, next)) {
+      throw new Error(`Invalid fulfillment state transition: Cannot transition fulfillment from ${current} to ${next}`);
+    }
+  }
+
+  static canTransitionTicket(current: TicketStatus, next: TicketStatus): boolean {
+    return VALID_TICKET_TRANSITIONS.some((r) => r.from.includes(current) && r.to === next);
+  }
+
+  static assertTicketTransition(current: TicketStatus, next: TicketStatus): void {
+    if (!this.canTransitionTicket(current, next)) {
+      throw new Error(`Invalid ticket state transition: Cannot transition ticket from ${current} to ${next}`);
     }
   }
 }

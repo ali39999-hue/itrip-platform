@@ -119,7 +119,20 @@ export class RefundDomainService {
         where: { id: booking.id },
         data: {
           status: 'REFUNDED',
+          paymentStatus: 'REFUNDED',
           cancelledAt: new Date(),
+        },
+      });
+
+      // Relational Booking Status History (BOOK-004)
+      await client.bookingStatusHistory.create({
+        data: {
+          bookingId: booking.id,
+          fromStatus: booking.status,
+          toStatus: 'REFUNDED',
+          actor: params.approvedBy || 'SYSTEM',
+          reason: `Refund processed: ${params.reason || 'Customer cancellation'}`,
+          correlationId: `corr_rfd_${refund.id}`,
         },
       });
 
