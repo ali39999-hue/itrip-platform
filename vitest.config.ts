@@ -9,6 +9,12 @@ export default defineConfig({
     testTimeout: 60000,
     hookTimeout: 60000,
     fileParallelism: false,
+    // Unit/integration tests must never touch the development database.
+    // The isolated itrip_test database is provisioned via scripts/ensure-test-db.mjs
+    // and `DATABASE_URL=...itrip_test npx prisma migrate deploy` (see README).
+    env: process.env.TEST_DATABASE_URL
+      ? { DATABASE_URL: process.env.TEST_DATABASE_URL }
+      : {},
   },
   resolve: {
     alias: {

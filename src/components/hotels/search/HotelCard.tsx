@@ -78,142 +78,243 @@ export function HotelCard({
       );
 
   return (
-    <article className="bg-surface border border-line rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row gap-5 hover:border-brand/40 transition-all shadow-elev-1 hover:shadow-elev-2 group">
-      {/* Hotel Image with Badges */}
-      <div className="relative w-full md:w-64 h-52 md:h-auto rounded-2xl overflow-hidden shrink-0 bg-soft">
-        <Image
-          src={img}
-          alt={hotel.name}
-          fill
-          sizes="(max-width: 768px) 100vw, 256px"
-          placeholder="blur"
-          blurDataURL={shimmerDataUrl(256, 192)}
-          className="object-cover group-hover:scale-105 transition-transform duration-500"
-        />
-        {hotel.freeCancellation && (
-          <span className="absolute top-2.5 start-2.5 px-2.5 py-1 rounded-full bg-success/90 text-surface text-xs font-black shadow-elev-1 backdrop-blur-sm">
-            {t('freeCancel')}
-          </span>
-        )}
-        <button
-          type="button"
-          onClick={onFav}
-          aria-label={t('addFav')}
-          className="absolute top-2.5 end-2.5 w-8 h-8 rounded-full bg-surface/85 backdrop-blur-sm text-ink grid place-items-center hover:bg-surface transition shadow-elev-1 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
-        >
-          <Heart size={16} className={fav ? 'fill-rose-warm text-rose-warm' : 'text-sub'} aria-hidden="true" />
-        </button>
-      </div>
-
-      {/* Hotel Content & Info */}
-      <div className="flex-1 flex flex-col justify-between gap-4">
-        <div>
-          {/* Header Row: Stars, City, Name & Rating */}
-          <div className="flex items-start justify-between gap-3 mb-2">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="flex text-gold">
-                  {Array.from({ length: hotel.stars }).map((_, i) => (
-                    <Star key={i} size={13} className="fill-gold text-gold" />
-                  ))}
-                </div>
-                <span className="text-xs text-sub font-bold">{locale === 'fa' ? hotel.city : hotel.cityEn}</span>
-              </div>
-              <h3 className="text-base sm:text-lg font-black text-ink group-hover:text-brand-dark transition-colors">
-                {locale === 'fa' ? hotel.name : hotel.nameEn}
-              </h3>
-              {locale === 'fa' && (
-                <p className="text-xs text-sub font-mono">{hotel.nameEn}</p>
-              )}
-            </div>
-
-            {/* Score Rating Badge with LTR protection to prevent flipped slashes */}
-            <div className="text-end shrink-0">
-              <div
-                dir="ltr"
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-mint text-brand-dark font-black text-sm border border-brand/20 shadow-xs"
-              >
-                <span>{num(hotel.rating, locale)}</span>
-                <span className="text-[11px] text-sub font-bold">/ {num(10, locale)}</span>
-              </div>
-              <p className="text-[11px] text-sub font-bold mt-1">
-                {num(hotel.reviewsCount, locale)} {t('reviews')}
-              </p>
-            </div>
-          </div>
-
-          {/* Decision Value Proposition Badge Row */}
-          <div className="flex flex-wrap items-center gap-2 mb-3">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-soft text-brand-dark text-xs font-bold border border-line/60">
-              <MapPin size={12} className="text-brand shrink-0" />
-              <span>{distanceText}</span>
-            </span>
-            {hotel.rating >= 8.5 && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-gold-soft text-price text-xs font-black">
-                <CheckCircle2 size={12} className="text-action" />
-                <span>
-                  {lt(locale, {
-                    fa: 'امتیاز ممتاز مهمانان',
-                    en: 'Guest Top Pick',
-                    ar: 'اختيار الضيوف المفضل',
-                    zh: '宾客高分首选',
-                    ru: 'Высокая оценка гостей',
-                  })}
-                </span>
+    <article className="bg-surface border border-line rounded-2xl p-3.5 sm:p-5 hover:border-brand/40 transition-all shadow-elev-1 hover:shadow-elev-2 group">
+      {/* ========================================================================= */}
+      {/* 1. MOBILE COMPACT VIEW (< MD) — FLYTODAY MOBILE STANDARD                  */}
+      {/* ========================================================================= */}
+      <div className="md:hidden flex flex-col gap-3">
+        {/* Top: Image Thumbnail + Main Info in a 2-Column Row */}
+        <div className="flex items-start gap-3">
+          {/* Thumbnail with free cancel & fav */}
+          <div className="relative w-28 h-32 rounded-xl overflow-hidden shrink-0 bg-soft">
+            <Image
+              src={img}
+              alt={hotel.name}
+              fill
+              sizes="112px"
+              placeholder="blur"
+              blurDataURL={shimmerDataUrl(112, 128)}
+              className="object-cover"
+            />
+            {hotel.freeCancellation && (
+              <span className="absolute top-1.5 start-1.5 px-1.5 py-0.5 rounded-md bg-success/90 text-surface text-[9px] font-black shadow-xs">
+                {t('freeCancel')}
               </span>
             )}
+            <button
+              type="button"
+              onClick={onFav}
+              aria-label={t('addFav')}
+              className="absolute top-1.5 end-1.5 w-6 h-6 rounded-full bg-surface/85 backdrop-blur-xs text-ink grid place-items-center shadow-xs"
+            >
+              <Heart size={12} className={fav ? 'fill-rose-warm text-rose-warm' : 'text-sub'} aria-hidden="true" />
+            </button>
           </div>
 
-          {/* Amenities */}
-          <div className="flex flex-wrap gap-1.5">
-            {hotel.amenities.slice(0, 5).map((am) => (
-              <span key={am} className="px-2.5 py-0.5 rounded-lg bg-soft border border-line/50 text-sub text-[11px] font-bold">
-                {(AM_MAP[am] && lt(locale, AM_MAP[am])) || am}
+          {/* Details Column */}
+          <div className="flex-1 min-w-0 flex flex-col justify-between h-32">
+            <div>
+              {/* Stars & City */}
+              <div className="flex items-center gap-1 mb-0.5">
+                <div className="flex text-gold">
+                  {Array.from({ length: hotel.stars }).map((_, i) => (
+                    <Star key={i} size={11} className="fill-gold text-gold" />
+                  ))}
+                </div>
+                <span className="text-[11px] text-sub font-bold truncate">
+                  {locale === 'fa' ? hotel.city : hotel.cityEn}
+                </span>
+              </div>
+
+              {/* Hotel Name */}
+              <h3 className="text-sm font-black text-ink leading-snug line-clamp-2">
+                {locale === 'fa' ? hotel.name : hotel.nameEn}
+              </h3>
+
+              {/* Distance to Center */}
+              <div className="flex items-center gap-1 text-[10.5px] text-brand-dark font-bold mt-1 truncate">
+                <MapPin size={11} className="text-brand shrink-0" />
+                <span className="truncate">{distanceText}</span>
+              </div>
+            </div>
+
+            {/* Rating Score Badge */}
+            <div className="flex items-center justify-between mt-auto">
+              <div
+                dir="ltr"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-mint text-brand-dark font-black text-xs border border-brand/20"
+              >
+                <span>{num(hotel.rating, locale)}</span>
+                <span className="text-[10px] text-sub font-bold">/ {num(10, locale)}</span>
+              </div>
+              <span className="text-[10px] text-sub font-bold">
+                {num(hotel.reviewsCount, locale)} {t('reviews')}
               </span>
-            ))}
+            </div>
           </div>
         </div>
 
-        {/* Footer Row: Compare, Total Stay & Booking CTA */}
-        <div className="pt-3 border-t border-line/60 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-          <div className="flex flex-col gap-1">
-            <label className="inline-flex items-center gap-2 cursor-pointer select-none text-xs text-sub font-bold">
-              <input
-                type="checkbox"
-                checked={cmpChecked}
-                onChange={onCmp}
-                className="w-4 h-4 rounded border-line text-brand focus:ring-brand"
-              />
-              <span>{t('compare')}</span>
-            </label>
-            <div className="text-xs text-sub font-medium">
-              <span className="text-sub font-bold">
-                {lt(locale, {
-                  fa: `جمع ${nights} شب:`,
-                  en: `Total for ${nights} nights:`,
-                  ar: `المجموع لـ ${nights} ليالٍ:`,
-                  zh: `${nights} 晚总价:`,
-                  ru: `Всего за ${nights} ноч.:`,
-                })}
-              </span>{' '}
-              <strong className="text-ink font-black font-mono">{totalMillion}</strong> {t('millionToman')}
+        {/* Bottom Row: Price & Booking CTA */}
+        <div className="pt-2 border-t border-line/60 flex items-center justify-between gap-2">
+          <div>
+            <span className="text-[10px] text-sub block font-bold leading-none mb-0.5">
+              {t('perNightFrom')}
+            </span>
+            <div className="text-sm font-black text-brand-dark font-mono num flex items-baseline gap-1">
+              <span>{priceMillion}</span>
+              <span className="text-[10px] font-bold text-sub">{t('millionToman')}</span>
             </div>
           </div>
 
-          <div className="flex items-center justify-between sm:justify-end gap-4">
-            <div className="text-end">
-              <span className="text-[11px] text-sub block font-medium">{t('perNightFrom')}</span>
-              <div className="text-base sm:text-lg font-black text-brand-dark font-mono num flex items-baseline gap-1">
-                <span>{priceMillion}</span>
-                <span className="text-xs font-bold text-sub">{t('millionToman')}</span>
+          <Link
+            href={`/hotels/${hotel.id}${queryString}`}
+            className="h-9 px-4 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs flex items-center justify-center transition active:scale-95 shadow-xs"
+          >
+            {t('viewAndBook')}
+          </Link>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 2. DESKTOP VIEW (MD+)                                                     */}
+      {/* ========================================================================= */}
+      <div className="hidden md:flex flex-row gap-5">
+        {/* Hotel Image with Badges */}
+        <div className="relative w-64 h-auto rounded-2xl overflow-hidden shrink-0 bg-soft">
+          <Image
+            src={img}
+            alt={hotel.name}
+            fill
+            sizes="256px"
+            placeholder="blur"
+            blurDataURL={shimmerDataUrl(256, 192)}
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+          {hotel.freeCancellation && (
+            <span className="absolute top-2.5 start-2.5 px-2.5 py-1 rounded-full bg-success/90 text-surface text-xs font-black shadow-elev-1 backdrop-blur-sm">
+              {t('freeCancel')}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={onFav}
+            aria-label={t('addFav')}
+            className="absolute top-2.5 end-2.5 w-8 h-8 rounded-full bg-surface/85 backdrop-blur-sm text-ink grid place-items-center hover:bg-surface transition shadow-elev-1 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+          >
+            <Heart size={16} className={fav ? 'fill-rose-warm text-rose-warm' : 'text-sub'} aria-hidden="true" />
+          </button>
+        </div>
+
+        {/* Hotel Content & Info */}
+        <div className="flex-1 flex flex-col justify-between gap-4">
+          <div>
+            {/* Header Row: Stars, City, Name & Rating */}
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="flex text-gold">
+                    {Array.from({ length: hotel.stars }).map((_, i) => (
+                      <Star key={i} size={13} className="fill-gold text-gold" />
+                    ))}
+                  </div>
+                  <span className="text-xs text-sub font-bold">{locale === 'fa' ? hotel.city : hotel.cityEn}</span>
+                </div>
+                <h3 className="text-base sm:text-lg font-black text-ink group-hover:text-brand-dark transition-colors">
+                  {locale === 'fa' ? hotel.name : hotel.nameEn}
+                </h3>
+                {locale === 'fa' && (
+                  <p className="text-xs text-sub font-mono">{hotel.nameEn}</p>
+                )}
+              </div>
+
+              {/* Score Rating Badge with LTR protection to prevent flipped slashes */}
+              <div className="text-end shrink-0">
+                <div
+                  dir="ltr"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-mint text-brand-dark font-black text-sm border border-brand/20 shadow-xs"
+                >
+                  <span>{num(hotel.rating, locale)}</span>
+                  <span className="text-[11px] text-sub font-bold">/ {num(10, locale)}</span>
+                </div>
+                <p className="text-[11px] text-sub font-bold mt-1">
+                  {num(hotel.reviewsCount, locale)} {t('reviews')}
+                </p>
               </div>
             </div>
-            <Link
-              href={`/hotels/${hotel.id}${queryString}`}
-              className="h-11 px-5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs sm:text-sm flex items-center justify-center transition shadow-sm hover:shadow-elev-1 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none active:scale-[0.98]"
-            >
-              {t('viewAndBook')}
-            </Link>
+
+            {/* Decision Value Proposition Badge Row */}
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-soft text-brand-dark text-xs font-bold border border-line/60">
+                <MapPin size={12} className="text-brand shrink-0" />
+                <span>{distanceText}</span>
+              </span>
+              {hotel.rating >= 8.5 && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-gold-soft text-price text-xs font-black">
+                  <CheckCircle2 size={12} className="text-action" />
+                  <span>
+                    {lt(locale, {
+                      fa: 'امتیاز ممتاز مهمانان',
+                      en: 'Guest Top Pick',
+                      ar: 'اختيار الضيوف المفضل',
+                      zh: '宾客高分首选',
+                      ru: 'Высокая оценка гостей',
+                    })}
+                  </span>
+                </span>
+              )}
+            </div>
+
+            {/* Amenities */}
+            <div className="flex flex-wrap gap-1.5">
+              {hotel.amenities.slice(0, 5).map((am) => (
+                <span key={am} className="px-2.5 py-0.5 rounded-lg bg-soft border border-line/50 text-sub text-[11px] font-bold">
+                  {(AM_MAP[am] && lt(locale, AM_MAP[am])) || am}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer Row: Compare, Total Stay & Booking CTA */}
+          <div className="pt-3 border-t border-line/60 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="inline-flex items-center gap-2 cursor-pointer select-none text-xs text-sub font-bold">
+                <input
+                  type="checkbox"
+                  checked={cmpChecked}
+                  onChange={onCmp}
+                  className="w-4 h-4 rounded border-line text-brand focus:ring-brand"
+                />
+                <span>{t('compare')}</span>
+              </label>
+              <div className="text-xs text-sub font-medium">
+                <span className="text-sub font-bold">
+                  {lt(locale, {
+                    fa: `جمع ${nights} شب:`,
+                    en: `Total for ${nights} nights:`,
+                    ar: `المجموع لـ ${nights} ليالٍ:`,
+                    zh: `${nights} 晚总价:`,
+                    ru: `Всего за ${nights} ноч.:`,
+                  })}
+                </span>{' '}
+                <strong className="text-ink font-black font-mono">{totalMillion}</strong> {t('millionToman')}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between sm:justify-end gap-4">
+              <div className="text-end">
+                <span className="text-[11px] text-sub block font-medium">{t('perNightFrom')}</span>
+                <div className="text-base sm:text-lg font-black text-brand-dark font-mono num flex items-baseline gap-1">
+                  <span>{priceMillion}</span>
+                  <span className="text-xs font-bold text-sub">{t('millionToman')}</span>
+                </div>
+              </div>
+              <Link
+                href={`/hotels/${hotel.id}${queryString}`}
+                className="h-11 px-5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs sm:text-sm flex items-center justify-center transition shadow-sm hover:shadow-elev-1 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none active:scale-[0.98]"
+              >
+                {t('viewAndBook')}
+              </Link>
+            </div>
           </div>
         </div>
       </div>

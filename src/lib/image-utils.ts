@@ -55,9 +55,69 @@ const DIVERSE_HOTEL_FALLBACKS = [
   'https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=800&q=80',
 ];
 
+const ALLOWED_IMAGE_HOSTS = new Set([
+  'images.unsplash.com',
+  'upload.wikimedia.org',
+  'cdn.alibaba.ir',
+  'cdn.grschannel.com',
+  'www.eghamat24.com',
+  'ak-d.tripcdn.com',
+]);
+
+const FORBIDDEN_HOST_PATTERNS = [
+  'localhost',
+  '127.0.0.1',
+  '0.0.0.0',
+  '::1',
+];
+
+/**
+ * Validates that an image URL is safe, uses http/https, matches configured remotePatterns,
+ * rejects private/loopback/localhost addresses, and does not point to video files.
+ */
+export function isSafeImageUrl(rawUrl?: string): boolean {
+  if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.startsWith('http')) return false;
+
+  // Reject malformed doubled URLs (e.g. https://domain.comhttps://...)
+  if (rawUrl.indexOf('http', 4) !== -1) return false;
+
+  // Reject video formats (mp4, webm, mov, etc.)
+  const lower = rawUrl.toLowerCase();
+  if (lower.includes('.mp4') || lower.includes('.webm') || lower.includes('.mov') || lower.includes('.avi')) {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+
+    const hostname = parsed.hostname.toLowerCase();
+
+    // Reject localhost, loopback and private ranges
+    if (FORBIDDEN_HOST_PATTERNS.some((p) => hostname === p || hostname.endsWith(`.${p}`))) {
+      return false;
+    }
+    if (
+      hostname.startsWith('10.') ||
+      hostname.startsWith('192.168.') ||
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
+    ) {
+      return false;
+    }
+
+    // Must be in configured Next.js image remotePatterns
+    return ALLOWED_IMAGE_HOSTS.has(hostname);
+  } catch {
+    return false;
+  }
+}
+
 export function getHotelImage(hotel: { id?: string; imageQuery?: string; name?: string; galleryImages?: string[] }) {
-  if (hotel.galleryImages && hotel.galleryImages.length > 0 && hotel.galleryImages[0].startsWith('http')) {
-    return hotel.galleryImages[0];
+  if (hotel.galleryImages && hotel.galleryImages.length > 0) {
+    const validImage = hotel.galleryImages.find((url) => isSafeImageUrl(url));
+    if (validImage) {
+      return validImage;
+    }
   }
   if (hotel.id && HOTEL_IMAGE_MAP[hotel.id]) {
     return HOTEL_IMAGE_MAP[hotel.id];

@@ -62,7 +62,154 @@ export function BentoFlightCard({ flight, onSelect, isCheapest = false }: BentoF
     <article
       className="relative bg-[#FDF6EE] dark:bg-surface rounded-2xl shadow-[0_2px_14px_rgba(64,50,30,0.07)] hover:shadow-[0_6px_22px_rgba(64,50,30,0.11)] transition-all group overflow-hidden"
     >
-      <div className="flex flex-col md:flex-row items-stretch">
+      {/* ========================================================================= */}
+      {/* 1. MOBILE COMPACT TICKET VIEW (< MD) — FLYTODAY MOBILE STANDARD          */}
+      {/* ========================================================================= */}
+      <div className="md:hidden p-4 flex flex-col gap-3">
+        {/* Mobile Top Row: Airline info & Urgency/Discount Badge */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <AirlineLogo airline={flight.airline} airlineEn={flight.airlineEn} size={30} />
+            <div className="flex items-center gap-2">
+              <h4 className="font-extrabold text-[13.5px] text-neutral-900 dark:text-ink leading-tight">
+                {flight.airline}
+              </h4>
+              <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-100/70 text-amber-900 font-bold dark:bg-amber-950/40 dark:text-amber-200">
+                {business ? 'Business' : 'Economy'}
+              </span>
+            </div>
+          </div>
+
+          {/* Badge */}
+          <div>
+            {flight.seatsLeft <= 3 ? (
+              <span className="inline-flex items-center gap-1 text-[11px] font-black text-rose-600 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-md">
+                <BellDot size={12} />
+                <span>{lt(locale, { fa: `${num(flight.seatsLeft, locale)} صندلی`, en: `${num(flight.seatsLeft, locale)} left`, ar: `${num(flight.seatsLeft, locale)} مقاعد`, zh: `剩${num(flight.seatsLeft, locale)}位`, ru: `Осталось ${num(flight.seatsLeft, locale)}` })}</span>
+              </span>
+            ) : isCheapest || flight.price < 26_000_000 ? (
+              <span className="text-[11px] font-black text-emerald-700 bg-emerald-100/70 dark:bg-emerald-950/50 dark:text-emerald-300 px-2 py-0.5 rounded-md">
+                {lt(locale, { fa: 'ارزان‌ترین', en: 'Cheapest', ar: 'الأرخص', zh: '最实惠', ru: 'Эконом' })}
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Mobile Middle Row: Times & Flight Line (Compact) */}
+        <div className="flex items-center justify-between gap-2 py-1">
+          {/* Departure */}
+          <div className="flex flex-col items-start shrink-0 min-w-[62px]">
+            <span className="text-xl font-black text-neutral-900 dark:text-ink font-mono tracking-tight leading-none" dir="ltr">
+              {flight.departureTime}
+            </span>
+            <span className="text-xs font-black text-neutral-800 dark:text-ink mt-1">
+              {originCity}
+            </span>
+            <span className="text-[10px] font-bold text-neutral-400 dark:text-sub font-mono">
+              {originIata}
+            </span>
+          </div>
+
+          {/* Dotted Flight Line */}
+          <div className="flex-1 mx-2 flex flex-col items-center justify-center min-w-0">
+            <span className="text-[10.5px] font-bold text-neutral-500 dark:text-sub mb-1 whitespace-nowrap">
+              {durationLocalized(flight.duration, locale)}
+            </span>
+            <div className="w-full relative flex items-center justify-between">
+              <span className="w-1.5 h-1.5 rounded-full bg-neutral-700 dark:bg-mint-bright shrink-0" />
+              <div className="flex-1 mx-1.5 relative flex items-center justify-center">
+                <span className="w-full border-t border-dotted border-neutral-400 dark:border-line" />
+                <span className="absolute px-1.5 py-0.5 bg-[#FDF6EE] dark:bg-surface text-[#197678] dark:text-mint-bright">
+                  <Plane size={14} fill="currentColor" className="-rotate-45 rtl:-scale-x-100" />
+                </span>
+              </div>
+              <span className="w-1.5 h-1.5 rounded-full bg-neutral-700 dark:bg-mint-bright shrink-0" />
+            </div>
+            <span className="text-[10px] font-bold text-neutral-500 dark:text-sub mt-1">
+              {flight.stops === 0
+                ? lt(locale, { fa: 'مستقیم', en: 'Non-stop', ar: 'مباشر', zh: '直飞', ru: 'Прямой' })
+                : `${num(flight.stops, locale)} ${t('stops')}`}
+            </span>
+          </div>
+
+          {/* Arrival */}
+          <div className="flex flex-col items-end shrink-0 min-w-[62px]">
+            <span className="text-xl font-black text-neutral-900 dark:text-ink font-mono tracking-tight leading-none" dir="ltr">
+              {flight.arrivalTime}
+            </span>
+            <span className="text-xs font-black text-neutral-800 dark:text-ink mt-1">
+              {destCity}
+            </span>
+            <span className="text-[10px] font-bold text-neutral-400 dark:text-sub font-mono">
+              {destIata}
+            </span>
+            {overnight && (
+              <span className="text-[9px] text-rose-500 font-bold">
+                {t('plusOneDay')}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile Bottom Row: Price & Action CTA (FlyToday layout) */}
+        <div className="pt-2.5 border-t border-[#F0E9DD] dark:border-line/70 flex items-center justify-between gap-3">
+          {/* Left: Baggage & details toggle */}
+          <div className="flex items-center gap-2.5 text-xs text-neutral-600 dark:text-sub">
+            <span className="flex items-center gap-1 font-bold text-[11px]">
+              <Briefcase size={12} className="text-[#197678] dark:text-mint-bright" />
+              {flight.baggage}
+            </span>
+            <button
+              type="button"
+              onClick={() => setOpen(!open)}
+              className="text-[11px] font-bold text-neutral-500 hover:text-amber-600 flex items-center gap-0.5"
+            >
+              <span>{t('flightDetails')}</span>
+              <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+
+          {/* Right: Price & CTA Button */}
+          <div className="flex items-center gap-2">
+            <div className="text-end">
+              <div className="flex items-baseline justify-end gap-1" dir="ltr">
+                <span className="text-lg font-black tracking-tight text-neutral-900 dark:text-ink leading-none tabular-nums">
+                  {num(flight.price, locale)}
+                </span>
+                <span className="text-[11px] font-bold text-neutral-500 dark:text-sub" dir={['fa', 'ar'].includes(locale) ? 'rtl' : 'ltr'}>
+                  {t('toman')}
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onSelect}
+              className="h-9 px-3.5 rounded-xl bg-gradient-to-b from-[#FFA83B] to-[#F58F1C] hover:from-[#FF9D22] hover:to-[#EF8410] text-[#592600] font-black text-xs transition active:scale-95 shadow-sm"
+            >
+              {t('selectTicket')}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Collapsed Details */}
+        {open && (
+          <div className="animate-in fade-in slide-in-from-top-1 duration-150 p-3 bg-[#FAF3E7] dark:bg-soft/70 border border-[#F0E9DD] dark:border-line/70 rounded-xl grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <b className="block text-[10px] text-neutral-400 dark:text-sub font-bold">{lt(locale, { fa: 'شماره پرواز', en: 'Flight No', ar: 'رقم الرحلة', zh: '航班号', ru: 'Номер' })}:</b>
+              <span className="font-mono font-bold text-ink">{flight.flightNo}</span>
+            </div>
+            <div>
+              <b className="block text-[10px] text-neutral-400 dark:text-sub font-bold">{t('baggageIncluded')}:</b>
+              <span className="font-bold text-ink">{flight.baggage}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 2. DESKTOP TICKET VIEW (MD+) — PHYSICAL BOARDING PASS STYLE             */}
+      {/* ========================================================================= */}
+      <div className="hidden md:flex flex-row items-stretch">
         {/* ================= MAIN TICKET BODY (در RTL: سمت راست — بدنه پرواز) ================= */}
         <div className="flex-1 p-5 md:p-6 flex flex-col justify-between min-w-0">
           {/* Top row: Airline logo, name, flight number & class — anchored to start (راست در RTL) */}
@@ -274,7 +421,7 @@ export function BentoFlightCard({ flight, onSelect, isCheapest = false }: BentoF
                     en: 'Cheapest',
                     ar: 'الأرخص',
                     zh: '最实惠',
-                    ru: 'Самый дешёвый',
+                    ru: 'Самый деشёвый',
                   })}
                 </span>
               </span>

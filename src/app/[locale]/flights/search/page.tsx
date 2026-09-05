@@ -15,7 +15,7 @@ import { num } from '@/lib/format';
 import { BentoFlightCard } from '@/components/flights/BentoFlightCard';
 import { CrossSellBundle } from '@/components/shared/CrossSellBundle';
 import {
-  PlaneTakeoff, PlaneLanding, CalendarDays, PenLine, SlidersHorizontal, X, Check, ArrowLeft, Loader2,
+  PlaneTakeoff, PlaneLanding, CalendarDays, PenLine, SlidersHorizontal, X, Check, Loader2, Search,
 } from 'lucide-react';
 
 const STEP = 1_000_000;
@@ -54,6 +54,10 @@ function FlightSearchInner() {
   const [price, setPrice] = useState<[number, number]>([20_000_000, 150_000_000]);
   const [sort, setSort] = useState<SortId>('price');
   const [sheet, setSheet] = useState(false);
+  const [editSheetOpen, setEditSheetOpen] = useState(false);
+  const [editFrom, setEditFrom] = useState(from);
+  const [editTo, setEditTo] = useState(to);
+  const [editDate, setEditDate] = useState(travelDate);
 
   // Live state
   const [flights, setFlights] = useState<Flight[]>([]);
@@ -163,6 +167,8 @@ function FlightSearchInner() {
   function selectFlight(f: Flight) {
     setBookingContext({
       type: 'flights',
+      // The server prices the draft from the live flight catalog by id.
+      id: f.id,
       title: `${localizedAirportLabel(f.origin, locale)} ✈ ${localizedAirportLabel(f.destination, locale)} (${f.flightNo})`,
       subtitle: `${locale === 'fa' ? f.airline : (f.airlineEn || f.airline)} • ${f.departureTime}`,
       amount: f.price,
@@ -289,35 +295,30 @@ function FlightSearchInner() {
 
         {/* Content */}
         <div className="flex-grow flex flex-col gap-4 min-w-0 w-full">
-          {/* Search summary */}
-          <div className="bg-surface/95 backdrop-blur-xl rounded-2xl p-4 flex flex-col md:flex-row justify-between items-center gap-3 shadow-sm border border-line/80">
-            <div className="flex items-center gap-3 md:gap-4 flex-wrap justify-center">
-              <div className="flex items-center gap-2">
-                <span className="text-lg md:text-xl font-black text-ink">{from || t('allOrigins')}</span>
-                <PlaneTakeoff size={17} className="text-sub" />
+          {/* Search summary - Sticky on mobile under header */}
+          <div className="sticky top-16 z-30 md:static bg-surface/95 backdrop-blur-xl rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 shadow-xs border border-line/80">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="text-sm sm:text-lg font-black text-ink truncate">{from || t('allOrigins')}</span>
+                <span className="text-sub font-black">➔</span>
+                <span className="text-sm sm:text-lg font-black text-ink truncate">{to || t('allDestinations')}</span>
               </div>
-              <ArrowLeft size={18} className="text-sub max-md:hidden ltr:rotate-180" />
-              <div className="flex items-center gap-2">
-                <span className="text-lg md:text-xl font-black text-ink">{to || t('allDestinations')}</span>
-                <PlaneLanding size={17} className="text-sub" />
-              </div>
-              <span className="px-3 py-1.5 bg-line/60 rounded-full flex items-center gap-1.5 text-[11.5px] font-bold text-sub">
-                <CalendarDays size={14} />
+              <span className="px-2.5 py-1 bg-soft rounded-lg flex items-center gap-1 text-[11px] font-bold text-sub">
+                <CalendarDays size={13} />
                 {dualDate(travelDate).j}
               </span>
             </div>
             <button
               onClick={() => {
-                const q = new URLSearchParams();
-                if (from) q.set('from', from);
-                if (to) q.set('to', to);
-                if (departParam) q.set('depart', departParam);
-                router.push(`/flights${q.size ? `?${q.toString()}` : ''}`);
+                setEditFrom(from);
+                setEditTo(to);
+                setEditDate(travelDate);
+                setEditSheetOpen(true);
               }}
-              className="min-h-10 px-4 rounded-xl bg-soft hover:bg-line/60 text-ink text-[13px] font-black flex items-center gap-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-sm border border-line"
+              className="h-9 px-3 rounded-xl bg-soft hover:bg-line/60 text-brand-dark text-xs font-black flex items-center gap-1.5 transition-colors border border-line shrink-0 active:scale-95"
             >
-              <PenLine size={15} />
-              {t('changeSearch')}
+              <PenLine size={13} />
+              <span>{t('changeSearch')}</span>
             </button>
           </div>
 
@@ -488,6 +489,40 @@ function FlightSearchInner() {
         </div>
       </div>
 
+      {/* ================= STICKY MOBILE FILTER & SORT PILL (FLYTODAY STYLE) ================= */}
+      <div className="lg:hidden fixed bottom-[70px] inset-x-0 z-40 flex justify-center pointer-events-none px-4">
+        <div className="pointer-events-auto bg-ink/90 dark:bg-surface/95 backdrop-blur-md text-surface dark:text-ink px-4 py-2 rounded-full shadow-elev-3 flex items-center gap-3 border border-surface/20 dark:border-line">
+          <button
+            type="button"
+            onClick={() => setSheet(true)}
+            className="flex items-center gap-1.5 text-xs font-black py-1 px-2 rounded-full hover:bg-surface/20 transition active:scale-95"
+          >
+            <SlidersHorizontal size={14} />
+            <span>{t('filters')}</span>
+            {activeFilters > 0 && (
+              <span className="w-4 h-4 rounded-full bg-brand text-surface text-[10px] grid place-items-center font-bold">
+                {num(activeFilters, locale)}
+              </span>
+            )}
+          </button>
+          <span className="w-px h-4 bg-surface/30 dark:bg-line" />
+          <button
+            type="button"
+            onClick={() => {
+              // Cycle sort on tap in mobile pill
+              const nextIdx = (sorts.findIndex((s) => s.id === sort) + 1) % sorts.length;
+              setSort(sorts[nextIdx].id);
+            }}
+            className="flex items-center gap-1.5 text-xs font-black py-1 px-2 rounded-full hover:bg-surface/20 transition active:scale-95"
+          >
+            <span className="text-[11px] opacity-75">{t('sortBy')}:</span>
+            <span className="text-brand-bright text-mint-bright dark:text-brand font-bold">
+              {sorts.find((s) => s.id === sort)?.label}
+            </span>
+          </button>
+        </div>
+      </div>
+
       {/* Filters — mobile bottom sheet */}
       {sheet && (
         <div className="lg:hidden">
@@ -510,6 +545,81 @@ function FlightSearchInner() {
                 className="w-full min-h-11 rounded-xl bg-brand hover:bg-brand-dark text-surface text-sm font-black transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
                 {t('apply')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* In-Place Flight Search Edit Sheet */}
+      {editSheetOpen && (
+        <div className="fixed inset-0 z-[160] flex items-end justify-center bg-deep/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="w-full max-w-lg bg-surface rounded-t-3xl p-5 border-t border-line shadow-2xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom-5 duration-200 space-y-4">
+            <div className="w-10 h-1 rounded-full bg-line mx-auto mb-1" />
+
+            <div className="flex items-center justify-between pb-3 border-b border-line">
+              <h3 className="text-sm font-black text-ink">تغییر پارامترهای جستجوی پرواز</h3>
+              <button
+                type="button"
+                onClick={() => setEditSheetOpen(false)}
+                className="text-xs font-bold text-sub px-2.5 py-1 rounded-lg bg-soft"
+              >
+                بستن
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-sub mb-1">مبدأ پرواز</label>
+                <div className="flex items-center gap-2 p-3 bg-soft rounded-xl border border-line">
+                  <PlaneTakeoff size={16} className="text-brand-dark" />
+                  <input
+                    type="text"
+                    value={editFrom}
+                    onChange={(e) => setEditFrom(e.target.value)}
+                    placeholder="مثال: تهران، مشهد..."
+                    className="w-full bg-transparent border-0 outline-none text-xs font-bold text-ink"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-sub mb-1">مقصد پرواز</label>
+                <div className="flex items-center gap-2 p-3 bg-soft rounded-xl border border-line">
+                  <PlaneLanding size={16} className="text-brand-dark" />
+                  <input
+                    type="text"
+                    value={editTo}
+                    onChange={(e) => setEditTo(e.target.value)}
+                    placeholder="مثال: استانبول، دبی، کیش..."
+                    className="w-full bg-transparent border-0 outline-none text-xs font-bold text-ink"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-sub mb-1">تاریخ پرواز (میلادی/شمسی)</label>
+                <input
+                  type="date"
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                  className="w-full p-3 rounded-xl border border-line bg-soft text-xs font-bold font-mono"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setEditSheetOpen(false);
+                  const q = new URLSearchParams();
+                  if (editFrom) q.set('from', editFrom);
+                  if (editTo) q.set('to', editTo);
+                  if (editDate) q.set('depart', editDate);
+                  router.push(`/flights/search?${q.toString()}`);
+                }}
+                className="w-full h-12 rounded-2xl bg-action hover:bg-action-hover text-ink font-black text-sm flex items-center justify-center gap-2 shadow-md transition active:scale-95"
+              >
+                <Search size={16} />
+                <span>جستجوی پروازهای جدید</span>
               </button>
             </div>
           </div>

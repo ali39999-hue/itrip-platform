@@ -320,7 +320,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-paper py-8 md:py-12 px-4 md:px-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         {/* Stepper */}
         {phase !== 'success' && <CheckoutStepper phase={phase} />}
 
@@ -332,112 +332,139 @@ export default function CheckoutPage() {
 
         {/* Phase 1: Passenger Form */}
         {phase === 'passengers' && (
-          <form onSubmit={handleSubmit(onSubmitPassenger)} className="space-y-6">
-            <PassengerSection
-              register={register}
-              control={control}
-              errors={errors}
-              scanning={scanning}
-              onScanPassport={scanPassport}
-              passportScanned={passportScanned}
-            />
+          <form onSubmit={handleSubmit(onSubmitPassenger)} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Main Form Column (Left in LTR, Right in RTL) */}
+            <div className="lg:col-span-7 space-y-6">
+              <PassengerSection
+                register={register}
+                control={control}
+                errors={errors}
+                scanning={scanning}
+                onScanPassport={scanPassport}
+                passportScanned={passportScanned}
+              />
 
-            <AddonsSection
-              addEsim={addEsim}
-              setAddEsim={setAddEsim}
-              addInsurance={addInsurance}
-              setAddInsurance={setAddInsurance}
-              countryName={countryName(country, locale)}
-            />
+              <AddonsSection
+                addEsim={addEsim}
+                setAddEsim={setAddEsim}
+                addInsurance={addInsurance}
+                setAddInsurance={setAddInsurance}
+                countryName={countryName(country, locale)}
+              />
 
-            <PriceBreakdownTable
-              baseAmount={baseAmount}
-              currency={currency}
-              addEsim={addEsim}
-              addInsurance={addInsurance}
-              itemTitle={itemTitle}
-            />
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className="w-full min-h-[54px] px-8 rounded-xl bg-action hover:bg-action-hover text-ink text-[15px] font-black shadow-md transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+                >
+                  {lt(locale, {
+                    fa: 'تایید اطلاعات و ادامه به مرحله پرداخت ←',
+                    en: 'Confirm Details & Continue to Payment →',
+                    ar: 'تأكيد البيانات والمتابعة إلى الدفع ←',
+                    zh: '确认信息并前往支付 →',
+                    ru: 'Подтвердить данные и перейти к оплате →',
+                  })}
+                </button>
+              </div>
+            </div>
 
-            <div className="flex justify-end pt-2">
-              <button
-                type="submit"
-                className="w-full sm:w-auto min-h-[52px] px-8 rounded-xl bg-action hover:bg-action-hover text-ink text-[15px] font-black shadow-md transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
-              >
-                {lt(locale, {
-                  fa: 'تایید اطلاعات و ادامه به مرحله پرداخت ←',
-                  en: 'Confirm Details & Continue to Payment →',
-                  ar: 'تأكيد البيانات والمتابعة إلى الدفع ←',
-                  zh: '确认信息并前往支付 →',
-                  ru: 'Подтвердить данные и перейти к оплате →',
-                })}
-              </button>
+            {/* Sticky Order Summary Sidebar (Desktop) */}
+            <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-4">
+              <PriceBreakdownTable
+                baseAmount={baseAmount}
+                currency={currency}
+                addEsim={addEsim}
+                addInsurance={addInsurance}
+                itemTitle={itemTitle}
+              />
+
+              {/* Security Badge in Sidebar */}
+              <div className="p-4 rounded-2xl bg-surface border border-line/80 shadow-xs flex items-center gap-3 text-xs text-sub">
+                <span className="w-8 h-8 rounded-full bg-mint text-brand-dark flex items-center justify-center shrink-0">
+                  🔒
+                </span>
+                <p className="leading-relaxed">
+                  {lt(locale, {
+                    fa: 'اطلاعات شما با پروتکل امنیتی SSL رمزنگاری شده و صدور بلیت آنی انجام می‌شود.',
+                    en: 'Your data is secured with SSL encryption and vouchers are issued instantly.',
+                    ar: 'بياناتك مشفرة ومحمية ببروتوكول SSL ويتم إصدار التذاكر فوراً.',
+                    zh: '您的信息采用SSL高强度加密，凭证即时出具。',
+                    ru: 'Ваши данные защищены SSL-шифрованием, ваучер оформляется мгновенно.',
+                  })}
+                </p>
+              </div>
             </div>
           </form>
         )}
 
         {/* Phase 2: Payment & Review */}
         {phase === 'payment' && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <PaymentGatewaySelector
-              method={method}
-              setMethod={setMethod}
-              walletBalance={walletBalance}
-              totalPayable={baseAmount + (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0)}
-            />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in fade-in duration-300">
+            {/* Gateway Column */}
+            <div className="lg:col-span-7 space-y-6">
+              <PaymentGatewaySelector
+                method={method}
+                setMethod={setMethod}
+                walletBalance={walletBalance}
+                totalPayable={baseAmount + (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0)}
+              />
 
-            <PriceBreakdownTable
-              baseAmount={baseAmount}
-              currency={currency}
-              addEsim={addEsim}
-              addInsurance={addInsurance}
-              itemTitle={itemTitle}
-            />
+              {/* Contextual Trust Banner */}
+              <div className="p-4 rounded-2xl bg-mint/40 border border-brand/20 flex items-center gap-3 text-xs text-brand-dark font-bold">
+                <span className="w-8 h-8 rounded-full bg-mint flex items-center justify-center shrink-0 shadow-xs">
+                  🛡️
+                </span>
+                <p className="leading-relaxed">
+                  {lt(locale, {
+                    fa: 'تراکنش امن با پروتکل رمزنگاری ۲۵۶ بیتی. صدور آنی واچر رسمی و ضمانت استرداد وجه طبق قوانین کنسلی.',
+                    en: 'Secure 256-bit encrypted transaction. Instant official voucher issuance and refund guarantee per cancellation policy.',
+                    ar: 'معاملة آمنة مع تشفير 256 بت. إصدار فوري للقسيمة الرسمية وضمان الاسترداد حسب سياسة الإلغاء.',
+                    zh: '256位加密安全交易。即时出具官方凭证，并按照退订政策提供退款保障。',
+                    ru: 'Безопасная транзакция с 256-битным шифрованием. Мгновенная выдача ваучера и гарантия возврата по правилам отмены.',
+                  })}
+                </p>
+              </div>
 
-            {/* Contextual Trust & Anxiety Relief Banner */}
-            <div className="p-4 rounded-2xl bg-mint/40 border border-brand/20 flex items-center gap-3 text-xs text-brand-dark font-bold">
-              <span className="w-8 h-8 rounded-full bg-mint flex items-center justify-center shrink-0 shadow-xs">
-                🛡️
-              </span>
-              <p className="leading-relaxed">
-                {lt(locale, {
-                  fa: 'تراکنش امن با پروتکل رمزنگاری ۲۵۶ بیتی. صدور آنی واچر رسمی و ضمانت استرداد وجه طبق قوانین کنسلی.',
-                  en: 'Secure 256-bit encrypted transaction. Instant official voucher issuance and refund guarantee per cancellation policy.',
-                  ar: 'معاملة آمنة مع تشفير 256 بت. إصدار فوري للقسيمة الرسمية وضمان الاسترداد حسب سياسة الإلغاء.',
-                  zh: '256位加密安全交易。即时出具官方凭证，并按照退订政策提供退款保障。',
-                  ru: 'Безопасная транзакция с 256-битным шифрованием. Мгновенная выдача ваучера и гарантия возврата по правилам отмены.',
-                })}
-              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setPhase('passengers')}
+                  className="text-[13px] font-bold text-sub hover:text-ink underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded"
+                >
+                  {lt(locale, {
+                    fa: '← بازگشت به ویرایش مشخصات',
+                    en: '← Back to Edit Details',
+                    ar: '← العودة لتعديل البيانات',
+                    zh: '← 返回修改乘客信息',
+                    ru: '← Вернуться к редактированию',
+                  })}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleFinalPayment}
+                  className="w-full sm:w-auto min-h-[54px] px-10 rounded-xl bg-action hover:bg-action-hover text-ink text-[16px] font-black shadow-md transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+                >
+                  {lt(locale, {
+                    fa: 'پرداخت نهایی و صدور آنی واچر',
+                    en: 'Complete Payment & Issue Voucher',
+                    ar: 'الدفع النهائي وإصدار القسيمة',
+                    zh: '确认支付并即时出票',
+                    ru: 'Оплатить и получить ваучер',
+                  })}
+                </button>
+              </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-              <button
-                type="button"
-                onClick={() => setPhase('passengers')}
-                className="text-[13px] font-bold text-sub hover:text-ink underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded"
-              >
-                {lt(locale, {
-                  fa: '← بازگشت به ویرایش مشخصات',
-                  en: '← Back to Passenger Details',
-                  ar: '← العودة لتعديل البيانات',
-                  zh: '← 返回修改乘客信息',
-                  ru: '← Вернуться к данным пассажиров',
-                })}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleFinalPayment}
-                disabled={!draftBookingId}
-                className="w-full sm:w-auto min-h-[52px] px-8 rounded-xl bg-action hover:bg-action-hover text-ink text-[15px] font-black shadow-md transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {lt(locale, {
-                  fa: 'تایید نهایی و پرداخت',
-                  en: 'Finalize & Complete Payment',
-                  ar: 'التأكيد النهائي والدفع',
-                  zh: '最终确认并支付',
-                  ru: 'Подтвердить и оплатить',
-                })}
-              </button>
+            {/* Sticky Order Summary Sidebar (Payment Phase) */}
+            <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-4">
+              <PriceBreakdownTable
+                baseAmount={baseAmount}
+                currency={currency}
+                addEsim={addEsim}
+                addInsurance={addInsurance}
+                itemTitle={itemTitle}
+              />
             </div>
           </div>
         )}

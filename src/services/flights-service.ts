@@ -148,6 +148,18 @@ function loadFlightsData(): { flights: Flight[]; airports: FlightMasterFile['air
   return { flights: cachedFlights, airports: cachedAirports, airlines: cachedAirlines };
 }
 
+/**
+ * Resolves the authoritative sell price for a normalized flight id (`fl_*`).
+ * The booking flow must price flights from the same live catalog the search
+ * serves — not only the static seed list. Returns null when unknown so the
+ * pricing engine can fail closed.
+ */
+export function getFlightPriceById(id: string): number | null {
+  const { flights } = loadFlightsData();
+  const flight = flights.find((f) => f.id === id);
+  return flight ? flight.price : null;
+}
+
 export interface FlightSearchParams {
   from?: string;
   to?: string;

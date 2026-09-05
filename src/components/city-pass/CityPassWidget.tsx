@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { MapPin, CreditCard, RefreshCw } from 'lucide-react';
 import { num } from '@/lib/format';
+import { lt } from '@/lib/lt';
 
 import { useBookingStore } from '@/stores/booking-store';
 
@@ -33,11 +34,12 @@ export function CityPassWidget({ locale }: { locale: string }) {
     e.preventDefault();
     setIsAttempted(true);
     if (isDeliveryValid) {
+      const tomanAmt = Math.round(total * 65000);
       useBookingStore.getState().addDirectBooking({
         type: 'city-pass',
         title: `${t('title')} (${t(c.nameKey)} - ${type === 'pass' ? t('unlimitedTouristPass') : t('storedValueCard')})`,
-        subtitle: `تحویل به نشانی: ${delivery} • مبلغ: ${total.toFixed(2)} Toman`,
-        amount: Math.round(total * 650000),
+        subtitle: `تحویل به: ${delivery} • مبلغ: €${total.toFixed(2)} (معادل ${tomanAmt.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} تومان)`,
+        amount: tomanAmt,
         currency: 'IRR',
         status: 'confirmed',
         travelDate: new Date().toISOString().slice(0, 10),

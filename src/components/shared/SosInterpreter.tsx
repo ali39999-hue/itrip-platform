@@ -40,7 +40,7 @@ export function SosInterpreter() {
       <button
         onClick={() => { setOpen(true); setPhase('pick'); setSeconds(0); }}
         aria-label={t('sos')}
-        className="fixed z-[120] bottom-[76px] md:bottom-6 right-4 md:right-6 min-h-[44px] px-3.5 rounded-full bg-deep/95 hover:bg-deep text-surface border border-line/30 backdrop-blur-md shadow-elev-2 hover:shadow-elev-3 transition-all inline-flex items-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className="fixed z-[120] bottom-[76px] md:bottom-6 end-4 md:end-6 min-h-[44px] px-3.5 rounded-full bg-deep/95 hover:bg-deep text-surface border border-line/30 backdrop-blur-md shadow-elev-2 hover:shadow-elev-3 transition-all inline-flex items-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
         <span className="relative grid place-items-center w-6 h-6 rounded-full bg-rose-500 text-surface shadow-sm">
           <Siren size={13} />

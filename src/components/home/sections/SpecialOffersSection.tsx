@@ -4,28 +4,23 @@ import { useRef } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCountryStore } from '@/stores/country-store';
-import { useBookingStore } from '@/stores/booking-store';
 import { COUNTRIES, EXPERIENCE_CATEGORY_META, countryName } from '@/lib/countries';
-import { daysFromNow } from '@/lib/utils';
-import { formatMoney, toLocalCurrency } from '@/lib/money';
+import { formatMoney } from '@/lib/money';
 import { CATEGORY_ICONS } from '@/components/shared/CountryExperiences';
 import Image from 'next/image';
 import { CATEGORY_PHOTO_MAP, shimmerDataUrl } from '@/lib/image-utils';
-import {
-  ArrowLeft, Sparkles, ChevronRight, ChevronLeft,
-} from 'lucide-react';
+import { ArrowLeft, Sparkles } from 'lucide-react';
+import { lt } from '@/lib/lt';
 
 export function SpecialOffersSection() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('Home');
   const t2 = useTranslations('Plan');
-  const ct = useTranslations('Common');
   const { country } = useCountryStore();
   const c = COUNTRIES[country];
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const scroll = (offset: number) => scrollRef.current?.scrollBy({ left: offset, behavior: 'smooth' });
 
   const offers = (() => {
     const ex = c.signatureExperiences;
@@ -40,16 +35,8 @@ export function SpecialOffersSection() {
     return picked.slice(0, 3);
   })();
 
-  function book(title: string, where: string, amount: number) {
-    useBookingStore.getState().setBookingContext({
-      type: 'tours',
-      title,
-      subtitle: `${where} • ${countryName(country, locale)}`,
-      amount: toLocalCurrency(amount, c.currency),
-      currency: c.currency as 'IRR' | 'USDT' | 'AED',
-      travelDate: daysFromNow(21),
-    });
-    router.push('/checkout');
+  function exploreOffer(title: string) {
+    router.push(`/tours?category=signature&city=${encodeURIComponent(title)}`);
   }
 
   return (
@@ -63,21 +50,15 @@ export function SpecialOffersSection() {
             </h2>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <button onClick={() => scroll(['fa', 'ar'].includes(locale) ? 300 : -300)} className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-surface border border-line text-brand-dark hover:bg-soft transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" aria-label={ct('aria.scrollRight')}>
-              <ChevronRight size={18} className="ltr:-scale-x-100" />
-            </button>
-            <button onClick={() => scroll(['fa', 'ar'].includes(locale) ? -300 : 300)} className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-surface border border-line text-brand-dark hover:bg-soft transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" aria-label={ct('aria.scrollLeft')}>
-              <ChevronLeft size={18} className="ltr:-scale-x-100" />
-            </button>
             <button
               onClick={() => router.push('/plan')}
-              className="hidden md:inline-flex items-center gap-1.5 min-h-10 px-4 rounded-full bg-brand text-surface text-[13px] font-black whitespace-nowrap hover:bg-brand-2 transition shadow-sm shadow-brand/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="hidden sm:inline-flex items-center gap-1.5 min-h-10 px-4 rounded-full bg-brand text-surface text-[13px] font-black whitespace-nowrap hover:bg-brand-2 transition shadow-sm shadow-brand/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <Sparkles size={14} /> {t2('plannerCta')}
             </button>
             <button
               onClick={() => router.push('/tours?category=signature')}
-              className="hidden md:inline-flex items-center gap-1.5 text-brand-dark text-[13px] font-bold whitespace-nowrap hover:gap-2.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="inline-flex items-center gap-1.5 text-brand-dark text-[13px] font-bold whitespace-nowrap hover:gap-2.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               {t('offersAll')} <ArrowLeft size={15} className="ltr:-scale-x-100" />
             </button>
@@ -97,7 +78,7 @@ export function SpecialOffersSection() {
             return (
               <button
                 key={offer.titleEn}
-                onClick={() => book(locale === 'en' ? offer.titleEn : offer.title, locale === 'en' ? offer.whereEn : offer.where, offer.fromPrice)}
+                onClick={() => exploreOffer(title)}
                 className="shrink-0 w-[min(84vw,340px)] sm:w-[320px] md:w-auto snap-start bg-surface rounded-[22px] shadow-elev-1 overflow-hidden hover:shadow-elev-2 hover:-translate-y-1 transition-all duration-300 group cursor-pointer border border-line/70 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand flex flex-col"
               >
                 <div className="aspect-[16/10] min-h-[170px] relative w-full overflow-hidden bg-brand-dark/20">
@@ -116,8 +97,8 @@ export function SpecialOffersSection() {
                       {Icon && <Icon size={12} />}
                       {catLabel}
                     </span>
-                    <span className="w-8 h-8 shrink-0 rounded-full bg-surface/90 text-brand-dark grid place-items-center shadow-sm transition-transform duration-300 group-hover:-translate-x-0.5 rtl:group-hover:translate-x-0.5">
-                      <ArrowLeft size={15} className="ltr:-scale-x-100" />
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-action/90 text-ink text-[10px] font-black shadow-xs">
+                      {lt(locale, { fa: 'تجربه برگزیده', en: 'Curated Choice', ar: 'خيار مميز', zh: '精选体验', ru: 'Выбор экспертов' })}
                     </span>
                   </div>
                   <div className="absolute bottom-3 start-3 end-3 text-surface z-10">
@@ -128,7 +109,10 @@ export function SpecialOffersSection() {
                 <div className="p-4 sm:p-5 flex flex-col gap-4 flex-1 justify-between">
                   <p className="text-xs text-sub leading-6 m-0 line-clamp-2 min-h-12">{desc}</p>
                   <div className="flex items-end justify-between gap-3 pt-3 border-t border-line/70">
-                    <span className="text-[11px] text-sub font-bold pb-1">{t('offersStarts')}</span>
+                    <div>
+                      <span className="text-[11px] text-sub font-bold block">{t('offersStarts')}</span>
+                      <span className="text-[11px] text-emerald-600 font-bold block">{lt(locale, { fa: 'مشاهده برنامه و رزرو', en: 'View Itinerary', ar: 'عرض البرنامج والحجز', zh: '查看行程与预订', ru: 'Программа и бронь' })}</span>
+                    </div>
                     <span className="text-[17px] font-black text-brand-dark font-mono num text-end leading-tight">
                       {formatMoney(offer.fromPrice, c.currency, locale)}
                     </span>

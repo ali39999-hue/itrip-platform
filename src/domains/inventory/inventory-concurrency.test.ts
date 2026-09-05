@@ -57,8 +57,8 @@ describe('Inventory Concurrency & Oversell Suite (INV-001 to INV-004)', () => {
     expect(allotment.booked).toBe(0);
   });
 
-  it('INV-001: 50 concurrent holds against capacity=1 yields EXACTLY 1 success (oversell = 0)', async () => {
-    const concurrentHoldCount = 50;
+  it('INV-001: 100 concurrent holds against capacity=1 yields EXACTLY 1 success (oversell = 0)', async () => {
+    const concurrentHoldCount = 100;
 
     const holdPromises = Array.from({ length: concurrentHoldCount }, () =>
       InventoryEngine.createHold({

@@ -44,8 +44,24 @@ export default function AuthPage() {
   const [scanning, setScanning] = useState(false);
   const [passportNo, setPassportNo] = useState(kyc?.passportNo || '');
   const [expiry, setExpiry] = useState(kyc?.passportExpiry || '');
+  const [countdown, setCountdown] = useState(120);
 
   const step = kyc?.step || 'phone';
+
+  useEffect(() => {
+    if (step !== 'otp') return;
+    setCountdown(120);
+    const timer = setInterval(() => {
+      setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [step]);
+
+  function formatCountdown(sec: number): string {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
 
   function validateIdentifier(): boolean {
     if (channel === 'phone') {
@@ -271,21 +287,45 @@ export default function AuthPage() {
                   id="password"
                   name="otp"
                   type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  autoFocus
                   dir="ltr"
                   maxLength={6}
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
                   placeholder="••••••"
-                  className="w-full h-12 rounded-xl border border-line px-4 text-center tracking-widest text-xl font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  className="w-full h-12 rounded-xl border border-line px-4 text-center tracking-widest text-2xl font-mono font-black text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-xs"
                 />
-                <p className="text-[11px] text-sub mt-1 text-center font-bold">{lt(locale, { fa: 'کد تأیید پیامک/ایمیل شد', en: 'The code was sent to you', ar: 'تم إرسال الرمز إليك', zh: '验证码已发送', ru: 'Код отправлен вам' })}</p>
+                
+                {/* Live Countdown / Resend Action */}
+                <div className="mt-2.5 flex items-center justify-between text-xs font-bold">
+                  {countdown > 0 ? (
+                    <span className="text-sub flex items-center gap-1">
+                      <span className="font-mono text-brand-dark font-black">{formatCountdown(countdown)}</span>
+                      <span>{lt(locale, { fa: 'تا امکان ارسال مجدد کد', en: 'until resend code is available', ar: 'حتى إمكانية إعادة الإرسال', zh: '后可重新发送', ru: 'до повторной отправки' })}</span>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={sendOtp}
+                      disabled={sending}
+                      className="text-brand-dark font-black hover:underline"
+                    >
+                      {lt(locale, { fa: 'ارسال مجدد کد تأیید', en: 'Resend verification code', ar: 'إعادة إرسال الرمز', zh: '重新发送验证码', ru: 'Отправить код повторно' })}
+                    </button>
+                  )}
+                  <span className="text-[11px] text-sub">
+                    {lt(locale, { fa: 'کد ۶ رقمی', en: '6-digit code', ar: 'رمز من 6 أرقام', zh: '6位验证码', ru: '6-значный код' })}
+                  </span>
+                </div>
               </div>
 
               <button
                 id="auth-verify-btn"
                 onClick={verifyOtp}
-                disabled={loading}
-                className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                disabled={loading || otp.trim().length < 4}
+                className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50"
               >
                 {loading && <Loader2 size={16} className="animate-spin" />}
                 {t('verifyOtp')}
@@ -293,7 +333,7 @@ export default function AuthPage() {
 
               <button
                 onClick={() => setKycStep('phone')}
-                className="w-full text-xs font-bold text-sub hover:text-ink text-center"
+                className="w-full text-xs font-bold text-sub hover:text-ink text-center pt-1"
               >
                 {lt(locale, { fa: 'تغییر روش یا شناسه ورود', en: 'Change method or identifier', ar: 'تغيير الطريقة أو المعرّف', zh: '更换登录方式或账号', ru: 'Изменить метод или идентификатор' })}
               </button>

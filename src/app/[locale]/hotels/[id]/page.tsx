@@ -16,6 +16,7 @@ import { HotelOverview, HotelLocation, HotelAmenities, HotelReviews, HotelPolici
 import { HotelRooms } from '@/components/hotels/detail/HotelRooms';
 import { BookingPanel } from '@/components/hotels/detail/BookingPanel';
 import { Loader2 } from 'lucide-react';
+import { lt } from '@/lib/lt';
 
 export default function HotelDetailPage() {
   const params = useParams<{ id: string }>();
@@ -41,38 +42,63 @@ export default function HotelDetailPage() {
     toastTimer.current = setTimeout(() => setToast(''), 2200);
   }
 
-  // Fetch live hotel details from API
+  // Fetch live hotel details from API.
+  // Transient failures (network blip, server restart mid-request) are retried
+  // before falling back to 404 — a momentary error must not read as "this
+  // hotel does not exist".
   useEffect(() => {
     async function loadDetail() {
       if (!params.id) return;
       setLoading(true);
       try {
-        const res = await fetch(`/api/hotels/${params.id}`);
-        if (!res.ok) {
-          // Fallback to static mock if id matches demo mock
-          const staticMatch = HOTELS.find((h) => h.id === params.id);
-          if (staticMatch) {
-            setHotel({
-              ...staticMatch,
-              countryId: 'iran',
-              galleryImages: [staticMatch.imageQuery || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'],
-              detailedRooms: staticMatch.roomTypes,
-            });
+        const maxAttempts = 3;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          try {
+            const res = await fetch(`/api/hotels/${params.id}`);
+            if (res.status === 404) {
+              // Definitive answer: this hotel does not exist.
+              const staticMatch = HOTELS.find((h) => h.id === params.id);
+              if (staticMatch) {
+                setHotel({
+                  ...staticMatch,
+                  countryId: 'iran',
+                  galleryImages: [staticMatch.imageQuery || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'],
+                  detailedRooms: staticMatch.roomTypes,
+                });
+                return;
+              }
+              setNotFoundState(true);
+              return;
+            }
+            if (!res.ok) {
+              // 5xx / gateway hiccups: retry before giving up.
+              if (attempt < maxAttempts) {
+                await new Promise((r) => setTimeout(r, 800 * attempt));
+                continue;
+              }
+              setNotFoundState(true);
+              return;
+            }
+            const json = await res.json();
+            if (json.success && json.data) {
+              setHotel(json.data);
+              return;
+            }
+            setNotFoundState(true);
+            return;
+          } catch (e) {
+            // Network-level failure: retry, then surface not-found as before.
+            console.error(`Failed to load hotel detail (attempt ${attempt}/${maxAttempts}):`, e);
+            if (attempt < maxAttempts) {
+              await new Promise((r) => setTimeout(r, 800 * attempt));
+              continue;
+            }
+            setNotFoundState(true);
             return;
           }
-          setNotFoundState(true);
-          return;
         }
-        const json = await res.json();
-        if (json.success && json.data) {
-          setHotel(json.data);
-        } else {
-          setNotFoundState(true);
-        }
-      } catch (e) {
-        console.error('Failed to load hotel detail:', e);
-        setNotFoundState(true);
       } finally {
+        // Any exit path (success, 404, or retries exhausted) clears the loader.
         setLoading(false);
       }
     }
@@ -167,6 +193,39 @@ export default function HotelDetailPage() {
         <div className="lg:sticky lg:top-36">
           <BookingPanel booking={booking} onBook={handleBook} />
         </div>
+      </div>
+
+      {/* ================= MOBILE STICKY RESERVATION BAR (FLYTODAY / BOOKING.COM STYLE) ================= */}
+      <div className="lg:hidden fixed bottom-[58px] inset-x-0 z-40 bg-surface/95 backdrop-blur-md border-t border-line px-4 py-3 shadow-elev-3 flex items-center justify-between gap-4">
+        <div>
+          <span className="text-[10.5px] font-bold text-sub block leading-none mb-1">
+            {capacity.n > 0
+              ? `${num(capacity.n, locale)} ${t('navRooms')} • ${num(booking.nights.length, locale)} ${t('duration')}`
+              : lt(locale, { fa: 'شروع نرخ هر شب', en: 'Starting per night', ar: 'السعر للّيلة', zh: '每晚起', ru: 'За ночь от' })}
+          </span>
+          <div className="text-base font-black text-brand-dark font-mono flex items-baseline gap-1">
+            <span>{num(toman(capacity.n > 0 ? totals.total : (hotel?.pricePerNight ?? 0)), locale)}</span>
+            <span className="text-[11px] font-bold text-sub">تومان</span>
+          </div>
+        </div>
+
+        {capacity.n > 0 ? (
+          <button
+            type="button"
+            onClick={handleBook}
+            className="h-11 px-6 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs sm:text-sm flex items-center justify-center transition active:scale-95 shadow-md shadow-action/25"
+          >
+            {t('continuePay')}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => document.getElementById('rooms')?.scrollIntoView({ behavior: 'smooth' })}
+            className="h-11 px-5 rounded-xl bg-brand hover:bg-brand-dark text-surface font-black text-xs sm:text-sm flex items-center justify-center transition active:scale-95 shadow-sm"
+          >
+            {lt(locale, { fa: 'انتخاب اتاق', en: 'Select Room', ar: 'اختر الغرفة', zh: '选择房型', ru: 'Выбрать номер' })}
+          </button>
+        )}
       </div>
 
       {toast && (

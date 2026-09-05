@@ -35,9 +35,10 @@ export function AiPlannerHookSection() {
             <Link
               key={idx}
               href={`/plan?q=${encodeURIComponent(prompt)}`}
-              className="px-4 py-2 rounded-xl bg-surface border border-line hover:border-brand/40 text-xs font-bold text-ink hover:text-brand-dark transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface border border-line hover:border-brand/40 text-xs font-bold text-ink hover:text-brand-dark transition-colors shadow-xs group"
             >
-              {prompt} ←
+              <span>{prompt}</span>
+              <ArrowLeft size={13} className="text-sub group-hover:text-brand-dark transition-transform group-hover:-translate-x-0.5 ltr:rotate-180 ltr:group-hover:translate-x-0.5" />
             </Link>
           ))}
         </div>

@@ -1,9 +1,9 @@
 'use client';
 
-import { Suspense, useMemo } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, Clock, Wallet, RefreshCcw, Ticket, Headset, type LucideIcon } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Wallet, RefreshCcw, Ticket, Headset, Copy, Check, type LucideIcon } from 'lucide-react';
 import { useBookingStore } from '@/stores/booking-store';
 import { num } from '@/lib/format';
 import { useLocale } from 'next-intl';
@@ -102,6 +102,7 @@ function PaymentStatusContent() {
   const queryAmountStr = searchParams.get('amount');
   const queryAmount = queryAmountStr ? Number(queryAmountStr) : null;
   const queryTitle = searchParams.get('title') || '';
+  const [copied, setCopied] = useState(false);
 
   const trackingCode = queryRef || latestBooking?.reference || '';
   const displayAmount = queryAmount !== null && !Number.isNaN(queryAmount)
@@ -109,6 +110,13 @@ function PaymentStatusContent() {
     : (latestBooking?.amount ?? null);
   const displayCurrency = latestBooking?.currency || 'IRR';
   const displayTitle = queryTitle || latestBooking?.title || lt(locale, { fa: 'سفارش خدمات مسافرتی فیروز', en: 'Firuzo Travel Services Booking', ar: 'طلب خدمات سفر فيروز', zh: 'Firuzo 旅行服务订单', ru: 'Заказ туристических услуг Firuzo' });
+
+  const copyPnr = () => {
+    if (!trackingCode) return;
+    navigator.clipboard.writeText(trackingCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   if (!hydrated) {
     return (
@@ -156,9 +164,21 @@ function PaymentStatusContent() {
 
             <div className="flex justify-between items-center pb-3 border-b border-line/50">
               <span className="text-xs font-bold text-sub">{lt(locale, { fa: 'کد پیگیری PNR', en: 'Tracking Ref / PNR', ar: 'رمز التتبع PNR', zh: '追踪码 PNR', ru: 'Код PNR' })}</span>
-              <span className="text-sm font-black text-brand-dark font-mono bg-mint/50 px-3 py-0.5 rounded-lg border border-brand/20" dir="ltr">
-                {trackingCode || '—'}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-black text-brand-dark font-mono bg-mint/50 px-3 py-0.5 rounded-lg border border-brand/20" dir="ltr">
+                  {trackingCode || '—'}
+                </span>
+                {trackingCode && (
+                  <button
+                    type="button"
+                    onClick={copyPnr}
+                    aria-label="کپی کد پیگیری"
+                    className="w-7 h-7 rounded-lg bg-surface border border-line text-sub hover:text-brand-dark grid place-items-center transition active:scale-95"
+                  >
+                    {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-between items-center">

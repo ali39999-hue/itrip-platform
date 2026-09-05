@@ -170,10 +170,28 @@ export default function TransfersPage() {
 
         {/* Results grid */}
         <section className="w-full md:w-3/4 flex flex-col gap-6">
-          <div className="flex justify-between items-center">
-            <h2 className="font-black text-ink text-[20px] md:text-[24px]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <h2 className="font-black text-ink text-[18px] md:text-[22px]">
               {results.length.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} {t('availableVehicles')}
             </h2>
+
+            {/* Mobile Category Filter Chips (Fixes hidden mobile filters bug) */}
+            <div className="flex md:hidden items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs font-black">
+              {CATS.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => toggleType(c.id)}
+                  className={`px-3 py-1.5 rounded-xl transition whitespace-nowrap border ${
+                    types.includes(c.id)
+                      ? 'bg-brand border-brand text-surface shadow-xs'
+                      : 'bg-surface border-line text-sub hover:text-ink'
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="flex flex-col gap-4">

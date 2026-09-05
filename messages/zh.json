@@ -214,7 +214,9 @@
     "tourTypeCommercial": "商务与展览",
     "btnTours": "搜索旅游",
     "dateReturn": "返回日期",
-    "dateCheckOut": "退房日期"
+    "dateCheckOut": "退房日期",
+    "roundTrip": "往返",
+    "oneWay": "单程"
   },
   "Home": {
     "offersKicker": "为您的目的地精选",
@@ -659,7 +661,9 @@
     "promoTitle": "Modern Travel Experience with Firuzo",
     "promoSubtitle": "Discover the best flights with instant booking & multi-currency payments.",
     "learnMore": "Learn More",
-    "flights": "flights"
+    "flights": "flights",
+    "sortBy": "排序方式",
+    "apply": "应用筛选"
   },
   "Tours": {
     "title": "精选旅游与特色体验",

@@ -103,6 +103,27 @@ export function PlannerResult({ ans, setStep, locale, isEn, shared, shareUrl, se
           bookAll={bookAll}
         />
       </div>
+
+      {/* ================= MOBILE STICKY PLAN CONVERSION BAR ================= */}
+      <div className="lg:hidden fixed bottom-[58px] inset-x-0 z-40 bg-surface/95 backdrop-blur-md border-t border-line px-4 py-3 shadow-elev-3 flex items-center justify-between gap-4">
+        <div>
+          <span className="text-[10.5px] font-bold text-sub block leading-none mb-1">
+            {num(days, locale)} {t('qDays')} • {num(travelers, locale)} مسافر
+          </span>
+          <div className="text-base font-black text-brand-dark font-mono flex items-baseline gap-1">
+            <span>{num(plan.total, locale)}</span>
+            <span className="text-[11px] font-bold text-sub">تومان</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={bookAll}
+          className="h-11 px-6 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs sm:text-sm flex items-center justify-center transition active:scale-95 shadow-md shadow-action/25 whitespace-nowrap"
+        >
+          {t('bookAll')}
+        </button>
+      </div>
     </div>
   );
 }

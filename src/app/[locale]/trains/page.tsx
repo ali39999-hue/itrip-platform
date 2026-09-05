@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { daysFromNow } from '@/lib/utils';
 import { shimmerDataUrl } from '@/lib/image-utils';
-import { TrainFront, BusFront, MapPin, CircleDot, Search } from 'lucide-react';
+import { TrainFront, BusFront, MapPin, CircleDot, Search, ArrowLeftRight } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
 interface ServiceItem {
@@ -97,8 +97,15 @@ export default function TrainsPage() {
   const router = useRouter();
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
   
+  const [fromCity, setFromCity] = useState(lt(locale, { fa: 'تهران', en: 'Tehran', ar: 'طهران', zh: '德黑兰', ru: 'Тегеран' }));
+  const [toCity, setToCity] = useState(lt(locale, { fa: 'مشهد', en: 'Mashhad', ar: 'مشهد', zh: '马什哈德', ru: 'Мешхед' }));
   const [filterTrain, setFilterTrain] = useState(true);
   const [filterBus, setFilterBus] = useState(true);
+
+  const swapStations = () => {
+    setFromCity(toCity);
+    setToCity(fromCity);
+  };
 
   const list = RAW_SERVICES.filter((s) => {
     if (s.kind === 'train' && filterTrain) return true;
@@ -120,7 +127,7 @@ export default function TrainsPage() {
   return (
     <div className="flex flex-col min-h-screen bg-soft">
       {/* Hero / Search Section */}
-      <section className="relative w-full h-[50vh] min-h-[450px] flex items-center justify-center overflow-hidden img-overlay-strong">
+      <section className="relative w-full h-[50vh] min-h-[460px] flex items-center justify-center overflow-hidden img-overlay-strong">
         <Image
           src="https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&q=75&w=1800"
           alt={t('title')}
@@ -132,39 +139,54 @@ export default function TrainsPage() {
         />
         <div className="absolute inset-0 bg-brand-dark/70 mix-blend-multiply" />
         
-        <div className="relative z-10 w-full px-4 md:px-0 flex flex-col items-center text-center pt-8">
-          <h1 className="text-[32px] md:text-[40px] font-black text-surface mb-2 tracking-tight">{t('title')}</h1>
-          <p className="text-[16px] md:text-[18px] font-bold text-surface/90 mb-10">{t('subtitle')}</p>
+        <div className="relative z-10 w-full px-4 md:px-6 flex flex-col items-center text-center pt-8">
+          <h1 className="text-[32px] md:text-[44px] font-black text-surface mb-2 tracking-tight">{t('title')}</h1>
+          <p className="text-sm sm:text-base md:text-lg font-bold text-surface/90 mb-8 max-w-xl">{t('subtitle')}</p>
           
           {/* Search Floating Card */}
-          <div className="glass-panel shadow-sm rounded-xl p-5 md:p-6 w-full max-w-4xl mx-auto">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <MapPin size={18} className="absolute start-3 top-1/2 -translate-y-1/2 text-sub pointer-events-none z-10" />
+          <div className="glass-panel shadow-elev-2 rounded-2xl p-4 sm:p-6 w-full max-w-4xl mx-auto">
+            <div className="flex flex-col md:flex-row items-center gap-3 relative">
+              <div className="relative w-full flex-1">
+                <MapPin size={18} className="absolute start-3.5 top-1/2 -translate-y-1/2 text-sub pointer-events-none z-10" />
                 <Input
-                  defaultValue={lt(locale, { fa: 'تهران', en: 'Tehran', ar: 'طهران', zh: '德黑兰', ru: 'Тегеран' })}
+                  value={fromCity}
+                  onChange={(e) => setFromCity(e.target.value)}
                   aria-label={t('fromStation')}
-                  className="h-12 w-full rounded-lg border-line bg-surface ps-10 font-bold text-[14px] text-ink focus-visible:ring-brand focus:border-brand"
+                  className="h-12 w-full rounded-xl border-line bg-surface ps-10 font-bold text-sm text-ink focus-visible:ring-brand focus:border-brand"
                   placeholder={t('fromStation')}
                 />
               </div>
-              <div className="relative flex-1">
-                <MapPin size={18} className="absolute start-3 top-1/2 -translate-y-1/2 text-sub pointer-events-none z-10" />
+
+              {/* Station Swap Button */}
+              <button
+                type="button"
+                onClick={swapStations}
+                className="w-9 h-9 rounded-full bg-surface border border-line shadow-xs text-brand-dark hover:bg-mint hover:scale-110 active:scale-95 transition grid place-items-center shrink-0 z-20 -my-1.5 md:my-0"
+                title="جابجایی مبدأ و مقصد"
+              >
+                <ArrowLeftRight size={14} className="rotate-90 md:rotate-0" />
+              </button>
+
+              <div className="relative w-full flex-1">
+                <MapPin size={18} className="absolute start-3.5 top-1/2 -translate-y-1/2 text-sub pointer-events-none z-10" />
                 <Input
-                  defaultValue={lt(locale, { fa: 'مشهد', en: 'Mashhad', ar: 'مشهد', zh: '马什哈德', ru: 'Мешхед' })}
+                  value={toCity}
+                  onChange={(e) => setToCity(e.target.value)}
                   aria-label={t('toStation')}
-                  className="h-12 w-full rounded-lg border-line bg-surface ps-10 font-bold text-[14px] text-ink focus-visible:ring-brand focus:border-brand"
+                  className="h-12 w-full rounded-xl border-line bg-surface ps-10 font-bold text-sm text-ink focus-visible:ring-brand focus:border-brand"
                   placeholder={t('toStation')}
                 />
               </div>
-              <div className="relative flex-1">
+
+              <div className="relative w-full flex-1">
                 <DatePicker
                   placeholder={lt(locale, { fa: 'تاریخ حرکت', en: 'Departure date', ar: 'تاريخ المغادرة', zh: '出发日期', ru: 'Дата выезда' })}
                 />
               </div>
+
               <Button
                 aria-label={lt(locale, { fa: 'جستجوی بلیط', en: 'Search tickets', ar: 'البحث عن تذاكر', zh: '搜索车票', ru: 'Поиск билетов' })}
-                className="h-12 bg-brand hover:bg-brand-dark text-surface font-black text-[14px] rounded-lg px-8 flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                className="h-12 bg-action hover:bg-action-hover text-ink font-black text-sm rounded-xl px-8 w-full md:w-auto flex items-center justify-center gap-2 shadow-sm shrink-0"
               >
                 <Search size={18} /> {lt(locale, { fa: 'جستجو', en: 'Search', ar: 'بحث', zh: '搜索', ru: 'Поиск' })}
               </Button>
@@ -175,10 +197,10 @@ export default function TrainsPage() {
 
       {/* Main Content & Results */}
       <main className="max-w-[1280px] w-full mx-auto px-4 md:px-10 py-10 flex flex-col md:flex-row gap-8 pb-24">
-        {/* Filters Sidebar */}
-        <aside className="w-full md:w-64 shrink-0">
-          <div className="bg-surface rounded-xl border border-line p-6 sticky top-24 shadow-sm flex flex-col gap-6">
-            <h3 className="font-black text-ink text-[18px] border-b border-line pb-3">{lt(locale, { fa: 'نوع وسیله نقلیه', en: 'Transport Type', ar: 'نوع المركبة', zh: '交通工具类型', ru: 'Тип транспорта' })}</h3>
+        {/* Filters Sidebar on Desktop */}
+        <aside className="w-full md:w-64 shrink-0 hidden md:block">
+          <div className="bg-surface rounded-2xl border border-line p-6 sticky top-24 shadow-xs flex flex-col gap-6">
+            <h3 className="font-black text-ink text-base border-b border-line pb-3">{lt(locale, { fa: 'نوع وسیله نقلیه', en: 'Transport Type', ar: 'نوع المركبة', zh: '交通工具类型', ru: 'Тиپ транспорта' })}</h3>
             <div className="flex flex-col gap-3">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -188,7 +210,7 @@ export default function TrainsPage() {
                   aria-label={t('trainOption')}
                   className="rounded border-line text-brand focus:ring-brand w-4 h-4"
                 />
-                <span className="text-[14px] font-bold text-ink flex items-center gap-2">
+                <span className="text-sm font-bold text-ink flex items-center gap-2">
                   <TrainFront size={16} className="text-brand-dark" /> {t('trainOption')}
                 </span>
               </label>
@@ -201,7 +223,7 @@ export default function TrainsPage() {
                   aria-label={t('busOption')}
                   className="rounded border-line text-brand focus:ring-brand w-4 h-4"
                 />
-                <span className="text-[14px] font-bold text-ink flex items-center gap-2">
+                <span className="text-sm font-bold text-ink flex items-center gap-2">
                   <BusFront size={16} className="text-brand-dark" /> {t('busOption')}
                 </span>
               </label>
@@ -211,9 +233,35 @@ export default function TrainsPage() {
 
         {/* Results List */}
         <section className="flex-1 flex flex-col gap-4">
-          <h2 className="font-black text-ink text-[20px] mb-2">
-            {list.length.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} {lt(locale, { fa: 'سرویس موجود', en: 'Available Services', ar: 'الخدمات المتاحة', zh: '可用服务', ru: 'Доступные услуги' })}
-          </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-1">
+            <h2 className="font-black text-ink text-lg sm:text-xl">
+              {list.length.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} {lt(locale, { fa: 'سرویس موجود', en: 'Available Services', ar: 'الخدمات المتاحة', zh: '可用服务', ru: 'Доступные услуги' })}
+            </h2>
+
+            {/* Mobile Filter Chips */}
+            <div className="flex md:hidden items-center gap-2 text-xs font-black">
+              <button
+                type="button"
+                onClick={() => setFilterTrain(!filterTrain)}
+                className={`px-3 py-1.5 rounded-xl border flex items-center gap-1.5 transition ${
+                  filterTrain ? 'bg-brand text-surface border-brand' : 'bg-surface text-sub border-line'
+                }`}
+              >
+                <TrainFront size={14} />
+                <span>{t('trainOption')}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterBus(!filterBus)}
+                className={`px-3 py-1.5 rounded-xl border flex items-center gap-1.5 transition ${
+                  filterBus ? 'bg-brand text-surface border-brand' : 'bg-surface text-sub border-line'
+                }`}
+              >
+                <BusFront size={14} />
+                <span>{t('busOption')}</span>
+              </button>
+            </div>
+          </div>
 
           {list.map((s) => (
             <article

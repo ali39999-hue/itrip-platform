@@ -45,7 +45,7 @@ export function JalaliDatePicker({
 
   return (
     <div
-      className={`relative w-full min-h-[48px] md:min-h-[52px] px-3.5 py-2 rounded-2xl bg-surface border transition flex items-center gap-2.5 ${
+      className={`relative w-full min-h-[58px] px-3.5 py-2 rounded-2xl bg-surface border transition flex items-center gap-2.5 ${
         error
           ? 'border-rose-500 focus-within:ring-2 focus-within:ring-rose-500/20'
           : 'border-line/80 hover:border-brand focus-within:border-brand focus-within:ring-2 focus-within:ring-brand'

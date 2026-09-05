@@ -10,22 +10,99 @@ import { BookingSagaOrchestrator } from '@/domains/booking/saga-orchestrator';
 import { getTenantAuthContext, assertTenantAccess } from '@/domains/identity/permission-service';
 
 import { InventoryEngine } from '@/domains/inventory/InventoryEngine';
+import { getHotelById } from '@/services/hotels-service';
+import { getFlightPriceById } from '@/services/flights-service';
+import { encryptSensitive, decryptSensitive } from '@/lib/security/crypto-vault';
 import crypto from 'crypto';
 
 // Addon prices resolve from the same catalog the UI uses — no magic numbers.
 function resolveAddonPrice(kind: 'esim' | 'insurance'): number | null {
   if (kind === 'esim') {
-    const pkg = ESIM_PACKAGES[0];
-    return pkg ? pkg.price : null;
+    const price = ESIM_PACKAGES[0] ? ESIM_PACKAGES[0].price : null;
+    return price;
   }
   const plan = INSURANCE_PLANS[0];
   return plan ? plan.price : null;
 }
 
+interface PassengerPii {
+  firstName: string;
+  lastName: string;
+  nationalId?: string;
+  passportNo?: string;
+  birthDate?: string;
+  gender?: string;
+}
+
+/**
+ * Passenger PII (nationalId, passportNo) is AES-256-GCM encrypted before the
+ * passengers array is written into the BookingItem.details JSON snapshot
+ * (Section 34). Names, gender and birth date stay readable for ticketing.
+ */
+function sanitizePassengersForStorage(passengers: PassengerPii[] | undefined) {
+  return (passengers || []).map((p) => ({
+    ...p,
+    nationalId: p.nationalId ? encryptSensitive(p.nationalId) : p.nationalId,
+    passportNo: p.passportNo ? encryptSensitive(p.passportNo) : p.passportNo,
+  }));
+}
+
+/**
+ * Persists each passenger as a TravelerProfile under the booking customer's
+ * account with encrypted TravelDocument rows, so the ERP travel dossier and
+ * document vault have queryable records (IAM-002, Section 34). Failures are
+ * logged but never fail the booking itself.
+ */
+async function persistTravelerDocuments(customerId: string, passengers: PassengerPii[] | undefined) {
+  for (const p of passengers || []) {
+    try {
+      let profile = await prisma.travelerProfile.findFirst({
+        where: { userId: customerId, firstName: p.firstName, lastName: p.lastName },
+      });
+      if (!profile) {
+        profile = await prisma.travelerProfile.create({
+          data: {
+            userId: customerId,
+            firstName: p.firstName,
+            lastName: p.lastName,
+            dateOfBirth: p.birthDate || null,
+            gender: p.gender || null,
+          },
+        });
+      }
+
+      const docs: Array<{ type: 'PASSPORT' | 'NATIONAL_ID'; number: string }> = [];
+      if (p.passportNo) docs.push({ type: 'PASSPORT', number: p.passportNo });
+      if (p.nationalId) docs.push({ type: 'NATIONAL_ID', number: p.nationalId });
+
+      for (const doc of docs) {
+        const existing = await prisma.travelDocument.findFirst({
+          where: { travelerProfileId: profile.id, type: doc.type },
+        });
+        // Encrypted values use a random IV, so equality checks must decrypt.
+        if (existing && decryptSensitive(existing.documentNumber) === doc.number) continue;
+        await prisma.travelDocument.create({
+          data: {
+            travelerProfileId: profile.id,
+            type: doc.type,
+            documentNumber: encryptSensitive(doc.number),
+            holderName: `${p.firstName} ${p.lastName}`,
+          },
+        });
+      }
+    } catch (e) {
+      console.error('persistTravelerDocuments error (non-fatal):', e);
+    }
+  }
+}
+
 /**
  * Resolves the canonical base price for an item from the product catalog.
- * Returns null when the item is unknown so callers can fail closed instead of
- * silently pricing it at an arbitrary fallback.
+ * Hotel items may come from the live hotel catalog (e.g. `ir_*` ids served by
+ * the hotels service) rather than the static seed list, so pricing falls back
+ * to the authoritative hotel record server-side. Returns null when the item is
+ * unknown so callers can fail closed instead of silently pricing it at an
+ * arbitrary fallback.
  */
 function resolveServerBasePrice(type: string, itemId?: string): number | null {
   if (!itemId) {
@@ -52,6 +129,20 @@ function resolveServerBasePrice(type: string, itemId?: string): number | null {
 
   const insurance = INSURANCE_PLANS.find((i) => i.id === itemId);
   if (insurance) return insurance.price;
+
+  if (type === 'HOTEL') {
+    // Supplier/live catalog hotels (the same source the detail API serves).
+    const liveHotel = getHotelById(itemId);
+    if (liveHotel && typeof liveHotel.pricePerNight === 'number') {
+      return liveHotel.pricePerNight;
+    }
+  }
+
+  if (type === 'FLIGHT') {
+    // Live flight catalog (`fl_*` ids normalized by the flights service).
+    const livePrice = getFlightPriceById(itemId);
+    if (livePrice !== null) return livePrice;
+  }
 
   return null;
 }
@@ -171,7 +262,19 @@ export async function createBookingDraft(data: unknown) {
               feeAmount: pricing.serviceFee,
               sellPrice: finalTotalAmount,
               details: JSON.stringify({
-                ...parsed,
+                type: parsed.type,
+                itemId: parsed.itemId,
+                itemTitle: parsed.itemTitle,
+                count: quantity,
+                nights,
+                travelDate: parsed.travelDate,
+                addonIds: parsed.addonIds,
+                addons: parsed.addons,
+                contactEmail: parsed.contactEmail,
+                contactPhone: parsed.contactPhone,
+                // PII encrypted at rest; explicit whitelist instead of ...parsed
+                // so client-sent extra keys never enter the audit snapshot.
+                passengers: sanitizePassengersForStorage(parsed.passengers),
                 pricingBreakdown: {
                   netCost: pricing.netCost,
                   markupAmount: pricing.markupAmount,
@@ -218,6 +321,9 @@ export async function createBookingDraft(data: unknown) {
     if (holdToken) {
       await prisma.inventoryHold.updateMany({ where: { token: holdToken }, data: { bookingId: booking.id } });
     }
+
+    // Persist passenger identities with encrypted travel documents (non-fatal).
+    await persistTravelerDocuments(userId, parsed.passengers);
 
     return { success: true, bookingId: booking.id, totalAmount: finalTotalAmount, currency };
   } catch (err: unknown) {
@@ -304,7 +410,7 @@ export async function getBookingById(id: string) {
     });
 
     if (!booking) return { success: false, error: 'Booking not found', booking: null };
-    
+
     // Strict Tenant Isolation & IDOR Check (IAM-002, IAM-003)
     const tenantCtx = await getTenantAuthContext(userId);
     try {
@@ -317,7 +423,31 @@ export async function getBookingById(id: string) {
       return { success: false, error: 'Forbidden: Access denied to booking', booking: null };
     }
 
-    return { success: true, booking };
+    // Owner/tenant-authorized read: passenger PII in the details snapshot is
+    // decrypted server-side so the raw ciphertext never reaches the client.
+    const sanitizedBooking = {
+      ...booking,
+      items: booking.items.map((item) => {
+        if (!item.details) return item;
+        try {
+          const parsedDetails = JSON.parse(item.details);
+          if (Array.isArray(parsedDetails.passengers)) {
+            parsedDetails.passengers = parsedDetails.passengers.map(
+              (p: { nationalId?: string; passportNo?: string } & Record<string, unknown>) => ({
+                ...p,
+                nationalId: p.nationalId ? decryptSensitive(p.nationalId) : p.nationalId,
+                passportNo: p.passportNo ? decryptSensitive(p.passportNo) : p.passportNo,
+              })
+            );
+          }
+          return { ...item, details: JSON.stringify(parsedDetails) };
+        } catch {
+          return item;
+        }
+      }),
+    };
+
+    return { success: true, booking: sanitizedBooking };
   } catch (err: unknown) {
     console.error('getBookingById server error:', err);
     return { success: false, error: 'Failed to fetch booking', booking: null };

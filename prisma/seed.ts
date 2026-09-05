@@ -57,11 +57,14 @@ async function main() {
     update: {
       passwordHash: userPasswordHash,
       role: 'CUSTOMER',
+      // Checkout requires a contact phone for voucher issuance.
+      phone: '09120000001',
       isActive: true,
     },
     create: {
       id: 'clr_mock_user_123',
       email: 'user@firuzo.com',
+      phone: '09120000001',
       name: 'Firuzo User',
       passwordHash: userPasswordHash,
       role: 'CUSTOMER',

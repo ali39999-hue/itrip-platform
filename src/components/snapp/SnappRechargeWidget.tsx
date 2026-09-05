@@ -159,6 +159,9 @@ export function SnappRechargeWidget({ locale, initialAmount }: { locale: string;
                 }}
               />
             </div>
+            <span className="text-xs font-black text-brand-dark px-1">
+              معادل {Math.round(amountIrr / 10).toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} تومان
+            </span>
             {!isAmountValid && amountIrr > 0 && (
               <span className="text-[13px] text-rose-warm font-bold">
                 {lt(locale, {
@@ -235,6 +238,27 @@ export function SnappRechargeWidget({ locale, initialAmount }: { locale: string;
             })}
           </p>
         </div>
+      </div>
+
+      {/* Mobile Sticky Payment Bar */}
+      <div className="md:hidden fixed bottom-[58px] inset-x-0 z-40 bg-surface/95 backdrop-blur-md border-t border-line px-4 py-3 shadow-elev-3 flex items-center justify-between gap-3">
+        <div>
+          <span className="text-[10.5px] font-bold text-sub block leading-none mb-0.5">
+            شارژ حساب اسنپ
+          </span>
+          <div className="flex items-baseline gap-1.5 font-mono">
+            <span className="text-base font-black text-brand-dark">€{num(total, locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span className="text-[11px] font-bold text-sub">({Math.round(amountIrr / 10).toLocaleString()} ت)</span>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          className="h-11 px-5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95 shadow-md shadow-action/20"
+        >
+          <CreditCard size={15} />
+          <span>پرداخت و شارژ</span>
+        </button>
       </div>
     </form>
   );

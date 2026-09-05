@@ -1,20 +1,32 @@
 'use client';
 
+import Image from 'next/image';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES, COUNTRY_ORDER, countryName, type CountryId } from '@/lib/countries';
-import { MapPin, ArrowLeft, ArrowRight, Compass, BookOpenText, Check } from 'lucide-react';
+import { CATEGORY_PHOTO_MAP, shimmerDataUrl } from '@/lib/image-utils';
+import { formatMoney } from '@/lib/money';
+import { MapPin, ArrowLeft, ArrowRight, Compass, BookOpenText, Check, Plane, Building2, Calendar, Sparkles } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
-const GRADIENTS = [
-  'from-teal-500 to-emerald-700',
-  'from-blue-500 to-indigo-700',
-  'from-amber-500 to-orange-600',
-  'from-purple-500 to-fuchsia-700',
-  'from-rose-500 to-red-700',
-  'from-cyan-500 to-sky-700',
-];
+const CITY_PHOTO_MAP: Record<string, string> = {
+  Tehran: 'https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?auto=format&fit=crop&q=75&w=800',
+  Isfahan: 'https://images.unsplash.com/photo-1609840114035-3c981b782dfe?auto=format&fit=crop&q=75&w=800',
+  Shiraz: 'https://images.unsplash.com/photo-1579606032834-d40073b757e7?auto=format&fit=crop&q=75&w=800',
+  Mashhad: 'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&q=75&w=800',
+  Yazd: 'https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?auto=format&fit=crop&q=75&w=800',
+  Tabriz: 'https://images.unsplash.com/photo-1580828343064-fde4fc206bc6?auto=format&fit=crop&q=75&w=800',
+  Kish: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&q=75&w=800',
+  Istanbul: 'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=75&w=800',
+  Antalya: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&q=75&w=800',
+  Dubai: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&q=75&w=800',
+  Tbilisi: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&q=75&w=800',
+  Moscow: 'https://images.unsplash.com/photo-1513326738677-b964603b136d?auto=format&fit=crop&q=75&w=800',
+  Muscat: 'https://images.unsplash.com/photo-1549488344-1f9b8d2bd1f3?auto=format&fit=crop&q=75&w=800',
+  Beijing: 'https://images.unsplash.com/photo-1508804052814-cd3ba865a116?auto=format&fit=crop&q=75&w=800',
+  Shanghai: 'https://images.unsplash.com/photo-1474181487882-5abf3f0ba6c2?auto=format&fit=crop&q=75&w=800',
+};
 
 export default function DestinationsPage() {
   const t = useTranslations('Destinations');
@@ -25,74 +37,185 @@ export default function DestinationsPage() {
   const c = COUNTRIES[country];
 
   return (
-    <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-8 pb-16">
+    <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-8 pb-16 space-y-10">
       {/* Hero + Country Switcher */}
-      <div className="bg-deep rounded-2xl p-8 mb-10 text-surface relative overflow-hidden">
+      <div className="bg-gradient-to-br from-deep via-[#074746] to-[#04292a] rounded-3xl p-8 sm:p-10 text-surface relative overflow-hidden shadow-elev-3 border border-surface/10">
         <span className="absolute -start-16 -top-24 w-56 h-56 rounded-full border-[30px] border-surface/5 pointer-events-none" />
-        <h1 className="text-3xl font-black mb-2 relative">{t('title')}</h1>
-        <p className="text-surface/75 relative mb-5">{t('subtitle')}</p>
-        <div className="relative flex flex-wrap gap-2">
+        <span className="absolute -end-20 -bottom-20 w-64 h-64 rounded-full border-[24px] border-mint-bright/10 pointer-events-none" />
+        
+        <div className="relative z-10 max-w-2xl">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface/15 backdrop-blur-md text-mint-bright text-xs font-black mb-3 border border-surface/20">
+            <Compass size={14} />
+            <span>{lt(locale, { fa: 'راهنمای مقاصد و سفرهای فیروزه', en: 'Firuzo Global Destinations Guide', ar: 'دليل الوجهات العالمية', zh: 'Firuzo 全球目的地指南', ru: 'Гид по направлениям Firuzo' })}</span>
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-black mb-2">{t('title')}</h1>
+          <p className="text-surface/85 text-sm sm:text-base leading-relaxed mb-6">{t('subtitle')}</p>
+        </div>
+
+        {/* Country Selector Pills */}
+        <div className="relative z-10 flex flex-wrap gap-2 pt-2 border-t border-surface/15">
           {COUNTRY_ORDER.map((id: CountryId) => (
             <button
               key={id}
               onClick={() => setCountry(id)}
-              className={`min-h-9 px-4 rounded-full text-[12.5px] font-black inline-flex items-center gap-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                country === id ? 'bg-surface text-brand-dark' : 'bg-surface/10 text-surface hover:bg-surface/20'
+              className={`min-h-10 px-4 rounded-xl text-xs font-black inline-flex items-center gap-2 transition active:scale-95 ${
+                country === id 
+                  ? 'bg-action text-ink shadow-md shadow-action/25' 
+                  : 'bg-surface/15 text-surface hover:bg-surface/25 border border-surface/10'
               }`}
             >
-              <span>{COUNTRIES[id].flag}</span>
-              {countryName(id, locale)}
-              {country === id && <Check size={13} />}
+              <span className="text-sm">{COUNTRIES[id].flag}</span>
+              <span>{countryName(id, locale)}</span>
+              {country === id && <Check size={13} className="text-ink" />}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Cities of selected country */}
-      <section className="mb-12">
-        <h2 className="text-xl font-black text-ink mb-5 flex items-center gap-2">
-          <MapPin size={22} className="text-brand-dark" />
-          {lt(locale, { fa: 'شهرهای', en: 'Cities of', ar: 'مدن', zh: '的城市', ru: 'Города' })} {countryName(country, locale)} {c.flag}
-        </h2>
-        <div className="masonry-grid">
-          {c.cities.map((city, i) => (
-            <button
-              key={city.en}
-              onClick={() => router.push(city.href)}
-              className={`masonry-item block w-full bg-gradient-to-br ${GRADIENTS[i % GRADIENTS.length]} ph-texture rounded-2xl h-44 p-5 text-surface text-end relative overflow-hidden hover:-translate-y-1 transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-sm cursor-pointer`}
-            >
-              <span className="text-[12px] font-extrabold opacity-80 block">{city.en}</span>
-              <strong className="text-2xl font-black block mt-1">{city.fa}</strong>
-              <span className="mt-3 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-surface/20 backdrop-blur text-[11px] font-black">
-                <Compass size={12} /> {t('exploreHotels')}
-              </span>
-              <span className="absolute bottom-4 start-4 w-9 h-9 rounded-full bg-surface/20 grid place-items-center group-hover:scale-110 transition">
-                <ArrowLeft size={16} className="rtl:inline ltr:hidden" />
-                <ArrowRight size={16} className="ltr:inline rtl:hidden" />
-              </span>
-            </button>
-          ))}
+      {/* Quick Ecosystem Services Strip */}
+      <section className="bg-surface rounded-2xl p-4 sm:p-5 border border-line shadow-xs flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Sparkles size={18} className="text-brand-dark" />
+          <span className="text-xs sm:text-sm font-black text-ink">
+            {lt(locale, { fa: 'دسترسی سریع به خدمات', en: 'Quick Services for', ar: 'خدمات سريعة لـ', zh: '快速服务：', ru: 'Быстрые услуги для' })} {countryName(country, locale)}:
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => router.push(`/flights/search?to=${countryName(country, locale)}`)}
+            className="px-3 py-1.5 rounded-xl bg-soft hover:bg-line/60 text-xs font-bold text-ink transition flex items-center gap-1.5"
+          >
+            <Plane size={13} className="text-brand-dark" />
+            <span>{lt(locale, { fa: 'پروازها', en: 'Flights', ar: 'طيران', zh: '航班', ru: 'Рейсы' })}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push(`/hotels/search?city=${countryName(country, locale)}`)}
+            className="px-3 py-1.5 rounded-xl bg-soft hover:bg-line/60 text-xs font-bold text-ink transition flex items-center gap-1.5"
+          >
+            <Building2 size={13} className="text-brand-dark" />
+            <span>{lt(locale, { fa: 'اقامتگاه‌ها', en: 'Hotels', ar: 'فنادق', zh: '酒店', ru: 'Отели' })}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push(`/tours?category=signature`)}
+            className="px-3 py-1.5 rounded-xl bg-soft hover:bg-line/60 text-xs font-bold text-ink transition flex items-center gap-1.5"
+          >
+            <Compass size={13} className="text-brand-dark" />
+            <span>{lt(locale, { fa: 'تورها و تجارب', en: 'Tours', ar: 'جولات', zh: '旅游', ru: 'Туры' })}</span>
+          </button>
         </div>
       </section>
 
-      {/* Signature Travel Guides */}
-      <section>
-        <h2 className="text-xl font-black text-ink mb-2 flex items-center gap-2">
-          <BookOpenText size={22} className="text-brand-dark" />
-          {t('guideBook')}
-        </h2>
-        <p className="text-xs text-sub font-semibold mb-5">
-          {t('guideBookSubtitle')}
-        </p>
+      {/* Cities of selected country with Authentic Photography */}
+      <section className="space-y-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl sm:text-2xl font-black text-ink flex items-center gap-2">
+            <MapPin size={22} className="text-brand-dark" />
+            <span>{lt(locale, { fa: 'شهرهای شاخص', en: 'Featured Cities of', ar: 'مدن بارزة في', zh: '特色城市：', ru: 'Популярные города' })} {countryName(country, locale)} {c.flag}</span>
+          </h2>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {c.signatureExperiences.map((exp, i) => (
-            <div key={i} className="p-5 border border-line rounded-2xl bg-surface">
-              <span className="text-xs font-bold text-brand-dark">{exp.category}</span>
-              <h3 className="font-black text-ink mt-1 text-base">{isEn ? exp.titleEn : exp.title}</h3>
-              <p className="text-xs text-sub mt-2 leading-relaxed">{isEn ? exp.descEn : exp.desc}</p>
-            </div>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {c.cities.map((city) => {
+            const photoUrl = CITY_PHOTO_MAP[city.en] || CITY_PHOTO_MAP.Tehran;
+            return (
+              <button
+                key={city.en}
+                onClick={() => router.push(city.href)}
+                className="relative rounded-2xl h-52 p-5 text-surface text-start overflow-hidden hover:shadow-elev-2 hover:-translate-y-1 transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-xs flex flex-col justify-between cursor-pointer border border-line/60"
+              >
+                <Image
+                  src={photoUrl}
+                  alt={city.fa}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-700"
+                  placeholder="blur"
+                  blurDataURL={shimmerDataUrl(400, 200)}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-deep/95 via-deep/40 to-transparent" />
+                
+                <div className="relative z-10">
+                  <span className="text-xs font-bold text-mint-bright block leading-tight">{city.en}</span>
+                  <strong className="text-2xl font-black block mt-0.5">{city.fa}</strong>
+                </div>
+
+                <div className="relative z-10 flex items-center justify-between w-full pt-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface/20 backdrop-blur-md text-xs font-black">
+                    <Compass size={13} /> {t('exploreHotels')}
+                  </span>
+                  <span className="w-8 h-8 rounded-full bg-surface text-brand-dark grid place-items-center group-hover:scale-110 transition shadow-sm">
+                    <ArrowLeft size={15} className="rtl:inline ltr:hidden" />
+                    <ArrowRight size={15} className="ltr:inline rtl:hidden" />
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Signature Travel Experiences & Guides */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-black text-ink mb-1 flex items-center gap-2">
+            <BookOpenText size={22} className="text-brand-dark" />
+            <span>{t('guideBook')}</span>
+          </h2>
+          <p className="text-xs sm:text-sm text-sub font-bold">
+            {t('guideBookSubtitle')}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {c.signatureExperiences.map((exp, i) => {
+            const photo = CATEGORY_PHOTO_MAP[exp.category] || CATEGORY_PHOTO_MAP.culture;
+            return (
+              <div key={i} className="rounded-2xl border border-line bg-surface overflow-hidden shadow-xs flex flex-col justify-between group hover:border-brand/40 transition">
+                <div className="relative h-40 w-full overflow-hidden bg-soft">
+                  <Image
+                    src={photo}
+                    alt={exp.title}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    placeholder="blur"
+                    blurDataURL={shimmerDataUrl(400, 200)}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-deep/90 via-deep/30 to-transparent" />
+                  <span className="absolute top-2.5 start-2.5 px-2.5 py-0.5 rounded-full bg-surface/90 text-brand-dark text-[11px] font-black backdrop-blur-xs shadow-xs">
+                    {exp.category}
+                  </span>
+                  <span className="absolute bottom-2.5 start-2.5 text-xs text-surface font-bold flex items-center gap-1">
+                    <Calendar size={12} className="text-mint-bright" /> {isEn ? exp.whenEn : exp.when}
+                  </span>
+                </div>
+
+                <div className="p-5 flex flex-col justify-between flex-1 gap-4">
+                  <div>
+                    <h3 className="font-black text-ink text-base mb-1.5 leading-snug">{isEn ? exp.titleEn : exp.title}</h3>
+                    <p className="text-xs text-sub leading-relaxed line-clamp-3">{isEn ? exp.descEn : exp.desc}</p>
+                  </div>
+
+                  <div className="pt-3 border-t border-line/60 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] text-sub font-bold block">{lt(locale, { fa: 'شروع نرخ:', en: 'From:', ar: 'يبدأ من:', zh: '起步价：', ru: 'От:' })}</span>
+                      <span className="text-sm font-black text-price font-mono">
+                        {formatMoney(exp.fromPrice, c.currency, locale)}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/tours?category=signature`)}
+                      className="px-3.5 py-1.5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs transition active:scale-95 shadow-xs"
+                    >
+                      {lt(locale, { fa: 'کاوش و رزرو', en: 'Explore', ar: 'استكشف', zh: '浏览', ru: 'Смотреть' })}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
     </div>

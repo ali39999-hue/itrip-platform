@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { requirePermission } from '@/domains/identity/permission-service';
+import { maskDocumentNumber } from '@/lib/security/crypto-vault';
 import { getLocale } from 'next-intl/server';
 import { lt } from '@/lib/lt';
 import { notFound } from 'next/navigation';
@@ -211,7 +212,7 @@ export default async function TravelFileDetailPage({
                       {tp.documents.map((doc) => (
                         <div key={doc.id} className="flex items-center justify-between text-[11px] text-sub pt-1 border-t border-line/40">
                           <span className="font-bold">{doc.type}:</span>
-                          <span className="font-black text-ink">{doc.documentNumber}</span>
+                          <span className="font-black text-ink" title={doc.expiresAt || undefined}>{maskDocumentNumber(doc.documentNumber)}</span>
                         </div>
                       ))}
                     </div>

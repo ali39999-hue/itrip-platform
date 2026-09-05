@@ -281,6 +281,37 @@ function HotelsSearchInner() {
           onCompareAction={() => setCompareModalOpen(true)}
         />
 
+        {/* Sticky Mobile Filter & Sort Pill (FlyToday Style) */}
+        <div className="lg:hidden fixed bottom-[70px] inset-x-0 z-40 flex justify-center pointer-events-none px-4">
+          <div className="pointer-events-auto bg-ink/90 dark:bg-surface/95 backdrop-blur-md text-surface dark:text-ink px-4 py-2 rounded-full shadow-elev-3 flex items-center gap-3 border border-surface/20 dark:border-line">
+            <button
+              type="button"
+              onClick={() => setMobileFilterOpen(true)}
+              className="flex items-center gap-1.5 text-xs font-black py-1 px-2 rounded-full hover:bg-surface/20 transition active:scale-95"
+            >
+              <span>{lt(locale, { fa: 'فیلترها', en: 'Filters', ar: 'تصفية', zh: '筛选', ru: 'Фильтры' })}</span>
+              {activeFiltersCount > 0 && (
+                <span className="w-4 h-4 rounded-full bg-brand text-surface text-[10px] grid place-items-center font-bold">
+                  {num(activeFiltersCount, locale)}
+                </span>
+              )}
+            </button>
+            <span className="w-px h-4 bg-surface/30 dark:bg-line" />
+            <button
+              type="button"
+              onClick={() => {
+                const sorts: Array<'rec' | 'cheap' | 'score' | 'stars'> = ['rec', 'cheap', 'score', 'stars'];
+                const curIdx = sorts.indexOf(sort);
+                const nextSort = sorts[(curIdx + 1) % sorts.length];
+                setSort(nextSort);
+              }}
+              className="flex items-center gap-1.5 text-xs font-black py-1 px-2 rounded-full hover:bg-surface/20 transition active:scale-95"
+            >
+              <span className="text-[11px] opacity-75">{lt(locale, { fa: 'مرتب‌سازی', en: 'Sort', ar: 'ترتيب', zh: '排序', ru: 'Сорт' })}</span>
+            </button>
+          </div>
+        </div>
+
         {/* Side-by-Side Comparison Modal */}
         <HotelCompareModal
           isOpen={compareModalOpen}

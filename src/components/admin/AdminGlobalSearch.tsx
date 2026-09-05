@@ -20,6 +20,23 @@ export function AdminGlobalSearch() {
   } | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Global Cmd+K / Ctrl+K keyboard shortcut listener
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      } else if (e.key === 'Escape' && open) {
+        setOpen(false);
+        inputRef.current?.blur();
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open]);
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -61,6 +78,7 @@ export function AdminGlobalSearch() {
     <div ref={containerRef} className="relative w-full max-w-xs md:max-w-sm">
       <div className="relative flex items-center">
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -72,7 +90,7 @@ export function AdminGlobalSearch() {
             zh: '快速搜索PNR、行程或客户…',
             ru: 'Быстрый поиск PNR, досье, клиента…',
           })}
-          className="w-full h-9 ps-9 pe-8 rounded-xl bg-soft/80 border border-line text-xs font-bold text-ink placeholder:text-sub focus:bg-surface focus:border-brand focus:outline-none transition"
+          className="w-full h-9 ps-9 pe-14 rounded-xl bg-soft/80 border border-line text-xs font-bold text-ink placeholder:text-sub focus:bg-surface focus:border-brand focus:outline-none transition"
         />
         <Search size={14} className="absolute start-3 text-sub pointer-events-none" />
         {loading ? (
@@ -84,7 +102,11 @@ export function AdminGlobalSearch() {
           >
             <X size={10} />
           </button>
-        ) : null}
+        ) : (
+          <kbd className="absolute end-2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono font-black text-sub bg-surface border border-line rounded pointer-events-none shadow-2xs">
+            ⌘K
+          </kbd>
+        )}
       </div>
 
       {/* Results Dropdown */}

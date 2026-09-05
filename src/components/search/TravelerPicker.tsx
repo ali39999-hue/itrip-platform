@@ -69,106 +69,238 @@ export function TravelerPicker({
       </button>
 
       {open && (
-        <div
-          role="dialog"
-          aria-label={t('guestsAndRooms')}
-          className="absolute top-[calc(100%+8px)] end-0 z-[100] w-72 p-4 rounded-2xl bg-surface border border-line shadow-elev-3 animate-in fade-in slide-in-from-top-2 duration-200"
-        >
-          <div className="space-y-3">
-            {/* Adults */}
-            <div className="flex items-center justify-between py-1.5 border-b border-line/50">
-              <div>
-                <strong className="block text-[13px] font-bold text-ink">{t('adult')}</strong>
-                <span className="block text-[11px] text-sub">{t('adultHint')}</span>
+        <>
+          {/* ================= DESKTOP POPOVER (MD+) ================= */}
+          <div
+            role="dialog"
+            aria-label={t('guestsAndRooms')}
+            className="hidden md:block absolute top-[calc(100%+8px)] end-0 z-[100] w-72 p-4 rounded-2xl bg-surface border border-line shadow-elev-3 animate-in fade-in slide-in-from-top-2 duration-200"
+          >
+            <div className="space-y-3">
+              {/* Adults */}
+              <div className="flex items-center justify-between py-1.5 border-b border-line/50">
+                <div>
+                  <strong className="block text-[13px] font-bold text-ink">{t('adult')}</strong>
+                  <span className="block text-[11px] text-sub">{t('adultHint')}</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    aria-label={t('adult') + ' -'}
+                    onClick={() => setAdults(Math.max(1, adults - 1))}
+                    disabled={adults <= 1}
+                    className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition"
+                  >
+                    <Minus size={13} />
+                  </button>
+                  <span className="w-5 text-center text-[13px] font-bold text-ink font-mono num">
+                    {num(adults, locale)}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={t('adult') + ' +'}
+                    onClick={() => setAdults(Math.min(9, adults + 1))}
+                    disabled={adults >= 9}
+                    className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition"
+                  >
+                    <Plus size={13} />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  aria-label={t('adult') + ' -'}
-                  onClick={() => setAdults(Math.max(1, adults - 1))}
-                  disabled={adults <= 1}
-                  className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition"
-                >
-                  <Minus size={13} />
-                </button>
-                <span className="w-5 text-center text-[13px] font-bold text-ink font-mono num">
-                  {num(adults, locale)}
-                </span>
-                <button
-                  type="button"
-                  aria-label={t('adult') + ' +'}
-                  onClick={() => setAdults(Math.min(9, adults + 1))}
-                  disabled={adults >= 9}
-                  className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition"
-                >
-                  <Plus size={13} />
-                </button>
+
+              {/* Children */}
+              <div className="flex items-center justify-between py-1.5 border-b border-line/50">
+                <div>
+                  <strong className="block text-[13px] font-bold text-ink">{t('child')}</strong>
+                  <span className="block text-[11px] text-sub">{t('childHint')}</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    aria-label={t('child') + ' -'}
+                    onClick={() => setChildrenCount(Math.max(0, childrenCount - 1))}
+                    disabled={childrenCount <= 0}
+                    className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition"
+                  >
+                    <Minus size={13} />
+                  </button>
+                  <span className="w-5 text-center text-[13px] font-bold text-ink font-mono num">
+                    {num(childrenCount, locale)}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={t('child') + ' +'}
+                    onClick={() => setChildrenCount(Math.min(6, childrenCount + 1))}
+                    disabled={childrenCount >= 6}
+                    className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition"
+                  >
+                    <Plus size={13} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Rooms */}
+              <div className="flex items-center justify-between py-1.5">
+                <div>
+                  <strong className="block text-[13px] font-bold text-ink">{t('room')}</strong>
+                  <span className="block text-[11px] text-sub">{t('roomHint')}</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    aria-label={t('room') + ' -'}
+                    onClick={() => setRooms(Math.max(1, rooms - 1))}
+                    disabled={rooms <= 1}
+                    className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition"
+                  >
+                    <Minus size={13} />
+                  </button>
+                  <span className="w-5 text-center text-[13px] font-bold text-ink font-mono num">
+                    {num(rooms, locale)}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={t('room') + ' +'}
+                    onClick={() => setRooms(Math.min(5, rooms + 1))}
+                    disabled={rooms >= 5}
+                    className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition"
+                  >
+                    <Plus size={13} />
+                  </button>
+                </div>
               </div>
             </div>
+          </div>
 
-            {/* Children */}
-            <div className="flex items-center justify-between py-1.5 border-b border-line/50">
-              <div>
-                <strong className="block text-[13px] font-bold text-ink">{t('child')}</strong>
-                <span className="block text-[11px] text-sub">{t('childHint')}</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  aria-label={t('child') + ' -'}
-                  onClick={() => setChildrenCount(Math.max(0, childrenCount - 1))}
-                  disabled={childrenCount <= 0}
-                  className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition"
-                >
-                  <Minus size={13} />
-                </button>
-                <span className="w-5 text-center text-[13px] font-bold text-ink font-mono num">
-                  {num(childrenCount, locale)}
-                </span>
-                <button
-                  type="button"
-                  aria-label={t('child') + ' +'}
-                  onClick={() => setChildrenCount(Math.min(6, childrenCount + 1))}
-                  disabled={childrenCount >= 6}
-                  className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition"
-                >
-                  <Plus size={13} />
-                </button>
-              </div>
-            </div>
+          {/* ================= MOBILE BOTTOM SHEET (< MD) — FLYTODAY STYLE ================= */}
+          <div className="md:hidden fixed inset-0 z-[160] flex items-end justify-center bg-deep/60 backdrop-blur-xs animate-in fade-in duration-200">
+            <div
+              role="dialog"
+              aria-label={t('guestsAndRooms')}
+              className="w-full bg-surface rounded-t-3xl p-5 border-t border-line shadow-elev-3 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom-5 duration-200 space-y-4"
+            >
+              {/* Drag Handle Indicator */}
+              <div className="w-10 h-1 rounded-full bg-line mx-auto mb-1" />
 
-            {/* Rooms */}
-            <div className="flex items-center justify-between py-1.5">
-              <div>
-                <strong className="block text-[13px] font-bold text-ink">{t('room')}</strong>
-                <span className="block text-[11px] text-sub">{t('roomHint')}</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  aria-label={t('room') + ' -'}
-                  onClick={() => setRooms(Math.max(1, rooms - 1))}
-                  disabled={rooms <= 1}
-                  className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition"
-                >
-                  <Minus size={13} />
-                </button>
-                <span className="w-5 text-center text-[13px] font-bold text-ink font-mono num">
-                  {num(rooms, locale)}
+              <div className="flex items-center justify-between pb-3 border-b border-line">
+                <div className="flex items-center gap-2">
+                  <Users size={18} className="text-brand-dark" />
+                  <h3 className="font-black text-base text-ink">{t('guestsAndRooms')}</h3>
+                </div>
+                <span className="text-xs font-bold text-brand-dark bg-mint px-2.5 py-1 rounded-full">
+                  {guestSummary}
                 </span>
+              </div>
+
+              {/* Rows with touch-friendly larger controls */}
+              <div className="space-y-4 py-2">
+                {/* Adults */}
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-soft/60 border border-line/60">
+                  <div>
+                    <strong className="block text-sm font-black text-ink">{t('adult')}</strong>
+                    <span className="block text-xs text-sub">{t('adultHint')}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      aria-label={t('adult') + ' -'}
+                      onClick={() => setAdults(Math.max(1, adults - 1))}
+                      disabled={adults <= 1}
+                      className="w-10 h-10 rounded-xl bg-surface border border-line text-ink grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition shadow-2xs"
+                    >
+                      <Minus size={16} />
+                    </button>
+                    <span className="w-6 text-center text-base font-black text-ink font-mono num">
+                      {num(adults, locale)}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={t('adult') + ' +'}
+                      onClick={() => setAdults(Math.min(9, adults + 1))}
+                      disabled={adults >= 9}
+                      className="w-10 h-10 rounded-xl bg-brand text-surface grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition shadow-xs shadow-brand/30"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Children */}
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-soft/60 border border-line/60">
+                  <div>
+                    <strong className="block text-sm font-black text-ink">{t('child')}</strong>
+                    <span className="block text-xs text-sub">{t('childHint')}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      aria-label={t('child') + ' -'}
+                      onClick={() => setChildrenCount(Math.max(0, childrenCount - 1))}
+                      disabled={childrenCount <= 0}
+                      className="w-10 h-10 rounded-xl bg-surface border border-line text-ink grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition shadow-2xs"
+                    >
+                      <Minus size={16} />
+                    </button>
+                    <span className="w-6 text-center text-base font-black text-ink font-mono num">
+                      {num(childrenCount, locale)}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={t('child') + ' +'}
+                      onClick={() => setChildrenCount(Math.min(6, childrenCount + 1))}
+                      disabled={childrenCount >= 6}
+                      className="w-10 h-10 rounded-xl bg-brand text-surface grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition shadow-xs shadow-brand/30"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Rooms */}
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-soft/60 border border-line/60">
+                  <div>
+                    <strong className="block text-sm font-black text-ink">{t('room')}</strong>
+                    <span className="block text-xs text-sub">{t('roomHint')}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      aria-label={t('room') + ' -'}
+                      onClick={() => setRooms(Math.max(1, rooms - 1))}
+                      disabled={rooms <= 1}
+                      className="w-10 h-10 rounded-xl bg-surface border border-line text-ink grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition shadow-2xs"
+                    >
+                      <Minus size={16} />
+                    </button>
+                    <span className="w-6 text-center text-base font-black text-ink font-mono num">
+                      {num(rooms, locale)}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={t('room') + ' +'}
+                      onClick={() => setRooms(Math.min(5, rooms + 1))}
+                      disabled={rooms >= 5}
+                      className="w-10 h-10 rounded-xl bg-brand text-surface grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition shadow-xs shadow-brand/30"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Confirm Button for Mobile */}
+              <div className="pt-2">
                 <button
                   type="button"
-                  aria-label={t('room') + ' +'}
-                  onClick={() => setRooms(Math.min(5, rooms + 1))}
-                  disabled={rooms >= 5}
-                  className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition"
+                  onClick={() => setOpen(false)}
+                  className="w-full h-12 rounded-2xl bg-action hover:bg-action-hover text-ink font-black text-sm shadow-md active:scale-[0.98] transition flex items-center justify-center"
                 >
-                  <Plus size={13} />
+                  {locale === 'fa' ? 'تأیید مسافران' : locale === 'ar' ? 'تأكيد المسافرين' : 'Confirm Passengers'}
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 'use client';
 
-import { CheckCircle2, Download, ArrowRight, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, Download, ArrowRight, ShieldCheck, Copy, Check } from 'lucide-react';
 import { useRouter } from '@/i18n/routing';
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
@@ -13,6 +14,14 @@ interface SuccessConfirmationProps {
 export function SuccessConfirmation({ confirmedRef, confirmedTitle }: SuccessConfirmationProps) {
   const router = useRouter();
   const locale = useLocale();
+  const [copied, setCopied] = useState(false);
+
+  const copyRef = () => {
+    if (!confirmedRef) return;
+    navigator.clipboard.writeText(confirmedRef);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="max-w-xl mx-auto p-8 rounded-3xl bg-surface border border-line shadow-elev-2 text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -41,7 +50,7 @@ export function SuccessConfirmation({ confirmedRef, confirmedTitle }: SuccessCon
         </p>
       </div>
 
-      <div className="p-4 rounded-2xl bg-mint/50 border border-brand/20 space-y-2 text-start">
+      <div className="p-4 rounded-2xl bg-mint/50 border border-brand/20 space-y-2.5 text-start">
         <div className="flex justify-between items-center text-[13px]">
           <span className="text-sub font-bold">
             {lt(locale, { fa: 'عنوان خدمت:', en: 'Service Title:', ar: 'عنوان الخدمة:', zh: '服务项目：', ru: 'Название услуги:' })}
@@ -50,11 +59,23 @@ export function SuccessConfirmation({ confirmedRef, confirmedTitle }: SuccessCon
             {confirmedTitle || lt(locale, { fa: 'سرویس رزرو شده', en: 'Booked Service', ar: 'الخدمة المحجوزة', zh: '已预订服务', ru: 'Забронированная услуга' })}
           </span>
         </div>
-        <div className="flex justify-between items-center text-[13px]">
+        <div className="flex justify-between items-center text-[13px] pt-1 border-t border-brand/10">
           <span className="text-sub font-bold">
             {lt(locale, { fa: 'کد پیگیری (PNR):', en: 'Tracking Code (PNR):', ar: 'رمز التتبع (PNR):', zh: '追踪码 (PNR)：', ru: 'Код бронирования (PNR):' })}
           </span>
-          <span className="font-mono font-black text-brand-dark tracking-wider" dir="ltr">{confirmedRef || '—'}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono font-black text-brand-dark tracking-wider px-2 py-0.5 rounded bg-surface border border-line text-sm" dir="ltr">
+              {confirmedRef || '—'}
+            </span>
+            <button
+              type="button"
+              onClick={copyRef}
+              aria-label="Copy PNR"
+              className="w-7 h-7 rounded-lg bg-surface border border-line text-sub hover:text-brand-dark grid place-items-center transition active:scale-95"
+            >
+              {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
+            </button>
+          </div>
         </div>
       </div>
 

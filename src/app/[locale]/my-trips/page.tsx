@@ -22,6 +22,10 @@ import {
   TrainFront,
   Award,
   Loader2,
+  Search,
+  X,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
@@ -37,6 +41,7 @@ interface BookingRecordSummary {
   status: string;
   totalAmount: unknown;
   createdAt: Date;
+  travelDate?: string;
   items: BookingRecordItem[];
 }
 
@@ -103,6 +108,9 @@ export default function MyTripsPage() {
   const [loading, setLoading] = useState(true);
   const [unauthorized, setUnauthorized] = useState(false);
   const [tab, setTab] = useState<'upcoming' | 'past' | 'cancelled'>('upcoming');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('ALL');
+  const [copiedRef, setCopiedRef] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -128,16 +136,68 @@ export default function MyTripsPage() {
 
   // Terminal/cancellation states never count as upcoming.
   const TERMINAL = new Set(['CANCELLED', 'REFUNDED', 'CANCEL_REQUESTED', 'CANCELLING', 'REFUND_INITIATED', 'FAILED', 'EXPIRED']);
-  const upcoming = dbBookings.filter((b) => !TERMINAL.has(b.status));
+  const now = new Date();
 
-  let filtered = dbBookings;
-  if (tab === 'upcoming') {
-    filtered = upcoming;
-  } else if (tab === 'past') {
-    filtered = dbBookings.filter((b) => b.status === 'COMPLETED' || b.status === 'CONFIRMED');
-  } else if (tab === 'cancelled') {
-    filtered = dbBookings.filter((b) => TERMINAL.has(b.status) && b.status !== 'EXPIRED');
+  // Effective travel date: the Booking row has no travelDate column, so read
+  // it from the item's details snapshot (written at draft creation). Falling
+  // back to createdAt put every fresh booking in the "Past" tab.
+  const getTravelDate = (b: BookingRecordSummary): Date => {
+    if (b.travelDate) return new Date(b.travelDate);
+    try {
+      const d = b.items?.[0]?.details ? JSON.parse(b.items[0].details) : null;
+      if (d?.travelDate) return new Date(d.travelDate);
+    } catch {}
+    return new Date(b.createdAt);
+  };
+
+  // Smart splitting: Upcoming vs Past
+  const upcoming = dbBookings.filter((b) => {
+    if (TERMINAL.has(b.status)) return false;
+    const tDate = getTravelDate(b);
+    return tDate >= now || b.status === 'CONFIRMED' || b.status === 'HELD';
+  });
+
+  const past = dbBookings.filter((b) => {
+    if (TERMINAL.has(b.status)) return false;
+    const tDate = getTravelDate(b);
+    return b.status === 'COMPLETED' || tDate < now;
+  });
+
+  const cancelled = dbBookings.filter((b) => TERMINAL.has(b.status) && b.status !== 'EXPIRED');
+
+  let filtered = tab === 'upcoming' ? upcoming : tab === 'past' ? past : cancelled;
+
+  // Search by PNR reference or Title
+  if (searchQuery.trim()) {
+    const q = searchQuery.trim().toLowerCase();
+    filtered = filtered.filter((b) => {
+      const refMatch = b.reference.toLowerCase().includes(q);
+      const firstItem = b.items?.[0];
+      let detailsMatch = false;
+      if (firstItem?.details) {
+        try {
+          const d = JSON.parse(firstItem.details);
+          const tName = (d.itemTitle || d.title || '').toLowerCase();
+          detailsMatch = tName.includes(q);
+        } catch {}
+      }
+      return refMatch || detailsMatch;
+    });
   }
+
+  // Filter by Type
+  if (typeFilter !== 'ALL') {
+    filtered = filtered.filter((b) => {
+      const bType = (b.items?.[0]?.type || 'HOTEL').toUpperCase();
+      return bType === typeFilter;
+    });
+  }
+
+  const copyPnr = (ref: string) => {
+    navigator.clipboard.writeText(ref);
+    setCopiedRef(ref);
+    setTimeout(() => setCopiedRef(null), 2000);
+  };
 
   if (!isHydrated) return null;
 
@@ -148,7 +208,7 @@ export default function MyTripsPage() {
 
         {/* Main Dashboard Content */}
         <div className="flex-1 flex flex-col gap-6">
-          <div className="w-full h-56 rounded-2xl overflow-hidden shadow-sm relative mb-2">
+          <div className="w-full h-56 rounded-3xl overflow-hidden shadow-sm relative mb-2">
             <Image
               alt={t('title')}
               className="object-cover"
@@ -158,37 +218,86 @@ export default function MyTripsPage() {
               placeholder="blur"
               blurDataURL={shimmerDataUrl(1800, 300)}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent" />
-            <div className="absolute bottom-8 end-8 text-surface">
-              <h1 className="font-black text-[28px] md:text-[32px] mb-2">{t('title')}</h1>
-              <p className="font-bold text-[15px] md:text-[16px] text-surface/90">{t('subtitle')}</p>
+            <div className="absolute inset-0 bg-gradient-to-t from-deep/90 via-deep/40 to-transparent" />
+            <div className="absolute bottom-6 end-6 start-6 text-surface">
+              <h1 className="font-black text-2xl md:text-3xl mb-1">{t('title')}</h1>
+              <p className="font-bold text-xs sm:text-sm text-surface/90">{t('subtitle')}</p>
             </div>
           </div>
 
-          <div className="flex items-center border-b border-line mb-4 overflow-x-auto whitespace-nowrap hide-scrollbar">
+          {/* Search and Filter Toolbar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-surface p-3 rounded-2xl border border-line shadow-xs">
+            <div className="relative w-full sm:max-w-xs">
+              <Search size={15} className="absolute top-1/2 -translate-y-1/2 start-3 text-sub pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={lt(locale, { fa: 'جستجوی شماره رهگیری یا نام سفر...', en: 'Search PNR or trip title...', ar: 'ابحث عن رقم الحجز...', zh: '搜索预订号或行程名称...', ru: 'Поиск по номеру или названию...' })}
+                className="w-full h-10 ps-9 pe-4 rounded-xl bg-soft border border-line text-xs font-bold text-ink placeholder:text-sub focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute top-1/2 -translate-y-1/2 end-2.5 text-sub hover:text-ink"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+
+            {/* Service Type Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none text-xs font-black">
+              {['ALL', 'FLIGHT', 'HOTEL', 'TOUR', 'TRANSFER'].map((st) => (
+                <button
+                  key={st}
+                  type="button"
+                  onClick={() => setTypeFilter(st)}
+                  className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap ${
+                    typeFilter === st
+                      ? 'bg-brand text-surface shadow-xs'
+                      : 'bg-soft text-sub hover:text-ink'
+                  }`}
+                >
+                  {st === 'ALL'
+                    ? lt(locale, { fa: 'همه سرویس‌ها', en: 'All', ar: 'الكل', zh: '全部', ru: 'Все' })
+                    : st === 'FLIGHT'
+                      ? lt(locale, { fa: 'پروازها', en: 'Flights', ar: 'طيران', zh: '机票', ru: 'Рейсы' })
+                      : st === 'HOTEL'
+                        ? lt(locale, { fa: 'هتل‌ها', en: 'Hotels', ar: 'فنادق', zh: '酒店', ru: 'Отели' })
+                        : st === 'TOUR'
+                          ? lt(locale, { fa: 'تورها', en: 'Tours', ar: 'جولات', zh: '旅游', ru: 'Туры' })
+                          : lt(locale, { fa: 'ترنسفر', en: 'Transfer', ar: 'نقل', zh: '接送', ru: 'Трансфер' })}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center border-b border-line mb-2 overflow-x-auto whitespace-nowrap hide-scrollbar">
             <button
               onClick={() => setTab('upcoming')}
-              className={`px-6 py-4 font-black text-[15px] transition-colors border-b-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                tab === 'upcoming' ? 'border-brand text-brand' : 'border-transparent text-sub hover:text-ink'
+              className={`px-6 py-3 font-black text-sm transition-colors border-b-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                tab === 'upcoming' ? 'border-brand text-brand-dark' : 'border-transparent text-sub hover:text-ink'
               }`}
             >
               {t('upcoming')} ({upcoming.length})
             </button>
             <button
               onClick={() => setTab('past')}
-              className={`px-6 py-4 font-black text-[15px] transition-colors border-b-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                tab === 'past' ? 'border-brand text-brand' : 'border-transparent text-sub hover:text-ink'
+              className={`px-6 py-3 font-black text-sm transition-colors border-b-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                tab === 'past' ? 'border-brand text-brand-dark' : 'border-transparent text-sub hover:text-ink'
               }`}
             >
-              {t('past')}
+              {t('past')} ({past.length})
             </button>
             <button
               onClick={() => setTab('cancelled')}
-              className={`px-6 py-4 font-black text-[15px] transition-colors border-b-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                tab === 'cancelled' ? 'border-brand text-brand' : 'border-transparent text-sub hover:text-ink'
+              className={`px-6 py-3 font-black text-sm transition-colors border-b-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                tab === 'cancelled' ? 'border-brand text-brand-dark' : 'border-transparent text-sub hover:text-ink'
               }`}
             >
-              {t('cancelled')} ({dbBookings.filter((b) => TERMINAL.has(b.status) && b.status !== 'EXPIRED').length})
+              {t('cancelled')} ({cancelled.length})
             </button>
           </div>
 
@@ -348,17 +457,35 @@ export default function MyTripsPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between mt-6 pt-2">
-                        <div className="flex gap-2">
+                      <div className="flex items-center justify-between mt-5 pt-2 flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => router.push(`/my-trips/${b.id}`)}
-                            className="rounded-xl font-black text-xs gap-1.5 border-line hover:bg-soft"
+                            className="rounded-xl font-black text-xs gap-1.5 border-line hover:bg-soft shadow-2xs"
                           >
                             <QrCode size={14} />
                             {t('viewVoucher')}
                           </Button>
+                          <button
+                            type="button"
+                            onClick={() => copyPnr(b.reference || b.id.slice(0, 8))}
+                            className="h-8 px-2.5 rounded-xl border border-line text-xs font-bold text-sub hover:text-brand-dark hover:bg-soft transition flex items-center gap-1"
+                            title="کپی شماره رزرو"
+                          >
+                            {copiedRef === (b.reference || b.id.slice(0, 8)) ? (
+                              <>
+                                <Check size={13} className="text-success" />
+                                <span className="text-[11px] text-success">کپی شد</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={13} />
+                                <span className="text-[11px]">کپی PNR</span>
+                              </>
+                            )}
+                          </button>
                         </div>
                       </div>
                     </div>

@@ -59,12 +59,12 @@ export default function FlightsLandingPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="flex sm:grid overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 pb-3 sm:pb-0 scrollbar-none">
           {popularRoutes.map((route, idx) => (
             <Link
               key={idx}
               href={`/flights/search?from=${route.fromName}&to=${route.toName}`}
-              className="group relative h-64 rounded-3xl overflow-hidden shadow-elev-1 hover:shadow-elev-3 transition-all"
+              className="shrink-0 w-[84vw] sm:w-auto snap-start group relative h-64 rounded-3xl overflow-hidden shadow-elev-1 hover:shadow-elev-3 transition-all"
             >
               <Image
                 src={route.img}

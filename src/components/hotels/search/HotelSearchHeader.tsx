@@ -28,11 +28,38 @@ export function HotelSearchHeader({
   const { country } = useCountryStore();
   const c = COUNTRIES[country] || COUNTRIES['turkey'];
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [mobileEditOpen, setMobileEditOpen] = useState(false);
 
   return (
     <>
-      {/* Search bar */}
-      <div className="border-b border-line glass-bar shadow-[0_8px_22px_rgba(5,63,62,.05)]">
+      {/* ================= 1. MOBILE COMPACT AIRBNB-STYLE SEARCH PILL (< MD) ================= */}
+      <div className="md:hidden border-b border-line bg-surface/90 backdrop-blur-md p-3 shadow-xs">
+        <button
+          type="button"
+          onClick={() => setMobileEditOpen(true)}
+          className="w-full flex items-center justify-between p-3 rounded-2xl bg-soft border border-line/80 shadow-2xs text-start active:scale-[0.99] transition"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-brand text-surface grid place-items-center shrink-0 shadow-xs">
+              <Search size={16} />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-black text-ink block truncate leading-tight">
+                {query || lt(locale, { fa: 'همه مقاصد و هتل‌ها', en: 'All Destinations & Hotels', ar: 'جميع الوجهات والفنادق', zh: '所有目的地与酒店', ru: 'Все отели' })}
+              </span>
+              <span className="text-[10.5px] font-bold text-sub block truncate mt-0.5">
+                {checkin} ➔ {checkout} • {num(adults, locale)} بزرگسال
+              </span>
+            </div>
+          </div>
+          <span className="text-[11px] font-black text-brand-dark px-2 py-1 rounded-lg bg-surface border border-line shrink-0">
+            ویرایش
+          </span>
+        </button>
+      </div>
+
+      {/* ================= 2. DESKTOP SEARCH BAR (MD+) ================= */}
+      <div className="hidden md:block border-b border-line glass-bar shadow-[0_8px_22px_rgba(5,63,62,.05)]">
         <div className="max-w-[1280px] mx-auto px-4 md:px-10 flex items-center gap-2 py-3 flex-wrap">
           <form
             className="flex items-center gap-2.5 flex-[1_1_100%] md:flex-[2_1_0%] min-w-0 min-h-[52px] px-3 border border-line rounded-xl bg-surface focus-within:border-brand focus-within:ring-[3px] focus-within:ring-brand/10 transition-all"
@@ -210,10 +237,127 @@ export function HotelSearchHeader({
           </h1>
           <span className="text-[13px] font-bold text-sub whitespace-nowrap pb-1">
             {num(resultsCount, locale)}{' '}
-            {lt(locale, { fa: 'اقامتگاه یافت شد', en: 'stays found', ar: 'إقامة تم العثور عليها', zh: '家住宿已找到', ru: 'вариантов найдено' })}
+            {lt(locale, { fa: 'اقامتگاه یافت شد', en: 'stays found', ar: 'إقامة تم العثور عليها', zh: '家住宿已找到', ru: 'вариانтов найдено' })}
           </span>
         </div>
       </div>
+
+      {/* ================= MOBILE FULL EDIT BOTTOM SHEET ================= */}
+      {mobileEditOpen && (
+        <div className="md:hidden fixed inset-0 z-[160] flex items-end justify-center bg-deep/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="w-full bg-surface rounded-t-3xl p-5 border-t border-line shadow-2xl max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-5 duration-200 space-y-4">
+            <div className="w-10 h-1 rounded-full bg-line mx-auto mb-1" />
+
+            <div className="flex items-center justify-between pb-3 border-b border-line">
+              <h3 className="text-sm font-black text-ink">ویرایش جستجوی هتل‌ها</h3>
+              <button
+                type="button"
+                onClick={() => setMobileEditOpen(false)}
+                className="text-xs font-bold text-sub px-2.5 py-1 rounded-lg bg-soft"
+              >
+                بستن
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-sub mb-1">نام شهر یا هتل مقصد</label>
+                <div className="flex items-center gap-2 p-3 bg-soft rounded-xl border border-line">
+                  <MapPin size={16} className="text-brand-dark" />
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => onQueryChange(e.target.value)}
+                    placeholder="مثال: استانبول، مشهد، دبی..."
+                    className="w-full bg-transparent border-0 outline-none text-xs font-bold text-ink"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-sub mb-1">تاریخ ورود</label>
+                  <input
+                    type="date"
+                    value={checkin}
+                    onChange={(e) => onCheckinChange?.(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-line bg-soft text-xs font-bold font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-sub mb-1">تاریخ خروج</label>
+                  <input
+                    type="date"
+                    value={checkout}
+                    onChange={(e) => onCheckoutChange?.(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-line bg-soft text-xs font-bold font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 bg-soft rounded-xl border border-line space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-ink">تعداد بزرگسال</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onAdultsChange?.(Math.max(1, adults - 1))}
+                      disabled={adults <= 1}
+                      className="w-8 h-8 rounded-lg bg-surface border border-line grid place-items-center"
+                    >
+                      <Minus size={13} />
+                    </button>
+                    <span className="w-5 text-center font-bold font-mono text-xs">{adults}</span>
+                    <button
+                      type="button"
+                      onClick={() => onAdultsChange?.(Math.min(9, adults + 1))}
+                      disabled={adults >= 9}
+                      className="w-8 h-8 rounded-lg bg-surface border border-line grid place-items-center"
+                    >
+                      <Plus size={13} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center pt-2 border-t border-line/60">
+                  <span className="text-xs font-bold text-ink">تعداد کودک</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onChildrenCountChange?.(Math.max(0, childrenCount - 1))}
+                      disabled={childrenCount <= 0}
+                      className="w-8 h-8 rounded-lg bg-surface border border-line grid place-items-center"
+                    >
+                      <Minus size={13} />
+                    </button>
+                    <span className="w-5 text-center font-bold font-mono text-xs">{childrenCount}</span>
+                    <button
+                      type="button"
+                      onClick={() => onChildrenCountChange?.(Math.min(6, childrenCount + 1))}
+                      disabled={childrenCount >= 6}
+                      className="w-8 h-8 rounded-lg bg-surface border border-line grid place-items-center"
+                    >
+                      <Plus size={13} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileEditOpen(false);
+                  onSearchSubmit();
+                }}
+                className="w-full h-12 rounded-2xl bg-action hover:bg-action-hover text-ink font-black text-sm flex items-center justify-center gap-2 shadow-md transition active:scale-95"
+              >
+                <Search size={16} />
+                <span>اعمال و مشاهده هتل‌ها</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

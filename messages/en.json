@@ -214,7 +214,9 @@
     "tourTypeRecreational": "Recreational & Leisure",
     "tourTypeMedical": "Medical & Wellness",
     "tourTypeCommercial": "Business & Expo",
-    "btnTours": "Search Tours"
+    "btnTours": "Search Tours",
+    "roundTrip": "Round Trip",
+    "oneWay": "One Way"
   },
   "Home": {
     "offersKicker": "For your destination",
@@ -659,7 +661,9 @@
     "promoTitle": "Modern Travel Experience with Firuzo",
     "promoSubtitle": "Discover the best flights with instant booking & multi-currency payments.",
     "learnMore": "Learn More",
-    "flights": "flights"
+    "flights": "flights",
+    "sortBy": "Sort by",
+    "apply": "Apply Filters"
   },
   "Tours": {
     "title": "Curated Tours & Experiences",

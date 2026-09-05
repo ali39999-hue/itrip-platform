@@ -9,7 +9,7 @@ import { useBookingStore } from '@/stores/booking-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { shimmerDataUrl } from '@/lib/image-utils';
-import { FileCheck2, ArrowRight, ArrowLeft, CheckCircle2, Headset } from 'lucide-react';
+import { FileCheck2, ArrowRight, ArrowLeft, CheckCircle2, Headset, Clock } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
 const VISA_IMGS: Record<string, string> = {
@@ -30,6 +30,8 @@ export default function VisaPage() {
   const [firstEn, setFirstEn] = useState('');
   const [lastEn, setLastEn] = useState('');
   const [passport, setPassport] = useState('');
+  const [hasValidPassport, setHasValidPassport] = useState(true);
+  const [hasPhoto, setHasPhoto] = useState(true);
   const [error, setError] = useState('');
 
   function start(service: (typeof VISA_SERVICES)[number]) {
@@ -101,79 +103,116 @@ export default function VisaPage() {
         <h2 className="text-center font-black text-ink text-[24px] md:text-[28px] tracking-tight mb-8">
           {lt(locale, { fa: 'محبوب‌ترین مقاصد ویزا', en: 'Popular Visa Destinations', ar: 'أشهر وجهات التأشيرة', zh: '热门签证目的地', ru: 'Популярные визовые направления' })}
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
-          {VISA_SERVICES.map((v, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+          {VISA_SERVICES.map((v) => (
             <article
               key={v.id}
-              className={`relative rounded-2xl overflow-hidden bg-paper shadow-sm hover:shadow-md transition-shadow group border border-line/60 card-lift ${
-                i % 2 === 0 ? 'lg:mt-8' : ''
-              }`}
+              className="relative rounded-3xl overflow-hidden bg-surface shadow-xs hover:shadow-elev-2 transition-all group border border-line flex flex-col justify-between"
             >
-              <div className="relative h-48 overflow-hidden bg-soft">
-                <Image
-                  src={VISA_IMGS[v.countryEn] || VISA_IMGS.Turkey}
-                  alt={`ویزای ${v.countryFa}`}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                  placeholder="blur"
-                  blurDataURL={shimmerDataUrl(800, 400)}
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute top-0 inset-x-0 p-4 h-48 bg-gradient-to-b from-deep/70 to-transparent">
-                  <span className="text-surface text-[20px] md:text-[24px] font-black drop-shadow-md">
-                    {v.countryFa}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-5 bg-surface/90 backdrop-blur-md -mt-8 mb-4 relative z-10 mx-4 rounded-xl shadow-sm border border-line">
-                <div className="flex justify-between items-center mb-4 border-b border-line pb-3">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[12px] font-bold text-sub">{lt(locale, { fa: 'نوع ویزا', en: 'Visa Type', ar: 'نوع التأشيرة', zh: '签证类型', ru: 'Тип визы' })}</span>
-                    <span className="text-[14px] font-black text-ink">{v.type}</span>
+              <div>
+                <div className="relative h-44 overflow-hidden bg-soft">
+                  <Image
+                    src={VISA_IMGS[v.countryEn] || VISA_IMGS.Turkey}
+                    alt={`ویزای ${v.countryFa}`}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 25vw"
+                    placeholder="blur"
+                    blurDataURL={shimmerDataUrl(800, 400)}
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-deep/90 via-deep/30 to-transparent" />
+                  
+                  <div className="absolute top-3 start-3">
+                    <span className="text-surface text-xl font-black drop-shadow-md">
+                      {v.countryFa}
+                    </span>
                   </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-[12px] font-bold text-sub">{lt(locale, { fa: 'درصد موفقیت', en: 'Success Rate', ar: 'نسبة الموافقة', zh: '成功率', ru: 'Процент одобрения' })}</span>
-                    <span className="text-[20px] md:text-[24px] text-brand-dark font-black num">
+
+                  <div className="absolute bottom-3 start-3 flex items-center gap-1.5 text-[11px] font-bold text-mint-bright">
+                    <Clock size={12} />
+                    <span>بررسی در {v.processingDays} روز کاری</span>
+                  </div>
+                </div>
+
+                <div className="p-5 flex flex-col gap-3">
+                  <div className="flex justify-between items-center pb-2 border-b border-line/60">
+                    <span className="text-xs font-bold text-sub">{lt(locale, { fa: 'نوع ویزا', en: 'Visa Type', ar: 'نوع التأشيرة', zh: '签证类型', ru: 'Тип визы' })}</span>
+                    <span className="text-xs font-black text-ink">{v.type}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center pb-2 border-b border-line/60">
+                    <span className="text-xs font-bold text-sub">{lt(locale, { fa: 'درصد قبولی', en: 'Approval Rate', ar: 'نسبة القبول', zh: '通过率', ru: 'Одобрение' })}</span>
+                    <span className="text-sm text-brand-dark font-black num">
                       %{v.approvalRate.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                     </span>
                   </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[12px] font-bold text-sub">{lt(locale, { fa: 'شروع قیمت از', en: 'Starting from', ar: 'يبدأ السعر من', zh: '价格起', ru: 'От' })}</span>
-                    <span className="text-[20px] md:text-[24px] text-price font-black num">
+              </div>
+
+              <div className="p-5 pt-0 mt-2">
+                <div className="flex justify-between items-baseline mb-3">
+                  <span className="text-xs font-bold text-sub">{lt(locale, { fa: 'شروع نرخ:', en: 'Starting from:', ar: 'يبدأ من:', zh: '价格起：', ru: 'От:' })}</span>
+                  <div className="text-end">
+                    <span className="text-lg font-black text-price font-mono num">
                       {v.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
-                      <span className="text-[12px] font-bold text-sub me-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
                     </span>
+                    <span className="text-xs font-bold text-sub ms-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
                   </div>
-                  <button
-                    onClick={() => start(v)}
-                    aria-label={`شروع درخواست ${v.countryFa}`}
-                    className="bg-brand text-surface px-4 py-2.5 rounded-xl font-black text-[13px] hover:bg-brand-dark transition-colors inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                  >
-                    <span>{t('startApplication')}</span>
-                    <ArrowLeft size={16} className="rtl:hidden" />
-                    <ArrowRight size={16} className="ltr:hidden" />
-                  </button>
                 </div>
+
+                <button
+                  onClick={() => start(v)}
+                  aria-label={`شروع درخواست ${v.countryFa}`}
+                  className="w-full h-11 bg-action hover:bg-action-hover text-ink rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                >
+                  <span>{t('startApplication')}</span>
+                  <ArrowLeft size={14} className="rtl:inline ltr:hidden" />
+                  <ArrowRight size={14} className="ltr:inline rtl:hidden" />
+                </button>
               </div>
             </article>
           ))}
         </div>
       </section>
 
-      {/* Embedded Form Section */}
+      {/* Embedded Application Form Section */}
       {selected && (
-        <section id="visa-form" className="bg-paper p-6 md:p-8 rounded-2xl border border-line scroll-mt-24 max-w-2xl mx-auto w-full">
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-line">
-            <FileCheck2 size={24} className="text-brand-dark" />
+        <section id="visa-form" className="bg-surface p-6 md:p-8 rounded-3xl border border-line shadow-elev-2 scroll-mt-24 max-w-2xl mx-auto w-full space-y-6 animate-in fade-in duration-300">
+          <div className="flex items-center gap-3 pb-4 border-b border-line">
+            <div className="w-10 h-10 rounded-xl bg-mint text-brand-dark grid place-items-center">
+              <FileCheck2 size={22} />
+            </div>
             <div>
               <h3 className="text-lg font-black text-ink">
-                {t('startApplication')}: {selected.countryFa}
+                {t('startApplication')}: ویزای {selected.countryFa}
               </h3>
-              <p className="text-xs text-sub font-bold">{t('requirements')}</p>
+              <p className="text-xs text-sub font-bold">{selected.type} • زمان بررسی تقریبی: {selected.processingDays} روز کاری</p>
             </div>
+          </div>
+
+          {/* Interactive Requirements Pre-Check */}
+          <div className="p-4 rounded-2xl bg-soft border border-line/80 space-y-2.5">
+            <span className="text-xs font-black text-ink block mb-1">
+              چک‌لیست مدارک الزامی قبل از ثبت درخواست:
+            </span>
+            <label className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-sub">
+              <input
+                type="checkbox"
+                checked={hasValidPassport}
+                onChange={(e) => setHasValidPassport(e.target.checked)}
+                className="w-4 h-4 rounded border-line text-brand focus:ring-brand"
+              />
+              <span>گذرنامه با حداقل ۶ ماه اعتبار از تاریخ آغاز سفر</span>
+            </label>
+            <label className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-sub">
+              <input
+                type="checkbox"
+                checked={hasPhoto}
+                onChange={(e) => setHasPhoto(e.target.checked)}
+                className="w-4 h-4 rounded border-line text-brand focus:ring-brand"
+              />
+              <span>عکس پرسنلی رنگی جدید تمام‌رخ با زمینه سفید (فایل اسکن‌شده)</span>
+            </label>
           </div>
 
           {error && (

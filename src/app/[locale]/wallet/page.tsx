@@ -174,9 +174,9 @@ export default function WalletPage() {
         </div>
       ) : (
         <>
-          {/* Balance Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div className="bg-gradient-to-br from-brand to-brand-dark rounded-2xl p-6 text-surface shadow-elev-2 relative overflow-hidden">
+          {/* Balance Cards with Mobile Snap Carousel */}
+          <div className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:grid-cols-3 gap-4 md:gap-6 mb-8 pb-2 md:pb-0 scrollbar-none">
+            <div className="shrink-0 w-[84vw] sm:w-[320px] md:w-auto snap-start bg-gradient-to-br from-brand to-brand-dark rounded-3xl p-6 text-surface shadow-elev-2 relative overflow-hidden flex flex-col justify-between">
               <span className="text-xs font-black opacity-80 block mb-1">
                 {lt(locale, { fa: 'IRR (تومان)', en: 'IRR (Toman)', ar: 'IRR (تومان)', zh: 'IRR (托曼)', ru: 'IRR (Томан)' })}
               </span>
@@ -188,7 +188,7 @@ export default function WalletPage() {
               <span className="text-[11px] font-bold opacity-75">{t('primaryBalance')}</span>
             </div>
 
-            <div className="bg-surface border border-line rounded-2xl p-6 shadow-elev-1 flex flex-col justify-between">
+            <div className="shrink-0 w-[84vw] sm:w-[320px] md:w-auto snap-start bg-surface border border-line rounded-3xl p-6 shadow-xs flex flex-col justify-between">
               <div>
                 <span className="text-xs font-black text-sub block mb-1">USDT (Tether)</span>
                 <span className="text-2xl font-black text-ink font-mono num block mb-1">
@@ -206,7 +206,7 @@ export default function WalletPage() {
               </span>
             </div>
 
-            <div className="bg-surface border border-line rounded-2xl p-6 shadow-elev-1 flex flex-col justify-between">
+            <div className="shrink-0 w-[84vw] sm:w-[320px] md:w-auto snap-start bg-surface border border-line rounded-3xl p-6 shadow-xs flex flex-col justify-between">
               <div>
                 <span className="text-xs font-black text-sub block mb-1">
                   {lt(locale, { fa: 'AED (درهم امارات)', en: 'AED (Emirati Dirham)', ar: 'AED (درهم إماراتي)', zh: 'AED (阿联酋迪拉姆)', ru: 'AED (Дирхам ОАЭ)' })}
@@ -268,15 +268,23 @@ export default function WalletPage() {
                   />
                 </div>
 
-                <div className="flex gap-2">
-                  {[1000000, 5000000, 10000000].map((amt) => (
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { amt: 1000000, label: '+۱ میلیون' },
+                    { amt: 5000000, label: '+۵ میلیون' },
+                    { amt: 10000000, label: '+۱۰ میلیون' },
+                  ].map(({ amt, label }) => (
                     <button
                       key={amt}
                       type="button"
                       onClick={() => setDepositAmount(String(amt))}
-                      className="px-3 py-1.5 rounded-lg border border-line bg-soft text-xs font-bold text-sub hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                      className={`py-2 px-1 rounded-xl border text-xs font-black transition active:scale-95 text-center ${
+                        depositAmount === String(amt)
+                          ? 'bg-mint border-brand text-brand-dark shadow-xs'
+                          : 'bg-soft border-line text-sub hover:text-ink hover:border-brand/40'
+                      }`}
                     >
-                      +{amt.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
+                      {label}
                     </button>
                   ))}
                 </div>
@@ -315,7 +323,7 @@ export default function WalletPage() {
                 </div>
               )}
 
-              <div className="space-y-4">
+                <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-sub mb-1">
@@ -350,9 +358,21 @@ export default function WalletPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-sub mb-1">
-                    {lt(locale, { fa: 'مقدار مبدا', en: 'Amount', ar: 'المبلغ', zh: '金额', ru: 'Сумма' })}
-                  </label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-xs font-bold text-sub">
+                      {lt(locale, { fa: 'مقدار مبدا', en: 'Amount', ar: 'المبلغ', zh: '金额', ru: 'Сумما' })}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const maxVal = wallet[exFrom] ?? 0;
+                        if (maxVal > 0) setExAmount(String(maxVal));
+                      }}
+                      className="text-[11px] font-black text-brand-dark hover:underline"
+                    >
+                      {lt(locale, { fa: 'کل موجودی (Max)', en: 'Max Balance', ar: 'أقصى رصيد', zh: '全部余额', ru: 'Макс' })}
+                    </button>
+                  </div>
                   <Input
                     type="number"
                     value={exAmount}
@@ -361,6 +381,47 @@ export default function WalletPage() {
                     className="font-bold text-lg font-mono"
                   />
                 </div>
+
+                {/* Live Exchange Rate & Estimated Receive Preview */}
+                {exFrom !== exTo && Number(exAmount) > 0 && (
+                  <div className="p-3 rounded-xl bg-soft border border-line/80 space-y-1.5 text-xs animate-in fade-in duration-200">
+                    <div className="flex justify-between text-sub font-bold">
+                      <span>{lt(locale, { fa: 'نرخ لحظه‌ای تبادل:', en: 'Live Exchange Rate:', ar: 'سعر الصرف اللحظي:', zh: '实时汇率：', ru: 'Текущий курс:' })}</span>
+                      <span className="font-mono text-ink">
+                        {exFrom === 'USDT' && exTo === 'IRR' && `1 USDT ≈ ${CURRENCY_TO_TOMAN.USDT.toLocaleString()} تومان`}
+                        {exFrom === 'IRR' && exTo === 'USDT' && `1 USDT ≈ ${CURRENCY_TO_TOMAN.USDT.toLocaleString()} تومان`}
+                        {exFrom === 'AED' && exTo === 'IRR' && `1 AED ≈ ${CURRENCY_TO_TOMAN.AED.toLocaleString()} تومان`}
+                        {exFrom === 'IRR' && exTo === 'AED' && `1 AED ≈ ${CURRENCY_TO_TOMAN.AED.toLocaleString()} تومان`}
+                        {exFrom === 'USDT' && exTo === 'AED' && `1 USDT ≈ ${(CURRENCY_TO_TOMAN.USDT / CURRENCY_TO_TOMAN.AED).toFixed(2)} AED`}
+                        {exFrom === 'AED' && exTo === 'USDT' && `1 AED ≈ ${(CURRENCY_TO_TOMAN.AED / CURRENCY_TO_TOMAN.USDT).toFixed(2)} USDT`}
+                      </span>
+                    </div>
+                    <div className="flex justify-between font-black text-brand-dark pt-1 border-t border-line/40">
+                      <span>{lt(locale, { fa: 'مبلغ تقریبی دریافتی:', en: 'Estimated to receive:', ar: 'المبلغ التقريبي المستلم:', zh: '预计到账：', ru: 'К получению:' })}</span>
+                      <span className="font-mono text-sm">
+                        {(() => {
+                          const amt = Number(exAmount);
+                          const fromRate = CURRENCY_TO_TOMAN[exFrom] ?? 1;
+                          const toRate = CURRENCY_TO_TOMAN[exTo] ?? 1;
+                          const received = (amt * fromRate) / toRate;
+                          return `${received.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${exTo}`;
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {exFrom === exTo && (
+                  <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 text-xs font-bold text-center">
+                    {lt(locale, {
+                      fa: 'ارز مبدا و مقصد یکسان است؛ لطفاً ارز دیگری را برای تبدیل انتخاب کنید.',
+                      en: 'From and To currencies are the same. Please pick a different destination currency.',
+                      ar: 'عملة المصدر والهدف متطابقتان، يرجى اختيار عملة أخرى.',
+                      zh: '源货币与目标货币相同，请选择其他币种。',
+                      ru: 'Валюты отправления и получения совпадают. Выберите другую валюту.',
+                    })}
+                  </div>
+                )}
 
                 <Button
                   onClick={doExchange}
@@ -392,18 +453,18 @@ export default function WalletPage() {
                 transactions.map((tx) => (
                   <div
                     key={tx.id}
-                    className="flex justify-between items-center p-4 rounded-xl border border-line/60 bg-soft/40"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border border-line/70 bg-soft/50 hover:border-brand/30 transition-all gap-3 shadow-2xs"
                   >
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-10 h-10 rounded-xl grid place-items-center ${
+                        className={`w-10 h-10 rounded-xl grid place-items-center shrink-0 ${
                           tx.direction === 'CREDIT' ? 'bg-success/10 text-success' : 'bg-rose-warm/10 text-rose-warm'
                         }`}
                       >
                         {tx.direction === 'CREDIT' ? <ArrowDownRight size={20} /> : <ArrowUpRight size={20} />}
                       </div>
-                      <div>
-                        <h3 className="font-black text-sm text-ink">
+                      <div className="min-w-0">
+                        <h3 className="font-black text-xs sm:text-sm text-ink truncate">
                           {tx.referenceType === 'BOOKING'
                             ? lt(locale, { fa: 'پرداخت رزرو سفر', en: 'Trip Booking Payment', ar: 'دفع حجز الرحلة', zh: '行程预订支付', ru: 'Оплата бронирования' })
                             : tx.referenceType === 'REFUND'
@@ -412,15 +473,16 @@ export default function WalletPage() {
                             ? lt(locale, { fa: 'تبدیل ارز کیف پول', en: 'Wallet Currency Exchange', ar: 'تحويل عملة المحفظة', zh: '钱包货币兑换', ru: 'Обмен валюты кошелька' })
                             : lt(locale, { fa: 'شارژ کیف پول', en: 'Wallet Top-up', ar: 'شحن المحفظة', zh: '钱包充值', ru: 'Пополнение кошелька' })}
                         </h3>
-                        <span className="text-[11px] font-mono text-sub">
+                        <span className="text-[10.5px] font-mono text-sub block">
                           {new Date(tx.createdAt).toISOString().slice(0, 10)} • #{tx.id.slice(0, 8)}
                         </span>
                       </div>
                     </div>
 
-                    <div className="text-end">
+                    <div className="text-end ps-12 sm:ps-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-center">
+                      <span className="text-[11px] text-sub sm:hidden">مبلغ:</span>
                       <span
-                        className={`font-black text-base font-mono num ${
+                        className={`font-black text-sm sm:text-base font-mono num ${
                           tx.direction === 'CREDIT' ? 'text-success' : 'text-rose-warm'
                         }`}
                       >
@@ -429,11 +491,6 @@ export default function WalletPage() {
                           lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })
                         )}{' '}
                         {tx.currency === 'IRR' ? lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' }) : tx.currency}
-                      </span>
-                      <span className="block text-[10.5px] text-sub">
-                        {tx.direction === 'CREDIT'
-                          ? lt(locale, { fa: 'واریز', en: 'Deposit / Inflow', ar: 'إيداع', zh: '入账', ru: 'Пополнение' })
-                          : lt(locale, { fa: 'برداشت', en: 'Payment / Outflow', ar: 'سحب', zh: '支出', ru: 'Списание' })}
                       </span>
                     </div>
                   </div>

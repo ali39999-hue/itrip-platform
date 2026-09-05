@@ -214,7 +214,9 @@
     "tourTypeCommercial": "تجاري ومعارض",
     "btnTours": "البحث عن الجولات",
     "dateReturn": "تاريخ العودة",
-    "dateCheckOut": "تاريخ المغادرة"
+    "dateCheckOut": "تاريخ المغادرة",
+    "roundTrip": "ذهاب وعودة",
+    "oneWay": "ذهاب فقط"
   },
   "Home": {
     "offersKicker": "خاص بوجهتك",
@@ -659,7 +661,9 @@
     "promoTitle": "تجربة سفر فريدة ومتميزة مع فيروزه",
     "promoSubtitle": "حجز سريع ومضمون لأفضل الرحلات الجوية",
     "learnMore": "اكتشف المزيد",
-    "flights": "رحلات طيران"
+    "flights": "رحلات طيران",
+    "sortBy": "ترتيب حسب",
+    "apply": "تطبيق التصفية"
   },
   "Tours": {
     "title": "الجولات والرحلات السياحية",

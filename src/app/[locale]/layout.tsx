@@ -142,7 +142,7 @@ export default async function RootLayout({
         } as React.CSSProperties
       }
     >
-      <body className="min-h-full flex flex-col bg-paper text-ink pb-[62px] md:pb-0">
+      <body className="min-h-full flex flex-col bg-paper text-ink pb-[calc(68px+env(safe-area-inset-bottom,0px))] md:pb-0">
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:start-4 focus:z-[999] focus:px-4 focus:py-2.5 focus:bg-brand focus:text-surface focus:rounded-xl focus:font-black focus:shadow-elev-3 focus:outline-none"

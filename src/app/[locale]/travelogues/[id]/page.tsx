@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
-import { Heart, Share2, ArrowLeft, MapPin, User, Check } from 'lucide-react';
+import { Heart, Share2, ArrowLeft, MapPin, User, Check, Clock, Sparkles, Building2, Plane } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { shimmerDataUrl } from '@/lib/image-utils';
 import { lt } from '@/lib/lt';
@@ -161,6 +161,12 @@ export default function TravelogueDetailPage() {
       
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8 pb-6 border-b border-line">
         <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="inline-flex items-center gap-1 text-[11px] font-black text-brand-dark bg-mint px-2.5 py-0.5 rounded-full">
+              <Clock size={12} />
+              <span>{lt(locale, { fa: '۵ دقیقه زمان مطالعه', en: '5 min read', ar: 'قراءة في 5 دقائق', zh: '5 分钟阅读', ru: '5 мин чтения' })}</span>
+            </span>
+          </div>
           <h1 className="text-2xl md:text-3xl font-black text-ink mb-3 leading-tight">
             {lt(locale, t.title)}
           </h1>
@@ -200,8 +206,74 @@ export default function TravelogueDetailPage() {
         </div>
       </div>
 
-      <div className="prose max-w-none text-ink font-medium leading-relaxed text-base">
-        <p>{lt(locale, t.content)}</p>
+      {/* Main Story Content with Editorial Touch */}
+      <div className="space-y-6 text-ink leading-relaxed text-sm sm:text-base font-medium">
+        <p className="first-letter:text-4xl first-letter:font-black first-letter:text-brand-dark first-letter:float-start first-letter:me-2">
+          {lt(locale, t.content)}
+        </p>
+
+        {/* Highlighted Traveler Insider Tip Callout */}
+        <div className="p-5 rounded-2xl bg-mint/40 border border-brand/20 my-6 flex items-start gap-3">
+          <Sparkles size={20} className="text-brand-dark shrink-0 mt-0.5" />
+          <div className="text-xs sm:text-sm">
+            <strong className="text-brand-dark font-black block mb-1">
+              {lt(locale, { fa: 'نکته اختصاصی این سفر:', en: "Traveler's Insider Tip:", ar: 'نصيحة ذهبية للمسافرين:', zh: '旅行者私藏贴士：', ru: 'Совет путешественника:' })}
+            </strong>
+            <p className="text-sub font-bold leading-relaxed m-0">
+              {lt(locale, {
+                fa: 'برای استفاده بهینه از زمان و حمل‌ونقل عمومی، تهیه فیروز پاس شهری و سیم‌کارت eSIM قبل از پرواز، هزینه‌ها را تا ۴۰٪ کاهش داده و شما را از ایستادن در صف‌های صرافی فرودگاه بی‌نیاز می‌کند.',
+                en: 'Purchasing an eSIM and City Pass before landing saves up to 40% on airport transit and skips exchange counter queues.',
+                ar: 'شراء بطاقة المدينة وشريحة eSIM قبل السفر يوفر حتى 40% من تكاليف التنقل في المطار.',
+                zh: '出行前提前购买城市通票和eSIM可节省高达40%的市内交通费用，免去机场排队换汇烦恼。',
+                ru: 'Покупка eSIM и City Pass заранее экономит до 40% на транспорте и избавляет от очередей в аэропорту.'
+              })}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Shop The Story / Related Services */}
+      <div className="mt-12 pt-8 border-t border-line">
+        <h3 className="font-black text-lg text-ink mb-4">
+          {lt(locale, { fa: 'خدمات پیشنهادی مرتبط با این سفر', en: 'Recommended Services for This Journey', ar: 'خدمات موصى بها لهذه الوجهة', zh: '本行程相关推荐服务', ru: 'Рекомендуемые услуги для этой поездки' })}
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Link
+            href="/hotels/search"
+            className="p-4 rounded-2xl bg-surface border border-line hover:border-brand/40 hover:shadow-xs transition flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 grid place-items-center">
+                <Building2 size={20} />
+              </div>
+              <div>
+                <strong className="text-sm font-black text-ink block group-hover:text-brand-dark transition-colors">
+                  {lt(locale, { fa: 'رزرو هتل‌های محبوب این مقصد', en: 'Explore Hotels in This Destination', ar: 'فنادق مميزة في هذه الوجهة', zh: '查看目的地热门酒店', ru: 'Отели в этом направлении' })}
+                </strong>
+                <span className="text-[11px] text-sub font-bold">با تضمین کمترین نرخ و پرداخت شتاب/تتر</span>
+              </div>
+            </div>
+            <ArrowLeft size={16} className="text-sub group-hover:-translate-x-1 transition-transform rtl:inline ltr:hidden" />
+          </Link>
+
+          <Link
+            href="/flights/search"
+            className="p-4 rounded-2xl bg-surface border border-line hover:border-brand/40 hover:shadow-xs transition flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 grid place-items-center">
+                <Plane size={20} />
+              </div>
+              <div>
+                <strong className="text-sm font-black text-ink block group-hover:text-brand-dark transition-colors">
+                  {lt(locale, { fa: 'پروازهای مستقیم به این مقصد', en: 'Flights to This Destination', ar: 'رحلات مباشرة إلى هذه الوجهة', zh: '直飞该目的地的航班', ru: 'Прямые рейсы в это направление' })}
+                </strong>
+                <span className="text-[11px] text-sub font-bold">بیش از ۴۰۰ ایرلاین داخلی و بین‌المللی</span>
+              </div>
+            </div>
+            <ArrowLeft size={16} className="text-sub group-hover:-translate-x-1 transition-transform rtl:inline ltr:hidden" />
+          </Link>
+        </div>
       </div>
     </div>
   );

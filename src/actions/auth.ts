@@ -4,6 +4,7 @@ import { signIn, signOut, safeAuth, issueOtp } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { profileUpdateSchema, otpRequestSchema } from '@/lib/validations';
 import { RateLimiter } from '@/lib/security/rate-limiter';
+import { encryptSensitive, decryptSensitive } from '@/lib/security/crypto-vault';
 
 export type AuthChannel = 'phone' | 'email' | 'telegram' | 'whatsapp' | 'wechat';
 
@@ -153,8 +154,10 @@ export async function updateProfileDetails(data: unknown) {
         lastNameEn: parsed.lastNameEn,
         email: parsed.email,
         phone: parsed.phone,
-        nationalId: parsed.nationalId,
-        passportNo: parsed.passportNo,
+        // PII is AES-256-GCM encrypted at rest (Section 34); legacy plaintext
+        // rows decrypt transparently on read via decryptSensitive.
+        nationalId: parsed.nationalId ? encryptSensitive(parsed.nationalId) : parsed.nationalId,
+        passportNo: parsed.passportNo ? encryptSensitive(parsed.passportNo) : parsed.passportNo,
         passportExpiry: parsed.passportExpiry,
       },
     });
@@ -165,6 +168,119 @@ export async function updateProfileDetails(data: unknown) {
     }
     console.error('updateProfileDetails error:', err);
     return { success: false, error: 'Failed to update profile' };
+  }
+}
+
+/**
+ * Owner-only KYC read: returns the signed-in user's identity details with PII
+ * decrypted for display. A signed-in principal can only ever see their own
+ * record — there is no identifier parameter by design.
+ */
+export async function getMyKyc(): Promise<{
+  success: boolean;
+  kyc?: {
+    firstNameFa: string;
+    lastNameFa: string;
+    firstNameEn: string;
+    lastNameEn: string;
+    nationalId: string;
+    passportNo: string;
+    passportExpiry: string;
+    kycApproved: boolean;
+  };
+}> {
+  try {
+    const session = await safeAuth();
+    if (!session?.user?.id) {
+      return { success: false };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        firstNameFa: true,
+        lastNameFa: true,
+        firstNameEn: true,
+        lastNameEn: true,
+        nationalId: true,
+        passportNo: true,
+        passportExpiry: true,
+      },
+    });
+
+    if (!user) {
+      return { success: false };
+    }
+
+    return {
+      success: true,
+      kyc: {
+        firstNameFa: user.firstNameFa || '',
+        lastNameFa: user.lastNameFa || '',
+        firstNameEn: user.firstNameEn || '',
+        lastNameEn: user.lastNameEn || '',
+        nationalId: user.nationalId ? decryptSensitive(user.nationalId) : '',
+        passportNo: user.passportNo ? decryptSensitive(user.passportNo) : '',
+        passportExpiry: user.passportExpiry || '',
+        kycApproved: Boolean(user.nationalId),
+      },
+    };
+  } catch (err: unknown) {
+    console.error('getMyKyc error:', err);
+    return { success: false };
+  }
+}
+
+/**
+ * Returns the signed-in principal for client-store hydration. Used by the
+ * SessionBootstrap component so a valid session cookie restores the client
+ * auth store on devices where localStorage was cleared (new device, cleanup).
+ */
+export async function getSessionUser() {
+  try {
+    const session = await safeAuth();
+    if (!session?.user?.id) {
+      return { success: false as const };
+    }
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        phone: true,
+        email: true,
+        name: true,
+        firstNameFa: true,
+        lastNameFa: true,
+        role: true,
+        telegramId: true,
+        whatsappPhone: true,
+        wechatId: true,
+        nationalId: true,
+      },
+    });
+    if (!user) return { success: false as const };
+
+    const role = ['SUPER_ADMIN', 'FINANCE', 'OPS'].includes(user.role)
+      ? ('admin' as const)
+      : ('customer' as const);
+    return {
+      success: true as const,
+      user: {
+        id: user.id,
+        phone: user.phone || '',
+        email: user.email || undefined,
+        firstNameFa: user.firstNameFa || user.name || 'کاربر',
+        lastNameFa: user.lastNameFa || 'فیروزه',
+        kycApproved: Boolean(user.nationalId),
+        role,
+        telegramId: user.telegramId || undefined,
+        whatsappPhone: user.whatsappPhone || undefined,
+        wechatId: user.wechatId || undefined,
+      },
+    };
+  } catch (err: unknown) {
+    console.error('getSessionUser error:', err);
+    return { success: false as const };
   }
 }
 

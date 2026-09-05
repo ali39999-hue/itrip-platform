@@ -30,6 +30,9 @@ export default async function AdminDashboard() {
     pendingRefundsCount,
     paymentExceptionsCount,
     supplierExceptionsCount,
+    pendingExceptions,
+    recentHistory,
+    recentAudit,
   ] = await Promise.all([
     prisma.booking.count({ where: { status: 'CONFIRMED' } }),
     prisma.booking.findMany({ select: { totalAmount: true, status: true } }),
@@ -39,7 +42,54 @@ export default async function AdminDashboard() {
     prisma.refund.count({ where: { status: 'REQUESTED' } }),
     prisma.operationalException.count({ where: { type: 'PAYMENT_MISMATCH', status: 'OPEN' } }),
     prisma.operationalException.count({ where: { type: 'SUPPLIER_TIMEOUT', status: 'OPEN' } }),
+    prisma.operationalException.findMany({
+      where: { status: { in: ['OPEN', 'ACKNOWLEDGED', 'IN_PROGRESS'] } },
+      orderBy: [
+        { severity: 'desc' },
+        { detectedAt: 'desc' },
+      ],
+      take: 8,
+    }),
+    prisma.bookingStatusHistory.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 6,
+      include: { booking: { select: { reference: true } } },
+    }),
+    prisma.auditLog.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 6,
+    }),
   ]);
+
+  // Server-side mapping: OperationalException -> Action Required widget items
+  const pendingTasks = pendingExceptions.map((exc) => ({
+    id: exc.id,
+    exceptionType: exc.type,
+    title: exc.title,
+    subtitle: `${exc.entityType}: ${exc.entityId}`,
+    severity: exc.severity,
+    detectedAt: exc.detectedAt.toISOString(),
+  }));
+
+  // Server-side mapping: booking lifecycle transitions + audit trail -> Live Feed
+  type LiveEventDTO = import('@/components/admin/LiveActivityFeed').LiveEventDTO;
+  const historyEvents: LiveEventDTO[] = recentHistory.map((h) => ({
+    id: `bh_${h.id}`,
+    kind: 'booking' as const,
+    title: h.reason || `${h.fromStatus} → ${h.toStatus} (${h.booking.reference})`,
+    actor: h.actor,
+    at: h.createdAt.toISOString(),
+  }));
+  const auditEvents: LiveEventDTO[] = recentAudit.map((a) => ({
+    id: `au_${a.id}`,
+    kind: (a.resource === 'PAYMENT' || a.resource === 'WALLET' ? 'payment' : a.resource === 'BOOKING' ? 'booking' : 'alert') as LiveEventDTO['kind'],
+    title: `${a.action} — ${a.resource} ${a.resourceId}`,
+    actor: a.userId ?? 'SYSTEM',
+    at: a.createdAt.toISOString(),
+  }));
+  const liveEvents = [...historyEvents, ...auditEvents]
+    .sort((x, y) => y.at.localeCompare(x.at))
+    .slice(0, 8);
 
   const totalRevenue = allBookings
     .filter((b) => b.status === 'CONFIRMED')
@@ -157,13 +207,13 @@ export default async function AdminDashboard() {
           </div>
 
           <div className="flex-1 min-h-[400px]">
-            <ActionWidgets />
+            <ActionWidgets tasks={pendingTasks} />
           </div>
         </div>
 
         {/* Sidebar */}
         <div className="h-[500px] lg:h-auto min-h-[400px]">
-          <LiveActivityFeed />
+          <LiveActivityFeed events={liveEvents} />
         </div>
       </div>
     </div>

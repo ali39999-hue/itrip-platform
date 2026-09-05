@@ -43,6 +43,10 @@ export function HotelSearchForm({
 }: HotelSearchFormProps) {
   const t = useTranslations('Search');
 
+  const nights = date1 && date2 && !Number.isNaN(new Date(date2).getTime()) && !Number.isNaN(new Date(date1).getTime())
+    ? Math.max(1, Math.round((new Date(date2).getTime() - new Date(date1).getTime()) / 86400000))
+    : 0;
+
   return (
     <>
       {/* City */}
@@ -59,7 +63,7 @@ export function HotelSearchForm({
         />
       </div>
 
-      {/* Date */}
+      {/* Date In */}
       <div className="md:col-span-2">
         <JalaliDatePicker
           value={date1}
@@ -69,13 +73,19 @@ export function HotelSearchForm({
         />
       </div>
 
-      <div className="md:col-span-2">
+      {/* Date Out with Nights Badge */}
+      <div className="md:col-span-2 relative">
         <JalaliDatePicker
           value={date2}
           onChange={(d) => setDate2(d || '')}
           label={t('dateCheckOut')}
           id="search-date-checkout"
         />
+        {nights > 0 && (
+          <span className="hidden md:inline-flex absolute -top-2.5 end-3 px-2 py-0.5 rounded-full bg-brand text-surface text-[10px] font-black z-20 shadow-xs pointer-events-none">
+            {nights} شب اقامت
+          </span>
+        )}
       </div>
 
       {/* Guests */}

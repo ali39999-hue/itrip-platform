@@ -14,7 +14,7 @@ import { daysFromNow } from '@/lib/utils';
 import { num } from '@/lib/format';
 import {
   Languages, Clock, Siren, BookOpenText, Star, MapPin, Check, Plus,
-  PhoneCall, PhoneOff, Users, Sparkles, Wallet, ArrowLeft,
+  PhoneCall, PhoneOff, Users, Sparkles, Wallet, ArrowLeft, Volume2, Copy
 } from 'lucide-react';
 
 type SosPhase = 'idle' | 'connecting' | 'live';
@@ -34,6 +34,7 @@ export default function InterpreterPage() {
   const [hours, setHours] = useState(3);
   const [selectedInt, setSelectedInt] = useState<string | null>(null);
   const [specFilter, setSpecFilter] = useState<'all' | InterpreterSpecialty>('all');
+  const serviceDate = daysFromNow(3);
   const [kitOpen, setKitOpen] = useState(false);
   const [kitLang, setKitLang] = useState<keyof typeof PHRASEBOOK>('ar');
 
@@ -72,10 +73,36 @@ export default function InterpreterPage() {
         ? `${isEn ? gi.nameEn : gi.name} · ${num(groupSize, locale)} pax${group.whisperSet ? ' · whisper set' : ''}`
         : `${num(groupSize, locale)} pax${group.whisperSet ? ' · whisper set' : ''}`,
       amount: priceOf(),
-      travelDate: daysFromNow(14),
+      travelDate: serviceDate,
       meta: { service: 'interpreter', tier: kind, group: String(groupSize) },
     });
     router.push('/checkout');
+  }
+
+  const [copiedPhrase, setCopiedPhrase] = useState<string | null>(null);
+
+  function speakPhrase(text: string, langCode: string) {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      const voiceLangs: Record<string, string> = {
+        ar: 'ar-SA',
+        ru: 'ru-RU',
+        tr: 'tr-TR',
+        ge: 'ka-GE',
+      };
+      utterance.lang = voiceLangs[langCode] || 'en-US';
+      utterance.rate = 0.9;
+      window.speechSynthesis.speak(utterance);
+    }
+  }
+
+  function copyPhraseText(text: string) {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopiedPhrase(text);
+      setTimeout(() => setCopiedPhrase(null), 1800);
+    }
   }
 
   function startSos() {
@@ -275,12 +302,34 @@ export default function InterpreterPage() {
                 </button>
               ))}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {PHRASEBOOK[kitLang].phrases.map((ph) => (
-                <div key={ph.fa} className="p-3.5 rounded-xl bg-soft/70 border border-line/60">
-                  <span className="block text-[10.5px] font-bold text-sub">{t('sayFa')}: {ph.fa}</span>
-                  <b className="block text-[15px] font-black mt-1" dir="auto">{ph.local}</b>
-                  <span className="block text-[10.5px] font-bold text-sub" dir="ltr">{ph.translit}</span>
+                <div key={ph.fa} className="p-4 rounded-2xl bg-soft border border-line/70 flex flex-col justify-between group hover:border-brand/40 transition">
+                  <div>
+                    <span className="block text-[11px] font-bold text-sub mb-1">{t('sayFa')}: {ph.fa}</span>
+                    <b className="block text-base font-black text-ink" dir="auto">{ph.local}</b>
+                    <span className="block text-[11px] font-mono text-brand-dark font-bold mt-0.5" dir="ltr">{ph.translit}</span>
+                  </div>
+
+                  {/* Audio Speak and Copy Actions */}
+                  <div className="flex items-center justify-end gap-1.5 pt-3 mt-2 border-t border-line/50">
+                    <button
+                      type="button"
+                      onClick={() => speakPhrase(ph.local, kitLang)}
+                      className="w-8 h-8 rounded-xl bg-surface border border-line text-brand-dark hover:bg-mint grid place-items-center transition active:scale-95 shadow-2xs"
+                      title="پخش صوتی تلفظ"
+                    >
+                      <Volume2 size={15} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => copyPhraseText(ph.local)}
+                      className="w-8 h-8 rounded-xl bg-surface border border-line text-sub hover:text-ink grid place-items-center transition active:scale-95 shadow-2xs"
+                      title="کپی عبارت"
+                    >
+                      {copiedPhrase === ph.local ? <Check size={14} className="text-success" /> : <Copy size={14} />}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

@@ -7,7 +7,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useLocalizedUserName } from '@/hooks/useLocalizedUserName';
 import { Button } from '@/components/ui/button';
 import { getWallet, getMyBookings } from '@/actions/booking';
-import { updateProfileDetails } from '@/actions/auth';
+import { updateProfileDetails, getMyKyc } from '@/actions/auth';
 import { AccountSidebar } from '@/components/account/AccountSidebar';
 import {
   UserRound,
@@ -21,6 +21,9 @@ import {
   Plane,
   Building,
   Briefcase,
+  Eye,
+  EyeOff,
+  AlertCircle,
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
@@ -46,6 +49,15 @@ export default function AccountPage() {
   }>>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [maskDocuments, setMaskDocuments] = useState(true);
+  const [nowTimestamp] = useState(() => Date.now());
+
+  const maskStr = (str?: string) => {
+    if (!str) return '—';
+    if (!maskDocuments) return str;
+    if (str.length <= 4) return '••••';
+    return str.slice(0, 2) + '••••' + str.slice(-2);
+  };
 
   const [formState, setFormState] = useState({
     firstNameFa: user?.firstNameFa || '',
@@ -62,15 +74,30 @@ export default function AccountPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [walletRes, bookingsRes] = await Promise.all([
+        const [walletRes, bookingsRes, kycRes] = await Promise.all([
           getWallet(),
           getMyBookings(),
+          getMyKyc(),
         ]);
         if (walletRes.success && walletRes.balances) {
           setWallet(walletRes.balances);
         }
         if (bookingsRes.success && bookingsRes.bookings) {
           setRecentBookings(bookingsRes.bookings.slice(0, 3));
+        }
+        // Owner-only server read restores saved KYC details after reload
+        // (the client store intentionally excludes PII from localStorage).
+        if (kycRes.success && kycRes.kyc) {
+          setFormState((prev) => ({
+            ...prev,
+            firstNameFa: prev.firstNameFa || kycRes.kyc!.firstNameFa,
+            lastNameFa: prev.lastNameFa || kycRes.kyc!.lastNameFa,
+            firstNameEn: prev.firstNameEn || kycRes.kyc!.firstNameEn,
+            lastNameEn: prev.lastNameEn || kycRes.kyc!.lastNameEn,
+            nationalId: kycRes.kyc!.nationalId,
+            passportNo: kycRes.kyc!.passportNo,
+            passportExpiry: kycRes.kyc!.passportExpiry,
+          }));
         }
       } catch (e) {
         console.error('Failed to load user account dashboard data:', e);
@@ -147,48 +174,72 @@ export default function AccountPage() {
   const kycDone = (kyc.step === 'approved' && user.kycApproved) || Boolean(kyc.nationalId || formState.nationalId);
 
   return (
-    <div className="flex flex-col md:flex-row w-full max-w-[1280px] mx-auto px-4 md:px-10 py-8 gap-8">
-      <AccountSidebar activeSection="profile" />
+    <div className="flex flex-col md:flex-row w-full max-w-[1280px] mx-auto px-4 md:px-10 py-6 md:py-8 gap-6 md:gap-8">
+      {/* Sidebar visible on Desktop only; on mobile it is condensed to avoid pushing content below fold */}
+      <div className="hidden md:block">
+        <AccountSidebar activeSection="profile" />
+      </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col gap-6">
-        {/* Welcome Header */}
-        <div className="bg-gradient-to-r from-brand to-brand-dark rounded-3xl p-6 md:p-8 text-surface shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <main className="flex-1 flex flex-col gap-5 md:gap-6 min-w-0">
+        {/* Welcome Header with Mobile-Optimized Layout */}
+        <div className="bg-gradient-to-r from-brand to-brand-dark rounded-3xl p-5 sm:p-6 md:p-8 text-surface shadow-elev-1 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface/15 text-xs font-bold mb-2">
-              <Sparkles size={14} />
-              {lt(locale, { fa: 'سطح کاربری: مسافر طلایی', en: 'Tier: Gold Traveler', ar: 'المستوى: مسافر ذهبي', zh: '会员等级：黄金旅客', ru: 'Уровень: Золотой' })}
+            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-surface/15 text-xs font-bold mb-2 backdrop-blur-xs">
+              <Sparkles size={13} />
+              <span>{lt(locale, { fa: 'سطح کاربری: مسافر طلایی فیروزه', en: 'Tier: Gold Traveler', ar: 'المستوى: مسافر ذهبي', zh: '会员等级：黄金旅客', ru: 'Уровень: Золотой' })}</span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-black">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-black">
               {lt(locale, { fa: 'خوش آمدید،', en: 'Welcome back,', ar: 'أهلاً بك،', zh: '欢迎回来，', ru: 'Добро пожаловать,' })} {localizedUserName || user.firstNameFa || user.phone}
             </h1>
-            <p className="text-surface/80 text-xs md:text-sm mt-1">
+            <p className="text-surface/80 text-xs md:text-sm mt-1 leading-relaxed">
               {lt(locale, { fa: 'مدیریت یکپارچه سفرها، مدارک هویتی، کیف پول و خدمات ویژه فیروزه', en: 'Manage bookings, identity documents, wallet and services in one place', ar: 'إدارة رحلاتك ووثائقك ومحفظتك في مكان واحد', zh: '集中管理您的行程、身份凭证与多币种钱包', ru: 'Управление поездками, документами и кошельком' })}
             </p>
           </div>
-          <div className="flex gap-2">
+
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto pt-1 md:pt-0">
             <Button
               onClick={() => router.push('/my-trips')}
               variant="outline"
-              className="bg-surface/10 hover:bg-surface/20 text-surface border-surface/30 font-bold rounded-xl"
+              size="sm"
+              className="flex-1 md:flex-none bg-surface/15 hover:bg-surface/25 text-surface border-surface/30 font-black rounded-xl text-xs h-10"
             >
               {lt(locale, { fa: 'سفرهای من', en: 'My Trips', ar: 'رحلاتي', zh: '我的行程', ru: 'Мои поездки' })}
             </Button>
             <Button
               onClick={() => setIsEditing(true)}
               variant="outline"
-              className="bg-surface/10 hover:bg-surface/20 text-surface border-surface/30 font-bold rounded-xl"
+              size="sm"
+              className="flex-1 md:flex-none bg-surface/15 hover:bg-surface/25 text-surface border-surface/30 font-black rounded-xl text-xs h-10"
             >
-              <Edit3 size={16} />
-              {lt(locale, { fa: 'ویرایش پروفایل', en: 'Edit Profile', ar: 'تعديل الملف الشخصي', zh: '编辑个人资料', ru: 'Редактировать профиль' })}
+              <Edit3 size={14} />
+              <span>{lt(locale, { fa: 'ویرایش', en: 'Edit', ar: 'تعديل', zh: '编辑', ru: 'Правка' })}</span>
             </Button>
             <Button
               onClick={() => router.push('/wallet')}
-              className="bg-surface text-brand-dark hover:bg-surface/90 font-black rounded-xl"
+              size="sm"
+              className="flex-1 md:flex-none bg-surface text-brand-dark hover:bg-surface/90 font-black rounded-xl text-xs h-10 shadow-xs"
             >
-              {lt(locale, { fa: 'شارژ کیف پول', en: 'Top Up Wallet', ar: 'شحن المحفظة', zh: '充值钱包', ru: 'Пополнить' })}
+              <Wallet size={14} />
+              <span>{lt(locale, { fa: 'شارژ کیف پول', en: 'Top Up', ar: 'شحن', zh: '充值', ru: 'Пополнить' })}</span>
             </Button>
           </div>
+        </div>
+
+        {/* Loyalty Progression Tier Bar */}
+        <div className="bg-surface rounded-2xl p-4 sm:p-5 border border-line shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex-1 space-y-1.5">
+            <div className="flex justify-between items-center text-xs font-black">
+              <span className="text-ink">سطح طلایی (۲,۵۰۰ امتیاز)</span>
+              <span className="text-brand-dark">پلاتینیوم (۵,۰۰۰ امتیاز)</span>
+            </div>
+            <div className="w-full h-2 rounded-full bg-soft overflow-hidden border border-line/60">
+              <div className="h-full bg-gradient-to-r from-action to-gold-light rounded-full" style={{ width: '50%' }} />
+            </div>
+          </div>
+          <span className="text-[11.5px] text-sub font-bold shrink-0">
+            ۲,۵۰۰ امتیاز تا سالن تشریفات اختصاصی فرودگاه (CIP)
+          </span>
         </div>
 
         {/* Financial & Status Overview Cards */}
@@ -277,21 +328,45 @@ export default function AccountPage() {
                 <p className="text-xs font-bold text-sub">{lt(locale, { fa: 'مورد استفاده در صدور پرواز، هتل و خدمات ویزا', en: 'Used for issuing flight tickets, hotel rooms & visas', ar: 'تُستخدم لإصدار تذاكر الطيران والفنادق والتأشيرة', zh: '用于预订机票、酒店及办理签证', ru: 'Используется для оформления билетов и виз' })}</p>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (isEditing) handleSaveProfile();
-                else setIsEditing(true);
-              }}
-              disabled={saving}
-              className="rounded-xl font-bold flex items-center gap-1.5"
-            >
-              {isEditing ? <CheckCircle size={16} className="text-success" /> : <Edit3 size={16} />}
-              {isEditing
-                ? lt(locale, { fa: 'ذخیره تغییرات', en: 'Save Changes', ar: 'حفظ التعديلات', zh: '保存更改', ru: 'Сохранить' })
-                : lt(locale, { fa: 'ویرایش اطلاعات', en: 'Edit Info', ar: 'تعديل', zh: '编辑', ru: 'Редактировать' })}
-            </Button>
+            <div className="flex items-center gap-2">
+              {!isEditing && (
+                <button
+                  type="button"
+                  onClick={() => setMaskDocuments(!maskDocuments)}
+                  className="h-9 px-3 rounded-xl border border-line bg-soft text-sub hover:text-ink text-xs font-bold transition flex items-center gap-1.5"
+                  title="ماسک امنیتی اسناد"
+                >
+                  {maskDocuments ? <EyeOff size={14} /> : <Eye size={14} />}
+                  <span>{maskDocuments ? 'نمایش اسناد' : 'مخفی‌سازی'}</span>
+                </button>
+              )}
+              {isEditing && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditing(false)}
+                  disabled={saving}
+                  className="rounded-xl font-bold text-xs"
+                >
+                  {lt(locale, { fa: 'انصراف', en: 'Cancel', ar: 'إلغاء', zh: '取消', ru: 'Отмена' })}
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (isEditing) handleSaveProfile();
+                  else setIsEditing(true);
+                }}
+                disabled={saving}
+                className="rounded-xl font-bold flex items-center gap-1.5"
+              >
+                {isEditing ? <CheckCircle size={16} className="text-success" /> : <Edit3 size={16} />}
+                {isEditing
+                  ? lt(locale, { fa: 'ذخیره تغییرات', en: 'Save Changes', ar: 'حفظ التعديلات', zh: '保存更改', ru: 'Сохранить' })
+                  : lt(locale, { fa: 'ویرایش اطلاعات', en: 'Edit Info', ar: 'تعديل', zh: '编辑', ru: 'Редактировать' })}
+              </Button>
+            </div>
           </div>
 
           {!isEditing ? (
@@ -327,21 +402,28 @@ export default function AccountPage() {
                 <span className="block text-xs font-bold text-sub mb-1">
                   {lt(locale, { fa: 'کد ملی / شناسه اقامت', en: 'National ID', ar: 'الرقم الوطني', zh: '国民身份证号', ru: 'Национальный ID' })}
                 </span>
-                <span className="text-sm font-black text-ink font-mono">{kyc.nationalId || formState.nationalId || '—'}</span>
+                <span className="text-sm font-black text-ink font-mono">{maskStr(kyc.nationalId || formState.nationalId)}</span>
               </div>
 
               <div>
                 <span className="block text-xs font-bold text-sub mb-1">
                   {lt(locale, { fa: 'شماره گذرنامه', en: 'Passport Number', ar: 'رقم جواز السفر', zh: '护照号码', ru: 'Номер паспорта' })}
                 </span>
-                <span className="text-sm font-black text-ink font-mono">{kyc.passportNo || formState.passportNo || '—'}</span>
+                <span className="text-sm font-black text-ink font-mono">{maskStr(kyc.passportNo || formState.passportNo)}</span>
               </div>
 
               <div>
                 <span className="block text-xs font-bold text-sub mb-1">
                   {lt(locale, { fa: 'تاریخ انقضای گذرنامه', en: 'Passport Expiry', ar: 'تاريخ انتهاء الجواز', zh: '护照有效期', ru: 'Срок действия паспорта' })}
                 </span>
-                <span className="text-sm font-black text-ink font-mono">{kyc.passportExpiry || formState.passportExpiry || '—'}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-black text-ink font-mono">{kyc.passportExpiry || formState.passportExpiry || '—'}</span>
+                  {kyc.passportExpiry && new Date(kyc.passportExpiry).getTime() - nowTimestamp < 180 * 86400000 && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
+                      <AlertCircle size={10} /> اعتبار زیر ۶ ماه
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div>

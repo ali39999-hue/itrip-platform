@@ -192,6 +192,24 @@ export class PaymentDomainService {
 
     const gatewayRef = gatewayRes.gatewayRef;
 
+    // 4b. Demo gateways complete the simulated Shaparak return inline: verify
+    // the hold and flip the local status to SUCCESS so the booking funnel can
+    // confirm. Real PSPs stay PENDING until their signed webhook arrives.
+    let initialStatus = params.method === 'gateway_shetab' ? 'PENDING' : 'SUCCESS';
+    if (adapter.isDemo && initialStatus !== 'SUCCESS' && gatewayRes.status !== 'SUCCESS' && adapter.verifyPayment) {
+      try {
+        const verifyRes = await adapter.verifyPayment({
+          gatewayRef,
+          expectedAmount: new Money(decimalAmount, currency),
+        });
+        if (verifyRes.verified && verifyRes.status === 'CAPTURED') {
+          initialStatus = 'SUCCESS';
+        }
+      } catch (e: unknown) {
+        console.error('Demo gateway verification failed:', e);
+      }
+    }
+
     // 5. Create PaymentAttempt record (PAY-003)
     const attempt = await client.paymentAttempt.create({
       data: {
@@ -200,7 +218,7 @@ export class PaymentDomainService {
         method: params.method,
         amount: decimalAmount,
         currency,
-        status: gatewayRes.status === 'SUCCESS' ? 'SUCCESS' : 'PENDING_CUSTOMER',
+        status: initialStatus === 'SUCCESS' ? 'SUCCESS' : 'PENDING_CUSTOMER',
         gatewayRef,
         rawPayload: JSON.stringify(gatewayRes.rawResponse || {}),
       },
@@ -215,7 +233,7 @@ export class PaymentDomainService {
         transactionType: 'SALE',
         amount: decimalAmount,
         currency,
-        status: gatewayRes.status === 'SUCCESS' ? 'SUCCESS' : 'PENDING',
+        status: initialStatus === 'SUCCESS' ? 'SUCCESS' : 'PENDING',
         rawResponse: JSON.stringify(gatewayRes.rawResponse || {}),
       },
     });
@@ -223,7 +241,6 @@ export class PaymentDomainService {
     // 7. Upsert Payment record for backward compatibility & direct query tracking,
     // explicitly linked to its PaymentIntent so the trace chain
     // Gateway → Attempt → Intent → Payment → Booking stays queryable (PAY-004).
-    const initialStatus = params.method === 'gateway_shetab' ? 'PENDING' : 'SUCCESS';
     const payment = await client.payment.upsert({
       where: { idempotencyKey: params.idempotencyKey },
       update: {

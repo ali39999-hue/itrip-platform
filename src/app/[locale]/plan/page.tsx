@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocale } from 'next-intl';
 import { COUNTRY_ORDER, EXPERIENCE_CATEGORY_META, type CountryId, type ExperienceCategory } from '@/lib/countries';
 import type { Answers, BudgetTier, Pace, Who } from '@/hooks/usePlanner';
@@ -54,50 +54,50 @@ export default function PlanPage() {
   const locale = useLocale();
   const isEn = locale === 'en';
 
+  // SSR-safe initial state. The URL query is applied after hydration in the
+  // effect below — reading window.location.search during the first render made
+  // the client tree diverge from the server HTML (hydration failure) whenever
+  // the page was opened with ?q= or ?dest= deep links.
   const [step, setStep] = useState(0); // index در QUESTIONS
-  const [ans, setAns] = useState<Answers>(() => {
-    /* اشتراک‌گذاری نتیجه با URL — بدون effect (الگوی مقدار اولیه) */
-    if (typeof window === 'undefined') return {};
-    const p = new URLSearchParams(window.location.search);
-    const q = p.get('q');
-
-    if (q) {
-      const parsed = parseNaturalQuery(q);
-      if (parsed) {
-        const a: Answers = { ...parsed };
-        if (a.dest) return a;
-        return a;
-      }
-    }
-    if (!p.has('dest')) return {};
-    const a: Answers = {};
-    if (COUNTRY_ORDER.includes(p.get('dest') as CountryId)) a.dest = p.get('dest') as CountryId;
-    if (['solo', 'duo', 'family', 'friends'].includes(p.get('who') ?? '')) a.who = p.get('who') as Who;
-    const d = Number(p.get('days'));
-    if (d >= 2 && d <= 14) a.days = d;
-    const ints = (p.get('int') ?? '').split(',').filter((x) => x in EXPERIENCE_CATEGORY_META) as ExperienceCategory[];
-    if (ints.length) a.interests = ints;
-    if (['economy', 'balanced', 'luxury'].includes(p.get('bud') ?? '')) a.budget = p.get('bud') as BudgetTier;
-    if (['relaxed', 'balanced', 'packed'].includes(p.get('pace') ?? '')) a.pace = p.get('pace') as Pace;
-    return a.dest ? a : {};
-  });
-  
-  const [startAtResult] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    const p = new URLSearchParams(window.location.search);
-    if (p.has('dest')) return true;
-    if (p.has('q')) {
-       const ans = parseNaturalQuery(p.get('q') || '');
-       return !!ans?.dest;
-    }
-    return false;
-  });
+  const [ans, setAns] = useState<Answers>({});
+  const [startAtResult, setStartAtResult] = useState(false);
   const [seed, setSeed] = useState(0);
   const [shared, setShared] = useState(false);
 
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const q = p.get('q');
+
+    let fromQuery: Answers = {};
+    if (q) {
+      const parsed = parseNaturalQuery(q);
+      if (parsed) {
+        fromQuery = { ...parsed };
+      }
+    } else if (p.has('dest')) {
+      const a: Answers = {};
+      if (COUNTRY_ORDER.includes(p.get('dest') as CountryId)) a.dest = p.get('dest') as CountryId;
+      if (['solo', 'duo', 'family', 'friends'].includes(p.get('who') ?? '')) a.who = p.get('who') as Who;
+      const d = Number(p.get('days'));
+      if (d >= 2 && d <= 14) a.days = d;
+      const ints = (p.get('int') ?? '').split(',').filter((x) => x in EXPERIENCE_CATEGORY_META) as ExperienceCategory[];
+      if (ints.length) a.interests = ints;
+      if (['economy', 'balanced', 'luxury'].includes(p.get('bud') ?? '')) a.budget = p.get('bud') as BudgetTier;
+      if (['relaxed', 'balanced', 'packed'].includes(p.get('pace') ?? '')) a.pace = p.get('pace') as Pace;
+      if (a.dest) fromQuery = a;
+    }
+
+    if (Object.keys(fromQuery).length > 0) setAns(fromQuery);
+
+    let startFromQuery = false;
+    if (p.has('dest')) startFromQuery = true;
+    else if (q) startFromQuery = !!parseNaturalQuery(q)?.dest;
+    if (startFromQuery) setStartAtResult(true);
+  }, []);
+
   const done = startAtResult || step >= QUESTIONS.length;
 
-  function shareUrl() {
+  async function shareUrl() {
     const p = new URLSearchParams();
     if (ans.dest) p.set('dest', ans.dest);
     if (ans.who) p.set('who', ans.who);
@@ -105,7 +105,30 @@ export default function PlanPage() {
     if (ans.interests?.length) p.set('int', ans.interests.join(','));
     if (ans.budget) p.set('bud', ans.budget);
     if (ans.pace) p.set('pace', ans.pace);
-    window.history.replaceState(null, '', `?${p.toString()}`);
+    
+    const shareQuery = p.toString() ? `?${p.toString()}` : '';
+    const fullUrl = typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}${shareQuery}` : '';
+
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', shareQuery || window.location.pathname);
+    }
+
+    if (typeof navigator !== 'undefined' && navigator.share && /mobile|android|iphone/i.test(navigator.userAgent)) {
+      try {
+        await navigator.share({
+          title: 'برنامه سفر هوشمند فیروزه',
+          text: 'برنامه اختصاصی سفر من در پلتفرم فیروزه را مشاهده کنید:',
+          url: fullUrl,
+        });
+      } catch {
+        // Fallback to clipboard if share dialog dismissed
+      }
+    } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(fullUrl);
+      } catch {}
+    }
+
     setShared(true);
     setTimeout(() => setShared(false), 2600);
   }
