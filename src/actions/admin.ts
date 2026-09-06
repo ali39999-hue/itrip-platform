@@ -5,6 +5,8 @@ import { revalidatePath } from 'next/cache';
 import { requirePermission, getTenantAuthContext } from '@/domains/identity/permission-service';
 import { ReconciliationService, ReconciliationReport } from '@/domains/ledger/ReconciliationService';
 import { InventoryEngine } from '@/domains/inventory/InventoryEngine';
+import { SettlementDomainService } from '@/domains/finance/SettlementDomainService';
+import { businessMetrics } from '@/lib/observability/business-metrics';
 
 export async function runLedgerReconciliation(): Promise<ReconciliationReport> {
   await requirePermission(['finance:reports:view', 'finance:settlement:match']);
@@ -351,4 +353,105 @@ export async function updateAllotment(id: string, data: { total?: number; stopSe
   revalidatePath('/admin/inventory');
   return { success: true };
 }
+
+// ==================== Supplier Settlement Commands (SET-001..SET-004) ====================
+
+export async function createAdminSettlementBatch(params: {
+  supplierId: string;
+  periodStart: string;
+  periodEnd: string;
+  currency?: string;
+}) {
+  try {
+    await requirePermission('finance:post');
+    const res = await SettlementDomainService.createSettlementBatch({
+      supplierId: params.supplierId,
+      periodStart: new Date(params.periodStart),
+      periodEnd: new Date(params.periodEnd),
+      currency: params.currency,
+    });
+    revalidatePath('/admin/finance');
+    return {
+      success: true,
+      batch: {
+        id: res.id,
+        batchNumber: res.batchNumber,
+        totalPayable: res.totalPayable.toNumber(),
+        netSettlement: res.netSettlement.toNumber(),
+        currency: res.totalPayable.currency,
+        status: res.status,
+      },
+    };
+  } catch (err: unknown) {
+    console.error('createAdminSettlementBatch error:', err);
+    return { success: false, error: 'Failed to create settlement batch' };
+  }
+}
+
+export async function getAdminSettlementBatches(supplierId?: string) {
+  try {
+    await requirePermission('finance:reports:view');
+    const batches = await prisma.settlementBatch.findMany({
+      where: supplierId ? { supplierId } : undefined,
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+    return {
+      success: true,
+      batches: batches.map((b) => ({
+        id: b.id,
+        batchNumber: b.batchNumber,
+        supplierId: b.supplierId,
+        totalPayable: Number(b.totalPayable),
+        netSettlement: Number(b.netSettlement),
+        currency: b.currency,
+        status: b.status,
+        periodStart: b.periodStart.toISOString(),
+        periodEnd: b.periodEnd.toISOString(),
+        createdAt: b.createdAt.toISOString(),
+      })),
+    };
+  } catch (err: unknown) {
+    console.error('getAdminSettlementBatches error:', err);
+    return { success: false, error: 'Failed to fetch settlement batches', batches: [] };
+  }
+}
+
+export async function executeAdminSettlementPayment(batchId: string) {
+  try {
+    const user = await requirePermission('finance:post');
+    const res = await SettlementDomainService.executeSettlementPayment(batchId);
+
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        action: 'SETTLEMENT_PAID',
+        resource: 'SettlementBatch',
+        resourceId: batchId,
+        newData: JSON.stringify({ settledAt: res.settledAt }),
+      },
+    });
+
+    revalidatePath('/admin/finance');
+    return { success: true, settledAt: res.settledAt.toISOString() };
+  } catch (err: unknown) {
+    console.error('executeAdminSettlementPayment error:', err);
+    return { success: false, error: 'Failed to execute settlement payment' };
+  }
+}
+
+/**
+ * Authoritative Business Telemetry Metrics (OBS-005).
+ * Aggregates funnel conversion rates, payment success rates, and volume metrics.
+ */
+export async function getAdminBusinessMetrics() {
+  try {
+    await requirePermission('finance:reports:view');
+    return { success: true, metrics: businessMetrics.getSnapshot() };
+  } catch (err: unknown) {
+    console.error('getAdminBusinessMetrics error:', err);
+    return { success: false, error: 'Failed to fetch business metrics' };
+  }
+}
+
 

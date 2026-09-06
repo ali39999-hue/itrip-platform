@@ -14,6 +14,7 @@ import { InventoryEngine } from '@/domains/inventory/InventoryEngine';
 import { getHotelById } from '@/services/hotels-service';
 import { getFlightPriceById } from '@/services/flights-service';
 import { encryptSensitive, decryptSensitive } from '@/lib/security/crypto-vault';
+import { businessMetrics } from '@/lib/observability/business-metrics';
 import crypto from 'crypto';
 
 // Addon prices resolve from the same catalog the UI uses — no magic numbers.
@@ -327,6 +328,8 @@ export async function createBookingDraft(data: unknown) {
     // Persist passenger identities with encrypted travel documents (non-fatal).
     await persistTravelerDocuments(userId, parsed.passengers);
 
+    businessMetrics.recordDraftCreated(parsed.type, finalTotalAmount);
+
     return { success: true, bookingId: booking.id, totalAmount: finalTotalAmount, currency };
   } catch (err: unknown) {
     console.error('createBookingDraft server error:', err);
@@ -361,6 +364,24 @@ export async function payBooking(bookingId: string, method: 'wallet_irr' | 'gate
       return { success: false, error: 'Booking is not payable in its current state' };
     }
 
+    // B2C-007: Enforce Quote Expiry TTL (15 minutes).
+    // An expired price quote must not be confirmed without re-pricing.
+    const latestSnapshot = await prisma.priceSnapshot.findFirst({
+      where: { bookingId },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (latestSnapshot) {
+      const quoteAgeMs = Date.now() - new Date(latestSnapshot.createdAt).getTime();
+      const QUOTE_MAX_AGE_MS = 15 * 60 * 1000;
+      if (quoteAgeMs > QUOTE_MAX_AGE_MS) {
+        return {
+          success: false,
+          error: 'QUOTE_EXPIRED: Price quote has expired (15-minute TTL). Please re-confirm booking price.',
+          requiresReprice: true,
+        };
+      }
+    }
+
     const result = await BookingSagaOrchestrator.confirmBookingSaga({
       bookingId,
       idempotencyKey,
@@ -373,6 +394,87 @@ export async function payBooking(bookingId: string, method: 'wallet_irr' | 'gate
   } catch (err: unknown) {
     console.error('payBooking saga error:', err);
     return { success: false, error: 'Payment processing failed' };
+  }
+}
+
+/**
+ * Server-authoritative reprice command for checkout (B2C-008).
+ * Re-evaluates catalog base prices, discounts, and creates an immutable PriceSnapshot audit record.
+ */
+export async function repriceBookingAction(bookingId: string) {
+  try {
+    const session = await safeAuth();
+    if (!session || !session.user) return { success: false, error: 'Unauthorized' };
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: { items: true },
+    });
+    if (!booking) return { success: false, error: 'Booking not found' };
+
+    const tenantCtx = await getTenantAuthContext(session.user.id);
+    assertTenantAccess(tenantCtx, {
+      customerId: booking.customerId,
+      organizationId: booking.organizationId,
+      branchId: booking.branchId,
+    });
+
+    if (booking.status !== 'PENDING_PAYMENT' && booking.status !== 'HELD') {
+      return { success: false, error: 'Cannot reprice booking in current state' };
+    }
+
+    let totalBaseCost = 0;
+    for (const item of booking.items) {
+      const freshPrice = resolveServerBasePrice(item.type, item.inventoryItemId || undefined);
+      if (freshPrice !== null) {
+        totalBaseCost += freshPrice;
+      } else {
+        totalBaseCost += Number(item.netCost);
+      }
+    }
+
+    const { pricing } = BookingDomainService.computeDraftPricing({
+      productType: booking.items[0]?.type || 'HOTEL',
+      baseUnitCost: totalBaseCost,
+      quantity: 1,
+      nights: 1,
+      userRole: session.user.role || 'CUSTOMER',
+      currency: 'IRR',
+    });
+
+    const newTotal = pricing.sellPrice;
+    await prisma.$transaction([
+      prisma.priceSnapshot.create({
+        data: {
+          bookingId: booking.id,
+          baseAmount: pricing.snapshot.baseAmount,
+          markupAmount: pricing.snapshot.markupAmount,
+          serviceFee: pricing.snapshot.serviceFee,
+          taxAmount: pricing.snapshot.taxAmount,
+          discountAmount: pricing.snapshot.discountAmount,
+          sellPrice: pricing.snapshot.sellPrice,
+          currency: pricing.snapshot.currency,
+          fxRate: pricing.snapshot.fxRate,
+          baseCurrency: pricing.snapshot.baseCurrency,
+          breakdownJson: pricing.snapshot.breakdownJson,
+        },
+      }),
+      prisma.booking.update({
+        where: { id: booking.id },
+        data: { totalAmount: newTotal },
+      }),
+    ]);
+
+    businessMetrics.recordPriceChange(Number(booking.totalAmount), newTotal);
+
+    return {
+      success: true,
+      newTotalAmount: newTotal,
+      currency: 'IRR',
+    };
+  } catch (err: unknown) {
+    console.error('repriceBookingAction error:', err);
+    return { success: false, error: 'Failed to reprice booking' };
   }
 }
 

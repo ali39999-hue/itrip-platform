@@ -4,6 +4,7 @@ import { Money } from '@/lib/finance';
 import { GeneralLedgerService } from '../ledger/GeneralLedgerService';
 import { BookingStateMachine, BookingState } from '../booking/state-machine';
 import { InventoryEngine } from '../inventory/InventoryEngine';
+import { businessMetrics } from '@/lib/observability/business-metrics';
 
 export interface RequestRefundParams {
   bookingId: string;
@@ -265,6 +266,8 @@ export class RefundDomainService {
           }),
         },
       });
+
+      businessMetrics.recordRefundProcessed(refund.id, netMoney.toNumber());
 
       return {
         success: true,

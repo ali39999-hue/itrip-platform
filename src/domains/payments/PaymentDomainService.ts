@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { Money } from '@/lib/finance';
 import { ShetabGatewayAdapter, DemoPaymentAdapter, InternalWalletGatewayAdapter } from './gateway-port';
+import { businessMetrics } from '@/lib/observability/business-metrics';
 
 export interface InitiatePaymentParams {
   bookingId?: string;
@@ -189,6 +190,7 @@ export class PaymentDomainService {
       gatewayRes = await adapter.createPayment(gatewayReq);
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
+      businessMetrics.recordPaymentFailed(adapter.name, errorMsg);
       return {
         success: false,
         status: 'FAILED',
@@ -527,6 +529,8 @@ export class PaymentDomainService {
         }),
       },
     });
+
+    businessMetrics.recordPaymentCaptured(gatewayName, incomingAmount.toNumber());
 
     return {
       processed: true,

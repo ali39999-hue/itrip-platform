@@ -4,6 +4,8 @@ import { BookingStateMachine, BookingState } from './state-machine';
 import { InventoryEngine } from '../inventory/InventoryEngine';
 import { PaymentDomainService } from '../payments/PaymentDomainService';
 import { GeneralLedgerService } from '../ledger/GeneralLedgerService';
+import { InvoiceDomainService } from '../finance/InvoiceDomainService';
+import { businessMetrics } from '@/lib/observability/business-metrics';
 
 export interface ConfirmBookingSagaParams {
   bookingId: string;
@@ -120,6 +122,22 @@ export class BookingSagaOrchestrator {
         tx
       );
 
+      // 5b. Step 4b: Issue Commercial Invoice for Confirmed Booking (FIN-011, FIN-012)
+      await InvoiceDomainService.createInvoice(
+        {
+          bookingId: booking.id,
+          customerId: booking.customerId,
+          lines: booking.items.map((item) => ({
+            description: `${item.type} reservation (${booking.reference})`,
+            quantity: 1,
+            unitPrice: item.sellPrice,
+            taxAmount: item.taxAmount || 0,
+          })),
+          currency: booking.currency,
+        },
+        tx
+      );
+
       // 6. Step 5: Transition to CONFIRMED
       BookingStateMachine.assertTransition('PAYMENT_CONFIRMED', 'CONFIRMED');
 
@@ -157,6 +175,8 @@ export class BookingSagaOrchestrator {
           correlationId,
         },
       });
+
+      businessMetrics.recordBookingConfirmed(booking.id, totalAmt.toNumber());
 
       // 7. Step 6: Durable Outbox Event & Saga Persistence (ASYNC-001, ASYNC-003)
       await tx.outboxEvent.create({
@@ -197,6 +217,7 @@ export class BookingSagaOrchestrator {
               { stepType: 'CAPTURE_INVENTORY_HOLD', status: 'SUCCEEDED' },
               { stepType: 'POST_GENERAL_LEDGER', status: 'SUCCEEDED' },
               { stepType: 'POST_REVENUE_REALIZATION', status: 'SUCCEEDED' },
+              { stepType: 'ISSUE_INVOICE', status: 'SUCCEEDED' },
               { stepType: 'TRANSITION_CONFIRMED', status: 'SUCCEEDED' },
               { stepType: 'EMIT_OUTBOX_EVENT', status: 'SUCCEEDED' },
             ],

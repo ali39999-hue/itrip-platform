@@ -163,6 +163,11 @@ export class BookingDomainService {
       if (outcome) expired++;
     }
 
+    if (expired > 0) {
+      const { businessMetrics } = await import('@/lib/observability/business-metrics');
+      businessMetrics.recordStaleBookingSwept(expired);
+    }
+
     return expired;
   }
 

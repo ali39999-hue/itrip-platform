@@ -341,6 +341,28 @@ unit suite remains 135/135.
 
 **Verification:** typecheck PASS (0 errors) · unit suite **24 files / 137 tests PASS** (+2 tests).
 
+## Continuation 16 (same run, 2026-09-06) — IAM-012, IAM-009, B2C-007/008, FIN-011/012, SET-001..004, OBS-005
+
+- **IAM-012 — legacy role reads eliminated:** `actions/auth.ts` and `actions/content.ts` now authorize
+  strictly via relational `hasErpRole(userId)`.
+- **IAM-009 — dedicated IDOR protection test suite:** new suite `src/domains/identity/idor-protection.test.ts`
+  (5 tests) verifying that cross-user bookings, profiles, documents, and branch resources are strictly rejected.
+- **B2C-007 / B2C-008 — quote expiry & checkout reprice:**
+  - `payBooking` enforces a 15-minute price quote TTL on `PriceSnapshot`; expired quotes reject confirmation with `QUOTE_EXPIRED`.
+  - Added `repriceBookingAction(bookingId)` for server-authoritative recalculation creating immutable `PriceSnapshot` records.
+  - Added unit test suite in `state-machine.test.ts`.
+- **FIN-011 / FIN-012 — commercial invoice generation wired:**
+  - `confirmBookingSaga` now issues commercial invoices via `InvoiceDomainService.createInvoice` and records the `ISSUE_INVOICE` saga step.
+- **SET-001..SET-004 — supplier settlement wired:**
+  - Added admin commands in `actions/admin.ts`: `createAdminSettlementBatch`, `getAdminSettlementBatches`, and `executeAdminSettlementPayment`.
+  - Payment records settlement execution in ledger and marks batch `SETTLED` with `SETTLEMENT_PAID` audit log.
+- **OBS-005 — business metrics telemetry:**
+  - Created `src/lib/observability/business-metrics.ts` tracking searches, drafts, bookings, payments, refunds, and funnels.
+  - Wired into booking draft creation, checkout reprice, saga confirmation, webhook capture, refund processing, and stale sweeps.
+  - Exposed `getAdminBusinessMetrics` in `actions/admin.ts` and created test suite `business-metrics.test.ts`.
+
+**Verification:** typecheck PASS (0 errors) · unit suite **26 files / 146 tests PASS** (+9 tests).
+
 ## Known remaining risks (carried into W1+)
 
 1. No real PSP integration — production payments still cannot complete until a real gateway adapter ships (PAY-004).
