@@ -9,6 +9,9 @@ import { Wallet, ArrowLeft, ShieldCheck, Zap, CreditCard, RefreshCw, ArrowUpRigh
 export function FinancialSection() {
   const locale = useLocale();
   const [activeTab, setActiveTab] = useState<'irr' | 'usdt'>('irr');
+  const numberLocale = locale === 'fa' ? 'fa-IR' : 'en-US';
+  const formatAmount = (amount: number, maximumFractionDigits = 0) =>
+    new Intl.NumberFormat(numberLocale, { maximumFractionDigits }).format(amount);
 
   return (
     <section className="w-full py-14 md:py-20 px-4 md:px-10 bg-soft/50">
@@ -84,7 +87,7 @@ export function FinancialSection() {
                   onClick={() => setActiveTab('irr')}
                   className={`px-3 py-1 rounded-lg transition ${activeTab === 'irr' ? 'bg-mint text-brand-dark font-black' : 'text-surface/80 hover:text-surface'}`}
                 >
-                  تومان
+                  {lt(locale, { fa: 'تومان', en: 'IRR', ar: 'IRR', zh: 'IRR', ru: 'IRR' })}
                 </button>
                 <button
                   type="button"
@@ -102,15 +105,19 @@ export function FinancialSection() {
                 {lt(locale, { fa: 'موجودی در دسترس', en: 'Available Balance', ar: 'الرصيد المتاح', zh: '可用余额', ru: 'Доступный баланс' })}
               </span>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight">
-                  {activeTab === 'irr' ? '۱۵۰,۰۰۰,۰۰۰' : '۲,۵۰۰.۰۰'}
+                <span className="text-3xl sm:text-4xl font-black font-sans tabular-nums tracking-tight">
+                  {activeTab === 'irr' ? formatAmount(150000000) : formatAmount(2500, 2)}
                 </span>
                 <span className="text-sm font-bold text-mint-bright">
-                  {activeTab === 'irr' ? 'تومان' : 'USDT (Tether)'}
+                  {activeTab === 'irr'
+                    ? lt(locale, { fa: 'تومان', en: 'IRR', ar: 'IRR', zh: 'IRR', ru: 'IRR' })
+                    : 'USDT (Tether)'}
                 </span>
               </div>
               <span className="text-[11px] text-surface/60 font-mono mt-1 block">
-                {activeTab === 'irr' ? '≈ 2,500.00 USDT' : '≈ ۱۵۰,۰۰۰,۰۰۰ تومان'}
+                {activeTab === 'irr'
+                  ? `≈ ${formatAmount(2500, 2)} USDT`
+                  : `≈ ${formatAmount(150000000)} ${lt(locale, { fa: 'تومان', en: 'IRR', ar: 'IRR', zh: 'IRR', ru: 'IRR' })}`}
               </span>
             </div>
 
