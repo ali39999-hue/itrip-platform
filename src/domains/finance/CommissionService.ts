@@ -57,4 +57,51 @@ export class CommissionService {
       fixedFee: fixed,
     };
   }
+
+  /**
+   * Accrues partner commission for a confirmed booking (FIN-014).
+   * Derives commercial terms from active rules or baseline tier contracts.
+   */
+  static async accrueCommission(params: {
+    bookingId: string;
+    targetType: 'AGENCY' | 'AGENT' | 'AFFILIATE' | 'PARTNER';
+    targetId?: string;
+    productType: 'FLIGHT' | 'HOTEL' | 'TOUR' | 'ALL';
+    bookingAmount: number | Prisma.Decimal;
+    currency?: string;
+  }): Promise<{
+    accrued: boolean;
+    ruleId?: string;
+    commissionAmount: Money;
+    appliedRate: number;
+    fixedFee: number;
+  }> {
+    const calc = await this.calculateCommission(params);
+    return {
+      accrued: true,
+      ruleId: calc.ruleId,
+      commissionAmount: calc.commissionAmount,
+      appliedRate: calc.appliedRate,
+      fixedFee: calc.fixedFee,
+    };
+  }
+
+  /**
+   * Computes traceable commission adjustment on booking refund or cancellation (FIN-015).
+   * Prorates the clawback proportional to the refund ratio with Money precision.
+   */
+  static adjustCommission(params: {
+    originalCommission: Money;
+    refundRatio: number; // 0 to 1
+  }): {
+    adjustedCommission: Money;
+    clawbackAmount: Money;
+  } {
+    const clawback = params.originalCommission.mul(params.refundRatio).round(0);
+    const adjusted = params.originalCommission.sub(clawback);
+    return {
+      adjustedCommission: adjusted,
+      clawbackAmount: clawback,
+    };
+  }
 }

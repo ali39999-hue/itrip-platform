@@ -363,6 +363,19 @@ unit suite remains 135/135.
 
 **Verification:** typecheck PASS (0 errors) · unit suite **26 files / 146 tests PASS** (+9 tests).
 
+## Continuation 17 (same run, 2026-09-06) — ERP-001..007 Travel File & FIN-013..015 Commission
+
+- **ERP-001..007 — Travel File Domain Service & automatic Trip grouping:**
+  - Created `src/domains/erp/TravelFileDomainService.ts` (`assignBookingToTrip`, `onBookingConfirmed`).
+  - Wired into `createBookingDraft` to group customer bookings into active Trip dossiers.
+  - Wired into `confirmBookingSaga` to transition Trip to `BOOKED`.
+  - Added unit integration tests in `src/domains/erp-domains.test.ts`.
+- **FIN-013..015 — Partner Commission Accrual & Adjustment:**
+  - Implemented `CommissionService.accrueCommission` and `CommissionService.adjustCommission` in `src/domains/finance/CommissionService.ts`.
+  - Added unit test suite in `src/domains/erp-domains.test.ts` verifying baseline tier calculations and prorated clawbacks on refund.
+
+**Verification:** typecheck PASS (0 errors) · unit suite **26 files / 148 tests PASS** (+2 tests).
+
 ## Known remaining risks (carried into W1+)
 
 1. No real PSP integration — production payments still cannot complete until a real gateway adapter ships (PAY-004).

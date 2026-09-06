@@ -178,6 +178,10 @@ export class BookingSagaOrchestrator {
 
       businessMetrics.recordBookingConfirmed(booking.id, totalAmt.toNumber());
 
+      // Update Travel File dossier status (ERP-001)
+      const { TravelFileDomainService } = await import('../erp/TravelFileDomainService');
+      await TravelFileDomainService.onBookingConfirmed(booking.id, tx).catch(() => null);
+
       // 7. Step 6: Durable Outbox Event & Saga Persistence (ASYNC-001, ASYNC-003)
       await tx.outboxEvent.create({
         data: {

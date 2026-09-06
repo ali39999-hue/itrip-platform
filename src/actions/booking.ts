@@ -328,6 +328,12 @@ export async function createBookingDraft(data: unknown) {
     // Persist passenger identities with encrypted travel documents (non-fatal).
     await persistTravelerDocuments(userId, parsed.passengers);
 
+    // Group or create Trip container dossier (ERP-001 Travel File integration)
+    const { TravelFileDomainService } = await import('@/domains/erp/TravelFileDomainService');
+    await TravelFileDomainService.assignBookingToTrip(userId, booking.id, parsed.type).catch((err) => {
+      console.warn('Non-fatal travel file assignment failed:', err);
+    });
+
     businessMetrics.recordDraftCreated(parsed.type, finalTotalAmount);
 
     return { success: true, bookingId: booking.id, totalAmount: finalTotalAmount, currency };

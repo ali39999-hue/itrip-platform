@@ -133,3 +133,78 @@ describe('ERP Domain Tests: Inventory Holds', () => {
     expect(successfulHolds.length).toBe(10);
   });
 });
+
+import { TravelFileDomainService } from '@/domains/erp/TravelFileDomainService';
+import { CommissionService } from '@/domains/finance/CommissionService';
+
+describe('ERP Domain Tests: Travel Files (ERP-001)', () => {
+  const suffix = `tf_${Date.now().toString(36)}`;
+  let testUserId = '';
+  let testBookingId = '';
+  let testTripId = '';
+
+  it('assigns booking to a new or open Trip dossier and updates status on confirmation', async () => {
+    const user = await prisma.user.create({
+      data: { id: `usr_${suffix}`, email: `tf_${suffix}@test.local`, name: 'Travel File Tester' },
+    });
+    testUserId = user.id;
+
+    const booking = await prisma.booking.create({
+      data: {
+        id: `bkg_${suffix}`,
+        reference: `ITR-TF-${suffix}`,
+        customerId: user.id,
+        status: 'PENDING_PAYMENT',
+        totalAmount: 1_000_000,
+        currency: 'IRR',
+      },
+    });
+    testBookingId = booking.id;
+
+    // 1. Assign booking to Trip dossier
+    const { tripId, reference } = await TravelFileDomainService.assignBookingToTrip(user.id, booking.id, 'HOTEL');
+    testTripId = tripId;
+    expect(tripId).toBeDefined();
+    expect(reference).toMatch(/^TRP-/);
+
+    const linkedBooking = await prisma.booking.findUniqueOrThrow({ where: { id: booking.id } });
+    expect(linkedBooking.tripId).toBe(tripId);
+
+    // 2. On booking confirmed, Trip advances to BOOKED
+    await TravelFileDomainService.onBookingConfirmed(booking.id);
+    const updatedTrip = await prisma.trip.findUniqueOrThrow({ where: { id: tripId } });
+    expect(updatedTrip.status).toBe('BOOKED');
+
+    // Cleanup
+    await prisma.booking.deleteMany({ where: { id: testBookingId } });
+    await prisma.trip.deleteMany({ where: { id: testTripId } });
+    await prisma.user.deleteMany({ where: { id: testUserId } });
+  });
+});
+
+describe('ERP Domain Tests: Commercial Commission Engine (FIN-013 to FIN-015)', () => {
+  it('calculates baseline commission and prorates adjustment on refund', async () => {
+    // 1. Accrue baseline commission for an agency (3% default)
+    const accrued = await CommissionService.accrueCommission({
+      bookingId: 'test_bkg_1',
+      targetType: 'AGENCY',
+      productType: 'HOTEL',
+      bookingAmount: 10_000_000,
+      currency: 'IRR',
+    });
+
+    expect(accrued.accrued).toBe(true);
+    expect(accrued.appliedRate).toBe(0.03);
+    // 10,000,000 * 3% = 300,000 IRR
+    expect(accrued.commissionAmount.toNumber()).toBe(300_000);
+
+    // 2. 50% cancellation refund adjusts commission by half
+    const adjustment = CommissionService.adjustCommission({
+      originalCommission: accrued.commissionAmount,
+      refundRatio: 0.5,
+    });
+
+    expect(adjustment.clawbackAmount.toNumber()).toBe(150_000);
+    expect(adjustment.adjustedCommission.toNumber()).toBe(150_000);
+  });
+});
