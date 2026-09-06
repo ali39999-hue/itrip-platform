@@ -17,7 +17,7 @@ export function AiPlannerHookSection() {
   return (
     <section className="w-full py-12 md:py-16 px-4 md:px-10 bg-gradient-to-br from-mint/50 via-soft to-surface border-y border-line/60">
       <div className="max-w-[1280px] mx-auto text-center space-y-6">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand text-surface text-xs font-bold shadow-sm mx-auto">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-dark text-surface text-xs font-bold shadow-sm mx-auto">
           <Sparkles size={14} />
           <span>{t('aiPlannerBadge')}</span>
         </div>

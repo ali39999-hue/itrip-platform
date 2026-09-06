@@ -10,6 +10,7 @@ import { LocaleSwitcher } from './header/LocaleSwitcher';
 import { DesktopNav, NAV_CATEGORIES } from './header/DesktopNav';
 import { UserAccountMenu } from './header/UserAccountMenu';
 import { useTranslations, useLocale } from 'next-intl';
+import { lt } from '@/lib/lt';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -71,10 +72,20 @@ export function Header() {
           </button>
         </div>
 
-        {/* Quick Country Switcher in Drawer */}
-        <div className="px-4 py-3 border-b border-line/60 bg-paper">
-          <span className="text-[11px] font-black text-sub block mb-1.5">کشور مقصد سفر:</span>
-          <CountrySwitcher />
+        {/* Quick Country & Locale Switcher in Drawer */}
+        <div className="px-4 py-3 border-b border-line/60 bg-paper flex items-center justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <span className="text-[10.5px] font-black text-sub block mb-1">
+              {lt(locale, { fa: 'کشور مقصد سفر:', en: 'Destination:', ar: 'البلد الوجهة:', zh: '目的地国家：', ru: 'Направление:' })}
+            </span>
+            <CountrySwitcher />
+          </div>
+          <div className="shrink-0">
+            <span className="text-[10.5px] font-black text-sub block mb-1">
+              {lt(locale, { fa: 'زبان:', en: 'Language:', ar: 'اللغة:', zh: '语言：', ru: 'Язык:' })}
+            </span>
+            <LocaleSwitcher />
+          </div>
         </div>
 
         {/* Scrollable Categories List */}

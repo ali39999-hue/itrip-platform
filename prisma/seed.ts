@@ -98,7 +98,9 @@ async function main() {
       update: {},
       create: {
         name: roleName,
-        permissions: JSON.stringify(perms),
+        // IAM-003: legacy JSON column is display/compat only and never read at
+        // runtime — persist an empty shell. Authority = RolePermission rows below.
+        permissions: '[]',
         description: `${roleName} Role`,
       },
     });

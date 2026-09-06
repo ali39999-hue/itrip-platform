@@ -202,6 +202,26 @@ export default function FlightCheckoutPage() {
           </div>
         </aside>
       </div>
+
+      {/* Mobile Sticky Price & Checkout Bar */}
+      <div className="lg:hidden fixed bottom-[calc(58px+env(safe-area-inset-bottom,0px))] inset-x-0 z-40 bg-surface/95 backdrop-blur-md border-t border-line px-4 py-3 shadow-elev-3 flex items-center justify-between gap-3">
+        <div>
+          <span className="text-[10.5px] font-bold text-sub block leading-none mb-0.5">
+            مبلغ کل قابل پرداخت
+          </span>
+          <div className="flex items-baseline gap-1.5 font-mono">
+            <span className="text-base font-black text-brand-dark">{num(Math.round(total / 10), locale)}</span>
+            <span className="text-[11px] font-bold text-sub">تومان</span>
+          </div>
+        </div>
+
+        <Button
+          onClick={handleProceed}
+          className="h-11 px-6 text-xs font-black bg-action hover:bg-action-hover text-ink shadow-md shadow-action/20 rounded-xl transition-all active:scale-95"
+        >
+          {t('confirmAndProceed')}
+        </Button>
+      </div>
     </div>
   );
 }

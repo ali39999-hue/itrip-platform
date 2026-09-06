@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { Plane, Briefcase, ChevronDown, Armchair, BellDot } from 'lucide-react';
+import { Plane, Briefcase, ChevronDown, Armchair, BellDot, Scale } from 'lucide-react';
 import type { Flight } from '@/lib/types';
 import { num } from '@/lib/format';
 import { lt } from '@/lib/lt';
@@ -41,9 +41,17 @@ interface BentoFlightCardProps {
   flight: Flight;
   onSelect: () => void;
   isCheapest?: boolean;
+  isCompared?: boolean;
+  onToggleCompare?: () => void;
 }
 
-export function BentoFlightCard({ flight, onSelect, isCheapest = false }: BentoFlightCardProps) {
+export function BentoFlightCard({
+  flight,
+  onSelect,
+  isCheapest = false,
+  isCompared = false,
+  onToggleCompare,
+}: BentoFlightCardProps) {
   const t = useTranslations('Flights');
   const locale = useLocale();
   const [open, setOpen] = useState(false);
@@ -153,8 +161,8 @@ export function BentoFlightCard({ flight, onSelect, isCheapest = false }: BentoF
 
         {/* Mobile Bottom Row: Price & Action CTA (FlyToday layout) */}
         <div className="pt-2.5 border-t border-[#F0E9DD] dark:border-line/70 flex items-center justify-between gap-3">
-          {/* Left: Baggage & details toggle */}
-          <div className="flex items-center gap-2.5 text-xs text-neutral-600 dark:text-sub">
+          {/* Left: Baggage, details toggle & compare */}
+          <div className="flex items-center gap-2 text-xs text-neutral-600 dark:text-sub flex-wrap">
             <span className="flex items-center gap-1 font-bold text-[11px]">
               <Briefcase size={12} className="text-[#197678] dark:text-mint-bright" />
               {flight.baggage}
@@ -167,6 +175,25 @@ export function BentoFlightCard({ flight, onSelect, isCheapest = false }: BentoF
               <span>{t('flightDetails')}</span>
               <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
             </button>
+
+            {onToggleCompare && (
+              <button
+                type="button"
+                onClick={onToggleCompare}
+                className={`text-[10.5px] font-black px-2 py-0.5 rounded-md transition-all flex items-center gap-1 border ${
+                  isCompared
+                    ? 'bg-amber-100 border-amber-400 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 shadow-xs'
+                    : 'bg-surface/90 border-neutral-300 dark:border-line text-neutral-600 dark:text-sub hover:text-ink'
+                }`}
+              >
+                <Scale size={11} className={isCompared ? 'text-amber-700' : 'text-sub'} />
+                <span>
+                  {isCompared
+                    ? lt(locale, { fa: 'در مقایسه', en: 'Comparing', ar: 'في المقارنة', zh: '已对比', ru: 'В сравнении' })
+                    : lt(locale, { fa: 'مقایسه', en: 'Compare', ar: 'مقارنة', zh: '比较', ru: 'Сравнить' })}
+                </span>
+              </button>
+            )}
           </div>
 
           {/* Right: Price & CTA Button */}
@@ -296,19 +323,25 @@ export function BentoFlightCard({ flight, onSelect, isCheapest = false }: BentoF
           {/* Bottom row: مقایسه (start) — جزئیات پرواز (میانی) — بار مجاز (end) */}
           <div className="mt-4 pt-3 border-t border-[#F0E9DD] dark:border-line/70 flex items-center justify-between gap-2 text-xs text-neutral-500">
             {/* Compare checkbox */}
-            <label className="flex items-center gap-2 cursor-pointer select-none text-neutral-400 hover:text-neutral-600 dark:text-sub dark:hover:text-ink transition-colors">
+            <label className="flex items-center gap-2 cursor-pointer select-none text-neutral-500 hover:text-neutral-800 dark:text-sub dark:hover:text-ink transition-colors">
               <input
                 type="checkbox"
-                checked={compared}
-                onChange={(e) => setCompared(e.target.checked)}
+                checked={onToggleCompare ? isCompared : compared}
+                onChange={() => {
+                  if (onToggleCompare) {
+                    onToggleCompare();
+                  } else {
+                    setCompared(!compared);
+                  }
+                }}
                 className="w-4 h-4 rounded border-neutral-300 text-amber-500 focus:ring-amber-400 cursor-pointer"
               />
-              <span className="text-xs font-bold">
+              <span className={`text-xs font-bold ${isCompared ? 'text-amber-700 dark:text-amber-300' : ''}`}>
                 {lt(locale, {
-                  fa: 'مقایسه',
+                  fa: 'مقایسه پرواز',
                   en: 'Compare',
-                  ar: 'مقارنة',
-                  zh: '比较',
+                  ar: 'مقارنة الرحلة',
+                  zh: '航班对比',
                   ru: 'Сравнить',
                 })}
               </span>

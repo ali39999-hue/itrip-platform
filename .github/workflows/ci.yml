@@ -39,6 +39,13 @@ jobs:
     steps:
       - name: Checkout Codebase
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Secrets Scan (SEC-009 / CI-009)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -60,18 +67,36 @@ jobs:
           npx prisma migrate deploy
           npm run prisma:seed
 
+      - name: Schema Drift Check (CI-014)
+        run: |
+          npx prisma migrate diff \
+            --from-url "$DATABASE_URL" \
+            --to-schema-datamodel prisma/schema.prisma \
+            --exit-code
+
       - name: Execute Unit & Financial Invariant Tests
         run: npm run test:unit
 
-      - name: Next.js Production Build
+      - name: Next.js Production Build (demo disabled)
         env:
           DEMO_MODE: "false"
+          NEXT_PUBLIC_DEMO_MODE: "false"
         run: npm run build
+
+      - name: CI-012 Guard — Production Build Must Fail With DEMO_MODE Enabled
+        env:
+          DEMO_MODE: "true"
+        run: |
+          if npx next build; then
+            echo "::error::Production build succeeded with DEMO_MODE=true — demo gate is broken"
+            exit 1
+          else
+            echo "OK: production build correctly refuses DEMO_MODE=true"
+          fi
 
   e2e-gate:
     runs-on: ubuntu-latest
     needs: audit-and-verify
-    continue-on-error: true
     env:
       DEMO_MODE: "true"
       NEXT_PUBLIC_DEMO_MODE: "true"
@@ -114,6 +139,7 @@ jobs:
       - name: Build Production Bundle
         env:
           DEMO_MODE: "false"
+          NEXT_PUBLIC_DEMO_MODE: "false"
         run: npm run build
 
       - name: Run E2E Golden Journeys (Desktop Chromium)

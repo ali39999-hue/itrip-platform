@@ -1,10 +1,12 @@
 'use server';
 
+import { headers } from 'next/headers';
 import { signIn, signOut, safeAuth, issueOtp } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { profileUpdateSchema, otpRequestSchema } from '@/lib/validations';
 import { RateLimiter } from '@/lib/security/rate-limiter';
 import { encryptSensitive, decryptSensitive } from '@/lib/security/crypto-vault';
+import { hasErpRole } from '@/domains/identity/permission-service';
 
 export type AuthChannel = 'phone' | 'email' | 'telegram' | 'whatsapp' | 'wechat';
 
@@ -34,8 +36,14 @@ export async function loginWithCredentials(email: string, pass: string) {
 export async function requestOtp(data: unknown) {
   try {
     const parsed = otpRequestSchema.parse(data);
-    // Multi-layered token-bucket rate limiting (Section 35)
-    const rateCheck = await RateLimiter.checkOtpRateLimit(parsed.identifier);
+    // Multi-layered token-bucket rate limiting (Section 35 / SEC-003):
+    // identifier layer + IP layer (previously the IP layer was never wired).
+    const hdrs = await headers();
+    const clientIp =
+      hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      hdrs.get('x-real-ip')?.trim() ||
+      'unknown_ip';
+    const rateCheck = await RateLimiter.checkOtpRateLimit(parsed.identifier, clientIp);
     if (!rateCheck.allowed) {
       return { success: false, error: rateCheck.reason || 'Too many codes requested. Please try again later.' };
     }
@@ -111,9 +119,9 @@ export async function verifyOtpAndLogin(identifier: string, otp: string, channel
     return { success: false, error: 'Account not found' };
   }
 
-  const role = ['SUPER_ADMIN', 'FINANCE', 'OPS'].includes(user.role)
-    ? ('admin' as const)
-    : ('customer' as const);
+  // Authority resolved strictly from the relational UserRole chain (IAM-001, IAM-012)
+  const isStaff = await hasErpRole(user.id);
+  const role = isStaff ? ('admin' as const) : ('customer' as const);
   return {
     success: true,
     user: {
@@ -260,9 +268,9 @@ export async function getSessionUser() {
     });
     if (!user) return { success: false as const };
 
-    const role = ['SUPER_ADMIN', 'FINANCE', 'OPS'].includes(user.role)
-      ? ('admin' as const)
-      : ('customer' as const);
+    // Authority resolved strictly from the relational UserRole chain (IAM-001, IAM-012)
+    const isStaff = await hasErpRole(user.id);
+    const role = isStaff ? ('admin' as const) : ('customer' as const);
     return {
       success: true as const,
       user: {

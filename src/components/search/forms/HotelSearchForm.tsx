@@ -50,7 +50,7 @@ export function HotelSearchForm({
   return (
     <>
       {/* City */}
-      <div className="md:col-span-3">
+      <div className="col-span-1 sm:col-span-6 lg:col-span-3">
         <CityAutocomplete
           value={dest}
           onChange={(val) => {
@@ -64,7 +64,7 @@ export function HotelSearchForm({
       </div>
 
       {/* Date In */}
-      <div className="md:col-span-2">
+      <div className="col-span-1 sm:col-span-6 lg:col-span-2">
         <JalaliDatePicker
           value={date1}
           onChange={(d) => setDate1(d || '')}
@@ -74,7 +74,7 @@ export function HotelSearchForm({
       </div>
 
       {/* Date Out with Nights Badge */}
-      <div className="md:col-span-2 relative">
+      <div className="col-span-1 sm:col-span-6 lg:col-span-2 relative">
         <JalaliDatePicker
           value={date2}
           onChange={(d) => setDate2(d || '')}
@@ -82,14 +82,14 @@ export function HotelSearchForm({
           id="search-date-checkout"
         />
         {nights > 0 && (
-          <span className="hidden md:inline-flex absolute -top-2.5 end-3 px-2 py-0.5 rounded-full bg-brand text-surface text-[10px] font-black z-20 shadow-xs pointer-events-none">
+          <span className="hidden sm:inline-flex absolute -top-2.5 end-3 px-2 py-0.5 rounded-full bg-brand text-surface text-[10px] font-black z-20 shadow-xs pointer-events-none">
             {nights} شب اقامت
           </span>
         )}
       </div>
 
       {/* Guests */}
-      <div className="md:col-span-3 relative">
+      <div className="col-span-1 sm:col-span-6 lg:col-span-3 relative">
         <TravelerPicker
           open={guestOpen}
           setOpen={setGuestOpen}
@@ -105,7 +105,7 @@ export function HotelSearchForm({
       {/* Submit Button */}
       <button
         type="submit"
-        className="md:col-span-2 min-h-[58px] px-6 rounded-2xl bg-action hover:bg-action-hover text-ink text-[15px] font-black shadow-elev-1 hover:shadow-elev-2 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+        className="col-span-1 sm:col-span-12 lg:col-span-2 min-h-[58px] px-6 rounded-2xl bg-action hover:bg-action-hover text-ink text-[15px] font-black shadow-elev-1 hover:shadow-elev-2 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
       >
         <Search size={18} />
         <span>{t('btnHotels')}</span>

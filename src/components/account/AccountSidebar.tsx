@@ -12,10 +12,11 @@ import {
   ShieldCheck,
   Star,
   UserRound,
+  Bot,
 } from 'lucide-react';
 
 interface AccountSidebarProps {
-  activeSection?: 'dashboard' | 'trips' | 'wallet' | 'profile';
+  activeSection?: 'dashboard' | 'trips' | 'wallet' | 'profile' | 'autobuy';
 }
 
 export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps) {
@@ -104,7 +105,19 @@ export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps)
           {lt(locale, { fa: 'کیف پول و امتیازات', en: 'Wallet & Rewards', ar: 'المحفظة والمكافآت', zh: '钱包与奖励', ru: 'Кошелёк и бонусы' })}
         </Link>
 
-        {user?.role === 'admin' && (
+        <Link
+          href="/account/auto-buy"
+          className={`flex items-center gap-3 px-4 py-3 font-bold text-[13.5px] rounded-2xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+            activeSection === 'autobuy'
+              ? 'bg-brand text-surface font-black shadow-xs'
+              : 'text-sub hover:bg-soft hover:text-ink'
+          }`}
+        >
+          <Bot size={17} />
+          <span>{lt(locale, { fa: 'خرید خودکار (ربات سفر)', en: 'Auto-Buy (Smart Bot)', ar: 'الشراء التلقائي (بوت السفر)', zh: '自动购票（智能助手）', ru: 'Автопокупка (бот)' })}</span>
+        </Link>
+
+        {['admin', 'SUPER_ADMIN', 'OPS', 'FINANCE'].includes(user?.role || '') && (
           <Link
             href="/admin"
             className="flex items-center gap-3 px-4 py-3 font-bold text-[13.5px] rounded-2xl text-brand-dark bg-mint border border-brand/20 hover:bg-mint/80 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"

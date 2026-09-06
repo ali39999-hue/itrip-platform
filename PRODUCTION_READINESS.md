@@ -1,4 +1,9 @@
 # iTRIP / FIRUZO — PRODUCTION READINESS REPORT
+> **⚠️ STATUS (2026-09-06, BASE-003):** This is a point-in-time report and is **superseded by
+> `docs/baseline/FEATURE_REALITY_MATRIX.md`**, which downgrades several claims below
+> (payment PSP is simulated, refund/invoice/settlement domains are unwired, E2E gate was non-blocking).
+> Read this document as historical context, not as the current gate.
+
 **Inspection & Verification Date:** 2026-09-05  
 **Target Quality Score:** 9.0 / 10  
 **Achieved Quality Score:** **9.2 / 10**  

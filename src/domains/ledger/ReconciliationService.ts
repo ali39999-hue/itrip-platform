@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { OperationalExceptionService, ExceptionSeverity } from '../finance/three-way-reconciliation';
 
 export interface ReconciliationGroupMismatch {
   groupId: string;
@@ -184,20 +185,17 @@ export class ReconciliationService {
 
     let exceptionId: string | undefined;
 
-    // If payment mismatch detected, automatically record into Exception Center (RECON-003)
+    // If payment mismatch detected, automatically record into Exception Center (RECON-003).
+    // ERP-009: repeated detections of the same mismatch dedupe onto the one open exception.
     if (!isMatch && (booking.status === 'CONFIRMED' || booking.status === 'PAYMENT_CONFIRMED')) {
-      const exc = await prisma.operationalException.create({
-        data: {
-          type: 'PAYMENT_MISMATCH',
-          severity: 'HIGH',
-          entityType: 'BOOKING',
-          entityId: booking.id,
-          title: `Payment discrepancy on booking ${booking.reference}`,
-          description: `Expected booking total ${bookingTotal} ${booking.currency}, but recorded payments total ${paidTotal} ${booking.currency}. Difference: ${paymentDiff}`,
-          status: 'OPEN',
-        },
+      exceptionId = await OperationalExceptionService.raiseException({
+        type: 'PAYMENT_MISMATCH',
+        severity: ExceptionSeverity.HIGH,
+        entityType: 'BOOKING',
+        entityId: booking.id,
+        title: `Payment discrepancy on booking ${booking.reference}`,
+        description: `Expected booking total ${bookingTotal} ${booking.currency}, but recorded payments total ${paidTotal} ${booking.currency}. Difference: ${paymentDiff}`,
       });
-      exceptionId = exc.id;
     }
 
     return {

@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { Money } from '@/lib/finance';
 import { GeneralLedgerService } from '@/domains/ledger/GeneralLedgerService';
+import { OperationalExceptionService, ExceptionSeverity } from './three-way-reconciliation';
 
 export interface CreateSettlementBatchParams {
   supplierId: string;
@@ -113,18 +114,16 @@ export class SettlementDomainService {
         data: { status: 'DISCREPANCY' },
       });
 
-      const exc = await prisma.operationalException.create({
-        data: {
-          type: 'SUPPLIER_STATEMENT_MISMATCH',
-          severity: 'HIGH',
-          entityType: 'SUPPLIER',
-          entityId: batch.supplierId,
-          title: `Settlement variance for batch ${batch.batchNumber}`,
-          description: `Supplier statement ${statement.statementNumber} claimed ${stmtAmount.toString()} but ledger batch has ${batchAmount.toString()}. Variance: ${variance.toString()}`,
-          status: 'OPEN',
-        },
+      // ERP-009: statement mismatches for the same supplier dedupe onto the
+      // one open exception instead of accumulating duplicates.
+      exceptionId = await OperationalExceptionService.raiseException({
+        type: 'SUPPLIER_STATEMENT_MISMATCH',
+        severity: ExceptionSeverity.HIGH,
+        entityType: 'SUPPLIER',
+        entityId: batch.supplierId,
+        title: `Settlement variance for batch ${batch.batchNumber}`,
+        description: `Supplier statement ${statement.statementNumber} claimed ${stmtAmount.toString()} but ledger batch has ${batchAmount.toString()}. Variance: ${variance.toString()}`,
       });
-      exceptionId = exc.id;
     } else {
       await prisma.settlementBatch.update({
         where: { id: batch.id },

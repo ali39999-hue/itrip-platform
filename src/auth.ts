@@ -3,7 +3,8 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
-import { ROLE_DEFAULT_PERMISSIONS } from '@/domains/identity/permissions';
+import { ROLE_DEFAULT_PERMISSIONS, ERP_STAFF_ROLES } from '@/domains/identity/permissions';
+import { encryptSensitive } from '@/lib/security/crypto-vault';
 
 declare module 'next-auth' {
   interface Session {
@@ -52,7 +53,17 @@ export async function issueOtp(identifier: string, channel: string): Promise<{ s
   await prisma.outboxEvent.create({
     data: {
       eventType: 'AUTH_OTP_REQUESTED',
-      payload: JSON.stringify({ identifier, channel, codeHash: hashOtp(code), expiresAt: expiresAt.toISOString() }),
+      // The plaintext code never leaves this function in clear: the outbox payload
+      // carries an AES-256-GCM sealed copy (SEC-003 / OBS-004) that only the
+      // notification worker decrypts at delivery time. `codeHash` stays the
+      // verification authority.
+      payload: JSON.stringify({
+        identifier,
+        channel,
+        codeHash: hashOtp(code),
+        codeEnc: encryptSensitive(code),
+        expiresAt: expiresAt.toISOString(),
+      }),
     },
   });
 
@@ -91,7 +102,9 @@ async function ensureUserRole(userId: string, roleName: string): Promise<void> {
     update: {},
     create: {
       name: roleName,
-      permissions: JSON.stringify(ROLE_DEFAULT_PERMISSIONS[roleName] || []),
+      // IAM-003: the legacy JSON column is never read at runtime — persist an
+      // empty compat shell. Permission authority lives in RolePermission rows.
+      permissions: '[]',
       description: `${roleName} Role`,
     },
   });
@@ -246,7 +259,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = user.role;
         // Session permissions mirror the relational RBAC authority (IAM-001).
         // ROLE_DEFAULT_PERMISSIONS is only a bootstrap for brand-new users whose
         // relational assignment could not be created (e.g. degraded DB access).
@@ -262,6 +274,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           (ROLE_DEFAULT_PERMISSIONS[user.role] || []).forEach((p) => perms.add(p));
         }
         token.permissions = Array.from(perms);
+
+        // IAM-002: the JWT role claim is the RELATIONAL role name (staff roles
+        // first), not the legacy `User.role` column — authorization decisions in
+        // middleware therefore resolve through the relational chain.
+        const roleNames = memberships.map((ur) => ur.role.name);
+        const staffRole = ERP_STAFF_ROLES.find((r) => roleNames.includes(r));
+        token.role = staffRole ?? roleNames[0] ?? user.role;
       }
       return token;
     },

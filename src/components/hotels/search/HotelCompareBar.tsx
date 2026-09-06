@@ -17,7 +17,7 @@ export function HotelCompareBar({
   if (cmp.size === 0) return null;
 
   return (
-    <div className="fixed bottom-[72px] md:bottom-6 start-4 end-4 md:start-auto md:end-8 md:w-[480px] bg-surface/95 backdrop-blur-md border border-brand/30 rounded-2xl p-4 shadow-elev-3 z-50 animate-in slide-in-from-bottom-4 duration-300">
+    <div className="fixed bottom-[72px] lg:bottom-6 start-3 end-3 sm:start-auto sm:end-8 sm:w-[480px] bg-surface/95 backdrop-blur-md border border-brand/30 rounded-2xl p-4 shadow-elev-3 z-50 animate-in slide-in-from-bottom-4 duration-300">
       <div className="flex items-center justify-between gap-3 mb-3">
         <div className="flex items-center gap-2">
           <Layers size={18} className="text-brand" />

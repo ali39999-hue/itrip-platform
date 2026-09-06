@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { requirePermission } from '@/domains/identity/permission-service';
+import { getTenantScopedPrisma } from '@/lib/prisma';
+import { requirePermission, getTenantAuthContext } from '@/domains/identity/permission-service';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    await requirePermission(['booking:view:all', 'ops:override:cancel']);
+    const user = await requirePermission(['booking:view:all', 'ops:override:cancel']);
+
+    // IAM-007: mirror getAdminBookings — global search respects the tenant
+    // boundary (org-scoped principals see only their organization; platform
+    // SUPER_ADMIN bypasses). Same contract as every other admin surface.
+    const tenantCtx = await getTenantAuthContext(user.id);
+    const db = getTenantScopedPrisma(tenantCtx.organizationId, tenantCtx.isSuperAdmin);
 
     const query = req.nextUrl.searchParams.get('q')?.trim();
     if (!query || query.length < 2) {
@@ -15,7 +21,7 @@ export async function GET(req: NextRequest) {
 
     const [bookings, trips, customers, refunds, invoices] = await Promise.all([
       // 1. Search Bookings by reference or external PNR
-      prisma.booking.findMany({
+      db.booking.findMany({
         where: {
           OR: [
             { reference: { contains: query, mode: 'insensitive' } },
@@ -27,7 +33,7 @@ export async function GET(req: NextRequest) {
       }),
 
       // 2. Search Trips by reference or title
-      prisma.trip.findMany({
+      db.trip.findMany({
         where: {
           OR: [
             { reference: { contains: query, mode: 'insensitive' } },
@@ -39,7 +45,7 @@ export async function GET(req: NextRequest) {
       }),
 
       // 3. Search Customers by name, email, or phone
-      prisma.user.findMany({
+      db.user.findMany({
         where: {
           OR: [
             { name: { contains: query, mode: 'insensitive' } },
@@ -52,7 +58,7 @@ export async function GET(req: NextRequest) {
       }),
 
       // 4. Search Refunds by refundNumber
-      prisma.refund.findMany({
+      db.refund.findMany({
         where: {
           refundNumber: { contains: query, mode: 'insensitive' },
         },
@@ -61,7 +67,7 @@ export async function GET(req: NextRequest) {
       }),
 
       // 5. Search Invoices by invoiceNumber
-      prisma.invoice.findMany({
+      db.invoice.findMany({
         where: {
           invoiceNumber: { contains: query, mode: 'insensitive' },
         },

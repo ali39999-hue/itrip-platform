@@ -6,6 +6,7 @@ import { COUNTRY_ORDER, EXPERIENCE_CATEGORY_META, type CountryId, type Experienc
 import type { Answers, BudgetTier, Pace, Who } from '@/hooks/usePlanner';
 import { PlannerWizard, QUESTIONS } from '@/components/plan/PlannerWizard';
 import { PlannerResult } from '@/components/plan/PlannerResult';
+import { FiruzoAiLoading } from '@/components/shared/FiruzoAiLoading';
 
 function parseNaturalQuery(q: string): Answers | null {
   if (!q) return null;
@@ -61,8 +62,19 @@ export default function PlanPage() {
   const [step, setStep] = useState(0); // index در QUESTIONS
   const [ans, setAns] = useState<Answers>({});
   const [startAtResult, setStartAtResult] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [seed, setSeed] = useState(0);
   const [shared, setShared] = useState(false);
+
+  useEffect(() => {
+    if (step >= QUESTIONS.length && !startAtResult) {
+      setIsGenerating(true);
+      const timer = setTimeout(() => {
+        setIsGenerating(false);
+      }, 2600);
+      return () => clearTimeout(timer);
+    }
+  }, [step, startAtResult]);
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
@@ -131,6 +143,14 @@ export default function PlanPage() {
 
     setShared(true);
     setTimeout(() => setShared(false), 2600);
+  }
+
+  if (isGenerating) {
+    return (
+      <div className="min-h-[75vh] flex flex-col items-center justify-center bg-soft/30 py-10 px-4">
+        <FiruzoAiLoading />
+      </div>
+    );
   }
 
   if (done) {

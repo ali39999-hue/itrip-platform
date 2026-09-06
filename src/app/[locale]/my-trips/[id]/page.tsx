@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { useAuthStore } from '@/stores/auth-store';
+import { useHydration } from '@/hooks/useHydration';
 import { useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { getBookingById } from '@/actions/booking';
@@ -84,8 +85,18 @@ export default function TripDetailsPage({
     };
   }, [id]);
 
+  const isHydrated = useHydration();
+
   if (is404) {
     notFound();
+  }
+
+  if (loading || !isHydrated) {
+    return (
+      <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-24 flex items-center justify-center text-brand">
+        <Loader2 className="animate-spin" size={36} />
+      </div>
+    );
   }
 
   if (!user) {
@@ -122,14 +133,6 @@ export default function TripDetailsPage({
             ru: 'Вход / Регистрация',
           })}
         </Button>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-24 flex items-center justify-center text-brand">
-        <Loader2 className="animate-spin" size={36} />
       </div>
     );
   }

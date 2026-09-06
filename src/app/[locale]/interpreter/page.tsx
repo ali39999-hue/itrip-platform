@@ -175,7 +175,7 @@ export default function InterpreterPage() {
       </div>
 
       {/* فرم رزرو + پیشنهاد خودکار گروه */}
-      <section id="booking" className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-5 mb-14 items-start">
+      <section id="booking" className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-5 mb-14 items-start">
         <div className="p-6 md:p-8 rounded-xl bg-surface border border-line shadow-sm">
           <h2 className="text-xl font-black mb-1">{t('booking')}</h2>
           <p className="text-[12px] font-bold text-sub m-0 mb-6">{t('groupSizeHint')}</p>

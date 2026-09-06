@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { getNotificationProvider } from './NotificationProvider';
+import { decryptSensitive } from '@/lib/security/crypto-vault';
+import { createLogger } from '@/lib/observability/logger';
 import crypto from 'crypto';
 
 /** Events stuck in PROCESSING for longer than this are re-queued. */
@@ -72,6 +74,9 @@ export class OutboxConsumer {
       let processedCount = 0;
 
       for (const event of claimedEvents) {
+        // OBS-002/003: every log line for this event carries its id/type so
+        // failures are traceable; field redaction guards OTP/PII leakage.
+        const log = createLogger('outbox', event.id);
         try {
           const payload = JSON.parse(event.payload || '{}');
 
@@ -131,20 +136,42 @@ export class OutboxConsumer {
 
             case 'AUTH_OTP_REQUESTED': {
               const notificationProvider = getNotificationProvider();
-              const { identifier, channel, code } = payload;
+              const { identifier, channel, codeEnc } = payload;
+
+              // The outbox payload carries the code AES-256-GCM sealed by
+              // issueOtp(); plaintext only exists in this scope at delivery
+              // time. Legacy events without codeEnc keep the masked message.
+              let code: string | undefined;
+              if (codeEnc) {
+                try {
+                  code = decryptSensitive(String(codeEnc));
+                } catch {
+                  // Unseal failure (e.g. key rotation): treat as a processing
+                  // failure so the event retries instead of delivering "***".
+                  throw new Error('OTP delivery failed: could not decrypt one-time code from outbox payload');
+                }
+              }
+
               const otpMessage = `کد تایید ورود به فیروزو: ${code || '***'}\nاعتبار: ۵ دقیقه`;
 
+              let delivery;
               if (channel === 'email' || (identifier && identifier.includes('@'))) {
-                await notificationProvider.sendEmail(
+                delivery = await notificationProvider.sendEmail(
                   identifier,
                   'کد تایید ورود به فیروزو',
                   otpMessage
                 );
               } else {
-                await notificationProvider.sendSms(
+                delivery = await notificationProvider.sendSms(
                   identifier,
                   otpMessage
                 );
+              }
+
+              // Delivery failure must NOT be acknowledged: throwing re-queues the
+              // event with backoff and eventually dead-letters it as actionable.
+              if (!delivery.success) {
+                throw new Error(`OTP delivery failed via ${delivery.provider}: ${delivery.error || 'unknown error'}`);
               }
               break;
             }
@@ -164,10 +191,17 @@ export class OutboxConsumer {
           });
           processedCount++;
         } catch (eventErr: unknown) {
-          console.error(`[Outbox] Failed processing event ${event.id}:`, eventErr);
           const errorMessage = eventErr instanceof Error ? eventErr.message : String(eventErr);
           const nextRetry = (event.retryCount || 0) + 1;
           const isDeadLetter = nextRetry >= 5;
+          log.error('Outbox event processing failed', {
+            eventType: event.eventType,
+            aggregateType: event.aggregateType,
+            aggregateId: event.aggregateId,
+            retry: nextRetry,
+            deadLetter: isDeadLetter,
+            error: errorMessage,
+          });
 
           // Exponential backoff: 2^retry * 10 seconds (10s, 20s, 40s, 80s)
           const backoffSeconds = Math.min(Math.pow(2, nextRetry) * 10, 600);

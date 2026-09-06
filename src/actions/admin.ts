@@ -1,10 +1,12 @@
 'use server';
 
 import { prisma, getTenantScopedPrisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { requirePermission, getTenantAuthContext } from '@/domains/identity/permission-service';
 import { ReconciliationService, ReconciliationReport } from '@/domains/ledger/ReconciliationService';
+import { InventoryEngine } from '@/domains/inventory/InventoryEngine';
+import { SettlementDomainService } from '@/domains/finance/SettlementDomainService';
+import { businessMetrics } from '@/lib/observability/business-metrics';
 
 export async function runLedgerReconciliation(): Promise<ReconciliationReport> {
   await requirePermission(['finance:reports:view', 'finance:settlement:match']);
@@ -128,115 +130,69 @@ export async function getAdminBookings() {
   }
 }
 
-import { BookingStateMachine, BookingState } from '@/domains/booking/state-machine';
-import { GeneralLedgerService } from '@/domains/ledger/GeneralLedgerService';
-import { v4 as uuidv4 } from 'uuid';
+import { RefundDomainService } from '@/domains/refund/RefundDomainService';
 
+/**
+ * Admin full-refund command (REF-001..REF-008).
+ * All refund semantics — idempotency, immutable policy snapshot, approval trail,
+ * attempt record, ledger reversal, inventory hold release, outbox notification —
+ * live in RefundDomainService. The action authenticates, gates eligibility, and
+ * writes the sensitive-action audit record (IAM-011).
+ */
 export async function refundBookingAdmin(bookingId: string) {
   try {
     const user = await requirePermission('booking:refund:approve');
 
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { items: true },
+      select: { id: true, status: true },
     });
     if (!booking) return { success: false, error: 'Booking not found' };
     if (booking.status !== 'CONFIRMED') return { success: false, error: 'Only confirmed bookings can be refunded' };
 
-    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // 1. Walk the state machine through the refund chain.
-      BookingStateMachine.assertTransition(booking.status as BookingState, 'CANCEL_REQUESTED');
-      BookingStateMachine.assertTransition('CANCEL_REQUESTED', 'CANCELLING');
-      BookingStateMachine.assertTransition('CANCELLING', 'CANCELLED');
-      BookingStateMachine.assertTransition('CANCELLED', 'REFUND_INITIATED');
+    // Deterministic per-booking key: a second full refund of the same booking —
+    // even a concurrent one — collapses onto the first refund (REF-005).
+    const result = await RefundDomainService.processRefund({
+      bookingId,
+      idempotencyKey: `admin_full_refund_${bookingId}`,
+      reason: 'Admin initiated full refund',
+      approvedBy: user.id,
+    });
 
-      await tx.booking.update({
-        where: { id: bookingId },
-        data: {
-          status: 'REFUND_INITIATED',
-          paymentStatus: 'PARTIALLY_REFUNDED',
-          cancelledAt: new Date(),
-        },
-      });
+    if (!result.success) {
+      return { success: false, error: result.error || 'Refund processing failed' };
+    }
 
-      // Relational Booking Status History (BOOK-004)
-      await tx.bookingStatusHistory.create({
-        data: {
-          bookingId,
-          fromStatus: booking.status,
-          toStatus: 'REFUND_INITIATED',
-          actor: user.id,
-          reason: 'Admin initiated refund workflow',
-        },
-      });
-
-      // 2. Double-Entry Ledger Refund Logic via Domain Service
-      const refundGroupId = uuidv4();
-
-      await GeneralLedgerService.postRefund({
-        groupId: refundGroupId,
-        userId: booking.customerId,
-        amount: booking.totalAmount.toNumber(),
-        currency: booking.currency,
-        referenceId: booking.id,
-      }, tx);
-
-      BookingStateMachine.assertTransition('REFUND_INITIATED', 'REFUNDED');
-
-      await tx.booking.update({
-        where: { id: bookingId },
-        data: {
-          status: 'REFUNDED',
-          paymentStatus: 'REFUNDED',
-        },
-      });
-
-      await tx.bookingStatusHistory.create({
-        data: {
-          bookingId,
-          fromStatus: 'REFUND_INITIATED',
-          toStatus: 'REFUNDED',
-          actor: user.id,
-          reason: 'Admin refund completed and ledger posted',
-        },
-      });
-
-      // 3. Release inventory so refunded bookings stop consuming capacity.
-      // A captured hold means allotment.booked was incremented at payment.
-      if (booking.holdToken) {
-        const hold = await tx.inventoryHold.findUnique({ where: { token: booking.holdToken } });
-        if (hold) {
-          if (hold.status === 'CAPTURED') {
-            await tx.allotment.updateMany({
-              where: { inventoryItemId: hold.inventoryItemId, date: hold.allotmentDate },
-              data: { booked: { decrement: hold.quantity } },
-            });
-          }
-          await tx.inventoryHold.updateMany({
-            where: { token: booking.holdToken, status: { in: ['ACTIVE', 'CAPTURED'] } },
-            data: { status: 'RELEASED' },
-          });
-        }
-      }
-
-      // 4. Audit Log
-      await tx.auditLog.create({
-        data: {
-          userId: user.id,
-          action: 'BOOKING_REFUNDED',
-          resource: 'Booking',
-          resourceId: booking.id,
-          newData: JSON.stringify({ status: 'REFUNDED', amount: booking.totalAmount, currency: booking.currency }),
-        },
-      });
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        action: 'BOOKING_REFUNDED',
+        resource: 'Booking',
+        resourceId: bookingId,
+        newData: JSON.stringify({
+          refundId: result.refundId,
+          refundNumber: result.refundNumber,
+          netRefundAmount: result.netRefundAmount,
+          currency: result.currency,
+        }),
+      },
     });
 
     revalidatePath('/admin/bookings');
-    return { success: true };
+    return {
+      success: true,
+      refundId: result.refundId,
+      refundNumber: result.refundNumber,
+      netRefundAmount: result.netRefundAmount,
+      currency: result.currency,
+    };
   } catch (err: unknown) {
     console.error('refundBookingAdmin server error:', err);
     const message = err instanceof Error ? err.message : '';
     if (message.startsWith('Unauthorized') || message.startsWith('Forbidden')) {
+      return { success: false, error: message };
+    }
+    if (message.startsWith('Invalid state transition')) {
       return { success: false, error: message };
     }
     return { success: false, error: 'Refund processing failed' };
@@ -388,11 +344,114 @@ export async function createAdminInventoryItem(data: {
 
 export async function updateAllotment(id: string, data: { total?: number; stopSell?: boolean }) {
   await requirePermission('inventory:manage');
-  await prisma.allotment.update({
-    where: { id },
-    data,
-  });
+  // Capacity mutations go through the engine (INV-004/005): row-locked and
+  // guarded so `total` can never drop below already-booked capacity.
+  const result = await InventoryEngine.setAllotmentPolicy(id, data);
+  if (!result.success) {
+    return { success: false, error: result.error || 'Allotment update rejected by inventory engine' };
+  }
   revalidatePath('/admin/inventory');
   return { success: true };
 }
+
+// ==================== Supplier Settlement Commands (SET-001..SET-004) ====================
+
+export async function createAdminSettlementBatch(params: {
+  supplierId: string;
+  periodStart: string;
+  periodEnd: string;
+  currency?: string;
+}) {
+  try {
+    await requirePermission('finance:post');
+    const res = await SettlementDomainService.createSettlementBatch({
+      supplierId: params.supplierId,
+      periodStart: new Date(params.periodStart),
+      periodEnd: new Date(params.periodEnd),
+      currency: params.currency,
+    });
+    revalidatePath('/admin/finance');
+    return {
+      success: true,
+      batch: {
+        id: res.id,
+        batchNumber: res.batchNumber,
+        totalPayable: res.totalPayable.toNumber(),
+        netSettlement: res.netSettlement.toNumber(),
+        currency: res.totalPayable.currency,
+        status: res.status,
+      },
+    };
+  } catch (err: unknown) {
+    console.error('createAdminSettlementBatch error:', err);
+    return { success: false, error: 'Failed to create settlement batch' };
+  }
+}
+
+export async function getAdminSettlementBatches(supplierId?: string) {
+  try {
+    await requirePermission('finance:reports:view');
+    const batches = await prisma.settlementBatch.findMany({
+      where: supplierId ? { supplierId } : undefined,
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+    return {
+      success: true,
+      batches: batches.map((b) => ({
+        id: b.id,
+        batchNumber: b.batchNumber,
+        supplierId: b.supplierId,
+        totalPayable: Number(b.totalPayable),
+        netSettlement: Number(b.netSettlement),
+        currency: b.currency,
+        status: b.status,
+        periodStart: b.periodStart.toISOString(),
+        periodEnd: b.periodEnd.toISOString(),
+        createdAt: b.createdAt.toISOString(),
+      })),
+    };
+  } catch (err: unknown) {
+    console.error('getAdminSettlementBatches error:', err);
+    return { success: false, error: 'Failed to fetch settlement batches', batches: [] };
+  }
+}
+
+export async function executeAdminSettlementPayment(batchId: string) {
+  try {
+    const user = await requirePermission('finance:post');
+    const res = await SettlementDomainService.executeSettlementPayment(batchId);
+
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        action: 'SETTLEMENT_PAID',
+        resource: 'SettlementBatch',
+        resourceId: batchId,
+        newData: JSON.stringify({ settledAt: res.settledAt }),
+      },
+    });
+
+    revalidatePath('/admin/finance');
+    return { success: true, settledAt: res.settledAt.toISOString() };
+  } catch (err: unknown) {
+    console.error('executeAdminSettlementPayment error:', err);
+    return { success: false, error: 'Failed to execute settlement payment' };
+  }
+}
+
+/**
+ * Authoritative Business Telemetry Metrics (OBS-005).
+ * Aggregates funnel conversion rates, payment success rates, and volume metrics.
+ */
+export async function getAdminBusinessMetrics() {
+  try {
+    await requirePermission('finance:reports:view');
+    return { success: true, metrics: businessMetrics.getSnapshot() };
+  } catch (err: unknown) {
+    console.error('getAdminBusinessMetrics error:', err);
+    return { success: false, error: 'Failed to fetch business metrics' };
+  }
+}
+
 

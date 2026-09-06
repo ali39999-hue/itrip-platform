@@ -61,12 +61,12 @@ export function FinancialSection() {
         </div>
 
         {/* Right Column: Modern Fintech Digital Card Preview */}
-        <div className="lg:col-span-5 relative">
+        <div className="lg:col-span-5 relative overflow-hidden rounded-3xl">
           {/* Card Container with Gradient Mesh and Glassmorphism */}
           <div className="relative rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-[#064e4d] via-[#043e3d] to-[#022322] text-surface shadow-elev-3 border border-surface/15 overflow-hidden">
             {/* Background Decorative Rings */}
-            <div className="absolute -end-12 -top-12 w-48 h-48 rounded-full border-[18px] border-mint-bright/10 pointer-events-none" />
-            <div className="absolute -start-10 -bottom-10 w-40 h-40 rounded-full border-[14px] border-mint-bright/5 pointer-events-none" />
+            <div className="absolute end-0 -top-8 w-40 h-40 rounded-full border-[16px] border-mint-bright/10 pointer-events-none" />
+            <div className="absolute start-0 -bottom-6 w-32 h-32 rounded-full border-[12px] border-mint-bright/5 pointer-events-none" />
 
             {/* Top Bar of Card */}
             <div className="relative z-10 flex items-center justify-between mb-8">

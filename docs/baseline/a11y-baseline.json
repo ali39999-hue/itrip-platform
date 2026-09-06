@@ -1,0 +1,36 @@
+{
+  "generatedAt": "2026-09-06T11:39:08.881Z",
+  "baseUrl": "http://localhost:3000",
+  "pages": {
+    "home": {
+      "url": "http://localhost:3000/fa",
+      "violationCount": 0,
+      "byRule": [],
+      "passes": 25
+    },
+    "flights-landing": {
+      "url": "http://localhost:3000/fa/flights",
+      "violationCount": 0,
+      "byRule": [],
+      "passes": 29
+    },
+    "hotels-landing": {
+      "url": "http://localhost:3000/fa/hotels",
+      "violationCount": 0,
+      "byRule": [],
+      "passes": 29
+    },
+    "services": {
+      "url": "http://localhost:3000/fa/services",
+      "violationCount": 0,
+      "byRule": [],
+      "passes": 25
+    },
+    "support": {
+      "url": "http://localhost:3000/fa/support",
+      "violationCount": 0,
+      "byRule": [],
+      "passes": 27
+    }
+  }
+}

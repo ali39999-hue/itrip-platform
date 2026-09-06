@@ -13,7 +13,7 @@ export function PlanSearchForm({ query, setQuery }: PlanSearchFormProps) {
 
   return (
     <>
-      <div className="md:col-span-9 relative flex items-center min-h-[58px] px-4 rounded-2xl bg-surface border border-line/80 hover:border-brand focus-within:border-brand focus-within:ring-2 focus-within:ring-brand shadow-sm transition">
+      <div className="col-span-1 sm:col-span-8 lg:col-span-9 relative flex items-center min-h-[58px] px-4 rounded-2xl bg-surface border border-line/80 hover:border-brand focus-within:border-brand focus-within:ring-2 focus-within:ring-brand shadow-sm transition">
         <Sparkles size={20} className="text-gold shrink-0 animate-pulse me-3" />
         <input
           type="text"
@@ -27,7 +27,7 @@ export function PlanSearchForm({ query, setQuery }: PlanSearchFormProps) {
 
       <button
         type="submit"
-        className="md:col-span-3 min-h-[58px] px-6 rounded-2xl bg-action hover:bg-action-hover text-ink text-[15px] font-black shadow-elev-1 hover:shadow-elev-2 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+        className="col-span-1 sm:col-span-4 lg:col-span-3 min-h-[58px] px-6 rounded-2xl bg-action hover:bg-action-hover text-ink text-[15px] font-black shadow-elev-1 hover:shadow-elev-2 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
       >
         <Sparkles size={18} />
         <span>{t('btnPlan')}</span>

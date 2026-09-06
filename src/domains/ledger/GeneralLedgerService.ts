@@ -70,6 +70,8 @@ const OWNER_TYPE_TO_CHART_ACCOUNT: Record<
   SUPPLIER_PAYABLE: { code: '2020', name: 'Supplier Accounts Payable', category: 'LIABILITY' },
   TAX_PAYABLE: { code: '2030', name: 'Tax & VAT Payable', category: 'LIABILITY' },
   FX_POOL: { code: '1030', name: 'FX Liquidity Pool', category: 'ASSET' },
+  PARTNER_PAYABLE: { code: '2040', name: 'Partner Commission Payable', category: 'LIABILITY' },
+  COMMISSION_EXPENSE: { code: '5010', name: 'Partner Commission Expense', category: 'EXPENSE' },
 };
 
 export class GeneralLedgerService {
@@ -138,6 +140,43 @@ export class GeneralLedgerService {
     const debitSum = debits._sum.amount ? new Prisma.Decimal(debits._sum.amount.toString()) : new Prisma.Decimal(0);
 
     return creditSum.sub(debitSum).toNumber();
+  }
+
+  /**
+   * Calculate exact balances for all user accounts with Decimal precision (MONEY-012, FIN-001).
+   * Grouped and aggregated in PostgreSQL to eliminate JavaScript floating-point rounding errors.
+   */
+  static async getUserBalances(
+    userId: string,
+    tx?: Prisma.TransactionClient
+  ): Promise<Record<string, number>> {
+    const client = tx || prisma;
+    const userAccounts = await client.account.findMany({
+      where: { ownerType: 'USER', ownerId: userId },
+      select: { id: true, currency: true },
+    });
+
+    const balances: Record<string, number> = { IRR: 0, USDT: 0, AED: 0 };
+    if (userAccounts.length === 0) return balances;
+
+    const accountIds = userAccounts.map((a) => a.id);
+    const sums = await client.ledgerEntry.groupBy({
+      by: ['accountId', 'direction'],
+      where: { accountId: { in: accountIds } },
+      _sum: { amount: true },
+    });
+
+    const accountCurrency = new Map(userAccounts.map((a) => [a.id, a.currency]));
+    for (const row of sums) {
+      const currency = accountCurrency.get(row.accountId);
+      if (!currency) continue;
+      const amount = row._sum.amount ? new Prisma.Decimal(row._sum.amount.toString()) : new Prisma.Decimal(0);
+      const delta = row.direction === 'CREDIT' ? amount : amount.negated();
+      const current = new Prisma.Decimal(balances[currency] ?? 0);
+      balances[currency] = current.add(delta).toNumber();
+    }
+
+    return balances;
   }
 
   /**

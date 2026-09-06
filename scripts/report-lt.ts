@@ -1,10 +1,15 @@
 import fs from 'fs';
 import path from 'path';
 
+const WALK_ROOT = path.resolve(process.cwd(), 'src');
+
 function findFilesWithLt(dir: string, fileList: string[] = []): string[] {
   const files = fs.readdirSync(dir);
   for (const file of files) {
     const fullPath = path.join(dir, file);
+    if (fullPath !== WALK_ROOT && !fullPath.startsWith(WALK_ROOT + path.sep)) {
+      continue; // containment: never step outside the repository's src/
+    }
     const stat = fs.statSync(fullPath);
     if (stat.isDirectory()) {
       if (!fullPath.includes('node_modules') && !fullPath.includes('.next')) {

@@ -42,6 +42,7 @@ model User {
   userRoles               UserRole[]
   organizationMemberships OrganizationMembership[]
   travelerProfiles        TravelerProfile[]
+  autoBuyRules            AutoBuyRule[]
 }
 
 // B2B & Organization Structure (IAM-003)
@@ -93,10 +94,12 @@ model OrganizationMembership {
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   branch          OrganizationBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  role            Role?        @relation(fields: [roleId], references: [id], onDelete: SetNull)
 
   @@unique([organizationId, userId])
   @@index([userId])
   @@index([branchId])
+  @@index([roleId])
 }
 
 // Traveler Profiles & Travel Documents (IAM-002)
@@ -137,13 +140,14 @@ model TravelDocument {
 }
 
 model Role {
-  id              String           @id @default(cuid())
-  name            String           @unique // e.g. SUPER_ADMIN, FINANCE_OPS
-  permissions     String           // JSON array of permission strings (backward compatibility)
-  description     String?
+  id                      String                   @id @default(cuid())
+  name                    String                   @unique // e.g. SUPER_ADMIN, FINANCE_OPS
+  permissions             String                   // JSON array of permission strings (backward compatibility)
+  description             String?
   
-  userRoles       UserRole[]
-  rolePermissions RolePermission[]
+  userRoles               UserRole[]
+  rolePermissions         RolePermission[]
+  organizationMemberships OrganizationMembership[]
 }
 
 model Permission {
@@ -391,6 +395,7 @@ model Booking {
   ticketStatus    String   @default("NOT_ISSUED") // NOT_ISSUED, ISSUING, ISSUED, VOIDED, REFUND_PENDING, REFUNDED
   totalAmount     Decimal  
   currency        String   @default("IRR")
+  travelDate      String?  // Primary travel date (YYYY-MM-DD), queryable — mirrors the details snapshot
   
   supplierId      String?  
   externalPnr     String?  // GDS reference
@@ -409,12 +414,14 @@ model Booking {
   refunds         Refund[]
   statusHistory   BookingStatusHistory[]
   priceSnapshots  PriceSnapshot[]
+  autoBuyRules    AutoBuyRule[]
   
   @@index([customerId])
   @@index([organizationId])
   @@index([tripId])
   @@index([status])
   @@index([paymentStatus])
+  @@index([travelDate])
 }
 
 model BookingStatusHistory {
@@ -940,3 +947,179 @@ model TaxRule {
   @@index([jurisdictionId, category])
   @@index([effectiveFrom, effectiveTo])
 }
+
+// ==================== Auto-Buy / Smart Purchase Rules ====================
+model AutoBuyRule {
+  id               String    @id @default(cuid())
+  userId           String
+  title            String
+  serviceType      String    // TOURS, FLIGHTS, HOTELS
+  targetId         String?   // tour ID, hotel ID, flight number
+  origin           String?
+  destination      String?
+  targetDate       String    // YYYY-MM-DD
+  maxPrice         Decimal   @db.Decimal(18, 4)
+  currency         String    @default("IRR")
+  passengerCount   Int       @default(1)
+  passengerDetails String    @db.Text // JSON string of passengers
+  executionMode    String    @default("ON_CONDITIONS_MET") // ON_PRICE_DROP, ON_SCHEDULED_TIME, ON_INVENTORY_AVAILABLE, ON_CONDITIONS_MET
+  status           String    @default("ACTIVE") // ACTIVE, TRIGGERED, FULFILLED, FAILED_FUNDS, CANCELLED, EXPIRED
+  scheduledAt      DateTime?
+  lastCheckedAt    DateTime?
+  bookingId        String?
+  failureReason    String?
+  expiresAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking          Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+  @@index([serviceType])
+  @@index([targetDate])
+}
+
+// ==================== Content Management: Tours, Experiences, Travelogues & Guides ====================
+
+model Tour {
+  id                 String              @id @default(cuid())
+  title              String
+  titleEn            String
+  city               String
+  cityEn             String?
+  country            String              @default("ایران")
+  countryEn          String?             @default("Iran")
+  durationDays       Int                 @default(3)
+  durationNights     Int                 @default(2)
+  price              Decimal             @db.Decimal(18, 4)
+  childPrice         Decimal?            @db.Decimal(18, 4)
+  rating             Float               @default(5.0)
+  reviewsCount       Int                 @default(0)
+  category           String              @default("cultural") // cultural, nature, medical, adventure
+  heroImage          String?
+  gallery            String[]            @default([])
+  summary            String?             @db.Text
+  summaryEn          String?             @db.Text
+  description        String?             @db.Text
+  descriptionEn      String?             @db.Text
+  highlights         String[]            @default([])
+  includes           String[]            @default([])
+  excludes           String[]            @default([])
+  hotelName          String?
+  hotelStars         Int?                @default(5)
+  transportType      String?
+  transportTypeEn    String?
+  groupSize          String?
+  groupSizeEn        String?
+  guideLanguages     String[]            @default(["فارسی"])
+  isPublished        Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  departureDates     TourDepartureDate[]
+  itineraryDays      TourItineraryDay[]
+
+  @@index([category])
+  @@index([city])
+  @@index([isPublished])
+}
+
+model TourDepartureDate {
+  id             String   @id @default(cuid())
+  tourId         String
+  startDate      String   // YYYY-MM-DD
+  endDate        String   // YYYY-MM-DD
+  price          Decimal  @db.Decimal(18, 4)
+  childPrice     Decimal? @db.Decimal(18, 4)
+  availableSeats Int      @default(10)
+  guaranteed     Boolean  @default(true)
+
+  tour           Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@index([tourId])
+}
+
+model TourItineraryDay {
+  id            String   @id @default(cuid())
+  tourId        String
+  day           Int
+  title         String
+  titleEn       String?
+  description   String   @db.Text
+  activities    String[] @default([])
+  breakfast     Boolean  @default(false)
+  lunch         Boolean  @default(false)
+  dinner        Boolean  @default(false)
+  accommodation String?
+
+  tour          Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@index([tourId])
+}
+
+model SignatureExperience {
+  id          String   @id @default(cuid())
+  countryId   String   // iran, turkey, uae, georgia, russia, oman, china
+  category    String   // yacht, festival, culture, nature, wellness, adventure, theater, exhibition, nightlife
+  title       String
+  titleEn     String
+  desc        String   @db.Text
+  descEn      String   @db.Text
+  where       String
+  whereEn     String
+  when        String
+  whenEn      String
+  fromPrice   Decimal  @db.Decimal(18, 4)
+  image       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([countryId])
+  @@index([category])
+  @@index([isActive])
+}
+
+model Travelogue {
+  id          String   @id @default(cuid())
+  countryId   String   @default("iran")
+  titleFa     String
+  titleEn     String
+  destFa      String
+  destEn      String
+  userName    String
+  userAvatar  String?
+  image       String
+  contentFa   String   @db.Text
+  contentEn   String   @db.Text
+  likesCount  Int      @default(0)
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([countryId])
+  @@index([isPublished])
+}
+
+model GuideArticle {
+  id          String   @id @default(cuid())
+  categoryFa  String
+  categoryEn  String
+  titleFa     String
+  titleEn     String
+  readTime    String   @default("۵ دقیقه")
+  excerptFa   String   @db.Text
+  excerptEn   String   @db.Text
+  bodyFa      String   @db.Text
+  bodyEn      String   @db.Text
+  image       String?
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isPublished])
+}
+
+

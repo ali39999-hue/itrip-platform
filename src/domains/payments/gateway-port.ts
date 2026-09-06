@@ -142,11 +142,37 @@ export class ShetabGatewayAdapter implements PaymentGatewayPort {
       }
     }
 
-    // 3. Signature verification when signature and secret are configured
-    if (this.secretKey && req.signature) {
+    // 3. Signature verification — strictly fail-closed (PAY-005):
+    // a callback is only trusted when the adapter is configured AND a valid
+    // HMAC signature is present. Missing secret or missing signature = reject.
+    if (!this.isProductionConfigured()) {
+      return {
+        verified: false,
+        transactionId: `unconfigured_${req.gatewayRef}`,
+        settledAmount: req.expectedAmount,
+        settledCurrency: req.expectedAmount.currency,
+        status: 'FAILED',
+        errorCode: 'GATEWAY_NOT_CONFIGURED',
+        error: 'Gateway credentials missing: verification cannot be trusted and fails closed',
+      };
+    }
+    if (!req.signature) {
+      return {
+        verified: false,
+        transactionId: `unsigned_${req.gatewayRef}`,
+        settledAmount: req.expectedAmount,
+        settledCurrency: req.expectedAmount.currency,
+        status: 'FAILED',
+        errorCode: 'MISSING_SIGNATURE',
+        error: 'Gateway callback signature missing: verification fails closed',
+      };
+    }
+    {
       const expectedData = `${req.gatewayRef}:${req.expectedAmount.toString()}:${req.merchantId || this.merchantId}:${req.timestamp || ''}`;
       const computedHmac = crypto.createHmac('sha256', this.secretKey).update(expectedData).digest('hex');
-      if (!crypto.timingSafeEqual(Buffer.from(computedHmac), Buffer.from(req.signature))) {
+      const sigBuf = Buffer.from(req.signature);
+      const computedBuf = Buffer.from(computedHmac);
+      if (sigBuf.length !== computedBuf.length || !crypto.timingSafeEqual(sigBuf, computedBuf)) {
         return {
           verified: false,
           transactionId: `tampered_${req.gatewayRef}`,
@@ -169,26 +195,60 @@ export class ShetabGatewayAdapter implements PaymentGatewayPort {
   }
 
   async verifyWebhook(rawBody: string, signature: string): Promise<WebhookVerificationResult> {
+    const invalid = (error: string) => {
+      let eventId = 'unknown';
+      let eventType = 'unknown';
+      let bookingId = '';
+      let gatewayRef = '';
+      let currency = 'IRR';
+      let eventTime = 0;
+      let merchantId = '';
+      try {
+        const parsed = JSON.parse(rawBody);
+        eventId = parsed.eventId || 'unknown';
+        eventType = parsed.eventType || 'unknown';
+        bookingId = parsed.bookingId || '';
+        gatewayRef = parsed.gatewayRef || '';
+        currency = parsed.currency || 'IRR';
+        eventTime = Number(parsed.timestamp) || 0;
+        merchantId = parsed.merchantId || '';
+      } catch {
+        // Unparseable body — keep placeholder correlation fields.
+      }
+      return {
+        valid: false as const,
+        gatewayName: this.name,
+        eventId,
+        eventType,
+        bookingId,
+        gatewayRef,
+        settledAmount: Money.zero(currency),
+        settledCurrency: currency.toUpperCase(),
+        timestamp: eventTime,
+        merchantId,
+        error,
+      };
+    };
+
+    // Fail closed when the signing secret is not configured (PAY-005):
+    // an unconfigured gateway must never be able to authorize a capture.
+    if (!this.secretKey) {
+      return invalid('Gateway webhook signature secret is not configured (SHETAB_SECRET_KEY missing)');
+    }
+    if (!signature) {
+      return invalid('Webhook signature missing: verification fails closed');
+    }
+
     const payload = JSON.parse(rawBody);
     const { eventId, eventType, bookingId, gatewayRef, amount, currency, timestamp, merchantId } = payload;
 
-    // Verify signature
-    if (this.secretKey) {
+    // Verify signature over the EXACT raw body bytes sent by the gateway.
+    {
       const computed = crypto.createHmac('sha256', this.secretKey).update(rawBody).digest('hex');
-      if (signature.length !== computed.length || !crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(signature))) {
-        return {
-          valid: false,
-          gatewayName: this.name,
-          eventId: eventId || 'unknown',
-          eventType: eventType || 'unknown',
-          bookingId: bookingId || '',
-          gatewayRef: gatewayRef || '',
-          settledAmount: Money.zero(currency || 'IRR'),
-          settledCurrency: currency || 'IRR',
-          timestamp: timestamp || 0,
-          merchantId: merchantId || '',
-          error: 'Invalid webhook cryptographic signature',
-        };
+      const sigBuf = Buffer.from(signature);
+      const computedBuf = Buffer.from(computed);
+      if (sigBuf.length !== computedBuf.length || !crypto.timingSafeEqual(computedBuf, sigBuf)) {
+        return invalid('Invalid webhook cryptographic signature');
       }
     }
 
@@ -252,6 +312,9 @@ export class DemoPaymentAdapter implements PaymentGatewayPort {
   readonly isDemo = true;
 
   private checkDemoAllowed() {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Security Error: Demo payment adapter is disabled in production (NODE_ENV=production)');
+    }
     if (process.env.DEMO_MODE !== 'true') {
       throw new Error('Security Error: Demo payment adapter is strictly disabled in production mode');
     }
@@ -328,13 +391,16 @@ export class InternalWalletGatewayAdapter implements PaymentGatewayPort {
 }
 
 /**
- * Factory for resolving active gateway port
+ * Factory for resolving active gateway port.
+ * The demo adapter is unreachable in production builds regardless of env:
+ * simulated success paths must never exist in a production process (PAY-005).
  */
 export function getPaymentGateway(method: string): PaymentGatewayPort {
   if (method === 'wallet_irr' || method === 'wallet_usdt') {
     return new InternalWalletGatewayAdapter();
   }
-  if (process.env.DEMO_MODE === 'true') {
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (!isProduction && process.env.DEMO_MODE === 'true') {
     return new DemoPaymentAdapter();
   }
   return new ShetabGatewayAdapter();

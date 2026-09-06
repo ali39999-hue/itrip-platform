@@ -223,4 +223,107 @@ export class InventoryEngine {
     });
     return result.count;
   }
+
+  /**
+   * Admin allotment policy update (INV-004/INV-005).
+   * All Allotment mutations must flow through the engine: this locks the row
+   * FOR UPDATE and enforces the capacity invariant — `total` can never drop
+   * below what is already `booked` (that would fabricate negative availability).
+   */
+  static async setAllotmentPolicy(
+    id: string,
+    policy: { total?: number; stopSell?: boolean },
+    tx?: Prisma.TransactionClient
+  ): Promise<{ success: boolean; error?: string }> {
+    const client = tx || prisma;
+
+    const rows: Array<{ id: string; total: number; booked: number; stopSell: boolean }> =
+      await client.$queryRaw`
+        SELECT "id", "total", "booked", "stopSell"
+        FROM "Allotment"
+        WHERE "id" = ${id}
+        FOR UPDATE
+      `;
+
+    const allotment = rows[0];
+    if (!allotment) return { success: false, error: 'Allotment not found' };
+
+    if (policy.total !== undefined && policy.total < allotment.booked) {
+      return {
+        success: false,
+        error: `Cannot set total (${policy.total}) below already-booked capacity (${allotment.booked})`,
+      };
+    }
+
+    await client.allotment.update({
+      where: { id: allotment.id },
+      data: {
+        ...(policy.total !== undefined ? { total: policy.total } : {}),
+        ...(policy.stopSell !== undefined ? { stopSell: policy.stopSell } : {}),
+      },
+    });
+
+    return { success: true };
+  }
+
+  /**
+   * Compensation path for captured holds (INV-010, saga/refund compensation).
+   * Restores capacity consumed by a CAPTURED hold exactly once; releasing an
+   * ACTIVE hold never touches the allotment (capacity was not consumed).
+   * Idempotent: already-released/expired holds return success without effects.
+   */
+  static async compensateCapturedHold(
+    token: string,
+    tx?: Prisma.TransactionClient
+  ): Promise<{ success: boolean; capacityRestored: boolean; error?: string }> {
+    const client = tx || prisma;
+
+    const holds: Array<{
+      id: string;
+      inventoryItemId: string;
+      allotmentDate: string;
+      quantity: number;
+      status: string;
+    }> = await client.$queryRaw`
+      SELECT "id", "inventoryItemId", "allotmentDate", "quantity", "status"
+      FROM "InventoryHold"
+      WHERE "token" = ${token}
+      FOR UPDATE
+    `;
+
+    const hold = holds[0];
+    if (!hold) return { success: false, capacityRestored: false, error: 'Hold not found' };
+
+    if (hold.status === 'RELEASED' || hold.status === 'EXPIRED') {
+      return { success: true, capacityRestored: false };
+    }
+
+    if (hold.status === 'CAPTURED') {
+      // Guarded decrement: only fires while booked >= quantity, so repeated
+      // compensation can never push booked negative (double-release safety).
+      const restored: Array<{ id: string }> = await client.$queryRaw`
+        UPDATE "Allotment"
+        SET "booked" = "booked" - ${hold.quantity}
+        WHERE "inventoryItemId" = ${hold.inventoryItemId}
+          AND "date" = ${hold.allotmentDate}
+          AND "booked" >= ${hold.quantity}
+        RETURNING "id"
+      `;
+      if (!restored || restored.length === 0) {
+        return { success: false, capacityRestored: false, error: 'Allotment booked counter below hold quantity — capacity not restored' };
+      }
+      await client.inventoryHold.update({
+        where: { id: hold.id },
+        data: { status: 'RELEASED' },
+      });
+      return { success: true, capacityRestored: true };
+    }
+
+    // ACTIVE hold: nothing consumed yet — just mark released.
+    await client.inventoryHold.update({
+      where: { id: hold.id },
+      data: { status: 'RELEASED' },
+    });
+    return { success: true, capacityRestored: false };
+  }
 }

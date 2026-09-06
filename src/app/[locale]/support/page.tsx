@@ -222,8 +222,9 @@ export default function SupportPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'دسته‌بندی موضوع', en: 'Subject Category', ar: 'التصنيف', zh: '问题类型', ru: 'Категория вопроса' })}</label>
+                    <label htmlFor="support-category" className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'دسته‌بندی موضوع', en: 'Subject Category', ar: 'التصنيف', zh: '问题类型', ru: 'Категория вопроса' })}</label>
                     <select
+                      id="support-category"
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
                       className="w-full h-11 rounded-xl border border-line px-3 text-xs font-bold bg-surface text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"

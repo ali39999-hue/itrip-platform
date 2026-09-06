@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { BookingStateMachine, type BookingState } from './state-machine';
+import { BookingDomainService } from './BookingDomainService';
 import { calculatePricing, roundCurrency } from '@/lib/pricing/engine';
 
 describe('Unit Tests: Booking State Machine Full Coverage', () => {
@@ -96,3 +97,24 @@ describe('Unit Tests: Pricing Engine Calculations', () => {
     expect(usdtRound.rounded).toBe(12.35);
   });
 });
+
+describe('Quote Expiry & Server-Side Reprice (B2C-007, B2C-008)', () => {
+  it('B2C-007: computes canonical draft pricing via BookingDomainService with valid PriceSnapshot', () => {
+    const { rawNetCost, pricing } = BookingDomainService.computeDraftPricing({
+      productType: 'HOTEL',
+      baseUnitCost: 2_000_000,
+      quantity: 2,
+      nights: 3,
+      totalAddonsCost: 300_000,
+      userRole: 'CUSTOMER',
+      currency: 'IRR',
+    });
+
+    // 2 rooms * 3 nights * 2,000,000 = 12,000,000 + 300,000 addons = 12,300,000
+    expect(rawNetCost).toBe(12_300_000);
+    expect(pricing.sellPrice).toBeGreaterThanOrEqual(12_300_000);
+    expect(pricing.snapshot.currency).toBe('IRR');
+    expect(pricing.snapshot.breakdownJson).toBeDefined();
+  });
+});
+

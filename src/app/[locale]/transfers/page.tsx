@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DatePicker } from '@/components/ui/DatePicker';
 import { daysFromNow } from '@/lib/utils';
 import { shimmerDataUrl } from '@/lib/image-utils';
-import { CarFront, Users, Luggage, Clock, Search, Crown, PlaneTakeoff, MapPin, TrainFront, BusFront, Star } from 'lucide-react';
+import { CarFront, Users, Luggage, Clock, Search, Crown, PlaneTakeoff, MapPin, TrainFront, BusFront, Star, ArrowLeft, ArrowRight } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
 const TRANSFER_IMGS: Record<string, string> = {
@@ -227,8 +227,11 @@ export default function TransfersPage() {
                       </div>
                     </div>
                     
-                    <p className="text-xs font-bold text-sub mb-4">
-                      {tr.from} → {tr.to}
+                    <p className="text-xs font-bold text-sub mb-4 flex items-center gap-1.5">
+                      <span>{tr.from}</span>
+                      <ArrowRight size={12} className="ltr:inline rtl:hidden text-brand-dark" />
+                      <ArrowLeft size={12} className="rtl:inline ltr:hidden text-brand-dark" />
+                      <span>{tr.to}</span>
                     </p>
 
                     <div className="flex flex-wrap gap-4 text-xs font-bold text-sub">

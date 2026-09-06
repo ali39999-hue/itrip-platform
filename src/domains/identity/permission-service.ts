@@ -1,8 +1,8 @@
 import { prisma } from '@/lib/prisma';
-import { ERPPermission, ROLE_DEFAULT_PERMISSIONS } from './permissions';
+import { ERPPermission, ROLE_DEFAULT_PERMISSIONS, ERP_STAFF_ROLES } from './permissions';
 
 export type { ERPPermission };
-export { ROLE_DEFAULT_PERMISSIONS };
+export { ROLE_DEFAULT_PERMISSIONS, ERP_STAFF_ROLES };
 
 export interface TenantAuthContext {
   userId: string;
@@ -12,9 +12,6 @@ export interface TenantAuthContext {
   isSuperAdmin: boolean;
   permissions: Set<ERPPermission>;
 }
-
-/** Role names that grant ERP back-office access (checked relationally via UserRole). */
-export const ERP_STAFF_ROLES = ['SUPER_ADMIN', 'FINANCE', 'OPS'] as const;
 
 /**
  * ERP gate resolved strictly from the relational chain (IAM-001).

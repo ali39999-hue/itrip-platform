@@ -14,7 +14,7 @@ export function UserAccountMenu() {
   return (
     <div className="flex items-center gap-2">
       {/* Admin ERP Quick Badge */}
-      {user?.role === 'admin' && (
+      {['admin', 'SUPER_ADMIN', 'OPS', 'FINANCE'].includes(user?.role || '') && (
         <Link
           href="/admin"
           className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-mint text-brand-dark hover:bg-brand hover:text-surface text-[12px] font-black border border-brand/20 transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
@@ -46,17 +46,17 @@ export function UserAccountMenu() {
       {user ? (
         <Link
           href="/account"
-          className="min-h-[38px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-brand text-surface hover:bg-brand-dark text-[13px] font-black shadow-sm transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+          className="min-h-[38px] inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full bg-brand text-surface hover:bg-brand-dark text-[12px] sm:text-[13px] font-black shadow-sm transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none shrink-0"
         >
           <UserRound size={15} />
-          <span>
+          <span className="truncate max-w-[90px] sm:max-w-none">
             {(locale === 'fa' ? user.firstNameFa : (user.firstNameEn || user.firstNameFa)) || user.phone}
           </span>
         </Link>
       ) : (
         <Link
           href="/auth"
-          className="min-h-[38px] inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-action hover:bg-action-hover text-ink text-[13px] font-black shadow-sm transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none active:scale-95"
+          className="min-h-[38px] inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-action hover:bg-action-hover text-ink text-[12px] sm:text-[13px] font-black shadow-sm transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none active:scale-95 shrink-0"
         >
           <UserRound size={15} />
           <span>{t('signin')}</span>

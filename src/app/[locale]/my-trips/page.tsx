@@ -138,9 +138,8 @@ export default function MyTripsPage() {
   const TERMINAL = new Set(['CANCELLED', 'REFUNDED', 'CANCEL_REQUESTED', 'CANCELLING', 'REFUND_INITIATED', 'FAILED', 'EXPIRED']);
   const now = new Date();
 
-  // Effective travel date: the Booking row has no travelDate column, so read
-  // it from the item's details snapshot (written at draft creation). Falling
-  // back to createdAt put every fresh booking in the "Past" tab.
+  // Effective travel date: prefer the queryable Booking.travelDate column;
+  // legacy rows fall back to the item details snapshot, then createdAt.
   const getTravelDate = (b: BookingRecordSummary): Date => {
     if (b.travelDate) return new Date(b.travelDate);
     try {

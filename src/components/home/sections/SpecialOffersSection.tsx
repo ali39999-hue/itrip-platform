@@ -52,7 +52,7 @@ export function SpecialOffersSection() {
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => router.push('/plan')}
-              className="hidden sm:inline-flex items-center gap-1.5 min-h-10 px-4 rounded-full bg-brand text-surface text-[13px] font-black whitespace-nowrap hover:bg-brand-2 transition shadow-sm shadow-brand/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="hidden sm:inline-flex items-center gap-1.5 min-h-10 px-4 rounded-full bg-brand-dark text-surface text-[13px] font-black whitespace-nowrap hover:bg-deep transition shadow-sm shadow-brand-dark/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <Sparkles size={14} /> {t2('plannerCta')}
             </button>

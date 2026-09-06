@@ -4,6 +4,8 @@ import { BookingStateMachine, BookingState } from './state-machine';
 import { InventoryEngine } from '../inventory/InventoryEngine';
 import { PaymentDomainService } from '../payments/PaymentDomainService';
 import { GeneralLedgerService } from '../ledger/GeneralLedgerService';
+import { InvoiceDomainService } from '../finance/InvoiceDomainService';
+import { businessMetrics } from '@/lib/observability/business-metrics';
 
 export interface ConfirmBookingSagaParams {
   bookingId: string;
@@ -31,13 +33,15 @@ export class BookingSagaOrchestrator {
         'PAYMENT_CONFIRMED'
       );
 
-      // 2. Step 1: Process Payment with Idempotency
+      // 2. Step 1: Process Payment with Idempotency.
+      // Money stays Decimal end-to-end (MONEY-002): totalAmount is a Prisma
+      // Decimal and is passed through untouched — no Number() coercion.
       const paymentRes = await PaymentDomainService.processPayment(
         {
           bookingId: booking.id,
           idempotencyKey: params.idempotencyKey,
           method: params.paymentMethod,
-          amount: Number(booking.totalAmount),
+          amount: booking.totalAmount,
           currency: booking.currency,
         },
         tx
@@ -56,16 +60,17 @@ export class BookingSagaOrchestrator {
         }
       }
 
-      // 4. Step 3: Dual-Entry Ledger Posting
-      // Aggregate costs across ALL booking items, not just the first one.
-      const totalAmt = Number(booking.totalAmount);
-      let netCost = 0;
-      let taxAmount = 0;
-      let feeAmount = 0;
+      // 4. Step 3: Dual-Entry Ledger Posting.
+      // All aggregation happens in Prisma.Decimal (MONEY-002/003) — float
+      // addition of monetary values is banned in this path.
+      const totalAmt = new Prisma.Decimal(booking.totalAmount);
+      let netCost = new Prisma.Decimal(0);
+      let taxAmount = new Prisma.Decimal(0);
+      let feeAmount = new Prisma.Decimal(0);
       for (const item of booking.items) {
-        netCost += Number(item.netCost || 0);
-        taxAmount += Number(item.taxAmount || 0);
-        feeAmount += Number(item.feeAmount || 0);
+        netCost = netCost.add(item.netCost ?? 0);
+        taxAmount = taxAmount.add(item.taxAmount ?? 0);
+        feeAmount = feeAmount.add(item.feeAmount ?? 0);
       }
 
       // Resolve supplier ID from the inventory item's actual supplier, not the item ID.
@@ -117,6 +122,22 @@ export class BookingSagaOrchestrator {
         tx
       );
 
+      // 5b. Step 4b: Issue Commercial Invoice for Confirmed Booking (FIN-011, FIN-012)
+      await InvoiceDomainService.createInvoice(
+        {
+          bookingId: booking.id,
+          customerId: booking.customerId,
+          lines: booking.items.map((item) => ({
+            description: `${item.type} reservation (${booking.reference})`,
+            quantity: 1,
+            unitPrice: item.sellPrice,
+            taxAmount: item.taxAmount || 0,
+          })),
+          currency: booking.currency,
+        },
+        tx
+      );
+
       // 6. Step 5: Transition to CONFIRMED
       BookingStateMachine.assertTransition('PAYMENT_CONFIRMED', 'CONFIRMED');
 
@@ -155,6 +176,12 @@ export class BookingSagaOrchestrator {
         },
       });
 
+      businessMetrics.recordBookingConfirmed(booking.id, totalAmt.toNumber());
+
+      // Update Travel File dossier status (ERP-001)
+      const { TravelFileDomainService } = await import('../erp/TravelFileDomainService');
+      await TravelFileDomainService.onBookingConfirmed(booking.id, tx).catch(() => null);
+
       // 7. Step 6: Durable Outbox Event & Saga Persistence (ASYNC-001, ASYNC-003)
       await tx.outboxEvent.create({
         data: {
@@ -183,7 +210,7 @@ export class BookingSagaOrchestrator {
           currentStep: 'COMPLETED',
           contextJson: JSON.stringify({
             paymentId: paymentRes.paymentId,
-            totalAmount: totalAmt,
+            totalAmount: totalAmt.toString(),
             currency: booking.currency,
           }),
           finishedAt: new Date(),
@@ -194,6 +221,7 @@ export class BookingSagaOrchestrator {
               { stepType: 'CAPTURE_INVENTORY_HOLD', status: 'SUCCEEDED' },
               { stepType: 'POST_GENERAL_LEDGER', status: 'SUCCEEDED' },
               { stepType: 'POST_REVENUE_REALIZATION', status: 'SUCCEEDED' },
+              { stepType: 'ISSUE_INVOICE', status: 'SUCCEEDED' },
               { stepType: 'TRANSITION_CONFIRMED', status: 'SUCCEEDED' },
               { stepType: 'EMIT_OUTBOX_EVENT', status: 'SUCCEEDED' },
             ],
