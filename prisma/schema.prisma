@@ -391,6 +391,7 @@ model Booking {
   ticketStatus    String   @default("NOT_ISSUED") // NOT_ISSUED, ISSUING, ISSUED, VOIDED, REFUND_PENDING, REFUNDED
   totalAmount     Decimal  
   currency        String   @default("IRR")
+  travelDate      String?  // Primary travel date (YYYY-MM-DD), queryable — mirrors the details snapshot
   
   supplierId      String?  
   externalPnr     String?  // GDS reference
@@ -415,6 +416,7 @@ model Booking {
   @@index([tripId])
   @@index([status])
   @@index([paymentStatus])
+  @@index([travelDate])
 }
 
 model BookingStatusHistory {

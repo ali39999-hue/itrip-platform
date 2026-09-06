@@ -251,6 +251,7 @@ export async function createBookingDraft(data: unknown) {
           ticketStatus: 'NOT_ISSUED',
           totalAmount: finalTotalAmount,
           currency,
+          travelDate: parsed.travelDate || null,
           holdToken,
           items: {
             create: {
