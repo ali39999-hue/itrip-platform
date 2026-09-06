@@ -70,6 +70,8 @@ const OWNER_TYPE_TO_CHART_ACCOUNT: Record<
   SUPPLIER_PAYABLE: { code: '2020', name: 'Supplier Accounts Payable', category: 'LIABILITY' },
   TAX_PAYABLE: { code: '2030', name: 'Tax & VAT Payable', category: 'LIABILITY' },
   FX_POOL: { code: '1030', name: 'FX Liquidity Pool', category: 'ASSET' },
+  PARTNER_PAYABLE: { code: '2040', name: 'Partner Commission Payable', category: 'LIABILITY' },
+  COMMISSION_EXPENSE: { code: '5010', name: 'Partner Commission Expense', category: 'EXPENSE' },
 };
 
 export class GeneralLedgerService {

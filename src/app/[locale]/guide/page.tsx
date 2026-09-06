@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocale } from 'next-intl';
 import { Link, useRouter } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
@@ -120,8 +120,42 @@ export default function GuidePage() {
   const ariaT = useTranslations('Common.aria');
   
   const [openId, setOpenId] = useState<string | null>(null);
+  const [dbArticles, setDbArticles] = useState<GuideArticle[]>([]);
 
-  const selectedArticle = ARTICLES.find(a => a.id === openId);
+  useEffect(() => {
+    import('@/actions/content').then(({ getPublicGuidesAction }) => {
+      getPublicGuidesAction().then((res) => {
+        if (res.success && res.guides && res.guides.length > 0) {
+          const items: GuideArticle[] = res.guides.map((gd: {
+            id: string;
+            categoryFa: string;
+            categoryEn?: string | null;
+            titleFa: string;
+            titleEn?: string | null;
+            readTime: string;
+            excerptFa: string;
+            excerptEn?: string | null;
+            bodyFa: string;
+            bodyEn?: string | null;
+            image?: string | null;
+          }) => ({
+            id: gd.id,
+            category: { fa: gd.categoryFa, en: gd.categoryEn || gd.categoryFa, ar: gd.categoryFa, zh: gd.categoryFa, ru: gd.categoryFa },
+            title: { fa: gd.titleFa, en: gd.titleEn || gd.titleFa, ar: gd.titleFa, zh: gd.titleFa, ru: gd.titleFa },
+            readTime: { fa: gd.readTime, en: gd.readTime, ar: gd.readTime, zh: gd.readTime, ru: gd.readTime },
+            excerpt: { fa: gd.excerptFa, en: gd.excerptEn || gd.excerptFa, ar: gd.excerptFa, zh: gd.excerptFa, ru: gd.excerptFa },
+            body: { fa: gd.bodyFa, en: gd.bodyEn || gd.bodyFa, ar: gd.bodyFa, zh: gd.bodyFa, ru: gd.bodyFa },
+            image: gd.image || 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&q=75&w=800',
+            icon: ShieldCheck,
+          }));
+          setDbArticles(items);
+        }
+      });
+    }).catch(() => {});
+  }, []);
+
+  const allArticles = [...ARTICLES, ...dbArticles];
+  const selectedArticle = allArticles.find(a => a.id === openId);
 
   return (
     <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-8">
@@ -252,6 +286,42 @@ export default function GuidePage() {
 
         </div>
         
+        {/* Custom Articles from ERP CMS */}
+        {dbArticles.length > 0 && (
+          <div className="mt-12 space-y-4">
+            <h3 className="font-black text-xl text-ink">
+              {lt(locale, { fa: 'سایر مقالات و راهنماهای کاربردی', en: 'More Guides & Travel Advice', ar: 'مقالات أخرى', zh: '更多攻略与文章', ru: 'Другие статьи' })}
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+              {dbArticles.map((art) => (
+                <div
+                  key={art.id}
+                  onClick={() => setOpenId(art.id)}
+                  className="p-5 rounded-3xl bg-surface border border-line shadow-xs hover:shadow-elev-2 transition-all cursor-pointer flex flex-col justify-between gap-3 group"
+                >
+                  <div className="space-y-2">
+                    <span className="px-2.5 py-0.5 rounded-full bg-mint text-brand-dark text-[11px] font-black inline-block">
+                      {lt(locale, art.category)}
+                    </span>
+                    <h4 className="font-black text-base text-ink group-hover:text-brand-dark transition-colors leading-snug">
+                      {lt(locale, art.title)}
+                    </h4>
+                    <p className="text-xs font-medium text-sub line-clamp-2 leading-relaxed">
+                      {lt(locale, art.excerpt)}
+                    </p>
+                  </div>
+                  <div className="pt-2 border-t border-line/60 flex items-center justify-between text-xs font-bold text-sub">
+                    <span>{lt(locale, art.readTime)}</span>
+                    <span className="text-brand-dark group-hover:translate-x-[-2px] transition-transform font-black">
+                      {lt(locale, { fa: 'مطالعه کامل ←', en: 'Read more →', ar: 'اقرأ المزيد ←', zh: '阅读全文 →', ru: 'Читать далее →' })}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <Link href="/travelogues" className="md:hidden mt-6 flex justify-center text-brand-dark font-black text-[14px] items-center gap-1">
           {lt(locale, { fa: 'مشاهده همه مقالات', en: 'View All Articles', ar: 'عرض جميع المقالات', zh: '查看所有攻略', ru: 'Все статьи' })} <ArrowLeft size={16} className="ltr:rotate-180" />
         </Link>

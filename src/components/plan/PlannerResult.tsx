@@ -105,7 +105,7 @@ export function PlannerResult({ ans, setStep, locale, isEn, shared, shareUrl, se
       </div>
 
       {/* ================= MOBILE STICKY PLAN CONVERSION BAR ================= */}
-      <div className="lg:hidden fixed bottom-[58px] inset-x-0 z-40 bg-surface/95 backdrop-blur-md border-t border-line px-4 py-3 shadow-elev-3 flex items-center justify-between gap-4">
+      <div className="lg:hidden fixed bottom-[calc(58px+env(safe-area-inset-bottom,0px))] inset-x-0 z-40 bg-surface/95 backdrop-blur-md border-t border-line px-4 py-3 shadow-elev-3 flex items-center justify-between gap-4">
         <div>
           <span className="text-[10.5px] font-bold text-sub block leading-none mb-1">
             {num(days, locale)} {t('qDays')} • {num(travelers, locale)} مسافر

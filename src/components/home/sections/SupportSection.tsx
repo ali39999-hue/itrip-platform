@@ -33,7 +33,7 @@ export function SupportSection() {
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
           <Link
             href="/support"
-            className="w-full sm:w-auto h-12 px-6 rounded-2xl bg-brand text-surface text-xs sm:text-sm font-bold hover:bg-brand-dark transition flex items-center justify-center gap-2 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="w-full sm:w-auto h-12 px-6 rounded-2xl bg-brand-dark text-surface text-xs sm:text-sm font-bold hover:bg-deep transition flex items-center justify-center gap-2 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             <Headset size={18} />
             <span>{lt(locale, { fa: 'گفتگوی آنلاین با پشتیبان', en: 'Live Chat', ar: 'الدردشة المباشرة', zh: '在线客服', ru: 'Онлайн чат' })}</span>

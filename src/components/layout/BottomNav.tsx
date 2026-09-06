@@ -30,7 +30,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label={t('ariaLabel')}
-      className="fixed inset-x-0 bottom-0 z-85 md:hidden border-t border-line bg-surface/95 backdrop-blur-xl shadow-[0_-8px_28px_rgba(5,63,62,.10)]"
+      className="fixed inset-x-0 bottom-0 z-85 lg:hidden border-t border-line bg-surface/95 backdrop-blur-xl shadow-[0_-8px_28px_rgba(5,63,62,.10)]"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="grid grid-cols-5">
@@ -41,12 +41,12 @@ export function BottomNav() {
               key={it.href}
               href={it.href}
               aria-current={active ? "page" : undefined}
-              className={`relative min-h-[58px] flex flex-col items-center justify-center gap-1 text-[10px] font-extrabold transition focus-visible:ring-2 focus-visible:ring-brand ${
+              className={`relative min-h-[58px] flex flex-col items-center justify-center gap-1 text-[10.5px] font-black transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-brand ${
                 active ? 'text-brand-dark' : 'text-sub hover:text-brand-dark'
               }`}
             >
               <span
-                className={`grid place-items-center w-11 h-7 rounded-full transition ${
+                className={`grid place-items-center w-11 h-7 rounded-full transition-colors ${
                   active ? 'bg-mint' : ''
                 }`}
               >
@@ -57,8 +57,8 @@ export function BottomNav() {
                 {it.href === '/account' && <UserRound size={18} />}
                 {it.href === '/auth' && <UserRound size={18} />}
               </span>
-              {t(it.labelKey)}
-              {active && <span className="absolute top-0 inset-x-6 h-[3px] rounded-b-full bg-brand" />}
+              <span>{t(it.labelKey)}</span>
+              {active && <span className="absolute top-0 inset-x-0 mx-auto w-8 h-[3px] rounded-b-full bg-brand" />}
             </Link>
           );
         })}

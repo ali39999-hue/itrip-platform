@@ -12,7 +12,12 @@ import { useBookingStore } from '@/stores/booking-store';
 import { daysFromNow } from '@/lib/utils';
 import { dualDate } from '@/lib/jalali';
 import { num } from '@/lib/format';
-import { BentoFlightCard } from '@/components/flights/BentoFlightCard';
+import {
+  BentoFlightCard,
+  FlightCompareBar,
+  FlightCompareModal,
+  useFlightComparison,
+} from '@/components/flights';
 import { CrossSellBundle } from '@/components/shared/CrossSellBundle';
 import {
   PlaneTakeoff, PlaneLanding, CalendarDays, PenLine, SlidersHorizontal, X, Check, Loader2, Search,
@@ -58,6 +63,10 @@ function FlightSearchInner() {
   const [editFrom, setEditFrom] = useState(from);
   const [editTo, setEditTo] = useState(to);
   const [editDate, setEditDate] = useState(travelDate);
+
+  // Flight Comparison state
+  const { cmp, toggleCmp, clearCmp } = useFlightComparison();
+  const [compareModalOpen, setCompareModalOpen] = useState(false);
 
   // Live state
   const [flights, setFlights] = useState<Flight[]>([]);
@@ -278,7 +287,7 @@ function FlightSearchInner() {
   );
 
   return (
-    <div className="min-h-screen bg-paper pb-20">
+    <div className="min-h-screen bg-paper pb-32 sm:pb-24 lg:pb-20">
       <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-6 flex flex-col lg:flex-row gap-6 items-start">
         {/* Sidebar desktop */}
         <aside className="w-72 max-h-[calc(100vh-6rem)] shrink-0 hidden lg:block overflow-y-auto overscroll-contain bg-surface rounded-2xl border border-line p-5 shadow-sm sticky top-24">
@@ -412,6 +421,8 @@ function FlightSearchInner() {
                   flight={f}
                   onSelect={() => selectFlight(f)}
                   isCheapest={idx === 0}
+                  isCompared={cmp.has(f.id)}
+                  onToggleCompare={() => toggleCmp(f.id)}
                 />
               ))}
             </div>
@@ -625,6 +636,24 @@ function FlightSearchInner() {
           </div>
         </div>
       )}
+
+      {/* Floating Flight Compare Bar */}
+      <FlightCompareBar
+        cmp={cmp}
+        flights={flights}
+        onToggleCmp={toggleCmp}
+        onClearCmp={clearCmp}
+        onCompareAction={() => setCompareModalOpen(true)}
+      />
+
+      {/* Side-by-Side Flight Comparison Modal */}
+      <FlightCompareModal
+        isOpen={compareModalOpen}
+        onClose={() => setCompareModalOpen(false)}
+        comparedFlights={flights.filter((f) => cmp.has(f.id))}
+        onRemove={toggleCmp}
+        onSelectFlight={(flight) => selectFlight(flight)}
+      />
     </div>
   );
 }

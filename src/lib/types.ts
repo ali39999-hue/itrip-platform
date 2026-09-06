@@ -48,17 +48,85 @@ export interface RoomType {
   available: number;
 }
 
+export interface TourItineraryDay {
+  day: number;
+  title: string;
+  titleEn?: string;
+  description: string;
+  descriptionEn?: string;
+  activities: string[];
+  activitiesEn?: string[];
+  meals: {
+    breakfast: boolean;
+    lunch: boolean;
+    dinner: boolean;
+  };
+  accommodation?: string;
+  accommodationEn?: string;
+  image?: string;
+}
+
+export interface TourDepartureDate {
+  id: string;
+  startDate: string;
+  endDate: string;
+  price: number;
+  childPrice?: number;
+  availableSeats: number;
+  guaranteed: boolean;
+}
+
+export interface TourReview {
+  id: string;
+  author: string;
+  rating: number;
+  date: string;
+  comment: string;
+  commentEn?: string;
+  travelType?: string;
+}
+
 export interface Tour {
   id: string;
   title: string;
   titleEn: string;
   city: string;
+  cityEn?: string;
+  country?: string;
+  countryEn?: string;
   durationDays: number;
+  durationNights?: number;
   price: number;
+  childPrice?: number;
   rating: number;
+  reviewsCount?: number;
   imageQuery: string;
+  heroImage?: string;
+  gallery?: string[];
   includes: string[];
+  excludes?: string[];
   category: 'cultural' | 'nature' | 'medical' | 'adventure';
+  summary?: string;
+  summaryEn?: string;
+  description?: string;
+  descriptionEn?: string;
+  highlights?: string[];
+  highlightsEn?: string[];
+  hotelName?: string;
+  hotelStars?: number;
+  transportType?: string;
+  transportTypeEn?: string;
+  groupSize?: string;
+  groupSizeEn?: string;
+  departureDates?: TourDepartureDate[];
+  itinerary?: TourItineraryDay[];
+  reviews?: TourReview[];
+  guideLanguages?: string[];
+  cancellationPolicy?: {
+    freeUntilDays: number;
+    description: string;
+    descriptionEn?: string;
+  };
 }
 
 export interface TransferOption {

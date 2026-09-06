@@ -1,18 +1,17 @@
 'use client';
 
-import { Suspense, useMemo, useState } from 'react';
-import Image from 'next/image';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { useRouter } from '@/i18n/routing';
+import { useRouter, Link } from '@/i18n/routing';
 import { TOURS } from '@/lib/data';
 import type { Tour } from '@/lib/types';
 import { useBookingStore } from '@/stores/booking-store';
 import { daysFromNow } from '@/lib/utils';
-import { shimmerDataUrl } from '@/lib/image-utils';
 import { CountryExperiencesSection } from '@/components/shared/CountryExperiences';
 import { MapPin, Star, ArrowLeft, ArrowRight, CalendarDays, SlidersHorizontal, Tent, Search, X, Check, Eye } from 'lucide-react';
 import { lt } from '@/lib/lt';
+import { TourImage } from '@/components/tours/TourImage';
 
 const TOUR_IMGS: Record<string, string> = {
   t1: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&q=70&w=800',
@@ -32,6 +31,18 @@ function ToursContent() {
   const [sort, setSort] = useState<SortKey>('rec');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTourPreview, setSelectedTourPreview] = useState<Tour | null>(null);
+  const [allTours, setAllTours] = useState<Tour[]>(TOURS);
+
+  useEffect(() => {
+    fetch('/api/tours')
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          setAllTours(json.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const CATEGORIES = [
     { id: 'all', label: t('allTours') },
@@ -64,7 +75,7 @@ function ToursContent() {
   const isSignature = category === 'signature';
 
   const filtered = useMemo(() => {
-    let list = category === 'all' ? TOURS : TOURS.filter((tour) => tour.category === category);
+    let list = category === 'all' ? allTours : allTours.filter((tour) => tour.category === category);
     
     // In-page search input + city query
     const activeSearch = searchQuery.trim().toLowerCase() || (cityParam ? cityParam.trim().toLowerCase() : '');
@@ -81,7 +92,7 @@ function ToursContent() {
     if (sort === 'expensive') list = [...list].sort((a, b) => b.price - a.price);
     if (sort === 'rec') list = [...list].sort((a, b) => b.rating - a.rating);
     return list;
-  }, [category, cityParam, searchQuery, sort]);
+  }, [allTours, category, cityParam, searchQuery, sort]);
 
   function book(tour: Tour) {
     setBookingContext({
@@ -97,25 +108,23 @@ function ToursContent() {
   return (
     <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-6 md:pt-8 pb-20 flex flex-col gap-8">
       {/* Hero Section */}
-      <section className="relative rounded-3xl overflow-hidden min-h-[340px] md:min-h-[420px] flex items-center justify-center bg-deep shadow-sm group">
-        <Image
+      <section className="relative rounded-2xl sm:rounded-3xl overflow-hidden min-h-[260px] sm:min-h-[340px] md:min-h-[420px] flex items-center justify-center bg-deep shadow-sm group">
+        <TourImage
           src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=75&w=1800"
           alt={t('title')}
-          fill
           sizes="100vw"
-          placeholder="blur"
-          blurDataURL={shimmerDataUrl(1800, 460)}
+          priority
           className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-deep/90 via-deep/40 to-transparent" />
-        <div className="relative z-10 text-center px-4 max-w-3xl py-10">
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface/15 backdrop-blur-md text-surface text-xs font-black mb-4 border border-surface/20">
-            <Tent size={14} className="text-mint-bright" /> {lt(locale, { fa: 'تجربه‌های دست‌چین و برنامه‌ریزی‌شده', en: 'Curated Travel Experiences', ar: 'تجارب سفر منتقاهاً بعناية', zh: '精选旅行体验', ru: 'Тщательно отобранные впечатления' })}
+        <div className="relative z-10 text-center px-4 max-w-3xl py-6 sm:py-10">
+          <span className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-surface/15 backdrop-blur-md text-surface text-[11px] sm:text-xs font-black mb-3 sm:mb-4 border border-surface/20">
+            <Tent size={13} className="text-mint-bright" /> {lt(locale, { fa: 'تجربه‌های دست‌چین و برنامه‌ریزی‌شده', en: 'Curated Travel Experiences', ar: 'تجارب سفر منتقاهاً بعناية', zh: '精选旅行体验', ru: 'Тщательно отобранные впечатления' })}
           </span>
-          <h1 className="text-surface mb-3 text-3xl sm:text-4xl md:text-5xl font-black tracking-tight">
+          <h1 className="text-surface mb-2 sm:mb-3 text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
             {t('title')}
           </h1>
-          <p className="text-surface/90 text-sm sm:text-base md:text-lg leading-relaxed max-w-xl mx-auto">
+          <p className="text-surface/90 text-xs sm:text-base md:text-lg leading-relaxed max-w-xl mx-auto">
             {t('subtitle')}
           </p>
         </div>
@@ -194,7 +203,7 @@ function ToursContent() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {filtered.map((tour) => (
                 <article
                   key={tour.id}
@@ -202,14 +211,11 @@ function ToursContent() {
                 >
                   <div>
                     {/* Consistent 16/10 aspect ratio across all cards */}
-                    <div className="relative aspect-[16/10] overflow-hidden bg-soft">
-                      <Image
-                        src={TOUR_IMGS[tour.id] || TOUR_IMGS.t1}
+                    <Link href={`/tours/${tour.id}`} className="block relative aspect-[16/10] overflow-hidden bg-soft">
+                      <TourImage
+                        src={tour.heroImage || TOUR_IMGS[tour.id] || TOUR_IMGS.t1}
                         alt={locale === 'fa' ? tour.title : tour.titleEn}
-                        fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                        placeholder="blur"
-                        blurDataURL={shimmerDataUrl(400, 250)}
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute top-2.5 start-2.5 flex gap-2">
@@ -217,15 +223,13 @@ function ToursContent() {
                           <Star size={12} className="text-gold fill-gold" /> {tour.rating}
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedTourPreview(tour)}
-                        className="absolute bottom-2.5 end-2.5 w-8 h-8 rounded-full bg-surface/90 backdrop-blur-xs text-ink grid place-items-center shadow-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="مشاهده جزییات"
+                      <span
+                        className="absolute bottom-2.5 end-2.5 px-2.5 py-1 rounded-full bg-surface/90 backdrop-blur-xs text-ink text-[11px] font-black shadow-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1"
                       >
-                        <Eye size={14} />
-                      </button>
-                    </div>
+                        <Eye size={12} />
+                        <span>{lt(locale, { fa: 'جزئیات کامل', en: 'Details', ar: 'التفاصيل', zh: '查看详情', ru: 'Подробнее' })}</span>
+                      </span>
+                    </Link>
 
                     <div className="p-4 flex flex-col gap-2">
                       <div className="flex items-center gap-1 text-[11px] font-bold text-sub">
@@ -233,12 +237,14 @@ function ToursContent() {
                         <span>{tour.city}</span>
                         <span className="mx-1">•</span>
                         <CalendarDays size={12} className="text-brand-dark" />
-                        <span>{tour.durationDays} {lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дن.' })}</span>
+                        <span>{tour.durationDays} {lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дн.' })}</span>
                       </div>
 
-                      <h3 className="font-black text-[15px] text-ink line-clamp-2 leading-snug group-hover:text-brand-dark transition-colors">
-                        {locale === 'fa' ? tour.title : tour.titleEn}
-                      </h3>
+                      <Link href={`/tours/${tour.id}`}>
+                        <h3 className="font-black text-[15px] text-ink line-clamp-2 leading-snug group-hover:text-brand-dark transition-colors">
+                          {locale === 'fa' ? tour.title : tour.titleEn}
+                        </h3>
+                      </Link>
 
                       <div className="flex flex-wrap gap-1 mt-1">
                         {tour.includes?.slice(0, 2).map((inc, i) => (
@@ -250,7 +256,7 @@ function ToursContent() {
                     </div>
                   </div>
 
-                  <div className="p-4 pt-0 flex justify-between items-center border-t border-line/60 mt-3">
+                  <div className="p-4 pt-0 flex justify-between items-center border-t border-line/60 mt-3 gap-2">
                     <div className="pt-3">
                       <span className="text-[10.5px] font-bold text-sub block">{lt(locale, { fa: 'قیمت هر نفر', en: 'Per Person', ar: 'للفرد', zh: '每人价格', ru: 'За человека' })}</span>
                       <span className="text-[16px] font-black text-price font-mono num">
@@ -259,15 +265,23 @@ function ToursContent() {
                       </span>
                     </div>
 
-                    <button
-                      onClick={() => book(tour)}
-                      aria-label={`رزرو ${locale === 'fa' ? tour.title : tour.titleEn}`}
-                      className="mt-3 bg-action hover:bg-action-hover text-ink px-4 py-2 rounded-xl font-black text-xs transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand flex items-center gap-1 cursor-pointer"
-                    >
-                      <span>{t('bookTour')}</span>
-                      <ArrowLeft size={14} className="rtl:hidden" />
-                      <ArrowRight size={14} className="ltr:hidden" />
-                    </button>
+                    <div className="flex items-center gap-1.5 mt-3">
+                      <Link
+                        href={`/tours/${tour.id}`}
+                        className="h-9 px-3 rounded-xl border border-line bg-surface hover:bg-soft text-ink font-extrabold text-xs transition flex items-center justify-center"
+                      >
+                        {lt(locale, { fa: 'جزئیات', en: 'Details', ar: 'التفاصيل', zh: '详情', ru: 'Инфо' })}
+                      </Link>
+                      <button
+                        onClick={() => book(tour)}
+                        aria-label={`رزرو ${locale === 'fa' ? tour.title : tour.titleEn}`}
+                        className="h-9 bg-action hover:bg-action-hover text-ink px-3.5 rounded-xl font-black text-xs transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>{t('bookTour')}</span>
+                        <ArrowRight size={13} className="ltr:inline rtl:hidden" />
+                        <ArrowLeft size={13} className="rtl:inline ltr:hidden" />
+                      </button>
+                    </div>
                   </div>
                 </article>
               ))}
@@ -297,10 +311,10 @@ function ToursContent() {
             </div>
 
             <div className="relative aspect-[16/9] rounded-2xl overflow-hidden">
-              <Image
-                src={TOUR_IMGS[selectedTourPreview.id] || TOUR_IMGS.t1}
+              <TourImage
+                src={selectedTourPreview.heroImage || TOUR_IMGS[selectedTourPreview.id] || TOUR_IMGS.t1}
                 alt="Tour preview"
-                fill
+                sizes="(max-width: 640px) 100vw, 500px"
                 className="object-cover"
               />
             </div>
@@ -329,24 +343,33 @@ function ToursContent() {
               </div>
             )}
 
-            <div className="pt-3 border-t border-line flex items-center justify-between gap-4">
+            <div className="pt-3 border-t border-line flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <div>
                 <span className="text-xs font-bold text-sub block">قیمت نهایی پکیج:</span>
                 <span className="text-lg font-black text-price font-mono">
                   {selectedTourPreview.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} تومان
                 </span>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  const tour = selectedTourPreview;
-                  setSelectedTourPreview(null);
-                  book(tour);
-                }}
-                className="h-11 px-6 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs transition active:scale-95 shadow-md"
-              >
-                تکمیل رزرو و پرداخت
-              </button>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/tours/${selectedTourPreview.id}`}
+                  onClick={() => setSelectedTourPreview(null)}
+                  className="h-11 px-4 rounded-xl border border-line bg-soft hover:bg-line/40 text-ink font-black text-xs transition flex items-center justify-center text-center"
+                >
+                  {lt(locale, { fa: 'مشاهده صفحه و روزشمار کامل', en: 'View Full Tour Page', ar: 'عرض صفحة الجولة والجدول الكامل', zh: '查看完整行程与细节', ru: 'Полное описание тура' })}
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const tour = selectedTourPreview;
+                    setSelectedTourPreview(null);
+                    book(tour);
+                  }}
+                  className="h-11 px-5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs transition active:scale-95 shadow-md"
+                >
+                  {lt(locale, { fa: 'رزرو و پرداخت', en: 'Book & Pay', ar: 'حجز ودفع', zh: '立即预订', ru: 'Забронировать' })}
+                </button>
+              </div>
             </div>
           </div>
         </div>

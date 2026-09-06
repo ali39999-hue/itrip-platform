@@ -30,7 +30,7 @@ export function PwaBoot() {
   if (!deferred || hidden) return null;
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 start-4 md:start-6 z-[115] flex items-center gap-3 p-2.5 pe-3.5 rounded-2xl bg-surface/95 backdrop-blur border border-line shadow-elev-3 animate-in slide-in-from-bottom-2 duration-300">
+    <div className="fixed bottom-20 lg:bottom-6 start-4 lg:start-6 z-[115] flex items-center gap-3 p-2.5 pe-3.5 rounded-2xl bg-surface/95 backdrop-blur border border-line shadow-elev-3 animate-in slide-in-from-bottom-2 duration-300">
       <span className="grid place-items-center w-9 h-9 rounded-xl bg-brand text-surface shrink-0 shadow-sm">
         <Download size={17} />
       </span>

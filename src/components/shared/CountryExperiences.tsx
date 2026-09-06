@@ -1,15 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { useCountryStore } from '@/stores/country-store';
-import { useBookingStore } from '@/stores/booking-store';
 import {
   COUNTRIES, EXPERIENCE_CATEGORY_META, countryName,
   type CountryId, type ExperienceCategory, type SignatureExperience,
 } from '@/lib/countries';
-import { daysFromNow } from '@/lib/utils';
 import { num } from '@/lib/format';
 import {
   Sailboat, PartyPopper, Landmark, Trees, Sparkles, MoonStar, MountainSnow,
@@ -33,10 +31,49 @@ export function useExperiences() {
   const locale = useLocale();
   const c = COUNTRIES[country];
   const isEn = locale === 'en';
+  const [dbExperiences, setDbExperiences] = useState<SignatureExperience[]>([]);
+
+  useEffect(() => {
+    import('@/actions/content').then(({ getPublicExperiencesAction }) => {
+      getPublicExperiencesAction(country).then((res) => {
+        if (res.success && res.experiences && res.experiences.length > 0) {
+          const formatted: SignatureExperience[] = res.experiences.map((exp: {
+            title: string;
+            titleEn?: string | null;
+            desc?: string | null;
+            descEn?: string | null;
+            category: string;
+            where?: string | null;
+            whereEn?: string | null;
+            when?: string | null;
+            whenEn?: string | null;
+            fromPrice: number | { toString(): string };
+          }) => ({
+            title: exp.title,
+            titleEn: exp.titleEn || exp.title,
+            desc: exp.desc || '',
+            descEn: exp.descEn || exp.desc || '',
+            category: exp.category as SignatureExperience['category'],
+            where: exp.where || '',
+            whereEn: exp.whereEn || exp.where || '',
+            when: exp.when || '',
+            whenEn: exp.whenEn || exp.when || '',
+            fromPrice: Number(exp.fromPrice),
+          }));
+          setDbExperiences(formatted);
+        }
+      });
+    }).catch(() => {});
+  }, [country]);
+
+  const allExperiences = useMemo(() => {
+    return [...dbExperiences, ...c.signatureExperiences];
+  }, [dbExperiences, c.signatureExperiences]);
+
   return {
     c,
     isEn,
-    experiences: c.signatureExperiences,
+    experiences: allExperiences,
     titleOf: (e: SignatureExperience) => (isEn ? e.titleEn : e.title),
     descOf: (e: SignatureExperience) => (isEn ? e.descEn : e.desc),
     whereOf: (e: SignatureExperience) => (isEn ? e.whereEn : e.where),
@@ -52,14 +89,8 @@ export function bookExperience(
   locale: string,
   countryId: CountryId
 ) {
-  useBookingStore.getState().setBookingContext({
-    type: 'tours',
-    title: locale === 'en' ? e.titleEn : e.title,
-    subtitle: `${locale === 'en' ? e.whereEn : e.where} • ${countryName(countryId, locale)}`,
-    amount: e.fromPrice,
-    travelDate: daysFromNow(21),
-  });
-  router.push('/checkout');
+  const title = locale === 'en' ? e.titleEn : e.title;
+  router.push(`/tours?category=signature&country=${countryId}&city=${encodeURIComponent(title)}`);
 }
 
 export function ExperienceCard({

@@ -53,7 +53,7 @@ export function SearchWidget({ initialTab = 'plan' }: SearchWidgetProps) {
       <div className="rounded-3xl p-4 md:p-6 shadow-elev-3 transition-all border border-line/80 bg-surface/95 backdrop-blur-xl">
         <SearchModeTabs activeTab={tab} onTabChange={setTab} />
 
-        <form onSubmit={submit} className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+        <form onSubmit={submit} className="relative z-10 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
           {tab === 'plan' && (
             <PlanSearchForm
               query={query}

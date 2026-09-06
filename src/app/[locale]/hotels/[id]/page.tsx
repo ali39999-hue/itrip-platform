@@ -161,7 +161,7 @@ export default function HotelDetailPage() {
   ] as const;
 
   return (
-    <div className="bg-paper pb-24">
+    <div className="bg-paper pb-36 sm:pb-32 lg:pb-24">
       <HotelHero hotel={hotel} />
 
       {/* subnav */}
@@ -196,7 +196,7 @@ export default function HotelDetailPage() {
       </div>
 
       {/* ================= MOBILE STICKY RESERVATION BAR (FLYTODAY / BOOKING.COM STYLE) ================= */}
-      <div className="lg:hidden fixed bottom-[58px] inset-x-0 z-40 bg-surface/95 backdrop-blur-md border-t border-line px-4 py-3 shadow-elev-3 flex items-center justify-between gap-4">
+      <div className="lg:hidden fixed bottom-[calc(58px+env(safe-area-inset-bottom,0px))] inset-x-0 z-[86] bg-surface/98 backdrop-blur-xl border-t border-line px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] flex items-center justify-between gap-4">
         <div>
           <span className="text-[10.5px] font-bold text-sub block leading-none mb-1">
             {capacity.n > 0

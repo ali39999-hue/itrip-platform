@@ -5,6 +5,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { SosInterpreter } from '@/components/shared/SosInterpreter';
+import { ToursPromoModal } from '@/components/tours/ToursPromoModal';
 
 export function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '';
@@ -23,6 +24,7 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
       <Footer />
       <BottomNav />
       <SosInterpreter />
+      <ToursPromoModal />
     </>
   );
 }

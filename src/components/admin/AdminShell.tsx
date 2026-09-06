@@ -7,9 +7,9 @@ import { Link } from '@/i18n/routing';
 import { LocaleSwitcher } from '@/components/layout/header/LocaleSwitcher';
 import { AdminGlobalSearch } from './AdminGlobalSearch';
 import {
-  LayoutDashboard, BriefcaseBusiness, Wallet, DatabaseZap,
+  LayoutDashboard, BriefcaseBusiness, Wallet,
   PlaneTakeoff, ExternalLink, ShieldCheck, UserCheck, Activity,
-  Building2, Boxes, PanelLeftClose, PanelLeftOpen
+  Building2, Boxes, PanelLeftClose, PanelLeftOpen, FolderKanban
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
@@ -22,7 +22,7 @@ const NAV = [
   { href: '/admin/finance', label: { fa: 'مالی و تراکنش‌ها', en: 'Finance & Transactions', ar: 'المالية والمعاملات', zh: '财务与交易', ru: 'Финансы и транзакции' }, icon: Wallet },
   { href: '/admin/suppliers', label: { fa: 'تامین‌کنندگان', en: 'Suppliers', ar: 'الموردون', zh: '供应商', ru: 'Поставщики' }, icon: Building2 },
   { href: '/admin/inventory', label: { fa: 'انبار و سهمیه‌ها', en: 'Inventory & Allotments', ar: 'المخزون والحصص', zh: '库存与配额', ru: 'Инвентарь и квоты' }, icon: Boxes },
-  { href: '/admin/content', label: { fa: 'یکپارچه‌سازی خارجی', en: 'External Integrations', ar: 'التكامل الخارجي', zh: '外部集成', ru: 'Интеграции' }, icon: DatabaseZap },
+  { href: '/admin/content', label: { fa: 'مدیریت محتوا (CMS)', en: 'Content Management', ar: 'إدارة المحتوى', zh: '内容管理 (CMS)', ru: 'Управление контентом' }, icon: FolderKanban },
 ];
 
 /**

@@ -1,5 +1,6 @@
 import type { Flight, Hotel, Tour, TransferOption, InsurancePlan } from './types';
 import type { CountryId } from './countries';
+import { DETAILED_TOURS } from '@/services/tours-service';
 
 export interface CityOption {
   id: string;
@@ -123,12 +124,7 @@ export const HOTELS: Hotel[] = [
   },
 ];
 
-export const TOURS: Tour[] = [
-  { id: 't1', title: 'تور فرهنگی اصفهان - نصف جهان', titleEn: 'Isfahan Cultural Tour', city: 'اصفهان', durationDays: 3, price: 85000000, rating: 4.8, imageQuery: 'isfahan-mosque', includes: ['پرواز رفت و برگشت', 'هتل ۵ ستاره', 'گشت شهری', 'بیمه مسافرتی'], category: 'cultural' },
-  { id: 't2', title: 'تور زیارتی مشهد ویژه', titleEn: 'Mashhad Pilgrimage Special', city: 'مشهد', durationDays: 3, price: 52000000, rating: 4.9, imageQuery: 'imam-reza-shrine', includes: ['پرواز', 'هتل نزدیک حرم', 'ترانسفر رایگان'], category: 'cultural' },
-  { id: 't3', title: 'تور درمانی استانبول + چکاپ کامل', titleEn: 'Istanbul Medical Checkup Tour', city: 'استانبول', durationDays: 5, price: 185000000, rating: 4.7, imageQuery: 'istanbul-bosphorus', includes: ['ویزا', 'پرواز', 'هتل', 'چکاپ کامل بیمارستانی', 'مترجم'], category: 'medical' },
-  { id: 't4', title: 'تور ماجراجویی گرجستان', titleEn: 'Georgia Adventure Tour', city: 'تفلیس', durationDays: 6, price: 142000000, rating: 4.6, imageQuery: 'georgia-mountains', includes: ['پرواز', 'هتل', 'کوهنوردی گیدار', 'اسکی در فصل'], category: 'adventure' },
-];
+export const TOURS: Tour[] = DETAILED_TOURS;
 
 export const TRANSFERS: TransferOption[] = [
   { id: 'tr1', vehicleType: 'سانروف ساینا', vehicleTypeEn: 'Saipa Saina Sunroof', from: 'فرودگاه امام خمینی', to: 'مرکز تهران', price: 3200000, capacity: 4, luggage: 3, durationMinutes: 75 },
