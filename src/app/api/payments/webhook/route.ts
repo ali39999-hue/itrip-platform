@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PaymentDomainService } from '@/domains/payments/PaymentDomainService';
 import { RateLimiter } from '@/lib/security/rate-limiter';
+import { createLogger } from '@/lib/observability/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,12 @@ export const dynamic = 'force-dynamic';
  * Strictly fails closed on missing signatures, tampered amounts, or replay attacks.
  */
 export async function POST(req: NextRequest) {
+  // Hoisted for the error path: the catch block logs correlation even when the
+  // failure happens before/inside parsing.
+  let logEventId = '';
+  let logBookingId = '';
+  let logGateway = 'SHETAB_GATEWAY';
+
   try {
     const rawBody = await req.text();
     if (!rawBody) {
@@ -36,6 +43,8 @@ export async function POST(req: NextRequest) {
     const gatewayName = req.headers.get('x-gateway') || (payload.gatewayName as string | undefined) || 'SHETAB_GATEWAY';
 
     const eventId = String(payload.eventId || payload.id || `evt_${Date.now()}`);
+    logEventId = eventId;
+    logGateway = gatewayName;
     const eventType = String(payload.eventType || payload.type || 'payment.captured');
     const bookingId = String(payload.bookingId || '');
     const gatewayRef = String(payload.gatewayRef || payload.referenceId || '');
@@ -46,6 +55,7 @@ export async function POST(req: NextRequest) {
     if (!bookingId) {
       return NextResponse.json({ error: 'Missing bookingId in webhook payload' }, { status: 400 });
     }
+    logBookingId = bookingId;
 
     const result = await PaymentDomainService.processWebhook({
       gatewayName,
@@ -59,6 +69,7 @@ export async function POST(req: NextRequest) {
       timestamp,
       merchantId,
       rawPayload: payload,
+      rawBody,
     });
 
     return NextResponse.json({
@@ -68,7 +79,12 @@ export async function POST(req: NextRequest) {
     }, { status: 200 });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error('[PaymentWebhook] Error processing webhook:', message);
+    // OBS-003: structured, machine-searchable webhook errors (OBS-004 redaction
+    // ensures any payload fragments logged as fields can never leak secrets).
+    createLogger('payment-webhook', logEventId || undefined).error(
+      'Webhook processing failed',
+      { error: message, bookingId: logBookingId, gatewayName: logGateway }
+    );
 
     if (message.includes('WEBHOOK_FAIL_CLOSED') || message.includes('signature') || message.includes('replay')) {
       return NextResponse.json({ error: message }, { status: 401 });

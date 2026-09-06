@@ -18,15 +18,25 @@ const ROUTE_PERMISSIONS: Record<string, string[]> = {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
+
+  // OBS-001 (lite): every response carries a correlation id — generated here
+  // when the caller (LB/CDN) did not supply one — so clients and logs can be
+  // correlated end-to-end. Request-scoped propagation into server actions is
+  // tracked as remaining OBS work.
+  const correlationId = request.headers.get('x-correlation-id') || crypto.randomUUID();
+  const withCorrelation = (response: NextResponse): NextResponse => {
+    response.headers.set('x-correlation-id', correlationId);
+    return response;
+  };
+
   // 1. Skip auth & i18n for api, _next, static files, and public routes
   if (
-    pathname.startsWith('/api/') || 
-    pathname.startsWith('/_next/') || 
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/_next/') ||
     pathname === '/favicon.ico' ||
     pathname.match(/\.(png|jpg|jpeg|gif|webp|svg)$/)
   ) {
-    return NextResponse.next();
+    return withCorrelation(NextResponse.next());
   }
 
   // Extract valid locale if present
@@ -38,9 +48,11 @@ export async function middleware(request: NextRequest) {
     const callbackUrl = request.nextUrl.searchParams.get('callbackUrl');
     const authUrl = new URL('/' + locale + '/auth', request.url);
     if (callbackUrl) {
+      // Forwarded as-is: NextAuth's redirect callback only honours same-origin
+      // callback URLs, so this cannot become an open redirect (SEC-007).
       authUrl.searchParams.set('callbackUrl', callbackUrl);
     }
-    return NextResponse.redirect(authUrl);
+    return withCorrelation(NextResponse.redirect(authUrl));
   }
 
   // 3. Handle /admin paths (with or without locale prefix)
@@ -50,7 +62,7 @@ export async function middleware(request: NextRequest) {
     const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
     if (!secret) {
       // No secret configured — block admin access entirely
-      return NextResponse.redirect(new URL('/' + locale + '/auth', request.url));
+      return withCorrelation(NextResponse.redirect(new URL('/' + locale + '/auth', request.url)));
     }
 
     // Get next-auth token safely without throwing
@@ -74,21 +86,21 @@ export async function middleware(request: NextRequest) {
           // User has access if role matches or any relational permission is granted
           const hasAccess = userRole === 'SUPER_ADMIN' || allowed.some(p => p === userRole || userPerms.includes(p));
           if (!hasAccess) {
-            return NextResponse.redirect(new URL('/' + locale + '/account', request.url));
+            return withCorrelation(NextResponse.redirect(new URL('/' + locale + '/account', request.url)));
           }
         }
       } else {
         // Unauthenticated user trying to access admin — redirect to auth
-        return NextResponse.redirect(new URL('/' + locale + '/auth', request.url));
+        return withCorrelation(NextResponse.redirect(new URL('/' + locale + '/auth', request.url)));
       }
     } catch {
       // Fail closed: an unreadable token never grants admin access.
-      return NextResponse.redirect(new URL('/' + locale + '/auth', request.url));
+      return withCorrelation(NextResponse.redirect(new URL('/' + locale + '/auth', request.url)));
     }
   }
 
   // 4. Delegate to next-intl middleware for routing/redirects (if not an API route)
-  return intlMiddleware(request);
+  return withCorrelation(intlMiddleware(request));
 }
 
 export const config = {

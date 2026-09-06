@@ -5,7 +5,11 @@ const ROOT = path.join(__dirname, '..');
 const files = process.argv.slice(2);
 
 for (const f of files) {
-  const full = path.join(ROOT, f);
+  const full = path.resolve(ROOT, f);
+  if (full !== ROOT && !full.startsWith(ROOT + path.sep)) {
+    console.error('Refusing to read outside repository root:', f);
+    continue;
+  }
   const src = fs.readFileSync(full, 'utf8');
   const lines = src.split(/\r?\n/);
   let ternary = 0;

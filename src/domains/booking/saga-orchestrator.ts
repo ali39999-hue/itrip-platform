@@ -31,13 +31,15 @@ export class BookingSagaOrchestrator {
         'PAYMENT_CONFIRMED'
       );
 
-      // 2. Step 1: Process Payment with Idempotency
+      // 2. Step 1: Process Payment with Idempotency.
+      // Money stays Decimal end-to-end (MONEY-002): totalAmount is a Prisma
+      // Decimal and is passed through untouched — no Number() coercion.
       const paymentRes = await PaymentDomainService.processPayment(
         {
           bookingId: booking.id,
           idempotencyKey: params.idempotencyKey,
           method: params.paymentMethod,
-          amount: Number(booking.totalAmount),
+          amount: booking.totalAmount,
           currency: booking.currency,
         },
         tx
@@ -56,16 +58,17 @@ export class BookingSagaOrchestrator {
         }
       }
 
-      // 4. Step 3: Dual-Entry Ledger Posting
-      // Aggregate costs across ALL booking items, not just the first one.
-      const totalAmt = Number(booking.totalAmount);
-      let netCost = 0;
-      let taxAmount = 0;
-      let feeAmount = 0;
+      // 4. Step 3: Dual-Entry Ledger Posting.
+      // All aggregation happens in Prisma.Decimal (MONEY-002/003) — float
+      // addition of monetary values is banned in this path.
+      const totalAmt = new Prisma.Decimal(booking.totalAmount);
+      let netCost = new Prisma.Decimal(0);
+      let taxAmount = new Prisma.Decimal(0);
+      let feeAmount = new Prisma.Decimal(0);
       for (const item of booking.items) {
-        netCost += Number(item.netCost || 0);
-        taxAmount += Number(item.taxAmount || 0);
-        feeAmount += Number(item.feeAmount || 0);
+        netCost = netCost.add(item.netCost ?? 0);
+        taxAmount = taxAmount.add(item.taxAmount ?? 0);
+        feeAmount = feeAmount.add(item.feeAmount ?? 0);
       }
 
       // Resolve supplier ID from the inventory item's actual supplier, not the item ID.
@@ -183,7 +186,7 @@ export class BookingSagaOrchestrator {
           currentStep: 'COMPLETED',
           contextJson: JSON.stringify({
             paymentId: paymentRes.paymentId,
-            totalAmount: totalAmt,
+            totalAmount: totalAmt.toString(),
             currency: booking.currency,
           }),
           finishedAt: new Date(),

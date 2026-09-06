@@ -1,5 +1,6 @@
 'use server';
 
+import { headers } from 'next/headers';
 import { signIn, signOut, safeAuth, issueOtp } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { profileUpdateSchema, otpRequestSchema } from '@/lib/validations';
@@ -34,8 +35,14 @@ export async function loginWithCredentials(email: string, pass: string) {
 export async function requestOtp(data: unknown) {
   try {
     const parsed = otpRequestSchema.parse(data);
-    // Multi-layered token-bucket rate limiting (Section 35)
-    const rateCheck = await RateLimiter.checkOtpRateLimit(parsed.identifier);
+    // Multi-layered token-bucket rate limiting (Section 35 / SEC-003):
+    // identifier layer + IP layer (previously the IP layer was never wired).
+    const hdrs = await headers();
+    const clientIp =
+      hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      hdrs.get('x-real-ip')?.trim() ||
+      'unknown_ip';
+    const rateCheck = await RateLimiter.checkOtpRateLimit(parsed.identifier, clientIp);
     if (!rateCheck.allowed) {
       return { success: false, error: rateCheck.reason || 'Too many codes requested. Please try again later.' };
     }

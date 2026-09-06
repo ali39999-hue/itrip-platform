@@ -11,8 +11,12 @@ export function createTenantScoper(activeOrganizationId?: string, isPlatformAdmi
     query: {
       $allModels: {
         async $allOperations({ model, operation, args, query }) {
-          // Models that belong to specific organizations
-          const tenantScopedModels = ['Booking', 'Invoice', 'TravelDocument'];
+          // Models that belong to specific organizations.
+          // Only models that actually carry an organizationId column may be
+          // listed here — scoping a model without the column would inject a
+          // Prisma validation error into every non-admin query (IAM-007).
+          // Booking is org-scoped; Invoice/TravelDocument are not yet.
+          const tenantScopedModels = ['Booking'];
 
           if (!tenantScopedModels.includes(model) || isPlatformAdmin) {
             return query(args);

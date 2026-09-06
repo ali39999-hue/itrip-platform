@@ -1,10 +1,10 @@
-# iTrip / Firuzo Platform v2.0
+# iTrip / Firuzo Platform v1.1.0
 
 > **Next-Generation International & Local Travel Booking Engine with AI Trip Planner & Multi-Currency Settlement**  
 > Built with Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, next-intl (5 Languages), Zustand, and Playwright E2E.
 
-[![Playwright Tests](https://img.shields.io/badge/Playwright-28%20E2E%20Specs%20%C3%97%202%20Browsers-brightgreen)](https://playwright.dev/)
-[![Vitest](https://img.shields.io/badge/Vitest-106%20Unit%20Tests%20Passed-brightgreen)](https://vitest.dev/)
+[![Playwright Tests](https://img.shields.io/badge/Playwright-15%20E2E%20Specs%20%C3%97%202%20Browsers-brightgreen)](https://playwright.dev/)
+[![Vitest](https://img.shields.io/badge/Vitest-134%20Unit%20Tests%20Passed-brightgreen)](https://vitest.dev/)
 [![Next.js](https://img.shields.io/badge/Next.js-16.3-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2-blue)](https://react.dev/)
 [![PWA Ready](https://img.shields.io/badge/PWA-Offline%20Ready-teal)](public/manifest.json)
@@ -46,9 +46,13 @@ graph TD
 
 ## ⚖️ Engineering Truth & Production Readiness Matrix
 
+> **Evidence-based status:** the authoritative per-area verdicts (with file:line evidence) live in
+> [`docs/baseline/FEATURE_REALITY_MATRIX.md`](docs/baseline/FEATURE_REALITY_MATRIX.md) — read that
+> first; this marketing-style table is kept high-level.
+
 | Domain Subsystem | Status | Implementation Details |
 | :--- | :---: | :--- |
-| **Database & Migrations** | `PRODUCTION-READY` | PostgreSQL 16 canonical, 12 Prisma migrations applied, strict indexes & foreign keys. |
+| **Database & Migrations** | `PRODUCTION-READY` | PostgreSQL 16 canonical, 15 Prisma migrations applied, strict indexes & foreign keys. |
 | **Inventory Concurrency** | `PRODUCTION-READY` | PostgreSQL row-locking (`FOR UPDATE`) & atomic conditional updates. Oversell = 0 guaranteed. |
 | **Financial Kernel & Money** | `PRODUCTION-READY` | Zero JavaScript floating-point arithmetic. 100% `Prisma.Decimal` Money kernel. |
 | **12-Stage Pricing Pipeline** | `PRODUCTION-READY` | Server-side authoritative calculations generating immutable `PriceSnapshot` audit records. |
@@ -106,7 +110,7 @@ graph TD
 
 ---
 
-## 🗺️ Route Inventory (29 Core Routes)
+## 🗺️ Route Inventory (41 Pages)
 
 | Category | Routes |
 | :--- | :--- |
@@ -141,7 +145,7 @@ The platform adheres to the **Firuzo Luxe** design tokens:
 ## 🛠️ Getting Started
 
 ### Prerequisites
-- Node.js 18.18+ or 20+
+- Node.js 20+
 - npm, yarn, or pnpm
 
 ### Installation
@@ -164,7 +168,7 @@ Open [http://localhost:3000/fa](http://localhost:3000/fa) in your browser.
 
 ## 🧪 Testing & Quality Assurance
 
-The codebase is fortified with a **Playwright End-to-End Test Suite (26 Suites)**:
+The codebase is fortified with a **Playwright End-to-End Test Suite (15 Spec Files)**:
 
 ```bash
 # Run full E2E test suite
@@ -197,11 +201,11 @@ itrip-platform/
 │   ├── i18n/               # next-intl routing & configuration
 │   ├── lib/                # Countries, data, formatters, jalali utils
 │   └── stores/             # Zustand stores (booking, country, auth)
-└── tests/                  # 26 Playwright E2E test suites
+└── tests/                  # 15 Playwright E2E spec files
 ```
 
 ---
 
 ## 📄 License & Team
 
-Developed for the **iTrip / Firuzo Platform** v2.0 Release.
+Developed for the **iTrip / Firuzo Platform** v1.1.0 Release.

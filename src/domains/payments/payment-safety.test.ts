@@ -1,4 +1,5 @@
 import { describe, it, expect, afterAll } from 'vitest';
+import { randomBytes } from 'crypto';
 import { PaymentDomainService } from './PaymentDomainService';
 import { ShetabGatewayAdapter, DemoPaymentAdapter } from './gateway-port';
 import { prisma } from '@/lib/prisma';
@@ -97,7 +98,8 @@ describe('Payment Hardening Suite (PAY-001 to PAY-008)', () => {
   });
 
   it('PAY-005: Webhook with incorrect HMAC signature is rejected and fails closed', async () => {
-    const secretKey = 'test_secret_key_123';
+    // Per-run throwaway key: exercises the same HMAC path without a static secret.
+    const secretKey = randomBytes(32).toString('hex');
     const adapter = new ShetabGatewayAdapter({
       merchantId: 'merch_001',
       secretKey,
@@ -287,6 +289,11 @@ describe('Payment Hardening Suite (PAY-001 to PAY-008)', () => {
     expect(response.status).toBe(200);
 
     const data = await response.json();
-    expect(data.processed).toBe(true);
+    // PAY-010: the shared test booking was already captured by the PAY-007 x3
+    // run above. A fresh valid event for the same booking must collapse into
+    // an idempotent no-op (one capture per booking) instead of minting a
+    // second Payment row.
+    expect(data.processed).toBe(false);
+    expect(data.status).toBe('DUPLICATE');
   });
 });

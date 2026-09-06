@@ -4,6 +4,15 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin();
 const isDev = process.env.NODE_ENV !== 'production';
 
+// CI-012 / BASE-008 — A production build with demo behaviour enabled is a
+// hard error: simulated success paths must never be able to ship. Demo builds
+// must explicitly target a non-production runtime (NODE_ENV != production).
+if (!isDev && process.env.DEMO_MODE === 'true') {
+  throw new Error(
+    'CI-012: Refusing production build with DEMO_MODE=true. Set DEMO_MODE=false (or build for a non-production runtime).'
+  );
+}
+
 const nextConfig: NextConfig = {
   ...(isDev
     ? {

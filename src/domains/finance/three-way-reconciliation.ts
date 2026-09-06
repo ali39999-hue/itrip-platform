@@ -10,7 +10,10 @@ export enum ExceptionSeverity {
 
 export class OperationalExceptionService {
   /**
-   * Registers an actionable operational exception with SLA and entity tracing (OPS-001)
+   * Registers an actionable operational exception with SLA and entity tracing (OPS-001).
+   * ERP-009 dedupe: repeated detections of the same (type, entityType, entityId)
+   * collapse onto the still-open exception — the description is refreshed and the
+   * SLA re-armed instead of flooding the Exception Center with duplicates.
    */
   static async raiseException(params: {
     type: string;
@@ -20,9 +23,32 @@ export class OperationalExceptionService {
     title?: string;
     organizationId?: string;
     description: string;
-    slaMinutes: number;
+    slaMinutes?: number;
   }): Promise<string> {
-    const slaDueAt = new Date(Date.now() + params.slaMinutes * 60 * 1000);
+    const openStatuses = ['OPEN', 'ACKNOWLEDGED', 'IN_PROGRESS'];
+    const existing = await prisma.operationalException.findFirst({
+      where: {
+        type: params.type,
+        entityType: params.entityType,
+        entityId: params.entityId,
+        status: { in: openStatuses },
+      },
+      orderBy: { detectedAt: 'desc' },
+    });
+
+    if (existing) {
+      await prisma.operationalException.update({
+        where: { id: existing.id },
+        data: {
+          description: params.description,
+          severity: params.severity,
+          slaDueAt: new Date(Date.now() + (params.slaMinutes ?? 240) * 60 * 1000),
+        },
+      });
+      return existing.id;
+    }
+
+    const slaDueAt = new Date(Date.now() + (params.slaMinutes ?? 240) * 60 * 1000);
 
     const record = await prisma.operationalException.create({
       data: {

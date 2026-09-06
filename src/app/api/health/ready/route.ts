@@ -4,6 +4,29 @@ import { ReconciliationService } from '@/domains/ledger/ReconciliationService';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * The full ledger double-entry scan is O(LedgerEntry) and must not run on every
+ * probe (OBS-007: probes arrive every few seconds). The result is cached here
+ * and recomputed at most once per LEDGER_CHECK_TTL_MS; a background refresh is
+ * performed inline only when the cache has expired.
+ */
+const LEDGER_CHECK_TTL_MS = 5 * 60 * 1000;
+let ledgerCache: { at: number; isBalanced: boolean; totalGroupsChecked: number; unbalancedGroupsCount: number } | null = null;
+
+async function getLedgerCheck() {
+  if (ledgerCache && Date.now() - ledgerCache.at < LEDGER_CHECK_TTL_MS) {
+    return { ...ledgerCache, cached: true };
+  }
+  const reconReport = await ReconciliationService.reconcileLedger();
+  ledgerCache = {
+    at: Date.now(),
+    isBalanced: reconReport.isBalanced,
+    totalGroupsChecked: reconReport.totalGroupsChecked,
+    unbalancedGroupsCount: reconReport.unbalancedGroupsCount,
+  };
+  return { ...ledgerCache, cached: false };
+}
+
 export async function GET() {
   const checks: Record<string, { status: 'healthy' | 'degraded' | 'unhealthy'; latencyMs?: number; details?: string; error?: string }> = {};
   let overallHealthy = true;
@@ -52,15 +75,17 @@ export async function GET() {
     details: isDemo ? 'mode: DEMO_SANDBOX' : hasMerchantCredentials ? 'mode: PRODUCTION_CONFIGURED' : 'mode: MISSING_MERCHANT_ID',
   };
 
-  // 4. Ledger Double-Entry Balance Probe
+  // 4. Ledger Double-Entry Balance Probe (cached, at most one full scan / 5 min)
   try {
-    const reconReport = await ReconciliationService.reconcileLedger();
+    const ledger = await getLedgerCheck();
     checks.ledger = {
-      status: reconReport.isBalanced ? 'healthy' : 'degraded',
-      details: `groupsChecked: ${reconReport.totalGroupsChecked}, unbalanced: ${reconReport.unbalancedGroupsCount}`,
-      error: !reconReport.isBalanced ? `Unbalanced ledger groups detected: ${reconReport.unbalancedGroupsCount}` : undefined,
+      status: ledger.isBalanced ? 'healthy' : 'degraded',
+      details: `groupsChecked: ${ledger.totalGroupsChecked}, unbalanced: ${ledger.unbalancedGroupsCount}${ledger.cached ? ' (cached)' : ''}`,
+      error: !ledger.isBalanced && ledger.unbalancedGroupsCount > 0
+        ? `Unbalanced ledger groups detected: ${ledger.unbalancedGroupsCount}`
+        : undefined,
     };
-    if (!reconReport.isBalanced && reconReport.unbalancedGroupsCount > 0) {
+    if (!ledger.isBalanced && ledger.unbalancedGroupsCount > 0) {
       overallHealthy = false;
     }
   } catch {

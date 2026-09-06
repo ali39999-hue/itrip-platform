@@ -42,8 +42,10 @@ export class ConsoleNotificationProvider implements NotificationProvider {
 
 /**
  * Production-ready SMS/Email provider adapter (e.g. Kavenegar / Ghasedak / Twilio).
- * Dispatches via REST API when KAVENEGAR_API_KEY / SMS_PROVIDER_API_KEY is configured,
- * otherwise falls back gracefully.
+ * Dispatches via REST API when KAVENEGAR_API_KEY / SMS_PROVIDER_API_KEY is configured.
+ * In production a missing provider key FAILS CLOSED (success: false) — silently
+ * faking delivery would strand users without their OTP. Non-production runtimes
+ * fall back to the console simulator for developer convenience.
  */
 export class ProductionNotificationProvider implements NotificationProvider {
   name = 'production-sms-gateway';
@@ -53,8 +55,20 @@ export class ProductionNotificationProvider implements NotificationProvider {
     this.apiKey = apiKey || process.env.KAVENEGAR_API_KEY || process.env.SMS_PROVIDER_API_KEY;
   }
 
+  private static isProductionRuntime(): boolean {
+    return process.env.NODE_ENV === 'production';
+  }
+
   async sendSms(to: string, message: string): Promise<NotificationResult> {
     if (!this.apiKey) {
+      if (ProductionNotificationProvider.isProductionRuntime()) {
+        console.error('[Notification:SMS] FAIL-CLOSED: SMS provider API key is not configured in production');
+        return {
+          success: false,
+          error: 'SMS provider not configured (KAVENEGAR_API_KEY / SMS_PROVIDER_API_KEY missing)',
+          provider: this.name,
+        };
+      }
       console.warn('[Notification:SMS] Missing SMS provider API key; falling back to simulation.');
       return new ConsoleNotificationProvider().sendSms(to, message);
     }
@@ -101,6 +115,14 @@ export class ProductionNotificationProvider implements NotificationProvider {
   async sendEmail(to: string, subject: string, body: string): Promise<NotificationResult> {
     const resendApiKey = process.env.RESEND_API_KEY;
     if (!resendApiKey) {
+      if (ProductionNotificationProvider.isProductionRuntime()) {
+        console.error('[Notification:Email] FAIL-CLOSED: RESEND_API_KEY is not configured in production');
+        return {
+          success: false,
+          error: 'Email provider not configured (RESEND_API_KEY missing)',
+          provider: this.name,
+        };
+      }
       console.warn('[Notification:Email] Missing email provider API key; falling back to simulation.');
       return new ConsoleNotificationProvider().sendEmail(to, subject, body);
     }
@@ -145,10 +167,18 @@ export class ProductionNotificationProvider implements NotificationProvider {
 
 /**
  * Returns the active notification provider based on runtime environment configuration.
+ * Production always uses the real provider adapter (which fails closed per call when
+ * unconfigured) — never the silent console simulator.
  */
 export function getNotificationProvider(): NotificationProvider {
+  const isProduction = process.env.NODE_ENV === 'production';
   const isDemo = process.env.DEMO_MODE === 'true' || process.env.NODE_ENV === 'test';
-  if (isDemo || (!process.env.KAVENEGAR_API_KEY && !process.env.SMS_PROVIDER_API_KEY)) {
+  const hasProviderKey = Boolean(process.env.KAVENEGAR_API_KEY || process.env.SMS_PROVIDER_API_KEY);
+
+  if (isProduction) {
+    return new ProductionNotificationProvider();
+  }
+  if (isDemo || !hasProviderKey) {
     return new ConsoleNotificationProvider();
   }
   return new ProductionNotificationProvider();

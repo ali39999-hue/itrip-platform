@@ -19,7 +19,15 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // Server-action/domain tests transitively pull in next-auth, whose ESM
+      // internals import 'next/server' (extensionless) while other files use
+      // 'next/server.js' — alias every spelling so suites can load the auth
+      // chain under vitest's node environment.
       'next/server': path.resolve(__dirname, './node_modules/next/server.js'),
+      'next/server.js': path.resolve(__dirname, './node_modules/next/server.js'),
+      'next/headers': path.resolve(__dirname, './node_modules/next/headers.js'),
+      'next/headers.js': path.resolve(__dirname, './node_modules/next/headers.js'),
+      'next/cache': path.resolve(__dirname, './node_modules/next/cache.js'),
     },
   },
 });

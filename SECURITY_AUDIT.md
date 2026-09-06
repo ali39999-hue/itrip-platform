@@ -1,4 +1,9 @@
 # iTRIP / FIRUZO — PRODUCTION SECURITY AUDIT REPORT
+> **⚠️ STATUS (2026-09-06, BASE-003):** Point-in-time report. The evidence-based per-area verdicts in
+> `docs/baseline/FEATURE_REALITY_MATRIX.md` supersede this document where they conflict (e.g. the
+> webhook signature fail-open hole and the unwired refund aggregate existed at this report's date —
+> both were **fixed** in the 2026-09-06 hardening run; see `docs/baseline/HARDENING-W0-CHANGELOG.md`).
+
 **Target:** Production Hardening & Vulnerability Mitigation  
 **Date:** 2026-09-05  
 **Audited Subsystems:** Authentication, RBAC, Multi-Tenancy (B2B), Payment Gateways, Webhooks, PII, Next.js Security Headers  

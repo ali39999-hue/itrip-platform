@@ -1,6 +1,11 @@
 # iTrip / Firuzo v2.0 Platform Release & QA Handoff Report
 
-> **Target Release:** v2.0-rc2  
+> **⚠️ STATUS (2026-09-06, BASE-003/DOC-002):** Point-in-time handoff report — current feature
+> statuses (LIVE / BETA / SIMULATED / COMING_SOON) are authoritative in
+> `docs/baseline/FEATURE_REALITY_MATRIX.md`. Test counts below reflect their original run,
+> not the current suite (113 unit / 15 E2E spec files as of 2026-09-06).
+
+> **Target Release:** v2.0-rc2 — *historical label; canonical release identity is `package.json` (v1.1.0)*  
 > **Repository:** `https://github.com/ali39999-hue/itrip-platform.git`  
 > **Testing Status:** 25/25 Playwright End-to-End Test Suites Passed (100% Green)
 

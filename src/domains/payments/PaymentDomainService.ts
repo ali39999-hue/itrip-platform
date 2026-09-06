@@ -39,6 +39,8 @@ export interface WebhookProcessParams {
   timestamp?: number;
   merchantId?: string;
   rawPayload?: Record<string, unknown>;
+  /** Exact raw request body bytes as received from the gateway — used for HMAC. */
+  rawBody?: string;
 }
 
 export interface WebhookProcessResult {
@@ -50,13 +52,17 @@ export interface WebhookProcessResult {
 
 export class PaymentDomainService {
   /**
-   * Resolve appropriate gateway adapter based on method and environment
+   * Resolve appropriate gateway adapter based on method and environment.
+   * The demo adapter is unreachable in production (NODE_ENV=production) even if
+   * DEMO_MODE is accidentally enabled — simulated success paths must never be
+   * reachable from a production process (PAY-005, CI-012).
    */
   private static getAdapter(method: string) {
     if (method === 'wallet_irr' || method === 'wallet_usdt') {
       return new InternalWalletGatewayAdapter();
     }
-    if (process.env.DEMO_MODE === 'true') {
+    const isProduction = process.env.NODE_ENV === 'production';
+    if (!isProduction && process.env.DEMO_MODE === 'true') {
       return new DemoPaymentAdapter();
     }
     return new ShetabGatewayAdapter();
@@ -355,7 +361,9 @@ export class PaymentDomainService {
     });
 
     // 3. Cryptographic Signature Verification (PAY-005: Strictly Fail-Closed)
-    const isDemo = process.env.DEMO_MODE === 'true';
+    // Demo mode requires BOTH the flag and a non-production runtime; a single
+    // misconfigured env var can never enable unsigned captures in production.
+    const isDemo = process.env.DEMO_MODE === 'true' && process.env.NODE_ENV !== 'production';
     if (!isDemo && !params.signature) {
       await client.webhookEvent.update({
         where: { id: webhookRecord.id },
@@ -364,14 +372,16 @@ export class PaymentDomainService {
       throw new Error('WEBHOOK_FAIL_CLOSED: Missing required cryptographic signature in production mode');
     }
 
-    const adapter = gatewayName === 'SHETAB_GATEWAY'
+    const adapter = gatewayName === 'SHETAB_GATEWAY' && !isDemo
       ? new ShetabGatewayAdapter()
       : isDemo
         ? new DemoPaymentAdapter()
         : new ShetabGatewayAdapter();
 
     if (adapter.verifyWebhook && params.rawPayload && params.signature) {
-      const rawString = JSON.stringify(params.rawPayload);
+      // HMAC must be computed over the EXACT bytes the gateway signed — not over
+      // a re-serialization of the parsed payload (key order/whitespace differ).
+      const rawString = params.rawBody || JSON.stringify(params.rawPayload);
       const verifyRes = await adapter.verifyWebhook(rawString, params.signature);
       if (!verifyRes.valid) {
         await client.webhookEvent.update({
@@ -395,6 +405,19 @@ export class PaymentDomainService {
       throw new Error(`Payment webhook error: Booking ${params.bookingId} not found`);
     }
 
+    // PAY-010a — no event may resurrect a terminal-state booking (money for
+    // expired/cancelled bookings flows back through refunds/reconciliation).
+    if (['EXPIRED', 'CANCELLED', 'REFUNDED', 'FAILED'].includes(booking.status)) {
+      await client.webhookEvent.update({
+        where: { id: webhookRecord.id },
+        data: { status: 'REJECTED', rejectionReason: `WEBHOOK_FAIL_CLOSED: Booking ${booking.id} is in terminal state ${booking.status}` },
+      });
+      throw new Error(`WEBHOOK_FAIL_CLOSED: Booking ${booking.id} is in terminal state ${booking.status} — capture rejected`);
+    }
+
+    // 4b. Booking & Financial Validation — runs BEFORE the duplicate-capture
+    // collapse so tampered amounts/currencies are loudly rejected even against
+    // an already-captured booking.
     const expectedAmount = new Prisma.Decimal(booking.totalAmount.toString());
     const incomingAmount = params.settledAmount instanceof Prisma.Decimal
       ? params.settledAmount
@@ -416,6 +439,21 @@ export class PaymentDomainService {
         data: { status: 'REJECTED', rejectionReason: reason },
       });
       throw new Error(`Payment webhook currency mismatch: ${reason}`);
+    }
+
+    // PAY-010b — one capture per booking, ever. A *valid* gateway event with a
+    // fresh eventId for an already-captured booking collapses into an
+    // idempotent no-op instead of minting a second Payment.
+    if (booking.status === 'CONFIRMED' && booking.paymentStatus === 'CAPTURED') {
+      await client.webhookEvent.update({
+        where: { id: webhookRecord.id },
+        data: { status: 'PROCESSED', processedAt: new Date() },
+      });
+      return {
+        processed: false,
+        status: 'DUPLICATE',
+        reason: 'Booking already captured — payment idempotency per booking (PAY-010)',
+      };
     }
 
     // 5. Atomic Capture Execution (PAY-002, PAY-007)
@@ -469,6 +507,24 @@ export class PaymentDomainService {
         actor: 'GATEWAY_WEBHOOK',
         reason: `Payment verified and captured via ${params.gatewayName} (ref: ${params.gatewayRef})`,
         correlationId: `corr_wh_${params.eventId}`,
+      },
+    });
+
+    // Sensitive-action audit trail (IAM-011, PAY-016): gateway-driven money
+    // movement must be traceable outside the webhook replay log as well.
+    await client.auditLog.create({
+      data: {
+        action: 'PAYMENT_CAPTURED',
+        resource: 'Payment',
+        resourceId: payment.id,
+        newData: JSON.stringify({
+          bookingId: booking.id,
+          amount: incomingAmount.toString(),
+          currency: params.settledCurrency.toUpperCase(),
+          gateway: gatewayName,
+          gatewayRef: params.gatewayRef,
+          eventId: params.eventId,
+        }),
       },
     });
 

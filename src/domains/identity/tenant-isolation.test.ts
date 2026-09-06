@@ -177,6 +177,40 @@ describe('Tenant Isolation & RBAC Security Suite (IAM-001 to IAM-003, SEC-001)',
     expect(userPerms).toContain(perm.code);
   });
 
+  it('IAM-008: Authorization matrix — deny by default, grant via relational chain, revoke takes effect immediately', async () => {
+    // Reuse the dynamic permission minted in the IAM-001 test above.
+    const customPerm = await prisma.permission.findUniqueOrThrow({
+      where: { code: `finance:custom_${suffix}` },
+    });
+
+    // 1. DENY by default: userB has no relational path to this permission at all.
+    const beforeGrant = await getUserPermissions(userBId);
+    expect(beforeGrant).not.toContain(customPerm.code);
+
+    // 2. GRANT: build the full relational chain Role → RolePermission → UserRole.
+    const matrixRole = await prisma.role.create({
+      data: { name: `ROLE_MATRIX_${suffix.toUpperCase()}`, permissions: '[]' },
+    });
+    await prisma.userRole.create({ data: { userId: userBId, roleId: matrixRole.id } });
+    await prisma.rolePermission.create({
+      data: { roleId: matrixRole.id, permissionId: customPerm.id },
+    });
+    const afterGrant = await getUserPermissions(userBId);
+    expect(afterGrant).toContain(customPerm.code);
+
+    // 3. REVOKE: deleting the relational link removes the permission at once —
+    // no cache, no legacy JSON fallback.
+    await prisma.rolePermission.delete({
+      where: { roleId_permissionId: { roleId: matrixRole.id, permissionId: customPerm.id } },
+    });
+    const afterRevoke = await getUserPermissions(userBId);
+    expect(afterRevoke).not.toContain(customPerm.code);
+
+    // Self-contained cleanup (afterAll only knows the IAM-001 fixtures).
+    await prisma.userRole.deleteMany({ where: { roleId: matrixRole.id } });
+    await prisma.role.delete({ where: { id: matrixRole.id } });
+  });
+
   it('IAM-002: Cross-tenant read access is strictly BLOCKED between Org A and Org B', async () => {
     const ctxA = await getTenantAuthContext(userAId);
     const ctxB = await getTenantAuthContext(userBId);
@@ -225,5 +259,40 @@ describe('Tenant Isolation & RBAC Security Suite (IAM-001 to IAM-003, SEC-001)',
     // Super Admin can access both without tenant blockage
     expect(() => assertTenantAccess(adminCtx, resourceOrgA)).not.toThrow();
     expect(() => assertTenantAccess(adminCtx, resourceOrgB)).not.toThrow();
+  });
+
+  it('IAM-007: tenant-scoped Prisma extension filters Booking by org and never breaks models without the column', async () => {
+    const { getTenantScopedPrisma } = await import('@/lib/prisma');
+    const ctxA = await getTenantAuthContext(userAId);
+    const dbA = getTenantScopedPrisma(ctxA.organizationId, ctxA.isSuperAdmin);
+
+    // 1. Regression guard (IAM-007 fix): models WITHOUT an organizationId column
+    // (Invoice, TravelDocument) must pass through the extension untouched —
+    // scoping them used to inject a Prisma validation error for every query.
+    await expect(dbA.invoice.findMany({ take: 1 })).resolves.not.toThrow();
+    await expect(dbA.travelDocument.findMany({ take: 1 })).resolves.not.toThrow();
+
+    // 2. Booking IS org-scoped: a booking belonging to Org A is visible to A…
+    const orgABooking = await prisma.booking.create({
+      data: {
+        reference: `ITR-SC-${suffix}`,
+        customerId: userAId,
+        status: 'CONFIRMED',
+        totalAmount: 100,
+        currency: 'IRR',
+        organizationId: orgAId,
+      },
+    });
+
+    const seenByA = await dbA.booking.findMany({ where: { reference: `ITR-SC-${suffix}` } });
+    expect(seenByA).toHaveLength(1);
+
+    // …and invisible to Org B's scoped client.
+    const ctxB = await getTenantAuthContext(userBId);
+    const dbB = getTenantScopedPrisma(ctxB.organizationId, ctxB.isSuperAdmin);
+    const seenByB = await dbB.booking.findMany({ where: { reference: `ITR-SC-${suffix}` } });
+    expect(seenByB).toHaveLength(0);
+
+    await prisma.booking.delete({ where: { id: orgABooking.id } });
   });
 });
