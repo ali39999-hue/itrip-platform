@@ -320,6 +320,27 @@ unit suite remains 135/135.
   the durable, handoff-ready summary of the entire run (findings, changes, evidence, deferred items,
   next priorities).
 
+## Continuation 15 (same run, 2026-09-06) — IAM-004, MONEY-012, BOOK-010, BOOK-013, BOOK-014
+
+- **IAM-004 — referential foreign key constraint for OrganizationMembership.roleId:**
+  - Added relation `role Role? @relation(fields: [roleId], references: [id], onDelete: SetNull)` on
+    `OrganizationMembership` and back-relation `organizationMemberships` on `Role`.
+  - Applied migration `20260906120000_add_org_membership_role_fk` across both dev and test databases.
+  - Added referential integrity test in `tenant-isolation.test.ts`: non-existent `roleId` strictly throws.
+- **MONEY-012 — wallet arithmetic unified on GeneralLedgerService:**
+  - Added `GeneralLedgerService.getUserBalances(userId)` grouping debit/credit per currency in PostgreSQL with Decimal precision.
+  - `exchangeWalletCurrency` and `getWallet` in `actions/booking.ts` now call `getAccountBalance` and `getUserBalances`.
+- **BOOK-010 — createBookingDraft delegates to BookingDomainService:**
+  - Added `BookingDomainService.computeDraftPricing(...)` encapsulating nights, quantity, add-ons and 12-stage pricing pipeline.
+  - `createBookingDraft` delegates pricing calculation instead of computing in the server action.
+- **BOOK-013 — canonical BookingTimeline:**
+  - Added `BookingDomainService.getBookingTimeline(bookingId)` merging `BookingStatusHistory`, `Payment`, `Refund`, and `AuditLog` into a single chronological timeline feed.
+  - Added server action `getBookingTimelineAction(bookingId)` with tenant and owner authorization.
+- **BOOK-014 — concurrent confirmation test:**
+  - Added concurrent race test in `booking-lifecycle.test.ts`: two simultaneous confirmation sagas race on the same booking; exactly one succeeds and the other fails, leaving the booking deterministically `CONFIRMED`.
+
+**Verification:** typecheck PASS (0 errors) · unit suite **24 files / 137 tests PASS** (+2 tests).
+
 ## Known remaining risks (carried into W1+)
 
 1. No real PSP integration — production payments still cannot complete until a real gateway adapter ships (PAY-004).

@@ -295,4 +295,41 @@ describe('Tenant Isolation & RBAC Security Suite (IAM-001 to IAM-003, SEC-001)',
 
     await prisma.booking.delete({ where: { id: orgABooking.id } });
   });
+
+  it('IAM-004: OrganizationMembership.roleId enforces referential integrity as a real foreign key to Role', async () => {
+    // 1. Trying to link a membership to a non-existent roleId violates the foreign key constraint
+    await expect(
+      prisma.organizationMembership.create({
+        data: {
+          organizationId: orgAId,
+          userId: superAdminId,
+          roleId: 'non_existent_role_id_9999',
+          status: 'ACTIVE',
+        },
+      })
+    ).rejects.toThrow();
+
+    // 2. Linking to an existing Role succeeds and the relation can be included
+    const agentRole = await prisma.role.upsert({
+      where: { name: 'AGENT' },
+      update: {},
+      create: { name: 'AGENT', permissions: '[]', description: 'Agent Role' },
+    });
+
+    const membership = await prisma.organizationMembership.create({
+      data: {
+        organizationId: orgAId,
+        userId: superAdminId,
+        roleId: agentRole.id,
+        status: 'ACTIVE',
+      },
+      include: { role: true },
+    });
+
+    expect(membership.role).not.toBeNull();
+    expect(membership.role?.name).toBe('AGENT');
+
+    // Cleanup
+    await prisma.organizationMembership.delete({ where: { id: membership.id } });
+  });
 });

@@ -7,6 +7,7 @@ import { FLIGHTS, HOTELS, TOURS, TRANSFERS, VISA_SERVICES, ESIM_PACKAGES, INSURA
 import { revalidatePath } from 'next/cache';
 import { safeAuth } from '@/auth';
 import { BookingSagaOrchestrator } from '@/domains/booking/saga-orchestrator';
+import { BookingDomainService } from '@/domains/booking/BookingDomainService';
 import { getTenantAuthContext, assertTenantAccess } from '@/domains/identity/permission-service';
 
 import { InventoryEngine } from '@/domains/inventory/InventoryEngine';
@@ -160,7 +161,7 @@ export async function createBookingDraft(data: unknown) {
     // 1. Validate data structure purely based on IDs/quantities
     const parsed = bookingSchema.parse(data);
 
-    // 2. Compute canonical price strictly on the server using pricing engine.
+    // 2. Compute canonical price strictly on the server by delegating to BookingDomainService (BOOK-010).
     //    Unknown items fail closed — never priced from client input.
     const baseUnitCost = resolveServerBasePrice(parsed.type, parsed.itemId);
     if (baseUnitCost === null) {
@@ -168,7 +169,6 @@ export async function createBookingDraft(data: unknown) {
     }
     const quantity = parsed.count || 1;
     const nights = parsed.nights || 1;
-    const totalBaseItemCost = parsed.type === 'HOTEL' ? baseUnitCost * nights * quantity : baseUnitCost * quantity;
 
     let totalAddonsCost = 0;
     if (parsed.addons?.esim || parsed.addonIds?.includes('esim')) {
@@ -182,13 +182,14 @@ export async function createBookingDraft(data: unknown) {
       totalAddonsCost += price;
     }
 
-    const rawNetCost = totalBaseItemCost + totalAddonsCost;
-
-    const pricing = calculatePricing({
+    const { rawNetCost, pricing } = BookingDomainService.computeDraftPricing({
+      productType: parsed.type,
+      baseUnitCost,
+      quantity,
+      nights,
+      totalAddonsCost,
       userRole,
       supplierId: parsed.itemId ? 'sup_dynamic' : 'sup_default_firuzo',
-      productType: parsed.type,
-      basePrice: rawNetCost,
       currency: 'IRR',
     });
 
@@ -455,6 +456,42 @@ export async function getBookingById(id: string) {
   }
 }
 
+/**
+ * Authoritative unified chronological timeline for a booking (BOOK-013).
+ * Tenant and owner-scoped: users/agents can inspect full lifecycle audit trail.
+ */
+export async function getBookingTimelineAction(bookingId: string) {
+  try {
+    const session = await safeAuth();
+    if (!session || !session.user) {
+      return { success: false, error: 'Unauthorized', events: [] };
+    }
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      select: { id: true, customerId: true, organizationId: true, branchId: true },
+    });
+    if (!booking) return { success: false, error: 'Booking not found', events: [] };
+
+    const tenantCtx = await getTenantAuthContext(session.user.id);
+    try {
+      assertTenantAccess(tenantCtx, {
+        customerId: booking.customerId,
+        organizationId: booking.organizationId,
+        branchId: booking.branchId,
+      });
+    } catch {
+      return { success: false, error: 'Forbidden: Access denied to booking timeline', events: [] };
+    }
+
+    const events = await BookingDomainService.getBookingTimeline(bookingId);
+    return { success: true, events };
+  } catch (err: unknown) {
+    console.error('getBookingTimelineAction server error:', err);
+    return { success: false, error: 'Failed to fetch booking timeline', events: [] };
+  }
+}
+
 export async function requestWalletTopUp(amountIrr: number) {
   try {
     const session = await safeAuth();
@@ -528,18 +565,11 @@ export async function exchangeWalletCurrency(from: 'IRR' | 'USDT' | 'AED', to: '
     const { GeneralLedgerService } = await import('@/domains/ledger/GeneralLedgerService');
     const { defaultCurrencyService } = await import('@/domains/currency/CurrencyService');
 
-    // Balance check straight from the ledger.
+    // Balance check straight from GeneralLedgerService with Decimal precision (MONEY-012)
     const account = await prisma.account.findFirst({
       where: { ownerType: 'USER', ownerId: session.user.id, currency: from },
     });
-    let balance = 0;
-    if (account) {
-      const [credits, debits] = await Promise.all([
-        prisma.ledgerEntry.aggregate({ where: { accountId: account.id, direction: 'CREDIT' }, _sum: { amount: true } }),
-        prisma.ledgerEntry.aggregate({ where: { accountId: account.id, direction: 'DEBIT' }, _sum: { amount: true } }),
-      ]);
-      balance = (Number(credits._sum.amount) || 0) - (Number(debits._sum.amount) || 0);
-    }
+    const balance = account ? await GeneralLedgerService.getAccountBalance(account.id, from) : 0;
     if (balance < amount) {
       return { success: false, error: 'Insufficient balance' };
     }
@@ -579,13 +609,14 @@ export async function getWallet() {
     }
     const userId = session.user.id;
 
+    const { GeneralLedgerService } = await import('@/domains/ledger/GeneralLedgerService');
+
     // Demo convenience: seed a starter wallet through the real ledger (TOPUP
     // entries) so wallet payments work in DEMO_MODE. Never runs in production.
     const DEMO_MODE = process.env.DEMO_MODE === 'true' && process.env.NODE_ENV !== 'production';
     if (DEMO_MODE) {
       const existingAccounts = await prisma.account.count({ where: { ownerType: 'USER', ownerId: userId } });
       if (existingAccounts === 0) {
-        const { GeneralLedgerService } = await import('@/domains/ledger/GeneralLedgerService');
         await GeneralLedgerService.postTopUp({
           groupId: `demo_topup_${userId}_${Date.now()}`,
           userId,
@@ -603,6 +634,9 @@ export async function getWallet() {
       }
     }
 
+    // Authoritative Decimal-precise balance aggregation via GeneralLedgerService (MONEY-012)
+    const balances = await GeneralLedgerService.getUserBalances(userId);
+
     const accounts = await prisma.account.findMany({
       where: { ownerType: 'USER', ownerId: userId },
       include: {
@@ -612,7 +646,6 @@ export async function getWallet() {
       },
     });
 
-    const balances: Record<string, number> = { IRR: 0, USDT: 0, AED: 0 };
     const allEntries: Array<{
       id: string;
       groupId: string;
@@ -625,27 +658,18 @@ export async function getWallet() {
     }> = [];
 
     accounts.forEach((acc) => {
-      let curBalance = 0;
       acc.entries.forEach((e) => {
-        const amt = Number(e.amount);
-        if (e.direction === 'CREDIT') {
-          curBalance += amt;
-        } else {
-          curBalance -= amt;
-        }
         allEntries.push({
           id: e.id,
           groupId: e.groupId,
           direction: e.direction,
-          amount: amt,
+          amount: Number(e.amount),
           currency: e.currency,
           referenceType: e.referenceType,
           referenceId: e.referenceId,
           createdAt: e.createdAt,
         });
       });
-      // A user may hold multiple accounts per currency — accumulate, don't overwrite.
-      balances[acc.currency] = (balances[acc.currency] ?? 0) + curBalance;
     });
 
     allEntries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

@@ -8,6 +8,7 @@
 import type { Booking } from '@/lib/types';
 import type { SupportedCurrency } from '../currency/CurrencyService';
 import { TaxEngine } from '@/lib/finance/tax-engine';
+import { calculatePricing, PricingResult } from '@/lib/pricing/engine';
 import { prisma } from '@/lib/prisma';
 import { BookingStateMachine, BookingState } from './state-machine';
 
@@ -63,6 +64,45 @@ export class BookingDomainService {
       discountAmount,
       totalAmount,
       currency,
+    };
+  }
+
+  /**
+   * Computes canonical server-side pricing for a booking draft (BOOK-010, MONEY-005).
+   * Encapsulates nights, quantity, add-ons, role discounts, and 12-stage pricing pipeline.
+   */
+  static computeDraftPricing(params: {
+    productType: string;
+    baseUnitCost: number;
+    quantity?: number;
+    nights?: number;
+    totalAddonsCost?: number;
+    userRole?: string;
+    supplierId?: string;
+    currency?: SupportedCurrency;
+  }): {
+    rawNetCost: number;
+    pricing: PricingResult;
+  } {
+    const quantity = Math.max(1, params.quantity || 1);
+    const nights = Math.max(1, params.nights || 1);
+    const totalBaseItemCost = params.productType === 'HOTEL'
+      ? params.baseUnitCost * nights * quantity
+      : params.baseUnitCost * quantity;
+
+    const rawNetCost = totalBaseItemCost + (params.totalAddonsCost || 0);
+
+    const pricing = calculatePricing({
+      userRole: params.userRole || 'CUSTOMER',
+      supplierId: params.supplierId || 'sup_default_firuzo',
+      productType: params.productType,
+      basePrice: rawNetCost,
+      currency: params.currency || 'IRR',
+    });
+
+    return {
+      rawNetCost,
+      pricing,
     };
   }
 
@@ -125,4 +165,99 @@ export class BookingDomainService {
 
     return expired;
   }
+
+  /**
+   * Builds canonical unified chronological timeline for a booking (BOOK-013).
+   * Merges status history, payment events, refunds, and audit actions into one feed.
+   */
+  static async getBookingTimeline(bookingId: string): Promise<BookingTimelineEvent[]> {
+    const [history, payments, refunds, audits] = await Promise.all([
+      prisma.bookingStatusHistory.findMany({
+        where: { bookingId },
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.payment.findMany({
+        where: { bookingId },
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.refund.findMany({
+        where: { bookingId },
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.auditLog.findMany({
+        where: { resource: 'Booking', resourceId: bookingId },
+        orderBy: { createdAt: 'asc' },
+      }),
+    ]);
+
+    const events: BookingTimelineEvent[] = [];
+
+    // Map status history
+    history.forEach((h) => {
+      events.push({
+        id: h.id,
+        type: 'LIFECYCLE',
+        title: `Transition: ${h.fromStatus} → ${h.toStatus}`,
+        description: h.reason || undefined,
+        actor: h.actor,
+        status: h.toStatus,
+        correlationId: h.correlationId || undefined,
+        timestamp: h.createdAt,
+      });
+    });
+
+    // Map payments
+    payments.forEach((p) => {
+      events.push({
+        id: p.id,
+        type: 'PAYMENT',
+        title: `Payment: ${p.status} (${p.method})`,
+        description: p.gatewayRef ? `Ref: ${p.gatewayRef}` : undefined,
+        amount: p.amount.toNumber(),
+        currency: p.currency,
+        status: p.status,
+        timestamp: p.createdAt,
+      });
+    });
+
+    // Map refunds
+    refunds.forEach((r) => {
+      events.push({
+        id: r.id,
+        type: 'REFUND',
+        title: `Refund: ${r.refundNumber} (${r.status})`,
+        description: r.reason || undefined,
+        amount: r.netRefundAmount.toNumber(),
+        currency: r.currency,
+        status: r.status,
+        timestamp: r.createdAt,
+      });
+    });
+
+    // Map audit logs
+    audits.forEach((a) => {
+      events.push({
+        id: a.id,
+        type: 'AUDIT',
+        title: `Audit: ${a.action}`,
+        actor: a.userId || undefined,
+        timestamp: a.createdAt,
+      });
+    });
+
+    return events.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  }
+}
+
+export interface BookingTimelineEvent {
+  id: string;
+  type: 'LIFECYCLE' | 'PAYMENT' | 'REFUND' | 'AUDIT';
+  title: string;
+  description?: string;
+  actor?: string;
+  status?: string;
+  amount?: number;
+  currency?: string;
+  correlationId?: string;
+  timestamp: Date;
 }

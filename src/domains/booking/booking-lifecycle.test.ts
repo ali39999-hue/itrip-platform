@@ -1,5 +1,7 @@
 import { describe, it, expect, afterAll } from 'vitest';
 import { BookingStateMachine } from './state-machine';
+import { BookingSagaOrchestrator } from './saga-orchestrator';
+import { BookingDomainService } from './BookingDomainService';
 import { prisma } from '@/lib/prisma';
 import { InventoryEngine } from '@/domains/inventory/InventoryEngine';
 
@@ -10,10 +12,17 @@ describe('Booking Lifecycle & Relational History Suite (BOOK-001 to BOOK-005)', 
 
   afterAll(async () => {
     try {
-      await prisma.bookingStatusHistory.deleteMany({ where: { bookingId: testBookingId } });
-      await prisma.priceSnapshot.deleteMany({ where: { bookingId: testBookingId } });
-      await prisma.bookingItem.deleteMany({ where: { bookingId: testBookingId } });
-      await prisma.booking.deleteMany({ where: { id: testBookingId } });
+      await prisma.outboxEvent.deleteMany({ where: { aggregateId: { in: [testBookingId, `bkg_race_${suffix}`] } } });
+      await prisma.sagaStep.deleteMany({ where: { saga: { aggregateId: { in: [testBookingId, `bkg_race_${suffix}`] } } } });
+      await prisma.sagaExecution.deleteMany({ where: { aggregateId: { in: [testBookingId, `bkg_race_${suffix}`] } } });
+      await prisma.payment.deleteMany({ where: { bookingId: { in: [testBookingId, `bkg_race_${suffix}`] } } });
+      await prisma.paymentIntent.deleteMany({ where: { bookingId: { in: [testBookingId, `bkg_race_${suffix}`] } } });
+      await prisma.ledgerEntry.deleteMany({ where: { groupId: { contains: suffix } } });
+      await prisma.bookingStatusHistory.deleteMany({ where: { bookingId: { in: [testBookingId, `bkg_race_${suffix}`] } } });
+      await prisma.priceSnapshot.deleteMany({ where: { bookingId: { in: [testBookingId, `bkg_race_${suffix}`] } } });
+      await prisma.bookingItem.deleteMany({ where: { bookingId: { in: [testBookingId, `bkg_race_${suffix}`] } } });
+      await prisma.booking.deleteMany({ where: { id: { in: [testBookingId, `bkg_race_${suffix}`] } } });
+      await prisma.booking.deleteMany({ where: { customerId: testUserId } });
       await prisma.user.deleteMany({ where: { id: testUserId } });
     } catch (e) {
       console.error('Cleanup error:', e);
@@ -178,5 +187,83 @@ describe('Booking Lifecycle & Relational History Suite (BOOK-001 to BOOK-005)', 
     await prisma.allotment.deleteMany({ where: { inventoryItemId: tempItemId } });
     await prisma.inventoryItem.deleteMany({ where: { id: tempItemId } });
     await prisma.supplier.deleteMany({ where: { id: tempSupplierId } });
+  });
+
+  it('BOOK-014: Two concurrent confirmations race against the same booking — exactly one succeeds', async () => {
+    // 1. Create a booking in PENDING_PAYMENT
+    const raceBooking = await prisma.booking.create({
+      data: {
+        id: `bkg_race_${suffix}`,
+        reference: `ITR-RACE-${suffix}`,
+        customerId: testUserId,
+        status: 'PENDING_PAYMENT',
+        paymentStatus: 'INITIATED',
+        totalAmount: 1_000_000,
+        currency: 'IRR',
+        items: {
+          create: [{
+            type: 'HOTEL',
+            netCost: 800_000,
+            markup: 200_000,
+            sellPrice: 1_000_000,
+          }],
+        },
+      },
+    });
+
+    // Seed customer wallet so wallet payment succeeds
+    const { GeneralLedgerService } = await import('@/domains/ledger/GeneralLedgerService');
+    await GeneralLedgerService.postTopUp({
+      groupId: `topup_race_${suffix}`,
+      userId: testUserId,
+      amount: 5_000_000,
+      currency: 'IRR',
+      referenceId: 'TEST_SEED',
+    });
+
+    // 2. Launch two concurrent confirmation saga attempts simultaneously
+    const attempt1 = BookingSagaOrchestrator.confirmBookingSaga({
+      bookingId: raceBooking.id,
+      idempotencyKey: `idem_race_1_${suffix}`,
+      paymentMethod: 'wallet_irr',
+    });
+
+    const attempt2 = BookingSagaOrchestrator.confirmBookingSaga({
+      bookingId: raceBooking.id,
+      idempotencyKey: `idem_race_2_${suffix}`,
+      paymentMethod: 'wallet_irr',
+    });
+
+    const results = await Promise.allSettled([attempt1, attempt2]);
+
+    const fulfilled = results.filter((r) => r.status === 'fulfilled');
+    const rejected = results.filter((r) => r.status === 'rejected');
+
+    // Exactly one confirmation must succeed, and the other must fail (deterministic state)
+    expect(fulfilled.length).toBe(1);
+    expect(rejected.length).toBe(1);
+
+    // 3. Verify final state is deterministically CONFIRMED
+    const finalBooking = await prisma.booking.findUniqueOrThrow({
+      where: { id: raceBooking.id },
+    });
+    expect(finalBooking.status).toBe('CONFIRMED');
+    expect(finalBooking.paymentStatus).toBe('CAPTURED');
+
+    // 4. Verify canonical BookingTimeline (BOOK-013) reflects the sequence
+    const timeline = await BookingDomainService.getBookingTimeline(raceBooking.id);
+    expect(timeline.length).toBeGreaterThanOrEqual(2);
+    expect(timeline.some((e) => e.type === 'LIFECYCLE' && e.status === 'CONFIRMED')).toBe(true);
+
+    // Cleanup
+    await prisma.outboxEvent.deleteMany({ where: { aggregateId: raceBooking.id } });
+    await prisma.sagaStep.deleteMany({ where: { saga: { aggregateId: raceBooking.id } } });
+    await prisma.sagaExecution.deleteMany({ where: { aggregateId: raceBooking.id } });
+    await prisma.payment.deleteMany({ where: { bookingId: raceBooking.id } });
+    await prisma.paymentIntent.deleteMany({ where: { bookingId: raceBooking.id } });
+    await prisma.ledgerEntry.deleteMany({ where: { groupId: { contains: raceBooking.id } } });
+    await prisma.bookingStatusHistory.deleteMany({ where: { bookingId: raceBooking.id } });
+    await prisma.bookingItem.deleteMany({ where: { bookingId: raceBooking.id } });
+    await prisma.booking.deleteMany({ where: { id: raceBooking.id } });
   });
 });
