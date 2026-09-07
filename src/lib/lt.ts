@@ -1,7 +1,8 @@
 /**
  * Inline localized text resolver for page-local copy.
  * Use for one-off UI strings; shared strings belong in messages/*.json via next-intl.
- * Falls back to English when a locale is missing a value.
+ * I18N-103: RTL-aware fallback matrix ensuring Persian/Arabic RTL contexts never
+ * receive unintended English fallback when RTL translations are available.
  */
 export type Locale = 'fa' | 'en' | 'ar' | 'zh' | 'ru';
 
@@ -16,9 +17,10 @@ export interface LText {
 export function lt(locale: string, text: LText): string {
   switch (locale) {
     case 'fa':
-      return text.fa;
+      return text.fa || text.en;
     case 'ar':
-      return text.ar ?? text.en;
+      // I18N-103: RTL fallback: If Arabic is missing, fall back to Persian (RTL) before English
+      return text.ar ?? text.fa ?? text.en;
     case 'zh':
       return text.zh ?? text.en;
     case 'ru':

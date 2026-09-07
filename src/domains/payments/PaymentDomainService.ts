@@ -1,14 +1,17 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { Money } from '@/lib/finance';
-import { ShetabGatewayAdapter, DemoPaymentAdapter, InternalWalletGatewayAdapter } from './gateway-port';
+import { DemoPaymentAdapter, InternalWalletGatewayAdapter } from './gateway-port';
+import { ShetabPspAdapter, validateLivePspConfiguration } from './adapters/ShetabPspAdapter';
+import { GeneralLedgerService } from '../ledger/GeneralLedgerService';
+import { OperationalExceptionService, ExceptionSeverity } from '../finance/three-way-reconciliation';
 import { businessMetrics } from '@/lib/observability/business-metrics';
 
 export interface InitiatePaymentParams {
   bookingId?: string;
   idempotencyKey: string;
   method: 'wallet_irr' | 'gateway_shetab' | 'wallet_usdt';
-  amount: number | Prisma.Decimal;
+  amount: Money; // MONEY-101: Money is the only core financial input
   currency?: string;
   rawPayload?: Record<string, unknown>;
   customerInfo?: {
@@ -24,6 +27,8 @@ export interface PaymentResult {
   attemptId?: string;
   gatewayRef?: string;
   redirectUrl?: string;
+  amount?: Money; // MONEY-104: Return Money from internal financial services
+  currency?: string;
   status: 'INITIATED' | 'PENDING' | 'PENDING_CUSTOMER' | 'SUCCESS' | 'CAPTURED' | 'FAILED' | 'REFUNDED';
   error?: string;
 }
@@ -34,8 +39,8 @@ export interface WebhookProcessParams {
   eventType?: string;
   bookingId: string;
   gatewayRef: string;
-  settledAmount: number | Prisma.Decimal | string;
-  settledCurrency: string;
+  settledAmount: Money; // MONEY-101: Money is the only core financial input
+  settledCurrency?: string;
   signature?: string;
   timestamp?: number;
   merchantId?: string;
@@ -53,10 +58,16 @@ export interface WebhookProcessResult {
 
 export class PaymentDomainService {
   /**
+   * PAY-102: Startup live PSP configuration validation.
+   * Fails closed immediately in production mode if credentials are missing.
+   */
+  static validateStartupPspConfig(): void {
+    validateLivePspConfiguration();
+  }
+
+  /**
    * Resolve appropriate gateway adapter based on method and environment.
-   * The demo adapter is unreachable in production (NODE_ENV=production) even if
-   * DEMO_MODE is accidentally enabled — simulated success paths must never be
-   * reachable from a production process (PAY-005, CI-012).
+   * In production, the Shetab PSP adapter is required and enforced.
    */
   private static getAdapter(method: string) {
     if (method === 'wallet_irr' || method === 'wallet_usdt') {
@@ -66,7 +77,7 @@ export class PaymentDomainService {
     if (!isProduction && process.env.DEMO_MODE === 'true') {
       return new DemoPaymentAdapter();
     }
-    return new ShetabGatewayAdapter();
+    return new ShetabPspAdapter();
   }
 
   /**
@@ -81,27 +92,23 @@ export class PaymentDomainService {
   }, tx?: Prisma.TransactionClient) {
     const client = tx || prisma;
     const expiresAt = new Date(Date.now() + (params.ttlMinutes || 15) * 60 * 1000);
-    
-    let decimalAmount: Prisma.Decimal;
-    if (params.amount instanceof Money) {
-      decimalAmount = params.amount.toDecimal();
-    } else if (params.amount instanceof Prisma.Decimal) {
-      decimalAmount = params.amount;
-    } else {
-      decimalAmount = new Prisma.Decimal(params.amount.toString());
-    }
+    const moneyAmount = params.amount instanceof Money
+      ? params.amount
+      : new Money(params.amount.toString(), params.currency || 'IRR');
+    const decimalAmount = moneyAmount.toDecimal();
+    const currency = (params.currency || moneyAmount.currency || 'IRR').toUpperCase();
 
     return client.paymentIntent.upsert({
       where: { idempotencyKey: params.idempotencyKey },
       update: {
         amount: decimalAmount,
-        currency: (params.currency || 'IRR').toUpperCase(),
+        currency,
         expiresAt,
       },
       create: {
         bookingId: params.bookingId,
         amount: decimalAmount,
-        currency: (params.currency || 'IRR').toUpperCase(),
+        currency,
         status: 'INITIATED',
         idempotencyKey: params.idempotencyKey,
         expiresAt,
@@ -110,18 +117,20 @@ export class PaymentDomainService {
   }
 
   /**
-   * Process payment attempt and gateway dispatch (PAY-001, PAY-003, PAY-004)
+   * Process payment attempt and gateway dispatch (PAY-001, PAY-003, PAY-004, PAY-103)
    * Enforces idempotency, booking-scoping, and strictly fails closed.
+   * PAY-103: Local state alone can never mean successful gateway payment.
    */
   static async processPayment(
     params: InitiatePaymentParams,
     tx?: Prisma.TransactionClient
   ): Promise<PaymentResult> {
     const client = tx || prisma;
-    const currency = (params.currency || 'IRR').toUpperCase();
-    const decimalAmount = params.amount instanceof Prisma.Decimal
-      ? params.amount
-      : new Prisma.Decimal(params.amount.toString());
+    const moneyAmount = (params.amount as unknown) instanceof Money
+      ? (params.amount as unknown as Money)
+      : new Money(String(params.amount), params.currency || 'IRR');
+    const currency = (params.currency || moneyAmount.currency || 'IRR').toUpperCase();
+    const decimalAmount = moneyAmount.toDecimal();
 
     // 1. Idempotency check on existing Payment record
     const existing = await client.payment.findUnique({
@@ -171,7 +180,7 @@ export class PaymentDomainService {
     // 3. Create or find canonical PaymentIntent (PAY-002)
     const intent = await this.createPaymentIntent({
       bookingId: params.bookingId || 'standalone',
-      amount: decimalAmount,
+      amount: moneyAmount,
       currency,
       idempotencyKey: `intent_${params.idempotencyKey}`,
     }, client);
@@ -200,10 +209,9 @@ export class PaymentDomainService {
 
     const gatewayRef = gatewayRes.gatewayRef;
 
-    // 4b. Demo gateways complete the simulated Shaparak return inline: verify
-    // the hold and flip the local status to SUCCESS so the booking funnel can
-    // confirm. Real PSPs stay PENDING until their signed webhook arrives.
-    let initialStatus = params.method === 'gateway_shetab' ? 'PENDING' : 'SUCCESS';
+    // PAY-103: PSP authority is mandatory. Local state alone can never mean successful payment.
+    // Wallet is internal balance, but Shetab gateway payments MUST remain PENDING until signed authority arrives.
+    let initialStatus: 'PENDING' | 'SUCCESS' = params.method === 'gateway_shetab' ? 'PENDING' : 'SUCCESS';
     if (adapter.isDemo && initialStatus !== 'SUCCESS' && gatewayRes.status !== 'SUCCESS' && adapter.verifyPayment) {
       try {
         const verifyRes = await adapter.verifyPayment({
@@ -246,9 +254,7 @@ export class PaymentDomainService {
       },
     });
 
-    // 7. Upsert Payment record for backward compatibility & direct query tracking,
-    // explicitly linked to its PaymentIntent so the trace chain
-    // Gateway → Attempt → Intent → Payment → Booking stays queryable (PAY-004).
+    // 7. Upsert Payment record for tracking (PAY-004)
     const payment = await client.payment.upsert({
       where: { idempotencyKey: params.idempotencyKey },
       update: {
@@ -283,8 +289,8 @@ export class PaymentDomainService {
   }
 
   /**
-   * Authoritative Signed Webhook & Callback Verification (PAY-005, PAY-006, PAY-007)
-   * Exactly-once processing with replay protection, cryptographic signatures, and amount validation.
+   * Authoritative Signed Webhook & Callback Verification (PAY-005, PAY-006, PAY-007, PAY-104, FIN-106)
+   * Exactly-once processing with replay protection, cryptographic signatures, amount validation, and automated ledger wiring.
    */
   static async processWebhook(
     params: WebhookProcessParams,
@@ -309,7 +315,7 @@ export class PaymentDomainService {
       }
     }
 
-    // 2. Idempotency Check: WebhookEvent unique constraint (PAY-006, PAY-007)
+    // 2. Idempotency Check: WebhookEvent unique constraint (PAY-006, PAY-007, PAY-104)
     const existingWebhook = await client.webhookEvent.findUnique({
       where: {
         gatewayName_eventId: {
@@ -362,9 +368,7 @@ export class PaymentDomainService {
       },
     });
 
-    // 3. Cryptographic Signature Verification (PAY-005: Strictly Fail-Closed)
-    // Demo mode requires BOTH the flag and a non-production runtime; a single
-    // misconfigured env var can never enable unsigned captures in production.
+    // 3. Cryptographic Signature Verification (PAY-005, PAY-101: Strictly Fail-Closed)
     const isDemo = process.env.DEMO_MODE === 'true' && process.env.NODE_ENV !== 'production';
     if (!isDemo && !params.signature) {
       await client.webhookEvent.update({
@@ -374,15 +378,13 @@ export class PaymentDomainService {
       throw new Error('WEBHOOK_FAIL_CLOSED: Missing required cryptographic signature in production mode');
     }
 
-    const adapter = gatewayName === 'SHETAB_GATEWAY' && !isDemo
-      ? new ShetabGatewayAdapter()
+    const adapter = (gatewayName.startsWith('SHETAB') && !isDemo)
+      ? new ShetabPspAdapter()
       : isDemo
         ? new DemoPaymentAdapter()
-        : new ShetabGatewayAdapter();
+        : new ShetabPspAdapter();
 
-    if (adapter.verifyWebhook && params.rawPayload && params.signature) {
-      // HMAC must be computed over the EXACT bytes the gateway signed — not over
-      // a re-serialization of the parsed payload (key order/whitespace differ).
+    if (adapter.verifyWebhook && (params.rawPayload || params.rawBody) && params.signature) {
       const rawString = params.rawBody || JSON.stringify(params.rawPayload);
       const verifyRes = await adapter.verifyWebhook(rawString, params.signature);
       if (!verifyRes.valid) {
@@ -407,8 +409,7 @@ export class PaymentDomainService {
       throw new Error(`Payment webhook error: Booking ${params.bookingId} not found`);
     }
 
-    // PAY-010a — no event may resurrect a terminal-state booking (money for
-    // expired/cancelled bookings flows back through refunds/reconciliation).
+    // Terminal state booking rejection (money for terminal state bookings flows back)
     if (['EXPIRED', 'CANCELLED', 'REFUNDED', 'FAILED'].includes(booking.status)) {
       await client.webhookEvent.update({
         where: { id: webhookRecord.id },
@@ -417,16 +418,13 @@ export class PaymentDomainService {
       throw new Error(`WEBHOOK_FAIL_CLOSED: Booking ${booking.id} is in terminal state ${booking.status} — capture rejected`);
     }
 
-    // 4b. Booking & Financial Validation — runs BEFORE the duplicate-capture
-    // collapse so tampered amounts/currencies are loudly rejected even against
-    // an already-captured booking.
-    const expectedAmount = new Prisma.Decimal(booking.totalAmount.toString());
-    const incomingAmount = params.settledAmount instanceof Prisma.Decimal
-      ? params.settledAmount
-      : new Prisma.Decimal(params.settledAmount.toString());
+    // 4b. Amount and currency validation
+    const incomingMoney = params.settledAmount;
+    const settledCurrency = (params.settledCurrency || incomingMoney.currency || booking.currency || 'IRR').toUpperCase();
+    const expectedMoney = new Money(booking.totalAmount.toString(), booking.currency);
 
-    if (!expectedAmount.equals(incomingAmount)) {
-      const reason = `Amount mismatch: expected ${expectedAmount.toString()} but received ${incomingAmount.toString()}`;
+    if (!expectedMoney.equals(incomingMoney)) {
+      const reason = `Amount mismatch: expected ${expectedMoney.toString()} but received ${incomingMoney.toString()}`;
       await client.webhookEvent.update({
         where: { id: webhookRecord.id },
         data: { status: 'REJECTED', rejectionReason: reason },
@@ -434,8 +432,8 @@ export class PaymentDomainService {
       throw new Error(`Payment webhook amount tampering detected: ${reason}`);
     }
 
-    if (booking.currency.toUpperCase() !== params.settledCurrency.toUpperCase()) {
-      const reason = `Currency mismatch: expected ${booking.currency} but received ${params.settledCurrency}`;
+    if (booking.currency.toUpperCase() !== settledCurrency.toUpperCase()) {
+      const reason = `Currency mismatch: expected ${booking.currency} but received ${settledCurrency}`;
       await client.webhookEvent.update({
         where: { id: webhookRecord.id },
         data: { status: 'REJECTED', rejectionReason: reason },
@@ -443,26 +441,27 @@ export class PaymentDomainService {
       throw new Error(`Payment webhook currency mismatch: ${reason}`);
     }
 
-    // PAY-010b — one capture per booking, ever. A *valid* gateway event with a
-    // fresh eventId for an already-captured booking collapses into an
-    // idempotent no-op instead of minting a second Payment.
+    // PAY-104: One capture per booking. A valid gateway event with a fresh eventId
+    // for an already-captured booking collapses into an idempotent DUPLICATE.
     if (booking.status === 'CONFIRMED' && booking.paymentStatus === 'CAPTURED') {
       await client.webhookEvent.update({
         where: { id: webhookRecord.id },
         data: { status: 'PROCESSED', processedAt: new Date() },
       });
+      const existingPayment = await client.payment.findFirst({
+        where: { bookingId: booking.id, status: 'SUCCESS' },
+      });
       return {
         processed: false,
         status: 'DUPLICATE',
+        paymentId: existingPayment?.id,
         reason: 'Booking already captured — payment idempotency per booking (PAY-010)',
       };
     }
 
-    // 5. Atomic Capture Execution (PAY-002, PAY-007)
+    // 5. Atomic Capture Execution (PAY-002, PAY-007, PAY-104)
     const idempotencyKey = `webhook_${gatewayName}_${params.eventId}`;
 
-    // Link the captured payment back to the booking's most recent intent so the
-    // Payment → PaymentIntent → Attempt chain stays traceable (PAY-004).
     const linkedIntent = await client.paymentIntent.findFirst({
       where: { bookingId: booking.id },
       orderBy: { createdAt: 'desc' },
@@ -475,8 +474,8 @@ export class PaymentDomainService {
         idempotencyKey,
         method: 'gateway_shetab',
         gatewayRef: params.gatewayRef,
-        amount: incomingAmount,
-        currency: params.settledCurrency.toUpperCase(),
+        amount: incomingMoney.toDecimal(),
+        currency: settledCurrency,
         status: 'SUCCESS',
         rawPayload: params.rawPayload ? JSON.stringify(params.rawPayload) : null,
       },
@@ -512,8 +511,26 @@ export class PaymentDomainService {
       },
     });
 
-    // Sensitive-action audit trail (IAM-011, PAY-016): gateway-driven money
-    // movement must be traceable outside the webhook replay log as well.
+    // FIN-106 / PAY-106: Wire verified payment to general ledger automatically (one posting per capture)
+    await GeneralLedgerService.postGatewayPayment(
+      {
+        groupId: `wh_grp_${params.eventId}`,
+        amount: incomingMoney,
+        currency: settledCurrency,
+        referenceId: booking.id,
+        memo: `Gateway webhook capture for booking ${booking.reference || booking.id}`,
+      },
+      client
+    );
+
+    // FIN-107, FIN-108: Wire revenue and supplier liability derived from PriceSnapshot
+    try {
+      await GeneralLedgerService.wireBookingConfirmationToLedger(booking.id, client);
+    } catch (err) {
+      console.warn('Booking confirmation revenue realization wiring note:', err);
+    }
+
+    // Sensitive-action audit trail
     await client.auditLog.create({
       data: {
         action: 'PAYMENT_CAPTURED',
@@ -521,8 +538,8 @@ export class PaymentDomainService {
         resourceId: payment.id,
         newData: JSON.stringify({
           bookingId: booking.id,
-          amount: incomingAmount.toString(),
-          currency: params.settledCurrency.toUpperCase(),
+          amount: incomingMoney.toString(),
+          currency: settledCurrency,
           gateway: gatewayName,
           gatewayRef: params.gatewayRef,
           eventId: params.eventId,
@@ -530,12 +547,167 @@ export class PaymentDomainService {
       },
     });
 
-    businessMetrics.recordPaymentCaptured(gatewayName, incomingAmount.toNumber());
+    businessMetrics.recordPaymentCaptured(gatewayName, incomingMoney.toNumber());
 
     return {
       processed: true,
       status: 'PROCESSED',
       paymentId: payment.id,
     };
+  }
+
+  /**
+   * PAY-105: Reconcile timeout / unknown gateway results
+   * Routes unknown or timed-out results to Operational Exception & Reconciliation rather than blind retry.
+   */
+  static async handleUnknownGatewayResult(params: {
+    paymentIntentId: string;
+    attemptId?: string;
+    gatewayRef?: string;
+    bookingId?: string;
+    reason: string;
+  }, tx?: Prisma.TransactionClient): Promise<{ status: 'PENDING_RECONCILIATION'; exceptionId: string }> {
+    const client = tx || prisma;
+
+    if (params.attemptId) {
+      await client.paymentAttempt.update({
+        where: { id: params.attemptId },
+        data: {
+          status: 'PENDING_CUSTOMER',
+          errorMessage: `GATEWAY_UNKNOWN_OUTCOME: ${params.reason}`,
+        },
+      });
+    }
+
+    if (params.gatewayRef) {
+      await client.gatewayTransaction.updateMany({
+        where: { gatewayRef: params.gatewayRef },
+        data: {
+          status: 'PENDING',
+          responseCode: 'TIMEOUT_UNKNOWN',
+        },
+      });
+    }
+
+    // Route to Operational Exception Center for reconciliation (PAY-105)
+    const exceptionId = await OperationalExceptionService.raiseException({
+      type: 'PAYMENT_TIMEOUT',
+      severity: ExceptionSeverity.HIGH,
+      entityType: 'PaymentIntent',
+      entityId: params.paymentIntentId,
+      title: `Gateway timeout / unknown status on intent ${params.paymentIntentId}`,
+      description: `Unknown or timed out gateway result: ${params.reason}. Routed to reconciliation queue to prevent blind retries.`,
+      slaMinutes: 60,
+    });
+
+    return {
+      status: 'PENDING_RECONCILIATION',
+      exceptionId,
+    };
+  }
+
+  /**
+   * PAY-108: Explicit handling of payment declines / failures to terminal state
+   */
+  static async handlePaymentFailure(params: {
+    paymentIntentId: string;
+    attemptId?: string;
+    gatewayRef?: string;
+    bookingId?: string;
+    reason: string;
+  }, tx?: Prisma.TransactionClient): Promise<{ status: 'FAILED'; reason: string }> {
+    const client = tx || prisma;
+
+    if (params.attemptId) {
+      await client.paymentAttempt.update({
+        where: { id: params.attemptId },
+        data: {
+          status: 'FAILED',
+          errorMessage: params.reason,
+        },
+      });
+    }
+
+    await client.paymentIntent.update({
+      where: { id: params.paymentIntentId },
+      data: {
+        status: 'FAILED',
+      },
+    });
+
+    if (params.gatewayRef) {
+      await client.gatewayTransaction.updateMany({
+        where: { gatewayRef: params.gatewayRef },
+        data: {
+          status: 'FAILED',
+          responseCode: 'DECLINED',
+        },
+      });
+    }
+
+    if (params.bookingId) {
+      await client.booking.update({
+        where: { id: params.bookingId },
+        data: {
+          paymentStatus: 'FAILED',
+        },
+      });
+
+      await client.bookingStatusHistory.create({
+        data: {
+          bookingId: params.bookingId,
+          fromStatus: 'PENDING_PAYMENT',
+          toStatus: 'PENDING_PAYMENT',
+          actor: 'PAYMENT_GATEWAY',
+          reason: `Payment declined: ${params.reason}`,
+        },
+      });
+    }
+
+    businessMetrics.recordPaymentFailed('SHETAB_GATEWAY', params.reason);
+
+    return {
+      status: 'FAILED',
+      reason: params.reason,
+    };
+  }
+
+  /**
+   * PAY-108: Payment window expiry handling to terminal VOIDED / EXPIRED state
+   */
+  static async handlePaymentExpiry(params: {
+    paymentIntentId: string;
+    bookingId?: string;
+  }, tx?: Prisma.TransactionClient): Promise<{ status: 'EXPIRED' }> {
+    const client = tx || prisma;
+
+    await client.paymentIntent.update({
+      where: { id: params.paymentIntentId },
+      data: {
+        status: 'VOIDED',
+      },
+    });
+
+    if (params.bookingId) {
+      await client.booking.update({
+        where: { id: params.bookingId },
+        data: {
+          status: 'EXPIRED',
+          paymentStatus: 'VOIDED',
+        },
+      });
+
+      await client.bookingStatusHistory.create({
+        data: {
+          bookingId: params.bookingId,
+          fromStatus: 'PENDING_PAYMENT',
+          toStatus: 'EXPIRED',
+          actor: 'SYSTEM_EXPIRY',
+          reason: 'Payment authorization window expired',
+        },
+      });
+    }
+
+    return { status: 'EXPIRED' };
   }
 }

@@ -67,6 +67,27 @@ export class CircuitBreaker {
       throw err;
     }
   }
+
+  /**
+   * Connect circuit breaker to routing with automatic fallback (SUP-108)
+   */
+  async executeWithRouting<T>(
+    primaryFn: () => Promise<T>,
+    fallbackFn: () => Promise<T>
+  ): Promise<{ result: T; fallbackUsed: boolean }> {
+    if (this.getState() === 'OPEN') {
+      const result = await fallbackFn();
+      return { result, fallbackUsed: true };
+    }
+
+    try {
+      const result = await this.execute(primaryFn);
+      return { result, fallbackUsed: false };
+    } catch {
+      const result = await fallbackFn();
+      return { result, fallbackUsed: true };
+    }
+  }
 }
 
 /**

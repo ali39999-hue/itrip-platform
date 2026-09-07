@@ -35,7 +35,12 @@ export class Money {
   public readonly amount: Prisma.Decimal;
   public readonly currency: string;
 
-  constructor(amount: DecimalValue, currency: string = 'IRR') {
+  constructor(amount: DecimalValue | Money, currency: string = 'IRR') {
+    if (amount instanceof Money) {
+      this.amount = amount.amount;
+      this.currency = amount.currency;
+      return;
+    }
     if (amount instanceof Prisma.Decimal) {
       this.amount = amount;
     } else {
@@ -48,8 +53,22 @@ export class Money {
     return new Money(0, currency);
   }
 
-  static from(amount: DecimalValue, currency: string = 'IRR'): Money {
+  static from(amount: DecimalValue | Money, currency: string = 'IRR'): Money {
     return new Money(amount, currency);
+  }
+
+  static sum(items: Money[], defaultCurrency: string = 'IRR'): Money {
+    if (items.length === 0) return Money.zero(defaultCurrency);
+    const firstCurrency = items[0].currency;
+    return items.reduce((acc, curr) => acc.add(curr), Money.zero(firstCurrency));
+  }
+
+  static min(a: Money, b: Money): Money {
+    return a.lessThan(b) ? a : b;
+  }
+
+  static max(a: Money, b: Money): Money {
+    return a.greaterThan(b) ? a : b;
   }
 
   add(other: Money | DecimalValue): Money {
@@ -145,9 +164,35 @@ export class Money {
     return this.amount.greaterThan(other.amount);
   }
 
+  greaterThanOrEqual(other: Money): boolean {
+    this.assertSameCurrency(other);
+    return this.amount.greaterThanOrEqualTo(other.amount);
+  }
+
+  greaterThanOrEqualTo(other: Money): boolean {
+    return this.greaterThanOrEqual(other);
+  }
+
   lessThan(other: Money): boolean {
     this.assertSameCurrency(other);
     return this.amount.lessThan(other.amount);
+  }
+
+  lessThanOrEqual(other: Money): boolean {
+    this.assertSameCurrency(other);
+    return this.amount.lessThanOrEqualTo(other.amount);
+  }
+
+  lessThanOrEqualTo(other: Money): boolean {
+    return this.lessThanOrEqual(other);
+  }
+
+  negated(): Money {
+    return new Money(this.amount.negated(), this.currency);
+  }
+
+  abs(): Money {
+    return new Money(this.amount.abs(), this.currency);
   }
 
   toNumber(): number {

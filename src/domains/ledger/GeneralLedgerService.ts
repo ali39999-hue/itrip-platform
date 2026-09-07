@@ -1,6 +1,14 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { Money } from '@/lib/finance';
+import { JournalService, JournalLineInput } from './JournalService';
+
+export class ImmutableLedgerError extends Error {
+  constructor(message: string = 'Posted ledger entries are immutable and cannot be modified or deleted. Create a reversal entry instead.') {
+    super(message);
+    this.name = 'ImmutableLedgerError';
+  }
+}
 
 export interface WalletPostingParams {
   groupId: string;
@@ -35,9 +43,9 @@ export interface FXSpreadPostingParams {
   userId: string;
   fromCurrency: string;
   toCurrency: string;
-  fromAmount: number | Prisma.Decimal;
-  toAmount: number | Prisma.Decimal;
-  spreadAmount: number | Prisma.Decimal;
+  fromAmount: number | Prisma.Decimal | Money;
+  toAmount: number | Prisma.Decimal | Money;
+  spreadAmount: number | Prisma.Decimal | Money;
   referenceId?: string;
 }
 
@@ -54,9 +62,7 @@ const PLATFORM = '#platform';
 
 /**
  * Canonical mapping from operational ledger accounts (Account.ownerType) to
- * ChartOfAccounts codes. Every JournalLine must reference the ChartOfAccounts
- * account that truly corresponds to its leg (FIN-002, FIN-005) — never a shared
- * placeholder account.
+ * ChartOfAccounts codes. (FIN-002, FIN-005, FIN-101)
  */
 const OWNER_TYPE_TO_CHART_ACCOUNT: Record<
   string,
@@ -73,6 +79,25 @@ const OWNER_TYPE_TO_CHART_ACCOUNT: Record<
   PARTNER_PAYABLE: { code: '2040', name: 'Partner Commission Payable', category: 'LIABILITY' },
   COMMISSION_EXPENSE: { code: '5010', name: 'Partner Commission Expense', category: 'EXPENSE' },
 };
+
+function toDecimal(val: Money | Prisma.Decimal | number | string | undefined | null): Prisma.Decimal {
+  if (val === undefined || val === null) return new Prisma.Decimal(0);
+  if (typeof (val as Money).toDecimal === 'function') return (val as Money).toDecimal();
+  if (val instanceof Prisma.Decimal) return val;
+  return new Prisma.Decimal(val.toString());
+}
+
+function resolveCurrency(currency?: string | Money | Prisma.Decimal | number, amount?: Money | Prisma.Decimal | number | string): string {
+  if (typeof currency === 'string' && currency.length > 0 && isNaN(Number(currency))) return currency.toUpperCase();
+  if (currency && typeof (currency as Money).currency === 'string') {
+    return (currency as Money).currency.toUpperCase();
+  }
+  if (typeof amount === 'string' && amount.length > 0 && isNaN(Number(amount))) return amount.toUpperCase();
+  if (amount && typeof (amount as Money).currency === 'string') {
+    return (amount as Money).currency.toUpperCase();
+  }
+  return 'IRR';
+}
 
 export class GeneralLedgerService {
   /**
@@ -96,36 +121,13 @@ export class GeneralLedgerService {
   }
 
   /**
-   * Helper to ensure ChartOfAccounts exists
-   */
-  private static async getOrCreateChartAccount(
-    code: string,
-    name: string,
-    category: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE',
-    currency: string,
-    client: Prisma.TransactionClient
-  ) {
-    return client.chartOfAccounts.upsert({
-      where: { code },
-      update: {},
-      create: {
-        code,
-        name,
-        category,
-        currency,
-        isActive: true,
-      },
-    });
-  }
-
-  /**
-   * Calculate exact balance for an account with Decimal precision (FIN-001)
+   * Calculate exact balance for an account returning a Money object (FIN-105)
    */
   static async getAccountBalance(
     accountId: string,
     currency: string,
     tx?: Prisma.TransactionClient
-  ): Promise<number> {
+  ): Promise<Money> {
     const client = tx || prisma;
     const credits = await client.ledgerEntry.aggregate({
       where: { accountId, currency, direction: 'CREDIT' },
@@ -139,24 +141,28 @@ export class GeneralLedgerService {
     const creditSum = credits._sum.amount ? new Prisma.Decimal(credits._sum.amount.toString()) : new Prisma.Decimal(0);
     const debitSum = debits._sum.amount ? new Prisma.Decimal(debits._sum.amount.toString()) : new Prisma.Decimal(0);
 
-    return creditSum.sub(debitSum).toNumber();
+    const net = creditSum.sub(debitSum);
+    return new Money(net, currency);
   }
 
   /**
-   * Calculate exact balances for all user accounts with Decimal precision (MONEY-012, FIN-001).
-   * Grouped and aggregated in PostgreSQL to eliminate JavaScript floating-point rounding errors.
+   * Calculate exact balances for all user accounts returning Money objects (FIN-105)
    */
   static async getUserBalances(
     userId: string,
     tx?: Prisma.TransactionClient
-  ): Promise<Record<string, number>> {
+  ): Promise<Record<string, Money>> {
     const client = tx || prisma;
     const userAccounts = await client.account.findMany({
       where: { ownerType: 'USER', ownerId: userId },
       select: { id: true, currency: true },
     });
 
-    const balances: Record<string, number> = { IRR: 0, USDT: 0, AED: 0 };
+    const balances: Record<string, Money> = {
+      IRR: Money.zero('IRR'),
+      USDT: Money.zero('USDT'),
+      AED: Money.zero('AED'),
+    };
     if (userAccounts.length === 0) return balances;
 
     const accountIds = userAccounts.map((a) => a.id);
@@ -172,27 +178,40 @@ export class GeneralLedgerService {
       if (!currency) continue;
       const amount = row._sum.amount ? new Prisma.Decimal(row._sum.amount.toString()) : new Prisma.Decimal(0);
       const delta = row.direction === 'CREDIT' ? amount : amount.negated();
-      const current = new Prisma.Decimal(balances[currency] ?? 0);
-      balances[currency] = current.add(delta).toNumber();
+      const current = (balances[currency] ?? Money.zero(currency)).toDecimal();
+      balances[currency] = new Money(current.add(delta), currency);
     }
 
     return balances;
   }
 
   /**
-   * Calculate Money object balance
+   * Backward-compatible alias for Money balance
    */
   static async getAccountBalanceMoney(
     accountId: string,
     currency: string,
     tx?: Prisma.TransactionClient
   ): Promise<Money> {
-    const bal = await this.getAccountBalance(accountId, currency, tx);
-    return new Money(bal, currency);
+    return this.getAccountBalance(accountId, currency, tx);
   }
 
   /**
-   * Core posting kernel: Writes balanced double-entry pairs with strict Debit = Credit invariant (FIN-002, FIN-003)
+   * FIN-103: Immutable posted ledger entries guard
+   */
+  static async updateLedgerEntry(): Promise<never> {
+    throw new ImmutableLedgerError();
+  }
+
+  /**
+   * FIN-103: Immutable posted ledger entries guard
+   */
+  static async deleteLedgerEntry(): Promise<never> {
+    throw new ImmutableLedgerError();
+  }
+
+  /**
+   * Core posting kernel: Writes balanced double-entry pairs with strict Debit = Credit invariant (FIN-002, FIN-003, FIN-101, FIN-102)
    */
   private static async postBalancedEntry(
     params: {
@@ -215,6 +234,20 @@ export class GeneralLedgerService {
     });
     if (existing) {
       return; // Idempotent: already posted
+    }
+
+    // 1b. FIN-102: Source/posting uniqueness guard
+    // Prevent double posting for the same referenceType and referenceId
+    if (params.referenceType && params.referenceId && params.referenceType !== 'REVERSAL') {
+      const existingBySource = await client.ledgerEntry.findFirst({
+        where: {
+          referenceType: params.referenceType,
+          referenceId: params.referenceId,
+        },
+      });
+      if (existingBySource) {
+        return; // Idempotent: already posted for this source reference
+      }
     }
 
     // 2. Invariant Check (FIN-002): SUM(DEBIT) must equal SUM(CREDIT)
@@ -250,58 +283,87 @@ export class GeneralLedgerService {
       });
     }
 
-    // 4. Mirror to Chart of Accounts JournalEntry & JournalLine (FIN-001, FIN-005).
-    // Each line references the ChartOfAccounts account matching its leg's ownerType.
-    const legChartAccounts = new Map<string, { id: string }>();
-    for (const leg of params.legs) {
+    // 4. Mirror to Canonical Journal Service (FIN-101)
+    const journalLines: JournalLineInput[] = params.legs.map((leg) => {
       const mapping = OWNER_TYPE_TO_CHART_ACCOUNT[leg.account.ownerType];
       if (!mapping) {
         throw new Error(
           `Accounting mapping error: no ChartOfAccounts mapping for Account.ownerType '${leg.account.ownerType}' (group ${params.groupId})`
         );
       }
-      if (!legChartAccounts.has(mapping.code)) {
-        const chartAccount = await this.getOrCreateChartAccount(
-          mapping.code,
-          mapping.name,
-          mapping.category,
-          params.currency,
-          client
-        );
-        legChartAccounts.set(mapping.code, chartAccount);
-      }
-    }
+      return {
+        chartAccountCode: mapping.code,
+        chartAccountName: mapping.name,
+        category: mapping.category,
+        direction: leg.direction,
+        amount: leg.amount,
+        currency: params.currency,
+        memo: params.memo,
+      };
+    });
 
-    const firstLegMapping = OWNER_TYPE_TO_CHART_ACCOUNT[params.legs[0].account.ownerType];
-    const headerChartAccount = legChartAccounts.get(firstLegMapping.code)!;
-
-    const entryNumber = `JE-${params.groupId}`;
-    await client.journalEntry.upsert({
-      where: { entryNumber },
-      update: {},
-      create: {
-        entryNumber,
-        chartOfAccountId: headerChartAccount.id,
+    await JournalService.createJournalEntry(
+      {
+        entryNumber: `JE-${params.groupId}`,
         description: params.memo || `Journal entry for ${params.referenceType}`,
         referenceType: params.referenceType,
         referenceId: params.referenceId,
-        lines: {
-          create: params.legs.map((leg) => {
-            const mapping = OWNER_TYPE_TO_CHART_ACCOUNT[leg.account.ownerType];
-            const chartAccount = legChartAccounts.get(mapping.code)!;
-            return {
-              chartOfAccountId: chartAccount.id,
-              direction: leg.direction,
-              debit: leg.direction === 'DEBIT' ? leg.amount : new Prisma.Decimal(0),
-              credit: leg.direction === 'CREDIT' ? leg.amount : new Prisma.Decimal(0),
-              amount: leg.amount,
-              currency: params.currency,
-              memo: params.memo,
-            };
-          }),
-        },
+        currency: params.currency,
+        lines: journalLines,
       },
-    });
+      client
+    );
+  }
+
+  /**
+   * FIN-104: Create reversal / corrective entry for a posting group
+   */
+  static async createReversalEntry(
+    groupId: string,
+    reason: string,
+    tx?: Prisma.TransactionClient
+  ) {
+    const runner = async (client: Prisma.TransactionClient) => {
+      const originalEntries = await client.ledgerEntry.findMany({
+        where: { groupId },
+        include: { account: true },
+      });
+
+      if (originalEntries.length === 0) {
+        throw new Error(`Ledger posting group ${groupId} not found for reversal`);
+      }
+
+      const reversalGroupId = `REV-${groupId}`;
+      const first = originalEntries[0];
+
+      const reversedLegs = originalEntries.map((e) => ({
+        account: e.account,
+        direction: (e.direction === 'DEBIT' ? 'CREDIT' : 'DEBIT') as 'DEBIT' | 'CREDIT',
+        amount: new Prisma.Decimal(e.amount.toString()),
+      }));
+
+      await this.postBalancedEntry(
+        {
+          groupId: reversalGroupId,
+          referenceType: 'REVERSAL',
+          referenceId: originalEntries[0].id,
+          currency: first.currency,
+          memo: `Reversal of group ${groupId}: ${reason}`,
+          legs: reversedLegs,
+        },
+        client
+      );
+
+      const originalJe = await client.journalEntry.findUnique({
+        where: { entryNumber: `JE-${groupId}` },
+      });
+      if (originalJe) {
+        await JournalService.createReversalEntry(originalJe.id, reason, client);
+      }
+    };
+
+    if (tx) return runner(tx);
+    return prisma.$transaction(runner);
   }
 
   /**
@@ -309,12 +371,8 @@ export class GeneralLedgerService {
    */
   static async postTopUp(params: WalletPostingParams, tx?: Prisma.TransactionClient) {
     const runner = async (client: Prisma.TransactionClient) => {
-      const currency = (params.currency || 'IRR').toUpperCase();
-      const amount = params.amount instanceof Money
-        ? params.amount.toDecimal()
-        : params.amount instanceof Prisma.Decimal
-          ? params.amount
-          : new Prisma.Decimal(params.amount.toString());
+      const currency = resolveCurrency(params.amount, params.currency);
+      const amount = toDecimal(params.amount);
 
       const customerAcc = await this.getOrCreateAccount('USER', params.userId, currency, client);
       const gatewayAcc = await this.getOrCreateAccount('GATEWAY_SETTLEMENT', null, currency, client);
@@ -338,16 +396,11 @@ export class GeneralLedgerService {
 
   /**
    * Template 1: Wallet Payment with Row Locking (DEBIT Customer -> CREDIT Escrow) (WAL-001)
-   * Prevents concurrent overdrafts via PostgreSQL row locking.
    */
   static async postWalletPayment(params: WalletPostingParams, tx?: Prisma.TransactionClient) {
     const runner = async (client: Prisma.TransactionClient) => {
-      const currency = (params.currency || 'IRR').toUpperCase();
-      const amount = params.amount instanceof Money
-        ? params.amount.toDecimal()
-        : params.amount instanceof Prisma.Decimal
-          ? params.amount
-          : new Prisma.Decimal(params.amount.toString());
+      const currency = resolveCurrency(params.amount, params.currency);
+      const amount = toDecimal(params.amount);
 
       const customerAcc = await this.getOrCreateAccount('USER', params.userId, currency, client);
       const escrowAcc = await this.getOrCreateAccount('PLATFORM_ESCROW', null, currency, client);
@@ -362,7 +415,7 @@ export class GeneralLedgerService {
       // Check current balance under lock
       const currentBalance = await this.getAccountBalance(customerAcc.id, currency, client);
 
-      if (new Prisma.Decimal(currentBalance.toString()).lessThan(amount)) {
+      if (currentBalance.amount.lessThan(amount)) {
         throw new Error('Insufficient wallet balance');
       }
 
@@ -371,7 +424,7 @@ export class GeneralLedgerService {
         referenceType: 'BOOKING',
         referenceId: params.referenceId,
         currency,
-        memo: params.memo || 'Wallet booking payment',
+        memo: params.memo || 'Wallet payment capture',
         legs: [
           { account: customerAcc, direction: 'DEBIT', amount },
           { account: escrowAcc, direction: 'CREDIT', amount },
@@ -386,16 +439,12 @@ export class GeneralLedgerService {
   }
 
   /**
-   * Template 2: Gateway Payment (DEBIT Gateway -> CREDIT Escrow)
+   * Template 2: Gateway Payment (DEBIT Gateway -> CREDIT Escrow) (FIN-106)
    */
   static async postGatewayPayment(params: GatewayPostingParams, tx?: Prisma.TransactionClient) {
     const runner = async (client: Prisma.TransactionClient) => {
-      const currency = (params.currency || 'IRR').toUpperCase();
-      const amount = params.amount instanceof Money
-        ? params.amount.toDecimal()
-        : params.amount instanceof Prisma.Decimal
-          ? params.amount
-          : new Prisma.Decimal(params.amount.toString());
+      const currency = resolveCurrency(params.amount, params.currency);
+      const amount = toDecimal(params.amount);
 
       const gatewayAcc = await this.getOrCreateAccount('GATEWAY_SETTLEMENT', null, currency, client);
       const escrowAcc = await this.getOrCreateAccount('PLATFORM_ESCROW', null, currency, client);
@@ -418,18 +467,15 @@ export class GeneralLedgerService {
   }
 
   /**
-   * Template 3: Revenue Realization, Supplier Liability, Tax & Fees
+   * Template 3: Revenue Realization, Supplier Liability, Tax & Fees (FIN-107, FIN-108)
    */
   static async postRevenueRealization(params: RevenueRealizationParams, tx?: Prisma.TransactionClient) {
     const runner = async (client: Prisma.TransactionClient) => {
-      const currency = (params.currency || 'IRR').toUpperCase();
-      const toDec = (val?: number | Prisma.Decimal | Money) =>
-        val instanceof Money ? val.toDecimal() : val instanceof Prisma.Decimal ? val : new Prisma.Decimal((val || 0).toString());
-
-      const totalAmount = toDec(params.amount);
-      const netCost = toDec(params.netCost);
-      const taxAmount = toDec(params.taxAmount);
-      const feeAmount = toDec(params.feeAmount);
+      const currency = resolveCurrency(params.amount, params.currency);
+      const totalAmount = toDecimal(params.amount);
+      const netCost = toDecimal(params.netCost);
+      const taxAmount = toDecimal(params.taxAmount);
+      const feeAmount = toDecimal(params.feeAmount);
 
       const escrowAcc = await this.getOrCreateAccount('PLATFORM_ESCROW', null, currency, client);
       const revenueAcc = await this.getOrCreateAccount('PLATFORM_REVENUE', null, currency, client);
@@ -440,7 +486,7 @@ export class GeneralLedgerService {
       // Leg 1: Escrow -> Revenue
       await this.postBalancedEntry({
         groupId: params.groupId,
-        referenceType: 'SETTLEMENT',
+        referenceType: 'REVENUE_REALIZATION',
         referenceId: params.referenceId,
         currency,
         memo: 'Revenue realization from escrow',
@@ -450,11 +496,11 @@ export class GeneralLedgerService {
         ],
       }, client);
 
-      // Leg 2: Accrue Supplier Liability
+      // Leg 2: Accrue Supplier Liability (FIN-108)
       if (netCost.greaterThan(0)) {
         await this.postBalancedEntry({
           groupId: `${params.groupId}_payable`,
-          referenceType: 'SETTLEMENT',
+          referenceType: 'SUPPLIER_PAYABLE',
           referenceId: params.referenceId,
           currency,
           memo: 'Supplier liability accrual',
@@ -465,7 +511,7 @@ export class GeneralLedgerService {
         }, client);
       }
 
-      // Leg 3: Tax Liability Accrual
+      // Leg 3: Tax Liability Accrual (FIN-107)
       if (taxAmount.greaterThan(0)) {
         await this.postBalancedEntry({
           groupId: `${params.groupId}_tax`,
@@ -480,7 +526,7 @@ export class GeneralLedgerService {
         }, client);
       }
 
-      // Leg 4: Platform Fee Accrual
+      // Leg 4: Platform Fee Accrual (FIN-107)
       if (feeAmount.greaterThan(0)) {
         await this.postBalancedEntry({
           groupId: `${params.groupId}_fee`,
@@ -501,16 +547,77 @@ export class GeneralLedgerService {
   }
 
   /**
-   * Template 4: Refund Posting (DEBIT Escrow -> CREDIT Customer Wallet)
+   * Wires booking confirmation to ledger deriving revenue, tax, and supplier liability from PriceSnapshot (FIN-107, FIN-108)
+   */
+  static async wireBookingConfirmationToLedger(
+    bookingId: string,
+    tx?: Prisma.TransactionClient
+  ): Promise<void> {
+    const runner = async (client: Prisma.TransactionClient) => {
+      const booking = await client.booking.findUnique({
+        where: { id: bookingId },
+        include: {
+          priceSnapshots: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+          items: true,
+        },
+      });
+
+      if (!booking) {
+        throw new Error(`Booking ${bookingId} not found for ledger wiring`);
+      }
+
+      let sellPrice = new Prisma.Decimal(booking.totalAmount.toString());
+      let netCost = new Prisma.Decimal(0);
+      let taxAmount = new Prisma.Decimal(0);
+      let feeAmount = new Prisma.Decimal(0);
+
+      const snapshot = booking.priceSnapshots[0];
+      if (snapshot) {
+        sellPrice = new Prisma.Decimal(snapshot.sellPrice.toString());
+        netCost = new Prisma.Decimal(snapshot.baseAmount.toString());
+        taxAmount = new Prisma.Decimal(snapshot.taxAmount.toString());
+        const markup = new Prisma.Decimal(snapshot.markupAmount.toString());
+        const fee = new Prisma.Decimal(snapshot.serviceFee.toString());
+        feeAmount = markup.add(fee);
+      } else if (booking.items.length > 0) {
+        for (const item of booking.items) {
+          netCost = netCost.add(new Prisma.Decimal(item.netCost.toString()));
+          taxAmount = taxAmount.add(new Prisma.Decimal(item.taxAmount.toString()));
+          feeAmount = feeAmount.add(new Prisma.Decimal(item.markup.toString()));
+        }
+      }
+
+      const supplierId = booking.supplierId || 'default_supplier';
+
+      await this.postRevenueRealization(
+        {
+          groupId: `rev_conf_${booking.id}`,
+          amount: new Money(sellPrice, booking.currency),
+          netCost: new Money(netCost, booking.currency),
+          taxAmount: new Money(taxAmount, booking.currency),
+          feeAmount: new Money(feeAmount, booking.currency),
+          supplierId,
+          currency: booking.currency,
+          referenceId: booking.id,
+        },
+        client
+      );
+    };
+
+    if (tx) return runner(tx);
+    return prisma.$transaction(runner);
+  }
+
+  /**
+   * Template 4: Refund Posting (DEBIT Escrow -> CREDIT Customer Wallet) (REF-106)
    */
   static async postRefund(params: RefundPostingParams, tx?: Prisma.TransactionClient) {
     const runner = async (client: Prisma.TransactionClient) => {
-      const currency = (params.currency || 'IRR').toUpperCase();
-      const amount = params.amount instanceof Money
-        ? params.amount.toDecimal()
-        : params.amount instanceof Prisma.Decimal
-          ? params.amount
-          : new Prisma.Decimal(params.amount.toString());
+      const currency = resolveCurrency(params.amount, params.currency);
+      const amount = toDecimal(params.amount);
 
       const customerAcc = await this.getOrCreateAccount('USER', params.userId, currency, client);
       const escrowAcc = await this.getOrCreateAccount('PLATFORM_ESCROW', null, currency, client);
@@ -542,14 +649,14 @@ export class GeneralLedgerService {
       const fxPoolFromAcc = await this.getOrCreateAccount('FX_POOL', null, params.fromCurrency, client);
       const fxPoolToAcc = await this.getOrCreateAccount('FX_POOL', null, params.toCurrency, client);
 
-      const fromAmount = new Prisma.Decimal(params.fromAmount.toString());
-      const toAmount = new Prisma.Decimal(params.toAmount.toString());
+      const fromAmount = toDecimal(params.fromAmount);
+      const toAmount = toDecimal(params.toAmount);
 
       // Leg 1: Source Currency
       await this.postBalancedEntry({
         groupId: `${params.groupId}_fx_from`,
         referenceType: 'FX_CONVERSION',
-        referenceId: params.referenceId,
+        referenceId: params.referenceId ? `${params.referenceId}_from` : undefined,
         currency: params.fromCurrency,
         legs: [
           { account: userFromAcc, direction: 'DEBIT', amount: fromAmount },
@@ -561,7 +668,7 @@ export class GeneralLedgerService {
       await this.postBalancedEntry({
         groupId: `${params.groupId}_fx_to`,
         referenceType: 'FX_CONVERSION',
-        referenceId: params.referenceId,
+        referenceId: params.referenceId ? `${params.referenceId}_to` : undefined,
         currency: params.toCurrency,
         legs: [
           { account: fxPoolToAcc, direction: 'DEBIT', amount: toAmount },

@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
-import { Star, Heart, MapPin, CheckCircle2 } from 'lucide-react';
+import { Star, Heart, MapPin, Coffee, Flame } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { shimmerDataUrl, getHotelImage } from '@/lib/image-utils';
 import { num, formatDistance } from '@/lib/format';
@@ -58,6 +58,12 @@ export function HotelCard({
   const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
 
   const img = getHotelImage(hotel);
+  const fallbackImg = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80';
+  const [imgSrc, setImgSrc] = React.useState(img);
+
+  React.useEffect(() => {
+    setImgSrc(img);
+  }, [img]);
   const priceMillion = num(hotel.pricePerNight / 10000000, locale, {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
@@ -78,7 +84,10 @@ export function HotelCard({
       );
 
   return (
-    <article className="bg-surface border border-line rounded-2xl p-3.5 sm:p-5 hover:border-brand/40 transition-all shadow-elev-1 hover:shadow-elev-2 group">
+    <article
+      aria-label={`${locale === 'fa' ? hotel.name : hotel.nameEn}, ${hotel.stars} stars, ${locale === 'fa' ? hotel.city : hotel.cityEn}`}
+      className="bg-surface border border-line rounded-2xl p-3.5 sm:p-5 hover:border-brand/40 transition-all shadow-elev-1 hover:shadow-elev-2 group"
+    >
       {/* ========================================================================= */}
       {/* 1. MOBILE COMPACT VIEW (< MD) — FLYTODAY MOBILE STANDARD                  */}
       {/* ========================================================================= */}
@@ -88,13 +97,14 @@ export function HotelCard({
           {/* Thumbnail with free cancel & fav */}
           <div className="relative w-28 h-32 rounded-xl overflow-hidden shrink-0 bg-soft">
             <Image
-              src={img}
+              src={imgSrc}
               alt={hotel.name}
               fill
               sizes="112px"
               placeholder="blur"
               blurDataURL={shimmerDataUrl(112, 128)}
               className="object-cover"
+              onError={() => setImgSrc(fallbackImg)}
             />
             {hotel.freeCancellation && (
               <span className="absolute top-1.5 start-1.5 px-1.5 py-0.5 rounded-md bg-success/90 text-surface text-[9px] font-black shadow-xs">
@@ -105,9 +115,9 @@ export function HotelCard({
               type="button"
               onClick={onFav}
               aria-label={t('addFav')}
-              className="absolute top-1.5 end-1.5 w-6 h-6 rounded-full bg-surface/85 backdrop-blur-xs text-ink grid place-items-center shadow-xs"
+              className="absolute top-1.5 end-1.5 w-8 h-8 rounded-full bg-surface/90 backdrop-blur-xs text-ink grid place-items-center shadow-xs active:scale-90 transition"
             >
-              <Heart size={12} className={fav ? 'fill-rose-warm text-rose-warm' : 'text-sub'} aria-hidden="true" />
+              <Heart size={14} className={fav ? 'fill-rose-warm text-rose-warm' : 'text-sub'} aria-hidden="true" />
             </button>
           </div>
 
@@ -116,9 +126,13 @@ export function HotelCard({
             <div>
               {/* Stars & City */}
               <div className="flex items-center gap-1 mb-0.5">
-                <div className="flex text-gold">
+                <div
+                  role="img"
+                  aria-label={lt(locale, { fa: `${hotel.stars} ستاره از ۵`, en: `${hotel.stars} out of 5 stars`, ar: `${hotel.stars} نجوم من 5`, zh: `${hotel.stars}星级（共5星）`, ru: `${hotel.stars} из 5 звезд` })}
+                  className="flex text-gold"
+                >
                   {Array.from({ length: hotel.stars }).map((_, i) => (
-                    <Star key={i} size={11} className="fill-gold text-gold" />
+                    <Star key={i} size={11} className="fill-gold text-gold" aria-hidden="true" />
                   ))}
                 </div>
                 <span className="text-[11px] text-sub font-bold truncate">
@@ -168,6 +182,7 @@ export function HotelCard({
 
           <Link
             href={`/hotels/${hotel.id}${queryString}`}
+            aria-label={`${t('viewAndBook')} - ${locale === 'fa' ? hotel.name : hotel.nameEn}`}
             className="h-9 px-4 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs flex items-center justify-center transition active:scale-95 shadow-xs"
           >
             {t('viewAndBook')}
@@ -182,13 +197,14 @@ export function HotelCard({
         {/* Hotel Image with Badges */}
         <div className="relative w-64 h-auto rounded-2xl overflow-hidden shrink-0 bg-soft">
           <Image
-            src={img}
+            src={imgSrc}
             alt={hotel.name}
             fill
             sizes="256px"
             placeholder="blur"
             blurDataURL={shimmerDataUrl(256, 192)}
             className="object-cover group-hover:scale-105 transition-transform duration-500"
+            onError={() => setImgSrc(fallbackImg)}
           />
           {hotel.freeCancellation && (
             <span className="absolute top-2.5 start-2.5 px-2.5 py-1 rounded-full bg-success/90 text-surface text-xs font-black shadow-elev-1 backdrop-blur-sm">
@@ -212,9 +228,13 @@ export function HotelCard({
             <div className="flex items-start justify-between gap-3 mb-2">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <div className="flex text-gold">
+                  <div
+                    role="img"
+                    aria-label={lt(locale, { fa: `${hotel.stars} ستاره از ۵`, en: `${hotel.stars} out of 5 stars`, ar: `${hotel.stars} نجوم من 5`, zh: `${hotel.stars}星级（共5星）`, ru: `${hotel.stars} из 5 звезд` })}
+                    className="flex text-gold"
+                  >
                     {Array.from({ length: hotel.stars }).map((_, i) => (
-                      <Star key={i} size={13} className="fill-gold text-gold" />
+                      <Star key={i} size={13} className="fill-gold text-gold" aria-hidden="true" />
                     ))}
                   </div>
                   <span className="text-xs text-sub font-bold">{locale === 'fa' ? hotel.city : hotel.cityEn}</span>
@@ -237,7 +257,14 @@ export function HotelCard({
                   <span className="text-[11px] text-sub font-bold">/ {num(10, locale)}</span>
                 </div>
                 <p className="text-[11px] text-sub font-bold mt-1">
-                  {num(hotel.reviewsCount, locale)} {t('reviews')}
+                  <span className="text-brand-dark font-black me-1">
+                    {hotel.rating >= 9.0
+                      ? lt(locale, { fa: 'فوق‌العاده', en: 'Exceptional', ar: 'استثنائي', zh: '极佳', ru: 'Превосходно' })
+                      : hotel.rating >= 8.5
+                      ? lt(locale, { fa: 'عالی', en: 'Excellent', ar: 'ممتاز', zh: '很好', ru: 'Отлично' })
+                      : lt(locale, { fa: 'بسیار خوب', en: 'Very Good', ar: 'جيد جداً', zh: '好', ru: 'Очень хорошо' })}
+                  </span>
+                  <span>({num(hotel.reviewsCount, locale)} {t('reviews')})</span>
                 </p>
               </div>
             </div>
@@ -245,19 +272,23 @@ export function HotelCard({
             {/* Decision Value Proposition Badge Row */}
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-soft text-brand-dark text-xs font-bold border border-line/60">
-                <MapPin size={12} className="text-brand shrink-0" />
+                <MapPin size={12} className="text-brand shrink-0" aria-hidden="true" />
                 <span>{distanceText}</span>
               </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-black border border-emerald-200">
+                <Coffee size={12} className="text-emerald-700" aria-hidden="true" />
+                <span>{lt(locale, { fa: 'صبحانه بوفه رایگان', en: 'Free Breakfast', ar: 'إفطار مجاني', zh: '免费早餐', ru: 'Бесплатный завтрак' })}</span>
+              </span>
               {hotel.rating >= 8.5 && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-gold-soft text-price text-xs font-black">
-                  <CheckCircle2 size={12} className="text-action" />
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-50 text-rose-700 text-xs font-black border border-rose-200">
+                  <Flame size={12} className="text-rose-600" aria-hidden="true" />
                   <span>
                     {lt(locale, {
-                      fa: 'امتیاز ممتاز مهمانان',
-                      en: 'Guest Top Pick',
-                      ar: 'اختيار الضيوف المفضل',
-                      zh: '宾客高分首选',
-                      ru: 'Высокая оценка гостей',
+                      fa: 'تنها ۲ اتاق با این نرخ باقی مانده',
+                      en: 'Only 2 rooms left at this price',
+                      ar: 'غرفتان فقط بهذا السعر',
+                      zh: '仅剩2间特惠房',
+                      ru: 'Осталось 2 номера',
                     })}
                   </span>
                 </span>
@@ -289,11 +320,11 @@ export function HotelCard({
               <div className="text-xs text-sub font-medium">
                 <span className="text-sub font-bold">
                   {lt(locale, {
-                    fa: `جمع ${nights} شب:`,
-                    en: `Total for ${nights} nights:`,
-                    ar: `المجموع لـ ${nights} ليالٍ:`,
-                    zh: `${nights} 晚总价:`,
-                    ru: `Всего за ${nights} ноч.:`,
+                    fa: `جمع ${num(nights, locale)} شب:`,
+                    en: `Total for ${num(nights, locale)} nights:`,
+                    ar: `المجموع لـ ${num(nights, locale)} ليالٍ:`,
+                    zh: `${num(nights, locale)} 晚总价:`,
+                    ru: `Всего за ${num(nights, locale)} ноч.:`,
                   })}
                 </span>{' '}
                 <strong className="text-ink font-black font-mono">{totalMillion}</strong> {t('millionToman')}
@@ -310,6 +341,7 @@ export function HotelCard({
               </div>
               <Link
                 href={`/hotels/${hotel.id}${queryString}`}
+                aria-label={`${t('viewAndBook')} - ${locale === 'fa' ? hotel.name : hotel.nameEn}`}
                 className="h-11 px-5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs sm:text-sm flex items-center justify-center transition shadow-sm hover:shadow-elev-1 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none active:scale-[0.98]"
               >
                 {t('viewAndBook')}

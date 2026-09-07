@@ -43,18 +43,23 @@ export function HotelCompareModal({
   const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-6 bg-deep/70 backdrop-blur-sm animate-in fade-in duration-200">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="hotel-compare-modal-title"
+      className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-6 bg-deep/70 backdrop-blur-sm animate-in fade-in duration-200"
+    >
       <div className="w-full max-w-5xl max-h-[90vh] bg-surface rounded-3xl border border-line shadow-elev-3 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 border-b border-line flex items-center justify-between bg-surface/90">
           <div>
-            <h3 className="text-lg font-black text-ink">
+            <h3 id="hotel-compare-modal-title" className="text-lg font-black text-ink">
               {lt(locale, {
-                fa: `مقایسه رو در روی اقامتگاه‌ها (${comparedHotels.length} مورد)`,
-                en: `Side-by-Side Comparison (${comparedHotels.length} stays)`,
-                ar: `مقارنة الإقامات جنبًا إلى جنب (${comparedHotels.length})`,
-                zh: `住宿并排对比（${comparedHotels.length} 项）`,
-                ru: `Сравнение отелей (${comparedHotels.length})`,
+                fa: `مقایسه رو در روی اقامتگاه‌ها (${num(comparedHotels.length, locale)} مورد)`,
+                en: `Side-by-Side Comparison (${num(comparedHotels.length, locale)} stays)`,
+                ar: `مقارنة الإقامات جنبًا إلى جنب (${num(comparedHotels.length, locale)})`,
+                zh: `住宿并排对比（${num(comparedHotels.length, locale)} 项）`,
+                ru: `Сравнение отелей (${num(comparedHotels.length, locale)})`,
               })}
             </h3>
             <p className="text-xs text-sub mt-0.5">
@@ -70,6 +75,7 @@ export function HotelCompareModal({
           <button
             type="button"
             onClick={onClose}
+            aria-label={lt(locale, { fa: 'بستن', en: 'Close', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}
             className="w-9 h-9 rounded-full bg-soft text-sub hover:text-ink grid place-items-center transition"
           >
             <X size={20} />

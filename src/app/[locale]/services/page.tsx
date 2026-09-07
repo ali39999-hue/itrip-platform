@@ -222,9 +222,9 @@ export default function ServicesPage() {
                 key={cat.id}
                 type="button"
                 onClick={() => setActiveCategory(cat.id as ServiceCategory)}
-                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer ${
                   activeCategory === cat.id
-                    ? 'bg-brand text-surface shadow-xs'
+                    ? 'bg-brand-dark text-surface shadow-xs'
                     : 'bg-surface text-sub hover:bg-soft hover:text-ink border border-line'
                 }`}
               >
@@ -258,7 +258,7 @@ export default function ServicesPage() {
                   >
                     <div>
                       <div className="flex items-start justify-between gap-2 mb-3">
-                        <div className={`w-12 h-12 rounded-xl grid place-items-center group-hover:scale-105 transition-transform ${s.bg}`}>
+                        <div className="w-12 h-12 rounded-xl grid place-items-center group-hover:scale-105 transition-transform bg-mint text-brand-dark border border-brand/20 shadow-2xs">
                           <Icon size={22} />
                         </div>
                         {s.tag && (

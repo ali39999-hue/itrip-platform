@@ -1,4 +1,5 @@
 import { describe, it, expect, afterAll } from 'vitest';
+import { Money } from '@/lib/finance';
 import { BookingStateMachine } from '@/domains/booking/state-machine';
 import { PaymentDomainService } from '@/domains/payments/PaymentDomainService';
 import { GeneralLedgerService } from '@/domains/ledger/GeneralLedgerService';
@@ -53,16 +54,16 @@ describe('Security: payment idempotency is booking-scoped', () => {
     // gateway_shetab payments start as PENDING (awaiting PSP callback), so
     // the first call returns success=false, status=PENDING. Use wallet_irr
     // for the idempotency test since it settles immediately.
-    const first = await PaymentDomainService.processPayment({ bookingId: bookingA.id, idempotencyKey: key, method: 'wallet_irr', amount: 1000 });
+    const first = await PaymentDomainService.processPayment({ bookingId: bookingA.id, idempotencyKey: key, method: 'wallet_irr', amount: new Money(1000, 'IRR') });
     expect(first.success).toBe(true);
     createdIds.payments.push(first.paymentId!);
 
-    const replay = await PaymentDomainService.processPayment({ bookingId: bookingB.id, idempotencyKey: key, method: 'wallet_irr', amount: 1000 });
+    const replay = await PaymentDomainService.processPayment({ bookingId: bookingB.id, idempotencyKey: key, method: 'wallet_irr', amount: new Money(1000, 'IRR') });
     expect(replay.success).toBe(false);
     expect(replay.error).toMatch(/different booking/i);
 
     // Same booking replay stays idempotent (returns the same payment).
-    const sameBooking = await PaymentDomainService.processPayment({ bookingId: bookingA.id, idempotencyKey: key, method: 'wallet_irr', amount: 1000 });
+    const sameBooking = await PaymentDomainService.processPayment({ bookingId: bookingA.id, idempotencyKey: key, method: 'wallet_irr', amount: new Money(1000, 'IRR') });
     expect(sameBooking.success).toBe(true);
     expect(sameBooking.paymentId).toBe(first.paymentId);
   });
@@ -77,13 +78,13 @@ describe('Security: ledger balance guards', () => {
 
     // User wallet starts empty: payment must fail.
     await expect(
-      GeneralLedgerService.postWalletPayment({ groupId: `sec_${suffix}_1`, userId: user.id, amount: 100, currency: 'IRR' })
+      GeneralLedgerService.postWalletPayment({ groupId: `sec_${suffix}_1`, userId: user.id, amount: new Money(100, 'IRR'), currency: 'IRR' })
     ).rejects.toThrow(/Insufficient wallet balance/i);
 
     // Top up, then the payment goes through and the balance drops.
-    await GeneralLedgerService.postTopUp({ groupId: `sec_${suffix}_2`, userId: user.id, amount: 500, currency: 'IRR' });
+    await GeneralLedgerService.postTopUp({ groupId: `sec_${suffix}_2`, userId: user.id, amount: new Money(500, 'IRR'), currency: 'IRR' });
     await expect(
-      GeneralLedgerService.postWalletPayment({ groupId: `sec_${suffix}_3`, userId: user.id, amount: 400, currency: 'IRR' })
+      GeneralLedgerService.postWalletPayment({ groupId: `sec_${suffix}_3`, userId: user.id, amount: new Money(400, 'IRR'), currency: 'IRR' })
     ).resolves.toBeUndefined();
 
     const acc = await prisma.account.findFirstOrThrow({ where: { ownerType: 'USER', ownerId: user.id, currency: 'IRR' } });
@@ -132,7 +133,7 @@ describe('Security: ledger balance guards', () => {
         eventId: `ev_tamper_${suffix}`,
         gatewayRef: `gw_tamper_${suffix}`,
         bookingId: booking.id,
-        settledAmount: 100_000,
+        settledAmount: new Money(100_000, 'IRR'),
         settledCurrency: 'IRR',
       })
     ).rejects.toThrow(/amount tampering detected/i);
@@ -142,7 +143,7 @@ describe('Security: ledger balance guards', () => {
       eventId: `ev_valid_${suffix}`,
       gatewayRef: `gw_valid_${suffix}`,
       bookingId: booking.id,
-      settledAmount: 500_000,
+      settledAmount: new Money(500_000, 'IRR'),
       settledCurrency: 'IRR',
     });
     expect(valid.processed).toBe(true);
@@ -152,7 +153,7 @@ describe('Security: ledger balance guards', () => {
       eventId: `ev_valid_${suffix}`,
       gatewayRef: `gw_valid_${suffix}`,
       bookingId: booking.id,
-      settledAmount: 500_000,
+      settledAmount: new Money(500_000, 'IRR'),
       settledCurrency: 'IRR',
     });
     expect(replay.processed).toBe(false);

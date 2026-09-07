@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Link } from '@/i18n/routing';
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
-import { Plane, ShieldCheck, RefreshCcw, Clock, ArrowLeft } from 'lucide-react';
+import { Plane, ShieldCheck, RefreshCcw, Clock, ArrowLeft, ArrowRight } from 'lucide-react';
 import { SearchWidget } from '@/components/search/SearchWidget';
 import { shimmerDataUrl } from '@/lib/image-utils';
 import { num } from '@/lib/format';
@@ -79,11 +79,10 @@ export default function FlightsLandingPage() {
 
               <div className="absolute bottom-4 start-4 end-4 text-surface">
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className="text-lg font-black">
-                    {lt(locale, { fa: route.fromFa, en: route.fromName, ar: route.fromFa, zh: route.fromName, ru: route.fromName })}
-                    {' '}
-                    <span className="text-mint-bright">←</span>{' '}
-                    {lt(locale, { fa: route.toFa, en: route.toName, ar: route.toFa, zh: route.toName, ru: route.toName })}
+                  <h3 className="text-lg font-black flex items-center gap-1.5 flex-wrap">
+                    <span>{lt(locale, { fa: route.fromFa, en: route.fromName, ar: route.fromFa, zh: route.fromName, ru: route.fromName })}</span>
+                    <ArrowRight size={14} className="inline rtl:rotate-180 text-mint-bright shrink-0" aria-hidden="true" />
+                    <span>{lt(locale, { fa: route.toFa, en: route.toName, ar: route.toFa, zh: route.toName, ru: route.toName })}</span>
                   </h3>
                   <span className="px-2 py-0.5 rounded-full bg-surface/20 backdrop-blur-sm text-xs font-bold">
                     {lt(locale, { fa: route.duration, en: route.durationEn, ar: route.duration, zh: route.durationEn, ru: route.durationEn })}

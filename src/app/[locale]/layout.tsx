@@ -6,12 +6,87 @@ import {
   Noto_Sans,
   Noto_Sans_SC,
 } from "next/font/google";
+import localFont from "next/font/local";
 import "../globals.css";
 import {NextIntlClientProvider} from 'next-intl';
 import {getMessages, getTranslations, setRequestLocale} from 'next-intl/server';
 import {routing} from '@/i18n/routing';
 import {notFound} from 'next/navigation';
 import {Providers} from '@/providers';
+
+const iranYekan = localFont({
+  src: [
+    {
+      path: "../../../public/fonts/iranyekan/IRANYekanXFaNum-Regular.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../../public/fonts/iranyekan/IRANYekanXFaNum-Medium.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../../../public/fonts/iranyekan/IRANYekanXFaNum-DemiBold.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../../public/fonts/iranyekan/IRANYekanXFaNum-Bold.woff2",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../../../public/fonts/iranyekan/IRANYekanXFaNum-Bold.woff2",
+      weight: "800",
+      style: "normal",
+    },
+    {
+      path: "../../../public/fonts/iranyekan/IRANYekanXFaNum-Bold.woff2",
+      weight: "900",
+      style: "normal",
+    },
+  ],
+  variable: "--font-iranyekan",
+  display: "swap",
+});
+
+const yekanBakh = localFont({
+  src: [
+    {
+      path: "../../../public/fonts/yekan-bakh/YekanBakh-Regular.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../../public/fonts/yekan-bakh/YekanBakh-SemiBold.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../../public/fonts/yekan-bakh/YekanBakh-Bold.woff2",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../../../public/fonts/yekan-bakh/YekanBakh-ExtraBold.woff2",
+      weight: "800",
+      style: "normal",
+    },
+    {
+      path: "../../../public/fonts/yekan-bakh/YekanBakh-Black.woff2",
+      weight: "900",
+      style: "normal",
+    },
+    {
+      path: "../../../public/fonts/yekan-bakh/YekanBakh-ExtraBlack.woff2",
+      weight: "950",
+      style: "normal",
+    },
+  ],
+  variable: "--font-yekan-bakh",
+  display: "swap",
+});
 
 const vazirmatn = Vazirmatn({
   variable: "--font-vazirmatn",
@@ -33,7 +108,7 @@ const geistMono = Geist_Mono({
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
   subsets: ["latin"],
-  weight: ["400", "500", "700", "800"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 const notoSans = Noto_Sans({
@@ -49,7 +124,7 @@ const notoSansSC = Noto_Sans_SC({
 });
 
 const LOCALE_FONT: Record<string, { variable: string }> = {
-  fa: vazirmatn,
+  fa: iranYekan,
   ar: vazirmatn,
   en: plusJakartaSans,
   ru: notoSans,
@@ -57,12 +132,16 @@ const LOCALE_FONT: Record<string, { variable: string }> = {
 };
 
 function localeFont(locale: string) {
-  return LOCALE_FONT[locale] ?? vazirmatn;
+  return LOCALE_FONT[locale] ?? iranYekan;
 }
 
 // CSS variables consumed by the --font-sans / --font-heading tokens in globals.css.
+// FlyToday exact font stack: IRANYekanXFaNum as primary font
 const LOCALE_FONT_VAR: Record<string, { sans: string; heading: string }> = {
-  fa: { sans: 'var(--font-vazirmatn)', heading: 'var(--font-heading-vazir)' },
+  fa: {
+    sans: 'var(--font-iranyekan), IRANYekanXFaNum, IRANYekanX, var(--font-yekan-bakh), "Yekan Bakh", sans-serif',
+    heading: 'var(--font-iranyekan), IRANYekanXFaNum, IRANYekanX, var(--font-yekan-bakh), "Yekan Bakh", sans-serif'
+  },
   ar: { sans: 'var(--font-vazirmatn)', heading: 'var(--font-heading-vazir)' },
   en: { sans: 'var(--font-jakarta)', heading: 'var(--font-jakarta)' },
   ru: { sans: 'var(--font-noto)', heading: 'var(--font-noto)' },
@@ -137,7 +216,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={dir}
-      className={`${font.variable} ${vazirmatnHeading.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${font.variable} ${plusJakartaSans.variable} ${iranYekan.variable} ${yekanBakh.variable} ${vazirmatnHeading.variable} ${geistMono.variable} h-full antialiased`}
       style={
         {
           '--font-app-sans': (LOCALE_FONT_VAR[locale] ?? LOCALE_FONT_VAR.fa).sans,

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { Money } from '@/lib/finance';
 import { BookingStateMachine, BookingState } from './state-machine';
 import { InventoryEngine } from '../inventory/InventoryEngine';
 import { PaymentDomainService } from '../payments/PaymentDomainService';
@@ -20,6 +21,9 @@ export class BookingSagaOrchestrator {
    */
   static async confirmBookingSaga(params: ConfirmBookingSagaParams) {
     return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      // Row-lock the booking to serialize concurrent confirmations (BOOK-014)
+      await tx.$executeRaw`SELECT id FROM "Booking" WHERE id = ${params.bookingId} FOR UPDATE`;
+
       const booking = await tx.booking.findUnique({
         where: { id: params.bookingId },
         include: { items: true },
@@ -34,14 +38,14 @@ export class BookingSagaOrchestrator {
       );
 
       // 2. Step 1: Process Payment with Idempotency.
-      // Money stays Decimal end-to-end (MONEY-002): totalAmount is a Prisma
-      // Decimal and is passed through untouched — no Number() coercion.
+      // Money stays Decimal end-to-end (MONEY-002): totalAmount is wrapped in Money (MONEY-101)
+      const bookingMoney = new Money(booking.totalAmount, booking.currency);
       const paymentRes = await PaymentDomainService.processPayment(
         {
           bookingId: booking.id,
           idempotencyKey: params.idempotencyKey,
           method: params.paymentMethod,
-          amount: booking.totalAmount,
+          amount: bookingMoney,
           currency: booking.currency,
         },
         tx
@@ -89,7 +93,7 @@ export class BookingSagaOrchestrator {
           {
             groupId: `saga_pay_${booking.id}`,
             userId: booking.customerId,
-            amount: totalAmt,
+            amount: bookingMoney,
             currency: booking.currency,
             referenceId: booking.id,
           },
@@ -99,7 +103,7 @@ export class BookingSagaOrchestrator {
         await GeneralLedgerService.postGatewayPayment(
           {
             groupId: `saga_pay_${booking.id}`,
-            amount: totalAmt,
+            amount: bookingMoney,
             currency: booking.currency,
             referenceId: booking.id,
           },
@@ -111,10 +115,10 @@ export class BookingSagaOrchestrator {
       await GeneralLedgerService.postRevenueRealization(
         {
           groupId: `saga_rev_${booking.id}`,
-          amount: totalAmt,
-          netCost,
-          taxAmount,
-          feeAmount,
+          amount: bookingMoney,
+          netCost: new Money(netCost, booking.currency),
+          taxAmount: new Money(taxAmount, booking.currency),
+          feeAmount: new Money(feeAmount, booking.currency),
           supplierId,
           currency: booking.currency,
           referenceId: booking.id,
@@ -130,8 +134,8 @@ export class BookingSagaOrchestrator {
           lines: booking.items.map((item) => ({
             description: `${item.type} reservation (${booking.reference})`,
             quantity: 1,
-            unitPrice: item.sellPrice,
-            taxAmount: item.taxAmount || 0,
+            unitPrice: new Money(item.sellPrice, booking.currency),
+            taxAmount: new Money(item.taxAmount || 0, booking.currency),
           })),
           currency: booking.currency,
         },

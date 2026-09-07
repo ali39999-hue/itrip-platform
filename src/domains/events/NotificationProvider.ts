@@ -1,3 +1,7 @@
+import { createLogger } from '@/lib/observability/logger';
+
+const notifLogger = createLogger('notification-provider');
+
 export interface NotificationResult {
   success: boolean;
   messageId?: string;
@@ -20,7 +24,7 @@ export class ConsoleNotificationProvider implements NotificationProvider {
 
   async sendSms(to: string, message: string): Promise<NotificationResult> {
     const maskedTo = to.length > 7 ? `${to.slice(0, 4)}***${to.slice(-2)}` : '***';
-    console.log(`[Notification:SMS:Dev] To: ${maskedTo} | Content: ${message}`);
+    notifLogger.info('Dispatched SMS (Dev Simulator)', { to: maskedTo, message });
     return {
       success: true,
       messageId: `sim-sms-${Date.now()}`,
@@ -31,7 +35,7 @@ export class ConsoleNotificationProvider implements NotificationProvider {
   async sendEmail(to: string, subject: string, body: string): Promise<NotificationResult> {
     const [userPart, domainPart] = to.split('@');
     const maskedEmail = domainPart ? `${userPart?.slice(0, 2)}***@${domainPart}` : '***';
-    console.log(`[Notification:Email:Dev] To: ${maskedEmail} | Subject: ${subject} | Body: ${body.slice(0, 60)}...`);
+    notifLogger.info('Dispatched Email (Dev Simulator)', { to: maskedEmail, subject, bodyPreview: `${body.slice(0, 60)}...` });
     return {
       success: true,
       messageId: `sim-email-${Date.now()}`,

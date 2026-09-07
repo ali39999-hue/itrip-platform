@@ -1,11 +1,15 @@
 import { HeroSection } from '@/components/home/HeroSection';
 import { 
+  QuickServicesBar,
+  PromotionalBanners,
+  PopularFlightsSection,
   SpecialOffersSection, 
-  AiPlannerHookSection, 
   DestinationsSection,
-  ServicesCatalog, 
-  FinancialSection, 
-  TrustMarquee, 
+  AiPlannerHookSection,
+  AppDownloadSection,
+  WhyFiruzoSection,
+  FaqSection,
+  TrustMarquee,
   SupportSection 
 } from '@/components/home/sections';
 import { lt } from '@/lib/lt';
@@ -13,22 +17,21 @@ import { lt } from '@/lib/lt';
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const title = lt(locale, {
-    fa: 'فیروزه - پلتفرم یکپارچه سفر هوشمند',
-    en: 'Firuzo - Smart Unified Travel Platform',
-    ar: 'فيروزو - منصة السفر الذكية الموحدة',
-    zh: 'Firuzo - 智能综合旅游平台',
-    ru: 'Firuzo - Интеллектуальная платформа путешествий'
+    fa: 'فیروزه - پلتفرم یکپارچه سفر هوشمند | خرید بلیط هواپیما، هتل و تور',
+    en: 'Firuzo - Smart Unified Travel Platform | Flights, Hotels & Tours',
+    ar: 'فيروزو - منصة السفر الذكية الموحدة | حجز طيران، فنادق وجولات',
+    zh: 'Firuzo - 智能综合旅游平台 | 机票、酒店与旅游预订',
+    ru: 'Firuzo - Платформа путешествий | Авиабилеты, отели и туры'
   });
   const description = lt(locale, {
-    fa: 'پلتفرم یکپارچه سفر فیروزه - رزرو پرواز، هتل، قطار، تور و خدمات مالی چند ارزی',
-    en: 'Firuzo unified travel platform - Book flights, hotels, trains, tours and multi-currency services',
-    ar: 'منصة فيروزو الموحدة للسفر - حجز رحلات طيران، فنادق، قطارات، جولات وخدمات مالية',
-    zh: 'Firuzo 综合旅游平台 - 预订机票、酒店、火车票、旅游团及多币种支付服务',
-    ru: 'Единая платформа путешествий Firuzo - бронирование авиабилетов, отелей, поездов, туров и мультивалютных услуг'
+    fa: 'خرید آنلاین بلیط هواپیما، رزرو هتل، قطار، تورهای مسافرتی و بیمه سامان با تضمین کمترین قیمت و استرداد آنی در فیروزه.',
+    en: 'Book flight tickets, hotels, trains, travel packages and insurance with lowest price guarantee and instant refund on Firuzo.',
+    ar: 'حجز تذاكر الطيران والفنادق والقطارات والجولات السياحية مع ضمان أقل سعر.',
+    zh: '在 Firuzo 在线预订机票、酒店、火车票及旅游套餐，尊享全网低价与极速退改保障。',
+    ru: 'Онлайн бронирование авиабилетов, отелей, поездов и туров с гарантией лучшей цены.'
   });
 
   return {
-    // absolute: the root layout template already appends the brand name.
     title: { absolute: title },
     description,
     openGraph: {
@@ -47,31 +50,43 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-soft/20">
-      {/* 1. Primary Focus: Hero & Unified Search Engine */}
+      {/* 1. Hero & Unified Flight/Hotel/Tour Search Engine */}
       <HeroSection />
 
-      {/* 2. Secondary Focus: Smart Planning Hook (Visually connected to Hero) */}
-      <div className="-mt-8 relative z-20">
-        <AiPlannerHookSection />
-      </div>
+      {/* 2. Sleek Quick Access Service Bar (FlyToday / Alibaba pattern) */}
+      <QuickServicesBar />
 
-      <div className="flex flex-col gap-8 md:gap-16 pt-12 pb-24">
-        {/* 3. Discovery: Personalized Signature Recommendations */}
+      <div className="flex flex-col gap-12 md:gap-20 pt-10 pb-20">
+        {/* 3. High-Impact Promotional Banners */}
+        <PromotionalBanners />
+
+        {/* 4. Trending & Best-Selling Flight Routes with Real Prices */}
+        <PopularFlightsSection />
+
+        {/* 5. Personalized Signature Experiences & Offers */}
         <SpecialOffersSection />
 
-        {/* 4. Exploration: Destination Discovery */}
+        {/* 6. Top Destination Cities & Stays */}
         <DestinationsSection />
 
-        {/* 5. Utility: Integrated Travel Services */}
-        <ServicesCatalog />
+        {/* 7. Conversational AI Assistant & Custom Trip Builder */}
+        <AiPlannerHookSection />
+
+        {/* 8. Mobile App Download Banner */}
+        <AppDownloadSection />
+
+        {/* 9. Why Firuzo? Trust & Guarantees */}
+        <WhyFiruzoSection />
+
+        {/* 10. Frequently Asked Questions Accordion */}
+        <FaqSection />
       </div>
 
       <div className="bg-surface border-t border-line/60">
-        {/* 6. Trust & Security: Financials & Support */}
+        {/* 11. Trust Marquee & 24/7 Concierge Support */}
         <div className="opacity-90">
           <TrustMarquee />
         </div>
-        <FinancialSection />
         <SupportSection />
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import crypto from 'crypto';
+import { InventoryHoldStateMachine, InventoryHoldStatus } from './hold-state-machine';
 
 export interface CreateHoldParams {
   inventoryItemId: string;
@@ -154,9 +155,11 @@ export class InventoryEngine {
         return { success: true };
       }
 
-      if (hold.status !== 'ACTIVE') {
-        return { success: false, error: `Hold already ${hold.status}` };
+      if (hold.status === 'RELEASED' || hold.status === 'EXPIRED') {
+        return { success: false, error: `Cannot capture hold in ${hold.status} status` };
       }
+
+      InventoryHoldStateMachine.assertTransition(hold.status as InventoryHoldStatus, 'CAPTURED');
 
       if (new Date() > new Date(hold.expiresAt)) {
         return { success: false, error: 'Hold expired' };
@@ -194,19 +197,95 @@ export class InventoryEngine {
   }
 
   /**
-   * Release hold upon cancellation or TTL expiry (INV-002)
-   * Idempotent: duplicate release is safe.
+   * Release hold upon cancellation or TTL expiry (INV-002, INV-103)
+   * Idempotent: duplicate release is safe and state machine transitions are enforced.
    */
   static async releaseHold(
     token: string,
     tx?: Prisma.TransactionClient
-  ): Promise<{ success: boolean }> {
-    const client = tx || prisma;
-    await client.inventoryHold.updateMany({
-      where: { token, status: 'ACTIVE' },
-      data: { status: 'RELEASED' },
+  ): Promise<{ success: boolean; error?: string }> {
+    const execute = async (client: Prisma.TransactionClient) => {
+      const holds: Array<{
+        id: string;
+        status: InventoryHoldStatus;
+      }> = await client.$queryRaw`
+        SELECT "id", "status"
+        FROM "InventoryHold"
+        WHERE "token" = ${token}
+        FOR UPDATE
+      `;
+
+      const hold = holds[0];
+      if (!hold) return { success: true };
+      if (hold.status === 'RELEASED' || hold.status === 'EXPIRED') {
+        return { success: true };
+      }
+
+      // If hold is already CAPTURED, cannot release via releaseHold without allotment compensation
+      if (hold.status === 'CAPTURED') {
+        return { success: false, error: 'Cannot release CAPTURED hold via releaseHold; use compensateCapturedHold' };
+      }
+
+      InventoryHoldStateMachine.assertTransition(hold.status, 'RELEASED');
+
+      await client.inventoryHold.update({
+        where: { id: hold.id },
+        data: { status: 'RELEASED' },
+      });
+      return { success: true };
+    };
+
+    if (tx) return execute(tx);
+    return prisma.$transaction(execute, {
+      maxWait: 15000,
+      timeout: 25000,
     });
-    return { success: true };
+  }
+
+  /**
+   * Links an existing hold token to a bookingId through the engine (INV-101)
+   */
+  static async linkHoldToBooking(
+    token: string,
+    bookingId: string,
+    tx?: Prisma.TransactionClient
+  ): Promise<boolean> {
+    const client = tx || prisma;
+    const res = await client.inventoryHold.updateMany({
+      where: { token },
+      data: { bookingId },
+    });
+    return res.count > 0;
+  }
+
+  /**
+   * Bulk creates allotments through the engine enforcing capacity invariants (INV-101)
+   */
+  static async createAllotments(
+    allotments: Array<{
+      inventoryItemId: string;
+      date: string;
+      total: number;
+      booked?: number;
+      stopSell?: boolean;
+    }>,
+    tx?: Prisma.TransactionClient
+  ): Promise<{ count: number }> {
+    const client = tx || prisma;
+    for (const a of allotments) {
+      if ((a.booked || 0) > a.total) {
+        throw new Error(`Invalid allotment: booked (${a.booked}) cannot exceed total capacity (${a.total})`);
+      }
+    }
+    return client.allotment.createMany({
+      data: allotments.map((a) => ({
+        inventoryItemId: a.inventoryItemId,
+        date: a.date,
+        total: a.total,
+        booked: a.booked || 0,
+        stopSell: a.stopSell || false,
+      })),
+    });
   }
 
   /**
@@ -276,54 +355,62 @@ export class InventoryEngine {
     token: string,
     tx?: Prisma.TransactionClient
   ): Promise<{ success: boolean; capacityRestored: boolean; error?: string }> {
-    const client = tx || prisma;
-
-    const holds: Array<{
-      id: string;
-      inventoryItemId: string;
-      allotmentDate: string;
-      quantity: number;
-      status: string;
-    }> = await client.$queryRaw`
-      SELECT "id", "inventoryItemId", "allotmentDate", "quantity", "status"
-      FROM "InventoryHold"
-      WHERE "token" = ${token}
-      FOR UPDATE
-    `;
-
-    const hold = holds[0];
-    if (!hold) return { success: false, capacityRestored: false, error: 'Hold not found' };
-
-    if (hold.status === 'RELEASED' || hold.status === 'EXPIRED') {
-      return { success: true, capacityRestored: false };
-    }
-
-    if (hold.status === 'CAPTURED') {
-      // Guarded decrement: only fires while booked >= quantity, so repeated
-      // compensation can never push booked negative (double-release safety).
-      const restored: Array<{ id: string }> = await client.$queryRaw`
-        UPDATE "Allotment"
-        SET "booked" = "booked" - ${hold.quantity}
-        WHERE "inventoryItemId" = ${hold.inventoryItemId}
-          AND "date" = ${hold.allotmentDate}
-          AND "booked" >= ${hold.quantity}
-        RETURNING "id"
+    const execute = async (client: Prisma.TransactionClient): Promise<{ success: boolean; capacityRestored: boolean; error?: string }> => {
+      const holds: Array<{
+        id: string;
+        inventoryItemId: string;
+        allotmentDate: string;
+        quantity: number;
+        status: string;
+      }> = await client.$queryRaw`
+        SELECT "id", "inventoryItemId", "allotmentDate", "quantity", "status"
+        FROM "InventoryHold"
+        WHERE "token" = ${token}
+        FOR UPDATE
       `;
-      if (!restored || restored.length === 0) {
-        return { success: false, capacityRestored: false, error: 'Allotment booked counter below hold quantity — capacity not restored' };
+
+      const hold = holds[0];
+      if (!hold) return { success: false, capacityRestored: false, error: 'Hold not found' };
+
+      if (hold.status === 'RELEASED' || hold.status === 'EXPIRED') {
+        return { success: true, capacityRestored: false };
       }
+
+      if (hold.status === 'CAPTURED') {
+        InventoryHoldStateMachine.assertTransition('CAPTURED', 'RELEASED');
+        // Guarded decrement: only fires while booked >= quantity, so repeated
+        // compensation can never push booked negative (double-release safety).
+        const restored: Array<{ id: string }> = await client.$queryRaw`
+          UPDATE "Allotment"
+          SET "booked" = "booked" - ${hold.quantity}
+          WHERE "inventoryItemId" = ${hold.inventoryItemId}
+            AND "date" = ${hold.allotmentDate}
+            AND "booked" >= ${hold.quantity}
+          RETURNING "id"
+        `;
+        if (!restored || restored.length === 0) {
+          return { success: false, capacityRestored: false, error: 'Allotment booked counter below hold quantity — capacity not restored' };
+        }
+        await client.inventoryHold.update({
+          where: { id: hold.id },
+          data: { status: 'RELEASED' },
+        });
+        return { success: true, capacityRestored: true };
+      }
+
+      // ACTIVE hold: nothing consumed yet — just mark released.
+      InventoryHoldStateMachine.assertTransition('ACTIVE', 'RELEASED');
       await client.inventoryHold.update({
         where: { id: hold.id },
         data: { status: 'RELEASED' },
       });
-      return { success: true, capacityRestored: true };
-    }
+      return { success: true, capacityRestored: false };
+    };
 
-    // ACTIVE hold: nothing consumed yet — just mark released.
-    await client.inventoryHold.update({
-      where: { id: hold.id },
-      data: { status: 'RELEASED' },
+    if (tx) return execute(tx);
+    return prisma.$transaction(execute, {
+      maxWait: 15000,
+      timeout: 25000,
     });
-    return { success: true, capacityRestored: false };
   }
 }

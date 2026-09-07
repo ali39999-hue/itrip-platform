@@ -26,7 +26,7 @@ export default function BookPage() {
     { label: lt(locale, { fa: 'ویزا مسافرتی', en: 'Visa', ar: 'تأشيرة', zh: '签证', ru: 'Виза' }), icon: FileCheck2, href: '/visa' },
     { label: lt(locale, { fa: 'بیمه مسافرتی', en: 'Travel Insurance', ar: 'تأمين السفر', zh: '旅行保险', ru: 'Страховка' }), icon: ShieldCheck, href: '/insurance' },
     { label: lt(locale, { fa: 'سیم‌کارت eSIM', en: 'eSIM', ar: 'شريحة eSIM', zh: 'eSIM 卡', ru: 'eSIM' }), icon: Wifi, href: '/esim' },
-    { label: lt(locale, { fa: 'کیف پول و ارز', en: 'Wallet', ar: 'المحفظة والعملات', zh: '钱包与货币', ru: 'Кошелёک' }), icon: Wallet, href: '/wallet' },
+    { label: lt(locale, { fa: 'کیف پول و ارز', en: 'Wallet', ar: 'المحفظة والعملات', zh: '钱包与货币', ru: 'Кошелёк' }), icon: Wallet, href: '/wallet' },
     { label: lt(locale, { fa: 'سفرهای من', en: 'My Trips', ar: 'رحلاتي', zh: '我的旅行', ru: 'Мои поездки' }), icon: UserRound, href: '/my-trips' },
     { label: lt(locale, { fa: 'راهنمای سفر', en: 'Travel Guide', ar: 'دليل السفر', zh: '旅行指南', ru: 'Путеводитель' }), icon: BookOpenText, href: '/guide' },
   ];

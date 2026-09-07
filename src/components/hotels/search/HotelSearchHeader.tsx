@@ -48,12 +48,12 @@ export function HotelSearchHeader({
                 {query || lt(locale, { fa: 'همه مقاصد و هتل‌ها', en: 'All Destinations & Hotels', ar: 'جميع الوجهات والفنادق', zh: '所有目的地与酒店', ru: 'Все отели' })}
               </span>
               <span className="text-[10.5px] font-bold text-sub block truncate mt-0.5">
-                {checkin} ➔ {checkout} • {num(adults, locale)} بزرگسال
+                {checkin} ➔ {checkout} • {num(adults, locale)} {lt(locale, { fa: 'بزرگسال', en: 'Adults', ar: 'بالغين', zh: '成人', ru: 'взрослых' })}
               </span>
             </div>
           </div>
           <span className="text-[11px] font-black text-brand-dark px-2 py-1 rounded-lg bg-surface border border-line shrink-0">
-            ویرایش
+            {lt(locale, { fa: 'ویرایش', en: 'Edit', ar: 'تعديل', zh: '修改', ru: 'Изменить' })}
           </span>
         </button>
       </div>
@@ -134,7 +134,7 @@ export function HotelSearchHeader({
             </div>
 
             {pickerOpen && (
-              <div className="absolute top-[calc(100%+8px)] end-0 z-100 w-64 p-3.5 rounded-2xl bg-surface border border-line shadow-elev-3 space-y-3">
+              <div className="absolute top-[calc(100%+8px)] end-0 z-[100] w-64 p-3.5 rounded-2xl bg-surface border border-line shadow-elev-3 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-ink">
                     {lt(locale, { fa: 'بزرگسال', en: 'Adults', ar: 'البالغين', zh: '成人', ru: 'Взрослые' })}
@@ -237,7 +237,7 @@ export function HotelSearchHeader({
           </h1>
           <span className="text-[13px] font-bold text-sub whitespace-nowrap pb-1">
             {num(resultsCount, locale)}{' '}
-            {lt(locale, { fa: 'اقامتگاه یافت شد', en: 'stays found', ar: 'إقامة تم العثور عليها', zh: '家住宿已找到', ru: 'вариانтов найдено' })}
+            {lt(locale, { fa: 'اقامتگاه یافت شد', en: 'stays found', ar: 'إقامة تم العثور عليها', zh: '家住宿已找到', ru: 'вариантов найдено' })}
           </span>
         </div>
       </div>
@@ -249,26 +249,26 @@ export function HotelSearchHeader({
             <div className="w-10 h-1 rounded-full bg-line mx-auto mb-1" />
 
             <div className="flex items-center justify-between pb-3 border-b border-line">
-              <h3 className="text-sm font-black text-ink">ویرایش جستجوی هتل‌ها</h3>
+              <h3 className="text-sm font-black text-ink">{lt(locale, { fa: 'ویرایش جستجوی هتل‌ها', en: 'Edit Hotel Search', ar: 'تعديل البحث عن الفنادق', zh: '修改酒店搜索', ru: 'Изменить поиск отелей' })}</h3>
               <button
                 type="button"
                 onClick={() => setMobileEditOpen(false)}
                 className="text-xs font-bold text-sub px-2.5 py-1 rounded-lg bg-soft"
               >
-                بستن
+                {lt(locale, { fa: 'بستن', en: 'Close', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}
               </button>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-sub mb-1">نام شهر یا هتل مقصد</label>
+                <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'نام شهر یا هتل مقصد', en: 'Destination City or Hotel', ar: 'اسم المدينة أو الفندق', zh: '目的地城市或酒店', ru: 'Город или отель назначения' })}</label>
                 <div className="flex items-center gap-2 p-3 bg-soft rounded-xl border border-line">
                   <MapPin size={16} className="text-brand-dark" />
                   <input
                     type="text"
                     value={query}
                     onChange={(e) => onQueryChange(e.target.value)}
-                    placeholder="مثال: استانبول، مشهد، دبی..."
+                    placeholder={lt(locale, { fa: 'مثال: استانبول، مشهد، دبی...', en: 'e.g. Istanbul, Mashhad, Dubai...', ar: 'مثال: إسطنبول، مشهد، دبي...', zh: '例：伊斯坦布尔、马什哈德、迪拜...', ru: 'Напр. Стамбул, Мешхед, Дубай...' })}
                     className="w-full bg-transparent border-0 outline-none text-xs font-bold text-ink"
                   />
                 </div>
@@ -276,7 +276,7 @@ export function HotelSearchHeader({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-sub mb-1">تاریخ ورود</label>
+                  <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'تاریخ ورود', en: 'Check-in Date', ar: 'تاريخ الوصول', zh: '入住日期', ru: 'Дата заезда' })}</label>
                   <input
                     type="date"
                     value={checkin}
@@ -285,7 +285,7 @@ export function HotelSearchHeader({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-sub mb-1">تاریخ خروج</label>
+                  <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'تاریخ خروج', en: 'Check-out Date', ar: 'تاريخ المغادرة', zh: '退房日期', ru: 'Дата выезда' })}</label>
                   <input
                     type="date"
                     value={checkout}
@@ -297,7 +297,7 @@ export function HotelSearchHeader({
 
               <div className="p-3 bg-soft rounded-xl border border-line space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-ink">تعداد بزرگسال</span>
+                  <span className="text-xs font-bold text-ink">{lt(locale, { fa: 'تعداد بزرگسال', en: 'Adults', ar: 'البالغين', zh: '成人人数', ru: 'Взрослые' })}</span>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
@@ -320,7 +320,7 @@ export function HotelSearchHeader({
                 </div>
 
                 <div className="flex justify-between items-center pt-2 border-t border-line/60">
-                  <span className="text-xs font-bold text-ink">تعداد کودک</span>
+                  <span className="text-xs font-bold text-ink">{lt(locale, { fa: 'تعداد کودک', en: 'Children', ar: 'الأطفال', zh: '儿童人数', ru: 'Дети' })}</span>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
@@ -352,7 +352,7 @@ export function HotelSearchHeader({
                 className="w-full h-12 rounded-2xl bg-action hover:bg-action-hover text-ink font-black text-sm flex items-center justify-center gap-2 shadow-md transition active:scale-95"
               >
                 <Search size={16} />
-                <span>اعمال و مشاهده هتل‌ها</span>
+                <span>{lt(locale, { fa: 'اعمال و مشاهده هتل‌ها', en: 'Apply & View Hotels', ar: 'تطبيق وعرض الفنادق', zh: '应用并查看酒店', ru: 'Применить и показать отели' })}</span>
               </button>
             </div>
           </div>

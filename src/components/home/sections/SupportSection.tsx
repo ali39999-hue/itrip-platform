@@ -40,10 +40,11 @@ export function SupportSection() {
           </Link>
           <a
             href="tel:+982191000000"
+            aria-label={lt(locale, { fa: 'تماس تلفنی پشتیبانی: ۰۲۱-۹۱۰۰۰۰۰۰', en: 'Call support at +98 21 91000000', ar: 'الاتصال بالدعم: 021-91000000', zh: '拨打客服电话: +98 21 91000000', ru: 'Позвонить в поддержку: +98 21 91000000' })}
             className="w-full sm:w-auto h-12 px-6 rounded-2xl bg-soft border border-line text-ink text-xs sm:text-sm font-bold hover:bg-line/40 transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
-            <PhoneCall size={18} className="text-brand" />
-            <span className="font-mono">{lt(locale, { fa: '۰۲۱-۹۱۰۰۰۰۰۰', en: '021-91000000', ar: '021-91000000', zh: '021-91000000', ru: '021-91000000' })}</span>
+            <PhoneCall size={18} className="text-brand" aria-hidden="true" />
+            <span dir="ltr" className="font-mono">{lt(locale, { fa: '۰۲۱-۹۱۰۰۰۰۰۰', en: '+98 21 91000000', ar: '021-91000000', zh: '+98 21 91000000', ru: '+98 21 91000000' })}</span>
           </a>
         </div>
       </div>

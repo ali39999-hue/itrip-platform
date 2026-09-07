@@ -5,6 +5,7 @@ import {
   getTenantAuthContext,
   assertTenantAccess,
 } from './permission-service';
+import { TenantRepository } from './TenantRepository';
 import { encryptSensitive } from '@/lib/security/crypto-vault';
 
 /**
@@ -22,9 +23,15 @@ describe('IDOR & Horizontal Privilege Escalation Protection Suite (IAM-009, SEC-
   let bookingBId = '';
   let profileBId = '';
   let docBId = '';
+  let invoiceBId = '';
+  let tripBId = '';
+  let batchBId = '';
 
   afterAll(async () => {
     try {
+      if (invoiceBId) await prisma.invoice.deleteMany({ where: { id: invoiceBId } });
+      if (tripBId) await prisma.trip.deleteMany({ where: { id: tripBId } });
+      if (batchBId) await prisma.settlementBatch.deleteMany({ where: { id: batchBId } });
       if (docBId) await prisma.travelDocument.deleteMany({ where: { id: docBId } });
       if (profileBId) await prisma.travelerProfile.deleteMany({ where: { id: profileBId } });
       if (bookingAId) await prisma.booking.deleteMany({ where: { id: bookingAId } });
@@ -110,12 +117,63 @@ describe('IDOR & Horizontal Privilege Escalation Protection Suite (IAM-009, SEC-
     const docB = await prisma.travelDocument.create({
       data: {
         travelerProfileId: profB.id,
+        organizationId: orgBId,
         type: 'PASSPORT',
         documentNumber: encryptSensitive('A99887766'),
         issuingCountry: 'IR',
       },
     });
     docBId = docB.id;
+
+    // 5. Create Org B Private Trip Dossier
+    const tripB = await prisma.trip.create({
+      data: {
+        reference: `TRP-B-${suffix}`,
+        userId: userBId,
+        organizationId: orgBId,
+        title: 'Org B Secret Business Trip',
+        status: 'BOOKED',
+      },
+    });
+    tripBId = tripB.id;
+
+    // Link bookingB to tripB
+    await prisma.booking.update({
+      where: { id: bookingBId },
+      data: { tripId: tripB.id },
+    });
+
+    // 6. Create Org B Private Invoice
+    const invoiceB = await prisma.invoice.create({
+      data: {
+        invoiceNumber: `INV-B-${suffix}`,
+        bookingId: bookingBId,
+        customerId: userBId,
+        organizationId: orgBId,
+        totalAmount: 2_000_000,
+        netAmount: 1_800_000,
+        taxAmount: 200_000,
+        currency: 'IRR',
+        status: 'ISSUED',
+      },
+    });
+    invoiceBId = invoiceB.id;
+
+    // 7. Create Org B Private Supplier Settlement Batch
+    const batchB = await prisma.settlementBatch.create({
+      data: {
+        batchNumber: `STLB-B-${suffix}`,
+        supplierId: 'sup_test_b',
+        organizationId: orgBId,
+        periodStart: new Date(),
+        periodEnd: new Date(Date.now() + 86400000),
+        totalPayable: 1_800_000,
+        netSettlement: 1_800_000,
+        currency: 'IRR',
+        status: 'OPEN',
+      },
+    });
+    batchBId = batchB.id;
   });
 
   it('IAM-009 / SEC-002: User A context strictly FAILS to access User B booking (Horizontal IDOR)', async () => {
@@ -182,5 +240,109 @@ describe('IDOR & Horizontal Privilege Escalation Protection Suite (IAM-009, SEC-
       where: { reference: `ITR-B-${suffix}` },
     });
     expect(leaked).toHaveLength(0);
+  });
+
+  it('IAM-109: Invoice IDOR — User A (Org A) context strictly FAILS to access Org B invoice', async () => {
+    const ctxA = await getTenantAuthContext(userAId);
+    const repoA = TenantRepository.forContext(ctxA);
+
+    // 1. Direct assertTenantAccess fails
+    const invoiceB = await prisma.invoice.findUniqueOrThrow({ where: { id: invoiceBId } });
+    expect(() =>
+      assertTenantAccess(ctxA, {
+        organizationId: invoiceB.organizationId,
+        customerId: invoiceB.customerId,
+      })
+    ).toThrow(/Cross-tenant data access blocked/i);
+
+    // 2. TenantRepository lookup fails
+    await expect(repoA.findInvoiceById(invoiceBId)).rejects.toThrow(/Cross-tenant data access blocked/i);
+
+    // 3. Tenant-scoped listing returns zero results for Org B invoices
+    const scopedInvoices = await repoA.findInvoices({ where: { id: invoiceBId } });
+    expect(scopedInvoices).toHaveLength(0);
+  });
+
+  it('IAM-109: Refund IDOR — User A (Org A) strictly FAILS to access or approve refund for Org B booking', async () => {
+    const ctxA = await getTenantAuthContext(userAId);
+
+    // Booking B belongs to Org B
+    const bookingB = await prisma.booking.findUniqueOrThrow({ where: { id: bookingBId } });
+
+    // User A cannot approve or access refund for Org B
+    expect(() =>
+      assertTenantAccess(ctxA, {
+        organizationId: bookingB.organizationId,
+        customerId: bookingB.customerId,
+      })
+    ).toThrow(/Cross-tenant data access blocked/i);
+  });
+
+  it('IAM-109: Settlement IDOR — User A (Org A) strictly FAILS to access Org B settlement batch', async () => {
+    const ctxA = await getTenantAuthContext(userAId);
+    const repoA = TenantRepository.forContext(ctxA);
+
+    const batchB = await prisma.settlementBatch.findUniqueOrThrow({ where: { id: batchBId } });
+
+    // 1. Direct assertTenantAccess fails
+    expect(() =>
+      assertTenantAccess(ctxA, {
+        organizationId: batchB.organizationId,
+      })
+    ).toThrow(/Cross-tenant data access blocked/i);
+
+    // 2. TenantRepository lookup fails
+    await expect(repoA.findSettlementBatchById(batchBId)).rejects.toThrow(/Cross-tenant data access blocked/i);
+
+    // 3. Scoped list returns zero
+    const scopedBatches = await repoA.findSettlementBatches({ where: { id: batchBId } });
+    expect(scopedBatches).toHaveLength(0);
+  });
+
+  it('IAM-109: Document IDOR — User A (Org A) strictly FAILS to access Org B travel document', async () => {
+    const ctxA = await getTenantAuthContext(userAId);
+    const repoA = TenantRepository.forContext(ctxA);
+
+    const docB = await prisma.travelDocument.findUniqueOrThrow({
+      where: { id: docBId },
+      include: { travelerProfile: true },
+    });
+
+    // 1. Direct assertTenantAccess fails
+    expect(() =>
+      assertTenantAccess(ctxA, {
+        organizationId: docB.organizationId,
+        customerId: docB.travelerProfile.userId,
+      })
+    ).toThrow(/Cross-tenant data access blocked/i);
+
+    // 2. TenantRepository lookup fails
+    await expect(repoA.findTravelDocumentById(docBId)).rejects.toThrow(/Cross-tenant data access blocked/i);
+
+    // 3. Scoped list returns zero
+    const scopedDocs = await repoA.findTravelDocuments({ where: { id: docBId } });
+    expect(scopedDocs).toHaveLength(0);
+  });
+
+  it('IAM-109: Travel-File (Trip) IDOR — User A (Org A) strictly FAILS to access Org B trip dossier', async () => {
+    const ctxA = await getTenantAuthContext(userAId);
+    const repoA = TenantRepository.forContext(ctxA);
+
+    const tripB = await prisma.trip.findUniqueOrThrow({ where: { id: tripBId } });
+
+    // 1. Direct assertTenantAccess fails
+    expect(() =>
+      assertTenantAccess(ctxA, {
+        organizationId: tripB.organizationId,
+        customerId: tripB.userId,
+      })
+    ).toThrow(/Cross-tenant data access blocked/i);
+
+    // 2. TenantRepository lookup fails
+    await expect(repoA.findTripById(tripBId)).rejects.toThrow(/Cross-tenant data access blocked/i);
+
+    // 3. Scoped list returns zero
+    const scopedTrips = await repoA.findTrips({ where: { id: tripBId } });
+    expect(scopedTrips).toHaveLength(0);
   });
 });

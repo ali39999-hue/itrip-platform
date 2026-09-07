@@ -107,8 +107,9 @@ export function PassengerForm({ onChange }: { onChange?: (p: Passenger) => void 
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-ink">{t('firstNameEn')}</label>
+          <label htmlFor="passenger-first-name" className="text-sm font-medium text-ink">{t('firstNameEn')}</label>
           <Input 
+            id="passenger-first-name"
             {...register('firstName')}
             className="bg-soft uppercase" 
             placeholder="FIRST NAME"
@@ -117,8 +118,9 @@ export function PassengerForm({ onChange }: { onChange?: (p: Passenger) => void 
           {errors.firstName && <span className="text-rose-warm text-xs font-medium">{errors.firstName.message}</span>}
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-ink">{t('lastNameEn')}</label>
+          <label htmlFor="passenger-last-name" className="text-sm font-medium text-ink">{t('lastNameEn')}</label>
           <Input 
+            id="passenger-last-name"
             {...register('lastName')}
             className="bg-soft uppercase" 
             placeholder="LAST NAME"
@@ -127,8 +129,9 @@ export function PassengerForm({ onChange }: { onChange?: (p: Passenger) => void 
           {errors.lastName && <span className="text-rose-warm text-xs font-medium">{errors.lastName.message}</span>}
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-ink">{t('passportNo')}</label>
+          <label htmlFor="passenger-passport-no" className="text-sm font-medium text-ink">{t('passportNo')}</label>
           <Input 
+            id="passenger-passport-no"
             {...register('passportNo')}
             className="bg-soft uppercase font-mono" 
             placeholder="Lxxxxxxx"
@@ -137,8 +140,9 @@ export function PassengerForm({ onChange }: { onChange?: (p: Passenger) => void 
           {errors.passportNo && <span className="text-rose-warm text-xs font-medium">{errors.passportNo.message}</span>}
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-ink">{t('nationalId')}</label>
+          <label htmlFor="passenger-national-id" className="text-sm font-medium text-ink">{t('nationalId')}</label>
           <Input 
+            id="passenger-national-id"
             {...register('nationalId')}
             className="bg-soft uppercase" 
             placeholder="0123456789" inputMode="numeric"
@@ -147,8 +151,9 @@ export function PassengerForm({ onChange }: { onChange?: (p: Passenger) => void 
           {errors.nationalId && <span className="text-rose-warm text-xs font-medium">{errors.nationalId.message}</span>}
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-ink">{t('birthDate')}</label>
+          <label htmlFor="passenger-birth-date" className="text-sm font-medium text-ink">{t('birthDate')}</label>
           <Input 
+            id="passenger-birth-date"
             type="date"
             {...register('birthDate')}
             className="bg-soft text-start" 
@@ -157,8 +162,8 @@ export function PassengerForm({ onChange }: { onChange?: (p: Passenger) => void 
           {errors.birthDate && <span className="text-rose-warm text-xs font-medium">{errors.birthDate.message}</span>}
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-ink">{t('gender')}</label>
-          <select {...register('gender')} className="flex h-10 w-full rounded-md border border-input bg-soft px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 uppercase">
+          <label htmlFor="passenger-gender-select" className="text-sm font-medium text-ink">{t('gender')}</label>
+          <select id="passenger-gender-select" {...register('gender')} className="flex h-10 w-full rounded-md border border-input bg-soft px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 uppercase">
             <option value="MALE">{t('male')}</option>
             <option value="FEMALE">{t('female')}</option>
           </select>

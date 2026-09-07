@@ -4,6 +4,108 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* FlyToday official font faces: IRANYekanXFaNum & IRANYekanX */
+@font-face {
+  font-family: 'IRANYekanXFaNum';
+  src: url('/fonts/iranyekan/IRANYekanXFaNum-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IRANYekanXFaNum';
+  src: url('/fonts/iranyekan/IRANYekanXFaNum-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IRANYekanXFaNum';
+  src: url('/fonts/iranyekan/IRANYekanXFaNum-DemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IRANYekanXFaNum';
+  src: url('/fonts/iranyekan/IRANYekanXFaNum-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IRANYekanXFaNum';
+  src: url('/fonts/iranyekan/IRANYekanXFaNum-Bold.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IRANYekanXFaNum';
+  src: url('/fonts/iranyekan/IRANYekanXFaNum-Bold.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IRANYekanX';
+  src: url('/fonts/iranyekan/IRANYekanX-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IRANYekanX';
+  src: url('/fonts/iranyekan/IRANYekanX-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Yekan Bakh font faces fallback */
+@font-face {
+  font-family: 'Yekan Bakh';
+  src: url('/fonts/yekan-bakh/YekanBakh-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Yekan Bakh';
+  src: url('/fonts/yekan-bakh/YekanBakh-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Yekan Bakh';
+  src: url('/fonts/yekan-bakh/YekanBakh-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Yekan Bakh';
+  src: url('/fonts/yekan-bakh/YekanBakh-ExtraBold.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Yekan Bakh';
+  src: url('/fonts/yekan-bakh/YekanBakh-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Yekan Bakh';
+  src: url('/fonts/yekan-bakh/YekanBakh-ExtraBlack.woff2') format('woff2');
+  font-weight: 950;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Latin numerals/labels inside RTL (fa/ar) locales — e.g. prices, phone numbers. */
 @utility font-en {
   font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
@@ -182,6 +284,14 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
     letter-spacing: -0.01em;
+  }
+  [dir="rtl"] h1,
+  [dir="rtl"] h2,
+  [dir="rtl"] h3,
+  [dir="rtl"] h4,
+  [dir="rtl"] h5,
+  [dir="rtl"] h6 {
+    letter-spacing: normal;
   }
 }
 

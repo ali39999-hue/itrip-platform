@@ -9,10 +9,10 @@
 | Field | Value |
 |---|---|
 | Working copy | `C:\Users\Lenovo\Desktop\firouzo\itrip-platform` |
-| HEAD SHA | `0fc1a1056bf103e922b674601557c5c622c55451` |
-| Branch | `feat/booking-travel-date` |
-| HEAD date | 2026-09-05 (see `git log -1` for exact timestamp) |
-| package.json version | `1.1.0` |
+| HEAD SHA | `cf45237bd0a01f6b4e0a2a7940c40f87358a224f` (reconciled BASE-101) |
+| Branch | `feat/production-master-task-list-v2` |
+| HEAD date | 2026-09-06 (commit cf45237) |
+| package.json version | `1.2.0` (reconciled BASE-105) |
 
 ## Working-tree state at freeze
 

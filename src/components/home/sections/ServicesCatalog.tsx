@@ -3,7 +3,7 @@
 import { Link } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCountryStore } from '@/stores/country-store';
-import { countryName } from '@/lib/countries';
+import { countryNameL } from './countryNames';
 import {
   Plane, BedDouble, Compass, CarTaxiFront, TrainFront, Wifi, Languages, ShieldCheck,
   type LucideIcon,
@@ -94,7 +94,7 @@ export function ServicesCatalog() {
         <div>
           <p className="mb-2 text-brand-dark font-black text-xs">{t('servicesKicker')}</p>
           <h2 className="text-2xl md:text-[32px] font-black text-ink m-0">
-            {t('servicesTitle', { country: countryName(country, locale) })}
+            {t('servicesTitle', { country: countryNameL(country, locale) })}
           </h2>
         </div>
 
@@ -110,7 +110,7 @@ export function ServicesCatalog() {
               >
                 <div>
                   <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl ${srv.iconBg} grid place-items-center mb-3 group-hover:scale-105 transition-transform`}>
-                    <Icon size={22} />
+                    <Icon size={22} aria-hidden="true" />
                   </div>
                   <h3 className="text-sm sm:text-base font-black text-ink mb-1 group-hover:text-brand-dark transition-colors leading-tight">
                     {srv.title}

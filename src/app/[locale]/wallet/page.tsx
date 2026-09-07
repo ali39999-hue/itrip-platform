@@ -360,7 +360,7 @@ export default function WalletPage() {
                 <div>
                   <div className="flex justify-between items-center mb-1">
                     <label className="text-xs font-bold text-sub">
-                      {lt(locale, { fa: 'مقدار مبدا', en: 'Amount', ar: 'المبلغ', zh: '金额', ru: 'Сумما' })}
+                      {lt(locale, { fa: 'مقدار مبدا', en: 'Amount', ar: 'المبلغ', zh: '金额', ru: 'Сумма' })}
                     </label>
                     <button
                       type="button"

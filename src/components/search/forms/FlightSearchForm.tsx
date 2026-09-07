@@ -55,11 +55,17 @@ export function FlightSearchForm({
     <>
       {/* Trip Type Selector (One-Way / Round-Trip) */}
       <div className="col-span-1 sm:col-span-12 flex items-center justify-between pb-1">
-        <div className="inline-flex items-center p-1 rounded-xl bg-soft border border-line text-xs font-black">
+        <div
+          role="radiogroup"
+          aria-label={t('roundTrip')}
+          className="inline-flex items-center p-1 rounded-xl bg-soft border border-line text-xs font-black"
+        >
           <button
             type="button"
+            role="radio"
+            aria-checked={tripType === 'round'}
             onClick={() => setTripType('round')}
-            className={`px-3.5 py-1.5 rounded-lg transition-all ${
+            className={`min-h-[36px] px-4 py-1.5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none ${
               tripType === 'round'
                 ? 'bg-surface text-brand-dark shadow-xs'
                 : 'text-sub hover:text-ink'
@@ -69,11 +75,13 @@ export function FlightSearchForm({
           </button>
           <button
             type="button"
+            role="radio"
+            aria-checked={tripType === 'oneWay'}
             onClick={() => {
               setTripType('oneWay');
               setDate2('');
             }}
-            className={`px-3.5 py-1.5 rounded-lg transition-all ${
+            className={`min-h-[36px] px-4 py-1.5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none ${
               tripType === 'oneWay'
                 ? 'bg-surface text-brand-dark shadow-xs'
                 : 'text-sub hover:text-ink'
@@ -97,22 +105,22 @@ export function FlightSearchForm({
           id="search-from-input"
         />
 
-        {/* Floating Swap button on Desktop */}
+        {/* Floating Swap button on Tablet & Desktop (horizontal alignment) */}
         <button
           type="button"
           onClick={swap}
           aria-label={t('swap')}
-          className="hidden lg:grid absolute top-1/2 -translate-y-1/2 -end-3.5 z-20 w-7 h-7 place-items-center rounded-full bg-surface border border-line shadow-elev-2 text-brand-dark hover:bg-mint hover:scale-110 active:scale-95 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          className="hidden sm:grid absolute top-1/2 -translate-y-1/2 -end-3.5 z-20 w-7 h-7 place-items-center rounded-full bg-surface border border-line shadow-elev-2 text-brand-dark hover:bg-mint hover:scale-110 active:scale-95 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
         >
           <ArrowLeftRight size={13} aria-hidden="true" />
         </button>
 
-        {/* Floating Swap button on Mobile / Tablet */}
+        {/* Floating Swap button on Mobile only (< sm, vertical stack) */}
         <button
           type="button"
           onClick={swap}
           aria-label={t('swap')}
-          className="lg:hidden grid absolute -bottom-3.5 end-5 z-20 w-8 h-8 place-items-center rounded-full bg-surface border border-line shadow-md text-brand-dark active:rotate-180 hover:bg-mint transition-transform duration-300"
+          className="sm:hidden grid absolute -bottom-3.5 end-5 z-20 w-8 h-8 place-items-center rounded-full bg-surface border border-line shadow-md text-brand-dark active:rotate-180 hover:bg-mint transition-transform duration-300 cursor-pointer"
         >
           <ArrowLeftRight size={14} className="rotate-90" aria-hidden="true" />
         </button>
@@ -153,8 +161,17 @@ export function FlightSearchForm({
           />
         ) : (
           <div
+            role="button"
+            tabIndex={0}
             onClick={() => setTripType('round')}
-            className="w-full min-h-[58px] px-3.5 py-2 rounded-2xl bg-soft/60 border border-dashed border-line text-sub flex items-center justify-center cursor-pointer hover:border-brand/60 transition group"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setTripType('round');
+              }
+            }}
+            aria-label={`${t('dateReturn')} (${t('roundTrip')})`}
+            className="w-full min-h-[58px] px-3.5 py-2 rounded-2xl bg-soft/60 border border-dashed border-line text-sub flex items-center justify-center cursor-pointer hover:border-brand/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand transition group"
           >
             <span className="text-xs font-bold group-hover:text-brand-dark">
               + {t('dateReturn')} ({t('roundTrip')})
@@ -174,6 +191,7 @@ export function FlightSearchForm({
           setChildrenCount={setChildrenCount}
           rooms={rooms}
           setRooms={setRooms}
+          showRooms={false}
         />
       </div>
 

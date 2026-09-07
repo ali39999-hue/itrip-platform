@@ -1,5 +1,6 @@
 import { describe, it, expect, afterAll } from 'vitest';
 import { randomBytes } from 'crypto';
+import { Money } from '@/lib/finance';
 import { PaymentDomainService } from './payments/PaymentDomainService';
 import { BookingDomainService } from './booking/BookingDomainService';
 import { OperationalExceptionService, ExceptionSeverity } from './finance/three-way-reconciliation';
@@ -97,7 +98,7 @@ describe('Hardening continuations (PAY-010, booking lifecycle, ERP-009)', () => 
       eventType: 'payment.captured',
       bookingId: capturedBookingId,
       gatewayRef: `ref_dup_${suffix}`,
-      settledAmount: amount,
+      settledAmount: new Money(amount, 'IRR'),
       settledCurrency: 'IRR',
       timestamp: Date.now(),
     });
@@ -123,7 +124,7 @@ describe('Hardening continuations (PAY-010, booking lifecycle, ERP-009)', () => 
         eventType: 'payment.captured',
         bookingId: terminalBookingId,
         gatewayRef: `ref_trm_${suffix}`,
-        settledAmount: amount,
+        settledAmount: new Money(amount, 'IRR'),
         settledCurrency: 'IRR',
         timestamp: Date.now(),
       })

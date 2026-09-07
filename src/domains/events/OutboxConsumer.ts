@@ -2,10 +2,62 @@ import { prisma } from '@/lib/prisma';
 import { getNotificationProvider } from './NotificationProvider';
 import { decryptSensitive } from '@/lib/security/crypto-vault';
 import { createLogger } from '@/lib/observability/logger';
+import { WorkerLeaseService } from './WorkerLeaseService';
 import crypto from 'crypto';
+
+const outboxLogger = createLogger('outbox-consumer');
 
 /** Events stuck in PROCESSING for longer than this are re-queued. */
 const PROCESSING_STALE_MS = 2 * 60 * 1000;
+
+/**
+ * Calculates bounded exponential backoff with random jitter (ASYNC-107)
+ * Prevents retry clustering and thundering herds across distributed workers.
+ */
+export function calculateBackoffWithJitter(
+  retryCount: number,
+  baseSeconds: number = 10,
+  maxSeconds: number = 600,
+  jitterFactor: number = 0.25
+): number {
+  const exponential = Math.min(Math.pow(2, retryCount) * baseSeconds, maxSeconds);
+  const jitter = (Math.random() * 2 - 1) * (exponential * jitterFactor);
+  return Math.max(1, Math.round(exponential + jitter));
+}
+
+/**
+ * Versioned Outbox Payload wrapper (ASYNC-105)
+ */
+export function wrapOutboxPayload(
+  data: Record<string, unknown>,
+  eventVersion: number = 1,
+  schemaVersion: string = '1.0.0'
+): string {
+  return JSON.stringify({
+    _meta: {
+      eventVersion,
+      schemaVersion,
+      emittedAt: new Date().toISOString(),
+    },
+    eventVersion,
+    schemaVersion,
+    ...data,
+  });
+}
+
+/**
+ * Parses outbox payload and extracts metadata (ASYNC-105)
+ */
+export function parseOutboxPayload(payloadStr: string): {
+  data: Record<string, unknown>;
+  eventVersion: number;
+  schemaVersion: string;
+} {
+  const parsed = JSON.parse(payloadStr || '{}');
+  const eventVersion = parsed.eventVersion || parsed._meta?.eventVersion || 1;
+  const schemaVersion = parsed.schemaVersion || parsed._meta?.schemaVersion || '1.0.0';
+  return { data: parsed, eventVersion, schemaVersion };
+}
 
 /** Generates a GDS-style PNR reference for voucher issuing. */
 function generatePnr(): string {
@@ -18,20 +70,35 @@ function generatePnr(): string {
 }
 
 export class OutboxConsumer {
-  private static isRunning = false;
-
   /**
-   * Concurrency-safe atomic outbox worker claim and execution (OUTBOX-001, OUTBOX-002)
-   * Uses PostgreSQL "SELECT ... FOR UPDATE SKIP LOCKED" to guarantee zero race conditions across worker instances.
+   * Concurrency-safe atomic outbox worker claim and execution (ASYNC-101 to ASYNC-107)
+   * Uses WorkerLeaseService distributed lease (ASYNC-102, ASYNC-103) and PostgreSQL
+   * "SELECT ... FOR UPDATE SKIP LOCKED" (ASYNC-104) to guarantee zero race conditions.
    */
   static async processPendingEvents(customWorkerId?: string): Promise<number> {
-    if (this.isRunning) return 0;
-    this.isRunning = true;
+    const workerId =
+      customWorkerId ||
+      `wrk_${crypto.randomBytes(3).toString('hex')}_${Date.now().toString(36)}`;
 
-    const workerId = customWorkerId || `worker_${crypto.randomBytes(3).toString('hex')}_${Date.now().toString(36)}`;
+    // ASYNC-102: Use distributed DB lease instead of process-local flag
+    const result = await WorkerLeaseService.withLease(
+      'outbox_consumer',
+      workerId,
+      30000,
+      async () => {
+        return this.executeProcessingCycle(workerId);
+      }
+    );
 
+    return result ?? 0;
+  }
+
+  /**
+   * Internal execution cycle under lease protection
+   */
+  private static async executeProcessingCycle(workerId: string): Promise<number> {
     try {
-      // 1. Recover events stranded in PROCESSING by a crash (Crash Recovery, Section 18)
+      // 1. Recover events stranded in PROCESSING by a worker crash (Crash Recovery, Section 18)
       const staleCutoff = new Date(Date.now() - PROCESSING_STALE_MS);
       const recovered = await prisma.outboxEvent.updateMany({
         where: { status: 'PROCESSING', lockedAt: { lt: staleCutoff } },
@@ -41,7 +108,7 @@ export class OutboxConsumer {
         console.warn(`[Outbox] Recovered ${recovered.count} stale PROCESSING events`);
       }
 
-      // 2. Concurrency-Safe Claim using SELECT ... FOR UPDATE SKIP LOCKED (Section 19)
+      // 2. Concurrency-Safe Claim using SELECT ... FOR UPDATE SKIP LOCKED (ASYNC-104)
       const claimedEvents: Array<{
         id: string;
         eventType: string;
@@ -74,20 +141,19 @@ export class OutboxConsumer {
       let processedCount = 0;
 
       for (const event of claimedEvents) {
-        // OBS-002/003: every log line for this event carries its id/type so
-        // failures are traceable; field redaction guards OTP/PII leakage.
         const log = createLogger('outbox', event.id);
         try {
-          const payload = JSON.parse(event.payload || '{}');
+          // ASYNC-105: Versioned payload parsing
+          const { data: payload, eventVersion, schemaVersion } = parseOutboxPayload(event.payload);
 
           // Process based on eventType
           switch (event.eventType) {
             case 'BOOKING_CONFIRMED':
             case 'BOOKING_PAID': {
-              // Voucher issuing: stamp the booking with a GDS reference once.
-              if (payload.bookingId) {
+              const bookingId = (payload.bookingId as string) || event.aggregateId;
+              if (bookingId) {
                 const booking = await prisma.booking.findUnique({
-                  where: { id: payload.bookingId },
+                  where: { id: bookingId },
                   select: { id: true, externalPnr: true },
                 });
                 if (booking && !booking.externalPnr) {
@@ -101,10 +167,10 @@ export class OutboxConsumer {
                       action: 'VOUCHER_ISSUED',
                       resource: 'Booking',
                       resourceId: booking.id,
-                      newData: JSON.stringify({ pnr }),
+                      newData: JSON.stringify({ pnr, eventVersion, schemaVersion }),
                     },
                   });
-                  console.log(`[Outbox] Issued voucher ${pnr} for booking ${booking.id}`);
+                  outboxLogger.info('Issued voucher for booking', { pnr, bookingId: booking.id });
                 }
               }
               break;
@@ -113,11 +179,13 @@ export class OutboxConsumer {
             case 'REFUND_REQUESTED':
             case 'BOOKING_REFUNDED': {
               const notificationProvider = getNotificationProvider();
-              const bookingId = payload.bookingId;
-              const booking = bookingId ? await prisma.booking.findUnique({
-                where: { id: bookingId },
-                include: { customer: true },
-              }) : null;
+              const bookingId = (payload.bookingId as string) || event.aggregateId;
+              const booking = bookingId
+                ? await prisma.booking.findUnique({
+                    where: { id: bookingId },
+                    include: { customer: true },
+                  })
+                : null;
 
               if (booking?.customer?.phone) {
                 await notificationProvider.sendSms(
@@ -136,18 +204,15 @@ export class OutboxConsumer {
 
             case 'AUTH_OTP_REQUESTED': {
               const notificationProvider = getNotificationProvider();
-              const { identifier, channel, codeEnc } = payload;
+              const identifier = payload.identifier as string;
+              const channel = payload.channel as string;
+              const codeEnc = payload.codeEnc as string;
 
-              // The outbox payload carries the code AES-256-GCM sealed by
-              // issueOtp(); plaintext only exists in this scope at delivery
-              // time. Legacy events without codeEnc keep the masked message.
               let code: string | undefined;
               if (codeEnc) {
                 try {
                   code = decryptSensitive(String(codeEnc));
                 } catch {
-                  // Unseal failure (e.g. key rotation): treat as a processing
-                  // failure so the event retries instead of delivering "***".
                   throw new Error('OTP delivery failed: could not decrypt one-time code from outbox payload');
                 }
               }
@@ -168,17 +233,31 @@ export class OutboxConsumer {
                 );
               }
 
-              // Delivery failure must NOT be acknowledged: throwing re-queues the
-              // event with backoff and eventually dead-letters it as actionable.
               if (!delivery.success) {
                 throw new Error(`OTP delivery failed via ${delivery.provider}: ${delivery.error || 'unknown error'}`);
               }
               break;
             }
 
-            default:
-              console.log(`[Outbox] Processed generic event ${event.eventType}`);
+            case 'NOTIFICATION_DISPATCH': {
+              const notificationProvider = getNotificationProvider();
+              const phone = payload.phone as string;
+              const email = payload.email as string;
+              const content = (payload.content as string) || (payload.message as string) || '';
+              const title = (payload.title as string) || 'اطلاعیه فیروزو';
+
+              if (phone) {
+                await notificationProvider.sendSms(phone, content);
+              } else if (email) {
+                await notificationProvider.sendEmail(email, title, content);
+              }
               break;
+            }
+
+            default: {
+              // ASYNC-106: Fail unknown event types so retry / DLQ logic triggers
+              throw new Error(`UNKNOWN_EVENT_TYPE: Event type "${event.eventType}" has no registered consumer handler`);
+            }
           }
 
           // Mark as PROCESSED
@@ -193,7 +272,7 @@ export class OutboxConsumer {
         } catch (eventErr: unknown) {
           const errorMessage = eventErr instanceof Error ? eventErr.message : String(eventErr);
           const nextRetry = (event.retryCount || 0) + 1;
-          const isDeadLetter = nextRetry >= 5;
+          const isDeadLetter = nextRetry >= 5 || errorMessage.startsWith('UNKNOWN_EVENT_TYPE');
           log.error('Outbox event processing failed', {
             eventType: event.eventType,
             aggregateType: event.aggregateType,
@@ -203,8 +282,8 @@ export class OutboxConsumer {
             error: errorMessage,
           });
 
-          // Exponential backoff: 2^retry * 10 seconds (10s, 20s, 40s, 80s)
-          const backoffSeconds = Math.min(Math.pow(2, nextRetry) * 10, 600);
+          // ASYNC-107: Bounded exponential backoff with jitter
+          const backoffSeconds = calculateBackoffWithJitter(nextRetry, 10, 600, 0.25);
           const nextAvailableAt = new Date(Date.now() + backoffSeconds * 1000);
 
           await prisma.outboxEvent.update({
@@ -225,8 +304,6 @@ export class OutboxConsumer {
     } catch (err) {
       console.error('[Outbox] Error in worker cycle:', err);
       return 0;
-    } finally {
-      this.isRunning = false;
     }
   }
 }

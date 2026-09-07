@@ -1,4 +1,5 @@
 import { describe, it, expect, afterAll } from 'vitest';
+import { Money } from '@/lib/finance';
 import { BookingStateMachine } from './state-machine';
 import { BookingSagaOrchestrator } from './saga-orchestrator';
 import { BookingDomainService } from './BookingDomainService';
@@ -216,7 +217,7 @@ describe('Booking Lifecycle & Relational History Suite (BOOK-001 to BOOK-005)', 
     await GeneralLedgerService.postTopUp({
       groupId: `topup_race_${suffix}`,
       userId: testUserId,
-      amount: 5_000_000,
+      amount: new Money(5_000_000, 'IRR'),
       currency: 'IRR',
       referenceId: 'TEST_SEED',
     });

@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { getAdminDashboardData } from '@/actions/admin';
 import { QuickActionsBar } from '@/components/admin/QuickActionsBar';
 import { ActionWidgets } from '@/components/admin/ActionWidgets';
 import { LiveActivityFeed } from '@/components/admin/LiveActivityFeed';
@@ -20,8 +20,8 @@ export default async function AdminDashboard() {
     redirect('/' + locale + '/auth');
   }
 
-  // Live Database Queries
-  const [
+  // Live Database Queries via Action Layer (BASE-006)
+  const {
     confirmedBookingsCount,
     allBookings,
     ledgerEntries,
@@ -33,33 +33,7 @@ export default async function AdminDashboard() {
     pendingExceptions,
     recentHistory,
     recentAudit,
-  ] = await Promise.all([
-    prisma.booking.count({ where: { status: 'CONFIRMED' } }),
-    prisma.booking.findMany({ select: { totalAmount: true, status: true } }),
-    prisma.ledgerEntry.findMany({ select: { direction: true, amount: true, referenceType: true, currency: true } }),
-    prisma.outboxEvent.count({ where: { status: 'PENDING' } }),
-    prisma.operationalException.count({ where: { status: 'OPEN' } }),
-    prisma.refund.count({ where: { status: 'REQUESTED' } }),
-    prisma.operationalException.count({ where: { type: 'PAYMENT_MISMATCH', status: 'OPEN' } }),
-    prisma.operationalException.count({ where: { type: 'SUPPLIER_TIMEOUT', status: 'OPEN' } }),
-    prisma.operationalException.findMany({
-      where: { status: { in: ['OPEN', 'ACKNOWLEDGED', 'IN_PROGRESS'] } },
-      orderBy: [
-        { severity: 'desc' },
-        { detectedAt: 'desc' },
-      ],
-      take: 8,
-    }),
-    prisma.bookingStatusHistory.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 6,
-      include: { booking: { select: { reference: true } } },
-    }),
-    prisma.auditLog.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 6,
-    }),
-  ]);
+  } = await getAdminDashboardData();
 
   // Server-side mapping: OperationalException -> Action Required widget items
   const pendingTasks = pendingExceptions.map((exc) => ({

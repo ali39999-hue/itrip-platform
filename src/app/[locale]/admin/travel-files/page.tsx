@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { getAdminTravelFiles } from '@/actions/admin';
 import { requirePermission } from '@/domains/identity/permission-service';
 import { getLocale } from 'next-intl/server';
 import { lt } from '@/lib/lt';
@@ -11,21 +11,8 @@ export default async function TravelFilesPage() {
   await requirePermission(['booking:view:all', 'ops:override:cancel']);
   const locale = await getLocale();
 
-  // Query Trips (Travel Files) with aggregated Bookings and Users
-  const trips = await prisma.trip.findMany({
-    include: {
-      user: {
-        select: { id: true, name: true, phone: true, email: true },
-      },
-      bookings: {
-        include: {
-          items: true,
-        },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 50,
-  });
+  // Query Trips (Travel Files) with aggregated Bookings and Users via Action Layer (BASE-006)
+  const { trips } = await getAdminTravelFiles();
 
   return (
     // AdminShell is provided by the admin layout; wrapping here renders a duplicate shell.
@@ -80,7 +67,7 @@ export default async function TravelFilesPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {trips.map((trip) => {
-              const totalItems = trip.bookings.reduce((sum, b) => sum + b.items.length, 0);
+              const totalItems = (trip.bookings || []).reduce((sum: number, b: { items?: unknown[] }) => sum + (b.items?.length || 0), 0);
               return (
                 <div key={trip.id} className="bg-surface p-5 rounded-2xl border border-line hover:border-brand/40 transition shadow-sm space-y-4">
                   <div className="flex items-start justify-between">

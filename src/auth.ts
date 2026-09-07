@@ -3,8 +3,11 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
-import { ROLE_DEFAULT_PERMISSIONS, ERP_STAFF_ROLES } from '@/domains/identity/permissions';
+import { ERP_STAFF_ROLES } from '@/domains/identity/permissions';
 import { encryptSensitive } from '@/lib/security/crypto-vault';
+import { createLogger } from '@/lib/observability/logger';
+
+const authLogger = createLogger('auth-service');
 
 declare module 'next-auth' {
   interface Session {
@@ -68,7 +71,7 @@ export async function issueOtp(identifier: string, channel: string): Promise<{ s
   });
 
   if (process.env.NODE_ENV !== 'production') {
-    console.log(`[AUTH-DEV] Issued OTP for ${identifier} via ${channel}: ${code}`);
+    authLogger.info('Issued OTP for dev testing', { identifier, channel, otp: code });
   }
 
   return { sent: true };
@@ -259,28 +262,35 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        // Session permissions mirror the relational RBAC authority (IAM-001).
-        // ROLE_DEFAULT_PERMISSIONS is only a bootstrap for brand-new users whose
-        // relational assignment could not be created (e.g. degraded DB access).
-        const memberships = await prisma.userRole.findMany({
-          where: { userId: user.id },
-          include: { role: { include: { rolePermissions: { include: { permission: true } } } } },
-        });
+        // Session permissions mirror relational RBAC authority (IAM-001, IAM-105).
+        const [userRoles, orgMemberships] = await Promise.all([
+          prisma.userRole.findMany({
+            where: { userId: user.id },
+            include: { role: { include: { rolePermissions: { include: { permission: true } } } } },
+          }),
+          prisma.organizationMembership.findMany({
+            where: { userId: user.id },
+            include: { role: { include: { rolePermissions: { include: { permission: true } } } } },
+          }),
+        ]);
         const perms = new Set<string>();
-        memberships.forEach((ur) =>
+        userRoles.forEach((ur) =>
           ur.role.rolePermissions.forEach((rp) => perms.add(rp.permission.code))
         );
-        if (perms.size === 0) {
-          (ROLE_DEFAULT_PERMISSIONS[user.role] || []).forEach((p) => perms.add(p));
-        }
+        orgMemberships.forEach((om) => {
+          if (om.role) {
+            om.role.rolePermissions.forEach((rp) => perms.add(rp.permission.code));
+          }
+        });
         token.permissions = Array.from(perms);
 
-        // IAM-002: the JWT role claim is the RELATIONAL role name (staff roles
-        // first), not the legacy `User.role` column — authorization decisions in
-        // middleware therefore resolve through the relational chain.
-        const roleNames = memberships.map((ur) => ur.role.name);
+        // IAM-002, IAM-105: Relational role name is the sole authority
+        const roleNames = [
+          ...userRoles.map((ur) => ur.role.name),
+          ...orgMemberships.map((om) => om.role?.name).filter(Boolean) as string[],
+        ];
         const staffRole = ERP_STAFF_ROLES.find((r) => roleNames.includes(r));
-        token.role = staffRole ?? roleNames[0] ?? user.role;
+        token.role = staffRole ?? roleNames[0] ?? 'CUSTOMER';
       }
       return token;
     },

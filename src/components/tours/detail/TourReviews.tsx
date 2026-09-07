@@ -94,7 +94,7 @@ export function TourReviews({ tour }: TourReviewsProps) {
                   <div>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-xs sm:text-sm font-black text-ink">{rev.author}</span>
-                      <span className="inline-flex items-center gap-0.5 text-[9.5px] sm:text-[10px] font-bold text-mint-bright bg-mint px-1.5 py-0.5 rounded-md">
+                      <span className="inline-flex items-center gap-0.5 text-[9.5px] sm:text-[10px] font-bold text-brand-dark bg-mint px-1.5 py-0.5 rounded-md border border-brand/20">
                         <CheckCircle2 size={10} /> {lt(locale, { fa: 'خریدار تاییدشده', en: 'Verified Buyer', ar: 'مشتري مؤكد', zh: '已验证买家', ru: 'Подтверждён' })}
                       </span>
                     </div>

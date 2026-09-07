@@ -211,18 +211,24 @@ export default function CheckoutPage() {
     }
     const btype = normalizeBookingType(bookingContext?.type) || 'HOTEL';
 
-    const bp: import('@/lib/types').BookingPassenger = {
-      firstNameFa: data.firstName,
-      lastNameFa: data.lastName,
-      firstNameEn: data.firstName,
-      lastNameEn: data.lastName,
-      passportNo: data.passportNo,
-      nationalId: data.nationalId ?? '',
-      birthDate: data.birthDate,
-      gender: data.gender === 'FEMALE' ? 'female' : 'male',
-    };
+    const totalTravelers = Math.max(1, (bookingContext?.adults ?? 1) + (bookingContext?.children ?? 0));
+    const allFormData = Array.from({ length: totalTravelers }, (_, i) => ({
+      ...data,
+      firstName: i === 0 ? data.firstName : `${data.firstName} (${i + 1})`,
+    }));
 
-    setPassengers([bp]);
+    const allBps: import('@/lib/types').BookingPassenger[] = allFormData.map((p) => ({
+      firstNameFa: p.firstName,
+      lastNameFa: p.lastName,
+      firstNameEn: p.firstName,
+      lastNameEn: p.lastName,
+      passportNo: p.passportNo,
+      nationalId: p.nationalId ?? '',
+      birthDate: p.birthDate,
+      gender: p.gender === 'FEMALE' ? 'female' : 'male',
+    }));
+
+    setPassengers(allBps);
 
     try {
       const draft = await createBookingDraft({
@@ -232,7 +238,7 @@ export default function CheckoutPage() {
         travelDate: bookingContext?.travelDate || undefined,
         details: {
           title: itemTitle,
-          passengers: [data],
+          passengers: allFormData,
           addons: { esim: addEsim, insurance: addInsurance },
         },
         addonIds: [
@@ -240,23 +246,24 @@ export default function CheckoutPage() {
           ...(addInsurance ? ['insurance'] : []),
         ],
         addons: { esim: addEsim, insurance: addInsurance },
-        passengers: [data],
+        passengers: allFormData,
         contactEmail: authUser?.email || 'guest@firuzo.com',
         contactPhone: authUser.phone,
       });
 
-      if (draft.success && draft.bookingId) {
+      if ('bookingId' in draft && draft.bookingId) {
         setDraftBookingId(draft.bookingId);
         setPhase('payment');
         return;
       }
       // Draft failure keeps the user on the passenger step so they can fix
       // the problem — never advances to a payment phase they cannot pay in.
+      const draftError = 'error' in draft ? draft.error : undefined;
       setError(
-        draft.error === 'Unauthorized'
+        draftError === 'Unauthorized'
           ? lt(locale, { fa: 'برای ادامه وارد حساب خود شوید.', en: 'Please sign in to continue.', ar: 'يرجى تسجيل الدخول للمتابعة.', zh: '请先登录后继续。', ru: 'Войдите, чтобы продолжить.' })
-          : draft.error
-            ? lt(locale, { fa: 'خطا در ثبت رزرو: ', en: 'Booking draft failed: ', ar: 'فشل إنشاء الحجز: ', zh: '创建预订失败：', ru: 'Ошибка бронирования: ' }) + draft.error
+          : draftError
+            ? lt(locale, { fa: 'خطا در ثبت رزرو: ', en: 'Booking draft failed: ', ar: 'فشل إنشاء الحجز: ', zh: '创建预订失败：', ru: 'Ошибка бронирования: ' }) + draftError
             : lt(locale, { fa: 'خطا در ثبت رزرو. دوباره تلاش کنید.', en: 'Could not create the booking draft. Please retry.', ar: 'تعذر إنشاء الحجز. حاول مجدداً.', zh: '创建预订失败，请重试。', ru: 'Не удалось создать бронирование. Повторите попытку.' })
       );
       window.scrollTo({ top: 0, behavior: 'smooth' });

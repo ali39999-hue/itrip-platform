@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PaymentDomainService } from '@/domains/payments/PaymentDomainService';
 import { RateLimiter } from '@/lib/security/rate-limiter';
 import { createLogger } from '@/lib/observability/logger';
+import { Money } from '@/lib/finance';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
       eventType,
       bookingId,
       gatewayRef,
-      settledAmount: String(settledAmount),
+      settledAmount: new Money(String(settledAmount), settledCurrency),
       settledCurrency,
       signature,
       timestamp,

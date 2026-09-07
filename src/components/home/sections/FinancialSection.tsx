@@ -54,7 +54,7 @@ export function FinancialSection() {
               href="/wallet" 
               className="inline-flex items-center gap-2 min-h-[48px] px-6 bg-brand hover:bg-brand-dark transition-colors text-surface rounded-xl shadow-elev-1 focus-visible:ring-2 focus-visible:ring-brand font-black text-sm"
             >
-              <span>{lt(locale, { fa: 'مدیریت و شارژ کیف پول', en: 'Open & Top Up Wallet', ar: 'عرض وإدارة المحفظة', zh: '管理与充值钱包', ru: 'Управление кошелькоم' })}</span>
+              <span>{lt(locale, { fa: 'مدیریت و شارژ کیف پول', en: 'Open & Top Up Wallet', ar: 'عرض وإدارة المحفظة', zh: '管理与充值钱包', ru: 'Управление кошельком' })}</span>
               <ArrowLeft size={16} className="ltr:rotate-180" aria-hidden="true" />
             </Link>
           </div>
@@ -80,19 +80,27 @@ export function FinancialSection() {
                 </div>
               </div>
 
-              {/* Currency Selector Pills */}
-              <div className="flex items-center p-1 rounded-xl bg-surface/10 backdrop-blur-md border border-surface/10 text-xs font-bold">
+              {/* Currency Selector Pills with ARIA Tab semantics */}
+              <div
+                role="tablist"
+                aria-label="Currency selection"
+                className="flex items-center p-1 rounded-xl bg-surface/10 backdrop-blur-md border border-surface/10 text-xs font-bold"
+              >
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'irr'}
                   onClick={() => setActiveTab('irr')}
-                  className={`px-3 py-1 rounded-lg transition ${activeTab === 'irr' ? 'bg-mint text-brand-dark font-black' : 'text-surface/80 hover:text-surface'}`}
+                  className={`min-h-[36px] px-3.5 py-1.5 rounded-lg transition focus-visible:ring-2 focus-visible:ring-mint-bright focus-visible:outline-none ${activeTab === 'irr' ? 'bg-mint text-brand-dark font-black' : 'text-surface/80 hover:text-surface'}`}
                 >
-                  {lt(locale, { fa: 'تومان', en: 'IRR', ar: 'IRR', zh: 'IRR', ru: 'IRR' })}
+                  {lt(locale, { fa: 'تومان', en: 'Toman (IRR)', ar: 'تومان', zh: '托曼 (IRR)', ru: 'Томан (IRR)' })}
                 </button>
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={activeTab === 'usdt'}
                   onClick={() => setActiveTab('usdt')}
-                  className={`px-3 py-1 rounded-lg transition ${activeTab === 'usdt' ? 'bg-mint text-brand-dark font-black' : 'text-surface/80 hover:text-surface'}`}
+                  className={`min-h-[36px] px-3.5 py-1.5 rounded-lg transition focus-visible:ring-2 focus-visible:ring-mint-bright focus-visible:outline-none ${activeTab === 'usdt' ? 'bg-mint text-brand-dark font-black' : 'text-surface/80 hover:text-surface'}`}
                 >
                   USDT
                 </button>
@@ -128,10 +136,10 @@ export function FinancialSection() {
               </span>
               <Link
                 href="/wallet"
-                className="inline-flex items-center gap-1 text-xs font-black text-action hover:text-gold-light transition"
+                className="inline-flex items-center gap-1 text-xs font-black text-action hover:text-gold-light transition py-2 px-3 -my-2 -mx-3 rounded-lg focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
               >
                 <span>{lt(locale, { fa: 'شارژ آنلاین', en: 'Top Up', ar: 'شحن', zh: '快速充值', ru: 'Пополнить' })}</span>
-                <ArrowUpRight size={14} />
+                <ArrowUpRight size={14} aria-hidden="true" />
               </Link>
             </div>
           </div>

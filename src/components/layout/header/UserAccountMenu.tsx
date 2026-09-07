@@ -46,7 +46,7 @@ export function UserAccountMenu() {
       {user ? (
         <Link
           href="/account"
-          className="min-h-[38px] inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full bg-brand text-surface hover:bg-brand-dark text-[12px] sm:text-[13px] font-black shadow-sm transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none shrink-0"
+          className="min-h-[38px] inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full bg-brand-dark text-surface hover:bg-deep text-[12px] sm:text-[13px] font-black shadow-sm transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none shrink-0"
         >
           <UserRound size={15} />
           <span className="truncate max-w-[90px] sm:max-w-none">
@@ -56,7 +56,7 @@ export function UserAccountMenu() {
       ) : (
         <Link
           href="/auth"
-          className="min-h-[38px] inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-action hover:bg-action-hover text-ink text-[12px] sm:text-[13px] font-black shadow-sm transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none active:scale-95 shrink-0"
+          className="min-h-[38px] inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-brand/50 text-brand-dark hover:bg-mint text-[12px] sm:text-[13px] font-black shadow-2xs transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none active:scale-95 shrink-0"
         >
           <UserRound size={15} />
           <span>{t('signin')}</span>

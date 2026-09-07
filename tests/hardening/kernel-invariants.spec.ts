@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { prisma } from '../../src/lib/prisma';
+import { Money } from '../../src/lib/finance';
 import { GeneralLedgerService } from '../../src/domains/ledger/GeneralLedgerService';
 
 test.describe('P0 Invariants: Financial & Ledger Balancing', () => {
@@ -49,7 +50,7 @@ test.describe('P0 Invariants: Financial & Ledger Balancing', () => {
     await GeneralLedgerService.postTopUp({
       groupId: balancedGroupId,
       userId: testUserId,
-      amount: depositAmount,
+      amount: new Money(depositAmount, 'IRR'),
       currency: 'IRR',
       memo: 'Balanced deposit entry',
     });
@@ -70,7 +71,7 @@ test.describe('P0 Invariants: Financial & Ledger Balancing', () => {
     await GeneralLedgerService.postTopUp({
       groupId: balancedGroupId,
       userId: testUserId,
-      amount: depositAmount,
+      amount: new Money(depositAmount, 'IRR'),
       currency: 'IRR',
       memo: 'Balanced deposit entry retry',
     });

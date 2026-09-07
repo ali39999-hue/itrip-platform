@@ -3,6 +3,7 @@
 import { safeAuth } from '@/auth';
 import { revalidatePath } from 'next/cache';
 import { ContentDomainService } from '@/domains/content/ContentDomainService';
+import { sanitizeUserObject } from '@/lib/security/content-sanitizer';
 
 async function checkAdminAuth() {
   const session = await safeAuth();
@@ -48,7 +49,8 @@ export async function createAdminTourAction(data: Parameters<typeof ContentDomai
     const isAuthed = await checkAdminAuth();
     if (!isAuthed) return { success: false, error: 'Unauthorized' };
 
-    const created = await ContentDomainService.createTour(data);
+    const sanitized = sanitizeUserObject(data);
+    const created = await ContentDomainService.createTour(sanitized);
     revalidatePath('/[locale]/admin/content', 'page');
     revalidatePath('/[locale]/tours', 'page');
 
@@ -118,7 +120,8 @@ export async function createAdminExperienceAction(data: Parameters<typeof Conten
     const isAuthed = await checkAdminAuth();
     if (!isAuthed) return { success: false, error: 'Unauthorized' };
 
-    const created = await ContentDomainService.createExperience(data);
+    const sanitized = sanitizeUserObject(data);
+    const created = await ContentDomainService.createExperience(sanitized);
     revalidatePath('/[locale]/admin/content', 'page');
     revalidatePath('/[locale]/destinations', 'page');
     revalidatePath('/[locale]/tours', 'page');
@@ -174,7 +177,8 @@ export async function createAdminTravelogueAction(data: Parameters<typeof Conten
     const isAuthed = await checkAdminAuth();
     if (!isAuthed) return { success: false, error: 'Unauthorized' };
 
-    const created = await ContentDomainService.createTravelogue(data);
+    const sanitized = sanitizeUserObject(data);
+    const created = await ContentDomainService.createTravelogue(sanitized);
     revalidatePath('/[locale]/admin/content', 'page');
     revalidatePath('/[locale]/travelogues', 'page');
 
@@ -228,7 +232,8 @@ export async function createAdminGuideAction(data: Parameters<typeof ContentDoma
     const isAuthed = await checkAdminAuth();
     if (!isAuthed) return { success: false, error: 'Unauthorized' };
 
-    const created = await ContentDomainService.createGuide(data);
+    const sanitized = sanitizeUserObject(data);
+    const created = await ContentDomainService.createGuide(sanitized);
     revalidatePath('/[locale]/admin/content', 'page');
     revalidatePath('/[locale]/guide', 'page');
 

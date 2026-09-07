@@ -3,4 +3,7 @@ export * from './BentoFlightCard';
 export * from './PassengerForm';
 export * from './FlightCompareBar';
 export * from './FlightCompareModal';
+export * from './FlightPriceCalendar';
+export * from './FlightRefundRulesModal';
+export * from './FlightPriceAlertModal';
 export * from './hooks/useFlightComparison';

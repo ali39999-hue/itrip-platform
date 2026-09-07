@@ -1,7 +1,8 @@
 'use client';
 
 import { Suspense, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, Clock, Wallet, RefreshCcw, Ticket, Headset, Copy, Check, type LucideIcon } from 'lucide-react';
 import { useBookingStore } from '@/stores/booking-store';
@@ -172,7 +173,7 @@ function PaymentStatusContent() {
                   <button
                     type="button"
                     onClick={copyPnr}
-                    aria-label="کپی کد پیگیری"
+                    aria-label={lt(locale, { fa: 'کپی کد پیگیری', en: 'Copy tracking code', ar: 'نسخ رمز التتبع', zh: '复制追踪码', ru: 'Копировать код' })}
                     className="w-7 h-7 rounded-lg bg-surface border border-line text-sub hover:text-brand-dark grid place-items-center transition active:scale-95"
                   >
                     {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}

@@ -135,7 +135,7 @@ describe('Unit & Integration Tests: RefundDomainService (REF-001, REF-002, REF-0
     });
 
     const balance = await GeneralLedgerService.getAccountBalance(customerAcc.id, 'IRR');
-    expect(balance).toBe(900_000);
+    expect(balance.toNumber()).toBe(900_000);
 
     // 6. Verify immutable policy snapshot, approval trail and execution attempt (REF-004..006)
     const snapshot = await prisma.refundPolicySnapshot.findUniqueOrThrow({

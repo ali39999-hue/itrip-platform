@@ -11,12 +11,8 @@ export function createTenantScoper(activeOrganizationId?: string, isPlatformAdmi
     query: {
       $allModels: {
         async $allOperations({ model, operation, args, query }) {
-          // Models that belong to specific organizations.
-          // Only models that actually carry an organizationId column may be
-          // listed here — scoping a model without the column would inject a
-          // Prisma validation error into every non-admin query (IAM-007).
-          // Booking is org-scoped; Invoice/TravelDocument are not yet.
-          const tenantScopedModels = ['Booking'];
+          // Models that belong to specific organizations (IAM-002, IAM-103)
+          const tenantScopedModels = ['Booking', 'Invoice', 'Trip', 'SettlementBatch', 'TravelDocument'];
 
           if (!tenantScopedModels.includes(model) || isPlatformAdmin) {
             return query(args);
@@ -38,6 +34,9 @@ export function createTenantScoper(activeOrganizationId?: string, isPlatformAdmi
 
           if (['create'].includes(operation)) {
             const data = (modifiedArgs.data as Record<string, unknown> || {});
+            if (data.organizationId && data.organizationId !== activeOrganizationId) {
+              throw new Error(`SECURITY_ERROR: Cross-tenant write blocked. Organization ${activeOrganizationId} cannot create resource for ${data.organizationId}`);
+            }
             if (!data.organizationId) {
               data.organizationId = activeOrganizationId;
             }
@@ -47,6 +46,9 @@ export function createTenantScoper(activeOrganizationId?: string, isPlatformAdmi
 
           if (['upsert'].includes(operation)) {
             const createData = (modifiedArgs.create as Record<string, unknown> || {});
+            if (createData.organizationId && createData.organizationId !== activeOrganizationId) {
+              throw new Error(`SECURITY_ERROR: Cross-tenant write blocked. Organization ${activeOrganizationId} cannot create resource for ${createData.organizationId}`);
+            }
             if (!createData.organizationId) {
               createData.organizationId = activeOrganizationId;
             }

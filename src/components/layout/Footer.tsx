@@ -149,7 +149,11 @@ export function Footer() {
               </p>
               <form onSubmit={handleSubscribe} className="flex flex-col gap-2">
                 <div className="relative">
+                  <label htmlFor="footer-newsletter-email" className="sr-only">
+                    {t('newsletterTitle')}
+                  </label>
                   <input
+                    id="footer-newsletter-email"
                     type="email"
                     placeholder={t('newsletterPlaceholder')}
                     value={email}
@@ -160,11 +164,12 @@ export function Footer() {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-2 rounded-xl bg-brand text-surface text-[12px] font-black hover:bg-brand-2 transition shadow-sm flex items-center justify-center gap-1.5"
+                  aria-live="polite"
+                  className="w-full py-2.5 rounded-xl bg-brand-dark text-surface text-[12px] font-black hover:bg-deep transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   {subscribed ? (
                     <>
-                      <Check size={14} className="text-surface" /> {t('newsletterDone')}
+                      <Check size={14} className="text-surface" aria-hidden="true" /> {t('newsletterDone')}
                     </>
                   ) : (
                     t('newsletterCta')

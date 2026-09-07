@@ -26,9 +26,9 @@ export function HeroSection() {
   const currentHeroImg = HERO_IMAGES[country] || HERO_IMAGES['turkey'];
 
   return (
-    <section className="relative w-full min-h-[620px] lg:min-h-[720px] flex items-center justify-center overflow-visible py-10 md:py-16">
+    <section className="relative w-full min-h-[560px] md:min-h-[640px] lg:min-h-[680px] flex items-center justify-center overflow-visible py-6 md:py-12">
       {/* Background image + overlays */}
-      <div className="absolute inset-0 z-0 px-3 sm:px-6 md:px-10 pt-3 pb-2">
+      <div className="absolute inset-0 z-0 px-2.5 sm:px-6 md:px-8 pt-2 pb-2">
         <div className={`relative w-full h-full rounded-3xl overflow-hidden shadow-elev-1 ${imgError ? 'bg-gradient-to-br from-brand-dark to-brand' : 'bg-surface'}`}>
           <Image
             src={currentHeroImg}
@@ -43,17 +43,17 @@ export function HeroSection() {
           />
           {imgError && <div className="absolute inset-0 bg-gradient-to-br from-brand-dark to-brand" />}
           {/* Multi-layer gradient: dark bottom for readable search, soft top for header */}
-          <div className="absolute inset-0 bg-gradient-to-b from-deep/40 via-deep/25 to-deep/60 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-deep/50 via-deep/30 to-deep/70 pointer-events-none" />
         </div>
       </div>
 
       {/* Hero content + glass search */}
-      <div className="relative z-[70] w-full max-w-[1280px] px-4 md:px-8 mx-auto flex flex-col items-center">
+      <div className="relative z-[70] w-full max-w-[1280px] px-3 sm:px-6 md:px-8 mx-auto flex flex-col items-center">
         {/* Editorial Scale Typography */}
-        <h1 className="text-surface text-center mb-3 max-w-4xl text-3xl sm:text-4xl md:text-5xl lg:text-[52px] leading-[1.25] font-black drop-shadow-md">
-          {t('titleA')} <span className="text-mint-bright underline decoration-mint-bright/40 decoration-wavy underline-offset-8">{t('titleB')}</span> {t('titleC')}
+        <h1 className="text-surface text-center mb-2 max-w-4xl text-2xl sm:text-3xl md:text-5xl lg:text-[48px] leading-[1.3] font-black drop-shadow-md">
+          {t('titleA')} <span className="text-mint-bright">{t('titleB')}</span> {t('titleC')}
         </h1>
-        <p className="text-surface/95 text-center font-bold mb-8 md:mb-10 max-w-2xl text-sm sm:text-base md:text-lg leading-relaxed drop-shadow-sm">
+        <p className="text-surface/90 text-center font-bold mb-6 md:mb-8 max-w-2xl text-xs sm:text-sm md:text-base leading-relaxed drop-shadow-sm">
           {t('subtitle')}
         </p>
 

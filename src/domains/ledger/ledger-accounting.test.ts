@@ -1,4 +1,5 @@
 import { describe, it, expect, afterAll } from 'vitest';
+import { Money } from '@/lib/finance';
 import { GeneralLedgerService } from './GeneralLedgerService';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
@@ -57,7 +58,7 @@ describe('General Ledger, Double-Entry & Wallet Suite (FIN-001 to FIN-003, WAL-0
     await GeneralLedgerService.postTopUp({
       groupId,
       userId: testUserId,
-      amount: initialDeposit,
+      amount: new Money(initialDeposit, testCurrency),
       currency: testCurrency,
       memo: 'Initial user deposit',
     });
@@ -101,7 +102,7 @@ describe('General Ledger, Double-Entry & Wallet Suite (FIN-001 to FIN-003, WAL-0
       await GeneralLedgerService.postTopUp({
         groupId,
         userId: testUserId,
-        amount,
+        amount: new Money(amount, testCurrency),
         currency: testCurrency,
       });
     }
@@ -125,14 +126,14 @@ describe('General Ledger, Double-Entry & Wallet Suite (FIN-001 to FIN-003, WAL-0
     const debit1Promise = GeneralLedgerService.postWalletPayment({
       groupId: `grp_debit1_${suffix}`,
       userId: testUserId,
-      amount: 4_000_000,
+      amount: new Money(4_000_000, testCurrency),
       currency: testCurrency,
     });
 
     const debit2Promise = GeneralLedgerService.postWalletPayment({
       groupId: `grp_debit2_${suffix}`,
       userId: testUserId,
-      amount: 4_000_000,
+      amount: new Money(4_000_000, testCurrency),
       currency: testCurrency,
     });
 
@@ -152,7 +153,7 @@ describe('General Ledger, Double-Entry & Wallet Suite (FIN-001 to FIN-003, WAL-0
       where: { ownerType: 'USER', ownerId: testUserId, currency: testCurrency },
     });
     const finalBalance = await GeneralLedgerService.getAccountBalance(userAcc.id, testCurrency);
-    expect(finalBalance).toBe(2_000_000);
+    expect(finalBalance.toNumber()).toBe(2_000_000);
   });
 
   it('Template 3: Revenue Realization splits revenue, supplier payable, and tax liability', async () => {
@@ -164,10 +165,10 @@ describe('General Ledger, Double-Entry & Wallet Suite (FIN-001 to FIN-003, WAL-0
 
     await GeneralLedgerService.postRevenueRealization({
       groupId,
-      amount: totalAmount,
-      netCost,
-      taxAmount,
-      feeAmount,
+      amount: new Money(totalAmount, testCurrency),
+      netCost: new Money(netCost, testCurrency),
+      taxAmount: new Money(taxAmount, testCurrency),
+      feeAmount: new Money(feeAmount, testCurrency),
       supplierId: `sup_test_${suffix}`,
       currency: testCurrency,
     });
@@ -194,12 +195,12 @@ describe('General Ledger, Double-Entry & Wallet Suite (FIN-001 to FIN-003, WAL-0
     await GeneralLedgerService.postRefund({
       groupId,
       userId: testUserId,
-      amount: refundAmount,
+      amount: new Money(refundAmount, testCurrency),
       currency: testCurrency,
       memo: 'Test refund credit',
     });
 
     const balanceAfter = await GeneralLedgerService.getAccountBalance(userAcc.id, testCurrency);
-    expect(balanceAfter).toBe(balanceBefore + refundAmount);
+    expect(balanceAfter.toNumber()).toBe(balanceBefore.toNumber() + refundAmount);
   });
 });

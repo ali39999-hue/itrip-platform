@@ -32,7 +32,8 @@ export type ERPPermission =
   | 'user:manage'
   | 'role:manage'
   | 'audit:view'
-  | 'ops:override:cancel';
+  | 'ops:override:cancel'
+  | 'traveler:pii:view';
 
 /** Role names that grant ERP back-office access (checked relationally via UserRole). */
 export const ERP_STAFF_ROLES = ['SUPER_ADMIN', 'FINANCE', 'OPS'] as const;
@@ -68,6 +69,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, ERPPermission[]> = {
     'role:manage',
     'audit:view',
     'ops:override:cancel',
+    'traveler:pii:view',
   ],
   FINANCE: [
     'booking:view',

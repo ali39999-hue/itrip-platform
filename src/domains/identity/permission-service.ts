@@ -96,6 +96,7 @@ export async function getTenantAuthContext(userId?: string): Promise<TenantAuthC
       organizationMemberships: {
         where: { status: 'ACTIVE' },
         include: {
+          role: true,
           branch: true,
           organization: {
             include: { branches: true },
@@ -116,9 +117,16 @@ export async function getTenantAuthContext(userId?: string): Promise<TenantAuthC
 
   const activeMembership = user.organizationMemberships[0];
 
+  // IAM-105: Relational UserRole or OrganizationMembership role is sole runtime authority
+  const primaryRole =
+    user.userRoles.find((ur) => (ERP_STAFF_ROLES as readonly string[]).includes(ur.role.name))?.role.name ??
+    user.organizationMemberships[0]?.role?.name ??
+    user.userRoles[0]?.role?.name ??
+    'CUSTOMER';
+
   return {
     userId: user.id,
-    role: user.role,
+    role: primaryRole,
     organizationId: activeMembership?.organizationId,
     branchId: activeMembership?.branchId ?? activeMembership?.organization?.branches?.[0]?.id,
     isSuperAdmin,

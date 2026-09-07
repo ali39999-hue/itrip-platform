@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, notFound } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { lt } from '@/lib/lt';
 import { getTourById, getRelatedTours } from '@/services/tours-service';
 import type { Tour, TourDepartureDate } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
@@ -22,6 +24,7 @@ import { RelatedTours } from '@/components/tours/detail/RelatedTours';
 
 export default function TourDetailPage() {
   const params = useParams<{ id: string }>();
+  const locale = useLocale();
   const tourId = params?.id;
 
   const staticTour = useMemo(() => {
@@ -82,9 +85,17 @@ export default function TourDetailPage() {
 
   if (loadingDynamic) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 bg-paper p-10">
-        <Loader2 size={36} className="animate-spin text-brand" />
-        <span className="text-sm font-bold text-sub">در حال بارگذاری اطلاعات تور...</span>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 bg-paper p-10" role="status" aria-live="polite">
+        <Loader2 size={36} className="animate-spin text-brand" aria-hidden="true" />
+        <span className="text-sm font-bold text-sub">
+          {lt(locale, {
+            fa: 'در حال بارگذاری اطلاعات تور...',
+            en: 'Loading tour details...',
+            ar: 'جاري تحميل تفاصيل الجولة...',
+            zh: '正在加载旅游套餐详情...',
+            ru: 'Загрузка информации о туре...',
+          })}
+        </span>
       </div>
     );
   }

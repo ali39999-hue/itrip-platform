@@ -9,6 +9,7 @@ import {
   type CountryId, type ExperienceCategory, type SignatureExperience,
 } from '@/lib/countries';
 import { num } from '@/lib/format';
+import { lt } from '@/lib/lt';
 import {
   Sailboat, PartyPopper, Landmark, Trees, Sparkles, MoonStar, MountainSnow,
   Drama, Palette, ArrowLeft, MapPin, Languages, type LucideIcon,
@@ -74,12 +75,12 @@ export function useExperiences() {
     c,
     isEn,
     experiences: allExperiences,
-    titleOf: (e: SignatureExperience) => (isEn ? e.titleEn : e.title),
-    descOf: (e: SignatureExperience) => (isEn ? e.descEn : e.desc),
-    whereOf: (e: SignatureExperience) => (isEn ? e.whereEn : e.where),
-    whenOf: (e: SignatureExperience) => (isEn ? e.whenEn : e.when),
+    titleOf: (e: SignatureExperience) => (locale === 'fa' ? e.title : e.titleEn),
+    descOf: (e: SignatureExperience) => (locale === 'fa' ? e.desc : e.descEn),
+    whereOf: (e: SignatureExperience) => (locale === 'fa' ? e.where : e.whereEn),
+    whenOf: (e: SignatureExperience) => (locale === 'fa' ? e.when : e.whenEn),
     catOf: (cat: ExperienceCategory) =>
-      isEn ? EXPERIENCE_CATEGORY_META[cat].en : EXPERIENCE_CATEGORY_META[cat].fa,
+      locale === 'fa' ? EXPERIENCE_CATEGORY_META[cat].fa : EXPERIENCE_CATEGORY_META[cat].en,
   };
 }
 
@@ -107,7 +108,6 @@ export function ExperienceCard({
   onBook: () => void;
 }) {
   const locale = useLocale();
-  const isEn = locale === 'en';
   const Icon = CATEGORY_ICONS[e.category];
   return (
     <button
@@ -131,7 +131,16 @@ export function ExperienceCard({
       </span>
       {(e.category === 'culture' || e.category === 'theater' || e.category === 'exhibition' || e.category === 'festival') && (
         <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-1 rounded-full bg-gold-soft text-price mb-2">
-          <Languages size={11} /> {isEn ? 'hourly interpreter available' : 'مترجم ساعتی دارد'}
+          <Languages size={11} aria-hidden="true" />
+          <span>
+            {lt(locale, {
+              fa: 'مترجم ساعتی دارد',
+              en: 'Hourly interpreter available',
+              ar: 'مترجم بالساعة متاح',
+              zh: '可提供按小时翻译陪同',
+              ru: 'Доступен почасовой переводчик',
+            })}
+          </span>
         </span>
       )}
       <div className="mt-auto flex items-center justify-between border-t border-line/70 pt-3">

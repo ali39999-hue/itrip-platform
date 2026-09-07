@@ -6,13 +6,19 @@ import { Footer } from '@/components/layout/Footer';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { SosInterpreter } from '@/components/shared/SosInterpreter';
 import { ToursPromoModal } from '@/components/tours/ToursPromoModal';
+import { Toaster } from 'sonner';
 
 export function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '';
   const isAdmin = /^\/([a-z]{2}\/)?admin(\/|$)/.test(pathname);
 
   if (isAdmin) {
-    return <main className="flex-1 min-h-screen bg-soft">{children}</main>;
+    return (
+      <main className="flex-1 min-h-screen bg-soft">
+        {children}
+        <Toaster position="top-center" richColors closeButton />
+      </main>
+    );
   }
 
   return (
@@ -25,6 +31,7 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
       <BottomNav />
       <SosInterpreter />
       <ToursPromoModal />
+      <Toaster position="top-center" richColors closeButton />
     </>
   );
 }

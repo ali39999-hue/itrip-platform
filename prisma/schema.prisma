@@ -59,8 +59,13 @@ model Organization {
   createdAt       DateTime                 @default(now())
   updatedAt       DateTime                 @updatedAt
 
-  memberships     OrganizationMembership[]
-  branches        OrganizationBranch[]
+  memberships             OrganizationMembership[]
+  branches                OrganizationBranch[]
+  bookings                Booking[]
+  trips                   Trip[]
+  invoices                Invoice[]
+  settlementBatches       SettlementBatch[]
+  travelDocuments         TravelDocument[]
 
   @@index([status])
 }
@@ -77,6 +82,11 @@ model OrganizationBranch {
 
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   members         OrganizationMembership[]
+  bookings        Booking[]
+  trips           Trip[]
+  invoices        Invoice[]
+  settlementBatches SettlementBatch[]
+  travelDocuments TravelDocument[]
 
   @@index([organizationId])
 }
@@ -122,27 +132,33 @@ model TravelerProfile {
 }
 
 model TravelDocument {
-  id                String          @id @default(cuid())
+  id                String              @id @default(cuid())
   travelerProfileId String
-  type              String          // PASSPORT, NATIONAL_ID, VISA, DRIVER_LICENSE
+  organizationId    String?             // B2B Multi-tenancy (IAM-103)
+  branchId          String?             // B2B Branch Scoping (IAM-103)
+  type              String              // PASSPORT, NATIONAL_ID, VISA, DRIVER_LICENSE
   documentNumber    String
-  issuingCountry    String          @default("IR")
-  issuedAt          String?         // YYYY-MM-DD
-  expiresAt         String?         // YYYY-MM-DD
+  issuingCountry    String              @default("IR")
+  issuedAt          String?             // YYYY-MM-DD
+  expiresAt         String?             // YYYY-MM-DD
   holderName        String?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 
-  travelerProfile   TravelerProfile @relation(fields: [travelerProfileId], references: [id], onDelete: Cascade)
+  travelerProfile   TravelerProfile     @relation(fields: [travelerProfileId], references: [id], onDelete: Cascade)
+  organization      Organization?       @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  branch            OrganizationBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
 
   @@index([travelerProfileId])
+  @@index([organizationId])
+  @@index([branchId])
   @@index([documentNumber])
 }
 
 model Role {
   id                      String                   @id @default(cuid())
   name                    String                   @unique // e.g. SUPER_ADMIN, FINANCE_OPS
-  permissions             String                   // JSON array of permission strings (backward compatibility)
+  permissions             String?                  @default("[]") // Deprecated: relational RolePermission is canonical (IAM-106)
   description             String?
   
   userRoles               UserRole[]
@@ -365,20 +381,26 @@ model Payment {
 // ==================== 3. Core: Trip & Booking State Machine ====================
 
 model Trip {
-  id          String    @id @default(cuid())
-  reference   String    @unique // e.g., TRP-10021
-  userId      String
-  title       String    @default("My Journey")
-  status      String    @default("PLANNING") // PLANNING, BOOKED, IN_PROGRESS, COMPLETED, CANCELLED
-  startDate   String?   // YYYY-MM-DD
-  endDate     String?   // YYYY-MM-DD
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id              String              @id @default(cuid())
+  reference       String              @unique // e.g., TRP-10021
+  userId          String
+  organizationId  String?             // B2B Multi-tenancy (IAM-103)
+  branchId        String?             // B2B Branch Scoping (IAM-103)
+  title           String              @default("My Journey")
+  status          String              @default("PLANNING") // PLANNING, BOOKED, IN_PROGRESS, COMPLETED, CANCELLED
+  startDate       String?             // YYYY-MM-DD
+  endDate         String?             // YYYY-MM-DD
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bookings    Booking[]
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization    Organization?       @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  branch          OrganizationBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  bookings        Booking[]
 
   @@index([userId])
+  @@index([organizationId])
+  @@index([branchId])
   @@index([status])
 }
 
@@ -408,8 +430,10 @@ model Booking {
   expiresAt       DateTime? // For payment deadline / Soft Lock
   cancelledAt     DateTime?
   
-  customer        User     @relation(fields: [customerId], references: [id])
-  trip            Trip?    @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  customer        User                @relation(fields: [customerId], references: [id])
+  trip            Trip?               @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  organization    Organization?       @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  branch          OrganizationBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
   items           BookingItem[]
   refunds         Refund[]
   statusHistory   BookingStatusHistory[]
@@ -418,6 +442,7 @@ model Booking {
   
   @@index([customerId])
   @@index([organizationId])
+  @@index([branchId])
   @@index([tripId])
   @@index([status])
   @@index([paymentStatus])
@@ -554,24 +579,30 @@ model RefundItem {
 
 // Invoicing & Commercial Billing (FIN-006)
 model Invoice {
-  id              String         @id @default(cuid())
-  invoiceNumber   String         @unique // e.g. INV-2026-0001
+  id              String              @id @default(cuid())
+  invoiceNumber   String              @unique // e.g. INV-2026-0001
   bookingId       String
   customerId      String
+  organizationId  String?             // B2B Multi-tenancy (IAM-103)
+  branchId        String?             // B2B Branch Scoping (IAM-103)
   totalAmount     Decimal
-  taxAmount       Decimal        @default(0)
+  taxAmount       Decimal             @default(0)
   netAmount       Decimal
-  currency        String         @default("IRR")
-  status          String         @default("ISSUED") // ISSUED, PAID, VOIDED, REFUNDED
-  issuedAt        DateTime       @default(now())
+  currency        String              @default("IRR")
+  status          String              @default("ISSUED") // ISSUED, PAID, VOIDED, REFUNDED
+  issuedAt        DateTime            @default(now())
   dueAt           DateTime?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
+  organization    Organization?       @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  branch          OrganizationBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
   lines           InvoiceLine[]
 
   @@index([bookingId])
   @@index([customerId])
+  @@index([organizationId])
+  @@index([branchId])
   @@index([status])
 }
 
@@ -611,20 +642,27 @@ model CommissionRule {
 
 // Supplier Settlement Batches (SET-001)
 model SettlementBatch {
-  id              String         @id @default(cuid())
-  batchNumber     String         @unique // e.g. STLB-2026-W36
+  id              String              @id @default(cuid())
+  batchNumber     String              @unique // e.g. STLB-2026-W36
   supplierId      String
+  organizationId  String?             // B2B Multi-tenancy (IAM-103)
+  branchId        String?             // B2B Branch Scoping (IAM-103)
   periodStart     DateTime
   periodEnd       DateTime
   totalPayable    Decimal
-  totalDeductions Decimal        @default(0)
+  totalDeductions Decimal             @default(0)
   netSettlement   Decimal
-  currency        String         @default("IRR")
-  status          String         @default("OPEN") // OPEN, SUBMITTED, RECONCILED, COMPLETED
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  currency        String              @default("IRR")
+  status          String              @default("OPEN") // OPEN, SUBMITTED, RECONCILED, COMPLETED
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  organization    Organization?       @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  branch          OrganizationBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
 
   @@index([supplierId])
+  @@index([organizationId])
+  @@index([branchId])
   @@index([status])
 }
 

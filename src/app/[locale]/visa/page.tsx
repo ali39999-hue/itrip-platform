@@ -113,7 +113,7 @@ export default function VisaPage() {
                 <div className="relative h-44 overflow-hidden bg-soft">
                   <Image
                     src={VISA_IMGS[v.countryEn] || VISA_IMGS.Turkey}
-                    alt={`ویزای ${v.countryFa}`}
+                    alt={`${lt(locale, { fa: 'ویزای', en: 'Visa for', ar: 'تأشيرة', zh: '签证', ru: 'Виза в' })} ${locale === 'fa' ? v.countryFa : v.countryEn}`}
                     fill
                     sizes="(max-width: 768px) 100vw, 25vw"
                     placeholder="blur"
@@ -124,13 +124,21 @@ export default function VisaPage() {
                   
                   <div className="absolute top-3 start-3">
                     <span className="text-surface text-xl font-black drop-shadow-md">
-                      {v.countryFa}
+                      {locale === 'fa' ? v.countryFa : v.countryEn}
                     </span>
                   </div>
 
                   <div className="absolute bottom-3 start-3 flex items-center gap-1.5 text-[11px] font-bold text-mint-bright">
-                    <Clock size={12} />
-                    <span>بررسی در {v.processingDays} روز کاری</span>
+                    <Clock size={12} aria-hidden="true" />
+                    <span>
+                      {lt(locale, {
+                        fa: `بررسی در ${v.processingDays} روز کاری`,
+                        en: `Processed in ${v.processingDays} days`,
+                        ar: `معالجة خلال ${v.processingDays} أيام عمل`,
+                        zh: `${v.processingDays} 个工作日`,
+                        ru: `Оформление: ${v.processingDays} дн.`,
+                      })}
+                    </span>
                   </div>
                 </div>
 
@@ -161,9 +169,10 @@ export default function VisaPage() {
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => start(v)}
-                  aria-label={`شروع درخواست ${v.countryFa}`}
-                  className="w-full h-11 bg-action hover:bg-action-hover text-ink rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                  aria-label={`${t('startApplication')} - ${locale === 'fa' ? v.countryFa : v.countryEn}`}
+                  className="w-full h-11 bg-action hover:bg-action-hover text-ink rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
                 >
                   <span>{t('startApplication')}</span>
                   <ArrowLeft size={14} className="rtl:inline ltr:hidden" />
@@ -184,9 +193,17 @@ export default function VisaPage() {
             </div>
             <div>
               <h3 className="text-lg font-black text-ink">
-                {t('startApplication')}: ویزای {selected.countryFa}
+                {t('startApplication')}: {lt(locale, { fa: 'ویزای', en: 'Visa for', ar: 'تأشيرة', zh: '签证', ru: 'Виза в' })} {locale === 'fa' ? selected.countryFa : selected.countryEn}
               </h3>
-              <p className="text-xs text-sub font-bold">{selected.type} • زمان بررسی تقریبی: {selected.processingDays} روز کاری</p>
+              <p className="text-xs text-sub font-bold">
+                {selected.type} • {lt(locale, {
+                  fa: `زمان بررسی تقریبی: ${selected.processingDays} روز کاری`,
+                  en: `Estimated processing: ${selected.processingDays} business days`,
+                  ar: `وقت المعالجة المتوقع: ${selected.processingDays} أيام عمل`,
+                  zh: `预计办理时间：${selected.processingDays} 个工作日`,
+                  ru: `Срок оформления: ${selected.processingDays} раб. дн.`,
+                })}
+              </p>
             </div>
           </div>
 

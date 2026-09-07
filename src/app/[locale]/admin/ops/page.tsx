@@ -1,30 +1,10 @@
 import { getLocale } from 'next-intl/server';
 import { lt } from '@/lib/lt';
 import { AlertCircle, Clock, CheckCircle2 } from 'lucide-react';
-import { prisma } from '@/lib/prisma';
+import { getAdminOpsData } from '@/actions/admin';
 import { safeAuth } from '@/auth';
 import { hasErpRole } from '@/domains/identity/permission-service';
 import { redirect } from 'next/navigation';
-
-async function getOpsData() {
-  const cutoffTime = new Date(Date.now() - 1000 * 60 * 15);
-  const [pendingEvents, stuckBookings] = await Promise.all([
-    prisma.outboxEvent.findMany({
-      where: { status: { in: ['PENDING', 'FAILED'] } },
-      orderBy: { createdAt: 'asc' }
-    }),
-    prisma.booking.findMany({
-      where: { 
-        status: 'DRAFT',
-        createdAt: { lt: cutoffTime }
-      },
-      take: 10,
-      orderBy: { createdAt: 'desc' }
-    })
-  ]);
-
-  return { pendingEvents, stuckBookings };
-}
 
 export default async function AdminOpsPage() {
   const locale = await getLocale();
@@ -36,7 +16,7 @@ export default async function AdminOpsPage() {
     redirect('/' + locale + '/account');
   }
 
-  const { pendingEvents, stuckBookings } = await getOpsData();
+  const { pendingEvents, stuckBookings } = await getAdminOpsData();
 
   return (
     <div className="space-y-6">

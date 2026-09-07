@@ -5,6 +5,8 @@
  * all bookings must be processed server-side through BookingStateMachine and BookingSagaOrchestrator.
  */
 
+import { Prisma } from '@prisma/client';
+import { Money } from '@/lib/finance';
 import type { Booking } from '@/lib/types';
 import type { SupportedCurrency } from '../currency/CurrencyService';
 import { TaxEngine } from '@/lib/finance/tax-engine';
@@ -30,78 +32,91 @@ export interface BookingSummary {
   travelDate: string;
   meta?: Record<string, string>;
   id?: string;
+  adults?: number;
+  children?: number;
 }
 
 export class BookingDomainService {
   /**
-   * Calculate detailed price breakdown for a booking
+   * Calculate detailed price breakdown for a booking (MONEY-101, MONEY-103)
+   * Uses Money kernel arithmetic without floating point errors or Math.round.
    */
   static calculatePriceBreakdown(
-    baseAmount: number,
-    addons: { price: number }[] = [],
-    discountRate: number = 0,
+    baseAmount: Money | number,
+    addons: { price: Money | number }[] = [],
+    discountRate: number | Prisma.Decimal = 0,
     currency: SupportedCurrency = 'IRR'
   ): MoneyBreakdown {
-    const addonsTotal = addons.reduce((sum, a) => sum + a.price, 0);
-    const gross = baseAmount + addonsTotal;
-    const discountAmount = Math.round(gross * discountRate);
-    const taxable = gross - discountAmount;
+    const baseMoney = baseAmount instanceof Money ? baseAmount : new Money(baseAmount, currency);
+    const addonsMoney = addons.map((a) => (a.price instanceof Money ? a.price : new Money(a.price, baseMoney.currency)));
+    const addonsTotal = Money.sum(addonsMoney, baseMoney.currency);
+    const gross = baseMoney.add(addonsTotal);
+    const dRate = discountRate instanceof Prisma.Decimal ? discountRate : new Prisma.Decimal(discountRate.toString());
+    const discountMoney = gross.mul(dRate).round(0);
+    const taxable = gross.sub(discountMoney);
 
     // Use dynamic TaxEngine with Decimal arithmetic
     const taxCalc = TaxEngine.calculateTax({
       taxableAmount: taxable,
-      currency,
+      currency: baseMoney.currency,
       jurisdiction: 'IR',
       serviceType: 'GENERAL',
     });
-    const taxAmount = taxCalc.taxAmount.toNumber();
-    const totalAmount = taxable + taxAmount;
+    const taxAmount = taxCalc.taxAmount;
+    const totalAmount = taxable.add(taxAmount);
 
     return {
-      baseAmount,
-      addonsAmount: addonsTotal,
-      taxAmount,
-      discountAmount,
-      totalAmount,
-      currency,
+      baseAmount: baseMoney.toNumber(),
+      addonsAmount: addonsTotal.toNumber(),
+      taxAmount: taxAmount.toNumber(),
+      discountAmount: discountMoney.toNumber(),
+      totalAmount: totalAmount.toNumber(),
+      currency: baseMoney.currency as SupportedCurrency,
     };
   }
 
   /**
-   * Computes canonical server-side pricing for a booking draft (BOOK-010, MONEY-005).
+   * Computes canonical server-side pricing for a booking draft (BOOK-010, MONEY-005, MONEY-101).
    * Encapsulates nights, quantity, add-ons, role discounts, and 12-stage pricing pipeline.
    */
   static computeDraftPricing(params: {
     productType: string;
-    baseUnitCost: number;
+    baseUnitCost: Money | number;
     quantity?: number;
     nights?: number;
-    totalAddonsCost?: number;
+    totalAddonsCost?: Money | number;
     userRole?: string;
     supplierId?: string;
     currency?: SupportedCurrency;
   }): {
     rawNetCost: number;
+    netCostMoney: Money;
     pricing: PricingResult;
   } {
+    const currency = params.currency || (params.baseUnitCost instanceof Money ? (params.baseUnitCost.currency as SupportedCurrency) : 'IRR');
+    const baseUnitMoney = params.baseUnitCost instanceof Money ? params.baseUnitCost : new Money(params.baseUnitCost, currency);
     const quantity = Math.max(1, params.quantity || 1);
     const nights = Math.max(1, params.nights || 1);
     const totalBaseItemCost = params.productType === 'HOTEL'
-      ? params.baseUnitCost * nights * quantity
-      : params.baseUnitCost * quantity;
+      ? baseUnitMoney.mul(nights * quantity)
+      : baseUnitMoney.mul(quantity);
 
-    const rawNetCost = totalBaseItemCost + (params.totalAddonsCost || 0);
+    const addonsCost = params.totalAddonsCost instanceof Money
+      ? params.totalAddonsCost
+      : new Money(params.totalAddonsCost || 0, currency);
+    const netCostMoney = totalBaseItemCost.add(addonsCost);
 
     const pricing = calculatePricing({
       userRole: params.userRole || 'CUSTOMER',
       supplierId: params.supplierId || 'sup_default_firuzo',
       productType: params.productType,
-      basePrice: rawNetCost,
-      currency: params.currency || 'IRR',
+      basePrice: netCostMoney,
+      currency,
     });
 
     return {
-      rawNetCost,
+      rawNetCost: netCostMoney.toNumber(),
+      netCostMoney,
       pricing,
     };
   }

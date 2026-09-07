@@ -13,7 +13,7 @@ import { lt } from '@/lib/lt';
 const CITY_PHOTO_MAP: Record<string, string> = {
   Tehran: 'https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?auto=format&fit=crop&q=75&w=800',
   Isfahan: 'https://images.unsplash.com/photo-1609840114035-3c981b782dfe?auto=format&fit=crop&q=75&w=800',
-  Shiraz: 'https://images.unsplash.com/photo-1579606032834-d40073b757e7?auto=format&fit=crop&q=75&w=800',
+  Shiraz: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&q=75&w=800',
   Mashhad: 'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&q=75&w=800',
   Yazd: 'https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?auto=format&fit=crop&q=75&w=800',
   Tabriz: 'https://images.unsplash.com/photo-1580828343064-fde4fc206bc6?auto=format&fit=crop&q=75&w=800',

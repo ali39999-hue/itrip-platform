@@ -1,5 +1,6 @@
 import { describe, it, expect, afterAll, beforeAll } from 'vitest';
 import { prisma } from '@/lib/prisma';
+import { Money } from '@/lib/finance';
 import { AutoBuyDomainService } from './AutoBuyDomainService';
 import { GeneralLedgerService } from '../ledger/GeneralLedgerService';
 import { daysFromNow } from '@/lib/utils';
@@ -189,7 +190,7 @@ describe('Auto-Buy Domain & Smart Execution Suite', () => {
     await GeneralLedgerService.postTopUp({
       groupId: `topup_${suffix}`,
       userId: testUserId,
-      amount: 100_000_000,
+      amount: new Money(100_000_000, 'IRR'),
       currency: 'IRR',
       referenceId: `REF-${suffix}`,
     });

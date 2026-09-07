@@ -12,7 +12,7 @@ export interface SearchWidgetProps {
   initialTab?: SearchTabId;
 }
 
-export function SearchWidget({ initialTab = 'plan' }: SearchWidgetProps) {
+export function SearchWidget({ initialTab = 'flights' }: SearchWidgetProps) {
   const {
     tab,
     setTab,
@@ -45,8 +45,23 @@ export function SearchWidget({ initialTab = 'plan' }: SearchWidgetProps) {
   return (
     <div className="w-full max-w-5xl mx-auto relative z-[60]">
       {error && (
-        <div className="mb-3 flex items-center gap-2 px-4 py-3 rounded-2xl bg-surface/95 border border-destructive/30 text-destructive text-sm font-bold shadow-md animate-in fade-in slide-in-from-top-2">
-          <X size={16} /> {error}
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="mb-3 flex items-center justify-between gap-2 px-4 py-3 rounded-2xl bg-surface/95 border border-destructive/30 text-destructive text-sm font-bold shadow-md animate-in fade-in slide-in-from-top-2"
+        >
+          <div className="flex items-center gap-2">
+            <X size={16} aria-hidden="true" />
+            <span>{error}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setError('')}
+            className="p-1 text-destructive/80 hover:text-destructive active:scale-95 transition"
+            aria-label="Dismiss error"
+          >
+            <X size={14} />
+          </button>
         </div>
       )}
 
