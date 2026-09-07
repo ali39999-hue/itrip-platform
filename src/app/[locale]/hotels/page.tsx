@@ -36,7 +36,7 @@ export default function HotelsLandingPage() {
       city: { fa: 'کیش و قشم', en: 'Kish & Qeshm', ar: 'كیش وقشم', zh: '基什与格什姆', ru: 'Киш и Кешм' },
       desc: { fa: 'استراحت ساحلی با چشم‌انداز خلیج فارس، کلوپ دریایی و ترانسفر رایگان', en: 'Seaside relaxation with Persian Gulf views, marina club and free transfers', ar: 'استرخاء على الشاطئ بإطلالة على الخليج الفارسي ونادٍ بحري ونقل مجاني', zh: '波斯湾海景度假，游艇会与免费接送', ru: 'Отдых у моря с видом на Персидский залив, марина и бесплатный трансфер' },
       price: 3900000,
-      img: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80',
+      img: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&q=80',
       stars: 5,
       query: 'resort',
     },

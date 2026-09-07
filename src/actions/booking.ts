@@ -6,11 +6,12 @@ import { revalidatePath } from 'next/cache';
 import { safeAuth } from '@/auth';
 import { BookingApplicationService } from '@/domains/booking/BookingApplicationService';
 import { BookingDomainService } from '@/domains/booking/BookingDomainService';
+import { ReferralDomainService } from '@/domains/referral/ReferralDomainService';
 import { getTenantAuthContext, assertTenantAccess } from '@/domains/identity/permission-service';
 import { decryptSensitive } from '@/lib/security/crypto-vault';
 
 export async function createBookingDraft(data: unknown): Promise<
-  | { success: true; bookingId: string; reference: string; totalAmount: number; currency: string; status: string; error?: undefined }
+  | { success: true; bookingId: string; reference: string; totalAmount: number; discountAmount?: number; currency: string; status: string; referralStatus?: string; error?: undefined }
   | { success: false; error: string; bookingId?: undefined }
 > {
   try {
@@ -39,6 +40,8 @@ export async function createBookingDraft(data: unknown): Promise<
       contactEmail: parsed.contactEmail,
       contactPhone: parsed.contactPhone,
       userRole,
+      referralCode: parsed.referralCode,
+      source: parsed.source || 'WEB',
     });
 
     return {
@@ -46,13 +49,37 @@ export async function createBookingDraft(data: unknown): Promise<
       bookingId: result.bookingId,
       reference: result.reference,
       totalAmount: result.totalAmount,
+      discountAmount: result.discountAmount,
       currency: result.currency,
       status: result.status,
+      referralStatus: result.referralStatus,
     };
   } catch (err: unknown) {
     console.error('createBookingDraft server error:', err);
     const message = err instanceof Error ? err.message : 'Failed to create booking draft';
     return { success: false, error: message };
+  }
+}
+
+/**
+ * Validates a referral code on demand before form submission.
+ */
+export async function validateReferralCodeAction(code: string) {
+  try {
+    const session = await safeAuth().catch(() => null);
+    const userId = session?.user?.id;
+    const res = await ReferralDomainService.validateCode(code, userId);
+    return {
+      success: true,
+      valid: res.valid,
+      status: res.status,
+      discountPercent: res.discountPercent,
+      leaderName: res.leaderName,
+      reason: res.reason,
+    };
+  } catch (err) {
+    console.error('validateReferralCodeAction error:', err);
+    return { success: false, valid: false, error: 'Failed to validate referral code' };
   }
 }
 

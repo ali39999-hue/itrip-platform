@@ -53,7 +53,7 @@ export function DesktopNav() {
   const isTours = pathname.startsWith('/tours');
 
   return (
-    <nav aria-label={ct('aria.mainNavigation')} className="hidden 2xl:flex items-center gap-0.5 min-w-0">
+    <nav aria-label={ct('aria.mainNavigation')} className="hidden xl:flex items-center gap-0.5 min-w-0">
       {/* Direct High-Intent Links (OTA Gold Standard) */}
       <Link
         href="/flights/search"

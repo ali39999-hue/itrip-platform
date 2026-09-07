@@ -48,7 +48,7 @@ export function HotelFilterSidebar({
       {/* Stars */}
       <div className="py-3.5 border-b border-line">
         <h3 className="m-0 mb-2.5 text-[12.5px] font-black text-ink">{t('filterStars')}</h3>
-        {[5, 4].map((s) => (
+        {[5, 4, 3].map((s) => (
           <label
             key={s}
             className="flex items-center gap-2.5 py-1 text-[12.5px] font-bold cursor-pointer group select-none"

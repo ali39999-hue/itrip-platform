@@ -4,18 +4,20 @@ import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { useSearchParams } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import { useAuthStore } from '@/stores/auth-store';
 import { ScanLine, CheckCircle2, Loader2, User, Lock, LogIn, Mail, Phone, Send, MessageCircle, QrCode } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { Logo } from '@/components/layout/Logo';
-import { AuthChannel, requestOtp } from '@/actions/auth';
+import { AuthChannel, requestOtp, getWeChatAuthUrl } from '@/actions/auth';
+import type { TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
 
 export default function AuthPage() {
   const t = useTranslations('Auth');
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, loginWithPassword, setKycStep, updateKyc, kyc, user } = useAuthStore();
+  const { login, loginWithPassword, loginWithTelegram, setKycStep, updateKyc, kyc, user } = useAuthStore();
 
   // Return the visitor to where they came from (checkout, my-trips, wallet…).
   // Only accept safe internal paths.
@@ -27,15 +29,6 @@ export default function AuthPage() {
     callbackUrl.includes('/admin') ? 'password' : 'otp'
   );
   const [password, setPassword] = useState('');
-
-  // Already signed-in users don't need the auth flow — send them on their way.
-  useEffect(() => {
-    if (kyc?.step === 'approved' && user) {
-      router.push(callbackUrl);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kyc?.step, user]);
-
   const [channel, setChannel] = useState<AuthChannel>('phone');
   const [identifier, setIdentifier] = useState('');
   const [otp, setOtp] = useState('');
@@ -50,6 +43,51 @@ export default function AuthPage() {
   const [passportNo, setPassportNo] = useState(kyc?.passportNo || '');
   const [expiry, setExpiry] = useState(kyc?.passportExpiry || '');
   const [countdown, setCountdown] = useState(120);
+
+  // Already signed-in users don't need the auth flow — send them on their way.
+  useEffect(() => {
+    if (kyc?.step === 'approved' && user) {
+      router.push(callbackUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kyc?.step, user]);
+
+  // Load official Telegram Login Widget dynamically if bot username is configured
+  useEffect(() => {
+    if (channel !== 'telegram') return;
+    const botUser = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
+    if (!botUser) return;
+
+    (window as unknown as { onTelegramAuth?: (user: TelegramAuthPayload) => void }).onTelegramAuth = async (tgUser) => {
+      setLoading(true);
+      setError('');
+      try {
+        const res = await loginWithTelegram(tgUser);
+        if (res.success) {
+          router.push(callbackUrl);
+        } else {
+          setError(res.error || 'خطا در احراز هویت تلگرام');
+        }
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : 'خطا در احراز هویت تلگرام');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const container = document.getElementById('telegram-login-container');
+    if (container && !container.hasChildNodes()) {
+      const script = document.createElement('script');
+      script.src = 'https://telegram.org/js/telegram-widget.js?22';
+      script.setAttribute('data-telegram-login', botUser);
+      script.setAttribute('data-size', 'large');
+      script.setAttribute('data-radius', '12');
+      script.setAttribute('data-request-access', 'write');
+      script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+      script.async = true;
+      container.appendChild(script);
+    }
+  }, [channel, callbackUrl, loginWithTelegram, router]);
 
   const step = kyc?.step || 'phone';
 
@@ -224,6 +262,31 @@ export default function AuthPage() {
               </button>
             </div>
 
+            {/* Google OAuth 2.0 Direct Sign In */}
+            <div className="mb-5">
+              <button
+                type="button"
+                onClick={() => signIn('google', { callbackUrl })}
+                className="w-full h-12 rounded-2xl border border-line bg-surface hover:bg-soft text-ink font-black text-xs flex items-center justify-center gap-3 transition shadow-2xs hover:shadow-xs"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                </svg>
+                <span>{lt(locale, { fa: 'ورود مستقیم با حساب گوگل', en: 'Continue with Google', ar: 'تسجيل الدخول باستخدام جوجل', zh: '使用Google账号登录', ru: 'Продолжить с Google' })}</span>
+              </button>
+
+              <div className="relative flex py-2 items-center">
+                <div className="flex-grow border-t border-line"></div>
+                <span className="flex-shrink mx-3 text-[10px] font-bold text-sub">
+                  {lt(locale, { fa: 'یا انتخاب کانال ورود', en: 'or select channel', ar: 'أو حدد القناة', zh: '或选择验证方式', ru: 'или выберите канал' })}
+                </span>
+                <div className="flex-grow border-t border-line"></div>
+              </div>
+            </div>
+
             {authMode === 'otp' ? (
               <>
                 {/* Channels Switcher */}
@@ -277,11 +340,48 @@ export default function AuthPage() {
 
                 {error && <div className="p-3 mb-4 rounded-xl bg-destructive/10 text-destructive text-xs font-bold">{error}</div>}
 
+                {/* Telegram Login Widget Container */}
+                {channel === 'telegram' && (
+                  <div className="mb-4 p-3 bg-soft/60 rounded-2xl flex flex-col items-center justify-center gap-2 border border-line">
+                    <span className="text-[11px] font-bold text-sub">
+                      {lt(locale, { fa: 'ورود سریع از طریق ویجت رسمی تلگرام:', en: 'Quick login via official Telegram widget:', ar: 'تسجيل دخول سريع عبر تيليجرام:', zh: '通过Telegram官方组件快速登录：', ru: 'Быстрый вход через Telegram:' })}
+                    </span>
+                    <div id="telegram-login-container" className="my-1 min-h-[40px] flex items-center justify-center"></div>
+                    <span className="text-[10px] text-sub/70">
+                      {lt(locale, { fa: 'یا شماره موبایل / نام کاربری خود را برای دریافت کد وارد کنید:', en: 'or enter your handle / phone to receive verification code:', ar: 'أو أدخل المعرف لتلقي الرمز:', zh: '或输入用户名接收验证码：', ru: 'или введите имя пользователя:' })}
+                    </span>
+                  </div>
+                )}
+
+                {/* WeChat QR Connect Button */}
+                {channel === 'wechat' && (
+                  <div className="mb-4">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const res = await getWeChatAuthUrl(callbackUrl);
+                        if (res.success && res.url) {
+                          window.location.href = res.url;
+                        } else {
+                          setError(res.error || lt(locale, { fa: 'شناسه WECHAT_APP_ID روی سرور تنظیم نشده است', en: 'WECHAT_APP_ID is not configured', ar: 'WECHAT_APP_ID غير مكوّن', zh: '未配置WECHAT_APP_ID', ru: 'WECHAT_APP_ID не настроен' }));
+                        }
+                      }}
+                      className="w-full h-11 rounded-xl bg-[#07C160]/10 hover:bg-[#07C160]/20 text-[#07C160] font-black text-xs transition flex items-center justify-center gap-2 border border-[#07C160]/30"
+                    >
+                      <QrCode size={16} />
+                      <span>{lt(locale, { fa: 'اسکن بارکد در اپلیکیشن وی‌چت (WeChat QR)', en: 'WeChat Web QR Code Login', ar: 'مسح رمز الاستجابة السريعة في وي تشات', zh: '微信网页版扫码登录', ru: 'Вход через QR-код WeChat' })}</span>
+                    </button>
+                    <div className="text-center my-2 text-[10px] text-sub font-bold">
+                      {lt(locale, { fa: 'یا دریافت کد از طریق شناسه وی‌چت / شماره موبایل:', en: 'or receive OTP code via WeChat ID / mobile:', ar: 'أو استلام الرمز عبر معرف وي تشات:', zh: '或通过微信号接收验证码：', ru: 'или получить код через WeChat ID:' })}
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="identifier" className="block text-xs font-bold text-sub mb-1">
                       {channel === 'phone' && lt(locale, { fa: 'شماره موبایل', en: 'Phone Number', ar: 'رقم الهاتف', zh: '手机号', ru: 'Номер телефона' })}
-                      {channel === 'email' && lt(locale, { fa: 'آدرس ایمیل', en: 'Email Address', ar: 'البريد الإلكتروني', zh: '电子邮箱', ru: 'Эл. почта' })}
+                      {channel === 'email' && lt(locale, { fa: 'آدرس ایمیل', en: 'Email Address', ar: 'البريد الإلكتروني', zh: '电子邮箱', ru: 'Эل. почта' })}
                       {channel === 'telegram' && lt(locale, { fa: 'شناسه تلگرام یا شماره', en: 'Telegram Username / Phone', ar: 'معرف تيليجرام أو الهاتف', zh: 'Telegram 用户名/手机号', ru: 'Telegram Username / Телефон' })}
                       {channel === 'whatsapp' && lt(locale, { fa: 'شماره واتساپ بین‌المللی', en: 'WhatsApp Number (+...)', ar: 'رقم الواتساب الدولي', zh: 'WhatsApp 国际号码', ru: 'Номер WhatsApp (+...)' })}
                       {channel === 'wechat' && lt(locale, { fa: 'شناسه وی‌چت / WeChat ID', en: 'WeChat ID / Mobile', ar: 'معرف وي تشات', zh: '微信号 / 手机号', ru: 'WeChat ID / Телефон' })}
@@ -301,6 +401,17 @@ export default function AuthPage() {
                       }
                       className="w-full h-12 rounded-xl border border-line px-4 font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                     />
+                    {channel === 'whatsapp' && (
+                      <p className="text-[10px] text-sub mt-1 font-medium">
+                        {lt(locale, {
+                          fa: 'کد تایید مستقیماً به شماره واتساپ شما ارسال خواهد شد.',
+                          en: 'Verification code will be sent directly to your WhatsApp.',
+                          ar: 'سيتم إرسال رمز التحقق مباشرة إلى رقم واتساب الخاص بك.',
+                          zh: '验证码将直接发送至您的WhatsApp。',
+                          ru: 'Код подтверждения будет отправлен прямо в ваш WhatsApp.'
+                        })}
+                      </p>
+                    )}
                   </div>
 
                   <button

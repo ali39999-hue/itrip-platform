@@ -143,8 +143,21 @@ export const bookingSchema = z.object({
     .string()
     .min(7, "Phone number is too short")
     .max(20, "Phone number is too long"),
+  referralCode: z.string().trim().max(30).optional(),
+  source: z.string().optional(),
 });
 export type BookingRequest = z.infer<typeof bookingSchema>;
+
+export const referralCodeSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .min(3, "Code must be at least 3 characters")
+    .max(20, "Code cannot exceed 20 characters")
+    .regex(/^[A-Za-z0-9_-]+$/, "Code may only contain letters, numbers, hyphens and underscores"),
+  leaderId: z.string().min(1, "Leader ID is required"),
+});
+export type ReferralCodeInput = z.infer<typeof referralCodeSchema>;
 
 // ─── Wallet Top-up ────────────────────────────────────────────────────────────
 

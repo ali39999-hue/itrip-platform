@@ -91,7 +91,7 @@ function getTypeMeta(type: string, locale: string) {
     'CITY-PASS': {
       label: lt(locale, { fa: 'فیروز پاس', en: 'City Pass', ar: 'بطاقة المدينة', zh: '城市通票', ru: 'Сити Пасс' }),
       icon: Award,
-      image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&q=70&w=800'
+      image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=70&w=800'
     },
   };
 

@@ -226,6 +226,16 @@ export class OutboxConsumer {
                   'کد تایید ورود به فیروزو',
                   otpMessage
                 );
+              } else if (channel === 'whatsapp') {
+                delivery = await notificationProvider.sendWhatsApp(
+                  identifier,
+                  otpMessage
+                );
+              } else if (channel === 'telegram') {
+                delivery = await notificationProvider.sendTelegram(
+                  identifier,
+                  otpMessage
+                );
               } else {
                 delivery = await notificationProvider.sendSms(
                   identifier,

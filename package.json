@@ -1,6 +1,6 @@
 {
   "name": "itrip-platform",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,7 +10,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "gate:i18n": "node scripts/i18n-completeness-gate.mjs",
-    "gate:a11y": "node scripts/a11y-ci-gate.mjs",
+    "gate:a11y": "node scripts/a11y-baseline.mjs",
     "security:scan": "node scripts/security-scan.mjs",
     "test:unit": "node scripts/run-unit-tests.mjs",
     "test:e2e": "playwright test",

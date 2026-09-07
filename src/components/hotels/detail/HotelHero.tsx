@@ -6,8 +6,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Star, MapPin, Heart, Wallet, Check, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { fa1 } from '@/lib/hotel-format';
-import { shimmerDataUrl } from '@/lib/image-utils';
-import { GALLERY } from '@/lib/hotel-mock';
+import { shimmerDataUrl, getHotelGallery } from '@/lib/image-utils';
 import type { Hotel } from '@/lib/types';
 import { lt } from '@/lib/lt';
 import { formatDistance } from '@/lib/format';
@@ -18,6 +17,8 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
   const isRtl = ['fa', 'ar'].includes(locale);
   const [fav, setFav] = useState(false);
   const [lbIndex, setLbIndex] = useState<number | null>(null);
+
+  const galleryList = getHotelGallery(hotel);
 
   // Localized hotel name, city and distance
   const displayName = locale === 'fa' ? hotel.name : (hotel.nameEn || hotel.name);
@@ -117,35 +118,61 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-[2fr_1fr_1fr] grid-rows-[132px_132px] md:grid-rows-[150px_150px] gap-2 rounded-2xl overflow-hidden">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <button
-              key={i}
-              onClick={() => setLbIndex(i)}
-              className={`relative overflow-hidden border-0 p-0 cursor-pointer group ${
-                i === 0 ? 'row-span-2 col-span-2 md:col-span-1' : ''
-              }`}
-            >
-              <Image
-                src={GALLERY[i]}
-                alt={galleryLabels[i]}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                placeholder="blur"
-                blurDataURL={shimmerDataUrl(800, 600)}
-                priority={i === 0}
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-              <span className="absolute bottom-2.5 end-2.5 px-2 py-1 rounded-lg bg-black/55 text-surface text-[10.5px] font-extrabold z-10">
-                {galleryLabels[i]}
-              </span>
-              {i === 4 && (
-                <span className="absolute inset-0 grid place-items-center bg-black/45 backdrop-blur-[2px] text-surface text-[13px] font-black z-10">
-                  {t('morePhotos', { count: 19 })}
+        {/* Mobile View (< md): Clean full-width hero with photos pill badge */}
+        <div className="md:hidden relative w-full aspect-[16/10] min-h-[220px] rounded-2xl overflow-hidden shadow-xs bg-soft">
+          <Image
+            src={galleryList[0]}
+            alt={displayName}
+            fill
+            sizes="(max-width: 768px) 100vw, 828px"
+            placeholder="blur"
+            blurDataURL={shimmerDataUrl(600, 375)}
+            priority
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+          <button
+            type="button"
+            onClick={() => setLbIndex(0)}
+            className="absolute bottom-3 end-3 px-3 py-1.5 rounded-xl bg-surface/90 backdrop-blur-md text-ink text-xs font-black shadow-xs flex items-center gap-1.5 active:scale-95 transition"
+          >
+            <span>{t('morePhotos', { count: galleryList.length })}</span>
+          </button>
+        </div>
+
+        {/* Desktop View (md+): 5-Photo Mosaic Grid */}
+        <div className="hidden md:grid md:grid-cols-[2fr_1fr_1fr] md:grid-rows-[150px_150px] gap-2 rounded-2xl overflow-hidden">
+          {[0, 1, 2, 3, 4].map((i) => {
+            const photo = galleryList[i] || galleryList[0];
+            return (
+              <button
+                key={i}
+                onClick={() => setLbIndex(i)}
+                className={`relative overflow-hidden border-0 p-0 cursor-pointer group bg-soft ${
+                  i === 0 ? 'row-span-2' : ''
+                }`}
+              >
+                <Image
+                  src={photo}
+                  alt={galleryLabels[i] || displayName}
+                  fill
+                  sizes="(max-width: 1024px) 50vw, 33vw"
+                  placeholder="blur"
+                  blurDataURL={shimmerDataUrl(800, 600)}
+                  priority={i === 0}
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <span className="absolute bottom-2.5 end-2.5 px-2 py-1 rounded-lg bg-black/55 text-surface text-[10.5px] font-extrabold z-10">
+                  {galleryLabels[i]}
                 </span>
-              )}
-            </button>
-          ))}
+                {i === 4 && galleryList.length > 5 && (
+                  <span className="absolute inset-0 grid place-items-center bg-black/45 backdrop-blur-[2px] text-surface text-[13px] font-black z-10">
+                    {t('morePhotos', { count: galleryList.length })}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </main>
 
@@ -154,8 +181,8 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
           <div className="w-full max-w-[760px]" onClick={(e) => e.stopPropagation()}>
             <div className="relative overflow-hidden aspect-[4/3] rounded-2xl bg-deep ph-texture shadow-2xl">
               <Image
-                src={GALLERY[lbIndex]}
-                alt={galleryLabels[lbIndex]}
+                src={galleryList[lbIndex] || galleryList[0]}
+                alt={displayName}
                 fill
                 sizes="760px"
                 placeholder="blur"
@@ -165,21 +192,21 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
             </div>
             <div className="flex items-center gap-2.5 mt-3 text-mint-bright text-[12.5px] font-extrabold">
               <button
-                onClick={() => setLbIndex((lbIndex + 4) % 5)}
+                onClick={() => setLbIndex((lbIndex + galleryList.length - 1) % galleryList.length)}
                 aria-label={t('aria.previous')}
                 className="w-10 h-10 grid place-items-center border border-white/25 rounded-xl bg-surface/10 hover:bg-surface/20 transition"
               >
                 {isRtl ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
               </button>
               <button
-                onClick={() => setLbIndex((lbIndex + 1) % 5)}
+                onClick={() => setLbIndex((lbIndex + 1) % galleryList.length)}
                 aria-label={t('aria.next')}
                 className="w-10 h-10 grid place-items-center border border-white/25 rounded-xl bg-surface/10 hover:bg-surface/20 transition"
               >
                 {isRtl ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
               </button>
               <span>
-                {galleryLabels[lbIndex]} — {lbIndex + 1} / {5}
+                {galleryLabels[lbIndex % galleryLabels.length] || displayName} — {lbIndex + 1} / {galleryList.length}
               </span>
               <button
                 onClick={() => setLbIndex(null)}

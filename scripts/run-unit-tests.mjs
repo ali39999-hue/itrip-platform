@@ -48,6 +48,11 @@ const vitest = spawnSync('npx', ['vitest', 'run', ...process.argv.slice(2)], {
   stdio: 'inherit',
   shell: true,
   cwd: root,
-  env: { ...process.env, DATABASE_URL: testUrl },
+  env: {
+    ...process.env,
+    DATABASE_URL: testUrl,
+    DEMO_MODE: process.env.DEMO_MODE || 'true',
+    NEXT_PUBLIC_DEMO_MODE: process.env.NEXT_PUBLIC_DEMO_MODE || 'true',
+  },
 });
 process.exit(vitest.status ?? 1);

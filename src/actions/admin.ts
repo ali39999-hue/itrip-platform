@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma, getTenantScopedPrisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { requirePermission, getTenantAuthContext, assertTenantAccess } from '@/domains/identity/permission-service';
 import { TenantRepository } from '@/domains/identity/TenantRepository';
@@ -616,6 +617,166 @@ export async function getAdminTravelFileById(id: string) {
     });
   }
   return { trip };
+}
+
+// ==================== Referral / Group Leader Admin Actions ====================
+
+import { ReferralDomainService, LeaderDashboardRow } from '@/domains/referral/ReferralDomainService';
+import { referralCodeSchema } from '@/lib/validations';
+
+export async function getAdminReferrals(): Promise<{ success: boolean; data?: LeaderDashboardRow[]; error?: string }> {
+  try {
+    await requirePermission(['booking:view:all', 'finance:reports:view']);
+    const data = await ReferralDomainService.getAllLeaderStats();
+    return { success: true, data };
+  } catch (err: unknown) {
+    console.error('getAdminReferrals error:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to fetch referral dashboard' };
+  }
+}
+
+export async function createReferralCodeAction(data: { code: string; leaderId: string; customTierConfig?: string }) {
+  try {
+    const admin = await requirePermission('ops:override:cancel');
+    const parsed = referralCodeSchema.parse(data);
+    const normalized = ReferralDomainService.normalizeCode(parsed.code);
+
+    const existing = await prisma.referralCode.findUnique({
+      where: { code: normalized },
+    });
+    if (existing) {
+      return { success: false, error: 'این کد معرف قبلاً ثبت شده است' };
+    }
+
+    const created = await prisma.referralCode.create({
+      data: {
+        code: normalized,
+        leaderId: parsed.leaderId,
+        customTierConfig: data.customTierConfig || null,
+      },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: admin.id,
+        action: 'REFERRAL_CODE_CREATED',
+        resource: 'ReferralCode',
+        resourceId: created.id,
+        newData: JSON.stringify(created),
+        reason: 'Group leader referral code created by admin',
+      },
+    });
+
+    revalidatePath('/admin/referrals');
+    return { success: true, referralCode: created };
+  } catch (err: unknown) {
+    console.error('createReferralCodeAction error:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to create referral code' };
+  }
+}
+
+export async function updateBookingReferralAction(bookingId: string, newCode: string, reason: string) {
+  try {
+    const admin = await requirePermission('ops:override:cancel');
+    if (!reason || reason.trim().length < 5) {
+      return { success: false, error: 'ذکر دلیل تغییر کد معرف (حداقل ۵ حرف) الزامی است' };
+    }
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: { referral: true },
+    });
+    if (!booking) return { success: false, error: 'رزرو یافت نشد' };
+
+    const validation = await ReferralDomainService.validateCode(newCode, booking.customerId);
+    const oldReferralData = booking.referral ? JSON.stringify(booking.referral) : null;
+
+    let updatedReferral;
+    if (booking.referral) {
+      updatedReferral = await prisma.bookingReferral.update({
+        where: { bookingId },
+        data: {
+          referralCodeId: validation.referralCodeId || null,
+          rawCode: validation.rawCode || newCode,
+          status: validation.status,
+          applied: validation.valid,
+        },
+      });
+    } else {
+      updatedReferral = await prisma.bookingReferral.create({
+        data: {
+          bookingId,
+          referralCodeId: validation.referralCodeId || null,
+          rawCode: validation.rawCode || newCode,
+          status: validation.status,
+          applied: validation.valid,
+          source: 'ADMIN',
+          registeredByUserId: admin.id,
+        },
+      });
+    }
+
+    await prisma.auditLog.create({
+      data: {
+        userId: admin.id,
+        action: 'REFERRAL_CODE_CHANGED',
+        resource: 'BookingReferral',
+        resourceId: updatedReferral.id,
+        oldData: oldReferralData,
+        newData: JSON.stringify(updatedReferral),
+        reason,
+      },
+    });
+
+    revalidatePath('/admin/referrals');
+    revalidatePath('/admin/bookings');
+    return { success: true, updatedReferral };
+  } catch (err: unknown) {
+    console.error('updateBookingReferralAction error:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to update booking referral' };
+  }
+}
+
+export async function settleLeaderRewardAction(referralCodeId: string, notes?: string) {
+  try {
+    const admin = await requirePermission('finance:settlement:match');
+    const stats = await ReferralDomainService.calculateLeaderStats(referralCodeId);
+    if (!stats) return { success: false, error: 'کد معرف یافت نشد' };
+
+    if (stats.rewardPercent <= 0 || stats.estimatedRewardAmount <= 0) {
+      return { success: false, error: 'این سرگروه هنوز به حد نصاب پاداش نرسیده است' };
+    }
+
+    const settlement = await prisma.leaderSettlement.create({
+      data: {
+        referralCodeId,
+        qualifiedPax: stats.confirmedPax,
+        rewardPercent: new Prisma.Decimal(stats.rewardPercent.toString()),
+        rewardAmount: new Prisma.Decimal(stats.estimatedRewardAmount.toString()),
+        status: 'SETTLED',
+        settledAt: new Date(),
+        settledBy: admin.id,
+        notes: notes || 'تسویه پاداش سرگروه طبق نصاب مسافران تأییدشده',
+      },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: admin.id,
+        action: 'LEADER_REWARD_SETTLED',
+        resource: 'LeaderSettlement',
+        resourceId: settlement.id,
+        newData: JSON.stringify(settlement),
+        reason: `Leader reward settled for ${stats.code}: ${stats.estimatedRewardAmount.toLocaleString()} IRR`,
+      },
+    });
+
+    revalidatePath('/admin/referrals');
+    return { success: true, settlement };
+  } catch (err: unknown) {
+    console.error('settleLeaderRewardAction error:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to settle leader reward' };
+  }
 }
 
 export async function addTravelFileNote(tripId: string, note: string) {

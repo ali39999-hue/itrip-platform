@@ -47,7 +47,7 @@ export function Header() {
   }, [mobileMenuOpen]);
 
   const drawerContent = mobileMenuOpen && mounted ? (
-    <div className="2xl:hidden fixed inset-0 z-[250] flex">
+    <div className="xl:hidden fixed inset-0 z-[250] flex">
       {/* Backdrop Blur Overlay */}
       <div
         className="fixed inset-0 bg-ink/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
@@ -196,7 +196,7 @@ export function Header() {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? ct('aria.closeMenu') : ct('aria.openMenu')}
             aria-expanded={mobileMenuOpen}
-            className="2xl:hidden w-11 h-11 grid place-items-center rounded-2xl text-ink hover:bg-soft active:scale-95 transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+            className="xl:hidden w-11 h-11 grid place-items-center rounded-2xl text-ink hover:bg-soft active:scale-95 transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
           >
             {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>

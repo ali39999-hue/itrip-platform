@@ -30,16 +30,89 @@ export const CATEGORY_PHOTO_MAP: Record<string, string> = {
 };
 
 export const HOTEL_IMAGE_MAP: Record<string, string> = {
-  h1: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80', // Mashhad Darvishi Luxury Suite
-  h2: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80', // Tehran Espinas Palace Grand Lobby
-  h3: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80', // Isfahan Abbasi Historic Courtyard
-  h4: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80', // Shiraz Grand Hotel
-  h5: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80', // Kish Toranj Sea Resort
-  h6: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=800&q=80', // Tabriz Pars El-Goli Hotel
-  h7: 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=800&q=80', // Yazd Moshir Historic Garden
-  h8: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=800&q=80', // Istanbul Bosphorus Palace
-  h9: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80', // Dubai Downtown Skyline Hotel
-  h10: 'https://images.unsplash.com/photo-1565008447742-97f6f38c985c?auto=format&fit=crop&w=800&q=80', // Tbilisi Old Town Boutique Hotel
+  h1: 'https://www.eghamat24.com/app/public/hotel_images/original/Mashhad-Darvishi-44.jpg', // هتل درویشی مشهد (تصویر واقعی)
+  h2: 'https://www.eghamat24.com/app/public/hotel_images/original/Esfahan-Abbasi-31.jpg', // هتل عباسی اصفهان (حیاط صفوی و باغ تاریخی - تصویر واقعی)
+  h3: 'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=800&q=80', // رزیدانس دبی مارینا (اسکای‌لاین مارینا و قایق‌های تفریحی)
+  h4: 'https://images.unsplash.com/photo-1565008447742-97f6f38c985c?auto=format&fit=crop&w=800&q=80', // بوتیک هتل تفلیس (بافت تاریخی و بالکن‌های چوبی تفلیس قدیم)
+  h5: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=800&q=80', // هتل طلاییه استانبول (تنگه بسفر و گالاتا)
+  h6: 'https://images.unsplash.com/photo-1513622470522-26c3c8a854bc?auto=format&fit=crop&w=800&q=80', // هتل متروپول مسکو (نزدیک میدان سرخ)
+  h7: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80', // رزورت ساحلی مسقط (ساحل القرم و دریای عمان)
+  h8: 'https://www.eghamat24.com/app/public/hotel_images/original/Shiraz-Shiraz-08.jpg', // هتل بزرگ شیراز (نمای صخره‌ای دروازه قرآن - تصویر واقعی)
+  h9: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80', // هتل دریایی ترنج کیش (ویلاهای روی آب خلیج فارس)
+  h10: 'https://www.eghamat24.com/app/public/hotel_images/original/Tabriz-Laleh-29.jpg', // هتل صخره‌ای لاله کندوان تبریز (تصویر واقعی)
+};
+
+export const HOTEL_GALLERIES: Record<string, string[]> = {
+  h1: [
+    'https://www.eghamat24.com/app/public/hotel_images/original/Mashhad-Darvishi-44.jpg',
+    'https://www.eghamat24.com/app/public/hotel_images/original/Mashhad-Darvishi-90.jpg',
+    'https://www.eghamat24.com/app/public/hotel_images/original/Mashhad-Darvishi-82.jpg',
+    'https://www.eghamat24.com/app/public/hotel_images/original/Mashhad-Darvishi-80.jpg',
+    'https://www.eghamat24.com/app/public/hotel_images/original/Mashhad-Darvishi-06.jpg',
+  ],
+  h2: [
+    'https://www.eghamat24.com/app/public/hotel_images/original/Esfahan-Abbasi-31.jpg',
+    'https://www.eghamat24.com/app/public/hotel_images/original/Esfahan-Abbasi-48.jpg',
+    'https://www.eghamat24.com/app/public/hotel_images/original/Esfahan-Abbasi-70.jpg',
+    'https://www.eghamat24.com/app/public/hotel_images/original/Esfahan-Abbasi-47.jpg',
+    'https://www.eghamat24.com/app/public/hotel_images/original/Esfahan-Abbasi-44.jpg',
+  ],
+  h3: [
+    'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=1200&q=80',
+  ],
+  h4: [
+    'https://images.unsplash.com/photo-1565008447742-97f6f38c985c?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80',
+  ],
+  h5: [
+    'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&w=1200&q=80',
+  ],
+  h6: [
+    'https://images.unsplash.com/photo-1513622470522-26c3c8a854bc?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1513326738677-b964603b136d?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80',
+  ],
+  h7: [
+    'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80',
+  ],
+  h8: [
+    'https://www.eghamat24.com/app/public/hotel_images/original/Shiraz-Shiraz-08.jpg',
+    'https://www.eghamat24.com/app/public/hotel_images/original/Shiraz-Shiraz-26.jpg',
+    'https://www.eghamat24.com/app/public/hotel_images/original/Shiraz-Bozorg-79.jpg',
+    'https://www.eghamat24.com/app/public/hotel_images/original/Shiraz-Bozorg-78.jpg',
+    'https://www.eghamat24.com/app/public/hotel_images/original/Shiraz-Bozorg-101.jpg',
+  ],
+  h9: [
+    'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80',
+  ],
+  h10: [
+    'https://www.eghamat24.com/app/public/hotel_images/original/Tabriz-Laleh-29.jpg',
+    'https://www.eghamat24.com/app/public/hotel_images/original/Tabriz-Laleh-07.jpg',
+    'https://www.eghamat24.com/app/public/hotel_images/original/Tabriz-Laleh-48.jpg',
+    'https://www.eghamat24.com/app/public/hotel_images/original/Tabriz-Laleh-23.jpg',
+    'https://www.eghamat24.com/app/public/hotel_images/original/Tabriz-Laleh-32.jpg',
+  ],
 };
 
 const DIVERSE_HOTEL_FALLBACKS = [
@@ -127,37 +200,49 @@ export function getHotelImage(hotel: { id?: string; imageQuery?: string; name?: 
   return DIVERSE_HOTEL_FALLBACKS[hash % DIVERSE_HOTEL_FALLBACKS.length];
 }
 
+export function getHotelGallery(hotel: { id?: string; galleryImages?: string[]; name?: string }): string[] {
+  if (hotel.galleryImages && hotel.galleryImages.length >= 2) {
+    const safe = hotel.galleryImages.filter((u) => isSafeImageUrl(u));
+    if (safe.length >= 2) return safe;
+  }
+  if (hotel.id && HOTEL_GALLERIES[hotel.id]) {
+    return HOTEL_GALLERIES[hotel.id];
+  }
+  const main = getHotelImage(hotel);
+  return [main, ...DIVERSE_HOTEL_FALLBACKS.slice(0, 4)];
+}
+
 export const DESTINATION_IMAGE_MAP: Record<string, string> = {
   // Iran
-  Tehran: 'https://images.unsplash.com/photo-1579762715118-a6f1d4b934f1?auto=format&fit=crop&w=800&q=80', // Tehran Milad Tower & Alborz
-  Mashhad: 'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=800&q=80', // Mashhad Grand Islamic Architecture
-  Isfahan: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80', // Isfahan Naqsh-e Jahan Square
-  Shiraz: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80', // Shiraz Historic Architecture
-  Kish: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80', // Kish Coral Coast
-  Tabriz: 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=800&q=80', // Tabriz Grand Bazaar
-  Yazd: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80', // Yazd Desert Windcatchers
+  Tehran: 'https://images.unsplash.com/photo-1579762715118-a6f1d4b934f1?auto=format&fit=crop&w=800&q=80', // برج میلاد و رشته‌کوه البرز تهران
+  Mashhad: 'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=800&q=80', // معماری و گنبد مطهر مشهد
+  Isfahan: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80', // میدان نقش جهان و مسجد شیخ لطف‌الله اصفهان
+  Shiraz: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80', // باغ ارم و مسجد نصیرالملک شیراز
+  Kish: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80', // ساحل مرجانی و آب‌های زلال کیش
+  Tabriz: 'https://images.unsplash.com/photo-1580828343064-fde4fc206bc6?auto=format&fit=crop&w=800&q=80', // بازار تاریخی و استخر شاه‌گلی تبریز
+  Yazd: 'https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?auto=format&fit=crop&w=800&q=80', // بافت خشتی و بادگیرهای تاریخی یزد
   // Turkey
-  Istanbul: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=800&q=80', // Istanbul Hagia Sophia & Bosphorus
-  Antalya: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80', // Antalya Mediterranean Coast
-  Izmir: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80', // Izmir Aegean Waterfront
-  Trabzon: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80', // Trabzon Black Sea Green Mountains
-  Bodrum: 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?auto=format&fit=crop&w=800&q=80', // Bodrum Castle Marina
+  Istanbul: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=800&q=80', // تنگه بسفر و ایاصوفیه استانبول
+  Antalya: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80', // سواحل نیلگون مدیترانه آنتالیا
+  Izmir: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80', // نوار ساحلی دریای اژه ازمیر
+  Trabzon: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80', // طبیعت سرسبز کوهستانی ترابزون
+  Bodrum: 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?auto=format&fit=crop&w=800&q=80', // اسکله و قلعه تفریحی بدروم
   // UAE
-  Dubai: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80', // Dubai Burj Khalifa & Downtown
-  'Abu Dhabi': 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=800&q=80', // Abu Dhabi Sheikh Zayed Grand Mosque
-  Sharjah: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80', // Sharjah Cultural Heritage
+  Dubai: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80', // برج خلیفه و اسکای‌لاین دبی
+  'Abu Dhabi': 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=800&q=80', // مسجد جامع شیخ زاید ابوظبی
+  Sharjah: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80', // میراث فرهنگی و هنر شارجه
   // Georgia
-  Tbilisi: 'https://images.unsplash.com/photo-1565008447742-97f6f38c985c?auto=format&fit=crop&w=800&q=80', // Tbilisi Old Town & Narikala Fortress
-  Batumi: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80', // Batumi Black Sea Boulevard
+  Tbilisi: 'https://images.unsplash.com/photo-1565008447742-97f6f38c985c?auto=format&fit=crop&w=800&q=80', // بافت تاریخی و قلعه ناریکالا تفلیس
+  Batumi: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80', // بلوار ساحلی و دریای سیاه باتومی
   // Oman
-  Muscat: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80', // Muscat Sultan Qaboos Grand Mosque & Corniche
-  Salalah: 'https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=800&q=80', // Salalah Lush Khareef Greenery
+  Muscat: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80', // مسجد سلطان قابوس و ساحل مطرح مسقط
+  Salalah: 'https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=800&q=80', // طبیعت سبز خریف و نخلستان‌های صلاله
   // Russia
-  Moscow: 'https://images.unsplash.com/photo-1513622470522-26c3c8a854bc?auto=format&fit=crop&w=800&q=80', // Moscow Red Square & Saint Basil's Cathedral
-  'Saint Petersburg': 'https://images.unsplash.com/photo-1556610961-2fecc5927173?auto=format&fit=crop&w=800&q=80', // Saint Petersburg Hermitage Palace
-  Sochi: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80', // Sochi Caucasus Mountains & Black Sea
+  Moscow: 'https://images.unsplash.com/photo-1513326738677-b964603b136d?auto=format&fit=crop&w=800&q=80', // میدان سرخ و کلیسای سنت باسیل مسکو
+  'Saint Petersburg': 'https://images.unsplash.com/photo-1556610961-2fecc5927173?auto=format&fit=crop&w=800&q=80', // کاخ ارمیتاژ و پل‌های رود نوا سن‌پترزبورگ
+  Sochi: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80', // کوه‌های قفقاز و سواحل سوچی
   // China
-  Beijing: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80', // Beijing Forbidden City & Great Wall
-  Shanghai: 'https://images.unsplash.com/photo-1538428494232-9c0d8a3ab403?auto=format&fit=crop&w=800&q=80', // Shanghai The Bund & Lujiazui Skyline
-  Guangzhou: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80', // Guangzhou Canton Tower & Pearl River
+  Beijing: 'https://images.unsplash.com/photo-1508804052814-cd3ba865a116?auto=format&fit=crop&w=800&q=80', // دیوار چین و شهر ممنوعه پکن
+  Shanghai: 'https://images.unsplash.com/photo-1474181487882-5abf3f0ba6c2?auto=format&fit=crop&w=800&q=80', // باند شانگهای و برج مروارید خاور
+  Guangzhou: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80', // برج کانتون و رودخانه مروارید گوانگژو
 };

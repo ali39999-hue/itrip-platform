@@ -13,6 +13,7 @@ interface PriceBreakdownTableProps {
   addInsurance: boolean;
   itemTitle: string;
   discountAmount?: number;
+  referralCode?: string;
 }
 
 export function PriceBreakdownTable({
@@ -22,6 +23,7 @@ export function PriceBreakdownTable({
   addInsurance,
   itemTitle,
   discountAmount = 0,
+  referralCode,
 }: PriceBreakdownTableProps) {
   const t = useTranslations('Checkout');
   const locale = useLocale();
@@ -66,7 +68,17 @@ export function PriceBreakdownTable({
           <div className="flex justify-between items-center py-1 text-success">
             <span className="font-bold flex items-center gap-1.5">
               <Tag size={14} aria-hidden="true" />
-              <span>{lt(locale, { fa: 'تخفیف ویژه', en: 'Special Discount', ar: 'خصم خاص', zh: '特别折扣', ru: 'Специальная скидка' })}</span>
+              <span>
+                {referralCode
+                  ? lt(locale, {
+                      fa: `تخفیف معرف (${referralCode})`,
+                      en: `Referral Discount (${referralCode})`,
+                      ar: `خصم كود الإحالة (${referralCode})`,
+                      zh: `推荐码折扣 (${referralCode})`,
+                      ru: `Скидка по промокоду (${referralCode})`,
+                    })
+                  : lt(locale, { fa: 'تخفیف ویژه', en: 'Special Discount', ar: 'خصم خاص', zh: '特别折扣', ru: 'Специальная скидка' })}
+              </span>
             </span>
             <span className="font-bold font-mono">-{formatMoney(discountAmount, currency, locale)}</span>
           </div>

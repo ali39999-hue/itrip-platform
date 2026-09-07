@@ -22,7 +22,7 @@ export function PopularFlightsSection() {
       duration: '۱.۵ ساعت',
       durationEn: '1h 30m',
       price: 24800000,
-      img: 'https://images.unsplash.com/photo-1579762715118-a6f1d4b934f1?auto=format&fit=crop&q=75&w=600',
+      img: 'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&q=75&w=600',
     },
     {
       fromFa: 'تهران',
@@ -55,7 +55,7 @@ export function PopularFlightsSection() {
       duration: '۱.۸ ساعت',
       durationEn: '1h 45m',
       price: 28500000,
-      img: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&q=75&w=600',
+      img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=75&w=600',
     },
     {
       fromFa: 'شیراز',
@@ -66,7 +66,7 @@ export function PopularFlightsSection() {
       duration: '۱.۳ ساعت',
       durationEn: '1h 20m',
       price: 26000000,
-      img: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&q=75&w=600',
+      img: 'https://images.unsplash.com/photo-1579762715118-a6f1d4b934f1?auto=format&fit=crop&q=75&w=600',
     },
     {
       fromFa: 'تهران',
@@ -77,7 +77,7 @@ export function PopularFlightsSection() {
       duration: '۲.۶ ساعت',
       durationEn: '2h 40m',
       price: 84500000,
-      img: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&q=75&w=600',
+      img: 'https://images.unsplash.com/photo-1565008447742-97f6f38c985c?auto=format&fit=crop&q=75&w=600',
     },
   ];
 

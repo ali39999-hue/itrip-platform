@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { lt } from '@/lib/lt';
@@ -17,6 +18,7 @@ import { useHydration } from '@/hooks/useHydration';
 import { CheckoutStepper, type CheckoutPhase } from '@/components/checkout/CheckoutStepper';
 import { PassengerSection } from '@/components/checkout/PassengerSection';
 import { AddonsSection, ESIM_PRICE, INSURANCE_PRICE } from '@/components/checkout/AddonsSection';
+import { ReferralInputSection } from '@/components/checkout/ReferralInputSection';
 import { PriceBreakdownTable } from '@/components/checkout/PriceBreakdownTable';
 import { PaymentGatewaySelector } from '@/components/checkout/PaymentGatewaySelector';
 import { IssuingModal } from '@/components/checkout/IssuingModal';
@@ -37,10 +39,13 @@ export default function CheckoutPage() {
   const setPassengers = useBookingStore((s) => s.setPassengers);
   const wallet = useBookingStore((s) => s.wallet);
   const authUser = useAuthStore((s) => s.user);
+  const searchParams = useSearchParams();
 
   const [phase, setPhase] = useState<CheckoutPhase>('passengers');
   const [addEsim, setAddEsim] = useState(false);
   const [addInsurance, setAddInsurance] = useState(false);
+  const [referralCode, setReferralCode] = useState('');
+  const [referralDiscountAmount, setReferralDiscountAmount] = useState(0);
   const [draftBookingId, setDraftBookingId] = useState<string | null>(null);
   const [serverWallet, setServerWallet] = useState<number | null>(null);
   const [method, setMethod] = useState<'wallet_irr' | 'gateway'>('wallet_irr');
@@ -74,6 +79,14 @@ export default function CheckoutPage() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [phase]);
+
+  // Pre-fill referral code from ?ref= query parameter if present
+  useEffect(() => {
+    const ref = searchParams?.get('ref');
+    if (ref) {
+      setReferralCode(ref.toUpperCase());
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (phase !== 'issuing') return;
@@ -183,7 +196,7 @@ export default function CheckoutPage() {
   const itemTitle = bookingContext?.title ?? '';
   const currency = 'IRR';
   const walletBalance = serverWallet ?? wallet.IRR ?? 0;
-  const totalPayable = baseAmount + (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0);
+  const totalPayable = Math.max(0, baseAmount + (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0) - referralDiscountAmount);
 
   function scanPassport() {
     setScanning(true);
@@ -260,10 +273,15 @@ export default function CheckoutPage() {
         passengers: allFormData,
         contactEmail: authUser?.email || 'guest@firuzo.com',
         contactPhone: authUser.phone,
+        referralCode: referralCode.trim() || undefined,
+        source: 'WEB',
       });
 
       if ('bookingId' in draft && draft.bookingId) {
         setDraftBookingId(draft.bookingId);
+        if (typeof draft.discountAmount === 'number' && draft.discountAmount > 0) {
+          setReferralDiscountAmount(draft.discountAmount);
+        }
         setPhase('payment');
         return;
       }
@@ -383,6 +401,18 @@ export default function CheckoutPage() {
                 countryName={countryName(country, locale)}
               />
 
+              <ReferralInputSection
+                referralCode={referralCode}
+                setReferralCode={setReferralCode}
+                onValidationChange={(isValid, discountPercent) => {
+                  if (isValid) {
+                    setReferralDiscountAmount(Math.round(baseAmount * discountPercent));
+                  } else {
+                    setReferralDiscountAmount(0);
+                  }
+                }}
+              />
+
               <div className="pt-2">
                 <button
                   type="submit"
@@ -407,6 +437,8 @@ export default function CheckoutPage() {
                 addEsim={addEsim}
                 addInsurance={addInsurance}
                 itemTitle={itemTitle}
+                discountAmount={referralDiscountAmount}
+                referralCode={referralCode ? referralCode.trim() : undefined}
               />
 
               {/* Security Badge in Sidebar */}
@@ -495,6 +527,8 @@ export default function CheckoutPage() {
                 addEsim={addEsim}
                 addInsurance={addInsurance}
                 itemTitle={itemTitle}
+                discountAmount={referralDiscountAmount}
+                referralCode={referralCode ? referralCode.trim() : undefined}
               />
             </div>
           </div>

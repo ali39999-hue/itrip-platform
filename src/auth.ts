@@ -1,11 +1,13 @@
 import NextAuth, { type DefaultSession } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import Google from 'next-auth/providers/google';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { ERP_STAFF_ROLES } from '@/domains/identity/permissions';
 import { encryptSensitive } from '@/lib/security/crypto-vault';
 import { createLogger } from '@/lib/observability/logger';
+import { ProductionTelegramProvider, TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
 
 const authLogger = createLogger('auth-service');
 
@@ -138,12 +140,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
   providers: [
+    ...(process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID
+      ? [
+          Google({
+            clientId: (process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID)!,
+            clientSecret: (process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET)!,
+          }),
+        ]
+      : []),
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
         identifier: { label: 'Identifier', type: 'text', placeholder: 'admin@firuzo.com or +98912...' },
         password: { label: 'Password', type: 'password' },
-        channel: { label: 'Channel', type: 'text' }, // credentials, otp, phone, email, telegram, whatsapp, wechat
+        channel: { label: 'Channel', type: 'text' }, // credentials, otp, phone, email, telegram, whatsapp, wechat, telegram_widget
       },
       async authorize(credentials) {
         if (!credentials?.identifier) return null;
@@ -155,6 +165,46 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const rawChannel = channel;
 
         let user = null;
+
+        if (channel === 'telegram_widget') {
+          const botToken = process.env.TELEGRAM_BOT_TOKEN;
+          if (!botToken) return null;
+          try {
+            const payload = JSON.parse(password) as TelegramAuthPayload;
+            const isValid = ProductionTelegramProvider.verifyTelegramAuth(payload, botToken);
+            if (!isValid) return null;
+
+            const telegramId = String(payload.id);
+            user = await prisma.user.findFirst({
+              where: {
+                OR: [{ telegramId }, { email: `${telegramId}@telegram.firuzo.com` }],
+              },
+            });
+
+            if (!user) {
+              const fullName = [payload.first_name, payload.last_name].filter(Boolean).join(' ') || payload.username || 'Telegram User';
+              user = await prisma.user.create({
+                data: {
+                  id: crypto.randomUUID(),
+                  telegramId,
+                  name: fullName,
+                  avatar: payload.photo_url,
+                  role: 'CUSTOMER',
+                  isActive: true,
+                },
+              });
+              await ensureUserRole(user.id, 'CUSTOMER');
+            }
+            return {
+              id: user.id,
+              email: user.email || `${user.id}@firuzo.com`,
+              name: user.name || 'Telegram User',
+              role: user.role,
+            };
+          } catch {
+            return null;
+          }
+        }
 
         if (channel === 'otp') {
           // Passwordless: the OTP itself is the credential, verified server-side.
@@ -259,6 +309,35 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   session: { strategy: 'jwt' },
   callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider === 'google') {
+        const email = user.email?.toLowerCase();
+        if (!email) return false;
+
+        let dbUser = await prisma.user.findUnique({
+          where: { email },
+        });
+
+        if (!dbUser) {
+          dbUser = await prisma.user.create({
+            data: {
+              id: crypto.randomUUID(),
+              email,
+              name: user.name || 'Google User',
+              avatar: user.image,
+              role: 'CUSTOMER',
+              isActive: true,
+            },
+          });
+          await ensureUserRole(dbUser.id, 'CUSTOMER');
+        }
+
+        user.id = dbUser.id;
+        user.role = dbUser.role;
+        return true;
+      }
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;

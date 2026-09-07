@@ -9,7 +9,7 @@ import { AdminGlobalSearch } from './AdminGlobalSearch';
 import {
   LayoutDashboard, BriefcaseBusiness, Wallet,
   PlaneTakeoff, ExternalLink, ShieldCheck, UserCheck, Activity,
-  Building2, Boxes, PanelLeftClose, PanelLeftOpen, FolderKanban
+  Building2, Boxes, PanelLeftClose, PanelLeftOpen, FolderKanban, Users
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
@@ -19,6 +19,7 @@ const NAV = [
   { href: '/admin/exceptions', label: { fa: 'مرکز خطا و استثنائات', en: 'Exception Center', ar: 'مركز الاستثناءات', zh: '异常中心', ru: 'Центр исключений' }, icon: ShieldCheck },
   { href: '/admin/ops', label: { fa: 'عملیات و پشتیبانی', en: 'Ops & Support', ar: 'العمليات والدعم', zh: '运营与支持', ru: 'Операции и поддержка' }, icon: Activity },
   { href: '/admin/bookings', label: { fa: 'رزروها', en: 'Bookings', ar: 'الحجوزات', zh: '预订', ru: 'Бронирования' }, icon: PlaneTakeoff },
+  { href: '/admin/referrals', label: { fa: 'کدهای معرف / سرگروه‌ها', en: 'Referrals & Leaders', ar: 'رموز الإحالة والقادة', zh: '推荐码与领队', ru: 'Рефералы и лидеры' }, icon: Users },
   { href: '/admin/finance', label: { fa: 'مالی و تراکنش‌ها', en: 'Finance & Transactions', ar: 'المالية والمعاملات', zh: '财务与交易', ru: 'Финансы и транзакции' }, icon: Wallet },
   { href: '/admin/suppliers', label: { fa: 'تامین‌کنندگان', en: 'Suppliers', ar: 'الموردون', zh: '供应商', ru: 'Поставщики' }, icon: Building2 },
   { href: '/admin/inventory', label: { fa: 'انبار و سهمیه‌ها', en: 'Inventory & Allotments', ar: 'المخزون والحصص', zh: '库存与配额', ru: 'Инвентарь и квоты' }, icon: Boxes },
