@@ -9,6 +9,8 @@ on:
 env:
   DATABASE_URL: postgresql://itrip_user:itrip_secure_password@localhost:5432/itrip_test_db
   AUTH_SECRET: ${{ secrets.CI_AUTH_SECRET || 'development_dummy_auth_key_32chars' }}
+  ADMIN_PASSWORD: ${{ secrets.CI_ADMIN_PASSWORD || 'Admin@Firuzo2026!Secure' }}
+  USER_PASSWORD: ${{ secrets.CI_USER_PASSWORD || 'User@Firuzo2026!Secure' }}
   NEXT_PUBLIC_SITE_URL: http://localhost:3000
 
 jobs:
