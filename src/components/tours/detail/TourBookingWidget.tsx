@@ -114,7 +114,7 @@ export function TourBookingWidget({
             >
               {dates.map((d) => (
                 <option key={d.id} value={d.id}>
-                  {d.startDate} تا {d.endDate} — {num(d.price, locale)} تومان ({num(d.availableSeats, locale)} صندلی)
+                  {d.startDate} {lt(locale, { fa: 'تا', en: 'to', ar: 'إلى', zh: '至', ru: 'до' })} {d.endDate} — {num(d.price, locale)} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })} ({num(d.availableSeats, locale)} {lt(locale, { fa: 'صندلی', en: 'seats', ar: 'مقاعد', zh: '余位', ru: 'мест' })})
                 </option>
               ))}
             </select>
@@ -196,17 +196,17 @@ export function TourBookingWidget({
         <div className="space-y-2 pt-2 border-t border-line text-xs font-bold">
           <div className="flex justify-between text-sub">
             <span>{num(adults, locale)} × {lt(locale, { fa: 'بزرگسال', en: 'Adult', ar: 'بالغ', zh: '成人', ru: 'взрослый' })}:</span>
-            <span className="font-mono text-ink">{num(adults * adultPrice, locale)} تومان</span>
+            <span className="font-mono text-ink">{num(adults * adultPrice, locale)} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
           </div>
           {children > 0 && (
             <div className="flex justify-between text-sub">
               <span>{num(children, locale)} × {lt(locale, { fa: 'کودک', en: 'Child', ar: 'طفل', zh: '儿童', ru: 'ребёнок' })}:</span>
-              <span className="font-mono text-ink">{num(children * childPrice, locale)} تومان</span>
+              <span className="font-mono text-ink">{num(children * childPrice, locale)} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
             </div>
           )}
           <div className="flex justify-between text-sub">
             <span>{lt(locale, { fa: 'بیمه مسافرتی و خدمات:', en: 'Insurance & Service:', ar: 'التأمين والخدمات:', zh: '旅行险与服务：', ru: 'Страховка и сервис:' })}</span>
-            <span className="text-mint-bright font-black">{lt(locale, { fa: 'رایگان (پکیج)', en: 'Included (Free)', ar: 'مشمول مجاناً', zh: '已包含', ru: 'Включено' })}</span>
+            <span className="text-brand-dark font-black">{lt(locale, { fa: 'رایگان (پکیج)', en: 'Included (Free)', ar: 'مشمول مجاناً', zh: '已包含', ru: 'Включено' })}</span>
           </div>
 
           <div className="flex justify-between items-baseline pt-2.5 border-t border-line text-sm font-black text-ink">
@@ -249,13 +249,13 @@ export function TourBookingWidget({
           </div>
           <div className="flex items-center gap-1.5">
             <ShieldCheck size={13} className="text-brand-dark shrink-0" />
-            <span>{lt(locale, { fa: 'استرداد آنی وجه', en: 'Instant Refund', ar: 'استرداد فوري', zh: '急速退款至钱包', ru: 'Быستрый возврат' })}</span>
+            <span>{lt(locale, { fa: 'استرداد آنی وجه', en: 'Instant Refund', ar: 'استرداد فوري', zh: '急速退款至钱包', ru: 'Быстрый возврат' })}</span>
           </div>
         </div>
       </aside>
 
-      {/* Mobile Sticky Reservation Bottom Bar (z-[86] to sit above BottomNav) */}
-      <div className="lg:hidden fixed bottom-[calc(58px+env(safe-area-inset-bottom,0px))] inset-x-0 z-[86] bg-surface/98 backdrop-blur-xl border-t border-line px-3.5 py-2.5 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] flex items-center justify-between gap-3">
+      {/* Mobile Sticky Reservation Bottom Bar (docks at bottom-0 on detail view) */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-[86] bg-surface/98 backdrop-blur-xl border-t border-line px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] flex items-center justify-between gap-3">
         {/* Price & Quick Config Button */}
         <button
           type="button"
@@ -263,14 +263,18 @@ export function TourBookingWidget({
           className="text-start flex flex-col min-w-0 cursor-pointer"
         >
           <div className="flex items-center gap-1 text-[10.5px] font-extrabold text-sub">
-            <span className="truncate">{num(adults + children, locale)} نفر</span>
+            <span className="truncate">
+              {num(adults + children, locale)} {lt(locale, { fa: 'نفر', en: 'travelers', ar: 'أشخاص', zh: '人', ru: 'чел.' })}
+            </span>
             <span>•</span>
             <span className="truncate font-mono">{activeDate?.startDate ? activeDate.startDate.slice(5) : ''}</span>
             <SlidersHorizontal size={11} className="text-brand-dark ms-0.5" />
           </div>
           <div className="text-base font-black text-price font-mono flex items-baseline gap-1">
             <span>{num(totalPrice, locale)}</span>
-            <span className="text-[10px] font-bold text-sub">تومان</span>
+            <span className="text-[10px] font-bold text-sub">
+              {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
+            </span>
           </div>
         </button>
 
@@ -300,7 +304,12 @@ export function TourBookingWidget({
 
       {/* Mobile Passenger & Date Selector Modal Sheet */}
       {mobileConfigOpen && (
-        <div className="lg:hidden fixed inset-0 z-[200] bg-ink/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={lt(locale, { fa: 'تنظیم تاریخ و تعداد مسافران', en: 'Customize Date & Passengers', ar: 'تحديد الموعد والمسافرين', zh: '选择出行班期与人数', ru: 'Настройка даты и участников' })}
+          className="lg:hidden fixed inset-0 z-[200] bg-ink/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
+        >
           <div className="w-full max-w-md bg-surface rounded-t-3xl sm:rounded-3xl p-5 border border-line shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <h3 className="font-black text-sm text-ink">
@@ -309,6 +318,7 @@ export function TourBookingWidget({
               <button
                 type="button"
                 onClick={() => setMobileConfigOpen(false)}
+                aria-label={lt(locale, { fa: 'بستن', en: 'Close', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}
                 className="w-8 h-8 rounded-full bg-soft text-sub grid place-items-center cursor-pointer"
               >
                 <X size={16} />
@@ -331,7 +341,7 @@ export function TourBookingWidget({
                       }`}
                     >
                       <span className="font-mono">{d.startDate} تا {d.endDate}</span>
-                      <span className="font-mono text-price">{num(d.price, locale)} تومان</span>
+                      <span className="font-mono text-price">{num(d.price, locale)} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
                     </div>
                   ))}
                 </div>
@@ -342,15 +352,19 @@ export function TourBookingWidget({
             <div className="space-y-3 pt-2 border-t border-line">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-black text-ink block">بزرگسال</span>
-                  <span className="text-[11px] font-bold text-sub">{num(adultPrice, locale)} تومان</span>
+                  <span className="text-xs font-black text-ink block">
+                    {lt(locale, { fa: 'بزرگسال', en: 'Adult', ar: 'بالغ', zh: '成人', ru: 'Взрослый' })}
+                  </span>
+                  <span className="text-[11px] font-bold text-sub">
+                    {num(adultPrice, locale)} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     disabled={adults <= 1}
                     onClick={() => setAdults((prev) => Math.max(1, prev - 1))}
-                    className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40"
+                    className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 cursor-pointer"
                   >
                     <Minus size={14} />
                   </button>
@@ -359,7 +373,7 @@ export function TourBookingWidget({
                     type="button"
                     disabled={adults >= (activeDate?.availableSeats || 10)}
                     onClick={() => setAdults((prev) => prev + 1)}
-                    className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40"
+                    className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 cursor-pointer"
                   >
                     <Plus size={14} />
                   </button>
@@ -368,15 +382,19 @@ export function TourBookingWidget({
 
               <div className="flex items-center justify-between pt-2 border-t border-line/60">
                 <div>
-                  <span className="text-xs font-black text-ink block">کودک (۲ تا ۱۱ سال)</span>
-                  <span className="text-[11px] font-bold text-sub">{num(childPrice, locale)} تومان</span>
+                  <span className="text-xs font-black text-ink block">
+                    {lt(locale, { fa: 'کودک (۲ تا ۱۱ سال)', en: 'Children (2-11 years)', ar: 'الأطفال (٢-١١ سنة)', zh: '儿童（2-11岁）', ru: 'Дети (2-11 лет)' })}
+                  </span>
+                  <span className="text-[11px] font-bold text-sub">
+                    {num(childPrice, locale)} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     disabled={children <= 0}
                     onClick={() => setChildren((prev) => Math.max(0, prev - 1))}
-                    className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40"
+                    className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 cursor-pointer"
                   >
                     <Minus size={14} />
                   </button>
@@ -385,7 +403,7 @@ export function TourBookingWidget({
                     type="button"
                     disabled={children >= 6}
                     onClick={() => setChildren((prev) => prev + 1)}
-                    className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40"
+                    className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 cursor-pointer"
                   >
                     <Plus size={14} />
                   </button>
@@ -396,15 +414,19 @@ export function TourBookingWidget({
             {/* Total and confirm button */}
             <div className="pt-3 border-t border-line flex items-center justify-between gap-3">
               <div>
-                <span className="text-[10.5px] font-bold text-sub block">جمع کل:</span>
-                <span className="text-base font-black text-price font-mono">{num(totalPrice, locale)} تومان</span>
+                <span className="text-[10.5px] font-bold text-sub block">
+                  {lt(locale, { fa: 'جمع کل:', en: 'Total:', ar: 'المجموع:', zh: '总计：', ru: 'Всего:' })}
+                </span>
+                <span className="text-base font-black text-price font-mono">
+                  {num(totalPrice, locale)} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
+                </span>
               </div>
               <button
                 type="button"
                 onClick={() => setMobileConfigOpen(false)}
-                className="h-10 px-5 rounded-xl bg-brand text-surface font-black text-xs cursor-pointer"
+                className="h-10 px-5 rounded-xl bg-brand hover:bg-brand-dark text-surface font-black text-xs cursor-pointer shadow-sm transition active:scale-95"
               >
-                تایید و بستن
+                {lt(locale, { fa: 'تایید و بستن', en: 'Confirm & Close', ar: 'تأكيد وإغلاق', zh: '确认并关闭', ru: 'Подтвердить' })}
               </button>
             </div>
           </div>

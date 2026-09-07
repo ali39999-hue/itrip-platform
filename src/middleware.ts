@@ -3,17 +3,21 @@ import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import createMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
+import { validateCsrfRequest } from './lib/security/csrf-protection';
+import { isSafeRedirectUrl } from './lib/security/url-validator';
 
 // Create the next-intl middleware
 const intlMiddleware = createMiddleware(routing);
 
-// Define coarse route permissions mapped to required roles or permissions (IAM-001)
-const ROUTE_PERMISSIONS: Record<string, string[]> = {
-  '/admin/finance': ['SUPER_ADMIN', 'FINANCE', 'finance:reports:view'],
-  '/admin/bookings': ['SUPER_ADMIN', 'FINANCE', 'OPS', 'booking:view:all'],
-  '/admin/ops': ['SUPER_ADMIN', 'OPS', 'ops:override:cancel'],
-  '/admin/content': ['SUPER_ADMIN', 'OPS', 'catalog:hotels:edit'],
-  '/admin': ['SUPER_ADMIN', 'FINANCE', 'OPS', 'booking:view:all'], // general admin access
+// Define route access mapped strictly to canonical relational permissions (IAM-107)
+const ROUTE_REQUIRED_PERMISSIONS: Record<string, string[]> = {
+  '/admin/finance': ['finance:view', 'finance:reports:view'],
+  '/admin/bookings': ['booking:view:all'],
+  '/admin/ops': ['ops:override:cancel'],
+  '/admin/content': ['catalog:hotels:edit', 'catalog:flights:edit'],
+  '/admin/travel-files': ['booking:view:all', 'ops:override:cancel'],
+  '/admin/exceptions': ['ops:override:cancel', 'booking:view:all'],
+  '/admin': ['booking:view:all', 'ops:override:cancel', 'finance:view'], // general admin back-office access
 };
 
 export async function middleware(request: NextRequest) {
@@ -29,12 +33,26 @@ export async function middleware(request: NextRequest) {
     return response;
   };
 
-  // 1. Skip auth & i18n for api, _next, static files, and public routes
+  // 1. Handle API routes: enforce CSRF on state mutations and attach correlation headers
+  if (pathname.startsWith('/api/')) {
+    const csrfCheck = validateCsrfRequest(request);
+    if (!csrfCheck.valid) {
+      return withCorrelation(
+        NextResponse.json(
+          { success: false, error: `Forbidden: CSRF validation failed (${csrfCheck.reason})` },
+          { status: 403 }
+        )
+      );
+    }
+    return withCorrelation(NextResponse.next());
+  }
+
+  // 1b. Skip auth & i18n for _next, static files, fonts, and public assets
   if (
-    pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/') ||
+    pathname.startsWith('/fonts/') ||
     pathname === '/favicon.ico' ||
-    pathname.match(/\.(png|jpg|jpeg|gif|webp|svg)$/)
+    pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|woff|woff2|ttf|eot|ico)$/)
   ) {
     return withCorrelation(NextResponse.next());
   }
@@ -43,13 +61,11 @@ export async function middleware(request: NextRequest) {
   const localeMatch = pathname.match(/^\/(fa|en|ar|zh|ru)(\/|$)/);
   const locale = localeMatch ? localeMatch[1] : 'fa';
 
-  // 2. Handle /login or /[locale]/login alias -> redirect to /[locale]/auth
+  // 2. Handle /login or /[locale]/login alias -> redirect to /[locale]/auth (SEC-104 open redirect check)
   if (pathname === '/login' || pathname.match(/^\/(fa|en|ar|zh|ru)\/login$/)) {
     const callbackUrl = request.nextUrl.searchParams.get('callbackUrl');
     const authUrl = new URL('/' + locale + '/auth', request.url);
-    if (callbackUrl) {
-      // Forwarded as-is: NextAuth's redirect callback only honours same-origin
-      // callback URLs, so this cannot become an open redirect (SEC-007).
+    if (callbackUrl && isSafeRedirectUrl(callbackUrl)) {
       authUrl.searchParams.set('callbackUrl', callbackUrl);
     }
     return withCorrelation(NextResponse.redirect(authUrl));
@@ -72,19 +88,18 @@ export async function middleware(request: NextRequest) {
         secret
       });
 
-      // Check if logged in user has sufficient role or permission for specific admin sub-routes
+      // Check if logged in user has sufficient canonical permissions for admin sub-routes (IAM-107)
       if (token) {
-        const userRole = (token.role as string) || 'CUSTOMER';
         const userPerms = (token.permissions as string[]) || [];
         const normalizedPath = pathname.replace(/^\/(fa|en|ar|zh|ru)/, '');
-        const matchingRoute = Object.keys(ROUTE_PERMISSIONS)
+        const matchingRoute = Object.keys(ROUTE_REQUIRED_PERMISSIONS)
           .sort((a, b) => b.length - a.length)
           .find(route => normalizedPath === route || normalizedPath.startsWith(route + '/'));
 
         if (matchingRoute) {
-          const allowed = ROUTE_PERMISSIONS[matchingRoute];
-          // User has access if role matches or any relational permission is granted
-          const hasAccess = userRole === 'SUPER_ADMIN' || allowed.some(p => p === userRole || userPerms.includes(p));
+          const requiredPerms = ROUTE_REQUIRED_PERMISSIONS[matchingRoute];
+          // Canonical relational check: user must possess at least one of the route's required permissions
+          const hasAccess = requiredPerms.some((p) => userPerms.includes(p));
           if (!hasAccess) {
             return withCorrelation(NextResponse.redirect(new URL('/' + locale + '/account', request.url)));
           }
@@ -105,7 +120,9 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Apply middleware to all routes except api, _next/static, _next/image, favicon.ico
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    // Include /api for CSRF and correlation tracing
+    '/api/:path*',
+    // Apply middleware to all pages except _next/static, _next/image, favicon.ico, fonts
+    '/((?!_next/static|_next/image|favicon.ico|fonts).*)',
   ],
 };

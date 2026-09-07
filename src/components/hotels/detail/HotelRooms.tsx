@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { fa, gShort } from '@/lib/hotel-format';
 import { getRoomsForLocale, getPlansForLocale } from '@/lib/hotel-mock';
-import { quote, TAX, keyOf, type useHotelBooking } from '@/hooks/useHotelBooking';
+import { quote, TAX, keyOf, toman, type useHotelBooking } from '@/hooks/useHotelBooking';
 import { lt } from '@/lib/lt';
 
 interface HotelRoomsProps {
@@ -234,13 +234,13 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
                           <span className="inline-flex items-center gap-1 text-[11px] font-bold text-sub"><Wallet size={12} /> {p.pay}</span>
                         </div>
                         <button onClick={() => setOpenBd(isOpen ? null : k)} className="self-start border-0 bg-transparent p-0 text-brand-dark text-[11px] font-extrabold underline underline-offset-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">
-                          {isOpen ? (lt(locale, { fa: 'بستن جزئیات', en: 'Hide details', ar: 'إخفاء التفاصيل', zh: '收起详情', ru: 'Скрыть детали' })) : (lt(locale, { fa: 'جزئیات قیمت هر شب', en: 'Nightly rate details', ar: 'تفاصيل سعر كل ليلة', zh: '每晚价格明细', ru: 'Детали тариفا за ночь' }))}
+                          {isOpen ? (lt(locale, { fa: 'بستن جزئیات', en: 'Hide details', ar: 'إخفاء التفاصيل', zh: '收起详情', ru: 'Скрыть детали' })) : (lt(locale, { fa: 'جزئیات قیمت هر شب', en: 'Nightly rate details', ar: 'تفاصيل سعر كل ليلة', zh: '每晚价格明细', ru: 'Детали тарифа за ночь' }))}
                         </button>
                       </div>
                       <div className="md:text-end">
-                        {pid === 'saver' && <div className="text-sub text-xs font-bold line-through">{fa(ref)} TRY</div>}
-                        <div className="text-lg font-black leading-snug text-price num">{fa(q.avg)} <small className="text-[11.5px] font-extrabold text-sub">TRY / {lt(locale, { fa: 'شب', en: 'night', ar: 'ليلة', zh: '晚', ru: 'ночь' })}</small></div>
-                        <div className="text-[11.5px] font-bold text-sub">{locale === 'fa' ? `جمع ${fa(nights.length)} شب:` : `Total ${nights.length} nights:`} <b>{fa(q.total)} TRY</b></div>
+                        {pid === 'saver' && <div className="text-sub text-xs font-bold line-through">{fa(toman(ref))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</div>}
+                        <div className="text-lg font-black leading-snug text-price num">{fa(toman(q.avg))} <small className="text-[11.5px] font-extrabold text-sub">{lt(locale, { fa: 'تومان / شب', en: 'Toman / night', ar: 'تومان / ليلة', zh: '图曼 / 晚', ru: 'томанов / ночь' })}</small></div>
+                        <div className="text-[11.5px] font-bold text-sub">{locale === 'fa' ? `جمع ${fa(nights.length)} شب:` : `Total ${nights.length} nights:`} <b>{fa(toman(q.total))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</b></div>
                       </div>
                       <div className="flex items-center justify-start md:justify-end gap-2">
                         <Select

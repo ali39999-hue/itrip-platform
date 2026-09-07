@@ -70,3 +70,5 @@ playwright-report/
 test-results/
 screenshots/
 snapshots/
+audit-screenshots/
+scripts/*.png

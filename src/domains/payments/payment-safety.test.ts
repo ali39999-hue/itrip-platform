@@ -11,6 +11,7 @@ describe('Payment Hardening Suite (PAY-001 to PAY-008)', () => {
   let testBookingId = '';
   const testAmount = 5_000_000;
   const testCurrency = 'IRR';
+  const testMoney = new Money(testAmount, testCurrency);
 
   afterAll(async () => {
     try {
@@ -76,7 +77,7 @@ describe('Payment Hardening Suite (PAY-001 to PAY-008)', () => {
       bookingId: testBookingId,
       idempotencyKey,
       method: 'wallet_irr',
-      amount: testAmount,
+      amount: testMoney,
       currency: testCurrency,
     });
 
@@ -134,7 +135,7 @@ describe('Payment Hardening Suite (PAY-001 to PAY-008)', () => {
       eventType: 'payment.captured',
       bookingId: testBookingId,
       gatewayRef: `ref_stale_${suffix}`,
-      settledAmount: testAmount,
+      settledAmount: testMoney,
       settledCurrency: testCurrency,
       timestamp: staleTimestamp,
     });
@@ -156,7 +157,7 @@ describe('Payment Hardening Suite (PAY-001 to PAY-008)', () => {
       eventType: 'payment.captured',
       bookingId: testBookingId,
       gatewayRef,
-      settledAmount: testAmount,
+      settledAmount: testMoney,
       settledCurrency: testCurrency,
       timestamp: now,
     });
@@ -172,7 +173,7 @@ describe('Payment Hardening Suite (PAY-001 to PAY-008)', () => {
       eventType: 'payment.captured',
       bookingId: testBookingId,
       gatewayRef,
-      settledAmount: testAmount,
+      settledAmount: testMoney,
       settledCurrency: testCurrency,
       timestamp: now,
     });
@@ -187,7 +188,7 @@ describe('Payment Hardening Suite (PAY-001 to PAY-008)', () => {
       eventType: 'payment.captured',
       bookingId: testBookingId,
       gatewayRef,
-      settledAmount: testAmount,
+      settledAmount: testMoney,
       settledCurrency: testCurrency,
       timestamp: now,
     });
@@ -218,7 +219,7 @@ describe('Payment Hardening Suite (PAY-001 to PAY-008)', () => {
         eventType: 'payment.captured',
         bookingId: testBookingId,
         gatewayRef: `ref_tamper_${suffix}`,
-        settledAmount: 100, // Expected 5,000,000
+        settledAmount: new Money(100, testCurrency), // Expected 5,000,000
         settledCurrency: testCurrency,
         timestamp: Date.now(),
       })
@@ -234,7 +235,7 @@ describe('Payment Hardening Suite (PAY-001 to PAY-008)', () => {
         eventType: 'payment.captured',
         bookingId: testBookingId,
         gatewayRef: `ref_curr_${suffix}`,
-        settledAmount: testAmount,
+        settledAmount: new Money(testAmount, 'USD'),
         settledCurrency: 'USD', // Expected IRR
         timestamp: Date.now(),
       })
@@ -253,7 +254,7 @@ describe('Payment Hardening Suite (PAY-001 to PAY-008)', () => {
         eventType: 'payment.captured',
         bookingId: testBookingId,
         gatewayRef: `ref_nosig_${suffix}`,
-        settledAmount: testAmount,
+        settledAmount: testMoney,
         settledCurrency: testCurrency,
         timestamp: Date.now(),
         // signature is omitted!

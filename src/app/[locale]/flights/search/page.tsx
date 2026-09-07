@@ -16,11 +16,14 @@ import {
   BentoFlightCard,
   FlightCompareBar,
   FlightCompareModal,
+  FlightPriceCalendar,
+  FlightRefundRulesModal,
+  FlightPriceAlertModal,
   useFlightComparison,
 } from '@/components/flights';
 import { CrossSellBundle } from '@/components/shared/CrossSellBundle';
 import {
-  PlaneTakeoff, PlaneLanding, CalendarDays, PenLine, SlidersHorizontal, X, Check, Loader2, Search,
+  PlaneTakeoff, PlaneLanding, CalendarDays, PenLine, SlidersHorizontal, X, Check, Loader2, Search, BellRing,
 } from 'lucide-react';
 
 const STEP = 1_000_000;
@@ -64,9 +67,18 @@ function FlightSearchInner() {
   const [editTo, setEditTo] = useState(to);
   const [editDate, setEditDate] = useState(travelDate);
 
-  // Flight Comparison state
+  // Flight Comparison & Value-Add Modals
   const { cmp, toggleCmp, clearCmp } = useFlightComparison();
   const [compareModalOpen, setCompareModalOpen] = useState(false);
+  const [priceAlertModalOpen, setPriceAlertModalOpen] = useState(false);
+  const [refundModalFlight, setRefundModalFlight] = useState<Flight | null>(null);
+  const [quickFilter, setQuickFilter] = useState<'all' | 'direct' | 'morning' | 'systemic'>('all');
+
+  function handleDateChange(newDate: string) {
+    const q = new URLSearchParams(params.toString());
+    q.set('depart', newDate);
+    router.push(`/flights/search?${q.toString()}`);
+  }
 
   // Live state
   const [flights, setFlights] = useState<Flight[]>([]);
@@ -331,6 +343,57 @@ function FlightSearchInner() {
             </button>
           </div>
 
+          {/* Low Fare 7-Day Price Window Calendar (Alibaba & FlyToday Benchmark) */}
+          <FlightPriceCalendar
+            selectedDate={travelDate}
+            onSelectDate={handleDateChange}
+            basePrice={flights[0]?.price || 28500000}
+            locale={locale}
+          />
+
+          {/* Quick Filter Chips & Price Drop Alert Trigger */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-2.5 sm:p-3 rounded-2xl bg-surface border border-line shadow-2xs">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none text-xs font-black">
+              <button
+                type="button"
+                onClick={() => setQuickFilter('all')}
+                className={`px-3 py-1.5 rounded-xl transition ${quickFilter === 'all' ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+              >
+                {lt(locale, { fa: 'همه پروازها', en: 'All Flights', ar: 'كل الرحلات', zh: '全部航班', ru: 'Все рейсы' })}
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuickFilter('direct')}
+                className={`px-3 py-1.5 rounded-xl transition ${quickFilter === 'direct' ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+              >
+                {lt(locale, { fa: 'فقط بدون توقف', en: 'Non-stop Only', ar: 'بدون توقف', zh: '仅直飞', ru: 'Только прямые' })}
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuickFilter('morning')}
+                className={`px-3 py-1.5 rounded-xl transition ${quickFilter === 'morning' ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+              >
+                {lt(locale, { fa: 'پروازهای صبح (۶-۱۲)', en: 'Morning (6-12)', ar: 'صباحاً (6-12)', zh: '早班机（6-12点）', ru: 'Утренние (6-12)' })}
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuickFilter('systemic')}
+                className={`px-3 py-1.5 rounded-xl transition ${quickFilter === 'systemic' ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+              >
+                {lt(locale, { fa: 'فقط سیستمی', en: 'Systemic Only', ar: 'منتظمة فقط', zh: '仅正班', ru: 'Только регулярные' })}
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setPriceAlertModalOpen(true)}
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-action/15 hover:bg-action/25 text-price text-xs font-black transition border border-action/30 shrink-0 cursor-pointer"
+            >
+              <BellRing size={14} className="text-price" aria-hidden="true" />
+              <span>{lt(locale, { fa: 'اطلاع از کاهش قیمت', en: 'Price Alert', ar: 'تنبيه الأسعار', zh: '降价提醒', ru: 'Следить за ценой' })}</span>
+            </button>
+          </div>
+
           {/* Sorting & mobile trigger */}
           <div className="flex overflow-x-auto pb-1 gap-2 scrollbar-none items-center">
             {sorts.map((s) => (
@@ -362,12 +425,20 @@ function FlightSearchInner() {
           </div>
 
           <div className="flex items-center justify-between">
-            <p className="text-[12px] text-sub font-bold">{num(totalCount, locale)} {t('flights')} (لایو)</p>
+            <p className="text-[12px] text-sub font-bold">
+              {num(totalCount, locale)} {t('flights')}
+            </p>
             {error && <span className="text-xs text-destructive font-bold">{error}</span>}
             {loading && (
               <span className="flex items-center gap-1.5 text-xs text-brand font-bold">
-                <Loader2 size={14} className="animate-spin" />
-                در حال به‌روزرسانی نتایج لایو...
+                <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                {lt(locale, {
+                  fa: 'در حال به‌روزرسانی نتایج پرواز...',
+                  en: 'Updating flight results...',
+                  ar: 'جاري تحديث نتائج الرحلات...',
+                  zh: '正在更新航班结果...',
+                  ru: 'Обновление результатов рейсов...',
+                })}
               </span>
             )}
           </div>
@@ -415,16 +486,27 @@ function FlightSearchInner() {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-              {flights.map((f, idx) => (
-                <BentoFlightCard
-                  key={f.id}
-                  flight={f}
-                  onSelect={() => selectFlight(f)}
-                  isCheapest={idx === 0}
-                  isCompared={cmp.has(f.id)}
-                  onToggleCompare={() => toggleCmp(f.id)}
-                />
-              ))}
+              {flights
+                .filter((f) => {
+                  if (quickFilter === 'direct' && f.stops > 0) return false;
+                  if (quickFilter === 'morning') {
+                    const depHour = parseInt(f.departureTime.slice(0, 2), 10);
+                    if (depHour < 6 || depHour >= 12) return false;
+                  }
+                  if (quickFilter === 'systemic' && f.ticketType === 'charter') return false;
+                  return true;
+                })
+                .map((f, idx) => (
+                  <BentoFlightCard
+                    key={f.id}
+                    flight={f}
+                    onSelect={() => selectFlight(f)}
+                    isCheapest={idx === 0}
+                    isCompared={cmp.has(f.id)}
+                    onToggleCompare={() => toggleCmp(f.id)}
+                    onShowRefundRules={(flight) => setRefundModalFlight(flight)}
+                  />
+                ))}
             </div>
           )}
 
@@ -536,12 +618,18 @@ function FlightSearchInner() {
 
       {/* Filters — mobile bottom sheet */}
       {sheet && (
-        <div className="lg:hidden">
-          <div className="fixed inset-0 z-90 bg-ink/45 fade-soft" onClick={() => setSheet(false)} />
-          <div className="fixed bottom-0 inset-x-0 z-100 bg-surface rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('filters')}
+          className="lg:hidden"
+        >
+          <div className="fixed inset-0 z-[90] bg-ink/45 fade-soft" onClick={() => setSheet(false)} aria-hidden="true" />
+          <div className="fixed bottom-0 inset-x-0 z-[100] bg-surface rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl">
             <div className="flex justify-between items-center p-5 border-b border-line">
               <h2 className="font-black text-sm text-ink">{t('filters')}</h2>
               <button
+                type="button"
                 onClick={() => setSheet(false)}
                 aria-label={ariaT('close')}
                 className="w-8 h-8 rounded-full bg-soft text-sub flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
@@ -552,6 +640,7 @@ function FlightSearchInner() {
             <div className="overflow-y-auto p-5">{filtersBody}</div>
             <div className="p-4 border-t border-line bg-surface">
               <button
+                type="button"
                 onClick={() => setSheet(false)}
                 className="w-full min-h-11 rounded-xl bg-brand hover:bg-brand-dark text-surface text-sm font-black transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
@@ -563,53 +652,76 @@ function FlightSearchInner() {
       )}
       {/* In-Place Flight Search Edit Sheet */}
       {editSheetOpen && (
-        <div className="fixed inset-0 z-[160] flex items-end justify-center bg-deep/60 backdrop-blur-xs animate-in fade-in duration-200">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={lt(locale, { fa: 'تغییر پارامترهای جستجوی پرواز', en: 'Edit flight search parameters', ar: 'تعديل معايير البحث عن الرحلات', zh: '修改航班搜索参数', ru: 'Изменить параметры поиска рейсов' })}
+          className="fixed inset-0 z-[160] flex items-end justify-center bg-deep/60 backdrop-blur-xs animate-in fade-in duration-200"
+        >
           <div className="w-full max-w-lg bg-surface rounded-t-3xl p-5 border-t border-line shadow-2xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom-5 duration-200 space-y-4">
             <div className="w-10 h-1 rounded-full bg-line mx-auto mb-1" />
 
             <div className="flex items-center justify-between pb-3 border-b border-line">
-              <h3 className="text-sm font-black text-ink">تغییر پارامترهای جستجوی پرواز</h3>
+              <h3 className="text-sm font-black text-ink">
+                {lt(locale, {
+                  fa: 'تغییر پارامترهای جستجوی پرواز',
+                  en: 'Edit Flight Search',
+                  ar: 'تعديل بحث الرحلات',
+                  zh: '修改航班搜索',
+                  ru: 'Изменить поиск рейсов',
+                })}
+              </h3>
               <button
                 type="button"
                 onClick={() => setEditSheetOpen(false)}
-                className="text-xs font-bold text-sub px-2.5 py-1 rounded-lg bg-soft"
+                aria-label={ariaT('close')}
+                className="text-xs font-bold text-sub px-2.5 py-1 rounded-lg bg-soft hover:bg-line/60 transition active:scale-95"
               >
-                بستن
+                {ariaT('close')}
               </button>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-sub mb-1">مبدأ پرواز</label>
+                <label htmlFor="edit-flight-origin" className="block text-xs font-bold text-sub mb-1">
+                  {lt(locale, { fa: 'مبدأ پرواز', en: 'Departure City', ar: 'مدينة المغادرة', zh: '出发城市', ru: 'Город вылета' })}
+                </label>
                 <div className="flex items-center gap-2 p-3 bg-soft rounded-xl border border-line">
-                  <PlaneTakeoff size={16} className="text-brand-dark" />
+                  <PlaneTakeoff size={16} className="text-brand-dark shrink-0" aria-hidden="true" />
                   <input
+                    id="edit-flight-origin"
                     type="text"
                     value={editFrom}
                     onChange={(e) => setEditFrom(e.target.value)}
-                    placeholder="مثال: تهران، مشهد..."
+                    placeholder={lt(locale, { fa: 'مثال: تهران، مشهد...', en: 'e.g. Tehran, Istanbul...', ar: 'مثال: طهران، دبي...', zh: '例如：德黑兰、伊斯坦布尔...', ru: 'Например: Тегеран, Стамбул...' })}
                     className="w-full bg-transparent border-0 outline-none text-xs font-bold text-ink"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-sub mb-1">مقصد پرواز</label>
+                <label htmlFor="edit-flight-dest" className="block text-xs font-bold text-sub mb-1">
+                  {lt(locale, { fa: 'مقصد پرواز', en: 'Destination City', ar: 'مدينة الوجهة', zh: '到达城市', ru: 'Город назначения' })}
+                </label>
                 <div className="flex items-center gap-2 p-3 bg-soft rounded-xl border border-line">
-                  <PlaneLanding size={16} className="text-brand-dark" />
+                  <PlaneLanding size={16} className="text-brand-dark shrink-0" aria-hidden="true" />
                   <input
+                    id="edit-flight-dest"
                     type="text"
                     value={editTo}
                     onChange={(e) => setEditTo(e.target.value)}
-                    placeholder="مثال: استانبول، دبی، کیش..."
+                    placeholder={lt(locale, { fa: 'مثال: استانبول، دبی، کیش...', en: 'e.g. Istanbul, Dubai...', ar: 'مثال: إسطنبول، دبي...', zh: '例如：伊斯坦布尔、迪拜...', ru: 'Например: Стамбул, Дубай...' })}
                     className="w-full bg-transparent border-0 outline-none text-xs font-bold text-ink"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-sub mb-1">تاریخ پرواز (میلادی/شمسی)</label>
+                <label htmlFor="edit-flight-date" className="block text-xs font-bold text-sub mb-1">
+                  {lt(locale, { fa: 'تاریخ پرواز', en: 'Flight Date', ar: 'تاريخ الرحلة', zh: '航班日期', ru: 'Дата рейса' })}
+                </label>
                 <input
+                  id="edit-flight-date"
                   type="date"
                   value={editDate}
                   onChange={(e) => setEditDate(e.target.value)}
@@ -629,8 +741,16 @@ function FlightSearchInner() {
                 }}
                 className="w-full h-12 rounded-2xl bg-action hover:bg-action-hover text-ink font-black text-sm flex items-center justify-center gap-2 shadow-md transition active:scale-95"
               >
-                <Search size={16} />
-                <span>جستجوی پروازهای جدید</span>
+                <Search size={16} aria-hidden="true" />
+                <span>
+                  {lt(locale, {
+                    fa: 'جستجوی پروازهای جدید',
+                    en: 'Search Flights',
+                    ar: 'بحث عن رحلات جديدة',
+                    zh: '搜索新航班',
+                    ru: 'Поиск новых рейсов',
+                  })}
+                </span>
               </button>
             </div>
           </div>
@@ -653,6 +773,24 @@ function FlightSearchInner() {
         comparedFlights={flights.filter((f) => cmp.has(f.id))}
         onRemove={toggleCmp}
         onSelectFlight={(flight) => selectFlight(flight)}
+      />
+
+      {/* Flight Refund Policy Rules Modal (Alibaba / FlyToday Benchmark) */}
+      <FlightRefundRulesModal
+        isOpen={Boolean(refundModalFlight)}
+        onClose={() => setRefundModalFlight(null)}
+        flight={refundModalFlight}
+        locale={locale}
+      />
+
+      {/* Flight Price Drop Alert Modal (Trip.com / FlyToday Benchmark) */}
+      <FlightPriceAlertModal
+        isOpen={priceAlertModalOpen}
+        onClose={() => setPriceAlertModalOpen(false)}
+        originCity={from || 'تهران'}
+        destCity={to || 'مشهد'}
+        currentLowestPrice={flights[0]?.price || 28500000}
+        locale={locale}
       />
     </div>
   );

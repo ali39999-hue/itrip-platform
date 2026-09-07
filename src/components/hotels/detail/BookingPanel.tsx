@@ -49,10 +49,9 @@ export function BookingPanel({ booking, onBook }: BookingPanelProps) {
           {capacity.n ? `${locale === 'fa' ? `جمع ${fa(capacity.n)} اتاق برای ${fa(nights.length)} شب` : `Total ${capacity.n} rooms for ${nights.length} nights`}` : (lt(locale, { fa: 'شروع قیمت برای اقامت شما', en: 'Starting rate for your dates', ar: 'السعر الابتدائي لتواريخ إقامتك', zh: '您所选日期的起步价', ru: 'Стартовая цена на ваши даты' }))}
         </div>
         <div className="flex items-baseline gap-1.5">
-          <b className="text-[26px] font-black text-price num">{fa(panelAmount)}</b>
-          <small className="text-xs font-extrabold text-sub">TRY</small>
+          <b className="text-[26px] font-black text-price num">{fa(toman(panelAmount))}</b>
+          <small className="text-xs font-extrabold text-sub">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</small>
         </div>
-        <div className="text-[11.5px] font-bold text-sub">≈ {fa(toman(panelAmount))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</div>
       </div>
       
       <div className="p-4 flex flex-col gap-2.5">

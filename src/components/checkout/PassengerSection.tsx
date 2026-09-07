@@ -151,7 +151,7 @@ export function PassengerSection({
 
         <div>
           <label className="block text-[12px] font-bold text-ink mb-1.5" htmlFor="birthDate">
-            {lt(locale, { fa: 'تاریخ تولد میلادی', en: 'Date of Birth (Gregorian)', ar: 'تاريخ الميلاد (ميلادي)', zh: '出生日期（公历）', ru: 'Дата рождения (Григорианский)' })} <span className="text-rose-warm">*</span>
+            {lt(locale, { fa: 'تاریخ تولد', en: 'Date of Birth', ar: 'تاريخ الميلاد', zh: '出生日期', ru: 'Дата рождения' })} <span className="text-rose-warm">*</span>
           </label>
           <Controller
             name="birthDate"
@@ -166,11 +166,11 @@ export function PassengerSection({
           />
           <span className="text-[10.5px] text-sub mt-1 block">
             {lt(locale, {
-              fa: 'از تقویم انتخاب کنید یا به شکل ۱۳۷۰/۰۳/۱۵ وارد کنید',
-              en: 'Pick from the calendar or type MM/DD/YYYY',
-              ar: 'اختر من التقويم أو اكتب MM/DD/YYYY',
-              zh: '从日历中选择，或输入 MM/DD/YYYY',
-              ru: 'Выберите в календаре или введите MM/DD/YYYY',
+              fa: 'از تقویم انتخاب نمایید (مطابق کارت ملی یا گذرنامه)',
+              en: 'Select from calendar matching passport/ID',
+              ar: 'اختر من التقويم (مطابق لجواز السفر أو الهوية)',
+              zh: '从日历中选择（须与证件一致）',
+              ru: 'Выберите в календаре (в соответствии с паспортом)',
             })}
           </span>
           {errors.birthDate && (

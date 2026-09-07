@@ -12,8 +12,8 @@ export function Tooltip({ content, children, side = 'top' }: TooltipProps) {
   const [visible, setVisible] = React.useState(false);
 
   const sideStyles = {
-    top: 'bottom-full start-1/2 -translate-x-1/2 mb-2',
-    bottom: 'top-full start-1/2 -translate-x-1/2 mt-2',
+    top: 'bottom-full start-1/2 -translate-x-1/2 rtl:translate-x-1/2 mb-2',
+    bottom: 'top-full start-1/2 -translate-x-1/2 rtl:translate-x-1/2 mt-2',
     start: 'top-1/2 end-full -translate-y-1/2 me-2',
     end: 'top-1/2 start-full -translate-y-1/2 ms-2',
   };

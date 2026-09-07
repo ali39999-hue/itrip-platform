@@ -38,10 +38,20 @@ export function JalaliDatePicker({
   id = 'jalali-date-picker',
 }: JalaliDatePickerProps) {
   const locale = useLocale();
-  const isRtl = ['fa', 'ar'].includes(locale);
+  const isFa = locale === 'fa';
 
   // Convert incoming string (YYYY-MM-DD) to DateObject if needed
   const dateObj = value ? new Date(value) : undefined;
+
+  const defaultPlaceholder = locale === 'fa'
+    ? 'انتخاب تاریخ'
+    : locale === 'ar'
+      ? 'اختر التاريخ'
+      : locale === 'zh'
+        ? '选择日期'
+        : locale === 'ru'
+          ? 'Выберите дату'
+          : 'Select date';
 
   return (
     <div
@@ -70,15 +80,15 @@ export function JalaliDatePicker({
             // Always return ISO format string (YYYY-MM-DD) for backend compatibility
             onChange(d.convert(gregorian, gregorian_en).format('YYYY-MM-DD'));
           }}
-          calendar={isRtl ? persian : gregorian}
-          locale={isRtl ? persian_fa : gregorian_en}
+          calendar={isFa ? persian : gregorian}
+          locale={isFa ? persian_fa : gregorian_en}
           calendarPosition="bottom-center"
           minDate={minDate}
           maxDate={maxDate}
           containerClassName="w-full"
           inputClass="w-full bg-transparent border-0 outline-0 p-0 text-[13px] font-bold text-ink cursor-pointer placeholder:text-sub focus:ring-0 leading-tight"
-          placeholder={placeholder || (isRtl ? 'انتخاب تاریخ' : 'Select date')}
-          format={isRtl ? 'YYYY/MM/DD' : 'MM/DD/YYYY'}
+          placeholder={placeholder || defaultPlaceholder}
+          format={isFa ? 'YYYY/MM/DD' : 'YYYY-MM-DD'}
         />
       </div>
     </div>

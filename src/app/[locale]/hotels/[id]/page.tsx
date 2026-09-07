@@ -122,9 +122,17 @@ export default function HotelDetailPage() {
 
   if (loading || !hotel) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 bg-paper p-10">
-        <Loader2 size={36} className="animate-spin text-brand" />
-        <span className="text-sm font-bold text-sub">در حال بارگذاری اطلاعات لایو هتل و اتاق‌ها...</span>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 bg-paper p-10" role="status" aria-live="polite">
+        <Loader2 size={36} className="animate-spin text-brand" aria-hidden="true" />
+        <span className="text-sm font-bold text-sub">
+          {lt(locale, {
+            fa: 'در حال بارگذاری اطلاعات لایو هتل و اتاق‌ها...',
+            en: 'Loading live hotel and room details...',
+            ar: 'جاري تحميل تفاصيل الفندق والغرف...',
+            zh: '正在加载酒店和房型详情...',
+            ru: 'Загрузка информации об отеле и номерах...',
+          })}
+        </span>
       </div>
     );
   }
@@ -165,19 +173,23 @@ export default function HotelDetailPage() {
       <HotelHero hotel={hotel} />
 
       {/* subnav */}
-      <div className="sticky top-16 z-60 mt-4 border-y border-line/80 bg-paper/95 backdrop-blur-xl">
+      <nav
+        aria-label="Hotel sections navigation"
+        className="sticky top-16 z-[60] mt-4 border-y border-line/80 bg-paper/95 backdrop-blur-xl"
+      >
         <div className="max-w-[1280px] mx-auto px-4 md:px-10 flex items-center gap-1 overflow-x-auto scrollbar-none">
           {subnavItems.map(([id, label]) => (
             <button
               key={id}
+              type="button"
               onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })}
-              className={`shrink-0 min-h-12 px-3.5 border-b-[3px] border-transparent bg-transparent text-[13px] font-extrabold whitespace-nowrap transition ${activeSec === id ? 'text-brand-dark border-brand' : 'text-sub hover:text-brand-dark'}`}
+              className={`shrink-0 min-h-12 px-3.5 border-b-[3px] border-transparent bg-transparent text-[13px] font-extrabold whitespace-nowrap transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${activeSec === id ? 'text-brand-dark border-brand' : 'text-sub hover:text-brand-dark'}`}
             >
               {label}
             </button>
           ))}
         </div>
-      </div>
+      </nav>
 
       <div className="max-w-[1280px] mx-auto px-4 md:px-10 mt-6 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
         <div className="flex flex-col gap-6 min-w-0">
@@ -196,7 +208,7 @@ export default function HotelDetailPage() {
       </div>
 
       {/* ================= MOBILE STICKY RESERVATION BAR (FLYTODAY / BOOKING.COM STYLE) ================= */}
-      <div className="lg:hidden fixed bottom-[calc(58px+env(safe-area-inset-bottom,0px))] inset-x-0 z-[86] bg-surface/98 backdrop-blur-xl border-t border-line px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] flex items-center justify-between gap-4">
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-[86] bg-surface/98 backdrop-blur-xl border-t border-line px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] flex items-center justify-between gap-4">
         <div>
           <span className="text-[10.5px] font-bold text-sub block leading-none mb-1">
             {capacity.n > 0
@@ -205,7 +217,9 @@ export default function HotelDetailPage() {
           </span>
           <div className="text-base font-black text-brand-dark font-mono flex items-baseline gap-1">
             <span>{num(toman(capacity.n > 0 ? totals.total : (hotel?.pricePerNight ?? 0)), locale)}</span>
-            <span className="text-[11px] font-bold text-sub">تومان</span>
+            <span className="text-[11px] font-bold text-sub">
+              {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томан' })}
+            </span>
           </div>
         </div>
 
@@ -229,7 +243,7 @@ export default function HotelDetailPage() {
       </div>
 
       {toast && (
-        <div className="fixed bottom-6 start-1/2 -translate-x-1/2 z-150 px-5 py-3 rounded-xl bg-ink text-surface text-sm font-extrabold shadow-2xl animate-in fade-in slide-in-from-bottom-2">
+        <div className="fixed bottom-6 start-1/2 -translate-x-1/2 z-[150] px-5 py-3 rounded-xl bg-ink text-surface text-sm font-extrabold shadow-2xl animate-in fade-in slide-in-from-bottom-2">
           {toast}
         </div>
       )}

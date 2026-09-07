@@ -2,154 +2,17 @@
 
 import { prisma } from '@/lib/prisma';
 import { bookingSchema } from '@/lib/validations';
-import { calculatePricing } from '@/lib/pricing/engine';
-import { FLIGHTS, HOTELS, TOURS, TRANSFERS, VISA_SERVICES, ESIM_PACKAGES, INSURANCE_PLANS } from '@/lib/data';
 import { revalidatePath } from 'next/cache';
 import { safeAuth } from '@/auth';
-import { BookingSagaOrchestrator } from '@/domains/booking/saga-orchestrator';
+import { BookingApplicationService } from '@/domains/booking/BookingApplicationService';
 import { BookingDomainService } from '@/domains/booking/BookingDomainService';
 import { getTenantAuthContext, assertTenantAccess } from '@/domains/identity/permission-service';
+import { decryptSensitive } from '@/lib/security/crypto-vault';
 
-import { InventoryEngine } from '@/domains/inventory/InventoryEngine';
-import { getHotelById } from '@/services/hotels-service';
-import { getFlightPriceById } from '@/services/flights-service';
-import { encryptSensitive, decryptSensitive } from '@/lib/security/crypto-vault';
-import { businessMetrics } from '@/lib/observability/business-metrics';
-import crypto from 'crypto';
-
-// Addon prices resolve from the same catalog the UI uses — no magic numbers.
-function resolveAddonPrice(kind: 'esim' | 'insurance'): number | null {
-  if (kind === 'esim') {
-    const price = ESIM_PACKAGES[0] ? ESIM_PACKAGES[0].price : null;
-    return price;
-  }
-  const plan = INSURANCE_PLANS[0];
-  return plan ? plan.price : null;
-}
-
-interface PassengerPii {
-  firstName: string;
-  lastName: string;
-  nationalId?: string;
-  passportNo?: string;
-  birthDate?: string;
-  gender?: string;
-}
-
-/**
- * Passenger PII (nationalId, passportNo) is AES-256-GCM encrypted before the
- * passengers array is written into the BookingItem.details JSON snapshot
- * (Section 34). Names, gender and birth date stay readable for ticketing.
- */
-function sanitizePassengersForStorage(passengers: PassengerPii[] | undefined) {
-  return (passengers || []).map((p) => ({
-    ...p,
-    nationalId: p.nationalId ? encryptSensitive(p.nationalId) : p.nationalId,
-    passportNo: p.passportNo ? encryptSensitive(p.passportNo) : p.passportNo,
-  }));
-}
-
-/**
- * Persists each passenger as a TravelerProfile under the booking customer's
- * account with encrypted TravelDocument rows, so the ERP travel dossier and
- * document vault have queryable records (IAM-002, Section 34). Failures are
- * logged but never fail the booking itself.
- */
-async function persistTravelerDocuments(customerId: string, passengers: PassengerPii[] | undefined) {
-  for (const p of passengers || []) {
-    try {
-      let profile = await prisma.travelerProfile.findFirst({
-        where: { userId: customerId, firstName: p.firstName, lastName: p.lastName },
-      });
-      if (!profile) {
-        profile = await prisma.travelerProfile.create({
-          data: {
-            userId: customerId,
-            firstName: p.firstName,
-            lastName: p.lastName,
-            dateOfBirth: p.birthDate || null,
-            gender: p.gender || null,
-          },
-        });
-      }
-
-      const docs: Array<{ type: 'PASSPORT' | 'NATIONAL_ID'; number: string }> = [];
-      if (p.passportNo) docs.push({ type: 'PASSPORT', number: p.passportNo });
-      if (p.nationalId) docs.push({ type: 'NATIONAL_ID', number: p.nationalId });
-
-      for (const doc of docs) {
-        const existing = await prisma.travelDocument.findFirst({
-          where: { travelerProfileId: profile.id, type: doc.type },
-        });
-        // Encrypted values use a random IV, so equality checks must decrypt.
-        if (existing && decryptSensitive(existing.documentNumber) === doc.number) continue;
-        await prisma.travelDocument.create({
-          data: {
-            travelerProfileId: profile.id,
-            type: doc.type,
-            documentNumber: encryptSensitive(doc.number),
-            holderName: `${p.firstName} ${p.lastName}`,
-          },
-        });
-      }
-    } catch (e) {
-      console.error('persistTravelerDocuments error (non-fatal):', e);
-    }
-  }
-}
-
-/**
- * Resolves the canonical base price for an item from the product catalog.
- * Hotel items may come from the live hotel catalog (e.g. `ir_*` ids served by
- * the hotels service) rather than the static seed list, so pricing falls back
- * to the authoritative hotel record server-side. Returns null when the item is
- * unknown so callers can fail closed instead of silently pricing it at an
- * arbitrary fallback.
- */
-function resolveServerBasePrice(type: string, itemId?: string): number | null {
-  if (!itemId) {
-    return null;
-  }
-
-  const flight = FLIGHTS.find((f) => f.id === itemId);
-  if (flight) return flight.price;
-
-  const hotel = HOTELS.find((h) => h.id === itemId);
-  if (hotel) return hotel.pricePerNight;
-
-  const tour = TOURS.find((t) => t.id === itemId);
-  if (tour) return tour.price;
-
-  const transfer = TRANSFERS.find((tr) => tr.id === itemId);
-  if (transfer) return transfer.price;
-
-  const visa = VISA_SERVICES.find((v) => v.id === itemId);
-  if (visa) return visa.price;
-
-  const esim = ESIM_PACKAGES.find((e) => e.id === itemId);
-  if (esim) return esim.price;
-
-  const insurance = INSURANCE_PLANS.find((i) => i.id === itemId);
-  if (insurance) return insurance.price;
-
-  if (type === 'HOTEL') {
-    // Supplier/live catalog hotels (the same source the detail API serves).
-    const liveHotel = getHotelById(itemId);
-    if (liveHotel && typeof liveHotel.pricePerNight === 'number') {
-      return liveHotel.pricePerNight;
-    }
-  }
-
-  if (type === 'FLIGHT') {
-    // Live flight catalog (`fl_*` ids normalized by the flights service).
-    const livePrice = getFlightPriceById(itemId);
-    if (livePrice !== null) return livePrice;
-  }
-
-  return null;
-}
-
-export async function createBookingDraft(data: unknown) {
+export async function createBookingDraft(data: unknown): Promise<
+  | { success: true; bookingId: string; reference: string; totalAmount: number; currency: string; status: string; error?: undefined }
+  | { success: false; error: string; bookingId?: undefined }
+> {
   try {
     const session = await safeAuth();
     if (!session || !session.user) {
@@ -157,189 +20,39 @@ export async function createBookingDraft(data: unknown) {
     }
     const userId = session.user.id;
     const userRole = session.user.role || 'CUSTOMER';
-    const tenantCtx = await getTenantAuthContext(userId).catch(() => null);
 
     // 1. Validate data structure purely based on IDs/quantities
     const parsed = bookingSchema.parse(data);
 
-    // 2. Compute canonical price strictly on the server by delegating to BookingDomainService (BOOK-010).
-    //    Unknown items fail closed — never priced from client input.
-    const baseUnitCost = resolveServerBasePrice(parsed.type, parsed.itemId);
-    if (baseUnitCost === null) {
-      return { success: false, error: 'Unknown item or unavailable product' };
-    }
-    const quantity = parsed.count || 1;
-    const nights = parsed.nights || 1;
-
-    let totalAddonsCost = 0;
-    if (parsed.addons?.esim || parsed.addonIds?.includes('esim')) {
-      const price = resolveAddonPrice('esim');
-      if (price === null) return { success: false, error: 'Add-on unavailable' };
-      totalAddonsCost += price;
-    }
-    if (parsed.addons?.insurance || parsed.addonIds?.includes('insurance')) {
-      const price = resolveAddonPrice('insurance');
-      if (price === null) return { success: false, error: 'Add-on unavailable' };
-      totalAddonsCost += price;
-    }
-
-    const { rawNetCost, pricing } = BookingDomainService.computeDraftPricing({
-      productType: parsed.type,
-      baseUnitCost,
-      quantity,
-      nights,
-      totalAddonsCost,
+    // 2. Delegate directly to canonical BookingApplicationService (BOOK-101, BOOK-102)
+    const result = await BookingApplicationService.createDraft({
+      actorId: userId,
+      type: parsed.type,
+      itemId: parsed.itemId,
+      itemTitle: parsed.itemTitle,
+      count: parsed.count,
+      nights: parsed.nights,
+      travelDate: parsed.travelDate,
+      addonIds: parsed.addonIds,
+      addons: parsed.addons,
+      passengers: parsed.passengers,
+      contactEmail: parsed.contactEmail,
+      contactPhone: parsed.contactPhone,
       userRole,
-      supplierId: parsed.itemId ? 'sup_dynamic' : 'sup_default_firuzo',
-      currency: 'IRR',
     });
 
-    const finalTotalAmount = pricing.sellPrice;
-    const currency = 'IRR';
-
-    // 3. Ensure user exists in DB
-    let user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          id: userId,
-          email: session.user.email || undefined,
-          name: session.user.name || 'Firuzo User',
-        },
-      });
-    }
-
-    // Random suffix avoids same-millisecond unique collisions on the reference.
-    const reference = `ITR-${Date.now()}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
-
-    let holdToken = undefined;
-    if (parsed.itemId) {
-      // Hold inventory for the actual travel date (not "today").
-      const travelDate = parsed.travelDate || new Date().toISOString().split('T')[0];
-      // Attempt to create a hold linked to this booking for traceability.
-      const holdRes = await InventoryEngine.createHold({
-        inventoryItemId: parsed.itemId,
-        date: travelDate,
-        quantity: quantity,
-        ttlMinutes: 15,
-      });
-
-      if (holdRes.success && holdRes.token) {
-        holdToken = holdRes.token;
-      }
-      // A failed hold does not block the draft: ON_REQUEST products may have
-      // no allotments. The booking is created as DRAFT in that case.
-    }
-
-    // 3.5 Check if parsed.itemId maps to an actual InventoryItem row in DB
-    let validInventoryItemId: string | null = null;
-    if (parsed.itemId) {
-      const dbItem = await prisma.inventoryItem.findUnique({ where: { id: parsed.itemId } }).catch(() => null);
-      if (dbItem) validInventoryItemId = dbItem.id;
-    }
-
-    // 4. Create Booking in DRAFT or HELD state with hold rollback compensation (BOOK-005)
-    let booking;
-    try {
-      booking = await prisma.booking.create({
-        data: {
-          reference,
-          customerId: userId,
-          organizationId: tenantCtx?.organizationId || null,
-          branchId: tenantCtx?.branchId || null,
-          status: holdToken ? 'HELD' : 'DRAFT',
-          paymentStatus: 'INITIATED',
-          fulfillmentStatus: 'PENDING',
-          ticketStatus: 'NOT_ISSUED',
-          totalAmount: finalTotalAmount,
-          currency,
-          travelDate: parsed.travelDate || null,
-          holdToken,
-          items: {
-            create: {
-              type: parsed.type,
-              inventoryItemId: validInventoryItemId,
-              netCost: pricing.netCost,
-              markup: pricing.markupAmount,
-              taxAmount: pricing.taxAmount,
-              feeAmount: pricing.serviceFee,
-              sellPrice: finalTotalAmount,
-              details: JSON.stringify({
-                type: parsed.type,
-                itemId: parsed.itemId,
-                itemTitle: parsed.itemTitle,
-                count: quantity,
-                nights,
-                travelDate: parsed.travelDate,
-                addonIds: parsed.addonIds,
-                addons: parsed.addons,
-                contactEmail: parsed.contactEmail,
-                contactPhone: parsed.contactPhone,
-                // PII encrypted at rest; explicit whitelist instead of ...parsed
-                // so client-sent extra keys never enter the audit snapshot.
-                passengers: sanitizePassengersForStorage(parsed.passengers),
-                pricingBreakdown: {
-                  netCost: pricing.netCost,
-                  markupAmount: pricing.markupAmount,
-                  taxAmount: pricing.taxAmount,
-                  serviceFee: pricing.serviceFee,
-                  sellPrice: pricing.sellPrice,
-                  roundingDelta: pricing.roundingDelta,
-                },
-              }),
-            },
-          },
-          priceSnapshots: {
-            create: {
-              baseAmount: pricing.snapshot.baseAmount,
-              markupAmount: pricing.snapshot.markupAmount,
-              serviceFee: pricing.snapshot.serviceFee,
-              taxAmount: pricing.snapshot.taxAmount,
-              discountAmount: pricing.snapshot.discountAmount,
-              sellPrice: pricing.snapshot.sellPrice,
-              currency: pricing.snapshot.currency,
-              fxRate: pricing.snapshot.fxRate,
-              baseCurrency: pricing.snapshot.baseCurrency,
-              breakdownJson: pricing.snapshot.breakdownJson,
-            },
-          },
-          statusHistory: {
-            create: {
-              fromStatus: 'INITIAL',
-              toStatus: holdToken ? 'HELD' : 'DRAFT',
-              actor: userId,
-              reason: 'Booking draft created',
-            },
-          },
-        },
-      });
-    } catch (createErr) {
-      if (holdToken) {
-        await InventoryEngine.releaseHold(holdToken).catch(() => null);
-      }
-      throw createErr;
-    }
-
-    // Link the hold back to the booking for release/refund traceability.
-    if (holdToken) {
-      await prisma.inventoryHold.updateMany({ where: { token: holdToken }, data: { bookingId: booking.id } });
-    }
-
-    // Persist passenger identities with encrypted travel documents (non-fatal).
-    await persistTravelerDocuments(userId, parsed.passengers);
-
-    // Group or create Trip container dossier (ERP-001 Travel File integration)
-    const { TravelFileDomainService } = await import('@/domains/erp/TravelFileDomainService');
-    await TravelFileDomainService.assignBookingToTrip(userId, booking.id, parsed.type).catch((err) => {
-      console.warn('Non-fatal travel file assignment failed:', err);
-    });
-
-    businessMetrics.recordDraftCreated(parsed.type, finalTotalAmount);
-
-    return { success: true, bookingId: booking.id, totalAmount: finalTotalAmount, currency };
+    return {
+      success: true,
+      bookingId: result.bookingId,
+      reference: result.reference,
+      totalAmount: result.totalAmount,
+      currency: result.currency,
+      status: result.status,
+    };
   } catch (err: unknown) {
     console.error('createBookingDraft server error:', err);
-    return { success: false, error: 'Failed to create booking draft' };
+    const message = err instanceof Error ? err.message : 'Failed to create booking draft';
+    return { success: false, error: message };
   }
 }
 
@@ -353,134 +66,76 @@ export async function payBooking(bookingId: string, method: 'wallet_irr' | 'gate
       return { success: false, error: 'Invalid idempotency key' };
     }
 
-    // Ownership & Tenant Isolation check (IAM-002)
-    const booking = await prisma.booking.findUnique({
-      where: { id: bookingId },
-      select: { id: true, customerId: true, organizationId: true, branchId: true, status: true },
-    });
-    if (!booking) return { success: false, error: 'Booking not found' };
-
-    const tenantCtx = await getTenantAuthContext(session.user.id);
-    assertTenantAccess(tenantCtx, {
-      customerId: booking.customerId,
-      organizationId: booking.organizationId,
-      branchId: booking.branchId,
-    });
-    if (['CONFIRMED', 'CANCELLED', 'REFUNDED', 'REFUND_INITIATED', 'CANCEL_REQUESTED', 'CANCELLING'].includes(booking.status)) {
-      return { success: false, error: 'Booking is not payable in its current state' };
-    }
-
-    // B2C-007: Enforce Quote Expiry TTL (15 minutes).
-    // An expired price quote must not be confirmed without re-pricing.
-    const latestSnapshot = await prisma.priceSnapshot.findFirst({
-      where: { bookingId },
-      orderBy: { createdAt: 'desc' },
-    });
-    if (latestSnapshot) {
-      const quoteAgeMs = Date.now() - new Date(latestSnapshot.createdAt).getTime();
-      const QUOTE_MAX_AGE_MS = 15 * 60 * 1000;
-      if (quoteAgeMs > QUOTE_MAX_AGE_MS) {
-        return {
-          success: false,
-          error: 'QUOTE_EXPIRED: Price quote has expired (15-minute TTL). Please re-confirm booking price.',
-          requiresReprice: true,
-        };
-      }
-    }
-
-    const result = await BookingSagaOrchestrator.confirmBookingSaga({
+    // Delegate directly to canonical BookingApplicationService (BOOK-101, BOOK-102)
+    const result = await BookingApplicationService.confirmPayment({
+      actorId: session.user.id,
       bookingId,
       idempotencyKey,
       paymentMethod: method,
     });
+
+    if (!result.success) {
+      return result;
+    }
 
     revalidatePath('/my-trips');
     revalidatePath('/wallet');
     return { success: true, booking: result.booking };
   } catch (err: unknown) {
     console.error('payBooking saga error:', err);
-    return { success: false, error: 'Payment processing failed' };
+    const message = err instanceof Error ? err.message : 'Payment processing failed';
+    return { success: false, error: message };
   }
 }
 
 /**
- * Server-authoritative reprice command for checkout (B2C-008).
- * Re-evaluates catalog base prices, discounts, and creates an immutable PriceSnapshot audit record.
+ * Server-authoritative reprice command for checkout (MONEY-108, MONEY-109, MONEY-110).
+ * Delegates to canonical BookingApplicationService.
  */
-export async function repriceBookingAction(bookingId: string) {
+export async function repriceBookingAction(
+  bookingId: string,
+  options?: { acceptPriceChange?: boolean; customerAcceptedPrice?: number }
+) {
   try {
     const session = await safeAuth();
     if (!session || !session.user) return { success: false, error: 'Unauthorized' };
 
-    const booking = await prisma.booking.findUnique({
-      where: { id: bookingId },
-      include: { items: true },
+    const res = await BookingApplicationService.repriceBooking({
+      actorId: session.user.id,
+      bookingId,
+      acceptPriceChange: options?.acceptPriceChange,
+      customerAcceptedPrice: options?.customerAcceptedPrice,
     });
-    if (!booking) return { success: false, error: 'Booking not found' };
-
-    const tenantCtx = await getTenantAuthContext(session.user.id);
-    assertTenantAccess(tenantCtx, {
-      customerId: booking.customerId,
-      organizationId: booking.organizationId,
-      branchId: booking.branchId,
-    });
-
-    if (booking.status !== 'PENDING_PAYMENT' && booking.status !== 'HELD') {
-      return { success: false, error: 'Cannot reprice booking in current state' };
-    }
-
-    let totalBaseCost = 0;
-    for (const item of booking.items) {
-      const freshPrice = resolveServerBasePrice(item.type, item.inventoryItemId || undefined);
-      if (freshPrice !== null) {
-        totalBaseCost += freshPrice;
-      } else {
-        totalBaseCost += Number(item.netCost);
-      }
-    }
-
-    const { pricing } = BookingDomainService.computeDraftPricing({
-      productType: booking.items[0]?.type || 'HOTEL',
-      baseUnitCost: totalBaseCost,
-      quantity: 1,
-      nights: 1,
-      userRole: session.user.role || 'CUSTOMER',
-      currency: 'IRR',
-    });
-
-    const newTotal = pricing.sellPrice;
-    await prisma.$transaction([
-      prisma.priceSnapshot.create({
-        data: {
-          bookingId: booking.id,
-          baseAmount: pricing.snapshot.baseAmount,
-          markupAmount: pricing.snapshot.markupAmount,
-          serviceFee: pricing.snapshot.serviceFee,
-          taxAmount: pricing.snapshot.taxAmount,
-          discountAmount: pricing.snapshot.discountAmount,
-          sellPrice: pricing.snapshot.sellPrice,
-          currency: pricing.snapshot.currency,
-          fxRate: pricing.snapshot.fxRate,
-          baseCurrency: pricing.snapshot.baseCurrency,
-          breakdownJson: pricing.snapshot.breakdownJson,
-        },
-      }),
-      prisma.booking.update({
-        where: { id: booking.id },
-        data: { totalAmount: newTotal },
-      }),
-    ]);
-
-    businessMetrics.recordPriceChange(Number(booking.totalAmount), newTotal);
 
     return {
-      success: true,
-      newTotalAmount: newTotal,
-      currency: 'IRR',
+      ...res,
+      newTotalAmount: res.newTotalAmount,
+      currency: res.currency,
     };
   } catch (err: unknown) {
     console.error('repriceBookingAction error:', err);
-    return { success: false, error: 'Failed to reprice booking' };
+    const message = err instanceof Error ? err.message : 'Failed to reprice booking';
+    return { success: false, error: message };
+  }
+}
+
+export async function cancelBookingAction(bookingId: string, reason?: string) {
+  try {
+    const session = await safeAuth();
+    if (!session || !session.user) return { success: false, error: 'Unauthorized' };
+
+    const res = await BookingApplicationService.cancelBooking({
+      actorId: session.user.id,
+      bookingId,
+      reason,
+    });
+
+    revalidatePath('/my-trips');
+    return res;
+  } catch (err: unknown) {
+    console.error('cancelBookingAction error:', err);
+    const message = err instanceof Error ? err.message : 'Failed to cancel booking';
+    return { success: false, error: message };
   }
 }
 
@@ -614,10 +269,12 @@ export async function requestWalletTopUp(amountIrr: number) {
 
     const idempotencyKey = `topup_intent_${session.user.id}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 
+    const moneyAmount = new Money(amountIrr, 'IRR');
+
     // Create durable PaymentIntent for this wallet charge (PAY-001)
     const intent = await PaymentDomainService.createPaymentIntent({
       bookingId: `wallet_topup_${session.user.id}`,
-      amount: Math.round(amountIrr),
+      amount: moneyAmount,
       currency: 'IRR',
       idempotencyKey,
       ttlMinutes: 20,
@@ -629,7 +286,7 @@ export async function requestWalletTopUp(amountIrr: number) {
       await GeneralLedgerService.postTopUp({
         groupId: `topup_grp_${intent.id}`,
         userId: session.user.id,
-        amount: Math.round(amountIrr),
+        amount: moneyAmount,
         currency: 'IRR',
         referenceId: intent.id,
       });
@@ -672,28 +329,32 @@ export async function exchangeWalletCurrency(from: 'IRR' | 'USDT' | 'AED', to: '
 
     const { GeneralLedgerService } = await import('@/domains/ledger/GeneralLedgerService');
     const { defaultCurrencyService } = await import('@/domains/currency/CurrencyService');
+    const { Money } = await import('@/lib/finance');
+    const { Prisma } = await import('@prisma/client');
 
     // Balance check straight from GeneralLedgerService with Decimal precision (MONEY-012)
     const account = await prisma.account.findFirst({
       where: { ownerType: 'USER', ownerId: session.user.id, currency: from },
     });
-    const balance = account ? await GeneralLedgerService.getAccountBalance(account.id, from) : 0;
-    if (balance < amount) {
+    const balance = account ? await GeneralLedgerService.getAccountBalance(account.id, from) : null;
+    const fromMoney = new Money(amount, from);
+    if (!balance || balance.lessThan(fromMoney)) {
       return { success: false, error: 'Insufficient balance' };
     }
 
     // 0.5% exchange spread retained as platform revenue.
     const converted = defaultCurrencyService.convert(amount, from, to);
-    const spread = converted * 0.005;
+    const toMoney = new Money(converted, to);
+    const spreadMoney = toMoney.mul(new Prisma.Decimal('0.005')).round(2);
 
     await GeneralLedgerService.postFXConversion({
       groupId: `fx_${session.user.id}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`,
       userId: session.user.id,
       fromCurrency: from,
       toCurrency: to,
-      fromAmount: amount,
-      toAmount: converted,
-      spreadAmount: Math.round(spread * 100) / 100,
+      fromAmount: fromMoney,
+      toAmount: toMoney,
+      spreadAmount: spreadMoney,
       referenceId: 'WALLET_EXCHANGE',
     });
     revalidatePath('/wallet');
@@ -718,6 +379,7 @@ export async function getWallet() {
     const userId = session.user.id;
 
     const { GeneralLedgerService } = await import('@/domains/ledger/GeneralLedgerService');
+    const { Money } = await import('@/lib/finance');
 
     // Demo convenience: seed a starter wallet through the real ledger (TOPUP
     // entries) so wallet payments work in DEMO_MODE. Never runs in production.
@@ -728,14 +390,14 @@ export async function getWallet() {
         await GeneralLedgerService.postTopUp({
           groupId: `demo_topup_${userId}_${Date.now()}`,
           userId,
-          amount: 150_000_000,
+          amount: new Money(150_000_000, 'IRR'),
           currency: 'IRR',
           referenceId: 'DEMO_SEED',
         });
         await GeneralLedgerService.postTopUp({
           groupId: `demo_topup_${userId}_${Date.now()}_usdt`,
           userId,
-          amount: 250,
+          amount: new Money(250, 'USDT'),
           currency: 'USDT',
           referenceId: 'DEMO_SEED',
         });
@@ -785,10 +447,10 @@ export async function getWallet() {
     return {
       success: true,
       balances: {
-        IRR: balances.IRR ?? 0,
-        USDT: balances.USDT ?? 0,
-        AED: balances.AED ?? 0,
-      },
+        IRR: balances.IRR ? balances.IRR.toNumber() : 0,
+        USDT: balances.USDT ? balances.USDT.toNumber() : 0,
+        AED: balances.AED ? balances.AED.toNumber() : 0,
+      } as { IRR: number; USDT: number; AED: number },
       transactions: allEntries,
     };
   } catch (err: unknown) {

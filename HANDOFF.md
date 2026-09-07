@@ -5,7 +5,7 @@
 > `docs/baseline/FEATURE_REALITY_MATRIX.md`. Test counts below reflect their original run,
 > not the current suite (113 unit / 15 E2E spec files as of 2026-09-06).
 
-> **Target Release:** v2.0-rc2 — *historical label; canonical release identity is `package.json` (v1.1.0)*  
+> **Target Release:** v2.0-rc2 — *historical label; canonical release identity is `package.json` (v1.2.0)*  
 > **Repository:** `https://github.com/ali39999-hue/itrip-platform.git`  
 > **Testing Status:** 25/25 Playwright End-to-End Test Suites Passed (100% Green)
 

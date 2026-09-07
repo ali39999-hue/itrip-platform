@@ -8,11 +8,11 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
-        // Brand (Firuzo teal) — primary navigation/confirmation actions.
-        brand: "bg-brand text-surface hover:bg-brand-2 shadow-sm",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
+        // Brand (Firuzo teal) — primary navigation/confirmation actions with WCAG AA compliance (6.28:1)
+        brand: "bg-brand-dark text-surface hover:bg-brand transition-colors shadow-sm",
         // Action (Firuzo gold) — the primary booking/checkout CTA.
-        action: "bg-action text-ink hover:bg-action-hover shadow-md",
+        action: "bg-action text-ink hover:bg-action-hover font-black shadow-md active:scale-[0.98]",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:

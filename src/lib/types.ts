@@ -17,6 +17,9 @@ export interface Flight {
   baggage: string;
   cabinClass: 'economy' | 'business';
   stops: number;
+  ticketType?: 'charter' | 'systemic';
+  aircraft?: string;
+  refundable?: boolean;
 }
 
 export interface Hotel {

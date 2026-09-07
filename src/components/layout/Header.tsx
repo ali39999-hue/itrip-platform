@@ -3,17 +3,19 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from '@/i18n/routing';
-import { Menu, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Menu, X, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { Logo } from './Logo';
 import { CountrySwitcher } from './header/CountrySwitcher';
 import { LocaleSwitcher } from './header/LocaleSwitcher';
 import { DesktopNav, NAV_CATEGORIES } from './header/DesktopNav';
 import { UserAccountMenu } from './header/UserAccountMenu';
+import { CommandPalette } from './CommandPalette';
 import { useTranslations, useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const t = useTranslations('Nav');
   const ct = useTranslations('Common');
@@ -55,6 +57,9 @@ export function Header() {
 
       {/* Drawer Panel */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('ariaLabel')}
         className={`relative z-10 w-full max-w-[320px] bg-surface h-full shadow-2xl flex flex-col justify-between border-e border-line animate-in ${
           isRtl ? 'slide-in-from-right-full' : 'slide-in-from-left-full'
         } duration-250`}
@@ -127,7 +132,13 @@ export function Header() {
         {/* Drawer Footer Notice */}
         <div className="p-4 border-t border-line bg-soft/40 text-center">
           <p className="text-[11px] text-sub font-bold m-0">
-            پلتفرم سفر هوشمند فیروزه · پشتیبانی ۲۴/۷
+            {lt(locale, {
+              fa: 'پلتفرم سفر هوشمند فیروزه · پشتیبانی ۲۴/۷',
+              en: 'Firuzo Smart Travel Platform · 24/7 Support',
+              ar: 'منصة فيروزو للسفر الذكي · دعم ٢٤/٧',
+              zh: 'Firuzo 智能旅游平台 · 24/7 全天候支持',
+              ru: 'Платформа умных путешествий Firuzo · Поддержка 24/7',
+            })}
           </p>
         </div>
       </div>
@@ -152,9 +163,35 @@ export function Header() {
         {/* Desktop Navigation */}
         <DesktopNav />
 
-        {/* User Account & Mobile Toggle */}
+        {/* Search, User Account & Mobile Toggle */}
         <div className="flex items-center gap-2">
+          {/* Quick Command Search Button (Ctrl+K / Cmd+K) */}
+          <button
+            type="button"
+            onClick={() => setCommandPaletteOpen(true)}
+            aria-label="Search or jump to (Ctrl+K)"
+            className="hidden sm:inline-flex items-center gap-2 h-10 px-3 rounded-xl bg-soft/80 hover:bg-soft border border-line/80 text-sub hover:text-ink text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-2xs cursor-pointer"
+          >
+            <Search size={14} className="text-brand-dark" aria-hidden="true" />
+            <span className="hidden md:inline">
+              {lt(locale, { fa: 'جستجو...', en: 'Search...', ar: 'بحث...', zh: '搜索...', ru: 'Поиск...' })}
+            </span>
+            <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded bg-surface border border-line text-[10px] font-mono font-black text-sub">
+              ⌘K
+            </kbd>
+          </button>
+
           <UserAccountMenu />
+
+          {/* Mobile Search Button */}
+          <button
+            type="button"
+            onClick={() => setCommandPaletteOpen(true)}
+            aria-label="Search"
+            className="sm:hidden w-11 h-11 grid place-items-center rounded-2xl text-ink hover:bg-soft active:scale-95 transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+          >
+            <Search size={19} />
+          </button>
 
           {/* Mobile Menu Button with 44px touch target */}
           <button
@@ -168,6 +205,9 @@ export function Header() {
           </button>
         </div>
       </div>
+
+      {/* Global Command Palette Dialog */}
+      <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
 
       {/* Render Mobile Drawer into document.body to escape header's backdrop-filter stacking context */}
       {mounted && typeof document !== 'undefined' && drawerContent && createPortal(drawerContent, document.body)}

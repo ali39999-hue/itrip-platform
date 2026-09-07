@@ -117,7 +117,7 @@ export default function SupportPage() {
                 className="h-11 px-4 rounded-xl bg-surface/15 hover:bg-surface/25 border border-surface/20 text-surface font-bold text-xs transition flex items-center justify-center gap-1.5"
               >
                 <MessageSquare size={16} className="text-mint-bright" />
-                <span>پشتیبانی تلگرام</span>
+                <span>{lt(locale, { fa: 'پشتیبانی تلگرام', en: 'Telegram Support', ar: 'دعم تلغرام', zh: 'Telegram 客服', ru: 'Telegram поддержка' })}</span>
               </a>
             </div>
           </div>
@@ -197,8 +197,11 @@ export default function SupportPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'نام و نام خانوادگی', en: 'Full Name', ar: 'الاسم الكامل', zh: '姓名', ru: 'ФИО' })}</label>
+                    <label htmlFor="support-name" className="block text-xs font-bold text-sub mb-1">
+                      {lt(locale, { fa: 'نام و نام خانوادگی', en: 'Full Name', ar: 'الاسم الكامل', zh: '姓名', ru: 'ФИО' })}
+                    </label>
                     <Input
+                      id="support-name"
                       type="text"
                       required
                       value={name}
@@ -208,8 +211,11 @@ export default function SupportPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-sub mb-1">{t('email')}</label>
+                    <label htmlFor="support-email" className="block text-xs font-bold text-sub mb-1">
+                      {t('email')}
+                    </label>
                     <Input
+                      id="support-email"
                       type="email"
                       required
                       value={email}
@@ -222,23 +228,38 @@ export default function SupportPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="support-category" className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'دسته‌بندی موضوع', en: 'Subject Category', ar: 'التصنيف', zh: '问题类型', ru: 'Категория вопроса' })}</label>
+                    <label htmlFor="support-category" className="block text-xs font-bold text-sub mb-1">
+                      {lt(locale, { fa: 'دسته‌بندی موضوع', en: 'Subject Category', ar: 'التصنيف', zh: '问题类型', ru: 'Категория вопроса' })}
+                    </label>
                     <select
                       id="support-category"
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
                       className="w-full h-11 rounded-xl border border-line px-3 text-xs font-bold bg-surface text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                     >
-                      <option value="flights">پرواز و استرداد بلیط</option>
-                      <option value="hotels">هتل و واچر اقامتگاه</option>
-                      <option value="wallet">کیف پول و درگاه شتاب / تتر</option>
-                      <option value="visa">ویزا و مدارک سفارت</option>
-                      <option value="esim">سیم‌کارت الکترونیک eSIM</option>
+                      <option value="flights">
+                        {lt(locale, { fa: 'پرواز و استرداد بلیط', en: 'Flights & Ticket Refunds', ar: 'الطيران واسترداد التذاكر', zh: '机票与退订', ru: 'Рейсы и возврат билетов' })}
+                      </option>
+                      <option value="hotels">
+                        {lt(locale, { fa: 'هتل و واچر اقامتگاه', en: 'Hotels & Accommodation Voucher', ar: 'الفنادق وقسائم الإقامة', zh: '酒店与住宿凭证', ru: 'Отели и ваучеры' })}
+                      </option>
+                      <option value="wallet">
+                        {lt(locale, { fa: 'کیف پول و درگاه پرداخت', en: 'Wallet & Payment Gateways', ar: 'المحفظة وبوابات الدفع', zh: '钱包与支付网关', ru: 'Кошелек и оплата' })}
+                      </option>
+                      <option value="visa">
+                        {lt(locale, { fa: 'ویزا و خدمات ورود', en: 'Visa & Entry Services', ar: 'التأشيرات وخدمات الدخول', zh: '签证与入境服务', ru: 'Визы и въезд' })}
+                      </option>
+                      <option value="esim">
+                        {lt(locale, { fa: 'سیم‌کارت بین‌المللی eSIM', en: 'International eSIM', ar: 'شريحة eSIM الدولية', zh: '国际 eSIM 卡', ru: 'Международная eSIM' })}
+                      </option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'کد پیگیری یا شماره رزرو (اختیاری)', en: 'Booking PNR (Optional)', ar: 'رقم الحجز (اختياري)', zh: '预订参考号（选填）', ru: 'Код PNR (опционально)' })}</label>
+                    <label htmlFor="support-reference" className="block text-xs font-bold text-sub mb-1">
+                      {lt(locale, { fa: 'کد پیگیری یا شماره رزرو (اختیاری)', en: 'Booking PNR (Optional)', ar: 'رقم الحجز (اختياري)', zh: '预订参考号（选填）', ru: 'Код PNR (опционально)' })}
+                    </label>
                     <Input
+                      id="support-reference"
                       type="text"
                       value={reference}
                       onChange={(e) => setReference(e.target.value)}
@@ -249,8 +270,11 @@ export default function SupportPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'متن پیام یا شرح مشکل', en: 'Message Details', ar: 'تفاصيل الرسالة', zh: '问题详情', ru: 'Описание проблемы' })}</label>
+                  <label htmlFor="support-message" className="block text-xs font-bold text-sub mb-1">
+                    {lt(locale, { fa: 'متن پیام یا شرح مشکل', en: 'Message Details', ar: 'تفاصيل الرسالة', zh: '问题详情', ru: 'Описание проблемы' })}
+                  </label>
                   <textarea
+                    id="support-message"
                     required
                     rows={4}
                     value={message}

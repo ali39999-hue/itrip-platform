@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { INTERPRETERS, INTERPRETER_PRICING as P } from '@/lib/interpreters';
 import { num } from '@/lib/format';
@@ -11,6 +12,7 @@ type Phase = 'pick' | 'connecting' | 'live';
 
 /** دکمه شناور «مترجم SOS» — سطح ۳ سرویس مترجم؛ شیک، خوانا و بدون ایجاد آلودگی بصری */
 export function SosInterpreter() {
+  const pathname = usePathname() || '';
   const t = useTranslations('Interpreter');
   const ariaT = useTranslations('Common.aria');
   const locale = useLocale();
@@ -20,11 +22,20 @@ export function SosInterpreter() {
   const [lang, setLang] = useState('en');
   const [seconds, setSeconds] = useState(0);
 
+  // Suppress SOS button on checkout, payment, and product detail pages on mobile
+  // to avoid colliding with sticky bottom reservation CTAs
+  const isExcluded =
+    pathname.includes('/checkout') ||
+    pathname.includes('/payment-status') ||
+    /^\/([a-z]{2}\/)?(hotels|tours)\/[^/]+/.test(pathname);
+
   useEffect(() => {
     if (phase !== 'live') return;
     const id = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(id);
   }, [phase]);
+
+  if (isExcluded) return null;
 
   function call() {
     setPhase('connecting');

@@ -12,7 +12,14 @@ import { Search, ShoppingCart, QrCode, Wifi, Signal, Globe, CheckCircle2, Smartp
 import { Input } from '@/components/ui/input';
 import { lt } from '@/lib/lt';
 
-const POPULAR_DESTINATIONS = ['ترکیه', 'امارات', 'گرجستان', 'روسیه', 'عمان', 'چین', 'اروپا'];
+const POPULAR_DESTINATIONS = [
+  { id: 'turkey', label: { fa: 'ترکیه', en: 'Turkey', ar: 'تركيا', zh: '土耳其', ru: 'Турция' }, key: 'ترکیه' },
+  { id: 'uae', label: { fa: 'امارات', en: 'UAE', ar: 'الإمارات', zh: '阿联酋', ru: 'ОАЭ' }, key: 'امارات' },
+  { id: 'georgia', label: { fa: 'گرجستان', en: 'Georgia', ar: 'جورجيا', zh: '格鲁吉亚', ru: 'Грузия' }, key: 'گرجستان' },
+  { id: 'russia', label: { fa: 'روسیه', en: 'Russia', ar: 'روسيا', zh: '俄罗斯', ru: 'Россия' }, key: 'روسیه' },
+  { id: 'oman', label: { fa: 'عمان', en: 'Oman', ar: 'عمان', zh: '阿曼', ru: 'Оман' }, key: 'عمان' },
+  { id: 'europe', label: { fa: 'اروپا', en: 'Europe', ar: 'أوروبا', zh: '欧洲', ru: 'Европа' }, key: 'اروپا' },
+];
 
 export default function EsimPage() {
   const t = useTranslations('Esim');
@@ -79,16 +86,16 @@ export default function EsimPage() {
             <span className="text-xs text-surface/80 font-bold">{lt(locale, { fa: 'مقاصد محبوب:', en: 'Popular:', ar: 'شائع:', zh: '热门：', ru: 'Популярные:' })}</span>
             {POPULAR_DESTINATIONS.map((dest) => (
               <button
-                key={dest}
+                key={dest.id}
                 type="button"
-                onClick={() => setQuery(dest)}
+                onClick={() => setQuery(dest.key)}
                 className={`px-3 py-1 rounded-full text-xs font-bold transition ${
-                  query === dest
+                  query === dest.key
                     ? 'bg-action text-ink font-black shadow-xs'
                     : 'bg-surface/20 hover:bg-surface/30 text-surface'
                 }`}
               >
-                {dest}
+                {lt(locale, dest.label)}
               </button>
             ))}
             {query && (

@@ -129,4 +129,111 @@ export class BookingStateMachine {
       throw new Error(`Invalid ticket state transition: Cannot transition ticket from ${current} to ${next}`);
     }
   }
+
+  /**
+   * Multi-dimensional state consistency rules (BOOK-107)
+   * Prevents invalid booking, payment, fulfillment, and ticket state combinations.
+   */
+  static isConsistent(state: {
+    status: BookingStatus;
+    paymentStatus: PaymentStatus;
+    fulfillmentStatus?: FulfillmentStatus;
+    ticketStatus?: TicketStatus;
+  }): { consistent: boolean; violation?: string } {
+    const { status, paymentStatus, fulfillmentStatus, ticketStatus } = state;
+
+    // 1. DRAFT must have INITIATED/PENDING_CUSTOMER payment, NOT_ISSUED ticket, PENDING fulfillment
+    if (status === 'DRAFT') {
+      if (paymentStatus === 'CAPTURED' || paymentStatus === 'AUTHORIZED' || paymentStatus === 'REFUNDED') {
+        return { consistent: false, violation: `DRAFT booking cannot have ${paymentStatus} payment` };
+      }
+      if (ticketStatus && ticketStatus !== 'NOT_ISSUED') {
+        return { consistent: false, violation: `DRAFT booking cannot have ${ticketStatus} ticket` };
+      }
+      if (fulfillmentStatus && fulfillmentStatus !== 'PENDING') {
+        return { consistent: false, violation: `DRAFT booking cannot have ${fulfillmentStatus} fulfillment` };
+      }
+    }
+
+    // 2. HELD cannot have CAPTURED payment, ticket must be NOT_ISSUED
+    if (status === 'HELD') {
+      if (paymentStatus === 'CAPTURED' || paymentStatus === 'REFUNDED') {
+        return { consistent: false, violation: `HELD booking cannot have ${paymentStatus} payment` };
+      }
+      if (ticketStatus && ticketStatus !== 'NOT_ISSUED') {
+        return { consistent: false, violation: `HELD booking cannot have ${ticketStatus} ticket` };
+      }
+    }
+
+    // 3. PENDING_PAYMENT cannot have CAPTURED payment or ISSUED ticket
+    if (status === 'PENDING_PAYMENT') {
+      if (paymentStatus === 'CAPTURED' || paymentStatus === 'REFUNDED') {
+        return { consistent: false, violation: `PENDING_PAYMENT booking cannot have ${paymentStatus} payment` };
+      }
+      if (ticketStatus && ticketStatus !== 'NOT_ISSUED') {
+        return { consistent: false, violation: `PENDING_PAYMENT booking cannot have ${ticketStatus} ticket` };
+      }
+    }
+
+    // 4. CONFIRMED requires authorized/captured payment
+    if (status === 'CONFIRMED') {
+      if (paymentStatus !== 'CAPTURED' && paymentStatus !== 'AUTHORIZED') {
+        return { consistent: false, violation: `CONFIRMED booking requires CAPTURED or AUTHORIZED payment, got ${paymentStatus}` };
+      }
+      if (fulfillmentStatus === 'FAILED') {
+        return { consistent: false, violation: 'CONFIRMED booking cannot have FAILED fulfillment' };
+      }
+    }
+
+    // 5. CANCELLED booking cannot have ISSUED ticket
+    if (status === 'CANCELLED') {
+      if (ticketStatus === 'ISSUED' || ticketStatus === 'ISSUING') {
+        return { consistent: false, violation: `CANCELLED booking cannot retain ${ticketStatus} ticket` };
+      }
+    }
+
+    // 6. REFUNDED booking must have REFUNDED/PARTIALLY_REFUNDED payment
+    if (status === 'REFUNDED') {
+      if (paymentStatus !== 'REFUNDED' && paymentStatus !== 'PARTIALLY_REFUNDED') {
+        return { consistent: false, violation: `REFUNDED booking requires REFUNDED payment status, got ${paymentStatus}` };
+      }
+      if (ticketStatus === 'ISSUED') {
+        return { consistent: false, violation: 'REFUNDED booking cannot retain ISSUED ticket' };
+      }
+    }
+
+    // 7. EXPIRED booking cannot have CAPTURED payment
+    if (status === 'EXPIRED') {
+      if (paymentStatus === 'CAPTURED') {
+        return { consistent: false, violation: 'EXPIRED booking cannot have CAPTURED payment' };
+      }
+      if (ticketStatus && ticketStatus !== 'NOT_ISSUED') {
+        return { consistent: false, violation: `EXPIRED booking cannot have ${ticketStatus} ticket` };
+      }
+    }
+
+    // 8. ISSUED ticket requires CONFIRMED (or during cancellation) and CAPTURED payment
+    if (ticketStatus === 'ISSUED') {
+      if (paymentStatus !== 'CAPTURED' && paymentStatus !== 'AUTHORIZED') {
+        return { consistent: false, violation: `ISSUED ticket requires CAPTURED or AUTHORIZED payment, got ${paymentStatus}` };
+      }
+      if (status !== 'CONFIRMED' && status !== 'CANCEL_REQUESTED' && status !== 'CANCELLING') {
+        return { consistent: false, violation: `ISSUED ticket cannot exist on booking with status ${status}` };
+      }
+    }
+
+    return { consistent: true };
+  }
+
+  static assertConsistency(state: {
+    status: BookingStatus;
+    paymentStatus: PaymentStatus;
+    fulfillmentStatus?: FulfillmentStatus;
+    ticketStatus?: TicketStatus;
+  }): void {
+    const res = this.isConsistent(state);
+    if (!res.consistent) {
+      throw new Error(`Booking State Consistency Violation: ${res.violation}`);
+    }
+  }
 }

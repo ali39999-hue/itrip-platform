@@ -12,7 +12,7 @@ const ROUTES: Record<SearchTabId, string> = {
   tours: '/tours',
 };
 
-export function useSearchFormState(initialTab: SearchTabId = 'plan') {
+export function useSearchFormState(initialTab: SearchTabId = 'flights') {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('Search');

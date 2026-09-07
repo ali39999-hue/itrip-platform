@@ -43,7 +43,8 @@ export async function requestOtp(data: unknown) {
       hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() ||
       hdrs.get('x-real-ip')?.trim() ||
       'unknown_ip';
-    const rateCheck = await RateLimiter.checkOtpRateLimit(parsed.identifier, clientIp);
+    const deviceId = hdrs.get('x-device-id')?.trim() || undefined;
+    const rateCheck = await RateLimiter.checkOtpRateLimit(parsed.identifier, clientIp, deviceId);
     if (!rateCheck.allowed) {
       return { success: false, error: rateCheck.reason || 'Too many codes requested. Please try again later.' };
     }

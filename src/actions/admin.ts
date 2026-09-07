@@ -2,11 +2,14 @@
 
 import { prisma, getTenantScopedPrisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { requirePermission, getTenantAuthContext } from '@/domains/identity/permission-service';
+import { requirePermission, getTenantAuthContext, assertTenantAccess } from '@/domains/identity/permission-service';
+import { TenantRepository } from '@/domains/identity/TenantRepository';
 import { ReconciliationService, ReconciliationReport } from '@/domains/ledger/ReconciliationService';
 import { InventoryEngine } from '@/domains/inventory/InventoryEngine';
 import { SettlementDomainService } from '@/domains/finance/SettlementDomainService';
 import { businessMetrics } from '@/lib/observability/business-metrics';
+import { TravelFileService } from '@/domains/erp/TravelFileService';
+import { ExceptionCenterService } from '@/domains/erp/ExceptionCenterService';
 
 export async function runLedgerReconciliation(): Promise<ReconciliationReport> {
   await requirePermission(['finance:reports:view', 'finance:settlement:match']);
@@ -142,12 +145,18 @@ import { RefundDomainService } from '@/domains/refund/RefundDomainService';
 export async function refundBookingAdmin(bookingId: string) {
   try {
     const user = await requirePermission('booking:refund:approve');
+    const tenantCtx = await getTenantAuthContext(user.id);
 
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      select: { id: true, status: true },
+      select: { id: true, status: true, organizationId: true, branchId: true, customerId: true },
     });
     if (!booking) return { success: false, error: 'Booking not found' };
+    assertTenantAccess(tenantCtx, {
+      organizationId: booking.organizationId,
+      branchId: booking.branchId,
+      customerId: booking.customerId,
+    });
     if (booking.status !== 'CONFIRMED') return { success: false, error: 'Only confirmed bookings can be refunded' };
 
     // Deterministic per-booking key: a second full refund of the same booking —
@@ -333,9 +342,7 @@ export async function createAdminInventoryItem(data: {
   }
 
   if (allotmentsData.length > 0) {
-    await prisma.allotment.createMany({
-      data: allotmentsData,
-    });
+    await InventoryEngine.createAllotments(allotmentsData);
   }
 
   revalidatePath('/admin/inventory');
@@ -390,8 +397,10 @@ export async function createAdminSettlementBatch(params: {
 
 export async function getAdminSettlementBatches(supplierId?: string) {
   try {
-    await requirePermission('finance:reports:view');
-    const batches = await prisma.settlementBatch.findMany({
+    const user = await requirePermission('finance:reports:view');
+    const tenantCtx = await getTenantAuthContext(user.id);
+    const repo = TenantRepository.forContext(tenantCtx);
+    const batches = await repo.findSettlementBatches({
       where: supplierId ? { supplierId } : undefined,
       orderBy: { createdAt: 'desc' },
       take: 50,
@@ -453,5 +462,219 @@ export async function getAdminBusinessMetrics() {
     return { success: false, error: 'Failed to fetch business metrics' };
   }
 }
+
+// ==================== Admin Dashboard & Queue Queries (BASE-006) ====================
+
+export async function getAdminDashboardData() {
+  const user = await requirePermission('booking:view:all');
+  const tenantCtx = await getTenantAuthContext(user.id);
+  const db = getTenantScopedPrisma(tenantCtx.organizationId, tenantCtx.isSuperAdmin);
+
+  const [
+    confirmedBookingsCount,
+    allBookings,
+    ledgerEntries,
+    pendingOutboxCount,
+    openExceptionsCount,
+    pendingRefundsCount,
+    paymentExceptionsCount,
+    supplierExceptionsCount,
+    pendingExceptions,
+    recentHistory,
+    recentAudit,
+  ] = await Promise.all([
+    db.booking.count({ where: { status: 'CONFIRMED' } }),
+    db.booking.findMany({ select: { totalAmount: true, status: true } }),
+    prisma.ledgerEntry.findMany({ select: { direction: true, amount: true, referenceType: true, currency: true } }),
+    prisma.outboxEvent.count({ where: { status: 'PENDING' } }),
+    prisma.operationalException.count({ where: { status: 'OPEN' } }),
+    prisma.refund.count({ where: { status: 'REQUESTED' } }),
+    prisma.operationalException.count({ where: { type: 'PAYMENT_MISMATCH', status: 'OPEN' } }),
+    prisma.operationalException.count({ where: { type: 'SUPPLIER_TIMEOUT', status: 'OPEN' } }),
+    prisma.operationalException.findMany({
+      where: { status: { in: ['OPEN', 'ACKNOWLEDGED', 'IN_PROGRESS'] } },
+      orderBy: [
+        { severity: 'desc' },
+        { detectedAt: 'desc' },
+      ],
+      take: 8,
+    }),
+    prisma.bookingStatusHistory.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 6,
+      include: { booking: { select: { reference: true } } },
+    }),
+    prisma.auditLog.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 6,
+    }),
+  ]);
+
+  return {
+    confirmedBookingsCount,
+    allBookings,
+    ledgerEntries,
+    pendingOutboxCount,
+    openExceptionsCount,
+    pendingRefundsCount,
+    paymentExceptionsCount,
+    supplierExceptionsCount,
+    pendingExceptions,
+    recentHistory,
+    recentAudit,
+  };
+}
+
+export async function getAdminExceptionsData() {
+  await requirePermission(['booking:view:all', 'ops:override:cancel']);
+  const exceptions = await prisma.operationalException.findMany({
+    orderBy: [
+      { severity: 'desc' },
+      { detectedAt: 'desc' },
+    ],
+    take: 50,
+  });
+  return { exceptions };
+}
+
+export async function getAdminOpsData() {
+  const user = await requirePermission('ops:override:cancel');
+  const tenantCtx = await getTenantAuthContext(user.id);
+  const db = getTenantScopedPrisma(tenantCtx.organizationId, tenantCtx.isSuperAdmin);
+  const cutoffTime = new Date(Date.now() - 1000 * 60 * 15);
+  const [pendingEvents, stuckBookings] = await Promise.all([
+    prisma.outboxEvent.findMany({
+      where: { status: { in: ['PENDING', 'FAILED'] } },
+      orderBy: { createdAt: 'asc' },
+    }),
+    db.booking.findMany({
+      where: { 
+        status: 'DRAFT',
+        createdAt: { lt: cutoffTime },
+      },
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+    }),
+  ]);
+
+  return { pendingEvents, stuckBookings };
+}
+
+export async function getAdminTravelFiles() {
+  const user = await requirePermission(['booking:view:all', 'ops:override:cancel']);
+  const tenantCtx = await getTenantAuthContext(user.id);
+  const db = getTenantScopedPrisma(tenantCtx.organizationId, tenantCtx.isSuperAdmin);
+  const trips = await db.trip.findMany({
+    include: {
+      user: {
+        select: { id: true, name: true, phone: true, email: true },
+      },
+      bookings: {
+        include: {
+          items: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+  });
+  return { trips };
+}
+
+export async function getAdminTravelFileById(id: string) {
+  const user = await requirePermission(['booking:view:all', 'ops:override:cancel']);
+  const tenantCtx = await getTenantAuthContext(user.id);
+  const trip = await prisma.trip.findUnique({
+    where: { id },
+    include: {
+      user: {
+        include: {
+          travelerProfiles: {
+            include: { documents: true },
+          },
+        },
+      },
+      bookings: {
+        include: {
+          items: {
+            include: {
+              inventoryItem: {
+                include: { supplier: true },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+      },
+    },
+  });
+  if (trip) {
+    assertTenantAccess(tenantCtx, {
+      organizationId: trip.organizationId,
+      branchId: trip.branchId,
+      customerId: trip.userId,
+    });
+  }
+  return { trip };
+}
+
+export async function addTravelFileNote(tripId: string, note: string) {
+  const user = await requirePermission(['booking:modify', 'ops:override:cancel']);
+  const result = await TravelFileService.addNote(tripId, user.id, note);
+  revalidatePath(`/admin/travel-files/${tripId}`);
+  return result;
+}
+
+export async function assignTravelFileOperator(tripId: string, assignedToId: string, note?: string) {
+  const user = await requirePermission(['user:manage', 'ops:override:cancel']);
+  const result = await TravelFileService.assignOperator(tripId, user.id, assignedToId, note);
+  revalidatePath(`/admin/travel-files/${tripId}`);
+  return result;
+}
+
+export async function updateTravelFileStatus(
+  tripId: string,
+  status: 'PLANNING' | 'BOOKED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
+  reason?: string
+) {
+  const user = await requirePermission(['booking:modify', 'ops:override:cancel']);
+  const result = await TravelFileService.updateStatus(tripId, user.id, status, reason);
+  revalidatePath(`/admin/travel-files/${tripId}`);
+  revalidatePath('/admin/travel-files');
+  return result;
+}
+
+export async function issueTravelFileInvoice(tripId: string, bookingId: string) {
+  const user = await requirePermission(['finance:post', 'ops:override:cancel']);
+  const result = await TravelFileService.issueInvoice(tripId, bookingId, user.id);
+  revalidatePath(`/admin/travel-files/${tripId}`);
+  return result;
+}
+
+export async function triggerTravelFileRefund(
+  tripId: string,
+  bookingId: string,
+  params: { amount?: number; penalty?: number; reason: string }
+) {
+  const user = await requirePermission(['booking:refund:approve', 'ops:override:cancel']);
+  const result = await TravelFileService.triggerRefund(tripId, bookingId, user.id, params);
+  revalidatePath(`/admin/travel-files/${tripId}`);
+  return result;
+}
+
+export async function assignException(exceptionId: string, ownerId: string) {
+  const user = await requirePermission(['ops:override:cancel', 'user:manage']);
+  const result = await ExceptionCenterService.assignException(exceptionId, ownerId, user.id);
+  revalidatePath('/admin/exceptions');
+  return result;
+}
+
+export async function resolveException(exceptionId: string, resolution: string) {
+  const user = await requirePermission(['ops:override:cancel', 'booking:modify']);
+  const result = await ExceptionCenterService.resolveException(exceptionId, resolution, user.id);
+  revalidatePath('/admin/exceptions');
+  return result;
+}
+
 
 

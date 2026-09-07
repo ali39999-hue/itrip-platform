@@ -1,13 +1,9 @@
-interface TokenBucket {
-  tokens: number;
-  lastRefill: number;
-}
-
-const memoryStore = new Map<string, TokenBucket>();
+import { RedisRateLimiter, type OtpVelocityResult } from './redis-rate-limiter';
 
 /**
  * Token Bucket Rate Limiter with In-Memory / Distributed-Ready Architecture (Section 35)
  * Controls burst traffic and protects authentication, OTP, and webhook endpoints against abuse.
+ * Delegates to RedisRateLimiter for unified distributed policy enforcement (AUTH-101, AUTH-102).
  */
 export class RateLimiter {
   /**
@@ -21,63 +17,39 @@ export class RateLimiter {
     maxTokens: number = 5,
     refillTimeSeconds: number = 60
   ): Promise<{ allowed: boolean; remaining: number; resetTimeMs: number }> {
-    const now = Date.now();
-    const refillRatePerMs = maxTokens / (refillTimeSeconds * 1000);
-
-    let bucket = memoryStore.get(key);
-    if (!bucket) {
-      bucket = { tokens: maxTokens, lastRefill: now };
-      memoryStore.set(key, bucket);
-    } else {
-      // Calculate token refill based on elapsed time
-      const elapsedMs = now - bucket.lastRefill;
-      const tokensToAdd = elapsedMs * refillRatePerMs;
-      bucket.tokens = Math.min(maxTokens, bucket.tokens + tokensToAdd);
-      bucket.lastRefill = now;
-    }
-
-    if (bucket.tokens >= 1) {
-      bucket.tokens -= 1;
-      const remaining = Math.floor(bucket.tokens);
-      const timeToFullMs = ((maxTokens - bucket.tokens) / refillRatePerMs);
-      return {
-        allowed: true,
-        remaining,
-        resetTimeMs: now + timeToFullMs,
-      };
-    }
-
-    const timeUntilOneTokenMs = (1 - bucket.tokens) / refillRatePerMs;
-    return {
-      allowed: false,
-      remaining: 0,
-      resetTimeMs: now + timeUntilOneTokenMs,
-    };
+    return RedisRateLimiter.checkRateLimit(key, maxTokens, refillTimeSeconds);
   }
 
   /**
-   * Layered OTP flood protection (Section 35)
-   * Max 3 requests per 10 minutes per phone/email identifier
+   * Layered OTP flood and velocity protection (AUTH-101, AUTH-102)
+   * Enforces identifier velocity, IP velocity, device limits, and 60-second cooldowns.
    */
-  static async checkOtpRateLimit(identifier: string, ip?: string): Promise<{ allowed: boolean; reason?: string }> {
-    // 1. Identifier rate limit: max 3 per 10 minutes
+  static async checkOtpRateLimit(
+    identifier: string,
+    ip?: string,
+    deviceId?: string
+  ): Promise<{ allowed: boolean; reason?: string; cooldownRemainingSeconds?: number; violations?: string[] }> {
+    if (ip || deviceId) {
+      const res: OtpVelocityResult = await RedisRateLimiter.checkOtpVelocity({
+        identifier,
+        ip,
+        deviceId,
+      });
+      return {
+        allowed: res.allowed,
+        reason: res.reason,
+        cooldownRemainingSeconds: res.cooldownRemainingSeconds,
+        violations: res.violations,
+      };
+    }
+
+    // Token-bucket fallback when no IP/device context is supplied (e.g. basic unit tests)
     const idCheck = await this.checkRateLimit(`otp:id:${identifier.toLowerCase()}`, 3, 600);
     if (!idCheck.allowed) {
       return {
         allowed: false,
         reason: 'Too many verification requests for this number/email. Please wait before retrying.',
       };
-    }
-
-    // 2. IP rate limit: max 10 requests per 5 minutes per IP
-    if (ip) {
-      const ipCheck = await this.checkRateLimit(`otp:ip:${ip}`, 10, 300);
-      if (!ipCheck.allowed) {
-        return {
-          allowed: false,
-          reason: 'Too many requests from this IP address. Please wait.',
-        };
-      }
     }
 
     return { allowed: true };

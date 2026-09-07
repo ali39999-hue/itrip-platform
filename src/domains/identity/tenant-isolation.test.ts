@@ -4,6 +4,7 @@ import {
   getTenantAuthContext,
   assertTenantAccess,
 } from './permission-service';
+import { TenantRepository, TenantWriteViolationError } from './TenantRepository';
 import { prisma } from '@/lib/prisma';
 
 describe('Tenant Isolation & RBAC Security Suite (IAM-001 to IAM-003, SEC-001)', () => {
@@ -331,5 +332,167 @@ describe('Tenant Isolation & RBAC Security Suite (IAM-001 to IAM-003, SEC-001)',
 
     // Cleanup
     await prisma.organizationMembership.delete({ where: { id: membership.id } });
+  });
+
+  it('IAM-108: Complete org/branch authorization matrix in policies and access guards', async () => {
+    // 1. Setup Branch THR (in Org A) and Branch SYZ (in Org B)
+    const branchesA = await prisma.organizationBranch.findMany({ where: { organizationId: orgAId } });
+    const branchA1 = branchesA[0];
+
+    const branchA2 = await prisma.organizationBranch.create({
+      data: { organizationId: orgAId, name: 'Org A Secondary Branch', code: 'A2' },
+    });
+
+    const branchAgentCtx = {
+      userId: userAId,
+      role: 'AGENT',
+      organizationId: orgAId,
+      branchId: branchA1.id,
+      isSuperAdmin: false,
+      permissions: new Set<import('./permissions').ERPPermission>(['booking:view', 'booking:create']),
+    };
+
+    // Matrix Rule 1: Same org, same branch -> ALLOW
+    expect(() =>
+      assertTenantAccess(branchAgentCtx, {
+        organizationId: orgAId,
+        branchId: branchA1.id,
+      })
+    ).not.toThrow();
+
+    // Matrix Rule 2: Same org, different branch -> DENY
+    expect(() =>
+      assertTenantAccess(branchAgentCtx, {
+        organizationId: orgAId,
+        branchId: branchA2.id,
+      })
+    ).toThrow(/Branch access boundary violation/i);
+
+    // Matrix Rule 3: Different org -> DENY
+    expect(() =>
+      assertTenantAccess(branchAgentCtx, {
+        organizationId: orgBId,
+        branchId: null,
+      })
+    ).toThrow(/Cross-tenant data access blocked/i);
+
+    // Matrix Rule 4: Headquarter user without branch restriction can access all branches in own org
+    const hqCtx = {
+      userId: userAId,
+      role: 'AGENT',
+      organizationId: orgAId,
+      branchId: undefined,
+      isSuperAdmin: false,
+      permissions: new Set<import('./permissions').ERPPermission>(['booking:view', 'booking:create']),
+    };
+    expect(() =>
+      assertTenantAccess(hqCtx, {
+        organizationId: orgAId,
+        branchId: branchA2.id,
+      })
+    ).not.toThrow();
+
+    await prisma.organizationBranch.delete({ where: { id: branchA2.id } });
+  });
+
+  it('IAM-110: Cross-organization write tests — TenantRepository blocks cross-org writes', async () => {
+    const ctxA = await getTenantAuthContext(userAId);
+    const repoA = TenantRepository.forContext(ctxA);
+
+    // 1. User A attempting to create a Booking explicitly targeted at Org B is rejected
+    await expect(
+      repoA.createBooking({
+        reference: `ITR-CROSS-${suffix}`,
+        customerId: userAId,
+        organizationId: orgBId, // Mismatched target org!
+        status: 'DRAFT',
+        totalAmount: 100,
+        currency: 'IRR',
+      })
+    ).rejects.toThrow(TenantWriteViolationError);
+
+    // 2. User A attempting to create an Invoice targeting Org B is rejected
+    await expect(
+      repoA.createInvoice({
+        invoiceNumber: `INV-CROSS-${suffix}`,
+        bookingId: `bkg_dummy_${suffix}`,
+        customerId: userAId,
+        organizationId: orgBId, // Mismatched target org!
+        totalAmount: 100,
+        netAmount: 90,
+        taxAmount: 10,
+        currency: 'IRR',
+      })
+    ).rejects.toThrow(TenantWriteViolationError);
+
+    // 3. User A attempting to create a Trip targeting Org B is rejected
+    await expect(
+      repoA.createTrip({
+        reference: `TRP-CROSS-${suffix}`,
+        userId: userAId,
+        organizationId: orgBId, // Mismatched target org!
+        title: 'Cross Org Trip Attempt',
+      })
+    ).rejects.toThrow(TenantWriteViolationError);
+  });
+
+  it('IAM-104: Database consistency triggers prevent persisting cross-tenant ownership', async () => {
+    // 1. Trip created for Org A
+    const tripA = await prisma.trip.create({
+      data: {
+        reference: `TRP-TRG-${suffix}`,
+        userId: userAId,
+        organizationId: orgAId,
+        title: 'Org A Trip',
+      },
+    });
+
+    // 2. DB Trigger prevents inserting a Booking for Org B linked to a Trip belonging to Org A!
+    await expect(
+      prisma.booking.create({
+        data: {
+          reference: `ITR-TRG-FAIL-${suffix}`,
+          customerId: userBId,
+          organizationId: orgBId, // Org B!
+          tripId: tripA.id,       // But Trip belongs to Org A!
+          totalAmount: 100,
+          currency: 'IRR',
+          status: 'DRAFT',
+        },
+      })
+    ).rejects.toThrow(/CROSS_ORG_VIOLATION/i);
+
+    // 3. Valid booking with matching org succeeds
+    const bookingA = await prisma.booking.create({
+      data: {
+        reference: `ITR-TRG-PASS-${suffix}`,
+        customerId: userAId,
+        organizationId: orgAId,
+        tripId: tripA.id,
+        totalAmount: 100,
+        currency: 'IRR',
+        status: 'DRAFT',
+      },
+    });
+    expect(bookingA.id).toBeDefined();
+
+    // 4. DB Trigger prevents inserting an Invoice for Org B linked to a Booking belonging to Org A!
+    await expect(
+      prisma.invoice.create({
+        data: {
+          invoiceNumber: `INV-TRG-FAIL-${suffix}`,
+          bookingId: bookingA.id, // Booking belongs to Org A
+          customerId: userBId,
+          organizationId: orgBId, // Mismatched Org B!
+          totalAmount: 100,
+          netAmount: 100,
+          currency: 'IRR',
+        },
+      })
+    ).rejects.toThrow(/CROSS_ORG_VIOLATION/i);
+
+    // 5. Cleanup
+    await prisma.booking.delete({ where: { id: bookingA.id } });
+    await prisma.trip.delete({ where: { id: tripA.id } });
   });
 });

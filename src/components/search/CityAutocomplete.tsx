@@ -5,7 +5,7 @@ import { useLocale } from 'next-intl';
 import { MapPin, Check, Search, X, Plane, ChevronRight } from 'lucide-react';
 import { CITIES } from '@/lib/data';
 import { useCountryStore } from '@/stores/country-store';
-import { countryName } from '@/lib/countries';
+import { countryNameL } from '@/components/home/sections/countryNames';
 import { lt } from '@/lib/lt';
 
 interface CityAutocompleteProps {
@@ -156,10 +156,16 @@ export function CityAutocomplete({
           className="hidden md:block absolute top-[calc(100%+8px)] start-0 z-[100] w-full min-w-[240px] max-h-64 overflow-y-auto p-1.5 rounded-2xl bg-surface border border-line shadow-elev-3 animate-in fade-in slide-in-from-top-2 duration-200"
         >
           <div className="px-2 py-1 text-[11px] font-bold text-sub border-b border-line/50 mb-1">
-            {locale === 'en' ? `Cities in ${countryName(country, locale)}` : `شهرهای ${countryName(country, locale)}`}
+            {lt(locale, {
+              fa: `شهرهای ${countryNameL(country, locale)}`,
+              en: `Cities in ${countryNameL(country, locale)}`,
+              ar: `المدن في ${countryNameL(country, locale)}`,
+              zh: `${countryNameL(country, locale)} 城市列表`,
+              ru: `Города: ${countryNameL(country, locale)}`,
+            })}
           </div>
           {filteredCities.map((city, idx) => {
-            const cityName = locale === 'en' ? city.nameEn : city.nameFa;
+            const cityName = locale === 'fa' ? city.nameFa : city.nameEn;
             const isSelected = value === cityName;
             const isHighlighted = idx === highlightIdx;
             return (
@@ -196,12 +202,17 @@ export function CityAutocomplete({
 
       {/* ================= MOBILE FULLSCREEN SHEET (< MD) — FLYTODAY STYLE ================= */}
       {open && (
-        <div className="md:hidden fixed inset-0 z-[150] bg-surface flex flex-col animate-in fade-in slide-in-from-bottom-3 duration-200">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={label}
+          className="md:hidden fixed inset-0 z-[150] bg-surface flex flex-col animate-in fade-in slide-in-from-bottom-3 duration-200"
+        >
           {/* Mobile Sheet Top Bar */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-line bg-paper/80 backdrop-blur-md">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-mint grid place-items-center text-brand-dark">
-                <MapPin size={16} />
+                <MapPin size={16} aria-hidden="true" />
               </div>
               <div>
                 <h3 className="text-sm font-black text-ink leading-tight">{label}</h3>
@@ -220,7 +231,7 @@ export function CityAutocomplete({
               type="button"
               onClick={() => setOpen(false)}
               className="w-9 h-9 rounded-full bg-soft text-ink grid place-items-center active:scale-95 transition"
-              aria-label="بستن"
+              aria-label={lt(locale, { fa: 'بستن', en: 'Close', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}
             >
               <X size={18} />
             </button>
@@ -295,11 +306,11 @@ export function CityAutocomplete({
                     ru: `Результаты (${filteredCities.length})`,
                   })
                 : lt(locale, {
-                    fa: `همه شهرهای ${countryName(country, locale)}`,
-                    en: `All cities in ${countryName(country, locale)}`,
-                    ar: `جميع مدن ${countryName(country, locale)}`,
-                    zh: `${countryName(country, locale)} 的所有城市`,
-                    ru: `Все города: ${countryName(country, locale)}`,
+                    fa: `همه شهرهای ${countryNameL(country, locale)}`,
+                    en: `All cities in ${countryNameL(country, locale)}`,
+                    ar: `جميع مدن ${countryNameL(country, locale)}`,
+                    zh: `${countryNameL(country, locale)} 的所有城市`,
+                    ru: `Все города: ${countryNameL(country, locale)}`,
                   })}
             </div>
 
@@ -318,7 +329,7 @@ export function CityAutocomplete({
               </div>
             ) : (
               filteredCities.map((city) => {
-                const cityName = locale === 'en' ? city.nameEn : city.nameFa;
+                const cityName = locale === 'fa' ? city.nameFa : city.nameEn;
                 const isSelected = value === cityName;
                 return (
                   <button
@@ -345,7 +356,7 @@ export function CityAutocomplete({
                           )}
                         </div>
                         <span className="text-[11px] text-sub font-medium">
-                          {city.countryId}
+                          {city.countryId ? countryNameL(city.countryId, locale) : ''}
                         </span>
                       </div>
                     </div>

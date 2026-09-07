@@ -85,7 +85,7 @@ export function TourAccommodation({ tour }: TourAccommodationProps) {
               <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-black text-brand-dark bg-surface px-2.5 py-0.5 sm:py-1 rounded-full border border-line">
                 <Plane size={12} /> {lt(locale, { fa: 'ناوگان حمل و نقل', en: 'Flights & Fleet', ar: 'الطيران والمواصلات', zh: '交通与车队', ru: 'Авиалинии и авто' })}
               </span>
-              <span className="text-[10.5px] sm:text-[11px] font-black text-mint-bright bg-mint px-2 py-0.5 rounded-full">
+              <span className="text-[10.5px] sm:text-[11px] font-black text-brand-dark bg-mint px-2 py-0.5 rounded-full border border-brand/20">
                 {lt(locale, { fa: 'تضمین صندلی', en: 'Confirmed', ar: 'مؤكد', zh: '即时确认位', ru: 'Подтверждено' })}
               </span>
             </div>

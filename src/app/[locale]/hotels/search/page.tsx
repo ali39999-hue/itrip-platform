@@ -131,6 +131,52 @@ function HotelsSearchInner() {
           activeFiltersCount={activeFiltersCount}
         />
 
+        {/* Quick Hotel Filter Pills (Trip.com / Alibaba Benchmark) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs font-black my-2">
+          <button
+            type="button"
+            onClick={resetAll}
+            className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${chips.length === 0 ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+          >
+            {lt(locale, { fa: 'همه اقامتگاه‌ها', en: 'All Stays', ar: 'كل الإقامات', zh: '全部住宿', ru: 'Все отели' })}
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleStar(5)}
+            className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${stars.has(5) ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+          >
+            {lt(locale, { fa: '۵ ستاره', en: '5-Star', ar: '5 نجوم', zh: '5星级', ru: '5 звезд' })}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (stars.has(4)) {
+                toggleStar(4);
+              } else {
+                toggleStar(4);
+                if (!stars.has(5)) toggleStar(5);
+              }
+            }}
+            className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${stars.has(4) ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+          >
+            {lt(locale, { fa: '۴ و ۵ ستاره', en: '4+ Stars', ar: '4+ نجوم', zh: '4星及以上', ru: '4+ звезды' })}
+          </button>
+          <button
+            type="button"
+            onClick={toggleFreeCancel}
+            className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${freeCancel ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+          >
+            {lt(locale, { fa: 'کنسلی رایگان', en: 'Free Cancellation', ar: 'إلغاء مجاني', zh: '免费取消', ru: 'Бесплатная отмена' })}
+          </button>
+          <button
+            type="button"
+            onClick={() => setMinScore(minScore === 9 ? 0 : 9)}
+            className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${minScore === 9 ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+          >
+            {lt(locale, { fa: 'امتیاز ۹+ (فوق‌العاده)', en: 'Score 9+ (Superb)', ar: 'تقييم 9+ (استثنائي)', zh: '9分以上（极佳）', ru: 'Оценка 9+ (Супер)' })}
+          </button>
+        </div>
+
         <HotelFilterChips chips={chips} onResetAll={resetAll} />
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -299,15 +345,14 @@ function HotelsSearchInner() {
             <span className="w-px h-4 bg-surface/30 dark:bg-line" />
             <button
               type="button"
-              onClick={() => {
-                const sorts: Array<'rec' | 'cheap' | 'score' | 'stars'> = ['rec', 'cheap', 'score', 'stars'];
-                const curIdx = sorts.indexOf(sort);
-                const nextSort = sorts[(curIdx + 1) % sorts.length];
-                setSort(nextSort);
-              }}
-              className="flex items-center gap-1.5 text-xs font-black py-1 px-2 rounded-full hover:bg-surface/20 transition active:scale-95"
+              onClick={() => setShowMap((prev) => !prev)}
+              className="flex items-center gap-1.5 text-xs font-black py-1 px-2 rounded-full hover:bg-surface/20 transition active:scale-95 text-mint-bright"
             >
-              <span className="text-[11px] opacity-75">{lt(locale, { fa: 'مرتب‌سازی', en: 'Sort', ar: 'ترتيب', zh: '排序', ru: 'Сорт' })}</span>
+              <span>
+                {showMap
+                  ? lt(locale, { fa: 'لیست اقامتگاه‌ها', en: 'List View', ar: 'عرض القائمة', zh: '列表视图', ru: 'Список' })
+                  : lt(locale, { fa: 'مشاهده روی نقشه', en: 'Map View', ar: 'عرض الخريطة', zh: '查看地图', ru: 'На карте' })}
+              </span>
             </button>
           </div>
         </div>

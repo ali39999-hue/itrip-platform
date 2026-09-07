@@ -162,9 +162,10 @@ export default function TrainsPage() {
                 type="button"
                 onClick={swapStations}
                 className="w-9 h-9 rounded-full bg-surface border border-line shadow-xs text-brand-dark hover:bg-mint hover:scale-110 active:scale-95 transition grid place-items-center shrink-0 z-20 -my-1.5 md:my-0"
-                title="جابجایی مبدأ و مقصد"
+                aria-label={lt(locale, { fa: 'جابجایی مبدأ و مقصد', en: 'Swap origin and destination', ar: 'تبديل المحطات', zh: '交换起止点', ru: 'Поменять местами' })}
+                title={lt(locale, { fa: 'جابجایی مبدأ و مقصد', en: 'Swap origin and destination', ar: 'تبديل المحطات', zh: '交换起止点', ru: 'Поменять местами' })}
               >
-                <ArrowLeftRight size={14} className="rotate-90 md:rotate-0" />
+                <ArrowLeftRight size={14} className="rotate-90 md:rotate-0" aria-hidden="true" />
               </button>
 
               <div className="relative w-full flex-1">
@@ -200,7 +201,7 @@ export default function TrainsPage() {
         {/* Filters Sidebar on Desktop */}
         <aside className="w-full md:w-64 shrink-0 hidden md:block">
           <div className="bg-surface rounded-2xl border border-line p-6 sticky top-24 shadow-xs flex flex-col gap-6">
-            <h3 className="font-black text-ink text-base border-b border-line pb-3">{lt(locale, { fa: 'نوع وسیله نقلیه', en: 'Transport Type', ar: 'نوع المركبة', zh: '交通工具类型', ru: 'Тиپ транспорта' })}</h3>
+            <h3 className="font-black text-ink text-base border-b border-line pb-3">{lt(locale, { fa: 'نوع وسیله نقلیه', en: 'Transport Type', ar: 'نوع المركبة', zh: '交通工具类型', ru: 'Тип транспорта' })}</h3>
             <div className="flex flex-col gap-3">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input

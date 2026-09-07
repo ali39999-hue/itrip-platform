@@ -120,7 +120,7 @@ export function DialogFooter({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 sm:space-x-reverse gap-2 mt-6 ${className}`}
+      className={`flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 sm:gap-3 mt-6 ${className}`}
       {...props}
     />
   );

@@ -150,7 +150,7 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
       </main>
 
       {lbIndex !== null && (
-        <div className="fixed inset-0 z-140 flex items-center justify-center bg-ink/95 p-4" onClick={() => setLbIndex(null)}>
+        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-ink/95 p-4" onClick={() => setLbIndex(null)}>
           <div className="w-full max-w-[760px]" onClick={(e) => e.stopPropagation()}>
             <div className="relative overflow-hidden aspect-[4/3] rounded-2xl bg-deep ph-texture shadow-2xl">
               <Image

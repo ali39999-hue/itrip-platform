@@ -43,13 +43,18 @@ export function FlightCompareModal({
   const minPrice = Math.min(...comparedFlights.map((f) => f.price));
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-6 bg-deep/70 backdrop-blur-sm animate-in fade-in duration-200">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="flight-compare-modal-title"
+      className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-6 bg-deep/70 backdrop-blur-sm animate-in fade-in duration-200"
+    >
       <div className="w-full max-w-5xl max-h-[92vh] bg-surface rounded-3xl border border-line shadow-elev-3 flex flex-col overflow-hidden">
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-line flex items-center justify-between bg-surface/90">
           <div>
-            <h3 className="text-lg sm:text-xl font-black text-ink flex items-center gap-2">
-              <Plane size={20} className="text-brand shrink-0" />
+            <h3 id="flight-compare-modal-title" className="text-lg sm:text-xl font-black text-ink flex items-center gap-2">
+              <Plane size={20} className="text-brand shrink-0" aria-hidden="true" />
               <span>
                 {lt(locale, {
                   fa: `مقایسه رو در روی پروازها (${num(comparedFlights.length, locale)} پرواز)`,

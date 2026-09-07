@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useLocale } from 'next-intl';
+import { lt } from '@/lib/lt';
 import { COUNTRY_ORDER, EXPERIENCE_CATEGORY_META, type CountryId, type ExperienceCategory } from '@/lib/countries';
 import type { Answers, BudgetTier, Pace, Who } from '@/hooks/usePlanner';
 import { PlannerWizard, QUESTIONS } from '@/components/plan/PlannerWizard';
@@ -128,8 +129,20 @@ export default function PlanPage() {
     if (typeof navigator !== 'undefined' && navigator.share && /mobile|android|iphone/i.test(navigator.userAgent)) {
       try {
         await navigator.share({
-          title: 'برنامه سفر هوشمند فیروزه',
-          text: 'برنامه اختصاصی سفر من در پلتفرم فیروزه را مشاهده کنید:',
+          title: lt(locale, {
+            fa: 'برنامه سفر هوشمند فیروزه',
+            en: 'Firuzo Smart Trip Itinerary',
+            ar: 'خطة السفر الذكية من فيروزو',
+            zh: 'Firuzo 智能行程规划',
+            ru: 'Умный маршрут путешествия Firuzo',
+          }),
+          text: lt(locale, {
+            fa: 'برنامه اختصاصی سفر من در پلتفرم فیروزه را مشاهده کنید:',
+            en: 'Check out my custom travel itinerary on Firuzo:',
+            ar: 'شاهد خطة سفري المخصصة على منصة فيروزو:',
+            zh: '在 Firuzo 查看我的专属旅行规划：',
+            ru: 'Посмотрите мой индивидуальный маршрут на Firuzo:',
+          }),
           url: fullUrl,
         });
       } catch {

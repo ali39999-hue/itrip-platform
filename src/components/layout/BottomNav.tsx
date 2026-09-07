@@ -27,10 +27,19 @@ export function BottomNav() {
 
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
 
+  // Hide BottomNav during checkout, payment flows, and product detail pages
+  // to avoid viewport overcrowding with sticky reservation bars (FlyToday, Booking.com, Trip.com standard)
+  const isExcludedPage =
+    pathname.includes('/checkout') ||
+    pathname.includes('/payment-status') ||
+    /^\/([a-z]{2}\/)?hotels\/[^/]+/.test(pathname) ||
+    /^\/([a-z]{2}\/)?tours\/[^/]+/.test(pathname);
+  if (isExcludedPage) return null;
+
   return (
     <nav
       aria-label={t('ariaLabel')}
-      className="fixed inset-x-0 bottom-0 z-85 lg:hidden border-t border-line bg-surface/95 backdrop-blur-xl shadow-[0_-8px_28px_rgba(5,63,62,.10)]"
+      className="fixed inset-x-0 bottom-0 z-[85] lg:hidden border-t border-line bg-surface/95 backdrop-blur-xl shadow-[0_-8px_28px_rgba(5,63,62,.10)]"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="grid grid-cols-5">

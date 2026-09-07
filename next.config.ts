@@ -1,8 +1,20 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from 'next-intl/plugin';
+import { execSync } from 'node:child_process';
+import packageJson from './package.json';
 
 const withNextIntl = createNextIntlPlugin();
 const isDev = process.env.NODE_ENV !== 'production';
+
+let commitSha = process.env.NEXT_PUBLIC_COMMIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA || process.env.GITHUB_SHA || '';
+if (!commitSha) {
+  try {
+    commitSha = execSync('git rev-parse --short HEAD').toString().trim();
+  } catch {
+    commitSha = 'cf45237';
+  }
+}
+const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || packageJson.version || '1.2.0';
 
 // CI-012 / BASE-008 — A production build with demo behaviour enabled is a
 // hard error: simulated success paths must never be able to ship. Demo builds
@@ -14,6 +26,10 @@ if (!isDev && process.env.DEMO_MODE === 'true') {
 }
 
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_APP_VERSION: appVersion,
+    NEXT_PUBLIC_COMMIT_SHA: commitSha,
+  },
   ...(isDev
     ? {
         allowedDevOrigins: ['localhost:3000', '127.0.0.1:3000'],
@@ -59,13 +75,13 @@ const nextConfig: NextConfig = {
       {
         source: '/(.*)',
         headers: [
-          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains; preload' },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://images.unsplash.com https://upload.wikimedia.org https://cdn.alibaba.ir https://cdn.grschannel.com https://www.eghamat24.com https://ak-d.tripcdn.com https://*.tile.openstreetmap.org; connect-src 'self' https://vitals.vercel-insights.com; frame-ancestors 'self';",
+            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com https://call.firuzo.online https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://images.unsplash.com https://upload.wikimedia.org https://cdn.alibaba.ir https://cdn.grschannel.com https://www.eghamat24.com https://ak-d.tripcdn.com https://*.tile.openstreetmap.org https://call.firuzo.online; connect-src 'self' https://vitals.vercel-insights.com https://call.firuzo.online https://*.google-analytics.com; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';",
           },
         ],
       },

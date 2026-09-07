@@ -15,6 +15,11 @@ export default defineConfig({
     env: process.env.TEST_DATABASE_URL
       ? { DATABASE_URL: process.env.TEST_DATABASE_URL }
       : {},
+    server: {
+      deps: {
+        inline: ['next-auth'],
+      },
+    },
   },
   resolve: {
     alias: {

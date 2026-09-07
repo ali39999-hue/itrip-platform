@@ -4,8 +4,10 @@ import Image from 'next/image';
 import { Link } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCountryStore } from '@/stores/country-store';
-import { COUNTRIES, countryName } from '@/lib/countries';
+import { COUNTRIES } from '@/lib/countries';
+import { countryNameL } from './countryNames';
 import { shimmerDataUrl, DESTINATION_IMAGE_MAP } from '@/lib/image-utils';
+import { lt } from '@/lib/lt';
 
 export function DestinationsSection() {
   const locale = useLocale();
@@ -21,15 +23,19 @@ export function DestinationsSection() {
   ]).map((city) => {
     const cityName = locale === 'fa' ? city.fa : city.en;
     const img = DESTINATION_IMAGE_MAP[city.en] || DESTINATION_IMAGE_MAP[city.fa] || 'https://images.unsplash.com/photo-1579762715118-a6f1d4b934f1?w=600&q=80';
-    const desc = locale === 'fa' 
-      ? `کشف زیبایی‌ها، جاذبه‌های برتر و اقامتگاه‌های لوکس ${city.fa}`
-      : `Discover top attractions, culture & luxury stays in ${city.en}`;
+    const desc = lt(locale, {
+      fa: `کشف جاذبه‌های برتر، فرهنگ غنی و اقامتگاه‌های لوکس ${city.fa}`,
+      en: `Discover top attractions, culture & luxury stays in ${city.en}`,
+      ar: `اكتشف أفضل المعالم والثقافة والإقامة الفاخرة في ${city.en}`,
+      zh: `探索 ${city.en} 的热门景点、丰富文化与特色住宿`,
+      ru: `Откройте для себя достопримечательности и отели в ${city.en}`,
+    });
 
     return {
       name: cityName,
       nameFa: city.fa,
       nameEn: city.en,
-      href: city.href || `/hotels/search?city=${encodeURIComponent(city.fa)}`,
+      href: city.href || `/hotels/search?city=${encodeURIComponent(locale === 'fa' ? city.fa : city.en)}`,
       img,
       desc,
     };
@@ -41,16 +47,16 @@ export function DestinationsSection() {
         <div>
           <p className="mb-2 text-brand-dark font-black text-xs">{t('destKicker')}</p>
           <h2 className="text-2xl md:text-[32px] font-black text-ink m-0">
-            {t('destTitle', { country: countryName(country, locale) })}
+            {t('destTitle', { country: countryNameL(country, locale) })}
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="flex sm:grid overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 pb-3 sm:pb-0 scrollbar-none">
           {cities.map((city) => (
             <Link
               key={city.nameEn}
               href={city.href}
-              className="group relative h-72 rounded-3xl overflow-hidden shadow-elev-1 hover:shadow-elev-3 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="shrink-0 w-[84vw] sm:w-auto snap-start group relative h-64 sm:h-72 rounded-3xl overflow-hidden shadow-elev-1 hover:shadow-elev-3 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <Image
                 src={city.img}
