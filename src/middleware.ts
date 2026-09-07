@@ -61,8 +61,13 @@ export async function middleware(request: NextRequest) {
   const localeMatch = pathname.match(/^\/(fa|en|ar|zh|ru)(\/|$)/);
   const locale = localeMatch ? localeMatch[1] : 'fa';
 
-  // 2. Handle /login or /[locale]/login alias -> redirect to /[locale]/auth (SEC-104 open redirect check)
-  if (pathname === '/login' || pathname.match(/^\/(fa|en|ar|zh|ru)\/login$/)) {
+  // 2. Handle /login, /signin or /[locale]/(login|signin|auth/signin) aliases -> redirect to /[locale]/auth (SEC-104 open redirect check)
+  if (
+    pathname === '/login' ||
+    pathname === '/signin' ||
+    pathname === '/sign-in' ||
+    pathname.match(/^\/(fa|en|ar|zh|ru)\/(login|signin|sign-in|auth\/signin|auth\/sign-in)$/)
+  ) {
     const callbackUrl = request.nextUrl.searchParams.get('callbackUrl');
     const authUrl = new URL('/' + locale + '/auth', request.url);
     if (callbackUrl && isSafeRedirectUrl(callbackUrl)) {

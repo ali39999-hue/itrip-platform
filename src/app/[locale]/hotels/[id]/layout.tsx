@@ -1,11 +1,7 @@
 import { Metadata } from 'next';
 import { HOTELS } from '@/lib/data';
 
-export async function generateStaticParams() {
-  return HOTELS.map((hotel) => ({
-    id: hotel.id,
-  }));
-}
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({
   params,

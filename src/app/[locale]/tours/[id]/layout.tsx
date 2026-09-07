@@ -1,14 +1,8 @@
 import type { Metadata } from 'next';
-import { getAllTours, getTourById } from '@/services/tours-service';
+import { getTourById } from '@/services/tours-service';
 import { prisma } from '@/lib/prisma';
 
-export const dynamicParams = true;
-
-export async function generateStaticParams() {
-  return getAllTours().map((tour) => ({
-    id: tour.id,
-  }));
-}
+export const dynamic = 'force-dynamic';
 
 type TourMeta = {
   title: string;
