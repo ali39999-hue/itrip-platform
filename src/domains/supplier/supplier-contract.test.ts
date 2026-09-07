@@ -150,17 +150,18 @@ describe('Real Suppliers & Integration Contract Suite (SUP-101 to SUP-109)', () 
   });
 
   it('SUP-106: Encrypts and decrypts supplier credentials securely via CryptoVault', () => {
+    const testApiKey = `test-supplier-key-${crypto.randomUUID()}`;
     const creds = {
-      apiKey: 'sec_parto_live_key_998877',
+      apiKey: testApiKey,
       officeId: 'THR-FIRUZO-MAIN',
       endpointUrl: 'https://api.partocrs.com/v2',
     };
 
     const sealed = encryptSensitive(JSON.stringify(creds));
-    expect(sealed).not.toContain('sec_parto_live_key_998877');
+    expect(sealed).not.toContain(testApiKey);
 
     const unsealed = JSON.parse(decryptSensitive(sealed));
-    expect(unsealed.apiKey).toBe('sec_parto_live_key_998877');
+    expect(unsealed.apiKey).toBe(testApiKey);
     expect(unsealed.officeId).toBe('THR-FIRUZO-MAIN');
   });
 

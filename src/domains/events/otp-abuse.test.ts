@@ -8,7 +8,7 @@ import crypto from 'crypto';
 
 describe('OTP Abuse & Replay Hardening Suite (AUTH-101 to AUTH-105)', () => {
   const originalEnv = { ...process.env };
-  const secretKey = 'test-secret-key-firuzo-security-suite';
+  const secretKey = process.env.AUTH_SECRET || crypto.randomBytes(32).toString('hex');
 
   function hashOtp(code: string): string {
     return crypto.createHmac('sha256', process.env.AUTH_SECRET || secretKey).update(code).digest('hex');
