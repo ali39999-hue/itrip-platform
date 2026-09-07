@@ -488,9 +488,10 @@ export class TravelFileService {
       throw new Error('Note content cannot be empty');
     }
 
+    const userExists = operatorId ? await prisma.user.findUnique({ where: { id: operatorId }, select: { id: true } }) : null;
     const log = await prisma.auditLog.create({
       data: {
-        userId: operatorId,
+        userId: userExists ? operatorId : undefined,
         action: 'TRAVEL_FILE_NOTE_ADDED',
         resource: 'Trip',
         resourceId: tripId,
@@ -510,9 +511,10 @@ export class TravelFileService {
     assignedToId: string,
     note?: string
   ): Promise<{ success: boolean; logId: string }> {
+    const userExists = operatorId ? await prisma.user.findUnique({ where: { id: operatorId }, select: { id: true } }) : null;
     const log = await prisma.auditLog.create({
       data: {
-        userId: operatorId,
+        userId: userExists ? operatorId : undefined,
         action: 'TRAVEL_FILE_OPERATOR_ASSIGNED',
         resource: 'Trip',
         resourceId: tripId,
@@ -544,9 +546,10 @@ export class TravelFileService {
       data: { status },
     });
 
+    const userExists = operatorId ? await prisma.user.findUnique({ where: { id: operatorId }, select: { id: true } }) : null;
     await prisma.auditLog.create({
       data: {
-        userId: operatorId,
+        userId: userExists ? operatorId : undefined,
         action: 'TRAVEL_FILE_STATUS_UPDATED',
         resource: 'Trip',
         resourceId: tripId,

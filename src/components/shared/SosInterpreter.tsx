@@ -46,17 +46,18 @@ export function SosInterpreter() {
 
   return (
     <>
-      {/* Floating SOS button — always positioned on the physical right corner (right-4 md:right-6)
-          so it never collides with the phone call widget which is permanently docked on the left (left-4) */}
+      {/* Floating SOS button — physical end corner. On mobile it docks ABOVE the
+          external call-center widget (permanently docked at bottom-~80px on the
+          same side, z-index out of our reach), icon-only to avoid collisions. */}
       <button
         onClick={() => { setOpen(true); setPhase('pick'); setSeconds(0); }}
         aria-label={t('sos')}
-        className="fixed z-[120] bottom-[76px] lg:bottom-6 end-4 lg:end-6 min-h-[44px] px-3.5 rounded-full bg-deep/95 hover:bg-deep text-surface border border-line/30 backdrop-blur-md shadow-elev-2 hover:shadow-elev-3 transition-all inline-flex items-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className="fixed z-[120] bottom-[150px] lg:bottom-6 end-4 lg:end-6 min-h-[44px] max-lg:w-11 max-lg:px-0 max-lg:justify-center px-3.5 rounded-full bg-deep/95 hover:bg-deep text-surface border border-line/30 backdrop-blur-md shadow-elev-2 hover:shadow-elev-3 transition-all inline-flex items-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
-        <span className="relative grid place-items-center w-6 h-6 rounded-full bg-rose-500 text-surface shadow-sm">
+        <span className="relative grid place-items-center w-6 h-6 rounded-full bg-rose-500 text-surface shadow-sm shrink-0">
           <Siren size={13} />
         </span>
-        <span className="text-xs font-black text-surface/90 group-hover:text-surface">
+        <span className="max-lg:hidden text-xs font-black text-surface/90 group-hover:text-surface">
           {t('sos')}
         </span>
       </button>

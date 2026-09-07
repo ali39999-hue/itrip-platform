@@ -2,7 +2,7 @@
 
 import { useTranslations, useLocale } from 'next-intl';
 import { Ban, Check, ShieldCheck, X } from 'lucide-react';
-import { fa, gFmt } from '@/lib/hotel-format';
+import { fa, stayDate } from '@/lib/hotel-format';
 import { ROOMS, PLANS, type PlanId } from '@/lib/hotel-mock';
 import { quote, toman, type useHotelBooking, FREE_CANCEL_HOURS } from '@/hooks/useHotelBooking';
 import { lt } from '@/lib/lt';
@@ -41,6 +41,9 @@ export function BookingPanel({ booking, onBook }: BookingPanelProps) {
   const worst = chosenPlans.includes('none') ? 'none' : chosenPlans.includes('partial') ? 'partial' : 'free';
   const dl = new Date(new Date(checkin + 'T14:00:00').getTime() - FREE_CANCEL_HOURS * 36e5);
   const canBook = capacity.n > 0 && needs.length === 0;
+  // Jalali for fa/ar readers (hotel dates are consumed in Jalali in Iran),
+  // Gregorian for other locales (see stayDate in lib/hotel-format).
+  const fmtDate = (d: Date) => stayDate(d, locale);
 
   return (
     <aside className="lg:sticky lg:top-[126px] border border-line rounded-xl bg-surface shadow-elev-2 overflow-hidden">
@@ -58,11 +61,11 @@ export function BookingPanel({ booking, onBook }: BookingPanelProps) {
         <div className="grid grid-cols-2 gap-2">
           <div className="p-2.5 border border-line rounded-xl">
             <span className="block text-[10px] font-extrabold text-sub">{t('checkIn')}</span>
-            <b className="text-[12.5px] font-black">{gFmt.format(new Date(checkin + 'T00:00:00'))}</b>
+            <b className="text-[12.5px] font-black">{fmtDate(new Date(checkin + 'T00:00:00'))}</b>
           </div>
           <div className="p-2.5 border border-line rounded-xl">
             <span className="block text-[10px] font-extrabold text-sub">{t('checkOut')}</span>
-            <b className="text-[12.5px] font-black">{gFmt.format(new Date(checkout + 'T00:00:00'))}</b>
+            <b className="text-[12.5px] font-black">{fmtDate(new Date(checkout + 'T00:00:00'))}</b>
           </div>
         </div>
         
@@ -154,7 +157,7 @@ export function BookingPanel({ booking, onBook }: BookingPanelProps) {
 
         <div className="p-3 border border-line/70 rounded-xl bg-soft/50 flex items-start gap-2 text-[11px] font-bold text-sub leading-snug">
           <ShieldCheck size={15} className="text-brand shrink-0 mt-0.5" />
-          <span>{worst === 'free' ? `${locale === 'fa' ? `کنسلی رایگان تا ${gFmt.format(dl)}.` : `Free cancellation until ${gFmt.format(dl)}.`}` : (lt(locale, { fa: 'تابع شرایط استرداد هتل.', en: 'Subject to hotel cancellation policies.', ar: 'خاضع لسياسات الإلغال الخاصة بالفندق.', zh: '以酒店取消政策为准。', ru: 'Согласно правилам отмены отеля.' }))}</span>
+          <span>{worst === 'free' ? `${locale === 'fa' ? `کنسلی رایگان تا ${fmtDate(dl)}.` : `Free cancellation until ${fmtDate(dl)}.`}` : (lt(locale, { fa: 'تابع شرایط استرداد هتل.', en: 'Subject to hotel cancellation policies.', ar: 'خاضع لسياسات الإلغال الخاصة بالفندق.', zh: '以酒店取消政策为准。', ru: 'Согласно правилам отмены отеля.' }))}</span>
         </div>
       </div>
     </aside>

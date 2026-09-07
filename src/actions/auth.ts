@@ -141,6 +141,72 @@ export async function verifyOtpAndLogin(identifier: string, otp: string, channel
   };
 }
 
+/**
+ * Standard password-based authentication for administrative and staff accounts.
+ */
+export async function loginWithPassword(identifier: string, password: string) {
+  const trimmedId = identifier.trim();
+  const trimmedPw = password.trim();
+  if (!trimmedId || !trimmedPw) {
+    return { success: false, error: 'شناسه کاربری و کلمه عبور الزامی است' };
+  }
+
+  try {
+    await signIn('credentials', {
+      identifier: trimmedId,
+      password: trimmedPw,
+      channel: 'credentials',
+      redirect: false,
+    });
+  } catch (error: unknown) {
+    const err = error as { message?: string; digest?: string; type?: string; name?: string };
+    if (err?.message?.includes('NEXT_REDIRECT') || err?.digest?.startsWith('NEXT_REDIRECT')) {
+      // Expected redirect on successful signIn
+    } else if (err?.type === 'CredentialsSignin' || err?.name === 'CredentialsSignin') {
+      return { success: false, error: 'اطلاعات ورود نامعتبر است (نام کاربری یا کلمه عبور اشتباه است)' };
+    }
+    return { success: false, error: 'خطا در احراز هویت' };
+  }
+
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { phone: trimmedId },
+        { email: trimmedId.toLowerCase() },
+      ],
+    },
+    select: {
+      id: true,
+      email: true,
+      phone: true,
+      name: true,
+      firstNameFa: true,
+      lastNameFa: true,
+      nationalId: true,
+    },
+  });
+
+  if (!user) {
+    return { success: false, error: 'حساب کاربری یافت نشد' };
+  }
+
+  const isStaff = await hasErpRole(user.id);
+  const role = isStaff ? ('admin' as const) : ('customer' as const);
+
+  return {
+    success: true,
+    user: {
+      id: user.id,
+      phone: user.phone || '',
+      email: user.email || undefined,
+      firstNameFa: user.firstNameFa || user.name || 'کاربر',
+      lastNameFa: user.lastNameFa || 'فیروزه',
+      kycApproved: Boolean(user.nationalId),
+      role,
+    },
+  };
+}
+
 export async function updateProfileDetails(data: unknown) {
   try {
     // Authorization: a signed-in user may only ever update their own profile.

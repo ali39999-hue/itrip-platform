@@ -30,12 +30,23 @@ export function ToursPromoModal() {
   const pathname = usePathname();
   const tours = getAllTours();
 
-  const isRestrictedRoute = pathname?.includes('/admin') || pathname?.includes('/checkout') || pathname?.includes('/book');
+  // Never crowd transactional flows: search/result/detail/checkout screens need
+  // every pixel for filters, sticky pills and reservation CTAs.
+  const isRestrictedRoute =
+    pathname?.includes('/admin') ||
+    pathname?.includes('/checkout') ||
+    pathname?.includes('/book') ||
+    pathname?.includes('/payment-status') ||
+    pathname?.includes('/flights') ||
+    pathname?.includes('/hotels') ||
+    /\/tours\/.+/.test(pathname ?? '');
 
   const [isOpen, setIsOpen] = useState(false);
   const [selectedTourIndex, setSelectedTourIndex] = useState(0);
   const [dontShowToday, setDontShowToday] = useState(false);
   const [mounted, setMounted] = useState(false);
+  // User-dismissed floating trigger (declutters mobile; persists for the session)
+  const [triggerHidden, setTriggerHidden] = useState(false);
 
   const selectedTour = tours[selectedTourIndex] || tours[0];
 
@@ -59,6 +70,7 @@ export function ToursPromoModal() {
 
     // Check if seen in this session
     if (sessionStorage.getItem('firuzo_tours_promo_session_seen')) {
+      setTriggerHidden(true);
       return;
     }
 
@@ -112,17 +124,30 @@ export function ToursPromoModal() {
   return (
     <>
       {/* Discreet Floating Trigger Badge when popup is closed */}
-      {!isOpen && (
-        <button
-          type="button"
-          onClick={() => setIsOpen(true)}
-          className="fixed start-4 bottom-20 lg:bottom-6 z-40 bg-gradient-to-r from-brand to-brand-dark hover:from-brand-dark hover:to-brand text-surface text-xs font-black px-3.5 py-2 rounded-2xl shadow-elev-3 flex items-center gap-2 border border-surface/20 transition-all hover:scale-105 active:scale-95 animate-in fade-in slide-in-from-bottom-3 cursor-pointer"
-          title={lt(locale, { fa: 'مشاهده تورهای منتخب فیروزه', en: 'Explore Curated Tours', ar: 'استكشف الجولات المختارة', zh: '精选旅游特惠', ru: 'Особые туры Firuzo' })}
-        >
-          <span className="w-2 h-2 rounded-full bg-mint-bright animate-ping" />
-          <Compass size={16} className="text-mint-bright" />
-          <span>{lt(locale, { fa: 'تورهای دست‌چین فیروزه', en: 'Curated Tours', ar: 'جولات فيروزو', zh: '精选旅游', ru: 'Особые туры' })}</span>
-        </button>
+      {!isOpen && !triggerHidden && (
+        <div className="fixed start-4 bottom-20 lg:bottom-6 z-40 flex items-center">
+          <button
+            type="button"
+            onClick={() => setIsOpen(true)}
+            className="bg-gradient-to-r from-brand to-brand-dark hover:from-brand-dark hover:to-brand text-surface text-xs font-black px-3.5 py-2 rounded-2xl shadow-elev-3 flex items-center gap-2 border border-surface/20 transition-all hover:scale-105 active:scale-95 animate-in fade-in slide-in-from-bottom-3 cursor-pointer"
+            title={lt(locale, { fa: 'مشاهده تورهای منتخب فیروزه', en: 'Explore Curated Tours', ar: 'استكشف الجولات المختارة', zh: '精选旅游特惠', ru: 'Особые туры Firuzo' })}
+          >
+            <span className="w-2 h-2 rounded-full bg-mint-bright animate-ping" />
+            <Compass size={16} className="text-mint-bright" />
+            <span>{lt(locale, { fa: 'تورهای دست‌چین فیروزه', en: 'Curated Tours', ar: 'جولات فيروزو', zh: '精选旅游', ru: 'Особые туры' })}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setTriggerHidden(true);
+              try { sessionStorage.setItem('firuzo_tours_promo_session_seen', 'true'); } catch { /* noop */ }
+            }}
+            aria-label={lt(locale, { fa: 'بستن', en: 'Dismiss', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}
+            className="-ms-2 -mt-5 w-5 h-5 rounded-full bg-ink/70 hover:bg-ink text-surface grid place-items-center shrink-0 shadow transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            <X size={11} />
+          </button>
+        </div>
       )}
 
       {/* Main Promo Popup Modal */}

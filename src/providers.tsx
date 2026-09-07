@@ -1,8 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from 'next-themes';
 import { useAuthStore } from '@/stores/auth-store';
 import { getSessionUser } from '@/actions/auth';
+import { getQueryClient } from '@/lib/query-client';
+import { initAnalytics } from '@/lib/analytics';
 
 /**
  * Restores the client auth store from the server session on mount. A valid
@@ -29,10 +33,22 @@ export function SessionBootstrap() {
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  // One QueryClient per browser session (singleton); SSR gets a fresh client
+  // per request inside getQueryClient(). useState preserves identity.
+  const [queryClient] = useState(getQueryClient);
+
+  useEffect(() => {
+    // Privacy-safe funnel analytics: no-op without NEXT_PUBLIC_POSTHOG_KEY,
+    // honors Do-Not-Track, never receives PII (see src/lib/analytics.ts).
+    initAnalytics();
+  }, []);
+
   return (
-    <>
-      <SessionBootstrap />
-      {children}
-    </>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+        <SessionBootstrap />
+        {children}
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }

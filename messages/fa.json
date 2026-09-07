@@ -120,6 +120,12 @@
       "installTitle": "نصب اپلیکیشن Firuzo",
       "installSubtitle": "دسترسی سریع‌تر بدون مرورگر",
       "install": "نصب"
+    },
+    "states": {
+      "retry": "تلاش مجدد",
+      "loading": "در حال بارگذاری…",
+      "errorTitle": "مشکلی پیش آمد",
+      "emptyTitle": "نتیجه‌ای پیدا نشد"
     }
   },
   "NotFound": {
@@ -464,7 +470,8 @@
     "successTitle": "رزرو شما با موفقیت قطعی و صادر شد!",
     "refCode": "کد رهگیری (PNR)",
     "downloadPdf": "دانلود واچر رسمی PDF",
-    "myTrips": "مشاهده در سفرهای من"
+    "myTrips": "مشاهده در سفرهای من",
+    "continueToPayment": "تایید و ادامه به پرداخت"
   },
   "HotelsSearch": {
     "title": "جستجوی هتل‌ها و اقامتگاه‌ها",
@@ -663,7 +670,9 @@
     "learnMore": "بیشتر بدانید",
     "flights": "پرواز",
     "sortBy": "مرتب‌سازی",
-    "apply": "اعمال فیلترها"
+    "apply": "اعمال فیلترها",
+    "minPrice": "حداقل قیمت",
+    "maxPrice": "حداکثر قیمت"
   },
   "Tours": {
     "title": "گشت‌ها و تورهای اختصاصی",

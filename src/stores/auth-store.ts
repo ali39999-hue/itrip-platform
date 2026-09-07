@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { KycProfile } from '@/lib/types';
-import { verifyOtpAndLogin, logoutUser, type AuthChannel } from '@/actions/auth';
+import { verifyOtpAndLogin, loginWithPassword as loginWithPasswordAction, logoutUser, type AuthChannel } from '@/actions/auth';
 
 interface User {
   id: string;
@@ -32,6 +32,7 @@ interface AuthState {
   user: User | null;
   kyc: KycProfile;
   login: (identifier: string, otp: string, channel?: AuthChannel) => Promise<boolean>;
+  loginWithPassword: (identifier: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   setKycStep: (step: KycProfile['step']) => void;
   updateKyc: (data: Partial<KycProfile>) => void;
@@ -53,6 +54,18 @@ export const useAuthStore = create<AuthState>()(
           kyc: { step: 'approved', phone: res.user.phone },
         });
         return true;
+      },
+      loginWithPassword: async (identifier, password) => {
+        const res = await loginWithPasswordAction(identifier, password);
+        if (!res.success || !res.user) {
+          return { success: false, error: res.error || 'ورود ناموفق بود' };
+        }
+
+        set({
+          user: res.user,
+          kyc: { step: 'approved', phone: res.user.phone },
+        });
+        return { success: true };
       },
       logout: () => {
         logoutUser().catch((e) => console.error('NextAuth logout failed', e));

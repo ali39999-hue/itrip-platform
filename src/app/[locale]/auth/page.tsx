@@ -15,13 +15,18 @@ export default function AuthPage() {
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, setKycStep, updateKyc, kyc, user } = useAuthStore();
+  const { login, loginWithPassword, setKycStep, updateKyc, kyc, user } = useAuthStore();
 
   // Return the visitor to where they came from (checkout, my-trips, wallet…).
   // Only accept safe internal paths.
   const rawCallback = searchParams.get('callbackUrl');
   const callbackUrl =
     rawCallback && rawCallback.startsWith('/') && !rawCallback.startsWith('//') ? rawCallback : '/account';
+
+  const [authMode, setAuthMode] = useState<'otp' | 'password'>(
+    callbackUrl.includes('/admin') ? 'password' : 'otp'
+  );
+  const [password, setPassword] = useState('');
 
   // Already signed-in users don't need the auth flow — send them on their way.
   useEffect(() => {
@@ -131,6 +136,26 @@ export default function AuthPage() {
     router.push(callbackUrl);
   }
 
+  async function handlePasswordLogin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!identifier.trim() || !password.trim()) {
+      setError(lt(locale, { fa: 'شناسه کاربری و کلمه عبور را وارد نمایید', en: 'Identifier and password are required', ar: 'المعرف وكلمة المرور مطلوبان', zh: '用户名和密码必填', ru: 'Логин и пароль обязательны' }));
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await loginWithPassword(identifier.trim(), password.trim());
+      if (!res.success) {
+        setError(res.error || lt(locale, { fa: 'اطلاعات ورود اشتباه است', en: 'Invalid credentials', ar: 'بيانات الدخول غير صحيحة', zh: '登录信息无效', ru: 'Неверные учетные данные' }));
+        return;
+      }
+      router.push(callbackUrl);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function scanPassport() {
     setScanning(true);
     setTimeout(() => {
@@ -168,102 +193,186 @@ export default function AuthPage() {
           <Logo size="md" />
         </div>
 
-        {/* Step: Multi-channel identifier input */}
+        {/* Step: Multi-channel identifier input or Staff Password Login */}
         {step === 'phone' && (
           <div>
             <div className="w-12 h-12 bg-mint rounded-2xl grid place-items-center text-brand-dark mb-6">
               <LogIn size={24} />
             </div>
-            <h1 className="font-black text-2xl text-ink mb-2">{t('loginTitle')}</h1>
-            <p className="text-xs font-bold text-sub mb-4">{t('loginSubtitle')}</p>
+            <h1 className="font-black text-2xl text-ink mb-2">
+              {authMode === 'password' ? lt(locale, { fa: 'ورود سازمانی و مدیریت ERP', en: 'Staff & ERP Management Login', ar: 'تسجيل دخول الإدارة وERP', zh: '管理与ERP系统登录', ru: 'Вход для персонала и ERP' }) : t('loginTitle')}
+            </h1>
+            <p className="text-xs font-bold text-sub mb-4">
+              {authMode === 'password' ? lt(locale, { fa: 'ورود با کلمه عبور اختصاصی مدیران و کارشناسان پشتیبانی', en: 'Sign in with administrator credentials for ERP access', ar: 'تسجيل الدخول ببيانات الإدارة للوصول إلى ERP', zh: '使用管理员凭据登录ERP工作台', ru: 'Вход с учетными данными администратора для доступа к ERP' }) : t('loginSubtitle')}
+            </p>
 
-            {/* Channels Switcher */}
-            <div className="grid grid-cols-5 gap-1.5 p-1 bg-soft rounded-2xl mb-6">
+            {/* Auth Mode Toggle: OTP vs Staff Password */}
+            <div className="flex bg-soft p-1 rounded-2xl mb-5 text-xs font-bold">
               <button
                 type="button"
-                onClick={() => { setChannel('phone'); setError(''); setIdentifier(''); }}
-                className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'phone' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
-                title="SMS / Phone"
+                onClick={() => { setAuthMode('otp'); setError(''); }}
+                className={`flex-1 py-2 rounded-xl text-center transition ${authMode === 'otp' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
               >
-                <Phone size={16} />
-                <span className="text-[10px]">SMS</span>
+                {lt(locale, { fa: 'ورود با کد یک‌بار مصرف', en: 'One-Time Code (OTP)', ar: 'رمز لمرة واحدة', zh: '短信/邮箱验证码', ru: 'Одноразовый код' })}
               </button>
               <button
                 type="button"
-                onClick={() => { setChannel('email'); setError(''); setIdentifier(''); }}
-                className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'email' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
-                title="Email"
+                onClick={() => { setAuthMode('password'); setError(''); }}
+                className={`flex-1 py-2 rounded-xl text-center transition ${authMode === 'password' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
               >
-                <Mail size={16} />
-                <span className="text-[10px]">Email</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => { setChannel('telegram'); setError(''); setIdentifier(''); }}
-                className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'telegram' ? 'bg-[#229ED9]/15 text-[#229ED9] shadow-xs' : 'text-sub hover:text-ink'}`}
-                title="Telegram"
-              >
-                <Send size={16} />
-                <span className="text-[10px]">Telegram</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => { setChannel('whatsapp'); setError(''); setIdentifier(''); }}
-                className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'whatsapp' ? 'bg-[#25D366]/15 text-[#25D366] shadow-xs' : 'text-sub hover:text-ink'}`}
-                title="WhatsApp"
-              >
-                <MessageCircle size={16} />
-                <span className="text-[10px]">WhatsApp</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => { setChannel('wechat'); setError(''); setIdentifier(''); }}
-                className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'wechat' ? 'bg-[#07C160]/15 text-[#07C160] shadow-xs' : 'text-sub hover:text-ink'}`}
-                title="WeChat"
-              >
-                <QrCode size={16} />
-                <span className="text-[10px]">WeChat</span>
+                {lt(locale, { fa: 'ورود با کلمه عبور (ERP)', en: 'Password Login (ERP)', ar: 'كلمة المرور (ERP)', zh: '密码登录 (ERP)', ru: 'Пароль (ERP)' })}
               </button>
             </div>
 
-            {error && <div className="p-3 mb-4 rounded-xl bg-destructive/10 text-destructive text-xs font-bold">{error}</div>}
+            {authMode === 'otp' ? (
+              <>
+                {/* Channels Switcher */}
+                <div className="grid grid-cols-5 gap-1.5 p-1 bg-soft rounded-2xl mb-6">
+                  <button
+                    type="button"
+                    onClick={() => { setChannel('phone'); setError(''); setIdentifier(''); }}
+                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'phone' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
+                    title="SMS / Phone"
+                  >
+                    <Phone size={16} />
+                    <span className="text-[10px]">SMS</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setChannel('email'); setError(''); setIdentifier(''); }}
+                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'email' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
+                    title="Email"
+                  >
+                    <Mail size={16} />
+                    <span className="text-[10px]">Email</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setChannel('telegram'); setError(''); setIdentifier(''); }}
+                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'telegram' ? 'bg-[#229ED9]/15 text-[#229ED9] shadow-xs' : 'text-sub hover:text-ink'}`}
+                    title="Telegram"
+                  >
+                    <Send size={16} />
+                    <span className="text-[10px]">Telegram</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setChannel('whatsapp'); setError(''); setIdentifier(''); }}
+                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'whatsapp' ? 'bg-[#25D366]/15 text-[#25D366] shadow-xs' : 'text-sub hover:text-ink'}`}
+                    title="WhatsApp"
+                  >
+                    <MessageCircle size={16} />
+                    <span className="text-[10px]">WhatsApp</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setChannel('wechat'); setError(''); setIdentifier(''); }}
+                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'wechat' ? 'bg-[#07C160]/15 text-[#07C160] shadow-xs' : 'text-sub hover:text-ink'}`}
+                    title="WeChat"
+                  >
+                    <QrCode size={16} />
+                    <span className="text-[10px]">WeChat</span>
+                  </button>
+                </div>
 
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="identifier" className="block text-xs font-bold text-sub mb-1">
-                  {channel === 'phone' && lt(locale, { fa: 'شماره موبایل', en: 'Phone Number', ar: 'رقم الهاتف', zh: '手机号', ru: 'Номер телефона' })}
-                  {channel === 'email' && lt(locale, { fa: 'آدرس ایمیل', en: 'Email Address', ar: 'البريد الإلكتروني', zh: '电子邮箱', ru: 'Эл. почта' })}
-                  {channel === 'telegram' && lt(locale, { fa: 'شناسه تلگرام یا شماره', en: 'Telegram Username / Phone', ar: 'معرف تيليجرام أو الهاتف', zh: 'Telegram 用户名/手机号', ru: 'Telegram Username / Телефон' })}
-                  {channel === 'whatsapp' && lt(locale, { fa: 'شماره واتساپ بین‌المللی', en: 'WhatsApp Number (+...)', ar: 'رقم الواتساب الدولي', zh: 'WhatsApp 国际号码', ru: 'Номер WhatsApp (+...)' })}
-                  {channel === 'wechat' && lt(locale, { fa: 'شناسه وی‌چت / WeChat ID', en: 'WeChat ID / Mobile', ar: 'معرف وي تشات', zh: '微信号 / 手机号', ru: 'WeChat ID / Телефон' })}
-                </label>
-                <input
-                  id="identifier"
-                  type={channel === 'email' ? 'email' : 'text'}
-                  dir="ltr"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder={
-                    channel === 'phone' ? '09123456789' :
-                    channel === 'email' ? 'user@firuzo.com' :
-                    channel === 'telegram' ? '@traveler_user' :
-                    channel === 'whatsapp' ? '+971501234567' :
-                    'wxid_firuzo2026'
-                  }
-                  className="w-full h-12 rounded-xl border border-line px-4 font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                />
-              </div>
+                {error && <div className="p-3 mb-4 rounded-xl bg-destructive/10 text-destructive text-xs font-bold">{error}</div>}
 
-              <button
-                id="auth-submit-btn"
-                onClick={sendOtp}
-                disabled={sending}
-                className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60"
-              >
-                {sending && <Loader2 size={16} className="animate-spin" />}
-                {channel === 'phone' ? t('sendOtp') : lt(locale, { fa: 'دریافت کد تأیید ورود', en: 'Send Login Code', ar: 'إرسال رمز الدخول', zh: '发送登录验证码', ru: 'Получить код входа' })}
-              </button>
-            </div>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="identifier" className="block text-xs font-bold text-sub mb-1">
+                      {channel === 'phone' && lt(locale, { fa: 'شماره موبایل', en: 'Phone Number', ar: 'رقم الهاتف', zh: '手机号', ru: 'Номер телефона' })}
+                      {channel === 'email' && lt(locale, { fa: 'آدرس ایمیل', en: 'Email Address', ar: 'البريد الإلكتروني', zh: '电子邮箱', ru: 'Эл. почта' })}
+                      {channel === 'telegram' && lt(locale, { fa: 'شناسه تلگرام یا شماره', en: 'Telegram Username / Phone', ar: 'معرف تيليجرام أو الهاتف', zh: 'Telegram 用户名/手机号', ru: 'Telegram Username / Телефон' })}
+                      {channel === 'whatsapp' && lt(locale, { fa: 'شماره واتساپ بین‌المللی', en: 'WhatsApp Number (+...)', ar: 'رقم الواتساب الدولي', zh: 'WhatsApp 国际号码', ru: 'Номер WhatsApp (+...)' })}
+                      {channel === 'wechat' && lt(locale, { fa: 'شناسه وی‌چت / WeChat ID', en: 'WeChat ID / Mobile', ar: 'معرف وي تشات', zh: '微信号 / 手机号', ru: 'WeChat ID / Телефон' })}
+                    </label>
+                    <input
+                      id="identifier"
+                      type={channel === 'email' ? 'email' : 'text'}
+                      dir="ltr"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      placeholder={
+                        channel === 'phone' ? '09123456789' :
+                        channel === 'email' ? 'user@firuzo.com' :
+                        channel === 'telegram' ? '@traveler_user' :
+                        channel === 'whatsapp' ? '+971501234567' :
+                        'wxid_firuzo2026'
+                      }
+                      className="w-full h-12 rounded-xl border border-line px-4 font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    />
+                  </div>
+
+                  <button
+                    id="auth-submit-btn"
+                    onClick={sendOtp}
+                    disabled={sending}
+                    className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60"
+                  >
+                    {sending && <Loader2 size={16} className="animate-spin" />}
+                    {channel === 'phone' ? t('sendOtp') : lt(locale, { fa: 'دریافت کد تأیید ورود', en: 'Send Login Code', ar: 'إرسال رمز الدخول', zh: '发送登录验证码', ru: 'Получить код входа' })}
+                  </button>
+                </div>
+              </>
+            ) : (
+              /* Staff Password Login Form */
+              <form onSubmit={handlePasswordLogin} className="space-y-4">
+                {error && <div className="p-3 mb-4 rounded-xl bg-destructive/10 text-destructive text-xs font-bold">{error}</div>}
+
+                <div>
+                  <label htmlFor="staff-identifier" className="block text-xs font-bold text-sub mb-1">
+                    {lt(locale, { fa: 'ایمیل سازمانی یا شماره همراه مدیر', en: 'Staff Email or Phone', ar: 'البريد الإلكتروني أو الهاتف للمسؤول', zh: '管理员邮箱或手机号', ru: 'Эл. почта или телефон администратора' })}
+                  </label>
+                  <input
+                    id="staff-identifier"
+                    type="text"
+                    dir="ltr"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    placeholder="admin@firuzo.com"
+                    autoComplete="username"
+                    className="w-full h-12 rounded-xl border border-line px-4 font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="staff-password" className="block text-xs font-bold text-sub mb-1">
+                    {lt(locale, { fa: 'کلمه عبور', en: 'Password', ar: 'كلمة المرور', zh: '密码', ru: 'Пароль' })}
+                  </label>
+                  <input
+                    id="staff-password"
+                    type="password"
+                    dir="ltr"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    className="w-full h-12 rounded-xl border border-line px-4 font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60"
+                >
+                  {loading && <Loader2 size={16} className="animate-spin" />}
+                  {lt(locale, { fa: 'ورود به پنل مدیریت ERP', en: 'Sign In to ERP Dashboard', ar: 'تسجيل الدخول إلى لوحة ERP', zh: '登录 ERP 控制台', ru: 'Войти в панель ERP' })}
+                </button>
+
+                <div className="pt-2 text-center text-xs text-sub">
+                  <span className="opacity-80">
+                    {lt(locale, {
+                      fa: 'حساب پیش‌فرض مدیر: admin@firuzo.com',
+                      en: 'Default Admin: admin@firuzo.com',
+                      ar: 'الحساب الافتراضي: admin@firuzo.com',
+                      zh: '默认管理员：admin@firuzo.com',
+                      ru: 'Администратор по умолчанию: admin@firuzo.com',
+                    })}
+                  </span>
+                </div>
+              </form>
+            )}
           </div>
         )}
 

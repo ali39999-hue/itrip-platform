@@ -26,7 +26,7 @@ jobs:
         image: postgres:16-alpine
         env:
           POSTGRES_USER: itrip_user
-          POSTGRES_PASSWORD: itrip_secure_password
+          POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD || 'ephemeral_ci_pg_pw' }}
           POSTGRES_DB: itrip_test_db
         ports:
           - 5432:5432
@@ -97,7 +97,6 @@ jobs:
   e2e-gate:
     runs-on: ubuntu-latest
     needs: audit-and-verify
-    continue-on-error: true
     env:
       DEMO_MODE: "false"
       NEXT_PUBLIC_DEMO_MODE: "false"
@@ -106,7 +105,7 @@ jobs:
         image: postgres:16-alpine
         env:
           POSTGRES_USER: itrip_user
-          POSTGRES_PASSWORD: itrip_secure_password
+          POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD || 'ephemeral_ci_pg_pw' }}
           POSTGRES_DB: itrip_test_db
         ports:
           - 5432:5432
@@ -158,3 +157,77 @@ jobs:
             test-results/
             playwright-report/
           retention-days: 7
+
+  concurrency-gate:
+    runs-on: ubuntu-latest
+    needs: audit-and-verify
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: itrip_user
+          POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD || 'ephemeral_ci_pg_pw' }}
+          POSTGRES_DB: itrip_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Apply Migrations
+        run: npx prisma migrate deploy
+
+      - name: Execute High-Concurrency Stress Suites (CI-104)
+        run: |
+          npx vitest run src/domains/inventory/inventory-concurrency.test.ts src/domains/inventory/capture-release-race.test.ts src/domains/inventory/hold-race.test.ts
+
+  recovery-and-fault-injection-gate:
+    runs-on: ubuntu-latest
+    needs: audit-and-verify
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: itrip_user
+          POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD || 'ephemeral_ci_pg_pw' }}
+          POSTGRES_DB: itrip_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Apply Migrations
+        run: npx prisma migrate deploy
+
+      - name: Execute Worker & Saga Crash Recovery Suites (CI-105)
+        run: |
+          npx vitest run src/domains/events/worker-crash-recovery.test.ts src/domains/events/saga-idempotency.test.ts src/domains/events/saga-outbox-crash.test.ts

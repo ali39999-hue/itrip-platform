@@ -7,9 +7,11 @@ export interface LogoProps {
   variant?: 'full' | 'icon' | 'monochrome';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  /** Hide the wordmark on small screens (crowded mobile headers). */
+  hideTextOnMobile?: boolean;
 }
 
-export function Logo({ variant = 'full', size = 'md', className = '' }: LogoProps) {
+export function Logo({ variant = 'full', size = 'md', className = '', hideTextOnMobile = false }: LogoProps) {
   const t = useTranslations('Logo');
   const ct = useTranslations('Common');
 
@@ -37,11 +39,11 @@ export function Logo({ variant = 'full', size = 'md', className = '' }: LogoProp
       </div>
 
       {variant === 'full' && (
-        <div className="flex flex-col text-start leading-tight">
+        <div className={`flex flex-col text-start leading-tight ${hideTextOnMobile ? 'hidden sm:flex' : 'flex'}`}>
           <span className={`font-black text-ink group-hover:text-brand-dark transition-colors ${dims.text}`}>
             {t('name')}
           </span>
-          <span className={`font-bold text-sub uppercase ${dims.sub}`}>
+          <span className={`font-bold text-sub uppercase ${dims.sub} hidden min-[420px]:block`}>
             {t('tagline')}
           </span>
         </div>

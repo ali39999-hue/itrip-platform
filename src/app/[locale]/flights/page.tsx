@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Link } from '@/i18n/routing';
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
-import { Plane, ShieldCheck, RefreshCcw, Clock, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Plane, ShieldCheck, RefreshCcw, Clock, ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
 import { SearchWidget } from '@/components/search/SearchWidget';
 import { shimmerDataUrl } from '@/lib/image-utils';
 import { num } from '@/lib/format';
@@ -97,6 +97,31 @@ export default function FlightsLandingPage() {
               </div>
             </Link>
           ))}
+        </div>
+      </section>
+
+      {/* AI Flight & Trip Planner Banner */}
+      <section className="max-w-[1280px] mx-auto px-4 md:px-10 pb-8">
+        <div className="p-6 md:p-8 rounded-3xl bg-gradient-to-r from-teal-950 via-slate-900 to-teal-900 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl border border-teal-500/30">
+          <div className="space-y-2 text-center md:text-start">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 text-xs font-bold border border-teal-400/20">
+              <Sparkles size={14} className="text-amber-300" />
+              <span>{lt(locale, { fa: 'هوش مصنوعی سفرساز فیروزه', en: 'Firuzo AI Trip Copilot', ar: 'مساعد السفر الذكي', zh: 'Firuzo AI 旅游定制', ru: 'AI планировщик путешествий' })}</span>
+            </div>
+            <h3 className="text-xl md:text-2xl font-black text-white m-0">
+              {lt(locale, { fa: 'هماهنگی همزمان پرواز، هتل و ترانسفر در چند ثانیه', en: 'Sync Flights, Stays & Transfers in Seconds', ar: 'تنسيق الطيران والفنادق والنقل في ثوانٍ', zh: '数秒内同步机票、酒店与接送服务', ru: 'Синхронизация рейсов, отелей и трансферов за секунды' })}
+            </h3>
+            <p className="text-xs md:text-sm text-slate-300 max-w-xl font-medium m-0">
+              {lt(locale, { fa: 'به جای جستجوی جداگانه پرواز و هتل، اجازه دهید هوش مصنوعی ارزان‌ترین و بهترین ترکیب را برایتان بچیند.', en: 'Instead of searching separately, let our AI find the best synchronized itinerary matching your budget.', ar: 'دع الذكاء الاصطناعي يرتب لك أفضل مسار متكامل بدلاً من البحث المنفرد.', zh: '无需繁琐单独搜索，让 AI 为您智能匹配最契合预算的无缝行程。', ru: 'Позвольте искусственному интеллекту составить оптимальный маршрут под ваш бюджет.' })}
+            </p>
+          </div>
+          <Link
+            href="/plan"
+            className="shrink-0 px-6 py-3.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 transition hover:scale-105 shadow-md shadow-teal-500/20"
+          >
+            <Sparkles size={16} />
+            <span>{lt(locale, { fa: 'ساخت برنامه سفر هوشمند', en: 'Build Smart Trip', ar: 'بناء خطة ذكية', zh: '立即定制智能行程', ru: 'Создать умный маршрут' })}</span>
+          </Link>
         </div>
       </section>
 

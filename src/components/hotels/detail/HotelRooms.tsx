@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { fa, gShort } from '@/lib/hotel-format';
+import { fa, stayDateShort } from '@/lib/hotel-format';
 import { getRoomsForLocale, getPlansForLocale } from '@/lib/hotel-mock';
 import { quote, TAX, keyOf, toman, type useHotelBooking } from '@/hooks/useHotelBooking';
 import { lt } from '@/lib/lt';
@@ -54,11 +54,11 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
         <div className="flex items-center gap-4 flex-wrap">
           <div>
             <span className="block text-[10.5px] font-extrabold text-sub">{t('checkIn')}</span>
-            <b className="text-[13px] font-black">{gShort.format(new Date(checkin + 'T00:00:00'))}</b>
+            <b className="text-[13px] font-black">{stayDateShort(new Date(checkin + 'T00:00:00'), locale)}</b>
           </div>
           <div>
             <span className="block text-[10.5px] font-extrabold text-sub">{t('checkOut')}</span>
-            <b className="text-[13px] font-black">{gShort.format(new Date(checkout + 'T00:00:00'))}</b>
+            <b className="text-[13px] font-black">{stayDateShort(new Date(checkout + 'T00:00:00'), locale)}</b>
           </div>
           <div>
             <span className="block text-[10.5px] font-extrabold text-sub">{t('duration')}</span>
@@ -229,7 +229,7 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
                             {p.meal === 'بدون وعده' ? <Ban size={12} /> : <Coffee size={12} />} {p.meal}
                           </span>
                           <span className={`inline-flex items-center gap-1 text-[11px] font-bold ${p.refund === 'free' ? 'text-success' : p.refund === 'partial' ? 'text-action-hover' : 'text-sub/70'}`}>
-                            {p.refund === 'free' ? <><Check size={12} /> {locale === 'fa' ? `لغو رایگان تا ${gShort.format(dl)}` : `Free cancellation until ${gShort.format(dl)}`}</> : p.refund === 'partial' ? <><Clock size={12} /> {lt(locale, { fa: 'لغو با کسر یک شب', en: 'Partial refund', ar: 'إلغاء مع خصم ليلة واحدة', zh: '取消扣一晚房费', ru: 'Отмена с вычетом одной ночи' })}</> : <><Ban size={12} /> {lt(locale, { fa: 'غیرقابل استرداد', en: 'Non-refundable', ar: 'غير قابل للاسترداد', zh: '不可退款', ru: 'Возврату не подлежит' })}</>}
+                            {p.refund === 'free' ? <><Check size={12} /> {locale === 'fa' ? `لغو رایگان تا ${stayDateShort(dl, locale)}` : `Free cancellation until ${stayDateShort(dl, locale)}`}</> : p.refund === 'partial' ? <><Clock size={12} /> {lt(locale, { fa: 'لغو با کسر یک شب', en: 'Partial refund', ar: 'إلغاء مع خصم ليلة واحدة', zh: '取消扣一晚房费', ru: 'Отмена с вычетом одной ночи' })}</> : <><Ban size={12} /> {lt(locale, { fa: 'غیرقابل استرداد', en: 'Non-refundable', ar: 'غير قابل للاسترداد', zh: '不可退款', ru: 'Возврату не подлежит' })}</>}
                           </span>
                           <span className="inline-flex items-center gap-1 text-[11px] font-bold text-sub"><Wallet size={12} /> {p.pay}</span>
                         </div>
@@ -267,7 +267,7 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
                               {q.nights.map((n, i) => (
                                 <tr key={i} className="border-b border-dashed border-line/70 last:border-0">
                                   <td className="py-1 font-bold text-sub">
-                                    {gShort.format(n.date)}
+                                    {stayDateShort(n.date, locale)}
                                   </td>
                                   <td className="py-1 text-end font-extrabold">{fa(n.price)} TRY</td>
                                 </tr>

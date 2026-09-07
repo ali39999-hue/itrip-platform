@@ -3,7 +3,7 @@
 import { useAuthStore } from '@/stores/auth-store';
 import { Link } from '@/i18n/routing';
 import { useTranslations, useLocale } from 'next-intl';
-import { UserRound, Headset, Sparkles, ShieldCheck } from 'lucide-react';
+import { UserRound, Headset, Sparkles } from 'lucide-react';
 
 export function UserAccountMenu() {
   const locale = useLocale();
@@ -13,22 +13,14 @@ export function UserAccountMenu() {
 
   return (
     <div className="flex items-center gap-2">
-      {/* Admin ERP Quick Badge */}
-      {['admin', 'SUPER_ADMIN', 'OPS', 'FINANCE'].includes(user?.role || '') && (
-        <Link
-          href="/admin"
-          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-mint text-brand-dark hover:bg-brand hover:text-surface text-[12px] font-black border border-brand/20 transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
-        >
-          <ShieldCheck size={14} />
-          <span>ERP</span>
-        </Link>
-      )}
+      {/* ERP is reachable via the account page, nav dropdown and mobile drawer —
+          a standalone header badge overcrowds the bar when signed in. */}
 
       {/* Support Icon Link */}
       <Link
         href="/support"
         aria-label={ct('aria.24hSupport')}
-        className="hidden sm:grid w-9 h-9 place-items-center rounded-full text-sub hover:text-brand-dark hover:bg-soft transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+        className="hidden 2xl:grid w-9 h-9 place-items-center rounded-full text-sub hover:text-brand-dark hover:bg-soft transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
       >
         <Headset size={18} />
       </Link>
@@ -36,7 +28,7 @@ export function UserAccountMenu() {
       {/* Plan Button */}
       <Link
         href="/plan"
-        className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-brand/40 text-brand-dark hover:bg-mint text-[13px] font-black transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+        className="hidden 2xl:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-brand/40 text-brand-dark hover:bg-mint text-[13px] font-black transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
       >
         <Sparkles size={14} className="text-brand" />
         <span>{t('plan')}</span>
@@ -46,20 +38,23 @@ export function UserAccountMenu() {
       {user ? (
         <Link
           href="/account"
-          className="min-h-[38px] inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full bg-brand-dark text-surface hover:bg-deep text-[12px] sm:text-[13px] font-black shadow-sm transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none shrink-0"
+          title={(locale === 'fa' ? user.firstNameFa : (user.firstNameEn || user.firstNameFa)) || user.phone}
+          aria-label={t('account')}
+          className="min-h-[38px] min-w-[38px] justify-center inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full bg-brand-dark text-surface hover:bg-deep text-[12px] sm:text-[13px] font-black shadow-sm transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none shrink-0"
         >
           <UserRound size={15} />
-          <span className="truncate max-w-[90px] sm:max-w-none">
+          {/* Name pill where room exists; icon-only at 2xl where the bar is fullest */}
+          <span className="hidden min-[420px]:inline 2xl:hidden truncate max-w-[90px] sm:max-w-none">
             {(locale === 'fa' ? user.firstNameFa : (user.firstNameEn || user.firstNameFa)) || user.phone}
           </span>
         </Link>
       ) : (
         <Link
           href="/auth"
-          className="min-h-[38px] inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-brand/50 text-brand-dark hover:bg-mint text-[12px] sm:text-[13px] font-black shadow-2xs transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none active:scale-95 shrink-0"
+          className="min-h-[38px] min-w-[38px] justify-center inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-brand/50 text-brand-dark hover:bg-mint text-[12px] sm:text-[13px] font-black shadow-2xs transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none active:scale-95 shrink-0"
         >
           <UserRound size={15} />
-          <span>{t('signin')}</span>
+          <span className="hidden min-[420px]:inline">{t('signin')}</span>
         </Link>
       )}
     </div>

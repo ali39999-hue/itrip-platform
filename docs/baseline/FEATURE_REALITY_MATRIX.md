@@ -1,6 +1,6 @@
 # BASE-003 / BASE-101 — Feature Reality Matrix
 
-Generated 2026-09-07 against HEAD `cf45237` (`cf45237bd0a01f6b4e0a2a7940c40f87358a224f`) on branch `feat/production-master-task-list-v2`.
+Generated 2026-09-07 against HEAD `a0ed715` (`a0ed71576e69af4370487388f1d122d351c2ed36`) on branch `main`.
 Labels: **PRODUCTION-READY / COMPLETE / PARTIAL / LEGACY / MOCK / SIMULATED / BROKEN / MISSING**.
 Every claim below is evidence-backed (file:line) and regenerated automatically via `scripts/generate-reality-matrix.mjs`.
 This matrix supersedes the optimistic claims in README/PRODUCTION_READINESS/SECURITY_AUDIT where they conflict.
@@ -8,10 +8,10 @@ This matrix supersedes the optimistic claims in README/PRODUCTION_READINESS/SECU
 ## Repository Metrics at Current HEAD
 
 - **Version:** 1.2.0 (reconciled BASE-105)
-- **Commit SHA:** `cf45237` (`cf45237bd0a01f6b4e0a2a7940c40f87358a224f`)
+- **Commit SHA:** `a0ed715` (`a0ed71576e69af4370487388f1d122d351c2ed36`)
 - **Prisma Models:** 58 models
 - **Database Migrations:** 19 migrations (reproducible via `prisma migrate deploy`)
-- **Unit & Integration Test Suites:** 37 test suites (148+ unit tests passing on isolated PostgreSQL 16)
+- **Unit & Integration Test Suites:** 47 test suites (148+ unit tests passing on isolated PostgreSQL 16)
 - **Runtime:** Node.js 20+ / Next.js 16.3 (App Router) / React 19.2
 
 ---

@@ -8,6 +8,7 @@ import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES } from '@/lib/countries';
 import { num } from '@/lib/format';
 import { lt } from '@/lib/lt';
+import { dualDate } from '@/lib/jalali';
 import type { HotelSearchHeaderProps } from './types';
 
 export function HotelSearchHeader({
@@ -48,7 +49,9 @@ export function HotelSearchHeader({
                 {query || lt(locale, { fa: 'همه مقاصد و هتل‌ها', en: 'All Destinations & Hotels', ar: 'جميع الوجهات والفنادق', zh: '所有目的地与酒店', ru: 'Все отели' })}
               </span>
               <span className="text-[10.5px] font-bold text-sub block truncate mt-0.5">
-                {checkin} ➔ {checkout} • {num(adults, locale)} {lt(locale, { fa: 'بزرگسال', en: 'Adults', ar: 'بالغين', zh: '成人', ru: 'взрослых' })}
+                {locale === 'fa' || locale === 'ar'
+                  ? `${dualDate(checkin).j || checkin} ➔ ${dualDate(checkout).j || checkout}`
+                  : `${checkin} ➔ ${checkout}`} • {num(adults, locale)} {lt(locale, { fa: 'بزرگسال', en: 'Adults', ar: 'بالغين', zh: '成人', ru: 'взрослых' })}
               </span>
             </div>
           </div>

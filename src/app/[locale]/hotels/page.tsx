@@ -134,6 +134,31 @@ export default function HotelsLandingPage() {
         </div>
       </section>
 
+      {/* AI Hotel & Trip Planner Banner */}
+      <section className="max-w-[1280px] mx-auto px-4 md:px-10 pb-8">
+        <div className="p-6 md:p-8 rounded-3xl bg-gradient-to-r from-teal-950 via-slate-900 to-teal-900 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl border border-teal-500/30">
+          <div className="space-y-2 text-center md:text-start">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 text-xs font-bold border border-teal-400/20">
+              <Sparkles size={14} className="text-amber-300" />
+              <span>{lt(locale, { fa: 'انتخاب هوشمند هتل و اقامتگاه', en: 'Smart Hotel Matching', ar: 'اختيار ذكي للفنادق', zh: '智能酒店匹配', ru: 'Умный подбор отелей' })}</span>
+            </div>
+            <h3 className="text-xl md:text-2xl font-black text-white m-0">
+              {lt(locale, { fa: 'پیدا کردن بهترین هتل متناسب با ساعت پرواز و سبک سفر شما', en: 'Find the Best Stay Tailored to Your Flight & Style', ar: 'العثور على أفضل فندق ملائم لرحلتك وأسلوبك', zh: '基于您的航班时间与出行风格匹配最优酒店', ru: 'Подбор лучшего отеля под ваш рейс и стиль отдыха' })}
+            </h3>
+            <p className="text-xs md:text-sm text-slate-300 max-w-xl font-medium m-0">
+              {lt(locale, { fa: 'هوش مصنوعی فیروزه با بررسی لوکیشن، ساعت ورود و خروج و نظرات مسافران، دقیق‌ترین هتل را پیشنهاد می‌دهد.', en: 'Firuzo AI evaluates locations, check-in schedules, and guest reviews to propose the perfect stay.', ar: 'يقترح الذكاء الاصطناعي الفندق الأنسب وفق الموقع والمواعيد والتقييمات.', zh: 'Firuzo AI 综合评估地理位置、入住时间与旅客口碑，为您推荐最理想住所。', ru: 'AI анализирует локацию, часы заезда и отзывы для идеального выбора.' })}
+            </p>
+          </div>
+          <Link
+            href="/plan"
+            className="shrink-0 px-6 py-3.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 transition hover:scale-105 shadow-md shadow-teal-500/20"
+          >
+            <Sparkles size={16} />
+            <span>{lt(locale, { fa: 'برنامه‌ریزی هوشمند اقامت', en: 'Plan Smart Stay', ar: 'تخطيط إقامة ذكية', zh: '智能规划住宿', ru: 'Спланировать проживание' })}</span>
+          </Link>
+        </div>
+      </section>
+
       {/* Hotel Highlights */}
       <section className="max-w-[1280px] mx-auto py-12 px-4 md:px-10 border-t border-line/60">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

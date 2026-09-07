@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { X } from 'lucide-react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface DialogProps {
   open: boolean;
@@ -16,22 +17,17 @@ const DialogContext = React.createContext<{
 
 export function Dialog({ open, onOpenChange, children }: DialogProps) {
   React.useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape' && open) {
-        onOpenChange(false);
-      }
-    }
+    // Lock scroll while open. Keyboard handling (Escape + Tab wrap) lives in
+    // DialogContent via useFocusTrap so focus is always managed together.
     if (open) {
       document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
     } else {
       document.body.style.overflow = '';
     }
     return () => {
       document.body.style.overflow = '';
-      window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [open, onOpenChange]);
+  }, [open ]);
 
   return (
     <DialogContext.Provider value={{ open, onOpenChange }}>
@@ -50,6 +46,9 @@ export function DialogContent({
   closeAriaLabel?: string;
 }) {
   const { open, onOpenChange } = React.useContext(DialogContext);
+  const panelRef = useFocusTrap<HTMLDivElement>(open, {
+    onEscape: () => onOpenChange(false),
+  });
 
   if (!open) return null;
 
@@ -57,10 +56,11 @@ export function DialogContent({
     <div
       className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-ink/60 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={() => onOpenChange(false)}
-      role="dialog"
-      aria-modal="true"
     >
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
         className={`relative w-full max-w-lg rounded-3xl bg-surface border border-line p-6 shadow-elev-3 animate-in zoom-in-95 duration-200 ${className}`}
         onClick={(e) => e.stopPropagation()}
       >

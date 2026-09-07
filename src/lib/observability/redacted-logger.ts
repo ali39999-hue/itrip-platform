@@ -10,7 +10,7 @@
 import { getCorrelationContext } from './correlation-context';
 
 export const SENSITIVE_KEY_PATTERN =
-  /^(pass(word)?|passwd|pwd|secret|api_?key|private_?key|access_?token|refresh_?token|auth|authorization|bearer|cookie|session_?id|sessionid|otp|code|pin|verification_?code|card_?(number)?|cc_?(number)?|pan|cvv\d?|cvc\d?|security_?code|expiry|passport_?(number)?|national_?(id|code|number)?|ssn|identity_?number)$/i;
+  /^(pass(word)?|passwd|pwd|secret|api_?key|private_?key|token|access_?token|refresh_?token|auth|authorization|bearer|cookie|session_?id|sessionid|otp|code|pin|verification_?code|card_?(number)?|cc_?(number)?|pan|cvv\d?|cvc\d?|security_?code|expiry|passport_?(number)?|national_?(id|code|number)?|ssn|identity_?number)$/i;
 
 // Regex patterns for sensitive values appearing anywhere in strings
 const CARD_NUMBER_REGEX = /\b(?:\d{4}[ -]?){3}\d{4}\b|\b\d{16}\b/g;

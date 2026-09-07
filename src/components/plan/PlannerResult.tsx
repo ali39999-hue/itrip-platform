@@ -4,16 +4,17 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { useBookingStore } from '@/stores/booking-store';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Check, Share2 } from 'lucide-react';
 import { num } from '@/lib/format';
 import { countryName } from '@/lib/countries';
 import { daysFromNow } from '@/lib/utils';
 import { usePlanner, type Answers } from '@/hooks/usePlanner';
+import { lt } from '@/lib/lt';
 
 import { PlannerTimeline } from './PlannerTimeline';
 import { PlannerSidebar } from './PlannerSidebar';
 
-interface PlannerResultProps {
+export interface PlannerResultProps {
   ans: Answers;
   setAns: React.Dispatch<React.SetStateAction<Answers>>;
   setStep: React.Dispatch<React.SetStateAction<number>>;
@@ -23,9 +24,21 @@ interface PlannerResultProps {
   shareUrl: () => void;
   seed: number;
   setSeed: React.Dispatch<React.SetStateAction<number>>;
+  onRefineWithPrompt?: (promptText: string) => void;
 }
 
-export function PlannerResult({ ans, setStep, locale, isEn, shared, shareUrl, seed, setSeed }: PlannerResultProps) {
+export function PlannerResult({ 
+  ans, 
+  setAns,
+  setStep, 
+  locale, 
+  isEn, 
+  shared, 
+  shareUrl, 
+  seed, 
+  setSeed,
+  onRefineWithPrompt 
+}: PlannerResultProps) {
   const t = useTranslations('Plan');
   const router = useRouter();
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
@@ -53,39 +66,79 @@ export function PlannerResult({ ans, setStep, locale, isEn, shared, shareUrl, se
   }
 
   return (
-    <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-6 md:pt-8 pb-20">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
+    <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-6 md:pt-10 pb-24">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-line/80">
         <div>
-          <h1 className="text-[24px] md:text-[32px] font-black tracking-tight m-0">{t('resultTitle')}</h1>
-          <p className="text-[12.5px] text-sub font-bold m-0 mt-1.5">{t('fromPool', { total: num(c.signatureExperiences.length, locale), count: num(plan.picked.length, locale) })}</p>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-mint text-brand-dark text-xs font-black mb-2">
+            <Sparkles size={13} />
+            <span>{t('kicker')}</span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-black text-ink tracking-tight m-0">
+            {t('resultTitle')} ({countryName(c.id, locale)})
+          </h1>
+          <p className="text-xs sm:text-sm text-sub font-medium m-0 mt-1">
+            {t('fromPool', { total: num(c.signatureExperiences.length, locale), count: num(plan.picked.length, locale) })}
+          </p>
         </div>
-        <button onClick={() => { setStep(0); setSeed((s) => s + 1); }} className="self-start md:self-auto min-h-10 px-4 rounded-full border border-line text-brand-dark font-black text-[12.5px] hover:bg-mint inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
-          <Sparkles size={14} /> {t('editAnswers')}
+
+        <div className="flex items-center gap-2">
+          <button 
+            type="button"
+            onClick={shareUrl} 
+            className="min-h-10 px-4 rounded-xl border border-line bg-surface text-ink font-bold text-xs hover:border-brand hover:text-brand-dark inline-flex items-center gap-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-2xs"
+          >
+            <Share2 size={15} />
+            <span>{shared ? t('shared') : t('share')}</span>
+          </button>
+          <button 
+            type="button"
+            onClick={() => { setStep(0); setSeed((s) => s + 1); }} 
+            className="min-h-10 px-4 rounded-xl border border-brand/30 bg-mint/50 text-brand-dark font-black text-xs hover:bg-mint inline-flex items-center gap-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-2xs"
+          >
+            <Sparkles size={14} /> 
+            <span>{t('editAnswers')}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Live Tuning Chips */}
+      <div className="flex flex-wrap items-center gap-2 mb-8 p-3 rounded-2xl bg-soft/50 border border-line/60">
+        <span className="text-xs font-bold text-sub px-1">{t('tuneTitle')}</span>
+        <button 
+          type="button"
+          onClick={() => setTune((v) => ({ ...v, cheaper: !v.cheaper }))} 
+          className={`min-h-9 px-4 rounded-xl text-xs font-black border transition-all cursor-pointer ${
+            tune.cheaper ? 'bg-brand text-surface border-brand shadow-xs' : 'border-line bg-surface text-sub hover:border-brand/60'
+          }`}
+        >
+          {t('tuneCheaper')}
+        </button>
+        <button 
+          type="button"
+          onClick={() => setTune((v) => ({ ...v, more: !v.more }))} 
+          className={`min-h-9 px-4 rounded-xl text-xs font-black border transition-all cursor-pointer ${
+            tune.more ? 'bg-brand text-surface border-brand shadow-xs' : 'border-line bg-surface text-sub hover:border-brand/60'
+          }`}
+        >
+          {t('tuneMore')}
         </button>
       </div>
 
-      {/* Ú†ÛŒÙ¾â€ŒÙ‡Ø§ÛŒ ØªÙ†Ø¸ÛŒÙ… Ø²Ù†Ø¯Ù‡ */}
-      <div className="flex flex-wrap items-center gap-2 mb-7">
-        <span className="text-[12px] font-bold text-sub">{t('tuneTitle')}</span>
-        <button onClick={() => setTune((v) => ({ ...v, cheaper: !v.cheaper }))} className={`min-h-9 px-4 rounded-full text-[12.5px] font-black border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${tune.cheaper ? 'bg-mint border-brand text-brand-dark' : 'border-line text-sub hover:border-brand'}`}>{t('tuneCheaper')}</button>
-        <button onClick={() => setTune((v) => ({ ...v, more: !v.more }))} className={`min-h-9 px-4 rounded-full text-[12.5px] font-black border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${tune.more ? 'bg-mint border-brand text-brand-dark' : 'border-line text-sub hover:border-brand'}`}>{t('tuneMore')}</button>
-        <button onClick={shareUrl} className="min-h-9 px-4 rounded-full text-[12.5px] font-black border border-line text-sub hover:border-brand hover:text-brand-dark ms-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
-          {shared ? t('shared') : t('share')}
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-start">
-        {/* ØªØ§ÛŒÙ…â€ŒÙ„Ø§ÛŒÙ† */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 items-start">
+        {/* Timeline Itinerary & AI Refiner */}
         <PlannerTimeline 
           plan={plan} 
           days={days} 
           locale={locale} 
           isEn={isEn}
+          countryId={c.id}
           onRegenerate={() => setSeed(s => s + 1)}
           onEditAnswers={() => { setStep(0); setSeed((s) => s + 1); }}
+          onRefineWithPrompt={onRefineWithPrompt}
         />
 
-        {/* Ø³Ø§ÛŒØ¯Ø¨Ø§Ø± Ø¬Ù…Ø¹ */}
+        {/* Sidebar Summary & Addons */}
         <PlannerSidebar
           plan={plan}
           travelers={travelers}
@@ -104,15 +157,17 @@ export function PlannerResult({ ans, setStep, locale, isEn, shared, shareUrl, se
         />
       </div>
 
-      {/* ================= MOBILE STICKY PLAN CONVERSION BAR ================= */}
+      {/* MOBILE STICKY PLAN CONVERSION BAR */}
       <div className="lg:hidden fixed bottom-[calc(58px+env(safe-area-inset-bottom,0px))] inset-x-0 z-40 bg-surface/95 backdrop-blur-md border-t border-line px-4 py-3 shadow-elev-3 flex items-center justify-between gap-4">
         <div>
-          <span className="text-[10.5px] font-bold text-sub block leading-none mb-1">
-            {num(days, locale)} {t('qDays')} • {num(travelers, locale)} مسافر
+          <span className="text-[11px] font-bold text-sub block leading-none mb-1">
+            {num(days, locale)} {t('qDays')} • {num(travelers, locale)} {lt(locale, { fa: 'مسافر', en: 'travelers', ar: 'مسافر', zh: '名旅客', ru: 'пассажиров' })}
           </span>
           <div className="text-base font-black text-brand-dark font-mono flex items-baseline gap-1">
             <span>{num(plan.total, locale)}</span>
-            <span className="text-[11px] font-bold text-sub">تومان</span>
+            <span className="text-[11px] font-bold text-sub">
+              {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'туманов' })}
+            </span>
           </div>
         </div>
 
@@ -127,4 +182,3 @@ export function PlannerResult({ ans, setStep, locale, isEn, shared, shareUrl, se
     </div>
   );
 }
-
