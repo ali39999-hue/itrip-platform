@@ -1,0 +1,67 @@
+# ── Build artifacts & dependencies ──
+.next/
+node_modules/
+out/
+build/
+coverage/
+
+# ── Git & CI/CD ──
+.git/
+.github/
+
+# ── Agent & IDE config ──
+.agents/
+.claude/
+CLAUDE.md
+AGENTS.md
+
+# ── Documentation (not needed for build) ──
+docs/
+ACCOUNTING_MODEL.md
+ARCHITECTURE.md
+BOOKING_LIFECYCLE.md
+CHANGELOG_CANONICAL_AUTHORITY_AND_E2E.md
+CHANGELOG_PRODUCTION_HARDENING.md
+ERP_OPERATIONS.md
+HANDOFF.md
+INVENTORY_CONCURRENCY.md
+PAYMENT_FLOW.md
+PRODUCTION_READINESS.md
+README.md
+REALITY_RECONCILIATION.md
+SECURITY_AUDIT.md
+TEST_STRATEGY.md
+walkthrough.md
+
+# ── Tests (E2E & unit) ──
+tests/
+playwright.config.ts
+vitest.config.ts
+playwright-report/
+test-results/
+screenshots/
+snapshots/
+
+# ── Dev-only scripts ──
+scripts/
+
+# ── Temp files ──
+.tmp*/
+.tmp-refcrops/
+
+# ── Local database files (must stay on local server) ──
+prisma/dev.db
+prisma/dev.db-journal
+prisma/*.db
+prisma/*.db-journal
+
+# ── Env files (secrets stay local) ──
+.env
+.env.local
+.env*.local
+
+# ── Misc ──
+*.exe
+*.pem
+*.log
+*.tsbuildinfo
