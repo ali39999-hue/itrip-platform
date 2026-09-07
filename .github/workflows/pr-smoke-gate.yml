@@ -6,7 +6,7 @@ on:
 
 env:
   DATABASE_URL: postgresql://itrip_user:itrip_secure_password@localhost:5432/itrip_test_db
-  AUTH_SECRET: ${{ secrets.CI_AUTH_SECRET || 'ci_pr_smoke_test_secret_32_chars_min' }}
+  AUTH_SECRET: ${{ secrets.CI_AUTH_SECRET || 'development_dummy_auth_key_32chars' }}
   NEXT_PUBLIC_SITE_URL: http://localhost:3000
 
 jobs:
