@@ -17,8 +17,9 @@ jobs:
   full-release-certification:
     runs-on: ubuntu-latest
     env:
-      DEMO_MODE: "false"
-      NEXT_PUBLIC_DEMO_MODE: "false"
+      DEMO_MODE: "true"
+      NEXT_PUBLIC_DEMO_MODE: "true"
+      GATEWAY_MODE: internal_wallet
     services:
       postgres:
         image: postgres:16-alpine
@@ -80,9 +81,16 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Build Next.js Production Release Bundle
+        env:
+          DEMO_MODE: "false"
+          NEXT_PUBLIC_DEMO_MODE: "false"
         run: npm run build
 
       - name: Run Complete E2E Matrix (Desktop & Mobile)
+        env:
+          DEMO_MODE: "false"
+          NEXT_PUBLIC_DEMO_MODE: "false"
+          GATEWAY_MODE: internal_wallet
         run: npx playwright test tests/golden-journeys.spec.ts
 
       - name: Regenerate and Audit Feature Reality Matrix (BASE-102)

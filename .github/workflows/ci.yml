@@ -100,6 +100,7 @@ jobs:
     env:
       DEMO_MODE: "false"
       NEXT_PUBLIC_DEMO_MODE: "false"
+      GATEWAY_MODE: internal_wallet
     services:
       postgres:
         image: postgres:16-alpine
