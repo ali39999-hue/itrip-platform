@@ -33,7 +33,7 @@ export function PopularFlightsSection() {
       duration: '۳.۵ ساعت',
       durationEn: '3h 50m',
       price: 96000000,
-      img: 'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=75&w=600',
+      img: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&q=75&w=600',
     },
     {
       fromFa: 'تهران',

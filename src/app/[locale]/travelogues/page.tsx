@@ -24,14 +24,14 @@ const MOCK_TRAVELOGUES = [
   {
     id: '2',
     country: 'uae',
-    titleFa: 'خاطرات سفر به دبی و برج خلیفه و سافاری در کویر',
-    titleEn: 'Dubai Memories, Burj Khalifa & Desert Safari',
+    titleFa: 'خاطرات سفر به دبی و سافاری در کویر',
+    titleEn: 'Dubai Memories & Desert Safari Adventure',
     destinationFa: 'دبی، امارات',
     destinationEn: 'Dubai, UAE',
     userName: 'Sara Mohammadi',
     readTime: '۷ دقیقه مطالعه',
     readTimeEn: '7 min read',
-    image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&auto=format&fit=crop&q=80'
+    image: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=600&auto=format&fit=crop&q=80'
   },
   {
     id: '3',
@@ -44,6 +44,18 @@ const MOCK_TRAVELOGUES = [
     readTime: '۶ دقیقه مطالعه',
     readTimeEn: '6 min read',
     image: 'https://images.unsplash.com/photo-1565008447742-97f6f38c985c?w=600&auto=format&fit=crop&q=80'
+  },
+  {
+    id: '4',
+    country: 'iran',
+    titleFa: 'سفر به نصف جهان؛ شکوه نقش جهان و آرامش هتل عباسی',
+    titleEn: 'Journey to Half the World: Naqsh-e Jahan & Abbasi Garden',
+    destinationFa: 'اصفهان، ایران',
+    destinationEn: 'Isfahan, Iran',
+    userName: 'Reza Tehrani',
+    readTime: '۸ دقیقه مطالعه',
+    readTimeEn: '8 min read',
+    image: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=600&auto=format&fit=crop&q=80'
   }
 ];
 

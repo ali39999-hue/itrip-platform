@@ -15,8 +15,8 @@ import { TourImage } from '@/components/tours/TourImage';
 
 const TOUR_IMGS: Record<string, string> = {
   t1: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&q=70&w=800',
-  t2: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&q=70&w=800',
-  t3: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&q=70&w=800',
+  t2: 'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&q=70&w=800',
+  t3: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=70&w=800',
   t4: 'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?auto=format&fit=crop&q=70&w=800',
 };
 

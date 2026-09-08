@@ -7,6 +7,7 @@ import persian from 'react-date-object/calendars/persian';
 import persian_fa from 'react-date-object/locales/persian_fa';
 import gregorian from 'react-date-object/calendars/gregorian';
 import gregorian_en from 'react-date-object/locales/gregorian_en';
+import gregorian_ar from 'react-date-object/locales/gregorian_ar';
 import { CalendarDays } from 'lucide-react';
 import { useLocale } from 'next-intl';
 
@@ -53,6 +54,12 @@ export function JalaliDatePicker({
           ? 'Выберите дату'
           : 'Select date';
 
+  const getLocale = () => {
+    if (locale === 'fa') return persian_fa;
+    if (locale === 'ar') return gregorian_ar;
+    return gregorian_en;
+  };
+
   return (
     <div
       className={`relative w-full min-h-[58px] px-3.5 py-2 rounded-2xl bg-surface border transition flex items-center gap-2.5 ${
@@ -81,7 +88,7 @@ export function JalaliDatePicker({
             onChange(d.convert(gregorian, gregorian_en).format('YYYY-MM-DD'));
           }}
           calendar={isFa ? persian : gregorian}
-          locale={isFa ? persian_fa : gregorian_en}
+          locale={getLocale()}
           calendarPosition="bottom-center"
           minDate={minDate}
           maxDate={maxDate}

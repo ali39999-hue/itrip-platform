@@ -14,9 +14,9 @@ export default function BookPage() {
 
   const TILES = [
     { label: t('flights'), icon: Plane, href: '/flights/search', image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&q=75&w=800', tag: '۴۰۰+ ایرلاین' },
-    { label: t('hotels'), icon: Building2, href: '/hotels/search', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=75&w=800', tag: 'تضمین کمترین نرخ' },
-    { label: t('tours'), icon: Map, href: '/tours', image: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=75&w=800', tag: 'گشت‌های اختصاصی' },
-    { label: t('transfers'), icon: Car, href: '/transfers', image: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&q=75&w=800', tag: 'استقبال فرودگاهی VIP' },
+    { label: t('hotels'), icon: Building2, href: '/hotels/search', image: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=75&w=800', tag: 'تضمین کمترین نرخ' },
+    { label: t('tours'), icon: Map, href: '/tours', image: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&q=75&w=800', tag: 'گشت‌های اختصاصی' },
+    { label: t('transfers'), icon: Car, href: '/transfers', image: 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&q=75&w=800', tag: 'استقبال فرودگاهی VIP' },
   ];
 
   const QUICK = [

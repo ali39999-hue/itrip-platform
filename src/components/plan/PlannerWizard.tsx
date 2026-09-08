@@ -24,36 +24,33 @@ import {
   type LucideIcon 
 } from 'lucide-react';
 import { BUDGET_CAP, BUDGET_LABEL, type Answers, type BudgetTier, type Pace, type Who } from '@/hooks/usePlanner';
-import { lt } from '@/lib/lt';
+import { lt, type LText } from '@/lib/lt';
 
 export const QUESTIONS = ['dest', 'who', 'days', 'interests', 'budget', 'pace'] as const;
 
-const PACE_META: Record<Pace, { key: 'paceRelaxed' | 'paceBalanced' | 'pacePacked'; Icon: LucideIcon; descFa: string; descEn: string }> = {
+const PACE_META: Record<Pace, { key: 'paceRelaxed' | 'paceBalanced' | 'pacePacked'; Icon: LucideIcon; desc: LText }> = {
   relaxed: { 
     key: 'paceRelaxed', 
     Icon: Sun,
-    descFa: '۱ برنامه در روز • استراحت کامل، کافه‌گردی و بدون عجله',
-    descEn: '1 activity per day • Maximum relaxation & leisure'
+    desc: { fa: '۱ برنامه در روز • استراحت کامل، کافه‌گردی و بدون عجله', en: '1 activity per day • Maximum relaxation & leisure', ar: '١ نشاط يومياً • راحة تامة واسترخاء', zh: '每天1个行程 • 彻底放松休闲', ru: '1 активность в день • Максимум отдыха' }
   },
   balanced: { 
     key: 'paceBalanced', 
     Icon: Sunset,
-    descFa: '۲ برنامه در روز • توازن ایده‌آل بین گشت و گذار و استراحت',
-    descEn: '2 activities per day • Ideal mix of sightseeing & rest'
+    desc: { fa: '۲ برنامه در روز • توازن ایده‌آل بین گشت و گذار و استراحت', en: '2 activities per day • Ideal mix of sightseeing & rest', ar: '٢ نشاط يومياً • توازن مثالي بين السياحة والراحة', zh: '每天2个行程 • 观光与休息的完美平衡', ru: '2 активности в день • Идеальный баланс экскурсий и отдыха' }
   },
   packed: { 
     key: 'pacePacked', 
     Icon: MoonStar,
-    descFa: '۳ برنامه در روز • دیدن بیشترین جاذبه‌ها و تجربه حداکثری',
-    descEn: '3 activities per day • Comprehensive action-packed explore'
+    desc: { fa: '۳ برنامه در روز • دیدن بیشترین جاذبه‌ها و تجربه حداکثری', en: '3 activities per day • Comprehensive action-packed explore', ar: '٣ نشاطات يومياً • أقصى استكشاف وتجربة شاملة', zh: '每天3个行程 • 全面紧凑的探索之旅', ru: '3 активности в день • Максимум впечатлений' }
   },
 };
 
 const WHO_META: Record<Who, { Icon: LucideIcon; descFa: string; descEn: string }> = {
-  solo: { Icon: User, descFa: 'سفر تک‌نفره، مستقل و کشف آزادانه', descEn: 'Solo explorer, total freedom' },
-  duo: { Icon: Heart, descFa: 'دونفره، رمانتیک و سرشار از خاطره', descEn: 'Couples & romantic escapes' },
-  family: { Icon: Baby, descFa: 'سفر خانوادگی، امن و مناسب کودکان', descEn: 'Family trip with kids friendly stays' },
-  friends: { Icon: Users, descFa: 'سفر گروهی با دوستان، تفریح و هیجان', descEn: 'Travel with best friends & adventure' },
+  solo: { Icon: User, desc: { fa: 'سفر تک‌نفره، مستقل و کشف آزادانه', en: 'Solo explorer, total freedom', ar: 'سفر تک‌نفره، مستقل و کشف آزادانه', zh: 'Solo explorer, total freedom', ru: 'Solo explorer, total freedom' } },
+  duo: { Icon: Heart, desc: { fa: 'دونفره، رمانتیک و سرشار از خاطره', en: 'Couples & romantic escapes', ar: 'دونفره، رمانتیک و سرشار از خاطره', zh: 'Couples & romantic escapes', ru: 'Couples & romantic escapes' } },
+  family: { Icon: Baby, desc: { fa: 'سفر خانوادگی، امن و مناسب کودکان', en: 'Family trip with kids friendly stays', ar: 'سفر خانوادگی، امن و مناسب کودکان', zh: 'Family trip with kids friendly stays', ru: 'Family trip with kids friendly stays' } },
+  friends: { Icon: Users, desc: { fa: 'سفر گروهی با دوستان، تفریح و هیجان', en: 'Travel with best friends & adventure', ar: 'سفر گروهی با دوستان، تفریح و هیجان', zh: 'Travel with best friends & adventure', ru: 'Travel with best friends & adventure' } },
 };
 
 const DEST_TAGS: Record<CountryId, { fa: string; en: string }> = {
@@ -234,7 +231,7 @@ export function PlannerWizard({ step, setStep, ans, setAns, locale, setSeed }: P
                         {isSelected && <Check size={16} className="text-brand shrink-0" />}
                       </div>
                       <p className="text-xs text-sub font-medium mt-1 leading-relaxed">
-                        {isEn ? meta.descEn : meta.descFa}
+                        {lt(locale, meta.desc)}
                       </p>
                     </div>
                   </button>
@@ -381,7 +378,7 @@ export function PlannerWizard({ step, setStep, ans, setAns, locale, setSeed }: P
                     <div className="pt-3 border-t border-line/60">
                       <span className="block text-xs font-bold text-sub">{t('perPerson')}</span>
                       <span className="text-sm font-black text-price font-mono">
-                        تا {num(BUDGET_CAP[b], locale)} <span className="text-[10px]">تومان</span>
+                        تا {num(BUDGET_CAP[b], locale)} <span className="text-[10px]">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'Toman' })}</span>
                       </span>
                     </div>
                   </button>
@@ -423,15 +420,15 @@ export function PlannerWizard({ step, setStep, ans, setAns, locale, setSeed }: P
                       </span>
                       <b className="text-base font-black text-ink mb-1">{t(key)}</b>
                       <p className="text-xs text-sub font-medium leading-relaxed mb-4">
-                        {isEn ? descEn : descFa}
+                        {lt(locale, desc)}
                       </p>
                     </div>
 
                     <div className="w-full pt-3 border-t border-line/60 flex items-center justify-center gap-1">
                       <span className="text-xs font-black text-brand-dark">
-                        {p === 'relaxed' && '۱ تجربه در روز'}
-                        {p === 'balanced' && '۲ تجربه در روز'}
-                        {p === 'packed' && '۳ تجربه در روز'}
+                        {p === 'relaxed' && lt(locale, { fa: '۱ تجربه در روز', en: '1 per day', ar: '١ باليوم', zh: '每天1个', ru: '1 в день' })}
+                        {p === 'balanced' && lt(locale, { fa: '۲ تجربه در روز', en: '2 per day', ar: '٢ باليوم', zh: '每天2个', ru: '2 в день' })}
+                        {p === 'packed' && lt(locale, { fa: '۳ تجربه در روز', en: '3 per day', ar: '٣ باليوم', zh: '每天3个', ru: '3 в день' })}
                       </span>
                     </div>
                   </button>

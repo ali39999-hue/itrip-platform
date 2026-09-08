@@ -15,9 +15,13 @@ import { CarFront, Users, Luggage, Clock, Search, Crown, PlaneTakeoff, MapPin, T
 import { lt } from '@/lib/lt';
 
 const TRANSFER_IMGS: Record<string, string> = {
-  tr1: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&q=70&w=800',
+  tr1: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=70&w=800',
   tr2: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=70&w=800',
-  tr3: 'https://images.unsplash.com/photo-1570733577524-3a047079e80d?auto=format&fit=crop&q=70&w=800',
+  tr3: 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&q=70&w=800',
+  tr4: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=70&w=800',
+  tr5: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&q=70&w=800',
+  tr6: 'https://images.unsplash.com/photo-1570733577524-3a047079e80d?auto=format&fit=crop&q=70&w=800',
+  tr7: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=70&w=800',
 };
 
 type CarCat = 'eco' | 'vip' | 'van';

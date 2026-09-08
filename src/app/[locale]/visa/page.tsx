@@ -14,9 +14,11 @@ import { lt } from '@/lib/lt';
 
 const VISA_IMGS: Record<string, string> = {
   Turkey: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&q=70&w=800',
-  UAE: 'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&q=70&w=800',
+  UAE: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&q=70&w=800',
   Georgia: 'https://images.unsplash.com/photo-1565008447742-97f6f38c985c?auto=format&fit=crop&q=70&w=800',
   Russia: 'https://images.unsplash.com/photo-1513326738677-b964603b136d?auto=format&fit=crop&q=70&w=800',
+  China: 'https://images.unsplash.com/photo-1508804052814-cd3ba865a116?auto=format&fit=crop&q=70&w=800',
+  Oman: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&q=70&w=800',
 };
 
 export default function VisaPage() {
@@ -69,7 +71,7 @@ export default function VisaPage() {
       {/* Hero Section */}
       <section className="relative rounded-2xl overflow-hidden min-h-[400px] flex items-center justify-center bg-deep shadow-sm group">
         <Image
-          src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&q=75&w=1800"
+          src="https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=75&w=1800"
           alt={t('title')}
           fill
           sizes="100vw"

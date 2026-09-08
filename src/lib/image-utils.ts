@@ -20,12 +20,12 @@ export const shimmerDataUrl = (w: number = 700, h: number = 475) =>
 export const CATEGORY_PHOTO_MAP: Record<string, string> = {
   yacht: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80',
   festival: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80',
-  culture: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80',
+  culture: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80',
   nature: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
   wellness: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80',
   nightlife: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80',
-  adventure: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80',
-  theater: 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?auto=format&fit=crop&w=800&q=80',
+  adventure: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=800&q=80',
+  theater: 'https://images.unsplash.com/photo-1514306191717-452ec28c7814?auto=format&fit=crop&w=800&q=80', // سالن اپرا و تئاتر مجلل
   exhibition: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=800&q=80',
 };
 
@@ -221,28 +221,35 @@ export const DESTINATION_IMAGE_MAP: Record<string, string> = {
   Kish: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80', // ساحل مرجانی و آب‌های زلال کیش
   Tabriz: 'https://images.unsplash.com/photo-1580828343064-fde4fc206bc6?auto=format&fit=crop&w=800&q=80', // بازار تاریخی و استخر شاه‌گلی تبریز
   Yazd: 'https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?auto=format&fit=crop&w=800&q=80', // بافت خشتی و بادگیرهای تاریخی یزد
+  Kashan: 'https://images.unsplash.com/photo-1584646098378-0874589d76b1?auto=format&fit=crop&w=800&q=80', // خانه تاریخی طباطبایی‌ها و باغ فین کاشان
+  Qeshm: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=800&q=80', // دره چاهکوه و شگفتی‌های زمین‌شناسی قشم
   // Turkey
   Istanbul: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=800&q=80', // تنگه بسفر و ایاصوفیه استانبول
-  Antalya: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80', // سواحل نیلگون مدیترانه آنتالیا
-  Izmir: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80', // نوار ساحلی دریای اژه ازمیر
-  Trabzon: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80', // طبیعت سرسبز کوهستانی ترابزون
-  Bodrum: 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?auto=format&fit=crop&w=800&q=80', // اسکله و قلعه تفریحی بدروم
+  Antalya: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=800&q=80', // بندرگاه تاریخی کالیچی و صخره‌های ساحلی آنتالیا
+  Izmir: 'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&w=800&q=80', // میدان کناک و نوار ساحلی اژه‌ای ازمیر
+  Trabzon: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80', // دره سرسبز و صومعه سوملا ترابزون
+  Bodrum: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=800&q=80', // خانه‌های سفید ساحلی و اسکله تفریحی بدروم
+  Cappadocia: 'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&w=800&q=80', // بالن‌های هوای گرم و دره‌های صخره‌ای کاپادوکیه
   // UAE
   Dubai: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80', // برج خلیفه و اسکای‌لاین دبی
   'Abu Dhabi': 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=800&q=80', // مسجد جامع شیخ زاید ابوظبی
-  Sharjah: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80', // میراث فرهنگی و هنر شارجه
+  Sharjah: 'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=800&q=80', // میراث فرهنگی و هنر اسلامی شارجه
+  'Ras Al Khaimah': 'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=800&q=80', // قله‌های جبل جیس و طبیعت راس‌الخیمه
   // Georgia
   Tbilisi: 'https://images.unsplash.com/photo-1565008447742-97f6f38c985c?auto=format&fit=crop&w=800&q=80', // بافت تاریخی و قلعه ناریکالا تفلیس
-  Batumi: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80', // بلوار ساحلی و دریای سیاه باتومی
+  Batumi: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=800&q=80', // بلوار ساحلی و دریای سیاه باتومی
+  Kazbegi: 'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?auto=format&fit=crop&w=800&q=80', // کلیسای گرگتی و قله برفی کازبک
+  Gudauri: 'https://images.unsplash.com/photo-1551524559-8af4e6624178?auto=format&fit=crop&w=800&q=80', // پیست اسکی و کوهستان قفقاز گودائوری
+  Kakheti: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=800&q=80', // تاکستان‌های سرسبز دره آلازانی کاختی
   // Oman
   Muscat: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80', // مسجد سلطان قابوس و ساحل مطرح مسقط
   Salalah: 'https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=800&q=80', // طبیعت سبز خریف و نخلستان‌های صلاله
   // Russia
   Moscow: 'https://images.unsplash.com/photo-1513326738677-b964603b136d?auto=format&fit=crop&w=800&q=80', // میدان سرخ و کلیسای سنت باسیل مسکو
   'Saint Petersburg': 'https://images.unsplash.com/photo-1556610961-2fecc5927173?auto=format&fit=crop&w=800&q=80', // کاخ ارمیتاژ و پل‌های رود نوا سن‌پترزبورگ
-  Sochi: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80', // کوه‌های قفقاز و سواحل سوچی
+  Sochi: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80', // کوه‌های قفقاز و سواحل سوچی
   // China
   Beijing: 'https://images.unsplash.com/photo-1508804052814-cd3ba865a116?auto=format&fit=crop&w=800&q=80', // دیوار چین و شهر ممنوعه پکن
   Shanghai: 'https://images.unsplash.com/photo-1474181487882-5abf3f0ba6c2?auto=format&fit=crop&w=800&q=80', // باند شانگهای و برج مروارید خاور
-  Guangzhou: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80', // برج کانتون و رودخانه مروارید گوانگژو
+  Guangzhou: 'https://images.unsplash.com/photo-1513622470522-26c3c8a854bc?auto=format&fit=crop&w=800&q=80', // برج کانتون و خط آسمان گوانگژو
 };

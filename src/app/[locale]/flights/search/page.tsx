@@ -397,7 +397,7 @@ function FlightSearchInner() {
               className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-action/15 hover:bg-action/25 text-price text-xs font-black transition border border-action/30 shrink-0 cursor-pointer"
             >
               <BellRing size={14} className="text-price" aria-hidden="true" />
-              <spa>{lt(locale, { fa: 'اطلاع از کاهش قیمت', en: 'Price Alert', ar: 'تنبيه الأسعار', zh: '降价提醒', ru: 'Следить за ценой' })}</span>
+              <span>{lt(locale, { fa: 'اطلاع از کاهش قیمت', en: 'Price Alert', ar: 'تنبيه الأسعار', zh: '降价提醒', ru: 'Следить за ценой' })}</span>
             </button>
           </div>
 

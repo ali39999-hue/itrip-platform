@@ -34,7 +34,7 @@ export function PromotionalBanners() {
       gradient: 'from-[#033b3a] via-[#045956] to-[#00a9a5]',
       badgeBg: 'bg-mint text-brand-dark',
       icon: Plane,
-      img: 'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=75&w=800',
+      img: 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?auto=format&fit=crop&q=75&w=800',
     },
     {
       id: 'b2',
@@ -58,7 +58,7 @@ export function PromotionalBanners() {
       gradient: 'from-[#7c3a00] via-[#b45309] to-[#f0a62a]',
       badgeBg: 'bg-gold-soft text-price',
       icon: Hotel,
-      img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=75&w=800',
+      img: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=75&w=800',
     },
     {
       id: 'b3',
@@ -82,7 +82,7 @@ export function PromotionalBanners() {
       gradient: 'from-[#1e3a8a] via-[#1d4ed8] to-[#0284c7]',
       badgeBg: 'bg-blue-100 text-blue-900',
       icon: ShieldCheck,
-      img: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&q=75&w=800',
+      img: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=75&w=800',
     },
   ];
 

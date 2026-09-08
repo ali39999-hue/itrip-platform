@@ -102,7 +102,7 @@ export function CityAutocomplete({
       setHighlightIdx((prev) => (prev - 1 + (filteredCities.length || 1)) % (filteredCities.length || 1));
     } else if (e.key === 'Enter' && filteredCities[highlightIdx]) {
       e.preventDefault();
-      const selected = locale === 'en' ? filteredCities[highlightIdx].nameEn : filteredCities[highlightIdx].nameFa;
+      const selected = locale === 'fa' ? filteredCities[highlightIdx].nameFa : filteredCities[highlightIdx].nameEn;
       handleSelect(selected);
     } else if (e.key === 'Escape') {
       setOpen(false);
@@ -275,7 +275,7 @@ export function CityAutocomplete({
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {popularCities.map((pc) => {
-                  const name = locale === 'en' ? pc.nameEn : pc.nameFa;
+                  const name = locale === 'fa' ? pc.nameFa : pc.nameEn;
                   return (
                     <button
                       key={pc.id}

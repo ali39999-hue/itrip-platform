@@ -49,7 +49,7 @@ export default function EsimPage() {
       {/* Hero Section */}
       <section className="relative w-full h-[440px] md:h-[500px] flex items-center justify-center overflow-hidden mb-12 img-overlay-strong">
         <Image
-          src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&q=75&w=1800"
+          src="https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&q=75&w=1800"
           alt={t('title')}
           fill
           sizes="100vw"

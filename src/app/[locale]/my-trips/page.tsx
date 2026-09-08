@@ -56,17 +56,17 @@ function getTypeMeta(type: string, locale: string) {
     HOTEL: {
       label: lt(locale, { fa: 'اقامتگاه', en: 'Hotel', ar: 'فندق', zh: '酒店', ru: 'Отель' }),
       icon: BedDouble,
-      image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=70&w=800'
+      image: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=70&w=800'
     },
     TOUR: {
       label: lt(locale, { fa: 'تور', en: 'Tour', ar: 'جولة', zh: '旅游', ru: 'Тур' }),
       icon: MapPin,
-      image: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=70&w=800'
+      image: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&q=70&w=800'
     },
     TRANSFER: {
       label: lt(locale, { fa: 'ترانسفر', en: 'Transfer', ar: 'توصيل', zh: '接送', ru: 'Трансфер' }),
       icon: CarFront,
-      image: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&q=70&w=800'
+      image: 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&q=70&w=800'
     },
     TRAIN: {
       label: lt(locale, { fa: 'قطار', en: 'Train', ar: 'قطار', zh: '火车', ru: 'Поезд' }),
@@ -76,12 +76,12 @@ function getTypeMeta(type: string, locale: string) {
     VISA: {
       label: lt(locale, { fa: 'ویزا', en: 'Visa', ar: 'تأشيرة', zh: '签证', ru: 'Виза' }),
       icon: FileCheck2,
-      image: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&q=70&w=800'
+      image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=70&w=800'
     },
     ESIM: {
       label: 'eSIM',
       icon: Wifi,
-      image: 'https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&q=70&w=800'
+      image: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&q=70&w=800'
     },
     INSURANCE: {
       label: lt(locale, { fa: 'بیمه', en: 'Insurance', ar: 'تأمين', zh: '保险', ru: 'Страховка' }),

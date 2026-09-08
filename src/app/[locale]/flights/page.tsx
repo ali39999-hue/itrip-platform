@@ -13,12 +13,12 @@ export default function FlightsLandingPage() {
   const locale = useLocale();
 
   const popularRoutes = [
-    { from: 'THR', fromName: 'Tehran', fromFa: 'تهران', to: 'IST', toName: 'Istanbul', toFa: 'استانبول', price: 8500000, img: 'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&w=800&q=80', duration: '۳ ساعت', durationEn: '3h' },
+    { from: 'THR', fromName: 'Tehran', fromFa: 'تهران', to: 'IST', toName: 'Istanbul', toFa: 'استانبول', price: 8500000, img: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=800&q=80', duration: '۳ ساعت', durationEn: '3h' },
     { from: 'THR', fromName: 'Tehran', fromFa: 'تهران', to: 'DXB', toName: 'Dubai', toFa: 'دبی', price: 9800000, img: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80', duration: '۲ ساعت', durationEn: '2h' },
     { from: 'MHD', fromName: 'Mashhad', fromFa: 'مشهد', to: 'THR', toName: 'Tehran', toFa: 'تهران', price: 2350000, img: 'https://images.unsplash.com/photo-1579762715118-a6f1d4b934f1?auto=format&fit=crop&w=800&q=80', duration: '۱.۵ ساعت', durationEn: '1.5h' },
     { from: 'THR', fromName: 'Tehran', fromFa: 'تهران', to: 'TBS', toName: 'Tbilisi', toFa: 'تفلیس', price: 6500000, img: 'https://images.unsplash.com/photo-1565008447742-97f6f38c985c?auto=format&fit=crop&w=800&q=80', duration: '۱.۸ ساعت', durationEn: '1.8h' },
-    { from: 'SYZ', fromName: 'Shiraz', fromFa: 'شیراز', to: 'IST', toName: 'Istanbul', toFa: 'استانبول', price: 8200000, img: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=800&q=80', duration: '۳.۵ ساعت', durationEn: '3.5h' },
-    { from: 'KIH', fromName: 'Kish', fromFa: 'کیش', to: 'THR', toName: 'Tehran', toFa: 'تهران', price: 2800000, img: 'https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?auto=format&fit=crop&w=800&q=80', duration: '۱.۶ ساعت', durationEn: '1.6h' },
+    { from: 'SYZ', fromName: 'Shiraz', fromFa: 'شیراز', to: 'IST', toName: 'Istanbul', toFa: 'استانبول', price: 8200000, img: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80', duration: '۳.۵ ساعت', durationEn: '3.5h' },
+    { from: 'KIH', fromName: 'Kish', fromFa: 'کیش', to: 'THR', toName: 'Tehran', toFa: 'تهران', price: 2800000, img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80', duration: '۱.۶ ساعت', durationEn: '1.6h' },
   ];
 
   return (

@@ -5,28 +5,10 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES, COUNTRY_ORDER, countryName, type CountryId } from '@/lib/countries';
-import { CATEGORY_PHOTO_MAP, shimmerDataUrl } from '@/lib/image-utils';
+import { CATEGORY_PHOTO_MAP, DESTINATION_IMAGE_MAP, shimmerDataUrl } from '@/lib/image-utils';
 import { formatMoney } from '@/lib/money';
 import { MapPin, ArrowLeft, ArrowRight, Compass, BookOpenText, Check, Plane, Building2, Calendar, Sparkles } from 'lucide-react';
 import { lt } from '@/lib/lt';
-
-const CITY_PHOTO_MAP: Record<string, string> = {
-  Tehran: 'https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?auto=format&fit=crop&q=75&w=800',
-  Isfahan: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&q=75&w=800',
-  Shiraz: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&q=75&w=800',
-  Mashhad: 'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&q=75&w=800',
-  Yazd: 'https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?auto=format&fit=crop&q=75&w=800',
-  Tabriz: 'https://images.unsplash.com/photo-1580828343064-fde4fc206bc6?auto=format&fit=crop&q=75&w=800',
-  Kish: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=75&w=800',
-  Istanbul: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&q=75&w=800',
-  Antalya: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&q=75&w=800',
-  Dubai: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&q=75&w=800',
-  Tbilisi: 'https://images.unsplash.com/photo-1565008447742-97f6f38c985c?auto=format&fit=crop&q=75&w=800',
-  Moscow: 'https://images.unsplash.com/photo-1513326738677-b964603b136d?auto=format&fit=crop&q=75&w=800',
-  Muscat: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&q=75&w=800',
-  Beijing: 'https://images.unsplash.com/photo-1508804052814-cd3ba865a116?auto=format&fit=crop&q=75&w=800',
-  Shanghai: 'https://images.unsplash.com/photo-1474181487882-5abf3f0ba6c2?auto=format&fit=crop&q=75&w=800',
-};
 
 export default function DestinationsPage() {
   const t = useTranslations('Destinations');
@@ -119,7 +101,7 @@ export default function DestinationsPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {c.cities.map((city) => {
-            const photoUrl = CITY_PHOTO_MAP[city.en] || CITY_PHOTO_MAP.Tehran;
+            const photoUrl = DESTINATION_IMAGE_MAP[city.en] || DESTINATION_IMAGE_MAP[city.fa] || 'https://images.unsplash.com/photo-1579762715118-a6f1d4b934f1?auto=format&fit=crop&w=800&q=80';
             return (
               <button
                 key={city.en}

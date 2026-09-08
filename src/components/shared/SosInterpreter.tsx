@@ -100,7 +100,7 @@ export function SosInterpreter() {
                   ? t('sosTitle')
                   : phase === 'connecting'
                   ? t('sosConnecting')
-                  : t('sosConnected', { name: isEn ? interpreter.nameEn : interpreter.name })}
+                  : t('sosConnected', { name: lt(locale, { fa: interpreter.name, en: interpreter.nameEn, ar: interpreter.name, zh: interpreter.nameEn, ru: interpreter.nameEn }) })}
               </h3>
 
               {phase === 'live' && (

@@ -70,7 +70,7 @@ const MOCK_TRAVELOGUES: Record<string, TravelogueItem> = {
       ru: 'Дубай, ОАЭ',
     },
     userName: 'Sara Mohammadi',
-    image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=800&auto=format&fit=crop&q=80',
     content: {
       fa: 'دبی شهر آسمان‌خراش‌ها و تفریحات مدرن است. بازدید از برج خلیفه و سافاری در صحرا از بهترین بخش‌های این سفر بود. همچنین خرید در دبی مال و دیدن آب‌نمای دبی تجربه‌ای فراموش‌نشدنی بود.',
       en: 'Dubai is the city of futuristic architecture and desert adventures. Visiting Burj Khalifa and the desert dune safari were the highlights of our journey.',
@@ -103,6 +103,32 @@ const MOCK_TRAVELOGUES: Record<string, TravelogueItem> = {
       ar: 'تبليسي في الخريف تتمتع بأجواء ساحرة. المشي في شوارع المدينة القديمة والتلفريك إلى ناريكالا والحمامات الكبريتية كانت تجربة رائعة.',
       zh: '秋天的第比利斯散发着迷人的魅力。漫步在老城区，乘坐缆车登上纳里卡拉要塞，享受硫磺温泉，令人心旷神怡。',
       ru: 'Тбилиси осенью невероятно уютен. Прогулки по старому городу, канатная дорога к крепости Нарикала и серные бани оставили незабываемые впечатления.',
+    },
+  },
+  '4': {
+    id: '4',
+    title: {
+      fa: 'سفر به نصف جهان؛ شکوه نقش جهان و آرامش هتل عباسی',
+      en: 'Journey to Half the World: Naqsh-e Jahan & Abbasi Garden',
+      ar: 'رحلة إلى نصف العالم: نقش جهان وحديقة عباسي',
+      zh: '半个世界之旅：伊玛目广场与阿巴西花园',
+      ru: 'Путешествие в Исфахан: Накш-э Джахан и отель Аббаси',
+    },
+    destination: {
+      fa: 'اصفهان، ایران',
+      en: 'Isfahan, Iran',
+      ar: 'أصفهان، إيران',
+      zh: '伊朗伊斯法罕',
+      ru: 'Исфахан, Иран',
+    },
+    userName: 'Reza Tehrani',
+    image: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=800&auto=format&fit=crop&q=80',
+    content: {
+      fa: 'اصفهان شاهکار هنر و فرهنگ صفوی است. گنبد فیروزه‌ای شیخ لطف‌الله، کاشی‌کاری‌های مسجد امام و صرف چای سنتی در حیاط باصفای هتل عباسی لحظاتی ماندگار را در دفترچه خاطرات این سفر رقم زد.',
+      en: 'Isfahan is a crowning triumph of Safavid heritage. The turquoise dome of Sheikh Lotfollah, Imam Mosque tilework, and evening Persian tea in the courtyard of Abbasi Hotel made this journey truly unforgettable.',
+      ar: 'أصفهان هي تحفة الفن والعمارة الصفوية. قبة الشيخ لطف الله الفيروزية والشاي التقليدي في باحة فندق عباسي من أجمل الذكريات.',
+      zh: '伊斯法罕是萨法维王朝艺术与文化的巅峰。希克斯罗图福拉清真寺的绿松石穹顶与阿巴西酒店庭院的下午茶令人流连忘返。',
+      ru: 'Исфахан — шедевр сефевидской архитектуры. Бирюзовый купол мечети шейха Лютфуллы и традиционный чай в саду отеля Аббаси оставили глубокий след.',
     },
   },
 };

@@ -52,7 +52,7 @@ export default function SupportPage() {
       {/* Hero Section */}
       <section className="relative w-full h-[320px] md:h-[400px] flex items-center justify-center overflow-hidden mb-10">
         <Image
-          src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&q=75&w=1800"
+          src="https://images.unsplash.com/photo-1534536281715-e28d76689b4d?auto=format&fit=crop&q=75&w=1800"
           alt={t('title')}
           fill
           sizes="100vw"
