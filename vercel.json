@@ -1,13 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "node scripts/auto-setup.mjs && next build",
-  "installCommand": "npm install",
   "framework": "nextjs",
   "regions": ["fra1"],
   "crons": [
     {
       "path": "/api/cron/auto-buy",
-      "schedule": "* * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
