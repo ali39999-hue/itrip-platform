@@ -39,7 +39,9 @@ export function CountrySwitcher() {
         className="min-h-[38px] inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-[13px] font-black text-brand-dark bg-brand/10 hover:bg-brand/20 transition border-0 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
       >
         <MapPin size={14} className="text-brand-dark" aria-hidden="true" />
-        <span>{c?.flag} {countryNameL(country, locale)}</span>
+        {/* Compact everywhere: full country name lives in the drawer switcher.
+            Keeps the header bar fitting at every breakpoint. */}
+        <span aria-hidden="true">{c?.flag}</span>
         <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
       </button>
       {open && (

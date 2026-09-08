@@ -3,7 +3,7 @@
 **Document:** `docs/baseline/PRODUCTION_SCORECARD.md`  
 **Task:** BASE-104  
 **Baseline Commit:** `cf45237`  
-**Application Version:** `1.2.0`  
+**Application Version:** `1.3.0`  
 **Evaluation Date:** 2026-09-07  
 
 ---
@@ -12,10 +12,10 @@
 
 | Gate ID | Gate Description | Target Invariant | Reproducible Command / Test | Current Status |
 |---|---|---|---|---|
-| **GATE-P0-01** | Database Schema & Migration | Clean migration deploy on PostgreSQL 16; zero schema drift | `npx prisma migrate deploy` | **PASS (18 migrations deployed)** |
+| **GATE-P0-01** | Database Schema & Migration | Clean migration deploy on PostgreSQL 16; zero schema drift | `npx prisma migrate deploy` | **PASS (19 migrations deployed)** |
 | **GATE-P0-02** | Strict TypeScript Verification | 0 compiler errors across entire repository | `npm run typecheck` (`tsc --noEmit`) | **PASS (0 errors)** |
 | **GATE-P0-03** | ESLint Architectural Invariants | 0 lint errors, no architecture boundary violations | `npm run lint` (`eslint`) | **PASS (0 errors)** |
-| **GATE-P0-04** | Core Domain & Unit Suite | 100% pass on all domain, concurrency, and security tests | `npm run test:unit` | **PASS (26 suites / 148+ tests)** |
+| **GATE-P0-04** | Core Domain & Unit Suite | 100% pass on all domain, concurrency, and security tests | `npm run test:unit` | **PASS (47 suites / 303 tests)** |
 | **GATE-P0-05** | Webhook Security Fail-Closed | Missing secret or invalid HMAC strictly rejects with HTTP 401 | `src/domains/payments/payment-safety.test.ts` | **PASS** |
 | **GATE-P0-06** | Production Demo-Mode Guard | Build throws error if `DEMO_MODE=true` in production | `next.config.ts` (`CI-012` guard) | **PASS** |
 | **GATE-P0-07** | Strict Tenant Isolation & IDOR | Cross-organization reads, writes, and IDOR fail closed | `src/domains/identity/tenant-isolation.test.ts`, `idor-protection.test.ts` | **PASS** |

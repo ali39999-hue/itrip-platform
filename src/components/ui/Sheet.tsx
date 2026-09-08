@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { X } from 'lucide-react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface SheetProps {
   open: boolean;
@@ -23,22 +24,17 @@ export function Sheet({
   side = 'bottom',
 }: SheetProps) {
   React.useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape' && open) {
-        onOpenChange(false);
-      }
-    }
+    // Lock scroll while open. Keyboard handling (Escape + Tab wrap) lives in
+    // SheetContent via useFocusTrap so focus is always managed together.
     if (open) {
       document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
     } else {
       document.body.style.overflow = '';
     }
     return () => {
       document.body.style.overflow = '';
-      window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [open, onOpenChange]);
+  }, [open ]);
 
   return (
     <SheetContext.Provider value={{ open, onOpenChange, side }}>
@@ -57,6 +53,9 @@ export function SheetContent({
   closeAriaLabel?: string;
 }) {
   const { open, onOpenChange, side } = React.useContext(SheetContext);
+  const panelRef = useFocusTrap<HTMLDivElement>(open, {
+    onEscape: () => onOpenChange(false),
+  });
 
   if (!open) return null;
 
@@ -73,10 +72,11 @@ export function SheetContent({
     <div
       className="fixed inset-0 z-[150] bg-ink/60 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={() => onOpenChange(false)}
-      role="dialog"
-      aria-modal="true"
     >
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
         className={`fixed z-[151] bg-surface border-line p-6 shadow-elev-3 overflow-y-auto ${sideClasses[side]} ${className}`}
         onClick={(e) => e.stopPropagation()}
       >

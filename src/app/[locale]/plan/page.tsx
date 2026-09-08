@@ -9,16 +9,16 @@ import { PlannerWizard, QUESTIONS } from '@/components/plan/PlannerWizard';
 import { PlannerResult } from '@/components/plan/PlannerResult';
 import { FiruzoAiLoading } from '@/components/shared/FiruzoAiLoading';
 
-function parseNaturalQuery(q: string): Answers | null {
+export function parseNaturalQuery(q: string): Answers | null {
   if (!q) return null;
   const a: Answers = {};
   const lower = q.toLowerCase();
   
   // Extract dest
   if (/(iran|ایران|تهران|شیراز|مشهد|اصفهان|کیش|قشم|تبریز|یزد|رشت|همدان|tehran|shiraz|mashhad|isfahan|esfahan|kish|qeshm|tabriz|yazd)/.test(lower)) a.dest = 'iran';
-  else if (/(turkey|ترکیه|استانبول|آنتالیا|ازمیر|istanbul|antalya|izmir)/.test(lower)) a.dest = 'turkey';
-  else if (/(uae|امارات|دبی|ابوظبی|dubai|abu dhabi)/.test(lower)) a.dest = 'uae';
-  else if (/(georgia|گرجستان|تفلیس|باتومی|tbilisi|batumi)/.test(lower)) a.dest = 'georgia';
+  else if (/(turkey|ترکیه|استانبول|آنتالیا|ازمیر|بدروم|istanbul|antalya|izmir|bodrum)/.test(lower)) a.dest = 'turkey';
+  else if (/(uae|امارات|دبی|ابوظبی|شارجه|dubai|abu dhabi|sharjah)/.test(lower)) a.dest = 'uae';
+  else if (/(georgia|گرجستان|تفلیس|باتومی|کازبگی|tbilisi|batumi|kazbegi)/.test(lower)) a.dest = 'georgia';
   else if (/(russia|روسیه|مسکو|سن پترزبورگ|moscow|saint petersburg)/.test(lower)) a.dest = 'russia';
   else if (/(oman|عمان|مسقط|صلاله|muscat|salalah)/.test(lower)) a.dest = 'oman';
   else if (/(china|چین|پکن|شانگهای|گوانگجو|beijing|shanghai|guangzhou)/.test(lower)) a.dest = 'china';
@@ -31,23 +31,44 @@ function parseNaturalQuery(q: string): Answers | null {
     if (d >= 2 && d <= 14) a.days = d;
   } else {
      // Check words
-     if (/(دو|two)/.test(lower)) a.days = 2;
-     if (/(سه|three)/.test(lower)) a.days = 3;
-     if (/(چهار|four)/.test(lower)) a.days = 4;
-     if (/(پنج|five)/.test(lower)) a.days = 5;
-     if (/(شش|six)/.test(lower)) a.days = 6;
-     if (/(هفت|seven)/.test(lower)) a.days = 7;
+     if (/(یک|one|1)/.test(lower)) a.days = 2;
+     if (/(دو|two|2)/.test(lower)) a.days = 2;
+     if (/(سه|three|3)/.test(lower)) a.days = 3;
+     if (/(چهار|four|4)/.test(lower)) a.days = 4;
+     if (/(پنج|five|5)/.test(lower)) a.days = 5;
+     if (/(شش|six|6)/.test(lower)) a.days = 6;
+     if (/(هفت|seven|7)/.test(lower)) a.days = 7;
+     if (/(ده|ten|10)/.test(lower)) a.days = 10;
+     if (/(چهارده|دو هفته|fourteen|14)/.test(lower)) a.days = 14;
   }
 
   // Extract who
-  if (/(خانواده|family|بچه)/.test(lower)) a.who = 'family';
-  else if (/(دوست|فرند|friends)/.test(lower)) a.who = 'friends';
-  else if (/(همسر|پارتنر|دونفره|duo|couple)/.test(lower)) a.who = 'duo';
-  else if (/(تنها|تکی|solo)/.test(lower)) a.who = 'solo';
+  if (/(خانواده|خانوادگی|بچه|فرزند|kids|family)/.test(lower)) a.who = 'family';
+  else if (/(دوست|دوستان|رفقا|فرند|friends|group)/.test(lower)) a.who = 'friends';
+  else if (/(همسر|پارتنر|دونفره|زن و شوهر|عاشقانه|رمانتیک|duo|couple)/.test(lower)) a.who = 'duo';
+  else if (/(تنها|تکی|انفرادی|مجردی|تنهایی|solo|alone)/.test(lower)) a.who = 'solo';
 
   // Extract budget
-  if (/(ارزان|اقتصادی|economy|cheap)/.test(lower)) a.budget = 'economy';
-  else if (/(لوکس|گران|لاکچری|luxury)/.test(lower)) a.budget = 'luxury';
+  if (/(ارزان|اقتصادی|کم‌هزینه|مقرون‌به‌صرفه|cheap|economy|budget)/.test(lower)) a.budget = 'economy';
+  else if (/(لوکس|گران|لاکچری|vip|پنج ستاره|۵ ستاره|luxury|expensive)/.test(lower)) a.budget = 'luxury';
+  else if (/(متعادل|متوسط|معمولی|استاندارد|balanced|standard)/.test(lower)) a.budget = 'balanced';
+
+  // Extract pace
+  if (/(آرام|استراحت|ریلکس|کم‌عجله|سبک|relaxed|slow|rest)/.test(lower)) a.pace = 'relaxed';
+  else if (/(فشرده|پربرنامه|پربار|سریع|ماکسیمم|packed|busy|fast|full)/.test(lower)) a.pace = 'packed';
+  else if (/(متعادل|balanced)/.test(lower)) a.pace = 'balanced';
+
+  // Extract interests
+  const ints: ExperienceCategory[] = [];
+  if (/(تاریخ|تاریخی|فرهنگ|فرهنگی|موزه|آثار باستانی|کاخ|مسجد|معماری|culture|history|museum)/.test(lower)) ints.push('culture');
+  if (/(طبیعت|کوه|جنگل|طبیعت‌گردی|روستا|دریاچه|nature|mountain|forest|lake)/.test(lower)) ints.push('nature');
+  if (/(کشتی|کروز|قایق|دریایی|ساحل|غواصی|شنا|yacht|boat|cruise|beach|sea)/.test(lower)) ints.push('yacht');
+  if (/(ماجراجویی|هیجان|سافاری|کویر|آفرود|adventure|safari|desert)/.test(lower)) ints.push('adventure');
+  if (/(آرامش|اسپا|ریلکس|آبگرم|سلامت|ماساژ|wellness|spa)/.test(lower)) ints.push('wellness');
+  if (/(شبانه|شب‌گردی|کافه|تفریحات شب|کلاب|nightlife|club)/.test(lower)) ints.push('nightlife');
+  if (/(خرید|مرکز خرید|پاساژ|بازار|سوغات|shopping|mall|bazaar|market|exhibition)/.test(lower)) ints.push('exhibition');
+  if (/(جشنواره|فستیوال|کنسرت|هنر|تئاتر|موسیقی|festival|theater|concert)/.test(lower)) ints.push('festival');
+  if (ints.length) a.interests = ints;
 
   return Object.keys(a).length > 0 ? a : null;
 }
@@ -56,11 +77,7 @@ export default function PlanPage() {
   const locale = useLocale();
   const isEn = locale === 'en';
 
-  // SSR-safe initial state. The URL query is applied after hydration in the
-  // effect below — reading window.location.search during the first render made
-  // the client tree diverge from the server HTML (hydration failure) whenever
-  // the page was opened with ?q= or ?dest= deep links.
-  const [step, setStep] = useState(0); // index در QUESTIONS
+  const [step, setStep] = useState(0);
   const [ans, setAns] = useState<Answers>({});
   const [startAtResult, setStartAtResult] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -146,7 +163,7 @@ export default function PlanPage() {
           url: fullUrl,
         });
       } catch {
-        // Fallback to clipboard if share dialog dismissed
+        // Fallback to clipboard
       }
     } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
       try {
@@ -157,6 +174,14 @@ export default function PlanPage() {
     setShared(true);
     setTimeout(() => setShared(false), 2600);
   }
+
+  const handleRefineWithPrompt = (promptText: string) => {
+    const parsed = parseNaturalQuery(promptText);
+    if (parsed) {
+      setAns((prev) => ({ ...prev, ...parsed }));
+    }
+    setSeed((s) => s + 1);
+  };
 
   if (isGenerating) {
     return (
@@ -178,6 +203,7 @@ export default function PlanPage() {
         shareUrl={shareUrl} 
         seed={seed}
         setSeed={setSeed}
+        onRefineWithPrompt={handleRefineWithPrompt}
       />
     );
   }

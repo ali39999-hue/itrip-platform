@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { Calendar, TrendingDown } from 'lucide-react';
 import { num } from '@/lib/format';
 import { lt } from '@/lib/lt';
@@ -72,15 +72,24 @@ export function FlightPriceCalendar({
     }));
   }, [selectedDate, basePrice, locale]);
 
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  // Keep the selected day visible: on small screens the 7-day strip overflows
+  // and the selected card could otherwise render half-clipped off-canvas.
+  useEffect(() => {
+    const selected = trackRef.current?.querySelector<HTMLElement>('[data-selected="true"]');
+    selected?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }, [selectedDate]);
+
   return (
     <section
       aria-label={lt(locale, { fa: 'تقویم ارزان‌ترین پروازها', en: 'Low Fare Flight Calendar', ar: 'تقويم أرخص الرحلات', zh: '低价机票日历', ru: 'Календарь низких цен' })}
       className="w-full bg-surface rounded-2xl border border-line p-3 sm:p-4 shadow-sm mb-5"
     >
       <div className="flex items-center justify-between gap-2 mb-2 px-1">
-        <div className="flex items-center gap-2">
-          <Calendar size={16} className="text-brand-dark" aria-hidden="true" />
-          <h3 className="text-xs sm:text-sm font-black text-ink">
+        <div className="flex items-center gap-2 min-w-0">
+          <Calendar size={16} className="text-brand-dark shrink-0" aria-hidden="true" />
+          <h3 className="text-xs sm:text-sm font-black text-ink leading-snug">
             {lt(locale, {
               fa: 'تقویم ارزان‌ترین پروازهای هفته (تضمین کمترین نرخ)',
               en: 'Lowest Fare Calendar (7-Day Price Window)',
@@ -90,18 +99,19 @@ export function FlightPriceCalendar({
             })}
           </h3>
         </div>
-        <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
+        <span className="shrink-0 inline-flex items-center gap-1 text-[11px] font-black text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
           <TrendingDown size={13} aria-hidden="true" />
           <span>{lt(locale, { fa: 'بهترین قیمت روز', en: 'Best Day Fare', ar: 'أفضل سعر', zh: '最优价', ru: 'Лучшая цена' })}</span>
         </span>
       </div>
 
       {/* 7-Day Horizontal Scroll Track */}
-      <div className="flex items-stretch gap-2 overflow-x-auto pb-1 pt-1.5 scrollbar-none snap-x snap-mandatory">
+      <div ref={trackRef} className="flex items-stretch gap-2 overflow-x-auto pb-1 pt-1.5 scrollbar-none snap-x snap-mandatory">
         {days.map((item) => (
           <button
             key={item.dateStr}
             type="button"
+            data-selected={item.isSelected || undefined}
             onClick={() => onSelectDate(item.dateStr)}
             className={`shrink-0 w-[116px] sm:w-auto sm:flex-1 p-2 sm:p-2.5 rounded-xl border text-center transition-all snap-start relative flex flex-col justify-between min-h-[76px] cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
               item.isSelected

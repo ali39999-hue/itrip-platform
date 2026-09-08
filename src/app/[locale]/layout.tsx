@@ -216,6 +216,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={dir}
+      suppressHydrationWarning
       className={`${font.variable} ${plusJakartaSans.variable} ${iranYekan.variable} ${yekanBakh.variable} ${vazirmatnHeading.variable} ${geistMono.variable} h-full antialiased`}
       style={
         {

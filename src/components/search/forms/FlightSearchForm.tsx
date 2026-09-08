@@ -103,6 +103,7 @@ export function FlightSearchForm({
           label={t('from')}
           placeholder={t('fromPlaceholder')}
           id="search-from-input"
+          className="pe-7 sm:pe-8"
         />
 
         {/* Floating Swap button on Tablet & Desktop (horizontal alignment) */}
@@ -137,6 +138,7 @@ export function FlightSearchForm({
           label={t('to')}
           placeholder={t('toPlaceholder')}
           id="search-to-input"
+          className="ps-3.5 sm:ps-7"
         />
       </div>
 

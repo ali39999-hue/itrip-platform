@@ -3,7 +3,7 @@
  * Exports canonical version, commit SHA, and provenance helper for runtime transparency.
  */
 
-export const NEXT_PUBLIC_APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || '1.3.0';
+export const NEXT_PUBLIC_APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || '1.4.0';
 export const NEXT_PUBLIC_COMMIT_SHA = process.env.NEXT_PUBLIC_COMMIT_SHA || 'cf45237';
 export const APP_VERSION = NEXT_PUBLIC_APP_VERSION;
 export const COMMIT_SHA = NEXT_PUBLIC_COMMIT_SHA;

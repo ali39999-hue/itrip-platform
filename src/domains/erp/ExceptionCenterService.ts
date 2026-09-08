@@ -298,9 +298,10 @@ export class ExceptionCenterService {
       },
     });
 
+    const userExists = operatorId ? await prisma.user.findUnique({ where: { id: operatorId }, select: { id: true } }) : null;
     await prisma.auditLog.create({
       data: {
-        userId: operatorId,
+        userId: userExists ? operatorId : undefined,
         action: 'EXCEPTION_RESOLVED',
         resource: 'OperationalException',
         resourceId: exceptionId,

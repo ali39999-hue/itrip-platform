@@ -120,6 +120,12 @@
       "installTitle": "تثبيت تطبيق Firuzo",
       "installSubtitle": "وصول أسرع بدون متصفح",
       "install": "تثبيت"
+    },
+    "states": {
+      "retry": "إعادة المحاولة",
+      "loading": "جارٍ التحميل…",
+      "errorTitle": "حدث خطأ ما",
+      "emptyTitle": "لا توجد نتائج"
     }
   },
   "NotFound": {
@@ -464,7 +470,8 @@
     "successTitle": "تم تأكيد حجزك وإصداره بنجاح!",
     "refCode": "رمز الحجز (PNR)",
     "downloadPdf": "تحميل قسيمة PDF الرسمية",
-    "myTrips": "عرض في رحلاتي"
+    "myTrips": "عرض في رحلاتي",
+    "continueToPayment": "التأكيد والمتابعة إلى الدفع"
   },
   "HotelsSearch": {
     "title": "البحث عن الفنادق",
@@ -663,7 +670,9 @@
     "learnMore": "اكتشف المزيد",
     "flights": "رحلات طيران",
     "sortBy": "ترتيب حسب",
-    "apply": "تطبيق التصفية"
+    "apply": "تطبيق التصفية",
+    "minPrice": "السعر الأدنى",
+    "maxPrice": "السعر الأقصى"
   },
   "Tours": {
     "title": "الجولات والرحلات السياحية",

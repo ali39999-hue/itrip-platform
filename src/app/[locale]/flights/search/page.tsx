@@ -22,6 +22,7 @@ import {
   useFlightComparison,
 } from '@/components/flights';
 import { CrossSellBundle } from '@/components/shared/CrossSellBundle';
+import { trackFunnel } from '@/lib/analytics';
 import {
   PlaneTakeoff, PlaneLanding, CalendarDays, PenLine, SlidersHorizontal, X, Check, Loader2, Search, BellRing,
 } from 'lucide-react';
@@ -186,6 +187,12 @@ function FlightSearchInner() {
   }
 
   function selectFlight(f: Flight) {
+    trackFunnel('flight_selected', {
+      route: '/flights/search',
+      locale,
+      stops: f.stops,
+      refundable: f.refundable ?? undefined,
+    });
     setBookingContext({
       type: 'flights',
       // The server prices the draft from the live flight catalog by id.
@@ -231,7 +238,7 @@ function FlightSearchInner() {
             step={STEP}
             value={price[0]}
             onChange={(e) => setPrice([Math.min(Number(e.target.value), price[1] - STEP), price[1]])}
-            aria-label={t('priceRange')}
+              aria-label={t('minPrice')}
             className="absolute inset-0 w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-surface [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-brand [&::-webkit-slider-thumb]:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-full"
           />
           <input
@@ -241,7 +248,7 @@ function FlightSearchInner() {
             step={STEP}
             value={price[1]}
             onChange={(e) => setPrice([price[0], Math.max(Number(e.target.value), price[0] + STEP)])}
-            aria-label={t('priceRange')}
+              aria-label={t('maxPrice')}
             className="absolute inset-0 w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-surface [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-brand [&::-webkit-slider-thumb]:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-full"
           />
         </div>
@@ -357,28 +364,28 @@ function FlightSearchInner() {
               <button
                 type="button"
                 onClick={() => setQuickFilter('all')}
-                className={`px-3 py-1.5 rounded-xl transition ${quickFilter === 'all' ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+                className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition ${quickFilter === 'all' ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
               >
                 {lt(locale, { fa: 'همه پروازها', en: 'All Flights', ar: 'كل الرحلات', zh: '全部航班', ru: 'Все рейсы' })}
               </button>
               <button
                 type="button"
                 onClick={() => setQuickFilter('direct')}
-                className={`px-3 py-1.5 rounded-xl transition ${quickFilter === 'direct' ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+                className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition ${quickFilter === 'direct' ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
               >
                 {lt(locale, { fa: 'فقط بدون توقف', en: 'Non-stop Only', ar: 'بدون توقف', zh: '仅直飞', ru: 'Только прямые' })}
               </button>
               <button
                 type="button"
                 onClick={() => setQuickFilter('morning')}
-                className={`px-3 py-1.5 rounded-xl transition ${quickFilter === 'morning' ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+                className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition ${quickFilter === 'morning' ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
               >
                 {lt(locale, { fa: 'پروازهای صبح (۶-۱۲)', en: 'Morning (6-12)', ar: 'صباحاً (6-12)', zh: '早班机（6-12点）', ru: 'Утренние (6-12)' })}
               </button>
               <button
                 type="button"
                 onClick={() => setQuickFilter('systemic')}
-                className={`px-3 py-1.5 rounded-xl transition ${quickFilter === 'systemic' ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+                className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition ${quickFilter === 'systemic' ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
               >
                 {lt(locale, { fa: 'فقط سیستمی', en: 'Systemic Only', ar: 'منتظمة فقط', zh: '仅正班', ru: 'Только регулярные' })}
               </button>
@@ -400,7 +407,7 @@ function FlightSearchInner() {
               <button
                 key={s.id}
                 onClick={() => setSort(s.id)}
-                className={`whitespace-nowrap min-h-10 px-4 rounded-xl text-[13px] font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-sm ${
+                className={`whitespace-nowrap shrink-0 min-h-10 px-4 rounded-xl text-[13px] font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-sm ${
                   sort === s.id
                     ? 'bg-brand text-surface shadow-sm'
                     : 'bg-surface text-sub border border-line hover:bg-soft'
@@ -412,7 +419,7 @@ function FlightSearchInner() {
             {/* Mobile filter trigger */}
             <button
               onClick={() => setSheet(true)}
-              className="lg:hidden whitespace-nowrap min-h-10 px-4 rounded-xl bg-surface text-ink border border-line hover:bg-soft text-[13px] font-black flex items-center gap-2 me-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-sm"
+              className="lg:hidden whitespace-nowrap shrink-0 min-h-10 px-4 rounded-xl bg-surface text-ink border border-line hover:bg-soft text-[13px] font-black flex items-center gap-2 me-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-sm"
             >
               <SlidersHorizontal size={15} />
               {t('filters')}

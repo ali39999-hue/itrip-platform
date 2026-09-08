@@ -120,6 +120,12 @@
       "installTitle": "Install Firuzo App",
       "installSubtitle": "Faster access without a browser",
       "install": "Install"
+    },
+    "states": {
+      "retry": "Try again",
+      "loading": "Loading…",
+      "errorTitle": "Something went wrong",
+      "emptyTitle": "No results found"
     }
   },
   "NotFound": {
@@ -464,7 +470,8 @@
     "successTitle": "Your booking is confirmed and issued!",
     "refCode": "Booking Reference (PNR)",
     "downloadPdf": "Download Official PDF Voucher",
-    "myTrips": "View in My Trips"
+    "myTrips": "View in My Trips",
+    "continueToPayment": "Confirm and continue to payment"
   },
   "HotelsSearch": {
     "title": "Search Hotels & Stays",
@@ -663,7 +670,9 @@
     "learnMore": "Learn More",
     "flights": "flights",
     "sortBy": "Sort by",
-    "apply": "Apply Filters"
+    "apply": "Apply Filters",
+    "minPrice": "Minimum price",
+    "maxPrice": "Maximum price"
   },
   "Tours": {
     "title": "Curated Tours & Experiences",

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useTranslations, useLocale } from 'next-intl';
 import { MapPin, Coffee, Wallet, Headset, BarChart3, ShieldCheck, Waves, Users, KeyRound, Check, X, ThumbsUp, Ban, ChevronDown, BedDouble, TrainFront, Building2, type LucideIcon } from 'lucide-react';
-import { fa1, gShort } from '@/lib/hotel-format';
+import { fa1, stayDateShort } from '@/lib/hotel-format';
 import { getDistsForLocale, getCatsForLocale, getReviewsForLocale, getFaqsForLocale } from '@/lib/hotel-mock';
 import type { Hotel } from '@/lib/types';
 import { FREE_CANCEL_HOURS } from '@/hooks/useHotelBooking';
@@ -288,7 +288,7 @@ export function HotelPolicies({ checkinDate }: { checkinDate: string }) {
         <div className="relative grid grid-cols-3 gap-2">
           <span className="absolute top-[9px] inset-x-2 h-[3px] rounded-full bg-gradient-to-l from-success/40 via-gold/50 to-rose-warm/40" />
           {[
-            [`از امروز تا ${gShort.format(dl)}`, 'بازگشت کامل وجه', 'bg-success'],
+            [`از امروز تا ${stayDateShort(dl, locale)}`, 'بازگشت کامل وجه', 'bg-success'],
             ['', 'کسر یک شب، مابقی بازگردانده می‌شود', 'bg-gold'],
             ['پس از ورود یا عدم حضور', 'بدون بازگشت وجه', 'bg-rose-warm'],
           ].map(([l1, l2, dot], i) => (

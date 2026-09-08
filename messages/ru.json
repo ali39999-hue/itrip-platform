@@ -120,6 +120,12 @@
       "installTitle": "Установить Firuzo",
       "installSubtitle": "Быстрый доступ без браузера",
       "install": "Установить"
+    },
+    "states": {
+      "retry": "Повторить",
+      "loading": "Загрузка…",
+      "errorTitle": "Что-то пошло не так",
+      "emptyTitle": "Ничего не найдено"
     }
   },
   "NotFound": {
@@ -464,7 +470,8 @@
     "successTitle": "Ваше бронирование успешно подтверждено!",
     "refCode": "Номер бронирования (PNR)",
     "downloadPdf": "Скачать официальный ваучер PDF",
-    "myTrips": "Мои поездки"
+    "myTrips": "Мои поездки",
+    "continueToPayment": "Подтвердить и перейти к оплате"
   },
   "HotelsSearch": {
     "title": "Поиск отелей и апартаментов",
@@ -663,7 +670,9 @@
     "learnMore": "Learn More",
     "flights": "flights",
     "sortBy": "Сортировка",
-    "apply": "Применить фильтры"
+    "apply": "Применить фильтры",
+    "minPrice": "Минимальная цена",
+    "maxPrice": "Максимальная цена"
   },
   "Tours": {
     "title": "Туры и авторские экскурсии",

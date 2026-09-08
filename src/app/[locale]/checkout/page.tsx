@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { lt } from '@/lib/lt';
 import { useForm } from 'react-hook-form';
@@ -21,11 +21,15 @@ import { PriceBreakdownTable } from '@/components/checkout/PriceBreakdownTable';
 import { PaymentGatewaySelector } from '@/components/checkout/PaymentGatewaySelector';
 import { IssuingModal } from '@/components/checkout/IssuingModal';
 import { SuccessConfirmation } from '@/components/checkout/SuccessConfirmation';
+import { StickyMobileBar } from '@/components/checkout/StickyMobileBar';
+import { formatMoney } from '@/lib/money';
+import { trackFunnel } from '@/lib/analytics';
 
 import { v4 as uuidv4 } from 'uuid';
 
 export default function CheckoutPage() {
   const locale = useLocale();
+  const tCheckout = useTranslations('Checkout');
   const router = useRouter();
   const hydrated = useHydration();
   const { country } = useCountryStore();
@@ -179,6 +183,7 @@ export default function CheckoutPage() {
   const itemTitle = bookingContext?.title ?? '';
   const currency = 'IRR';
   const walletBalance = serverWallet ?? wallet.IRR ?? 0;
+  const totalPayable = baseAmount + (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0);
 
   function scanPassport() {
     setScanning(true);
@@ -196,6 +201,12 @@ export default function CheckoutPage() {
 
   const onSubmitPassenger = async (data: Passenger) => {
     setError('');
+    trackFunnel('passenger_submitted', {
+      route: '/checkout',
+      locale,
+      type: bookingContext?.type ?? 'unknown',
+      travelers: Math.max(1, (bookingContext?.adults ?? 1) + (bookingContext?.children ?? 0)),
+    });
     if (!authUser?.phone) {
       setError(
         lt(locale, {
@@ -277,6 +288,12 @@ export default function CheckoutPage() {
 
   async function handleFinalPayment() {
     setError('');
+    trackFunnel('payment_started', {
+      route: '/checkout',
+      locale,
+      method,
+      amount: totalPayable,
+    });
     setPhase('issuing');
     setIssueStep(0);
 
@@ -298,6 +315,7 @@ export default function CheckoutPage() {
     try {
       paymentRes = await paymentPromise;
     } catch {
+      trackFunnel('payment_failed', { route: '/checkout', locale, reason: 'exception' });
       setError(
         lt(locale, { fa: 'خطای غیرمنتظره در پرداخت رخ داد.', en: 'An unexpected error occurred during payment.', ar: 'حدث خطأ غير متوقع أثناء الدفع.', zh: '支付过程中发生意外错误。', ru: 'При оплате произошла непредвиденная ошибка.' })
       );
@@ -306,6 +324,11 @@ export default function CheckoutPage() {
     }
 
     if (!paymentRes.success) {
+      trackFunnel('payment_failed', {
+        route: '/checkout',
+        locale,
+        reason: (paymentRes as { error?: string }).error ?? 'unknown',
+      });
       if ((paymentRes as { error?: string }).error === 'NO_DRAFT') {
         setError(
           lt(locale, { fa: 'ابتدا اطلاعات مسافر را ثبت کنید.', en: 'Submit passenger details first.', ar: 'أدخل بيانات المسافر أولاً.', zh: '请先提交乘客信息。', ru: 'Сначала укажите данные пассажира.' })
@@ -319,6 +342,7 @@ export default function CheckoutPage() {
 
     // Server confirmed — take the real reference (and PNR if already issued).
     const booking = (paymentRes as { booking?: { reference?: string; externalPnr?: string } }).booking;
+    trackFunnel('payment_succeeded', { route: '/checkout', locale, method });
     await minAnimation;
     setConfirmedRef(booking?.externalPnr || booking?.reference || '');
     setConfirmedTitle(itemTitle);
@@ -326,7 +350,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-paper py-8 md:py-12 px-4 md:px-8">
+    <div className="min-h-screen bg-paper pt-8 pb-36 md:py-12 lg:pb-12 px-4 md:px-8">
       <div className="max-w-5xl mx-auto">
         {/* Stepper */}
         {phase !== 'success' && <CheckoutStepper phase={phase} />}
@@ -339,7 +363,7 @@ export default function CheckoutPage() {
 
         {/* Phase 1: Passenger Form */}
         {phase === 'passengers' && (
-          <form onSubmit={handleSubmit(onSubmitPassenger)} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <form id="checkout-passenger-form" onSubmit={handleSubmit(onSubmitPassenger)} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Main Form Column (Left in LTR, Right in RTL) */}
             <div className="lg:col-span-7 space-y-6">
               <PassengerSection
@@ -486,6 +510,24 @@ export default function CheckoutPage() {
           <SuccessConfirmation
             confirmedRef={confirmedRef}
             confirmedTitle={confirmedTitle}
+          />
+        )}
+
+        {/* Sticky mobile total + CTA (conversion benchmark: total always visible) */}
+        {phase === 'passengers' && (
+          <StickyMobileBar
+            totalCaption={tCheckout('totalPayable')}
+            total={formatMoney(totalPayable, currency, locale)}
+            ctaLabel={tCheckout('continueToPayment')}
+            formId="checkout-passenger-form"
+          />
+        )}
+        {phase === 'payment' && (
+          <StickyMobileBar
+            totalCaption={tCheckout('totalPayable')}
+            total={formatMoney(totalPayable, currency, locale)}
+            ctaLabel={tCheckout('confirmPay')}
+            onCta={handleFinalPayment}
           />
         )}
       </div>

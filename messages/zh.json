@@ -120,6 +120,12 @@
       "installTitle": "安装 Firuzo 应用",
       "installSubtitle": "无需浏览器即可快速访问",
       "install": "安装"
+    },
+    "states": {
+      "retry": "重试",
+      "loading": "加载中…",
+      "errorTitle": "出现错误",
+      "emptyTitle": "未找到结果"
     }
   },
   "NotFound": {
@@ -464,7 +470,8 @@
     "successTitle": "您的预订已确认并成功出票！",
     "refCode": "预订编号 (PNR)",
     "downloadPdf": "下载官方PDF凭证",
-    "myTrips": "查看我的行程"
+    "myTrips": "查看我的行程",
+    "continueToPayment": "确认并前往支付"
   },
   "HotelsSearch": {
     "title": "搜索酒店与住宿",
@@ -663,7 +670,9 @@
     "learnMore": "Learn More",
     "flights": "flights",
     "sortBy": "排序方式",
-    "apply": "应用筛选"
+    "apply": "应用筛选",
+    "minPrice": "最低价格",
+    "maxPrice": "最高价格"
   },
   "Tours": {
     "title": "精选旅游与特色体验",

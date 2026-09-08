@@ -25,7 +25,7 @@ export function HotelSearchToolbar({
   ];
 
   return (
-    <div className="flex items-center gap-2 my-4 p-2.5 border border-line rounded-2xl bg-surface shadow-xs overflow-x-auto scrollbar-none">
+    <div className="flex flex-wrap lg:flex-nowrap items-center gap-2 my-4 p-2.5 border border-line rounded-2xl bg-surface shadow-xs lg:overflow-x-auto scrollbar-none">
       <span className="hidden sm:inline-flex items-center gap-1.5 px-2 text-[12px] font-black text-sub shrink-0">
         <ArrowDownUp size={14} className="text-brand-dark" /> {lt(locale, { fa: 'مرتب‌سازی:', en: 'Sort:', ar: 'الترتيب:', zh: '排序：', ru: 'Сортировка:' })}
       </span>
@@ -49,7 +49,7 @@ export function HotelSearchToolbar({
         type="button"
         onClick={onToggleMap}
         aria-pressed={showMap}
-        className={`me-auto shrink-0 min-h-[36px] px-4 inline-flex items-center gap-1.5 rounded-xl border text-[12px] font-extrabold whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+        className={`lg:me-auto shrink-0 min-h-[36px] px-4 inline-flex items-center gap-1.5 rounded-xl border text-[12px] font-extrabold whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
           showMap
             ? 'border-brand text-surface bg-brand shadow-xs'
             : 'border-line text-sub bg-surface hover:border-mint-bright hover:text-ink'

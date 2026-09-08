@@ -47,7 +47,7 @@ export function Header() {
   }, [mobileMenuOpen]);
 
   const drawerContent = mobileMenuOpen && mounted ? (
-    <div className="lg:hidden fixed inset-0 z-[250] flex">
+    <div className="2xl:hidden fixed inset-0 z-[250] flex">
       {/* Backdrop Blur Overlay */}
       <div
         className="fixed inset-0 bg-ink/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
@@ -147,10 +147,10 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-[80] bg-surface/90 backdrop-blur-md border-b border-line/80">
-      <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-7xl 2xl:max-w-[1400px] mx-auto px-3 sm:px-4 md:px-8 h-16 flex items-center justify-between gap-2 md:gap-4">
         {/* Brand Logo & Switchers */}
-        <div className="flex items-center gap-2 sm:gap-4">
-          <Logo size="md" />
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          <Logo size="sm" hideTextOnMobile />
 
           <div className="hidden sm:flex items-center gap-2">
             <CountrySwitcher />
@@ -173,10 +173,7 @@ export function Header() {
             className="hidden sm:inline-flex items-center gap-2 h-10 px-3 rounded-xl bg-soft/80 hover:bg-soft border border-line/80 text-sub hover:text-ink text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-2xs cursor-pointer"
           >
             <Search size={14} className="text-brand-dark" aria-hidden="true" />
-            <span className="hidden md:inline">
-              {lt(locale, { fa: 'جستجو...', en: 'Search...', ar: 'بحث...', zh: '搜索...', ru: 'Поиск...' })}
-            </span>
-            <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded bg-surface border border-line text-[10px] font-mono font-black text-sub">
+            <kbd className="hidden 2xl:inline-block px-1.5 py-0.5 rounded bg-surface border border-line text-[10px] font-mono font-black text-sub">
               ⌘K
             </kbd>
           </button>
@@ -199,7 +196,7 @@ export function Header() {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? ct('aria.closeMenu') : ct('aria.openMenu')}
             aria-expanded={mobileMenuOpen}
-            className="lg:hidden w-11 h-11 grid place-items-center rounded-2xl text-ink hover:bg-soft active:scale-95 transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+            className="2xl:hidden w-11 h-11 grid place-items-center rounded-2xl text-ink hover:bg-soft active:scale-95 transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
           >
             {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>

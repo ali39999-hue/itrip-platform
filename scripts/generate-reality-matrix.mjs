@@ -61,6 +61,8 @@ function generateMatrix() {
   const git = getGitInfo();
   const prisma = getPrismaStats();
   const tests = getTestStats();
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+  const version = pkg.version || '1.4.1';
   const dateStr = new Date().toISOString().slice(0, 10);
 
   const markdown = `# BASE-003 / BASE-101 — Feature Reality Matrix
@@ -72,7 +74,7 @@ This matrix supersedes the optimistic claims in README/PRODUCTION_READINESS/SECU
 
 ## Repository Metrics at Current HEAD
 
-- **Version:** 1.2.0 (reconciled BASE-105)
+- **Version:** ${version} (reconciled BASE-105)
 - **Commit SHA:** \`${git.commit}\` (\`${git.fullSha}\`)
 - **Prisma Models:** ${prisma.modelCount} models
 - **Database Migrations:** ${prisma.migrationCount} migrations (reproducible via \`prisma migrate deploy\`)
@@ -110,7 +112,7 @@ This matrix supersedes the optimistic claims in README/PRODUCTION_READINESS/SECU
 | OTP/auth | PARTIAL | Hashed OTP (HMAC w/ AUTH_SECRET), 5-min TTL, max 5 attempts, rate limits; sealed AES-256-GCM outbox payload for workers; multi-channel credentials provider |
 | Observability | PARTIAL → improving | \`health/live\` + \`health/ready\` (cached ledger check); structured JSON logger with PII redaction (\`OBS-003/004\`); correlation id in responses (\`OBS-001\`); business telemetry & conversion metrics (\`OBS-005\`) |
 | CI | PARTIAL | PostgreSQL 16 + lint + strict typecheck + unit + build enforced; CI-012 demo build gate; E2E runner; continuous testing |
-| Docs | COMPLETE | Version 1.2.0 reconciled across package.json, README, BASELINE, and release notes; reality matrix auto-regenerated |
+| Docs | COMPLETE | Version ${version} reconciled across package.json, README, BASELINE, and release notes; reality matrix auto-regenerated |
 
 ---
 

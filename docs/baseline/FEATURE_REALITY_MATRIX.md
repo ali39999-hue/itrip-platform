@@ -1,17 +1,17 @@
 # BASE-003 / BASE-101 — Feature Reality Matrix
 
-Generated 2026-09-07 against HEAD `cf45237` (`cf45237bd0a01f6b4e0a2a7940c40f87358a224f`) on branch `feat/production-master-task-list-v2`.
+Generated 2026-09-07 against HEAD `714f532` (`714f532905e3819bee85418a5f848954e71cab43`) on branch `main`.
 Labels: **PRODUCTION-READY / COMPLETE / PARTIAL / LEGACY / MOCK / SIMULATED / BROKEN / MISSING**.
 Every claim below is evidence-backed (file:line) and regenerated automatically via `scripts/generate-reality-matrix.mjs`.
 This matrix supersedes the optimistic claims in README/PRODUCTION_READINESS/SECURITY_AUDIT where they conflict.
 
 ## Repository Metrics at Current HEAD
 
-- **Version:** 1.2.0 (reconciled BASE-105)
-- **Commit SHA:** `cf45237` (`cf45237bd0a01f6b4e0a2a7940c40f87358a224f`)
+- **Version:** 1.4.1 (reconciled BASE-105)
+- **Commit SHA:** `714f532` (`714f532905e3819bee85418a5f848954e71cab43`)
 - **Prisma Models:** 58 models
 - **Database Migrations:** 19 migrations (reproducible via `prisma migrate deploy`)
-- **Unit & Integration Test Suites:** 37 test suites (148+ unit tests passing on isolated PostgreSQL 16)
+- **Unit & Integration Test Suites:** 47 test suites (148+ unit tests passing on isolated PostgreSQL 16)
 - **Runtime:** Node.js 20+ / Next.js 16.3 (App Router) / React 19.2
 
 ---
@@ -45,7 +45,7 @@ This matrix supersedes the optimistic claims in README/PRODUCTION_READINESS/SECU
 | OTP/auth | PARTIAL | Hashed OTP (HMAC w/ AUTH_SECRET), 5-min TTL, max 5 attempts, rate limits; sealed AES-256-GCM outbox payload for workers; multi-channel credentials provider |
 | Observability | PARTIAL → improving | `health/live` + `health/ready` (cached ledger check); structured JSON logger with PII redaction (`OBS-003/004`); correlation id in responses (`OBS-001`); business telemetry & conversion metrics (`OBS-005`) |
 | CI | PARTIAL | PostgreSQL 16 + lint + strict typecheck + unit + build enforced; CI-012 demo build gate; E2E runner; continuous testing |
-| Docs | COMPLETE | Version 1.2.0 reconciled across package.json, README, BASELINE, and release notes; reality matrix auto-regenerated |
+| Docs | COMPLETE | Version 1.4.1 reconciled across package.json, README, BASELINE, and release notes; reality matrix auto-regenerated |
 
 ---
 

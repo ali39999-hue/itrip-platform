@@ -31,7 +31,10 @@ const nextConfig: NextConfig = {
     // Run `npm run typecheck` locally for full type-checking.
     ignoreBuildErrors: true,
   },
+<<<<<<< HEAD
 
+=======
+>>>>>>> 9142fcbd111cfdfe2bd71eaa3cc829adc39a8a03
   env: {
     NEXT_PUBLIC_APP_VERSION: appVersion,
     NEXT_PUBLIC_COMMIT_SHA: commitSha,

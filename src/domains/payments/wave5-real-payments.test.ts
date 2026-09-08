@@ -346,7 +346,7 @@ describe('Wave 5: Real Payment & PSP Gateway Suite (PAY-101 to PAY-110)', () => 
     const adapter = new CustomerRefundAdapter({
       pspSecretKey: secretKey,
       pspTerminalId: terminalId,
-      payaApiKey: 'test_paya_key',
+      payaApiKey: `test-paya-key-${crypto.randomUUID()}`,
     });
 
     // 1. Iranian Sheba (IBAN) format validation (ISO 7064 Mod 97)

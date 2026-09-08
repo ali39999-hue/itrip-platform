@@ -256,16 +256,16 @@ function ToursContent() {
                     </div>
                   </div>
 
-                  <div className="p-4 pt-0 flex justify-between items-center border-t border-line/60 mt-3 gap-2">
-                    <div className="pt-3">
+                  <div className="p-4 pt-0 flex flex-wrap justify-between items-center border-t border-line/60 mt-3 gap-2">
+                    <div className="pt-3 min-w-0">
                       <span className="text-[10.5px] font-bold text-sub block">{lt(locale, { fa: 'قیمت هر نفر', en: 'Per Person', ar: 'للفرد', zh: '每人价格', ru: 'За человека' })}</span>
-                      <span className="text-[16px] font-black text-price font-mono num">
+                      <span className="text-[16px] font-black text-price font-mono num whitespace-nowrap">
                         {tour.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                         <span className="text-[10.5px] font-bold text-sub ms-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 mt-3">
+                    <div className="flex items-center gap-1.5 mt-3 shrink-0">
                       <Link
                         href={`/tours/${tour.id}`}
                         className="h-9 px-3 rounded-xl border border-line bg-surface hover:bg-soft text-ink font-extrabold text-xs transition flex items-center justify-center"
@@ -321,18 +321,18 @@ function ToursContent() {
 
             <div className="grid grid-cols-2 gap-3 text-xs font-bold">
               <div className="p-3 rounded-xl bg-soft border border-line">
-                <span className="text-sub block">مقصد و شهر:</span>
+                <span className="text-sub block">{lt(locale, { fa: 'مقصد و شهر:', en: 'Destination & City:', ar: 'الوجهة والمدينة:', zh: '目的地与城市：', ru: 'Направление:' })}</span>
                 <span className="text-ink font-black">{selectedTourPreview.city}</span>
               </div>
               <div className="p-3 rounded-xl bg-soft border border-line">
-                <span className="text-sub block">مدت اقامت و برنامه:</span>
-                <span className="text-ink font-black">{selectedTourPreview.durationDays} روز و شب</span>
+                <span className="text-sub block">{lt(locale, { fa: 'مدت اقامت و برنامه:', en: 'Duration & Plan:', ar: 'مدة الإقامة والخطة:', zh: '停留时间与规划：', ru: 'Длительность:' })}</span>
+                <span className="text-ink font-black">{selectedTourPreview.durationDays} {lt(locale, { fa: 'روز و شب', en: 'Days & Nights', ar: 'أيام وليال', zh: '天数', ru: 'дней и ночей' })}</span>
               </div>
             </div>
 
             {selectedTourPreview.includes && (
               <div>
-                <span className="text-xs font-black text-sub block mb-2">خدمات و اقلام پکیج:</span>
+                <span className="text-xs font-black text-sub block mb-2">{lt(locale, { fa: 'خدمات و اقلام پکیج:', en: 'Included Services:', ar: 'الخدمات المشمولة:', zh: '套餐包含服务：', ru: 'Включенные услуги:' })}</span>
                 <div className="flex flex-wrap gap-1.5">
                   {selectedTourPreview.includes.map((inc, i) => (
                     <span key={i} className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg bg-mint text-brand-dark">
@@ -345,9 +345,9 @@ function ToursContent() {
 
             <div className="pt-3 border-t border-line flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <div>
-                <span className="text-xs font-bold text-sub block">قیمت نهایی پکیج:</span>
+                <span className="text-xs font-bold text-sub block">{lt(locale, { fa: 'قیمت نهایی پکیج:', en: 'Total Package Price:', ar: 'السعر الإجمالي للباقة:', zh: '套餐总价：', ru: 'Итоговая цена:' })}</span>
                 <span className="text-lg font-black text-price font-mono">
-                  {selectedTourPreview.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} تومان
+                  {selectedTourPreview.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
                 </span>
               </div>
               <div className="flex items-center gap-2">

@@ -53,11 +53,11 @@ export function DesktopNav() {
   const isTours = pathname.startsWith('/tours');
 
   return (
-    <nav aria-label={ct('aria.mainNavigation')} className="hidden lg:flex items-center gap-1">
+    <nav aria-label={ct('aria.mainNavigation')} className="hidden 2xl:flex items-center gap-0.5 min-w-0">
       {/* Direct High-Intent Links (OTA Gold Standard) */}
       <Link
         href="/flights/search"
-        className={`px-3 py-2 rounded-full text-[13.5px] font-bold transition flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none ${
+        className={`whitespace-nowrap px-2 py-2 rounded-full text-[13px] font-bold transition flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none ${
           isFlights ? 'bg-mint text-brand-dark font-black' : 'text-ink hover:text-brand-dark hover:bg-soft'
         }`}
       >
@@ -67,7 +67,7 @@ export function DesktopNav() {
 
       <Link
         href="/hotels/search"
-        className={`px-3 py-2 rounded-full text-[13.5px] font-bold transition flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none ${
+        className={`whitespace-nowrap px-2 py-2 rounded-full text-[13px] font-bold transition flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none ${
           isHotels ? 'bg-mint text-brand-dark font-black' : 'text-ink hover:text-brand-dark hover:bg-soft'
         }`}
       >
@@ -77,7 +77,7 @@ export function DesktopNav() {
 
       <Link
         href="/tours"
-        className={`px-3 py-2 rounded-full text-[13.5px] font-bold transition flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none ${
+        className={`whitespace-nowrap px-2 py-2 rounded-full text-[13px] font-bold transition flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none ${
           isTours ? 'bg-mint text-brand-dark font-black' : 'text-ink hover:text-brand-dark hover:bg-soft'
         }`}
       >
@@ -90,7 +90,7 @@ export function DesktopNav() {
         <div key={cat.key} className="relative group">
           <button
             type="button"
-            className="px-3 py-2 rounded-full text-[13.5px] font-bold text-ink hover:text-brand-dark hover:bg-soft transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer"
+            className="whitespace-nowrap px-2 py-2 rounded-full text-[13px] font-bold text-ink hover:text-brand-dark hover:bg-soft transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer"
           >
             {t(cat.key)}
           </button>

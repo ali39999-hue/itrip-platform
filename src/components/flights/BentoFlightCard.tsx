@@ -302,7 +302,7 @@ export function BentoFlightCard({
             </div>
 
             {/* Center Flight Duration & Dotted Path with Plane Icon */}
-            <div className="flex-1 mx-2 md:mx-8 flex flex-col items-center justify-center min-w-0">
+            <div className="flex-1 mx-2 md:mx-6 flex flex-col items-center justify-center min-w-[120px] sm:min-w-[140px]">
               <span className="text-[11.5px] font-bold text-neutral-600 dark:text-sub mb-2.5 whitespace-nowrap">
                 {durationLocalized(flight.duration, locale)}
               </span>

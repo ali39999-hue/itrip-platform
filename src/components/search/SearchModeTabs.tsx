@@ -46,7 +46,7 @@ export function SearchModeTabs({ activeTab, onTabChange }: SearchModeTabsProps) 
               }`}
             >
               <Icon size={16} className={active ? 'text-surface' : 'text-sub'} aria-hidden="true" />
-              <span className="truncate leading-tight">{t(labelKey)}</span>
+              <span className="text-center leading-tight line-clamp-2">{t(labelKey)}</span>
             </button>
           );
         })}

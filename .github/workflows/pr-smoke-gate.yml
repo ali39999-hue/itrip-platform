@@ -1,0 +1,63 @@
+name: PR Smoke Gate
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  DATABASE_URL: postgresql://itrip_user:itrip_secure_password@localhost:5432/itrip_test_db
+  AUTH_SECRET: ${{ secrets.CI_AUTH_SECRET || 'development_dummy_auth_key_32chars' }}
+  NEXT_PUBLIC_SITE_URL: http://localhost:3000
+
+jobs:
+  pr-verification-gate:
+    runs-on: ubuntu-latest
+    env:
+      DEMO_MODE: "false"
+      NEXT_PUBLIC_DEMO_MODE: "false"
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: itrip_user
+          POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD || 'itrip_secure_password' }}
+          POSTGRES_DB: itrip_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout PR Branch
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Code Hygiene & ESLint
+        run: npm run lint
+
+      - name: Strict TypeScript Compilation
+        run: npm run typecheck
+
+      - name: Verify Prisma Migrations
+        run: npx prisma migrate deploy
+
+      - name: Security Scan Gate (SEC-106)
+        run: node scripts/security-scan.mjs
+
+      - name: I18N Completeness Gate (I18N-102)
+        run: node scripts/i18n-completeness-gate.mjs
+
+      - name: Fast Smoke Unit & Domain Tests
+        run: |
+          npx vitest run src/domains/identity/ src/domains/finance/ src/lib/security/

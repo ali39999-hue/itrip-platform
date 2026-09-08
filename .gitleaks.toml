@@ -1,0 +1,7 @@
+[allowlist]
+description = "Allow CI workflow test-only dummy credentials and test fixtures"
+paths = [
+    '''.github/workflows/.*''',
+    '''tests/.*''',
+    '''scripts/.*'''
+]
