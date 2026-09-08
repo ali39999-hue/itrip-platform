@@ -88,7 +88,7 @@ export function AppDownloadSection() {
             </a>
 
             <Link
-              href="/pwa"
+              href="/"
               className="h-12 px-5 rounded-2xl bg-surface/20 hover:bg-surface/30 text-surface border border-surface/30 transition-all font-black text-xs inline-flex items-center gap-2 active:scale-95"
             >
               <Smartphone size={16} aria-hidden="true" />

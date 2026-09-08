@@ -1,17 +1,17 @@
 {
-  "generatedAt": "2026-09-08T07:49:18.404Z",
+  "generatedAt": "2026-09-08T09:31:29.567Z",
   "baseUrl": "http://localhost:3000",
   "pages": {
     "home": {
       "url": "http://localhost:3000/fa",
-      "violationCount": 3,
+      "violationCount": 1,
       "byRule": [
         {
           "id": "color-contrast",
           "impact": "serious",
           "help": "Elements must meet minimum color contrast ratio thresholds",
-          "nodes": 3,
-          "sampleTarget": ".gap-3.items-center.flex:nth-child(1) > .min-w-0 > .sm\\:text-\\[11px\\].sm\\:line-clamp-2.line-clamp-1"
+          "nodes": 1,
+          "sampleTarget": ".bg-rose-500\\/10 > span"
         }
       ],
       "passes": 29
