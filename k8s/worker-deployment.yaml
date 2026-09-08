@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: firuzo-worker
+  labels:
+    app.kubernetes.io/name: firuzo-platform
+    app.kubernetes.io/component: background-worker
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: firuzo-worker
+  template:
+    metadata:
+      labels:
+        app: firuzo-worker
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+        - name: worker
+          image: firuzo-app:latest
+          imagePullPolicy: IfNotPresent
+          command: ["npm", "run", "worker"]
+          envFrom:
+            - configMapRef:
+                name: firuzo-config
+            - secretRef:
+                name: firuzo-secrets
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "384Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1024Mi"

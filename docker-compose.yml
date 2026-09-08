@@ -19,6 +19,20 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: firuzo-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   app:
     build:
       context: .
@@ -28,8 +42,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-firuzo_secure_password_2026}@db:5432/itrip?schema=public
+      - REDIS_URL=redis://redis:6379
       - NODE_ENV=production
       - AUTH_SECRET=${AUTH_SECRET}
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
@@ -49,5 +66,32 @@ services:
     ports:
       - "3000:3000"
 
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: firuzo-worker
+    restart: unless-stopped
+    command: ["npm", "run", "worker"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      app:
+        condition: service_started
+    environment:
+      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-firuzo_secure_password_2026}@db:5432/itrip?schema=public
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=production
+      - AUTH_SECRET=${AUTH_SECRET}
+      - DEMO_MODE=false
+      - GATEWAY_MODE=${GATEWAY_MODE:-internal_wallet}
+      - BALE_BOT_TOKEN=${BALE_BOT_TOKEN}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN}
+      - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID}
+
 volumes:
   postgres_data:
+  redis_data:
