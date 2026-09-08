@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { useBookingStore } from '@/stores/booking-store';
-import { Sparkles, Check, Share2 } from 'lucide-react';
+import { Sparkles, Share2 } from 'lucide-react';
 import { num } from '@/lib/format';
 import { countryName } from '@/lib/countries';
 import { daysFromNow } from '@/lib/utils';
@@ -27,18 +27,18 @@ export interface PlannerResultProps {
   onRefineWithPrompt?: (promptText: string) => void;
 }
 
-export function PlannerResult({ 
-  ans, 
-  setAns,
-  setStep, 
-  locale, 
-  isEn, 
-  shared, 
-  shareUrl, 
-  seed, 
-  setSeed,
-  onRefineWithPrompt 
-}: PlannerResultProps) {
+export function PlannerResult(props: PlannerResultProps) {
+  const { 
+    ans, 
+    setStep, 
+    locale, 
+    isEn, 
+    shared, 
+    shareUrl, 
+    seed, 
+    setSeed, 
+    onRefineWithPrompt 
+  } = props;
   const t = useTranslations('Plan');
   const router = useRouter();
   const setBookingContext = useBookingStore((s) => s.setBookingContext);

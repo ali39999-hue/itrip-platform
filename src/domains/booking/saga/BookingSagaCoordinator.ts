@@ -19,7 +19,6 @@ import { wrapOutboxPayload } from '@/domains/events/OutboxConsumer';
 import { businessMetrics } from '@/lib/observability/business-metrics';
 import { Money } from '@/lib/finance';
 import { createLogger } from '@/lib/observability/logger';
-import { updateCorrelationContext } from '@/lib/observability/correlation-context';
 import crypto from 'crypto';
 
 const sagaLogger = createLogger('booking-saga-coordinator');

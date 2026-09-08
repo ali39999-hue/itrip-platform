@@ -5,7 +5,6 @@
  */
 
 import {
-  type SupportedLocale,
   type ContentTranslationMap,
   validateContentTranslation,
 } from './ContentTranslation';

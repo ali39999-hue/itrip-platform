@@ -41,12 +41,18 @@ export async function requestOtp(data: unknown) {
     const parsed = otpRequestSchema.parse(data);
     // Multi-layered token-bucket rate limiting (Section 35 / SEC-003):
     // identifier layer + IP layer (previously the IP layer was never wired).
-    const hdrs = await headers();
-    const clientIp =
-      hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-      hdrs.get('x-real-ip')?.trim() ||
-      'unknown_ip';
-    const deviceId = hdrs.get('x-device-id')?.trim() || undefined;
+    let clientIp = '127.0.0.1';
+    let deviceId: string | undefined;
+    try {
+      const hdrs = await headers();
+      clientIp =
+        hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+        hdrs.get('x-real-ip')?.trim() ||
+        'unknown_ip';
+      deviceId = hdrs.get('x-device-id')?.trim() || undefined;
+    } catch {
+      // safe fallback if called outside Next.js request context
+    }
     const rateCheck = await RateLimiter.checkOtpRateLimit(parsed.identifier, clientIp, deviceId);
     if (!rateCheck.allowed) {
       return { success: false, error: rateCheck.reason || 'Too many codes requested. Please try again later.' };

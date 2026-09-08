@@ -17,10 +17,7 @@ import {
   Heart, 
   Baby, 
   Sparkles,
-  Calendar, 
   Check, 
-  Compass, 
-  ShieldCheck,
   type LucideIcon 
 } from 'lucide-react';
 import { BUDGET_CAP, BUDGET_LABEL, type Answers, type BudgetTier, type Pace, type Who } from '@/hooks/usePlanner';

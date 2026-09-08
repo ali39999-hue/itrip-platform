@@ -30,6 +30,7 @@
 *.log
 dev_out.log
 server.log
+start-server.bat
 
 # debug
 npm-debug.log*

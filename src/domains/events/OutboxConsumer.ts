@@ -220,14 +220,8 @@ export class OutboxConsumer {
               const otpMessage = `کد تایید ورود به فیروزو: ${code || '***'}\nاعتبار: ۵ دقیقه`;
 
               let delivery;
-              if (channel === 'email' || (identifier && identifier.includes('@'))) {
-                delivery = await notificationProvider.sendEmail(
-                  identifier,
-                  'کد تایید ورود به فیروزو',
-                  otpMessage
-                );
-              } else if (channel === 'whatsapp') {
-                delivery = await notificationProvider.sendWhatsApp(
+              if (channel === 'bale') {
+                delivery = await notificationProvider.sendBale(
                   identifier,
                   otpMessage
                 );
@@ -236,9 +230,15 @@ export class OutboxConsumer {
                   identifier,
                   otpMessage
                 );
-              } else if (channel === 'bale') {
-                delivery = await notificationProvider.sendBale(
+              } else if (channel === 'whatsapp') {
+                delivery = await notificationProvider.sendWhatsApp(
                   identifier,
+                  otpMessage
+                );
+              } else if (channel === 'email' || (identifier && identifier.includes('@') && !identifier.startsWith('@'))) {
+                delivery = await notificationProvider.sendEmail(
+                  identifier,
+                  'کد تایید ورود به فیروزو',
                   otpMessage
                 );
               } else {

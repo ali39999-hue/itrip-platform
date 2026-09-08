@@ -16,7 +16,6 @@ export const SENSITIVE_KEY_PATTERN =
 const CARD_NUMBER_REGEX = /\b(?:\d{4}[ -]?){3}\d{4}\b|\b\d{16}\b/g;
 const BEARER_TOKEN_REGEX = /Bearer\s+([A-Za-z0-9\-_.+=/]{12,})/gi;
 const CONNECTION_STRING_PW_REGEX = /(:[^\s/@:]+)@/g;
-const IRANIAN_NATIONAL_ID_REGEX = /\b(?:\d{3}-\d{6}-\d|\d{10})\b/g;
 
 const MAX_DEPTH = 6;
 const MAX_ARRAY_LENGTH = 50;

@@ -19,6 +19,54 @@ export class ProductionBaleProvider {
   }
 
   /**
+   * Resolves identifier (username or ID) to a numeric Bale chat_id.
+   * If identifier is already numeric digits, returns as is.
+   * Otherwise inspects recent bot updates to match username or recent sender.
+   */
+  private async resolveChatId(identifier: string): Promise<string> {
+    const clean = identifier.trim().replace(/^@/, '');
+    if (/^\d{6,15}$/.test(clean)) {
+      return clean;
+    }
+
+    if (!this.botToken) return clean;
+
+    try {
+      const updatesUrl = `https://tapi.bale.ai/bot${this.botToken}/getUpdates`;
+      const res = await fetch(updatesUrl, { cache: 'no-store' });
+      if (res.ok) {
+        const data = (await res.json()) as {
+          ok: boolean;
+          result?: Array<{
+            message?: {
+              from?: { id: number; username?: string };
+              chat?: { id: number };
+            };
+          }>;
+        };
+        if (data.ok && Array.isArray(data.result)) {
+          const match = data.result.find((u) => {
+            const uName = u.message?.from?.username?.toLowerCase();
+            return uName === clean.toLowerCase() || String(u.message?.from?.id) === clean;
+          });
+          if (match?.message?.chat?.id) {
+            return String(match.message.chat.id);
+          }
+          // If only 1 user ever messaged or sent /start to the bot, resolve to that active chat
+          const latestChat = data.result[data.result.length - 1]?.message?.chat?.id;
+          if (latestChat) {
+            return String(latestChat);
+          }
+        }
+      }
+    } catch (resolveErr) {
+      console.warn('[BaleProvider] Chat ID resolution fallback:', resolveErr);
+    }
+
+    return clean;
+  }
+
+  /**
    * Sends an OTP code or text message to a Bale user or chat.
    */
   async sendMessage(chatId: string, text: string): Promise<NotificationResult> {
@@ -32,8 +80,8 @@ export class ProductionBaleProvider {
       };
     }
 
-    const cleanChatId = chatId.trim().replace(/^@/, '');
-    if (!cleanChatId) {
+    const cleanInput = chatId.trim().replace(/^@/, '');
+    if (!cleanInput) {
       return {
         success: false,
         error: 'Invalid Bale chat ID or identifier',
@@ -41,13 +89,15 @@ export class ProductionBaleProvider {
       };
     }
 
+    const targetChatId = await this.resolveChatId(cleanInput);
+
     try {
       const url = `https://tapi.bale.ai/bot${this.botToken}/sendMessage`;
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chat_id: cleanChatId,
+          chat_id: targetChatId,
           text: text,
         }),
       });

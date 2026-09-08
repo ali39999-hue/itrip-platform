@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { num } from '@/lib/format';
-import { EXPERIENCE_CATEGORY_META, type CountryId } from '@/lib/countries';
+import type { CountryId } from '@/lib/countries';
 import { CATEGORY_ICONS } from '@/components/shared/CountryExperiences';
 import { 
   Plane, 
@@ -16,9 +16,7 @@ import {
   MoonStar, 
   Clock, 
   Printer, 
-  Compass, 
   Lightbulb, 
-  Send, 
   CheckCircle2,
   ArrowLeft,
   ArrowRight,
@@ -46,16 +44,16 @@ const slotLabel = (slot: number, locale: string) => {
   return lt(locale, { fa: 'عصر و شب', en: 'Evening', ar: 'المساء', zh: '晚上', ru: 'Вечер' });
 };
 
-export function PlannerTimeline({ 
-  plan, 
-  days, 
-  locale, 
-  isEn, 
-  countryId = 'iran',
-  onRegenerate, 
-  onEditAnswers,
-  onRefineWithPrompt 
-}: PlannerTimelineProps) {
+export function PlannerTimeline(props: PlannerTimelineProps) {
+  const { 
+    plan, 
+    days, 
+    locale, 
+    isEn, 
+    onRegenerate, 
+    onEditAnswers, 
+    onRefineWithPrompt 
+  } = props;
   const t = useTranslations('Plan');
   const [refineText, setRefineText] = useState('');
   const [justRefined, setJustRefined] = useState(false);

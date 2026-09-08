@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-firuzo_secure_password_2026}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-test_dummy_db_password_2026}
       POSTGRES_DB: itrip
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -45,7 +45,7 @@ services:
       redis:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-firuzo_secure_password_2026}@db:5432/itrip?schema=public
+      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-test_dummy_db_password_2026}@db:5432/itrip?schema=public
       - REDIS_URL=redis://redis:6379
       - NODE_ENV=production
       - AUTH_SECRET=${AUTH_SECRET}
@@ -81,7 +81,7 @@ services:
       app:
         condition: service_started
     environment:
-      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-firuzo_secure_password_2026}@db:5432/itrip?schema=public
+      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-test_dummy_db_password_2026}@db:5432/itrip?schema=public
       - REDIS_URL=redis://redis:6379
       - NODE_ENV=production
       - AUTH_SECRET=${AUTH_SECRET}

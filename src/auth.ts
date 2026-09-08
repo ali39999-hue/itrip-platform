@@ -125,14 +125,14 @@ export async function issueOtp(
     const otpMessage = `کد تایید ورود به فیروزو: ${code}\nاعتبار: ۵ دقیقه`;
     let dispatch;
 
-    if (channel === 'email' || (identifier && identifier.includes('@'))) {
-      dispatch = await notificationProvider.sendEmail(identifier, 'کد تایید ورود به فیروزو', otpMessage);
-    } else if (channel === 'bale') {
+    if (channel === 'bale') {
       dispatch = await notificationProvider.sendBale(identifier, otpMessage);
     } else if (channel === 'telegram') {
       dispatch = await notificationProvider.sendTelegram(identifier, otpMessage);
     } else if (channel === 'whatsapp') {
       dispatch = await notificationProvider.sendWhatsApp(identifier, otpMessage);
+    } else if (channel === 'email' || (identifier && identifier.includes('@') && !identifier.startsWith('@'))) {
+      dispatch = await notificationProvider.sendEmail(identifier, 'کد تایید ورود به فیروزو', otpMessage);
     } else {
       dispatch = await notificationProvider.sendSms(identifier, otpMessage);
     }
@@ -154,7 +154,7 @@ export async function issueOtp(
     sent: true,
     realSent,
     provider: providerUsed,
-    devCode: !realSent || process.env.NODE_ENV !== 'production' ? code : undefined,
+    devCode: !realSent ? code : undefined,
   };
 }
 

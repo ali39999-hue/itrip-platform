@@ -16,7 +16,6 @@ export function SosInterpreter() {
   const t = useTranslations('Interpreter');
   const ariaT = useTranslations('Common.aria');
   const locale = useLocale();
-  const isEn = locale === 'en';
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<Phase>('pick');
   const [lang, setLang] = useState('en');

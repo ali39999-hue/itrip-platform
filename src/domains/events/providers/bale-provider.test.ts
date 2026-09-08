@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ProductionBaleProvider } from './ProductionBaleProvider';
-import { ConsoleNotificationProvider, ProductionNotificationProvider } from '../NotificationProvider';
+import { ConsoleNotificationProvider } from '../NotificationProvider';
 import { otpRequestSchema } from '@/lib/validations';
 
 describe('Bale Messenger Provider & Auth Channel Tests', () => {

@@ -8,7 +8,6 @@ import {
 } from './ContentTranslation';
 import {
   CmsPublishingService,
-  type CmsContentItem,
 } from './CmsPublishingService';
 import { SeoMetadataService } from './SeoMetadataService';
 
