@@ -9,28 +9,55 @@
  */
 
 import { NotificationResult } from '../NotificationProvider';
+import { prisma } from '@/lib/prisma';
 
 export class ProductionBaleProvider {
   readonly name: string = 'production-bale-gateway';
   private botToken?: string;
 
   constructor(token?: string) {
-    this.botToken = token || process.env.BALE_BOT_TOKEN;
+    this.botToken = token !== undefined ? token : (process.env.BALE_BOT_TOKEN || '');
   }
 
   /**
-   * Resolves identifier (username or ID) to a numeric Bale chat_id.
-   * If identifier is already numeric digits, returns as is.
-   * Otherwise inspects recent bot updates to match username or recent sender.
+   * Resolves identifier (username, phone, or numeric ID) to a numeric Bale chat_id.
+   * If identifier is already a valid numeric user ID (not phone number), returns as is.
+   * Otherwise queries database or inspects bot updates to match user.
    */
   private async resolveChatId(identifier: string): Promise<string> {
     const clean = identifier.trim().replace(/^@/, '');
-    if (/^\d{6,15}$/.test(clean)) {
+    const isPhone = /^(09|\+98|98)\d{9}$/.test(clean);
+
+    // If already a direct numeric Bale chat/user ID (and NOT a phone number)
+    if (/^\d{6,10}$/.test(clean) && !isPhone && !clean.startsWith('09')) {
       return clean;
     }
 
     if (!this.botToken) return clean;
 
+    // 1. Check database for existing user mapping
+    try {
+      const dbUser = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { baleId: clean },
+            { baleId: `@${clean}` },
+            { phone: clean },
+            ...(clean.startsWith('09') ? [{ phone: '+98' + clean.slice(1) }] : []),
+            ...(clean.startsWith('+98') ? [{ phone: '0' + clean.slice(3) }] : []),
+          ],
+        },
+        select: { id: true, baleId: true },
+      });
+
+      if (dbUser?.baleId && /^\d{6,10}$/.test(dbUser.baleId) && !dbUser.baleId.startsWith('09')) {
+        return dbUser.baleId;
+      }
+    } catch {
+      // ignore db query error in resolution
+    }
+
+    // 2. Query Bale bot updates to dynamically resolve active user
     try {
       const updatesUrl = `https://tapi.bale.ai/bot${this.botToken}/getUpdates`;
       const res = await fetch(updatesUrl, { cache: 'no-store' });
@@ -44,18 +71,40 @@ export class ProductionBaleProvider {
             };
           }>;
         };
-        if (data.ok && Array.isArray(data.result)) {
+        if (data.ok && Array.isArray(data.result) && data.result.length > 0) {
           const match = data.result.find((u) => {
             const uName = u.message?.from?.username?.toLowerCase();
             return uName === clean.toLowerCase() || String(u.message?.from?.id) === clean;
           });
           if (match?.message?.chat?.id) {
-            return String(match.message.chat.id);
+            const resolvedId = String(match.message.chat.id);
+            // Cache in database if user exists
+            prisma.user.updateMany({
+              where: {
+                OR: [
+                  { phone: clean },
+                  ...(clean.startsWith('09') ? [{ phone: '+98' + clean.slice(1) }] : []),
+                ],
+              },
+              data: { baleId: resolvedId },
+            }).catch(() => {});
+            return resolvedId;
           }
-          // If only 1 user ever messaged or sent /start to the bot, resolve to that active chat
+
+          // If a user recently interacted with the bot (like /start), resolve to that active chat
           const latestChat = data.result[data.result.length - 1]?.message?.chat?.id;
           if (latestChat) {
-            return String(latestChat);
+            const resolvedId = String(latestChat);
+            prisma.user.updateMany({
+              where: {
+                OR: [
+                  { phone: clean },
+                  ...(clean.startsWith('09') ? [{ phone: '+98' + clean.slice(1) }] : []),
+                ],
+              },
+              data: { baleId: resolvedId },
+            }).catch(() => {});
+            return resolvedId;
           }
         }
       }

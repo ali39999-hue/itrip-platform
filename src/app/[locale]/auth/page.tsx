@@ -43,7 +43,6 @@ export default function AuthPage() {
   const [passportNo, setPassportNo] = useState(kyc?.passportNo || '');
   const [expiry, setExpiry] = useState(kyc?.passportExpiry || '');
   const [countdown, setCountdown] = useState(120);
-  const [devOtpCode, setDevOtpCode] = useState<string | null>(null);
   const [isRealSent, setIsRealSent] = useState<boolean>(false);
 
   // Already signed-in users don't need the auth flow — send them on their way.
@@ -174,12 +173,7 @@ export default function AuthPage() {
         );
         return;
       }
-      if (res.devCode) {
-        setDevOtpCode(res.devCode);
-        setOtp(res.devCode);
-      } else {
-        setDevOtpCode(null);
-      }
+      setOtp(''); // Require user to input the real code sent to their app
       setIsRealSent(Boolean(res.realSent));
       setKycStep('otp');
     } finally {
@@ -587,44 +581,16 @@ export default function AuthPage() {
 
             {error && <div className="p-3 mb-4 rounded-xl bg-destructive/10 text-destructive text-xs font-bold">{error}</div>}
 
-            {devOtpCode && (
-              <div className="p-3.5 mb-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-ink text-xs">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-black text-amber-700 dark:text-amber-400">
-                    {lt(locale, {
-                      fa: '💡 حالت شبیه‌ساز (بدون توکن ربات/پیامک):',
-                      en: '💡 Dev Simulator (No Bot/SMS token in .env):',
-                      ar: '💡 وضع المحاكاة:',
-                      zh: '💡 开发模拟模式：',
-                      ru: '💡 Режим симулятора:'
-                    })}
-                  </span>
-                  <span className="font-mono font-black text-sm bg-surface px-2 py-0.5 rounded-lg border border-amber-500/40 text-brand">
-                    {devOtpCode}
-                  </span>
-                </div>
-                <p className="text-[11px] text-sub leading-relaxed">
-                  {lt(locale, {
-                    fa: 'کد تایید در کادر زیر درج شد. پس از قرار دادن BALE_BOT_TOKEN یا TELEGRAM_BOT_TOKEN در فایل .env.local کدها به گوشی کاربر ارسال خواهند شد.',
-                    en: 'Code is auto-filled below. Set BALE_BOT_TOKEN or TELEGRAM_BOT_TOKEN in .env.local to dispatch real messages to user devices.',
-                    ar: 'تم ملء الرمز أدناه تلقائيًا.',
-                    zh: '验证码已自动填充。配置Token后将真实发送到手机。',
-                    ru: 'Код заполнен автоматически.'
-                  })}
-                </p>
-              </div>
-            )}
-
             {isRealSent && (
-              <div className="p-3 mb-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold flex items-center gap-2">
-                <CheckCircle2 size={16} />
+              <div className="p-3.5 mb-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-2.5">
+                <CheckCircle2 size={18} className="text-emerald-600 flex-shrink-0" />
                 <span>
                   {lt(locale, {
-                    fa: 'کد تایید واقعی با موفقیت به پیام‌رسان یا شماره شما ارسال گردید.',
-                    en: 'Verification code was dispatched successfully to your account/number.',
-                    ar: 'تم إرسال رمز التحقق الفعلي بنجاح.',
-                    zh: '验证码已成功发送到您的账号/手机。',
-                    ru: 'Код подтверждения успешно отправлен на ваш аккаунт/номер.'
+                    fa: 'کد تأیید به حساب بله / پیام‌رسان شما ارسال گردید. لطفاً آن را در کادر زیر وارد کنید.',
+                    en: 'Verification code has been dispatched. Please enter it in the box below.',
+                    ar: 'تم إرسال رمز التحقق إلى حسابك. يرجى إدخاله في المربع أدناه.',
+                    zh: '验证码已发送至您的账号，请在下方输入。',
+                    ru: 'Код подтверждения отправлен. Пожалуйста, введите его ниже.'
                   })}
                 </span>
               </div>

@@ -58,12 +58,20 @@ describe('Bale Messenger Provider & Auth Channel Tests', () => {
   });
 
   it('ConsoleNotificationProvider simulates Bale delivery in dev/test', async () => {
-    const consoleProvider = new ConsoleNotificationProvider();
-    const res = await consoleProvider.sendBale('09123456789', 'کد: 12345');
+    const origToken = process.env.BALE_BOT_TOKEN;
+    delete process.env.BALE_BOT_TOKEN;
+    try {
+      const consoleProvider = new ConsoleNotificationProvider();
+      const res = await consoleProvider.sendBale('09123456789', 'کد: 12345');
 
-    expect(res.success).toBe(true);
-    expect(res.provider).toBe('console-simulator');
-    expect(res.messageId).toContain('sim-bale-');
+      expect(res.success).toBe(true);
+      expect(res.provider).toBe('console-simulator');
+      expect(res.messageId).toContain('sim-bale-');
+    } finally {
+      if (origToken !== undefined) {
+        process.env.BALE_BOT_TOKEN = origToken;
+      }
+    }
   });
 
   it('otpRequestSchema validates "bale" as a canonical channel', () => {
