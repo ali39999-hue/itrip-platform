@@ -24,26 +24,78 @@ export interface SmsSendOptions {
   tokens?: Record<string, string>;
 }
 
+/**
+ * Validates outgoing SMS API URLs against SSRF:
+ * 1. Enforces HTTP or HTTPS protocol only
+ * 2. Whitelists permitted Iranian SMS providers
+ * 3. Rejects localhost, loopback, private, and reserved IP ranges
+ */
+function assertSafeSmsUrl(urlStr: string): URL {
+  const parsed = new URL(urlStr);
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error('Security violation: Only HTTP/HTTPS allowed for SMS gateway requests');
+  }
+
+  const allowedHosts = new Set([
+    'smswbs.ir',
+    'www.smswbs.ir',
+    'smshooshmand.com',
+    'api.kavenegar.com',
+    'api2.ippanel.com',
+  ]);
+
+  if (!allowedHosts.has(parsed.hostname.toLowerCase())) {
+    throw new Error(`Security violation: Destination host ${parsed.hostname} is not permitted`);
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+  const isForbidden =
+    hostname === 'localhost' ||
+    hostname.endsWith('.local') ||
+    /^127\./.test(hostname) ||
+    /^10\./.test(hostname) ||
+    /^192\.168\./.test(hostname) ||
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname) ||
+    hostname === '::1';
+
+  if (isForbidden) {
+    throw new Error('Security violation: Access to private or loopback addresses is forbidden');
+  }
+
+  return parsed;
+}
+
 export class ProductionSmsProvider {
   readonly name: string = 'production-sms-gateway';
   private apiKey?: string;
-  private providerType: 'kavenegar' | 'farazsms';
+  private smswbsUser?: string;
+  private smswbsPass?: string;
+  private providerType: 'kavenegar' | 'farazsms' | 'smswbs';
   private defaultSender: string;
 
   constructor(options?: {
     apiKey?: string;
-    providerType?: 'kavenegar' | 'farazsms';
+    providerType?: 'kavenegar' | 'farazsms' | 'smswbs';
     defaultSender?: string;
   }) {
+    this.smswbsUser = options?.apiKey === '' ? undefined : process.env.SMSWBS_USERNAME;
+    this.smswbsPass = options?.apiKey === '' ? undefined : process.env.SMSWBS_PASSWORD;
+
     this.apiKey =
-      options?.apiKey ||
-      process.env.KAVENEGAR_API_KEY ||
-      process.env.FARAZ_SMS_API_KEY ||
-      process.env.SMS_PROVIDER_API_KEY;
+      options?.apiKey !== undefined
+        ? options.apiKey
+        : (process.env.KAVENEGAR_API_KEY ||
+           process.env.FARAZ_SMS_API_KEY ||
+           process.env.SMS_PROVIDER_API_KEY ||
+           this.smswbsPass);
 
     this.providerType =
       options?.providerType ||
-      (process.env.FARAZ_SMS_API_KEY ? 'farazsms' : 'kavenegar');
+      (this.smswbsUser && this.smswbsPass
+        ? 'smswbs'
+        : process.env.FARAZ_SMS_API_KEY
+          ? 'farazsms'
+          : 'kavenegar');
 
     this.defaultSender =
       options?.defaultSender ||
@@ -133,7 +185,9 @@ export class ProductionSmsProvider {
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        if (this.providerType === 'farazsms') {
+        if (this.providerType === 'smswbs') {
+          return await this.dispatchSmswbs(recipient, message, options);
+        } else if (this.providerType === 'farazsms') {
           return await this.dispatchFarazSms(recipient, message, options);
         } else {
           return await this.dispatchKavenegar(recipient, message);
@@ -161,6 +215,7 @@ export class ProductionSmsProvider {
 
   private async dispatchKavenegar(recipient: string, message: string): Promise<SmsDeliveryRecord> {
     const url = `https://api.kavenegar.com/v1/${this.apiKey}/sms/send.json`;
+    assertSafeSmsUrl(url);
     const params = new URLSearchParams({
       receptor: recipient,
       message,
@@ -241,6 +296,100 @@ export class ProductionSmsProvider {
       statusCode: data.code || 200,
       timestamp: new Date(),
       rawResponse: data as unknown as Record<string, unknown>,
+    };
+  }
+
+  private async dispatchSmswbs(
+    recipient: string,
+    message: string,
+    options?: SmsSendOptions
+  ): Promise<SmsDeliveryRecord> {
+    let localMobile = recipient.replace(/\D/g, '');
+    if (localMobile.startsWith('989')) {
+      localMobile = '0' + localMobile.slice(2);
+    } else if (localMobile.startsWith('9') && localMobile.length === 10) {
+      localMobile = '0' + localMobile;
+    }
+
+    const username = this.smswbsUser || process.env.SMSWBS_USERNAME;
+    const password = this.smswbsPass || process.env.SMSWBS_PASSWORD;
+
+    if (!username || !password) {
+      throw new Error('SMSWBS credentials (SMSWBS_USERNAME / SMSWBS_PASSWORD) are unconfigured');
+    }
+
+    // 1. Try dedicated OTP endpoint first
+    const safeOtpUrl = assertSafeSmsUrl('http://smswbs.ir/class/sms/restful/OTP/send_OTP.php');
+    const otpBody = {
+      username,
+      api_password: password,
+      mobile: localMobile,
+      footer: 'سامانه فیروزو',
+    };
+
+    let otpRes;
+    try {
+      otpRes = await fetch(safeOtpUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(otpBody),
+        signal: AbortSignal.timeout(5000),
+      });
+    } catch (netErr) {
+      throw new Error(`SMSWBS transport error: ${netErr instanceof Error ? netErr.message : String(netErr)}`);
+    }
+
+    if (otpRes.ok) {
+      const data = (await otpRes.json()) as { errCode?: number; result?: string | number };
+      if (data.errCode === 0 || (data.errCode !== undefined && data.errCode >= 0)) {
+        return {
+          messageId: String(data.result || `smswbs-otp-${Date.now()}`),
+          provider: 'smswbs-otp',
+          recipient: localMobile,
+          status: 'SENT',
+          statusCode: 200,
+          timestamp: new Date(),
+          rawResponse: data as unknown as Record<string, unknown>,
+        };
+      }
+
+      console.warn(`[SMSWBS:OTP] send_OTP returned code ${data.errCode}: ${data.result}. Attempting standard SMS fallback.`);
+    }
+
+    // 2. Fallback to standard OneToMany endpoint
+    const safeSendUrl = assertSafeSmsUrl('http://smswbs.ir/class/sms/restful/sendSms_OneToMany.php');
+    const sendBody = {
+      username,
+      api_password: password,
+      from: options?.sender || this.defaultSender,
+      to: [localMobile],
+      text: message,
+    };
+
+    const sendRes = await fetch(safeSendUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sendBody),
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!sendRes.ok) {
+      throw new Error(`SMSWBS gateway returned HTTP ${sendRes.status}`);
+    }
+
+    const sendData = (await sendRes.json()) as { errCode?: number; result?: string | number };
+    if (sendData.errCode !== undefined && sendData.errCode < 0) {
+      throw new Error(`SMSWBS error ${sendData.errCode}: ${sendData.result || 'Delivery failed'}`);
+    }
+
+    return {
+      messageId: String(sendData.result || `smswbs-${Date.now()}`),
+      provider: 'smswbs',
+      recipient: localMobile,
+      status: 'SENT',
+      statusCode: 200,
+      timestamp: new Date(),
+      rawResponse: sendData as unknown as Record<string, unknown>,
     };
   }
 }

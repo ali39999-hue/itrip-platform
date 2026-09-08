@@ -39,7 +39,7 @@ describe('Bale Messenger Provider & Auth Channel Tests', () => {
     });
     vi.stubGlobal('fetch', mockFetch);
 
-    const res = await provider.sendMessage('@bale_customer', 'کد تایید ورود: 54321');
+    const res = await provider.sendMessage('556572462', 'کد تایید ورود: 54321');
 
     expect(mockFetch).toHaveBeenCalledWith(
       `https://tapi.bale.ai/bot${fakeToken}/sendMessage`,
@@ -47,7 +47,7 @@ describe('Bale Messenger Provider & Auth Channel Tests', () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chat_id: 'bale_customer',
+          chat_id: '556572462',
           text: 'کد تایید ورود: 54321',
         }),
       })

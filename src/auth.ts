@@ -119,6 +119,7 @@ export async function issueOtp(
 
   let realSent = false;
   let providerUsed = 'console-simulator';
+  let dispatchError: string | undefined;
 
   try {
     const notificationProvider = getNotificationProvider();
@@ -140,9 +141,12 @@ export async function issueOtp(
     if (dispatch?.success && dispatch.provider !== 'console-simulator') {
       realSent = true;
       providerUsed = dispatch.provider;
+    } else if (!dispatch?.success && dispatch?.error) {
+      dispatchError = dispatch.error;
     }
   } catch (dispatchErr: unknown) {
     const errMsg = dispatchErr instanceof Error ? dispatchErr.message : String(dispatchErr);
+    dispatchError = errMsg;
     console.warn('[issueOtp] Instant notification dispatch notice:', errMsg);
   }
 
@@ -154,6 +158,7 @@ export async function issueOtp(
     sent: true,
     realSent,
     provider: providerUsed,
+    error: dispatchError,
     devCode: !realSent ? code : undefined,
   };
 }

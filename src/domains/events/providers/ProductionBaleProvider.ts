@@ -68,33 +68,24 @@ export class ProductionBaleProvider {
             message?: {
               from?: { id: number; username?: string };
               chat?: { id: number };
+              contact?: { phone_number?: string };
             };
           }>;
         };
         if (data.ok && Array.isArray(data.result) && data.result.length > 0) {
           const match = data.result.find((u) => {
             const uName = u.message?.from?.username?.toLowerCase();
-            return uName === clean.toLowerCase() || String(u.message?.from?.id) === clean;
+            const uId = String(u.message?.from?.id);
+            const uContactPhone = u.message?.contact?.phone_number?.replace(/\D/g, '');
+            const cleanPhone = clean.replace(/\D/g, '');
+            const isPhoneMatch = uContactPhone && cleanPhone && (uContactPhone.endsWith(cleanPhone.slice(-10)) || cleanPhone.endsWith(uContactPhone.slice(-10)));
+
+            return uName === clean.toLowerCase() || uId === clean || isPhoneMatch;
           });
+
           if (match?.message?.chat?.id) {
             const resolvedId = String(match.message.chat.id);
             // Cache in database if user exists
-            prisma.user.updateMany({
-              where: {
-                OR: [
-                  { phone: clean },
-                  ...(clean.startsWith('09') ? [{ phone: '+98' + clean.slice(1) }] : []),
-                ],
-              },
-              data: { baleId: resolvedId },
-            }).catch(() => {});
-            return resolvedId;
-          }
-
-          // If a user recently interacted with the bot (like /start), resolve to that active chat
-          const latestChat = data.result[data.result.length - 1]?.message?.chat?.id;
-          if (latestChat) {
-            const resolvedId = String(latestChat);
             prisma.user.updateMany({
               where: {
                 OR: [
@@ -139,6 +130,14 @@ export class ProductionBaleProvider {
     }
 
     const targetChatId = await this.resolveChatId(cleanInput);
+
+    if (!targetChatId || targetChatId.startsWith('09') || targetChatId.startsWith('+98') || !/^\d{5,12}$/.test(targetChatId)) {
+      return {
+        success: false,
+        error: 'حساب بله برای این شماره یا شناسه یافت نشد. کاربر باید ابتدا در اپلیکیشن بله بازوی @firuzootpbot را باز کرده و دکمه شروع را بزند.',
+        provider: this.name,
+      };
+    }
 
     try {
       const url = `https://tapi.bale.ai/bot${this.botToken}/sendMessage`;

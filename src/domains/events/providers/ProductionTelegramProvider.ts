@@ -42,9 +42,19 @@ export class ProductionTelegramProvider {
     }
 
     // Sort all key-value pairs alphabetically (excluding 'hash')
+    const keys = Object.keys(data).filter((k) => k !== 'hash');
+    for (let i = 0; i < keys.length; i++) {
+      for (let j = i + 1; j < keys.length; j++) {
+        if (keys[i].localeCompare(keys[j]) > 0) {
+          const temp = keys[i];
+          keys[i] = keys[j];
+          keys[j] = temp;
+        }
+      }
+    }
+
     const pairs: string[] = [];
-    for (const key of Object.keys(data).sort()) {
-      if (key === 'hash') continue;
+    for (const key of keys) {
       const val = (data as unknown as Record<string, unknown>)[key];
       if (val !== undefined && val !== null) {
         pairs.push(`${key}=${val}`);

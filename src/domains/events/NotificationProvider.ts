@@ -2,6 +2,7 @@ import { createLogger } from '@/lib/observability/logger';
 import { ProductionWhatsappProvider } from './providers/ProductionWhatsappProvider';
 import { ProductionTelegramProvider } from './providers/ProductionTelegramProvider';
 import { ProductionBaleProvider } from './providers/ProductionBaleProvider';
+import { ProductionSmsProvider } from './providers/ProductionSmsProvider';
 
 const notifLogger = createLogger('notification-provider');
 
@@ -107,7 +108,12 @@ export class ProductionNotificationProvider implements NotificationProvider {
   private apiKey: string | undefined;
 
   constructor(apiKey?: string) {
-    this.apiKey = apiKey || process.env.KAVENEGAR_API_KEY || process.env.SMS_PROVIDER_API_KEY;
+    this.apiKey =
+      apiKey !== undefined
+        ? apiKey
+        : (process.env.KAVENEGAR_API_KEY ||
+           process.env.SMS_PROVIDER_API_KEY ||
+           process.env.SMSWBS_PASSWORD);
   }
 
   private static isProductionRuntime(): boolean {
@@ -115,46 +121,43 @@ export class ProductionNotificationProvider implements NotificationProvider {
   }
 
   async sendSms(to: string, message: string): Promise<NotificationResult> {
-    if (!this.apiKey) {
+    const hasConfig = Boolean(
+      this.apiKey ||
+      (this.apiKey === undefined && (
+        process.env.KAVENEGAR_API_KEY ||
+        process.env.SMS_PROVIDER_API_KEY ||
+        process.env.FARAZ_SMS_API_KEY ||
+        (process.env.SMSWBS_USERNAME && process.env.SMSWBS_PASSWORD)
+      ))
+    );
+
+    if (!hasConfig) {
       if (ProductionNotificationProvider.isProductionRuntime()) {
-        console.error('[Notification:SMS] FAIL-CLOSED: SMS provider API key is not configured in production');
+        console.error('[Notification:SMS] FAIL-CLOSED: SMS provider is not configured in production');
         return {
           success: false,
-          error: 'SMS provider not configured (KAVENEGAR_API_KEY / SMS_PROVIDER_API_KEY missing)',
+          error: 'SMS provider not configured (SMSWBS/Kavenegar/FarazSMS credentials missing)',
           provider: this.name,
         };
       }
-      console.warn('[Notification:SMS] Missing SMS provider API key; falling back to simulation.');
+      console.warn('[Notification:SMS] Missing SMS provider credentials; falling back to simulation.');
       return new ConsoleNotificationProvider().sendSms(to, message);
     }
 
     try {
-      // Standard Kavenegar / HTTP SMS gateway request payload
-      const url = `https://api.kavenegar.com/v1/${this.apiKey}/sms/send.json`;
-      const params = new URLSearchParams({
-        receptor: to,
-        message: message,
-      });
-
-      const res = await fetch(`${url}?${params.toString()}`, {
-        method: 'POST',
-        headers: { 'Accept': 'application/json' },
-      });
-
-      if (!res.ok) {
-        throw new Error(`SMS gateway returned HTTP ${res.status}`);
+      const smsProvider = new ProductionSmsProvider();
+      const res = await smsProvider.sendSms(to, message);
+      if (res.status === 'FAILED') {
+        return {
+          success: false,
+          error: res.error || 'SMS delivery failed',
+          provider: res.provider,
+        };
       }
-
-      const data = await res.json() as { return?: { status: number; message: string }; entries?: Array<{ messageid: number }> };
-      if (data.return && data.return.status !== 200) {
-        throw new Error(data.return.message || 'SMS delivery failed');
-      }
-
-      const messageId = data.entries?.[0]?.messageid ? String(data.entries[0].messageid) : `sms-${Date.now()}`;
       return {
         success: true,
-        messageId,
-        provider: this.name,
+        messageId: res.messageId,
+        provider: res.provider,
       };
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
@@ -243,7 +246,12 @@ export class ProductionNotificationProvider implements NotificationProvider {
 export function getNotificationProvider(): NotificationProvider {
   const isProduction = process.env.NODE_ENV === 'production';
   const isDemo = process.env.DEMO_MODE === 'true' || process.env.NODE_ENV === 'test';
-  const hasProviderKey = Boolean(process.env.KAVENEGAR_API_KEY || process.env.SMS_PROVIDER_API_KEY);
+  const hasProviderKey = Boolean(
+    process.env.KAVENEGAR_API_KEY ||
+    process.env.SMS_PROVIDER_API_KEY ||
+    process.env.FARAZ_SMS_API_KEY ||
+    (process.env.SMSWBS_USERNAME && process.env.SMSWBS_PASSWORD)
+  );
 
   if (isProduction) {
     return new ProductionNotificationProvider();

@@ -58,6 +58,12 @@ export async function requestOtp(data: unknown) {
       return { success: false, error: rateCheck.reason || 'Too many codes requested. Please try again later.' };
     }
     const issueRes = await issueOtp(parsed.identifier, parsed.channel);
+    if (!issueRes.realSent && issueRes.error) {
+      return {
+        success: false,
+        error: issueRes.error,
+      };
+    }
     return {
       success: true,
       sent: true,
