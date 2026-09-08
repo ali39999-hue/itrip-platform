@@ -46,7 +46,7 @@ const PACE_META: Record<Pace, { key: 'paceRelaxed' | 'paceBalanced' | 'pacePacke
   },
 };
 
-const WHO_META: Record<Who, { Icon: LucideIcon; descFa: string; descEn: string }> = {
+const WHO_META: Record<Who, { Icon: LucideIcon; desc: LText }> = {
   solo: { Icon: User, desc: { fa: 'سفر تک‌نفره، مستقل و کشف آزادانه', en: 'Solo explorer, total freedom', ar: 'سفر تک‌نفره، مستقل و کشف آزادانه', zh: 'Solo explorer, total freedom', ru: 'Solo explorer, total freedom' } },
   duo: { Icon: Heart, desc: { fa: 'دونفره، رمانتیک و سرشار از خاطره', en: 'Couples & romantic escapes', ar: 'دونفره، رمانتیک و سرشار از خاطره', zh: 'Couples & romantic escapes', ru: 'Couples & romantic escapes' } },
   family: { Icon: Baby, desc: { fa: 'سفر خانوادگی، امن و مناسب کودکان', en: 'Family trip with kids friendly stays', ar: 'سفر خانوادگی، امن و مناسب کودکان', zh: 'Family trip with kids friendly stays', ru: 'Family trip with kids friendly stays' } },
@@ -395,7 +395,7 @@ export function PlannerWizard({ step, setStep, ans, setAns, locale, setSeed }: P
             {qHead(t('qPace'), t('qPaceSub'))}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {(['relaxed', 'balanced', 'packed'] as Pace[]).map((p) => {
-                const { key, Icon, descFa, descEn } = PACE_META[p];
+                const { key, Icon, desc } = PACE_META[p];
                 const isSelected = ans.pace === p;
                 return (
                   <button 
