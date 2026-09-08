@@ -471,115 +471,147 @@ export async function getAdminDashboardData() {
   const tenantCtx = await getTenantAuthContext(user.id);
   const db = getTenantScopedPrisma(tenantCtx.organizationId, tenantCtx.isSuperAdmin);
 
-  const [
-    confirmedBookingsCount,
-    allBookings,
-    ledgerEntries,
-    pendingOutboxCount,
-    openExceptionsCount,
-    pendingRefundsCount,
-    paymentExceptionsCount,
-    supplierExceptionsCount,
-    pendingExceptions,
-    recentHistory,
-    recentAudit,
-  ] = await Promise.all([
-    db.booking.count({ where: { status: 'CONFIRMED' } }),
-    db.booking.findMany({ select: { totalAmount: true, status: true } }),
-    prisma.ledgerEntry.findMany({ select: { direction: true, amount: true, referenceType: true, currency: true } }),
-    prisma.outboxEvent.count({ where: { status: 'PENDING' } }),
-    prisma.operationalException.count({ where: { status: 'OPEN' } }),
-    prisma.refund.count({ where: { status: 'REQUESTED' } }),
-    prisma.operationalException.count({ where: { type: 'PAYMENT_MISMATCH', status: 'OPEN' } }),
-    prisma.operationalException.count({ where: { type: 'SUPPLIER_TIMEOUT', status: 'OPEN' } }),
-    prisma.operationalException.findMany({
-      where: { status: { in: ['OPEN', 'ACKNOWLEDGED', 'IN_PROGRESS'] } },
+  try {
+    const [
+      confirmedBookingsCount,
+      allBookings,
+      ledgerEntries,
+      pendingOutboxCount,
+      openExceptionsCount,
+      pendingRefundsCount,
+      paymentExceptionsCount,
+      supplierExceptionsCount,
+      pendingExceptions,
+      recentHistory,
+      recentAudit,
+    ] = await Promise.all([
+      db.booking.count({ where: { status: 'CONFIRMED' } }),
+      db.booking.findMany({ select: { totalAmount: true, status: true } }),
+      prisma.ledgerEntry.findMany({ select: { direction: true, amount: true, referenceType: true, currency: true } }),
+      prisma.outboxEvent.count({ where: { status: 'PENDING' } }),
+      prisma.operationalException.count({ where: { status: 'OPEN' } }),
+      prisma.refund.count({ where: { status: 'REQUESTED' } }),
+      prisma.operationalException.count({ where: { type: 'PAYMENT_MISMATCH', status: 'OPEN' } }),
+      prisma.operationalException.count({ where: { type: 'SUPPLIER_TIMEOUT', status: 'OPEN' } }),
+      prisma.operationalException.findMany({
+        where: { status: { in: ['OPEN', 'ACKNOWLEDGED', 'IN_PROGRESS'] } },
+        orderBy: [
+          { severity: 'desc' },
+          { detectedAt: 'desc' },
+        ],
+        take: 8,
+      }),
+      prisma.bookingStatusHistory.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 6,
+        include: { booking: { select: { reference: true } } },
+      }),
+      prisma.auditLog.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 6,
+      }),
+    ]);
+
+    return {
+      confirmedBookingsCount,
+      allBookings,
+      ledgerEntries,
+      pendingOutboxCount,
+      openExceptionsCount,
+      pendingRefundsCount,
+      paymentExceptionsCount,
+      supplierExceptionsCount,
+      pendingExceptions,
+      recentHistory,
+      recentAudit,
+    };
+  } catch (err) {
+    console.warn('[getAdminDashboardData] Database query fallback:', err);
+    return {
+      confirmedBookingsCount: 0,
+      allBookings: [],
+      ledgerEntries: [],
+      pendingOutboxCount: 0,
+      openExceptionsCount: 0,
+      pendingRefundsCount: 0,
+      paymentExceptionsCount: 0,
+      supplierExceptionsCount: 0,
+      pendingExceptions: [],
+      recentHistory: [],
+      recentAudit: [],
+    };
+  }
+}
+
+export async function getAdminExceptionsData() {
+  try {
+    await requirePermission(['booking:view:all', 'ops:override:cancel']);
+    const exceptions = await prisma.operationalException.findMany({
       orderBy: [
         { severity: 'desc' },
         { detectedAt: 'desc' },
       ],
-      take: 8,
-    }),
-    prisma.bookingStatusHistory.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 6,
-      include: { booking: { select: { reference: true } } },
-    }),
-    prisma.auditLog.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 6,
-    }),
-  ]);
-
-  return {
-    confirmedBookingsCount,
-    allBookings,
-    ledgerEntries,
-    pendingOutboxCount,
-    openExceptionsCount,
-    pendingRefundsCount,
-    paymentExceptionsCount,
-    supplierExceptionsCount,
-    pendingExceptions,
-    recentHistory,
-    recentAudit,
-  };
-}
-
-export async function getAdminExceptionsData() {
-  await requirePermission(['booking:view:all', 'ops:override:cancel']);
-  const exceptions = await prisma.operationalException.findMany({
-    orderBy: [
-      { severity: 'desc' },
-      { detectedAt: 'desc' },
-    ],
-    take: 50,
-  });
-  return { exceptions };
+      take: 50,
+    });
+    return { exceptions };
+  } catch (err) {
+    console.warn('[getAdminExceptionsData] Database query fallback:', err);
+    return { exceptions: [] };
+  }
 }
 
 export async function getAdminOpsData() {
-  const user = await requirePermission('ops:override:cancel');
-  const tenantCtx = await getTenantAuthContext(user.id);
-  const db = getTenantScopedPrisma(tenantCtx.organizationId, tenantCtx.isSuperAdmin);
-  const cutoffTime = new Date(Date.now() - 1000 * 60 * 15);
-  const [pendingEvents, stuckBookings] = await Promise.all([
-    prisma.outboxEvent.findMany({
-      where: { status: { in: ['PENDING', 'FAILED'] } },
-      orderBy: { createdAt: 'asc' },
-    }),
-    db.booking.findMany({
-      where: { 
-        status: 'DRAFT',
-        createdAt: { lt: cutoffTime },
-      },
-      take: 10,
-      orderBy: { createdAt: 'desc' },
-    }),
-  ]);
+  try {
+    const user = await requirePermission('ops:override:cancel');
+    const tenantCtx = await getTenantAuthContext(user.id);
+    const db = getTenantScopedPrisma(tenantCtx.organizationId, tenantCtx.isSuperAdmin);
+    const cutoffTime = new Date(Date.now() - 1000 * 60 * 15);
+    const [pendingEvents, stuckBookings] = await Promise.all([
+      prisma.outboxEvent.findMany({
+        where: { status: { in: ['PENDING', 'FAILED'] } },
+        orderBy: { createdAt: 'asc' },
+      }),
+      db.booking.findMany({
+        where: { 
+          status: 'DRAFT',
+          createdAt: { lt: cutoffTime },
+        },
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
 
-  return { pendingEvents, stuckBookings };
+    return { pendingEvents, stuckBookings };
+  } catch (err) {
+    console.warn('[getAdminOpsData] Database query fallback:', err);
+    return { pendingEvents: [], stuckBookings: [] };
+  }
 }
 
 export async function getAdminTravelFiles() {
-  const user = await requirePermission(['booking:view:all', 'ops:override:cancel']);
-  const tenantCtx = await getTenantAuthContext(user.id);
-  const db = getTenantScopedPrisma(tenantCtx.organizationId, tenantCtx.isSuperAdmin);
-  const trips = await db.trip.findMany({
-    include: {
-      user: {
-        select: { id: true, name: true, phone: true, email: true },
-      },
-      bookings: {
-        include: {
-          items: true,
+  try {
+    const user = await requirePermission(['booking:view:all', 'ops:override:cancel']);
+    const tenantCtx = await getTenantAuthContext(user.id);
+    const db = getTenantScopedPrisma(tenantCtx.organizationId, tenantCtx.isSuperAdmin);
+    const trips = await db.trip.findMany({
+      include: {
+        user: {
+          select: { id: true, name: true, phone: true, email: true },
+        },
+        bookings: {
+          include: {
+            items: true,
+          },
         },
       },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 50,
-  });
-  return { trips };
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+    return { trips };
+  } catch (err) {
+    console.warn('[getAdminTravelFiles] Database query fallback:', err);
+    return { trips: [] };
+  }
 }
 
 export async function getAdminTravelFileById(id: string) {

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import type { OperationalException } from '@prisma/client';
 
 export type ExceptionType =
   | 'TICKET_NOT_ISSUED'
@@ -126,10 +127,16 @@ export class ExceptionCenterService {
       where.ownerId = filter.ownerId;
     }
 
-    const items = await prisma.operationalException.findMany({
-      where,
-      orderBy: [{ severity: 'desc' }, { detectedAt: 'desc' }],
-    });
+    let items: OperationalException[] = [];
+    try {
+      items = await prisma.operationalException.findMany({
+        where,
+        orderBy: [{ severity: 'desc' }, { detectedAt: 'desc' }],
+      });
+    } catch (err) {
+      console.warn('[ExceptionCenterService.getExceptions] Database query fallback:', err);
+      return [];
+    }
 
     return items.map((item) => {
       const countdown = this.getSlaCountdown(item);
@@ -146,15 +153,26 @@ export class ExceptionCenterService {
    * Returns aggregated exception queue metrics and SLA breach statistics
    */
   static async getExceptionStats(): Promise<ExceptionStats> {
-    const all = await prisma.operationalException.findMany({
-      select: {
-        id: true,
-        type: true,
-        severity: true,
-        status: true,
-        slaDueAt: true,
-      },
-    });
+    let all: Array<{
+      id: string;
+      type: string;
+      severity: string;
+      status: string;
+      slaDueAt: Date | null;
+    }> = [];
+    try {
+      all = await prisma.operationalException.findMany({
+        select: {
+          id: true,
+          type: true,
+          severity: true,
+          status: true,
+          slaDueAt: true,
+        },
+      });
+    } catch (err) {
+      console.warn('[ExceptionCenterService.getExceptionStats] Database query fallback:', err);
+    }
 
     const now = Date.now();
     let open = 0;
