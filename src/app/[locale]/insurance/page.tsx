@@ -57,7 +57,7 @@ export default function InsurancePage() {
         {/* Hero Section */}
         <section className="relative w-full rounded-3xl overflow-hidden min-h-[340px] md:min-h-[420px] flex items-center justify-center bg-deep shadow-elev-2">
           <Image 
-            src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&q=75&w=1800"
+            src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&q=75&w=1800"
             alt={t('title')}
             fill
             sizes="100vw"

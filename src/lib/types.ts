@@ -33,6 +33,10 @@ export interface Hotel {
   reviewsCount: number;
   pricePerNight: number;
   imageQuery: string;
+  heroImage?: string;
+  galleryImages?: string[];
+  address?: string;
+  description?: string;
   amenities: string[];
   distanceFromCenter: string;
   distanceFromCenterEn?: string;

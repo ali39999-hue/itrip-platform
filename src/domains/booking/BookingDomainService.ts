@@ -88,6 +88,9 @@ export class BookingDomainService {
     userRole?: string;
     supplierId?: string;
     currency?: SupportedCurrency;
+    referralDiscountPercent?: number;
+    referralCode?: string;
+    promoDiscountPercent?: number;
   }): {
     rawNetCost: number;
     netCostMoney: Money;
@@ -112,6 +115,9 @@ export class BookingDomainService {
       productType: params.productType,
       basePrice: netCostMoney,
       currency,
+      referralDiscountPercent: params.referralDiscountPercent,
+      referralCode: params.referralCode,
+      promoDiscountPercent: params.promoDiscountPercent,
     });
 
     return {

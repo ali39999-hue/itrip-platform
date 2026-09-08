@@ -3,7 +3,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { KycProfile } from '@/lib/types';
-import { verifyOtpAndLogin, loginWithPassword as loginWithPasswordAction, logoutUser, type AuthChannel } from '@/actions/auth';
+import { verifyOtpAndLogin, loginWithPassword as loginWithPasswordAction, logoutUser, loginWithTelegram as loginWithTelegramAction, type AuthChannel } from '@/actions/auth';
+import type { TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
 
 interface User {
   id: string;
@@ -33,6 +34,7 @@ interface AuthState {
   kyc: KycProfile;
   login: (identifier: string, otp: string, channel?: AuthChannel) => Promise<boolean>;
   loginWithPassword: (identifier: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithTelegram: (payload: TelegramAuthPayload) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   setKycStep: (step: KycProfile['step']) => void;
   updateKyc: (data: Partial<KycProfile>) => void;
@@ -59,6 +61,18 @@ export const useAuthStore = create<AuthState>()(
         const res = await loginWithPasswordAction(identifier, password);
         if (!res.success || !res.user) {
           return { success: false, error: res.error || 'ورود ناموفق بود' };
+        }
+
+        set({
+          user: res.user,
+          kyc: { step: 'approved', phone: res.user.phone },
+        });
+        return { success: true };
+      },
+      loginWithTelegram: async (payload: TelegramAuthPayload) => {
+        const res = await loginWithTelegramAction(payload);
+        if (!res.success || !res.user) {
+          return { success: false, error: res.error || 'ورود با تلگرام ناموفق بود' };
         }
 
         set({

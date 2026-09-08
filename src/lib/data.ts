@@ -54,8 +54,18 @@ export const FLIGHTS: Flight[] = [
 
 export const HOTELS: Hotel[] = [
   {
-    id: 'h1', name: 'هتل فروردین مشهد', nameEn: 'Farvardin Hotel Mashhad', city: 'مشهد', cityEn: 'Mashhad',
-    stars: 5, rating: 8.7, reviewsCount: 1243, pricePerNight: 42000000, imageQuery: 'luxury-hotel',
+    id: 'h1', name: 'هتل درویشی مشهد', nameEn: 'Darvishi Royal Hotel Mashhad', city: 'مشهد', cityEn: 'Mashhad',
+    stars: 5, rating: 8.9, reviewsCount: 1243, pricePerNight: 42000000, imageQuery: 'luxury-hotel',
+    heroImage: 'https://www.eghamat24.com/app/public/hotel_images/original/Mashhad-Darvishi-44.jpg',
+    galleryImages: [
+      'https://www.eghamat24.com/app/public/hotel_images/original/Mashhad-Darvishi-44.jpg',
+      'https://www.eghamat24.com/app/public/hotel_images/original/Mashhad-Darvishi-90.jpg',
+      'https://www.eghamat24.com/app/public/hotel_images/original/Mashhad-Darvishi-82.jpg',
+      'https://www.eghamat24.com/app/public/hotel_images/original/Mashhad-Darvishi-80.jpg',
+      'https://www.eghamat24.com/app/public/hotel_images/original/Mashhad-Darvishi-06.jpg',
+    ],
+    address: 'مشهد، خیابان امام رضا، بین امام رضا ۲۴ و ۲۶',
+    description: 'تنها هتل آتریوم شرق کشور با ۲۰ طبقه مجلل، سوئیت‌های پنت‌هاوس و رویال، استخر و اسپای اختصاصی و فاصله کوتاه تا بارگاه منور رضوی.',
     amenities: ['wifi', 'pool', 'spa', 'restaurant', 'parking', 'shuttle'],
     distanceFromCenter: '۵۰۰ متر تا حرم', freeCancellation: true,
     roomTypes: [
@@ -67,6 +77,16 @@ export const HOTELS: Hotel[] = [
   {
     id: 'h2', name: 'هتل عباسی اصفهان', nameEn: 'Abbasi Hotel Isfahan', city: 'اصفهان', cityEn: 'Isfahan',
     stars: 5, rating: 9.1, reviewsCount: 2109, pricePerNight: 38000000, imageQuery: 'historic-hotel',
+    heroImage: 'https://www.eghamat24.com/app/public/hotel_images/original/Esfahan-Abbasi-31.jpg',
+    galleryImages: [
+      'https://www.eghamat24.com/app/public/hotel_images/original/Esfahan-Abbasi-31.jpg',
+      'https://www.eghamat24.com/app/public/hotel_images/original/Esfahan-Abbasi-48.jpg',
+      'https://www.eghamat24.com/app/public/hotel_images/original/Esfahan-Abbasi-70.jpg',
+      'https://www.eghamat24.com/app/public/hotel_images/original/Esfahan-Abbasi-47.jpg',
+      'https://www.eghamat24.com/app/public/hotel_images/original/Esfahan-Abbasi-44.jpg',
+    ],
+    address: 'اصفهان، خیابان چهارباغ عباسی، خیابان آمادگاه',
+    description: 'کهن‌ترین مهمانسرای جهان با معماری بی‌بدیل صفوی، حیاط و باغ ایرانی رویایی، چایخانه سنتی و اتاق‌های پردیس مشرف به فضای سبز تاریخی.',
     amenities: ['wifi', 'restaurant', 'garden', 'museum', 'teahouse'],
     distanceFromCenter: '۱ کیلومتر تا میدان نقش جهان', freeCancellation: false,
     roomTypes: [
@@ -77,6 +97,16 @@ export const HOTELS: Hotel[] = [
   {
     id: 'h3', name: 'رزیدانس دبی مارینا', nameEn: 'Dubai Marina Residence', city: 'دبی', cityEn: 'Dubai',
     stars: 4, rating: 8.4, reviewsCount: 867, pricePerNight: 152000000, imageQuery: 'modern-apartment',
+    heroImage: 'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=1200&q=80',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=1200&q=80',
+    ],
+    address: 'دبی، مارینا، خیابان الممشى، نزدیک به ساحل JBR',
+    description: 'آپارتمان‌های لوکس با چشم‌انداز رویایی کانال مارینا، استخر بی‌نهایت در پشت‌بام، سالن بدنسازی مجهز و دسترسی پیاده به ساحل جی‌بی‌آر.',
     amenities: ['wifi', 'pool', 'gym', 'beach_access'],
     distanceFromCenter: '۳۰۰ متر از ساحل جبرعلی', freeCancellation: true,
     roomTypes: [
@@ -87,6 +117,16 @@ export const HOTELS: Hotel[] = [
   {
     id: 'h4', name: 'بوتیک هتل تفلیس', nameEn: 'Tbilisi Old Town Boutique', city: 'تفلیس', cityEn: 'Tbilisi',
     stars: 4, rating: 8.9, reviewsCount: 654, pricePerNight: 68000000, imageQuery: 'boutique-hotel',
+    heroImage: 'https://images.unsplash.com/photo-1565008447742-97f6f38c985c?auto=format&fit=crop&w=1200&q=80',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1565008447742-97f6f38c985c?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80',
+    ],
+    address: 'تفلیس، بخش تاریخی کالا، خیابان شاردنی',
+    description: 'بوتیک هتل شیک در قلب بافت تاریخی تفلیس با بالکن‌های حکاکی‌شده چوبی گرجی، تراس پانوراما رو به قلعه ناریکالا و صبحانه بوفه سنتی.',
     amenities: ['wifi', 'breakfast', 'terrace', 'bar'],
     distanceFromCenter: 'قلب شهر قدیم', freeCancellation: true,
     roomTypes: [
@@ -96,6 +136,16 @@ export const HOTELS: Hotel[] = [
   {
     id: 'h5', name: 'هتل طلاییه استانبول', nameEn: 'Golden Horn Hotel Istanbul', city: 'استانبول', cityEn: 'Istanbul',
     stars: 4, rating: 8.6, reviewsCount: 1531, pricePerNight: 74000000, imageQuery: 'istanbul-hotel',
+    heroImage: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=1200&q=80',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&w=1200&q=80',
+    ],
+    address: 'استانبول، بی‌اوغلو، نزدیکی میدان تاکسیم و خیابان استقلال',
+    description: 'اقامت در موقعیتی ممتاز با دسترسی مستقیم به میدان تاکسیم و مترو، تراس با چشم‌انداز خیره‌کننده شاخ طلایی و تنگه بسفر و اسپا با حمام ترکی.',
     amenities: ['wifi', 'spa', 'restaurant', 'terrace'],
     distanceFromCenter: '۵۰۰ متر تا تاکسیم', freeCancellation: true,
     roomTypes: [
@@ -106,6 +156,16 @@ export const HOTELS: Hotel[] = [
   {
     id: 'h6', name: 'هتل متروپول مسکو', nameEn: 'Metropol Hotel Moscow', city: 'مسکو', cityEn: 'Moscow',
     stars: 5, rating: 9.0, reviewsCount: 987, pricePerNight: 135000000, imageQuery: 'moscow-hotel',
+    heroImage: 'https://images.unsplash.com/photo-1513622470522-26c3c8a854bc?auto=format&fit=crop&w=1200&q=80',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1513622470522-26c3c8a854bc?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1513326738677-b964603b136d?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80',
+    ],
+    address: 'مسکو، میدان تئاتر، روبروی تئاتر بولشوی و ۳۰۰ متری میدان سرخ',
+    description: 'هتل افسانه‌ای و تاریخی روسیه با شکوه معماری آرت‌نوو، نقاشی‌های گنبدی باشکوه و رستوران مجلل در چند قدمی کرملین و میدان سرخ.',
     amenities: ['wifi', 'restaurant', 'spa', 'gym'],
     distanceFromCenter: '۲۰۰ متر تا میدان سرخ', freeCancellation: false,
     roomTypes: [
@@ -115,11 +175,81 @@ export const HOTELS: Hotel[] = [
   {
     id: 'h7', name: 'رزورت ساحلی مسقط', nameEn: 'Muscat Beach Resort', city: 'مسقط', cityEn: 'Muscat',
     stars: 5, rating: 8.8, reviewsCount: 742, pricePerNight: 118000000, imageQuery: 'muscat-resort',
+    heroImage: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80',
+    ],
+    address: 'مسقط، منطقه شاطئ القرم، مشرف به خلیج عمان',
+    description: 'ریزورت ۵ ستاره ساحلی با نخلستان اختصاصی، دسترسی مستقیم به ماسه‌های طلایی دریای عمان و مرکز اسپا و ورزش‌های آبی مدرن.',
     amenities: ['wifi', 'pool', 'beach_access', 'restaurant', 'spa'],
     distanceFromCenter: 'ساحل القرم', freeCancellation: true,
     roomTypes: [
       { id: 'r1', name: 'اتاق دبل اقیانوس', capacity: 2, breakfast: true, pricePerNight: 118000000, available: 5 },
       { id: 'r2', name: 'سوییت فامیلی', capacity: 4, breakfast: true, pricePerNight: 186000000, available: 2 },
+    ],
+  },
+  {
+    id: 'h8', name: 'هتل بزرگ شیراز', nameEn: 'Shiraz Grand Hotel', city: 'شیراز', cityEn: 'Shiraz',
+    stars: 5, rating: 9.0, reviewsCount: 1420, pricePerNight: 48000000, imageQuery: 'grand-hotel',
+    heroImage: 'https://www.eghamat24.com/app/public/hotel_images/original/Shiraz-Shiraz-08.jpg',
+    galleryImages: [
+      'https://www.eghamat24.com/app/public/hotel_images/original/Shiraz-Shiraz-08.jpg',
+      'https://www.eghamat24.com/app/public/hotel_images/original/Shiraz-Shiraz-26.jpg',
+      'https://www.eghamat24.com/app/public/hotel_images/original/Shiraz-Bozorg-79.jpg',
+      'https://www.eghamat24.com/app/public/hotel_images/original/Shiraz-Bozorg-78.jpg',
+      'https://www.eghamat24.com/app/public/hotel_images/original/Shiraz-Bozorg-101.jpg',
+    ],
+    address: 'شیراز، ورودی شهر، در جوار دروازه قرآن',
+    description: 'هتل باشکوه با معماری منحصر‌به‌فرد بر فراز صخره‌های دروازه قرآن با رستوران گردان و چشم‌انداز سراسری به شهر ادب و شعر.',
+    amenities: ['wifi', 'pool', 'spa', 'restaurant', 'parking', 'gym'],
+    distanceFromCenter: 'کنار دروازه قرآن', freeCancellation: true,
+    roomTypes: [
+      { id: 'r1', name: 'اتاق دبل مشرف به شهر', capacity: 2, breakfast: true, pricePerNight: 48000000, available: 6 },
+      { id: 'r2', name: 'سوییت رویال', capacity: 3, breakfast: true, pricePerNight: 78000000, available: 2 },
+    ],
+  },
+  {
+    id: 'h9', name: 'هتل دریایی ترنج کیش', nameEn: 'Toranj Marine Resort Kish', city: 'کیش', cityEn: 'Kish',
+    stars: 5, rating: 9.3, reviewsCount: 1850, pricePerNight: 88000000, imageQuery: 'toranj-resort',
+    heroImage: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=80',
+    galleryImages: [
+      'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80',
+    ],
+    address: 'جزیره کیش، میدان جاسک، جاده جهان',
+    description: 'نخستین هتل دریایی خاورمیانه با سوئیت‌های چوبی احداث‌شده بر روی پهنه آب‌های زلال خلیج فارس، کف شیشه‌ای جهت تماشای دنیای زیر آب و ترانسفر VIP.',
+    amenities: ['wifi', 'pool', 'beach_access', 'restaurant', 'spa', 'shuttle'],
+    distanceFromCenter: 'بر روی آب‌های ساحل غربی کیش', freeCancellation: true,
+    roomTypes: [
+      { id: 'r1', name: 'سوئیت رو به غروب دریایی', capacity: 2, breakfast: true, pricePerNight: 88000000, available: 4 },
+      { id: 'r2', name: 'سوئیت امپریال رویال', capacity: 4, breakfast: true, pricePerNight: 165000000, available: 1 },
+    ],
+  },
+  {
+    id: 'h10', name: 'هتل صخره‌ای لاله کندوان', nameEn: 'Laleh Kandovan Rock Hotel', city: 'تبریز', cityEn: 'Tabriz',
+    stars: 5, rating: 8.9, reviewsCount: 680, pricePerNight: 39000000, imageQuery: 'kandovan-cave',
+    heroImage: 'https://www.eghamat24.com/app/public/hotel_images/original/Tabriz-Laleh-29.jpg',
+    galleryImages: [
+      'https://www.eghamat24.com/app/public/hotel_images/original/Tabriz-Laleh-29.jpg',
+      'https://www.eghamat24.com/app/public/hotel_images/original/Tabriz-Laleh-07.jpg',
+      'https://www.eghamat24.com/app/public/hotel_images/original/Tabriz-Laleh-48.jpg',
+      'https://www.eghamat24.com/app/public/hotel_images/original/Tabriz-Laleh-23.jpg',
+      'https://www.eghamat24.com/app/public/hotel_images/original/Tabriz-Laleh-32.jpg',
+    ],
+    address: 'آذربایجان شرقی، اسکو، دهکده توریستی تاریخی کندوان',
+    description: 'سومین هتل صخره‌ای جهان با اتاق‌های مخروطی کله‌قندی حفر شده در دل صخره‌های طبیعی کوه سهند با جکوزی آب‌معدنی طبیعی و هوای کوهستانی بی‌نظیر.',
+    amenities: ['wifi', 'restaurant', 'spa', 'parking'],
+    distanceFromCenter: 'در قلب روستای تاریخی کندوان', freeCancellation: true,
+    roomTypes: [
+      { id: 'r1', name: 'اتاق دبل صخره‌ای کله‌قندی', capacity: 2, breakfast: true, pricePerNight: 39000000, available: 5 },
+      { id: 'r2', name: 'سوئیت رویال جکوزی‌دار', capacity: 3, breakfast: true, pricePerNight: 64000000, available: 2 },
     ],
   },
 ];

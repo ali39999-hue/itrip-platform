@@ -43,6 +43,7 @@ model User {
   organizationMemberships OrganizationMembership[]
   travelerProfiles        TravelerProfile[]
   autoBuyRules            AutoBuyRule[]
+  referralCodes           ReferralCode[]
 }
 
 // B2B & Organization Structure (IAM-003)
@@ -439,6 +440,7 @@ model Booking {
   statusHistory   BookingStatusHistory[]
   priceSnapshots  PriceSnapshot[]
   autoBuyRules    AutoBuyRule[]
+  referral        BookingReferral?
   
   @@index([customerId])
   @@index([organizationId])
@@ -1158,6 +1160,78 @@ model GuideArticle {
   updatedAt   DateTime @updatedAt
 
   @@index([isPublished])
+}
+
+// ==================== Referral & Group Leader System ====================
+
+model ReferralCode {
+  id               String            @id @default(cuid())
+  code             String            @unique // Uppercase, trimmed unique code (e.g. KOOH123)
+  leaderId         String
+  isActive         Boolean           @default(true)
+  customTierConfig String?           // Custom JSON overrides for reward tiers if any
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  leader           User              @relation(fields: [leaderId], references: [id], onDelete: Cascade)
+  referrals        BookingReferral[]
+  settlements      LeaderSettlement[]
+
+  @@index([code])
+  @@index([leaderId])
+}
+
+model BookingReferral {
+  id                 String        @id @default(cuid())
+  bookingId          String        @unique // Exactly one referral record per booking
+  referralCodeId     String?       // Nullable if code was invalid / unmatched
+  rawCode            String        // Raw entered code (trimmed and uppercase)
+  status             String        @default("VALID") // VALID, UNMATCHED, SELF_REFERRAL, INACTIVE
+  paxCount           Int           @default(1) // Confirmed traveler count for this booking
+  discountAmount     Decimal       @default(0) // 5% discount amount in currency
+  discountPercent    Decimal       @default(0.05) // Configured discount percentage applied
+  applied            Boolean       @default(true) // Whether the discount was applied or superseded by coupon
+  source             String        @default("WEB") // WEB, ADMIN, PHONE
+  registeredByUserId String?
+  registeredAt       DateTime      @default(now())
+
+  booking            Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  referralCode       ReferralCode? @relation(fields: [referralCodeId], references: [id], onDelete: SetNull)
+
+  @@index([referralCodeId])
+  @@index([status])
+  @@index([rawCode])
+}
+
+model LeaderSettlement {
+  id             String        @id @default(cuid())
+  referralCodeId String
+  qualifiedPax   Int           // Number of confirmed passengers counted
+  rewardPercent  Decimal       // Reward percentage earned (e.g. 0.25, 0.50, 1.00)
+  rewardAmount   Decimal       // Calculated reward amount (IRR)
+  currency       String        @default("IRR")
+  status         String        @default("PENDING") // PENDING, APPROVED, SETTLED, REJECTED
+  settledAt      DateTime?
+  settledBy      String?
+  notes          String?
+  createdAt      DateTime      @default(now())
+
+  referralCode   ReferralCode  @relation(fields: [referralCodeId], references: [id], onDelete: Cascade)
+
+  @@index([referralCodeId])
+  @@index([status])
+}
+
+// Distributed Worker Lease (ASYNC-102, ASYNC-103)
+model WorkerLease {
+  resourceName String   @id
+  holderId     String
+  acquiredAt   DateTime @default(now())
+  expiresAt    DateTime
+  heartbeatAt  DateTime @default(now())
+  version      Int      @default(1)
+
+  @@index([expiresAt])
 }
 
 

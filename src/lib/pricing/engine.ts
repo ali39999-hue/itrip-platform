@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { Money, MoneyBreakdown } from '@/lib/finance';
 import { TaxEngine } from '@/lib/finance/tax-engine';
+import { REFERRAL_CONFIG } from '@/lib/referral/config';
 
 export interface PricingContext {
   userRole: string; // CUSTOMER, AGENT, B2B, B2B_TIER_1, SUPER_ADMIN
@@ -11,6 +12,8 @@ export interface PricingContext {
   isDomestic?: boolean;
   channel?: 'WEB' | 'MOBILE' | 'B2B_PORTAL' | 'API';
   promoDiscountPercent?: number; // e.g. 0.05 for 5% off
+  referralDiscountPercent?: number; // e.g. 0.05 for 5% off (calculated on baseCost)
+  referralCode?: string;
   fxRate?: Prisma.Decimal | number;
   targetCurrency?: string;
 }
@@ -141,11 +144,58 @@ export function calculatePricing(ctx: PricingContext): PricingResult {
   });
   const taxAmount = isWholesale ? subtotalBeforeTax.mul(new Prisma.Decimal('0.05')).round(0) : taxResult.taxAmount;
 
-  // Stage 8: Promotions / Discounts
-  let discountAmount = Money.zero(currency);
+  // Stage 8: Promotions / Discounts & Referral
+  let promoDiscountAmount = Money.zero(currency);
   if (ctx.promoDiscountPercent && ctx.promoDiscountPercent > 0) {
     const promoRate = new Prisma.Decimal(ctx.promoDiscountPercent.toString());
-    discountAmount = subtotalBeforeTax.mul(promoRate).round(0);
+    promoDiscountAmount = subtotalBeforeTax.mul(promoRate).round(0);
+  }
+
+  let referralDiscountAmount = Money.zero(currency);
+  if (ctx.referralDiscountPercent && ctx.referralDiscountPercent > 0) {
+    // Calculated strictly on BASE price (baseCost) per specification
+    const refRate = new Prisma.Decimal(ctx.referralDiscountPercent.toString());
+    referralDiscountAmount = baseCost.mul(refRate).round(0);
+
+    // Apply cap if defined
+    if (REFERRAL_CONFIG.maxDiscountCapIrr !== null && currency === 'IRR') {
+      const capMoney = new Money(REFERRAL_CONFIG.maxDiscountCapIrr, 'IRR');
+      if (referralDiscountAmount.greaterThan(capMoney)) {
+        referralDiscountAmount = capMoney;
+      }
+    }
+  }
+
+  // Conflict resolution / Stacking logic
+  let discountAmount = Money.zero(currency);
+  let appliedDiscountType: 'NONE' | 'PROMO' | 'REFERRAL' | 'STACKED' = 'NONE';
+
+  if (promoDiscountAmount.isPositive() && referralDiscountAmount.isPositive()) {
+    if (REFERRAL_CONFIG.stackingRule === 'STACK') {
+      discountAmount = promoDiscountAmount.add(referralDiscountAmount);
+      appliedDiscountType = 'STACKED';
+    } else if (REFERRAL_CONFIG.stackingRule === 'REFERRAL_ONLY') {
+      discountAmount = referralDiscountAmount;
+      appliedDiscountType = 'REFERRAL';
+    } else if (REFERRAL_CONFIG.stackingRule === 'COUPON_ONLY') {
+      discountAmount = promoDiscountAmount;
+      appliedDiscountType = 'PROMO';
+    } else {
+      // Default: 'HIGHER_BENEFIT' — pick the highest customer benefit
+      if (referralDiscountAmount.greaterThan(promoDiscountAmount)) {
+        discountAmount = referralDiscountAmount;
+        appliedDiscountType = 'REFERRAL';
+      } else {
+        discountAmount = promoDiscountAmount;
+        appliedDiscountType = 'PROMO';
+      }
+    }
+  } else if (referralDiscountAmount.isPositive()) {
+    discountAmount = referralDiscountAmount;
+    appliedDiscountType = 'REFERRAL';
+  } else if (promoDiscountAmount.isPositive()) {
+    discountAmount = promoDiscountAmount;
+    appliedDiscountType = 'PROMO';
   }
 
   // Subtotal before rounding
@@ -179,6 +229,10 @@ export function calculatePricing(ctx: PricingContext): PricingResult {
       roundingDelta: roundingDeltaMoney.toString(),
       supplierFee: supplierFee.toString(),
       platformFee: platformFee.toString(),
+      referralCode: ctx.referralCode || null,
+      referralDiscount: referralDiscountAmount.toString(),
+      promoDiscount: promoDiscountAmount.toString(),
+      appliedDiscountType,
     }),
   };
 

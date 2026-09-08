@@ -15,6 +15,7 @@ import { getHotelById } from '@/services/hotels-service';
 import { getFlightPriceById } from '@/services/flights-service';
 import { encryptSensitive } from '@/lib/security/crypto-vault';
 import { businessMetrics } from '@/lib/observability/business-metrics';
+import { ReferralDomainService } from '../referral/ReferralDomainService';
 import crypto from 'crypto';
 
 export interface PassengerPii {
@@ -40,6 +41,8 @@ export interface CreateBookingDraftCommand {
   contactEmail?: string;
   contactPhone?: string;
   userRole?: string;
+  referralCode?: string;
+  source?: string;
 }
 
 export interface RepriceBookingCommand {
@@ -163,7 +166,14 @@ export class BookingApplicationService {
       totalAddonsCost += price;
     }
 
-    // 2. Canonical server-side pricing
+    // 2. Validate referral code if provided (REF-001)
+    const referralValidation = cmd.referralCode
+      ? await ReferralDomainService.validateCode(cmd.referralCode, cmd.actorId)
+      : null;
+
+    const referralDiscountPercent = referralValidation?.valid ? referralValidation.discountPercent : 0;
+
+    // 2b. Canonical server-side pricing
     const { pricing } = BookingDomainService.computeDraftPricing({
       productType: cmd.type,
       baseUnitCost,
@@ -173,6 +183,8 @@ export class BookingApplicationService {
       userRole: cmd.userRole || 'CUSTOMER',
       supplierId: cmd.itemId ? 'sup_dynamic' : 'sup_default_firuzo',
       currency: 'IRR',
+      referralDiscountPercent,
+      referralCode: referralValidation?.normalizedCode || cmd.referralCode,
     });
 
     const finalTotalAmount = pricing.sellPrice;
@@ -289,6 +301,21 @@ export class BookingApplicationService {
               reason: 'Booking draft created via canonical BookingApplicationService',
             },
           },
+          referral: referralValidation
+            ? {
+                create: {
+                  referralCodeId: referralValidation.referralCodeId || null,
+                  rawCode: referralValidation.rawCode || cmd.referralCode || '',
+                  status: referralValidation.status,
+                  paxCount: (cmd.passengers && cmd.passengers.length > 0) ? cmd.passengers.length : quantity,
+                  discountAmount: pricing.snapshot.discountAmount,
+                  discountPercent: referralValidation.discountPercent,
+                  applied: referralValidation.valid && Number(pricing.snapshot.discountAmount) > 0,
+                  source: cmd.source || 'WEB',
+                  registeredByUserId: cmd.actorId,
+                },
+              }
+            : undefined,
         },
       });
     } catch (createErr) {
@@ -324,8 +351,10 @@ export class BookingApplicationService {
       bookingId: booking.id,
       reference: booking.reference,
       totalAmount: finalTotalAmount,
+      discountAmount: Number(pricing.snapshot.discountAmount),
       currency,
       status: booking.status,
+      referralStatus: referralValidation ? referralValidation.status : undefined,
     };
   }
 

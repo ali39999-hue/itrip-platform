@@ -1,4 +1,6 @@
 import { createLogger } from '@/lib/observability/logger';
+import { ProductionWhatsappProvider } from './providers/ProductionWhatsappProvider';
+import { ProductionTelegramProvider } from './providers/ProductionTelegramProvider';
 
 const notifLogger = createLogger('notification-provider');
 
@@ -13,6 +15,8 @@ export interface NotificationProvider {
   name: string;
   sendSms(to: string, message: string): Promise<NotificationResult>;
   sendEmail(to: string, subject: string, body: string): Promise<NotificationResult>;
+  sendWhatsApp(to: string, message: string): Promise<NotificationResult>;
+  sendTelegram(to: string, message: string): Promise<NotificationResult>;
 }
 
 /**
@@ -39,6 +43,26 @@ export class ConsoleNotificationProvider implements NotificationProvider {
     return {
       success: true,
       messageId: `sim-email-${Date.now()}`,
+      provider: this.name,
+    };
+  }
+
+  async sendWhatsApp(to: string, message: string): Promise<NotificationResult> {
+    const maskedTo = to.length > 7 ? `${to.slice(0, 4)}***${to.slice(-2)}` : '***';
+    notifLogger.info('Dispatched WhatsApp (Dev Simulator)', { to: maskedTo, message });
+    return {
+      success: true,
+      messageId: `sim-wa-${Date.now()}`,
+      provider: this.name,
+    };
+  }
+
+  async sendTelegram(to: string, message: string): Promise<NotificationResult> {
+    const maskedTo = to.length > 4 ? `${to.slice(0, 3)}***` : '***';
+    notifLogger.info('Dispatched Telegram (Dev Simulator)', { to: maskedTo, message });
+    return {
+      success: true,
+      messageId: `sim-tg-${Date.now()}`,
       provider: this.name,
     };
   }
@@ -166,6 +190,16 @@ export class ProductionNotificationProvider implements NotificationProvider {
         provider: 'resend',
       };
     }
+  }
+
+  async sendWhatsApp(to: string, message: string): Promise<NotificationResult> {
+    const whatsappProvider = new ProductionWhatsappProvider();
+    return whatsappProvider.sendWhatsAppMessage(to, message);
+  }
+
+  async sendTelegram(to: string, message: string): Promise<NotificationResult> {
+    const telegramProvider = new ProductionTelegramProvider();
+    return telegramProvider.sendMessage(to, message);
   }
 }
 

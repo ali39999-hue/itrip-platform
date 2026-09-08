@@ -82,7 +82,7 @@ export function PromotionalBanners() {
       gradient: 'from-[#1e3a8a] via-[#1d4ed8] to-[#0284c7]',
       badgeBg: 'bg-blue-100 text-blue-900',
       icon: ShieldCheck,
-      img: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&q=75&w=800',
+      img: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&q=75&w=800',
     },
   ];
 

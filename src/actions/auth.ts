@@ -1,12 +1,14 @@
 'use server';
 
 import { headers } from 'next/headers';
+import crypto from 'crypto';
 import { signIn, signOut, safeAuth, issueOtp } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { profileUpdateSchema, otpRequestSchema } from '@/lib/validations';
 import { RateLimiter } from '@/lib/security/rate-limiter';
 import { encryptSensitive, decryptSensitive } from '@/lib/security/crypto-vault';
 import { hasErpRole } from '@/domains/identity/permission-service';
+import { ProductionTelegramProvider, TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
 
 export type AuthChannel = 'phone' | 'email' | 'telegram' | 'whatsapp' | 'wechat';
 
@@ -139,6 +141,109 @@ export async function verifyOtpAndLogin(identifier: string, otp: string, channel
       wechatId: user.wechatId || (channel === 'wechat' ? identifier : undefined),
     },
   };
+}
+
+/**
+ * Verifies official Telegram Login Widget response cryptographically and signs in.
+ */
+export async function loginWithTelegram(payload: TelegramAuthPayload) {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (!botToken) {
+    return { success: false, error: 'TELEGRAM_BOT_TOKEN is not configured on the server' };
+  }
+
+  const isValid = ProductionTelegramProvider.verifyTelegramAuth(payload, botToken);
+  if (!isValid) {
+    return { success: false, error: 'Invalid or expired Telegram authentication signature' };
+  }
+
+  const telegramId = String(payload.id);
+  const fullName = [payload.first_name, payload.last_name].filter(Boolean).join(' ') || payload.username || 'Telegram User';
+
+  try {
+    await signIn('credentials', {
+      identifier: telegramId,
+      password: JSON.stringify(payload),
+      channel: 'telegram_widget',
+      redirect: false,
+    });
+  } catch (error: unknown) {
+    const err = error as { message?: string; digest?: string; type?: string };
+    if (!err?.message?.includes('NEXT_REDIRECT') && !err?.digest?.startsWith('NEXT_REDIRECT')) {
+      console.error('Telegram signIn error:', err);
+    }
+  }
+
+  let user = await prisma.user.findFirst({
+    where: {
+      OR: [{ telegramId }, { email: `${telegramId}@telegram.firuzo.com` }],
+    },
+  });
+
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        id: crypto.randomUUID(),
+        telegramId,
+        name: fullName,
+        avatar: payload.photo_url,
+        role: 'CUSTOMER',
+        isActive: true,
+      },
+    });
+
+    const role = await prisma.role.upsert({
+      where: { name: 'CUSTOMER' },
+      update: {},
+      create: {
+        name: 'CUSTOMER',
+        permissions: '[]',
+        description: 'Customer Role',
+      },
+    });
+
+    await prisma.userRole.upsert({
+      where: { userId_roleId: { userId: user.id, roleId: role.id } },
+      update: {},
+      create: { userId: user.id, roleId: role.id },
+    });
+  }
+
+  const isStaff = await hasErpRole(user.id);
+  const role = isStaff ? ('admin' as const) : ('customer' as const);
+
+  return {
+    success: true,
+    user: {
+      id: user.id,
+      phone: user.phone || '',
+      email: user.email || undefined,
+      firstNameFa: user.firstNameFa || user.name || fullName,
+      lastNameFa: user.lastNameFa || '',
+      kycApproved: Boolean(user.nationalId),
+      role,
+      channel: 'telegram' as const,
+      telegramId: user.telegramId || telegramId,
+    },
+  };
+}
+
+/**
+ * Generates the official WeChat Open Platform QR Code web authentication URL.
+ */
+export async function getWeChatAuthUrl(callbackUrl: string = '/account') {
+  const appId = process.env.WECHAT_APP_ID || process.env.NEXT_PUBLIC_WECHAT_APP_ID;
+  if (!appId) {
+    return { success: false, error: 'WECHAT_APP_ID is not configured on the server' };
+  }
+
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const redirectUri = `${baseUrl}/api/auth/callback/wechat`;
+  const url = `https://open.weixin.qq.com/connect/qrconnect?appid=${appId}&redirect_uri=${encodeURIComponent(
+    redirectUri
+  )}&response_type=code&scope=snsapi_login&state=${encodeURIComponent(callbackUrl)}#wechat_redirect`;
+
+  return { success: true, url };
 }
 
 /**

@@ -1,11 +1,8 @@
 import { Metadata } from 'next';
 import { HOTELS } from '@/lib/data';
+import { getHotelById } from '@/services/hotels-service';
 
-export async function generateStaticParams() {
-  return HOTELS.map((hotel) => ({
-    id: hotel.id,
-  }));
-}
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({
   params,
@@ -13,7 +10,7 @@ export async function generateMetadata({
   params: Promise<{ id: string; locale: string }>;
 }): Promise<Metadata> {
   const { id, locale } = await params;
-  const hotel = HOTELS.find((h) => h.id === id);
+  const hotel = getHotelById(id) || HOTELS.find((h) => h.id === id);
 
   if (!hotel) {
     return {

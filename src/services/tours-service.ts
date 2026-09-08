@@ -316,7 +316,7 @@ export const DETAILED_TOURS: Tour[] = [
         meals: { breakfast: true, lunch: false, dinner: false },
         accommodation: 'پایان سفر',
         accommodationEn: 'End of tour',
-        image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&q=80&w=800',
+        image: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=80&w=800',
       },
     ],
     reviews: [
@@ -465,7 +465,7 @@ export const DETAILED_TOURS: Tour[] = [
         meals: { breakfast: true, lunch: true, dinner: false },
         accommodation: 'هتل ۵ ستاره رادیسون بلو شیشلی',
         accommodationEn: '5-star Radisson Blu Sisli Hotel',
-        image: 'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=800',
+        image: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=800',
       },
       {
         day: 3,
@@ -478,7 +478,7 @@ export const DETAILED_TOURS: Tour[] = [
         meals: { breakfast: true, lunch: false, dinner: true },
         accommodation: 'هتل ۵ ستاره رادیسون بلو شیشلی',
         accommodationEn: '5-star Radisson Blu Sisli Hotel',
-        image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&q=80&w=800',
+        image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&q=80&w=800',
       },
       {
         day: 4,
@@ -504,7 +504,7 @@ export const DETAILED_TOURS: Tour[] = [
         meals: { breakfast: true, lunch: false, dinner: false },
         accommodation: 'پایان تور',
         accommodationEn: 'End of tour',
-        image: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&q=80&w=800',
+        image: 'https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&q=80&w=800',
       },
     ],
     reviews: [
