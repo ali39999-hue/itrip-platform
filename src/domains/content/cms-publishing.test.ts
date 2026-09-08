@@ -282,7 +282,7 @@ describe('Wave 18: CMS Domain Services Suite (CMS-101, CMS-102, CMS-103)', () =>
         description: 'معرفی جاذبه‌های تاریخی نصف جهان',
         url: 'https://itrip.ir/fa/guide/isfahan',
         locale: 'fa',
-        authorName: 'تیم تحریریه فیروزه',
+        authorName: 'تیم تحریریه فیروزو',
         publishedTime: '2026-09-01T10:00:00Z',
       });
 
@@ -290,7 +290,7 @@ describe('Wave 18: CMS Domain Services Suite (CMS-101, CMS-102, CMS-103)', () =>
       expect(jsonLd['@type']).toBe('Article');
       expect(jsonLd['headline']).toBe('راهنمای سفر به اصفهان');
       expect(jsonLd['inLanguage']).toBe('fa');
-      expect((jsonLd['author'] as { name: string }).name).toBe('تیم تحریریه فیروزه');
+      expect((jsonLd['author'] as { name: string }).name).toBe('تیم تحریریه فیروزو');
     });
 
     it('generates valid Schema.org/TouristTrip JSON-LD structured data with itinerary', () => {

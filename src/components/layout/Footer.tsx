@@ -55,6 +55,14 @@ export function Footer() {
     },
   ];
 
+  const currentGregorianYear = new Date().getFullYear();
+  let currentDisplayYear = String(currentGregorianYear);
+  try {
+    if (locale === 'fa') {
+      currentDisplayYear = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { year: 'numeric' }).format(new Date());
+    }
+  } catch {}
+
   return (
     <footer className="mt-20">
       {/* Value Proposition Bar */}
@@ -199,7 +207,7 @@ export function Footer() {
       <div className="bg-deep text-surface">
         <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-4 flex items-center justify-center text-center">
           <p className="text-[12px] text-mint-bright/80 font-bold">
-            {t('rights')}
+            {t('rights').replace(/\b(202\d|۱۴۰\d)\b/, currentDisplayYear)}
           </p>
         </div>
       </div>

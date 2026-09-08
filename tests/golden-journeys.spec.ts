@@ -38,10 +38,10 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     // Verify Payment phase elements (price breakdown, wallet or gateway selector)
     await expect(page.locator('h2:has-text("انتخاب روش پرداخت"), h2:has-text("جزئیات قیمت")').first()).toBeVisible({ timeout: 10000 });
 
-    // 4. Pay through the banking gateway (works without wallet balance) and
+    // 4. Pay through the customer wallet (instant internal settlement) and
     // ride out the issuing animation to the final voucher.
-    const gatewayRadio = page.locator('input[name="paymentMethod"]').nth(1);
-    await gatewayRadio.check();
+    const walletRadio = page.locator('input[name="paymentMethod"]').first();
+    await walletRadio.check();
     const payBtn = page.locator('button:has-text("پرداخت نهایی و صدور آنی واچر")').first();
     await expect(payBtn).toBeVisible();
     await payBtn.click();

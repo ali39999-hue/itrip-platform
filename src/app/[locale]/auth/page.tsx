@@ -6,7 +6,7 @@ import { useRouter } from '@/i18n/routing';
 import { useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { useAuthStore } from '@/stores/auth-store';
-import { ScanLine, CheckCircle2, Loader2, User, Lock, LogIn, Mail, Phone, Send, MessageCircle, QrCode } from 'lucide-react';
+import { ScanLine, CheckCircle2, Loader2, User, Lock, LogIn, Mail, Phone, Send, MessageCircle, QrCode, MessageSquare } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { Logo } from '@/components/layout/Logo';
 import { AuthChannel, requestOtp, getWeChatAuthUrl } from '@/actions/auth';
@@ -43,6 +43,8 @@ export default function AuthPage() {
   const [passportNo, setPassportNo] = useState(kyc?.passportNo || '');
   const [expiry, setExpiry] = useState(kyc?.passportExpiry || '');
   const [countdown, setCountdown] = useState(120);
+  const [devOtpCode, setDevOtpCode] = useState<string | null>(null);
+  const [isRealSent, setIsRealSent] = useState<boolean>(false);
 
   // Already signed-in users don't need the auth flow — send them on their way.
   useEffect(() => {
@@ -106,9 +108,20 @@ export default function AuthPage() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
 
+  function toAsciiDigits(input: string): string {
+    const p = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    const a = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    let res = input;
+    for (let i = 0; i < 10; i++) {
+      res = res.replaceAll(p[i], String(i)).replaceAll(a[i], String(i));
+    }
+    return res;
+  }
+
   function validateIdentifier(): boolean {
+    const normalized = toAsciiDigits(identifier).trim();
     if (channel === 'phone') {
-      if (!/^09\d{9}$/.test(identifier) && !/^\+\d{10,14}$/.test(identifier)) {
+      if (!/^09\d{9}$/.test(normalized) && !/^\+\d{10,14}$/.test(normalized)) {
         setError(lt(locale, { fa: 'شماره موبایل معتبر نیست (۰۹xxxxxxxxx یا کد کشور)', en: 'Invalid phone number (09xxxxxxxxx or +...)', ar: 'رقم جوال غير صالح', zh: '手机号格式错误', ru: 'Неверный номер телефона' }));
         return false;
       }
@@ -129,7 +142,12 @@ export default function AuthPage() {
       }
     } else if (channel === 'wechat') {
       if (!identifier.trim()) {
-        setError(lt(locale, { fa: 'شناسه وی‌چت (WeChat ID) یا شماره موبایل الزامی است', en: 'WeChat ID or mobile phone required', ar: 'معرف وي تشات أو الجوال مطلوب', zh: '微信号或绑定的手机号必填', ru: 'Введите WeChat ID или телефон' }));
+        setError(lt(locale, { fa: 'شناسه وی‌چت (WeChat ID) یا شماره موبایل الزامی است', en: 'WeChat ID or mobile phone required', ar: 'معرف وي تشات أو الجوال مطلوب', zh: '微信号或绑定的手机号必填', ru: 'Введите WeChat ID یا телефон' }));
+        return false;
+      }
+    } else if (channel === 'bale') {
+      if (!identifier.trim() || identifier.length < 3) {
+        setError(lt(locale, { fa: 'شناسه بله (@username) یا شماره موبایل را وارد کنید', en: 'Enter Bale username or phone', ar: 'أدخل معرّف بله أو الهاتف', zh: '请输入Bale用户名或手机号', ru: 'Введите имя пользователя Bale или номер' }));
         return false;
       }
     }
@@ -156,6 +174,13 @@ export default function AuthPage() {
         );
         return;
       }
+      if (res.devCode) {
+        setDevOtpCode(res.devCode);
+        setOtp(res.devCode);
+      } else {
+        setDevOtpCode(null);
+      }
+      setIsRealSent(Boolean(res.realSent));
       setKycStep('otp');
     } finally {
       setSending(false);
@@ -289,52 +314,67 @@ export default function AuthPage() {
 
             {authMode === 'otp' ? (
               <>
-                {/* Channels Switcher */}
-                <div className="grid grid-cols-5 gap-1.5 p-1 bg-soft rounded-2xl mb-6">
+                {/* Channels Switcher with Capability-Aware Badges (SITE-002) */}
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 p-1 bg-soft rounded-2xl mb-6">
                   <button
                     type="button"
                     onClick={() => { setChannel('phone'); setError(''); setIdentifier(''); }}
-                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'phone' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
+                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'phone' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
                     title="SMS / Phone"
                   >
                     <Phone size={16} />
                     <span className="text-[10px]">SMS</span>
+                    <span className="text-[8.5px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 rounded-full">LIVE</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => { setChannel('email'); setError(''); setIdentifier(''); }}
-                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'email' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
+                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'email' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
                     title="Email"
                   >
                     <Mail size={16} />
                     <span className="text-[10px]">Email</span>
+                    <span className="text-[8.5px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 rounded-full">LIVE</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => { setChannel('telegram'); setError(''); setIdentifier(''); }}
-                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'telegram' ? 'bg-[#229ED9]/15 text-[#229ED9] shadow-xs' : 'text-sub hover:text-ink'}`}
+                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'telegram' ? 'bg-[#229ED9]/15 text-[#229ED9] shadow-xs' : 'text-sub hover:text-ink'}`}
                     title="Telegram"
                   >
                     <Send size={16} />
                     <span className="text-[10px]">Telegram</span>
+                    <span className="text-[8.5px] font-black text-sky-600 bg-sky-500/10 px-1.5 rounded-full">BETA</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setChannel('bale'); setError(''); setIdentifier(''); }}
+                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'bale' ? 'bg-[#00A693]/15 text-[#00A693] shadow-xs' : 'text-sub hover:text-ink'}`}
+                    title="Bale (پیام‌رسان بله)"
+                  >
+                    <MessageSquare size={16} />
+                    <span className="text-[10px]">بله (Bale)</span>
+                    <span className="text-[8.5px] font-black text-teal-600 bg-teal-500/10 px-1.5 rounded-full">BETA</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => { setChannel('whatsapp'); setError(''); setIdentifier(''); }}
-                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'whatsapp' ? 'bg-[#25D366]/15 text-[#25D366] shadow-xs' : 'text-sub hover:text-ink'}`}
+                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'whatsapp' ? 'bg-[#25D366]/15 text-[#25D366] shadow-xs' : 'text-sub hover:text-ink'}`}
                     title="WhatsApp"
                   >
                     <MessageCircle size={16} />
                     <span className="text-[10px]">WhatsApp</span>
+                    <span className="text-[8.5px] font-black text-emerald-600 bg-emerald-500/10 px-1.5 rounded-full">BETA</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => { setChannel('wechat'); setError(''); setIdentifier(''); }}
-                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-1 transition ${channel === 'wechat' ? 'bg-[#07C160]/15 text-[#07C160] shadow-xs' : 'text-sub hover:text-ink'}`}
+                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'wechat' ? 'bg-[#07C160]/15 text-[#07C160] shadow-xs' : 'text-sub hover:text-ink'}`}
                     title="WeChat"
                   >
                     <QrCode size={16} />
                     <span className="text-[10px]">WeChat</span>
+                    <span className="text-[8.5px] font-black text-emerald-600 bg-emerald-500/10 px-1.5 rounded-full">BETA</span>
                   </button>
                 </div>
 
@@ -383,6 +423,7 @@ export default function AuthPage() {
                       {channel === 'phone' && lt(locale, { fa: 'شماره موبایل', en: 'Phone Number', ar: 'رقم الهاتف', zh: '手机号', ru: 'Номер телефона' })}
                       {channel === 'email' && lt(locale, { fa: 'آدرس ایمیل', en: 'Email Address', ar: 'البريد الإلكتروني', zh: '电子邮箱', ru: 'Эل. почта' })}
                       {channel === 'telegram' && lt(locale, { fa: 'شناسه تلگرام یا شماره', en: 'Telegram Username / Phone', ar: 'معرف تيليجرام أو الهاتف', zh: 'Telegram 用户名/手机号', ru: 'Telegram Username / Телефон' })}
+                      {channel === 'bale' && lt(locale, { fa: 'شناسه بله یا شماره موبایل', en: 'Bale Username / Phone', ar: 'معرف بله أو الهاتف', zh: 'Bale 用户名/手机号', ru: 'Bale Username / Телефон' })}
                       {channel === 'whatsapp' && lt(locale, { fa: 'شماره واتساپ بین‌المللی', en: 'WhatsApp Number (+...)', ar: 'رقم الواتساب الدولي', zh: 'WhatsApp 国际号码', ru: 'Номер WhatsApp (+...)' })}
                       {channel === 'wechat' && lt(locale, { fa: 'شناسه وی‌چت / WeChat ID', en: 'WeChat ID / Mobile', ar: 'معرف وي تشات', zh: '微信号 / 手机号', ru: 'WeChat ID / Телефон' })}
                     </label>
@@ -391,16 +432,28 @@ export default function AuthPage() {
                       type={channel === 'email' ? 'email' : 'text'}
                       dir="ltr"
                       value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
+                      onChange={(e) => setIdentifier(toAsciiDigits(e.target.value))}
                       placeholder={
                         channel === 'phone' ? '09123456789' :
                         channel === 'email' ? 'user@firuzo.com' :
                         channel === 'telegram' ? '@traveler_user' :
+                        channel === 'bale' ? '@bale_user or 0912...' :
                         channel === 'whatsapp' ? '+971501234567' :
                         'wxid_firuzo2026'
                       }
                       className="w-full h-12 rounded-xl border border-line px-4 font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                     />
+                    {channel === 'bale' && (
+                      <p className="text-[10px] text-sub mt-1 font-medium">
+                        {lt(locale, {
+                          fa: 'کد تایید ورود مستقیماً از طریق پیام‌رسان بله برای شما ارسال خواهد شد.',
+                          en: 'Verification code will be sent to your Bale messenger account.',
+                          ar: 'سيتم إرسال رمز التحقق مباشرة إلى حسابك في بله.',
+                          zh: '验证码将直接发送至您的Bale账号。',
+                          ru: 'Код подтверждения будет отправлен прямо в ваш аккаунт Bale.'
+                        })}
+                      </p>
+                    )}
                     {channel === 'whatsapp' && (
                       <p className="text-[10px] text-sub mt-1 font-medium">
                         {lt(locale, {
@@ -439,7 +492,7 @@ export default function AuthPage() {
                     type="text"
                     dir="ltr"
                     value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
+                    onChange={(e) => setIdentifier(toAsciiDigits(e.target.value))}
                     placeholder="admin@firuzo.com"
                     autoComplete="username"
                     className="w-full h-12 rounded-xl border border-line px-4 font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
@@ -499,6 +552,49 @@ export default function AuthPage() {
             </p>
 
             {error && <div className="p-3 mb-4 rounded-xl bg-destructive/10 text-destructive text-xs font-bold">{error}</div>}
+
+            {devOtpCode && (
+              <div className="p-3.5 mb-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-ink text-xs">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-black text-amber-700 dark:text-amber-400">
+                    {lt(locale, {
+                      fa: '💡 حالت شبیه‌ساز (بدون توکن ربات/پیامک):',
+                      en: '💡 Dev Simulator (No Bot/SMS token in .env):',
+                      ar: '💡 وضع المحاكاة:',
+                      zh: '💡 开发模拟模式：',
+                      ru: '💡 Режим симулятора:'
+                    })}
+                  </span>
+                  <span className="font-mono font-black text-sm bg-surface px-2 py-0.5 rounded-lg border border-amber-500/40 text-brand">
+                    {devOtpCode}
+                  </span>
+                </div>
+                <p className="text-[11px] text-sub leading-relaxed">
+                  {lt(locale, {
+                    fa: 'کد تایید در کادر زیر درج شد. پس از قرار دادن BALE_BOT_TOKEN یا TELEGRAM_BOT_TOKEN در فایل .env.local کدها به گوشی کاربر ارسال خواهند شد.',
+                    en: 'Code is auto-filled below. Set BALE_BOT_TOKEN or TELEGRAM_BOT_TOKEN in .env.local to dispatch real messages to user devices.',
+                    ar: 'تم ملء الرمز أدناه تلقائيًا.',
+                    zh: '验证码已自动填充。配置Token后将真实发送到手机。',
+                    ru: 'Код заполнен автоматически.'
+                  })}
+                </p>
+              </div>
+            )}
+
+            {isRealSent && (
+              <div className="p-3 mb-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold flex items-center gap-2">
+                <CheckCircle2 size={16} />
+                <span>
+                  {lt(locale, {
+                    fa: 'کد تایید واقعی با موفقیت به پیام‌رسان یا شماره شما ارسال گردید.',
+                    en: 'Verification code was dispatched successfully to your account/number.',
+                    ar: 'تم إرسال رمز التحقق الفعلي بنجاح.',
+                    zh: '验证码已成功发送到您的账号/手机。',
+                    ru: 'Код подтверждения успешно отправлен на ваш аккаунт/номер.'
+                  })}
+                </span>
+              </div>
+            )}
 
             <div className="space-y-4">
               <div>

@@ -1,10 +1,53 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from 'next-intl/plugin';
 import { execSync } from 'node:child_process';
+import os from 'node:os';
 import packageJson from './package.json';
 
 const withNextIntl = createNextIntlPlugin();
 const isDev = process.env.NODE_ENV !== 'production';
+
+function getLocalNetworkOrigins(): string[] {
+  const origins = new Set<string>();
+  try {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+      for (const net of interfaces[name] || []) {
+        if (net.family === 'IPv4' && !net.internal) {
+          origins.add(`${net.address}:3000`);
+          origins.add(net.address);
+        }
+      }
+    }
+  } catch {
+    // fallback safely
+  }
+  return Array.from(origins);
+}
+
+const envAllowed = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)
+  : [];
+
+const baseAllowedOrigins = [
+  'localhost:3000',
+  '127.0.0.1:3000',
+  '*.trycloudflare.com',
+  '*.vercel.app',
+  '*.firuzo.com',
+  'firuzo.com',
+  '*.firuzo.online',
+  'firuzo.online',
+  'call.firuzo.online',
+  ...envAllowed,
+];
+
+const allAllowedOrigins = Array.from(
+  new Set([
+    ...baseAllowedOrigins,
+    ...(isDev ? getLocalNetworkOrigins() : []),
+  ])
+);
 
 let commitSha = process.env.NEXT_PUBLIC_COMMIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA || process.env.GITHUB_SHA || '';
 if (!commitSha) {
@@ -26,29 +69,26 @@ if (!isDev && process.env.DEMO_MODE === 'true') {
 }
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ['@prisma/client', 'bcryptjs'],
   typescript: {
     // Existing TS errors are pre-existing schema mismatches; skip during build.
     // Run `npm run typecheck` locally for full type-checking.
     ignoreBuildErrors: true,
   },
-<<<<<<< HEAD
-
-=======
->>>>>>> 9142fcbd111cfdfe2bd71eaa3cc829adc39a8a03
   env: {
     NEXT_PUBLIC_APP_VERSION: appVersion,
     NEXT_PUBLIC_COMMIT_SHA: commitSha,
   },
   ...(isDev
     ? {
-        allowedDevOrigins: ['localhost:3000', '127.0.0.1:3000'],
-        experimental: {
-          serverActions: {
-            allowedOrigins: ['localhost:3000', '127.0.0.1:3000'],
-          },
-        },
+        allowedDevOrigins: allAllowedOrigins,
       }
     : {}),
+  experimental: {
+    serverActions: {
+      allowedOrigins: allAllowedOrigins,
+    },
+  },
   images: {
     unoptimized: true,
     formats: ['image/avif', 'image/webp'],

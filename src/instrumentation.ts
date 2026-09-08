@@ -1,9 +1,15 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
-    // BASE-008 / CI-012: fail fast when a production process boots with demo
-    // flags or missing mandatory configuration. Dev/test runtimes just warn.
+    // BASE-008 / CI-012: validate and auto-configure production runtime
     const { assertProductionConfig } = await import('@/lib/runtime-mode');
     assertProductionConfig();
+
+    // In Vercel Serverless environment, background timers are bypassed to prevent
+    // hanging serverless functions; scheduling is handled via vercel.json crons.
+    if (process.env.VERCEL === '1') {
+      console.log('[instrumentation] Vercel Serverless environment detected — background worker timers bypassed in favor of serverless crons.');
+      return;
+    }
 
     const { HoldExpirationWorker } = await import('@/workers/hold-expiration-worker');
     const { OutboxConsumer } = await import('@/domains/events/OutboxConsumer');

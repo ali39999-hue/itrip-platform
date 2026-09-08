@@ -8,15 +8,13 @@ import {
 import { ReconciliationService } from '@/domains/ledger/ReconciliationService';
 
 describe('NotificationProvider Unit Tests', () => {
-  const originalEnv = process.env;
-
   beforeEach(() => {
     vi.restoreAllMocks();
-    process.env = { ...originalEnv };
   });
 
   afterEach(() => {
-    process.env = originalEnv;
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it('ConsoleNotificationProvider simulates SMS delivery without errors', async () => {

@@ -141,7 +141,7 @@ export default function InsurancePage() {
                 >
                   {isPremium && (
                     <span className="absolute -top-3 start-6 px-3.5 py-1 rounded-full bg-action text-ink text-xs font-black shadow-xs">
-                      {lt(locale, { fa: 'توصیه فیروزه برای شنگن', en: 'Firuzo Pick for Schengen', ar: 'خيار موصى به', zh: '申根签证首选', ru: 'Выбор для Шенгена' })}
+                      {lt(locale, { fa: 'توصیه فیروزو برای شنگن', en: 'Firuzo Pick for Schengen', ar: 'خيار موصى به', zh: '申根签证首选', ru: 'Выбор для Шенгена' })}
                     </span>
                   )}
 

@@ -14,6 +14,9 @@ export async function GET() {
   const mem = process.memoryUsage();
   return NextResponse.json({
     status: 'live',
+    version: process.env.NEXT_PUBLIC_APP_VERSION || '1.5.0',
+    commitSha: process.env.NEXT_PUBLIC_COMMIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA || '4196538',
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString(),
     uptimeSeconds: Math.round(process.uptime()),
     process: {

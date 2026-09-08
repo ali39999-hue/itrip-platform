@@ -58,6 +58,16 @@ export default function AdminSuppliersPage() {
     loadSuppliers();
   }, [loadSuppliers]);
 
+  // Escape closes the creation modal.
+  useEffect(() => {
+    if (!showModal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowModal(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showModal]);
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
@@ -75,7 +85,7 @@ export default function AdminSuppliersPage() {
       setContact('');
       await loadSuppliers();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Error creating supplier');
+      setError(err instanceof Error ? err.message : 'Error creating supplier');
     } finally {
       setCreating(false);
     }
@@ -95,15 +105,17 @@ export default function AdminSuppliersPage() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button
+            type="button"
             onClick={loadSuppliers}
-            className="h-10 px-3 bg-surface border border-line text-sub rounded-xl hover:text-ink transition flex items-center gap-1.5 text-xs font-bold"
+            className="min-h-11 px-3 bg-surface border border-line text-sub rounded-xl hover:text-ink transition flex items-center gap-1.5 text-xs font-bold"
           >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
             {lt(locale, { fa: 'بروزرسانی', en: 'Refresh', ar: 'تحديث', zh: '刷新', ru: 'Обновить' })}
           </button>
           <button
+            type="button"
             onClick={() => setShowModal(true)}
-            className="h-10 px-4 bg-brand text-surface rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 hover:bg-brand-dark transition shadow-sm"
+            className="min-h-11 px-4 bg-brand text-surface rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 hover:bg-brand-dark transition shadow-sm"
           >
             <Plus size={16} />
             {lt(locale, { fa: 'افزودن تامین‌کننده جدید', en: 'Add Supplier', ar: 'إضافة مورد جديد', zh: '添加新供应商', ru: 'Добавить поставщика' })}
@@ -112,9 +124,9 @@ export default function AdminSuppliersPage() {
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-bold flex items-center gap-2">
-          <AlertCircle size={18} />
-          {error}
+        <div role="alert" className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-bold flex items-center gap-2">
+          <AlertCircle size={18} aria-hidden="true" />
+          <span>{error}</span>
         </div>
       )}
 
@@ -177,8 +189,8 @@ export default function AdminSuppliersPage() {
 
       {/* Add Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-xs grid place-items-center p-4">
-          <div className="bg-surface w-full max-w-md rounded-2xl border border-line p-6 shadow-xl space-y-4">
+        <div className="fixed inset-0 z-[200] bg-ink/65 backdrop-blur-xs grid place-items-center p-4 overflow-y-auto" onClick={() => setShowModal(false)}>
+          <div role="dialog" aria-modal="true" aria-label={lt(locale, { fa: 'افزودن تامین‌کننده جدید', en: 'Add New Supplier', ar: 'إضافة مورد جديد', zh: '添加新供应商', ru: 'Добавить поставщика' })} onClick={(e) => e.stopPropagation()} className="bg-surface w-full max-w-md rounded-2xl border border-line p-6 shadow-xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-ink">
               {lt(locale, { fa: 'افزودن تامین‌کننده جدید', en: 'Add New Supplier', ar: 'إضافة مورد جديد', zh: '添加新供应商', ru: 'Добавить поставщика' })}
             </h3>
@@ -261,14 +273,14 @@ export default function AdminSuppliersPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="h-10 px-4 rounded-xl border border-line text-sub font-bold text-sm hover:bg-soft"
+                  className="min-h-11 px-4 rounded-xl border border-line text-sub font-bold text-sm hover:bg-soft"
                 >
                   {lt(locale, { fa: 'انصراف', en: 'Cancel', ar: 'إلغاء', zh: '取消', ru: 'Отмена' })}
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="h-10 px-5 rounded-xl bg-brand text-surface font-bold text-sm hover:bg-brand-dark disabled:opacity-50"
+                  className="min-h-11 px-5 rounded-xl bg-brand text-surface font-bold text-sm hover:bg-brand-dark disabled:opacity-50"
                 >
                   {creating ? '...' : lt(locale, { fa: 'ثبت تامین‌کننده', en: 'Save Supplier', ar: 'حفظ المورد', zh: '保存供应商', ru: 'Сохранить' })}
                 </button>

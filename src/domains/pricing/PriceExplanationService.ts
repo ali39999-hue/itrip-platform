@@ -95,7 +95,7 @@ export class PriceExplanationService {
     if (breakdown.markupAmount.isPositive()) {
       items.push({
         key: 'platform_markup',
-        label: locale === 'fa' ? 'کارمزد خدمات پلتفرم فیروزه' : 'Firuzo Service Margin',
+        label: locale === 'fa' ? 'کارمزد خدمات پلتفرم فیروزو' : 'Firuzo Service Margin',
         amount: breakdown.markupAmount,
         formatted: formatMoney(breakdown.markupAmount.toNumber(), currency, locale),
         description:
@@ -199,7 +199,7 @@ export class PriceExplanationService {
       priceGuaranteedUntil: expiresAt ? expiresAt.toISOString() : undefined,
       transparencyNote:
         locale === 'fa'
-          ? 'پلتفرم فیروزه تضمین می‌کند که هیچ هزینه پنهان یا کارمزد اعلام‌نشده‌ای در این پیش‌فاکتور وجود ندارد.'
+          ? 'پلتفرم فیروزو تضمین می‌کند که هیچ هزینه پنهان یا کارمزد اعلام‌نشده‌ای در این پیش‌فاکتور وجود ندارد.'
           : 'Firuzo guarantees complete fee transparency with zero hidden costs or undisclosed surcharges.',
     };
   }

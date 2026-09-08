@@ -2,15 +2,16 @@
 
 import { headers } from 'next/headers';
 import crypto from 'crypto';
-import { signIn, signOut, safeAuth, issueOtp } from '@/auth';
+import { signIn, signOut, safeAuth, issueOtp, normalizeIdentifier, getPhoneLookupCandidates } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { profileUpdateSchema, otpRequestSchema } from '@/lib/validations';
 import { RateLimiter } from '@/lib/security/rate-limiter';
 import { encryptSensitive, decryptSensitive } from '@/lib/security/crypto-vault';
 import { hasErpRole } from '@/domains/identity/permission-service';
 import { ProductionTelegramProvider, TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
+import { getAppBaseUrl } from '@/lib/runtime-url';
 
-export type AuthChannel = 'phone' | 'email' | 'telegram' | 'whatsapp' | 'wechat';
+export type AuthChannel = 'phone' | 'email' | 'telegram' | 'whatsapp' | 'wechat' | 'bale';
 
 export async function loginWithCredentials(email: string, pass: string) {
   try {
@@ -50,8 +51,14 @@ export async function requestOtp(data: unknown) {
     if (!rateCheck.allowed) {
       return { success: false, error: rateCheck.reason || 'Too many codes requested. Please try again later.' };
     }
-    await issueOtp(parsed.identifier, parsed.channel);
-    return { success: true, sent: true };
+    const issueRes = await issueOtp(parsed.identifier, parsed.channel);
+    return {
+      success: true,
+      sent: true,
+      realSent: issueRes.realSent,
+      provider: issueRes.provider,
+      devCode: issueRes.devCode,
+    };
   } catch (err: unknown) {
     if (err && typeof err === 'object' && 'issues' in err) {
       return { success: false, error: 'Invalid phone number or email' };
@@ -92,14 +99,17 @@ export async function verifyOtpAndLogin(identifier: string, otp: string, channel
   // The session cookie set by signIn is not readable via auth() within this
   // same request, so resolve the profile straight from the DB. This is safe:
   // signIn above already verified the OTP server-side.
+  const normalizedId = normalizeIdentifier(identifier);
+  const phoneCandidates = getPhoneLookupCandidates(normalizedId);
   const user = await prisma.user.findFirst({
     where: {
       OR: [
-        { phone: identifier },
-        { email: identifier.toLowerCase() },
-        { telegramId: identifier },
-        { whatsappPhone: identifier },
-        { wechatId: identifier },
+        ...phoneCandidates.map((p) => ({ phone: p })),
+        { email: normalizedId.toLowerCase() },
+        { telegramId: normalizedId },
+        { whatsappPhone: normalizedId },
+        { wechatId: normalizedId },
+        { baleId: normalizedId },
       ],
     },
     select: {
@@ -113,6 +123,7 @@ export async function verifyOtpAndLogin(identifier: string, otp: string, channel
       telegramId: true,
       whatsappPhone: true,
       wechatId: true,
+      baleId: true,
       nationalId: true,
       passportNo: true,
     },
@@ -139,6 +150,7 @@ export async function verifyOtpAndLogin(identifier: string, otp: string, channel
       telegramId: user.telegramId || (channel === 'telegram' ? identifier : undefined),
       whatsappPhone: user.whatsappPhone || (channel === 'whatsapp' ? identifier : undefined),
       wechatId: user.wechatId || (channel === 'wechat' ? identifier : undefined),
+      baleId: user.baleId || (channel === 'bale' ? identifier : undefined),
     },
   };
 }
@@ -237,7 +249,7 @@ export async function getWeChatAuthUrl(callbackUrl: string = '/account') {
     return { success: false, error: 'WECHAT_APP_ID is not configured on the server' };
   }
 
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  const baseUrl = getAppBaseUrl();
   const redirectUri = `${baseUrl}/api/auth/callback/wechat`;
   const url = `https://open.weixin.qq.com/connect/qrconnect?appid=${appId}&redirect_uri=${encodeURIComponent(
     redirectUri
@@ -250,7 +262,7 @@ export async function getWeChatAuthUrl(callbackUrl: string = '/account') {
  * Standard password-based authentication for administrative and staff accounts.
  */
 export async function loginWithPassword(identifier: string, password: string) {
-  const trimmedId = identifier.trim();
+  const trimmedId = normalizeIdentifier(identifier);
   const trimmedPw = password.trim();
   if (!trimmedId || !trimmedPw) {
     return { success: false, error: 'شناسه کاربری و کلمه عبور الزامی است' };
@@ -273,10 +285,11 @@ export async function loginWithPassword(identifier: string, password: string) {
     return { success: false, error: 'خطا در احراز هویت' };
   }
 
+  const phoneCandidates = getPhoneLookupCandidates(trimmedId);
   const user = await prisma.user.findFirst({
     where: {
       OR: [
-        { phone: trimmedId },
+        ...phoneCandidates.map((p) => ({ phone: p })),
         { email: trimmedId.toLowerCase() },
       ],
     },
@@ -305,7 +318,7 @@ export async function loginWithPassword(identifier: string, password: string) {
       phone: user.phone || '',
       email: user.email || undefined,
       firstNameFa: user.firstNameFa || user.name || 'کاربر',
-      lastNameFa: user.lastNameFa || 'فیروزه',
+      lastNameFa: user.lastNameFa || 'فیروزو',
       kycApproved: Boolean(user.nationalId),
       role,
     },
@@ -435,6 +448,7 @@ export async function getSessionUser() {
         telegramId: true,
         whatsappPhone: true,
         wechatId: true,
+        baleId: true,
         nationalId: true,
       },
     });
@@ -456,6 +470,7 @@ export async function getSessionUser() {
         telegramId: user.telegramId || undefined,
         whatsappPhone: user.whatsappPhone || undefined,
         wechatId: user.wechatId || undefined,
+        baleId: user.baleId || undefined,
       },
     };
   } catch (err: unknown) {

@@ -50,7 +50,7 @@ export function PriceBreakdownTable({
             <span className="text-sub font-bold flex items-center gap-1.5">
               <span>+ {lt(locale, { fa: 'سیم‌کارت eSIM', en: 'eSIM Card', ar: 'شريحة eSIM', zh: 'eSIM 卡', ru: 'eSIM карта' })}</span>
             </span>
-            <span className="font-bold text-ink font-mono">+{formatMoney(ESIM_PRICE, 'IRR', locale)}</span>
+            <span className="font-bold text-ink font-mono">+{formatMoney(ESIM_PRICE, currency, locale)}</span>
           </div>
         )}
 
@@ -60,7 +60,7 @@ export function PriceBreakdownTable({
               <ShieldCheck size={14} className="text-brand-dark" aria-hidden="true" />
               <span>+ {lt(locale, { fa: 'بیمه مسافرتی', en: 'Travel Insurance', ar: 'تأمين السفر', zh: '旅行保险', ru: 'Туристическая страховка' })}</span>
             </span>
-            <span className="font-bold text-ink font-mono">+{formatMoney(INSURANCE_PRICE, 'IRR', locale)}</span>
+            <span className="font-bold text-ink font-mono">+{formatMoney(INSURANCE_PRICE, currency, locale)}</span>
           </div>
         )}
 

@@ -20,12 +20,12 @@ export function AppDownloadSection() {
         <div className="relative z-10 max-w-xl text-center lg:text-start space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface/15 backdrop-blur-md text-mint-bright text-xs font-black border border-surface/20">
             <Smartphone size={14} aria-hidden="true" />
-            <span>{lt(locale, { fa: 'اپلیکیشن اختصاصی موبایل فیروزه', en: 'Firuzo Mobile Application', ar: 'تطبيق فيروزو للهاتف', zh: 'Firuzo 官方移动客户端', ru: 'Мобильное приложение Firuzo' })}</span>
+            <span>{lt(locale, { fa: 'اپلیکیشن اختصاصی موبایل فیروزو', en: 'Firuzo Mobile Application', ar: 'تطبيق فيروزو للهاتف', zh: 'Firuzo 官方移动客户端', ru: 'Мобильное приложение Firuzo' })}</span>
           </div>
 
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-surface leading-tight tracking-tight">
             {lt(locale, {
-              fa: 'سفر در دستان شما؛ با اپلیکیشن فیروزه هوشمندانه‌تر سفر کنید',
+              fa: 'سفر در دستان شما؛ با اپلیکیشن فیروزو هوشمندانه‌تر سفر کنید',
               en: 'Travel in Your Pocket; Travel Smarter with Firuzo App',
               ar: 'سفرك بين يديك؛ سافر بذكاء مع تطبيق فيروزو',
               zh: '旅行尽在掌中；使用 Firuzo App 畅享智慧出行',
@@ -106,7 +106,7 @@ export function AppDownloadSection() {
             {lt(locale, { fa: 'اسکن مستقیم با دوربین گوشی', en: 'Scan with Camera', ar: 'امسح بالكاميرا', zh: '手机扫码极速下载', ru: 'Сканируйте камерой' })}
           </span>
           <span className="text-[11px] font-bold text-sub block">
-            {lt(locale, { fa: 'دانلود آنی اپلیکیشن فیروزه', en: 'Instant App Download', ar: 'تحميل مباشر', zh: '支持 Android 与 iOS', ru: 'Для Android и iOS' })}
+            {lt(locale, { fa: 'دانلود آنی اپلیکیشن فیروزو', en: 'Instant App Download', ar: 'تحميل مباشر', zh: '支持 Android 与 iOS', ru: 'Для Android и iOS' })}
           </span>
         </div>
       </div>

@@ -33,7 +33,7 @@ export function LiveActivityFeed({ events }: { events: LiveEventDTO[] }) {
           <Activity size={20} className="text-brand" />
           <h2 className="text-[16px] font-black text-ink m-0">{lt(locale, { fa: 'رخدادهای زنده (Live Feed)', en: 'Live Feed', ar: 'البث المباشر للأحداث', zh: '实时动态', ru: 'Живая лента' })}</h2>
         </div>
-        <span className="flex h-2.5 w-2.5 relative">
+        <span className="flex h-2.5 w-2.5 relative" aria-hidden="true">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand opacity-75"></span>
           <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand"></span>
         </span>

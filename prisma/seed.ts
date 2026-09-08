@@ -161,6 +161,50 @@ async function main() {
     });
   }
 
+  // 3b. Seed User Wallet (FIN-001 / WAL-001) with starter balance for customer checkout flows
+  const userWalletAcc = await prisma.account.upsert({
+    where: {
+      ownerType_ownerId_currency: { ownerType: 'USER', ownerId: user.id, currency: 'IRR' },
+    },
+    update: {},
+    create: { ownerType: 'USER', ownerId: user.id, currency: 'IRR' },
+  });
+  const gatewayAcc = await prisma.account.upsert({
+    where: {
+      ownerType_ownerId_currency: { ownerType: 'GATEWAY_SETTLEMENT', ownerId: 'PLATFORM', currency: 'IRR' },
+    },
+    update: {},
+    create: { ownerType: 'GATEWAY_SETTLEMENT', ownerId: 'PLATFORM', currency: 'IRR' },
+  });
+  const existingSeedTopup = await prisma.ledgerEntry.findFirst({
+    where: { groupId: 'seed_wallet_topup_user' },
+  });
+  if (!existingSeedTopup) {
+    const seedAmount = new Prisma.Decimal('500000000'); // 500,000,000 IRR (~50M Tomans)
+    await prisma.ledgerEntry.createMany({
+      data: [
+        {
+          groupId: 'seed_wallet_topup_user',
+          accountId: gatewayAcc.id,
+          direction: 'DEBIT',
+          amount: seedAmount,
+          currency: 'IRR',
+          referenceType: 'TOPUP',
+          referenceId: 'SEED_INITIAL',
+        },
+        {
+          groupId: 'seed_wallet_topup_user',
+          accountId: userWalletAcc.id,
+          direction: 'CREDIT',
+          amount: seedAmount,
+          currency: 'IRR',
+          referenceType: 'TOPUP',
+          referenceId: 'SEED_INITIAL',
+        },
+      ],
+    });
+  }
+
   // 4. Seed Versioned Tax Jurisdictions & Rules (MONEY-003)
   const irJurisdiction = await prisma.taxJurisdiction.upsert({
     where: { code: 'IR' },

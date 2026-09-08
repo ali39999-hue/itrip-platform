@@ -6,6 +6,7 @@ import { ShetabPspAdapter, validateLivePspConfiguration } from './adapters/Sheta
 import { GeneralLedgerService } from '../ledger/GeneralLedgerService';
 import { OperationalExceptionService, ExceptionSeverity } from '../finance/three-way-reconciliation';
 import { businessMetrics } from '@/lib/observability/business-metrics';
+import { getAppBaseUrl } from '@/lib/runtime-url';
 
 export interface InitiatePaymentParams {
   bookingId?: string;
@@ -190,7 +191,7 @@ export class PaymentDomainService {
       intentId: intent.id,
       bookingId: params.bookingId || '',
       amount: new Money(decimalAmount, currency),
-      callbackUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/payments/callback`,
+      callbackUrl: `${getAppBaseUrl()}/api/payments/callback`,
       customerInfo: params.customerInfo,
     };
 

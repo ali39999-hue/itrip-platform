@@ -227,7 +227,7 @@ export function CommandPalette({
                   </div>
                   <div>
                     <span className="block font-black text-[13px]">
-                      {lt(locale, { fa: 'کیف پول چندارزی فیروزه (ریال و تتر)', en: 'Multi-Currency Wallet (IRR & USDT)', ar: 'المحفظة متعددة العملات', zh: 'Firuzo 多币种电子钱包', ru: 'Мультивалютный кошелек' })}
+                      {lt(locale, { fa: 'کیف پول چندارزی فیروزو (ریال و تتر)', en: 'Multi-Currency Wallet (IRR & USDT)', ar: 'المحفظة متعددة العملات', zh: 'Firuzo 多币种电子钱包', ru: 'Мультивалютный кошелек' })}
                     </span>
                     <span className="block text-[10.5px] text-sub font-medium">
                       {lt(locale, { fa: 'شارژ آنلاین، استرداد آنی وجه و تبدیل ارز', en: 'Instant top-up, auto refund and currency exchange', ar: 'شحن فوري واسترداد سريع', zh: '即刻充值、极速退款与货币兑换', ru: 'Пополнение, возврат и обмен' })}

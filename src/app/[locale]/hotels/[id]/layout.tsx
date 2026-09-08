@@ -18,7 +18,7 @@ export async function generateMetadata({
     };
   }
 
-  const title = `${hotel.name} | ${locale === 'fa' ? 'رزرو هتل لوکس در فیروزه' : 'Luxury Hotel Booking | Firuzo'}`;
+  const title = `${hotel.name} | ${locale === 'fa' ? 'رزرو هتل در فیروزو' : 'Hotel Booking | Firuzo'}`;
   const description = `${hotel.name} - ${hotel.stars} Stars, ${hotel.city}. Verified by Firuzo with instant voucher issuing.`;
 
   return {

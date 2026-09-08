@@ -308,27 +308,42 @@ export default function MyTripsPage() {
             <div className="bg-surface rounded-xl border border-line p-14 text-center shadow-sm flex flex-col items-center justify-center">
               <Luggage size={64} className="text-line mb-6" />
               <p className="font-black text-[20px] text-ink mb-2">{t('noTrips')}</p>
-              <p className="font-bold text-[14px] text-sub mb-8">
+              <p className="font-bold text-[14px] text-sub mb-8 max-w-md">
                 {lt(locale, {
-                  fa: 'برای مشاهده سفرهای خود ابتدا وارد حساب کاربری شوید.',
-                  en: 'Sign in to view your trips.',
-                  ar: 'سجّل الدخول لعرض رحلاتك.',
-                  zh: '请登录以查看您的行程。',
-                  ru: 'Войдите, чтобы увидеть свои поездки.',
+                  fa: 'برای مشاهده سفرهای خود ابتدا وارد حساب کاربری شوید یا جستجوی جدید انجام دهید.',
+                  en: 'Sign in to view your trips or start a new search.',
+                  ar: 'سجّل الدخول لعرض رحلاتك أو ابدأ بحثاً جديداً.',
+                  zh: '请登录以查看您的行程或开始新的搜索。',
+                  ru: 'Войдите, чтобы увидеть свои поездки, или начните поиск.',
                 })}
               </p>
-              <Button
-                onClick={() => router.push('/auth?callbackUrl=/my-trips')}
-                className="bg-brand hover:bg-brand-2 text-surface h-12 px-8 font-black rounded-xl text-[15px]"
-              >
-                {lt(locale, {
-                  fa: 'ورود / ثبت‌نام',
-                  en: 'Sign in',
-                  ar: 'تسجيل الدخول',
-                  zh: '登录',
-                  ru: 'Войти',
-                })}
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <Button
+                  onClick={() => router.push('/auth?callbackUrl=/my-trips')}
+                  className="bg-brand hover:bg-brand-2 text-surface h-12 px-8 font-black rounded-xl text-[15px]"
+                >
+                  {lt(locale, {
+                    fa: 'ورود به حساب کاربری',
+                    en: 'Sign in to account',
+                    ar: 'تسجيل الدخول',
+                    zh: '登录账户',
+                    ru: 'Войти в аккаунт',
+                  })}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/flights/search')}
+                  className="border-line hover:bg-soft text-ink h-12 px-6 font-black rounded-xl text-[14px]"
+                >
+                  {lt(locale, {
+                    fa: 'جستجوی پرواز و هتل',
+                    en: 'Search Flights & Hotels',
+                    ar: 'البحث عن الرحلات والفنادق',
+                    zh: '搜索机票与酒店',
+                    ru: 'Поиск рейсов и отелей',
+                  })}
+                </Button>
+              </div>
             </div>
           ) : filtered.length === 0 ? (
             <div className="bg-surface rounded-xl border border-line p-14 text-center shadow-sm flex flex-col items-center justify-center">
@@ -336,7 +351,7 @@ export default function MyTripsPage() {
               <p className="font-black text-[20px] text-ink mb-2">{t('noTrips')}</p>
               <p className="font-bold text-[14px] text-sub mb-8">
                 {lt(locale, {
-                  fa: 'با فیروزه سفر رویاهاتون رو برنامه‌ریزی کنید.',
+                  fa: 'با فیروزو سفر رویاهاتون رو برنامه‌ریزی کنید.',
                   en: 'Start planning your next adventure with Firuzo.',
                   ar: 'ابدأ التخطيط لرحلة أحلامك مع فيروزو.',
                   zh: '与 Firuzo 一起规划您的梦想之旅。',

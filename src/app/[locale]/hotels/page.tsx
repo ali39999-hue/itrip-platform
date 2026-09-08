@@ -146,7 +146,7 @@ export default function HotelsLandingPage() {
               {lt(locale, { fa: 'پیدا کردن بهترین هتل متناسب با ساعت پرواز و سبک سفر شما', en: 'Find the Best Stay Tailored to Your Flight & Style', ar: 'العثور على أفضل فندق ملائم لرحلتك وأسلوبك', zh: '基于您的航班时间与出行风格匹配最优酒店', ru: 'Подбор лучшего отеля под ваш рейс и стиль отдыха' })}
             </h3>
             <p className="text-xs md:text-sm text-slate-300 max-w-xl font-medium m-0">
-              {lt(locale, { fa: 'هوش مصنوعی فیروزه با بررسی لوکیشن، ساعت ورود و خروج و نظرات مسافران، دقیق‌ترین هتل را پیشنهاد می‌دهد.', en: 'Firuzo AI evaluates locations, check-in schedules, and guest reviews to propose the perfect stay.', ar: 'يقترح الذكاء الاصطناعي الفندق الأنسب وفق الموقع والمواعيد والتقييمات.', zh: 'Firuzo AI 综合评估地理位置、入住时间与旅客口碑，为您推荐最理想住所。', ru: 'AI анализирует локацию, часы заезда и отзывы для идеального выбора.' })}
+              {lt(locale, { fa: 'هوش مصنوعی فیروزو با بررسی لوکیشن، ساعت ورود و خروج و نظرات مسافران، دقیق‌ترین هتل را پیشنهاد می‌دهد.', en: 'Firuzo AI evaluates locations, check-in schedules, and guest reviews to propose the perfect stay.', ar: 'يقترح الذكاء الاصطناعي الفندق الأنسب وفق الموقع والمواعيد والتقييمات.', zh: 'Firuzo AI 综合评估地理位置、入住时间与旅客口碑，为您推荐最理想住所。', ru: 'AI анализирует локацию, часы заезда и отзывы для идеального выбора.' })}
             </p>
           </div>
           <Link

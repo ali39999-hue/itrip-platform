@@ -38,6 +38,8 @@ interface BookingItemData {
 interface BookingRecord {
   id: string;
   reference: string;
+  pnr?: string | null;
+  supplierRef?: string | null;
   status: string;
   totalAmount: unknown;
   currency: string;
@@ -180,7 +182,7 @@ export default function TripDetailsPage({
         {/* Printable Official Header */}
         <div className="hidden print:flex items-center justify-between pb-4 border-b border-line mb-4">
           <div>
-            <h1 className="text-2xl font-black text-ink">فیروزه · واچر رسمی مسافرتی</h1>
+            <h1 className="text-2xl font-black text-ink">فیروزو · واچر رسمی مسافرتی</h1>
             <p className="text-xs text-sub">Firuzo Smart Travel Platform · Official Itinerary Voucher</p>
           </div>
           <div className="text-end">
@@ -194,17 +196,26 @@ export default function TripDetailsPage({
             <h1 className="text-2xl md:text-[32px] font-black text-ink mb-2 tracking-tight">
               {title}
             </h1>
-            <div className="flex items-center gap-2 flex-wrap text-sm text-sub font-bold">
-              <span>{lt(locale, { fa: 'کد رهگیری:', en: 'Reference:', ar: 'رمز الحجز:', zh: '参考号：', ru: 'Номер брони:' })}</span>
-              <span className="font-mono text-ink bg-soft px-2.5 py-0.5 rounded-lg border border-line">#{refCode}</span>
-              <button
-                type="button"
-                onClick={copyReference}
-                className="w-7 h-7 rounded-lg bg-soft border border-line text-sub hover:text-brand-dark grid place-items-center transition active:scale-95"
-                title="کپی کد رهگیری"
-              >
-                {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
-              </button>
+            <div className="flex items-center gap-4 flex-wrap text-sm text-sub font-bold">
+              <div className="flex items-center gap-2">
+                <span>{lt(locale, { fa: 'کد رهگیری فیروزو:', en: 'Firuzo Reference:', ar: 'رمز فيروزو:', zh: 'Firuzo 参考号：', ru: 'Номер Firuzo:' })}</span>
+                <span className="font-mono text-ink bg-soft px-2.5 py-0.5 rounded-lg border border-line">#{refCode}</span>
+                <button
+                  type="button"
+                  onClick={copyReference}
+                  className="w-7 h-7 rounded-lg bg-soft border border-line text-sub hover:text-brand-dark grid place-items-center transition active:scale-95"
+                  title="کپی کد رهگیری"
+                >
+                  {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span>{lt(locale, { fa: 'کد تایید تامین‌کننده (PNR):', en: 'Supplier PNR:', ar: 'رمز PNR المورد:', zh: '供应商 PNR：', ru: 'PNR поставщика:' })}</span>
+                <span className="font-mono text-ink bg-mint/50 text-brand-dark px-2.5 py-0.5 rounded-lg border border-brand/20">
+                  {booking?.pnr || booking?.supplierRef || lt(locale, { fa: 'در انتظار تایید تامین‌کننده', en: 'Pending Supplier Confirmation', ar: 'قيد تأكيد المورد', zh: '待供应商确认', ru: 'Ожидает подтверждения' })}
+                </span>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -417,12 +428,12 @@ export default function TripDetailsPage({
                 <>
                   <p className="text-xs text-sub leading-relaxed font-bold">
                     آیا از لغو رزرو شماره <strong className="font-mono text-ink">#{refCode}</strong> اطمینان دارید؟
-                    طبق قوانین کنسلی، جریمه استرداد بر اساس ساعت باقی‌مانده تا پرواز/اقامت محاسبه شده و مانده وجه در کمتر از چند دقیقه به کیف پول فیروزه شما بازمی‌گردد.
+                    طبق قوانین کنسلی، جریمه استرداد بر اساس ساعت باقی‌مانده تا پرواز/اقامت محاسبه شده و مانده وجه در کمتر از چند دقیقه به کیف پول فیروزو شما بازمی‌گردد.
                   </p>
 
                   <div className="p-3.5 rounded-xl bg-soft border border-line text-xs font-bold space-y-1">
                     <span className="text-sub block">مقصد استرداد وجه:</span>
-                    <span className="text-brand-dark font-black block">کیف پول فیروزه (تسویه آنی و بدون کارمزد بانکی)</span>
+                    <span className="text-brand-dark font-black block">کیف پول فیروزو (تسویه آنی و بدون کارمزد بانکی)</span>
                   </div>
 
                   <div className="flex gap-2 pt-2">

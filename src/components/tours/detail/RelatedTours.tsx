@@ -33,7 +33,7 @@ export function RelatedTours({ tours }: RelatedToursProps) {
             <span>{lt(locale, { fa: 'سفرهای پیشنهادی', en: 'Recommended Tours', ar: 'جولات مقترحة', zh: '推荐旅游路线', ru: 'Рекомендуемые туры' })}</span>
           </div>
           <h2 className="text-lg sm:text-2xl font-black text-ink">
-            {lt(locale, { fa: 'سایر تورهای پرطرفدار فیروزه', en: 'Other Popular Tours on Firuzo', ar: 'جولات أخرى شائعة', zh: '其他热门旅游精选', ru: 'Другие популярные туры' })}
+            {lt(locale, { fa: 'سایر تورهای پرطرفدار فیروزو', en: 'Other Popular Tours on Firuzo', ar: 'جولات أخرى شائعة', zh: '其他热门旅游精选', ru: 'Другие популярные туры' })}
           </h2>
         </div>
 

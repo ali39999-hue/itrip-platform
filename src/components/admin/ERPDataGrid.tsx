@@ -9,9 +9,7 @@ import {
   Download,
   ChevronLeft,
   ChevronRight,
-  Filter,
   Bookmark,
-  Plus,
   Trash2,
 } from 'lucide-react';
 
@@ -338,10 +336,10 @@ export function ERPDataGrid<T extends object>({
               <button
                 type="button"
                 onClick={() => setShowSaveViewModal(true)}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-line text-xs font-bold text-sub hover:text-ink hover:bg-soft transition"
+                className="inline-flex items-center gap-1 min-h-9 px-2.5 py-1.5 rounded-xl border border-line text-xs font-bold text-sub hover:text-ink hover:bg-soft transition"
                 title="Save current filters/sort as a custom view"
               >
-                <Bookmark size={13} />
+                <Bookmark size={13} aria-hidden="true" />
                 <span>Save View</span>
               </button>
             </div>
@@ -351,7 +349,7 @@ export function ERPDataGrid<T extends object>({
               type="button"
               onClick={handleExportCsv}
               disabled={sortedData.length === 0}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-soft text-ink font-bold text-xs hover:bg-line/70 transition disabled:opacity-50"
+              className="inline-flex items-center gap-1 min-h-9 px-3 py-1.5 rounded-xl bg-soft text-ink font-bold text-xs hover:bg-line/70 transition disabled:opacity-50"
             >
               <Download size={14} />
               <span>Export CSV ({sortedData.length})</span>
@@ -382,21 +380,28 @@ export function ERPDataGrid<T extends object>({
             {savedViews.map((view) => (
               <div
                 key={view.id}
-                onClick={() => applySavedView(view)}
-                className={`group flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition ${
+                className={`group flex items-center gap-1 ps-2.5 pe-1 py-0.5 rounded-lg text-xs font-bold transition ${
                   activeViewId === view.id
                     ? 'bg-brand-dark text-surface'
                     : 'bg-soft text-sub hover:text-ink'
                 }`}
               >
-                <span>{view.name}</span>
+                <button
+                  type="button"
+                  onClick={() => applySavedView(view)}
+                  aria-pressed={activeViewId === view.id}
+                  className="py-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  {view.name}
+                </button>
                 <button
                   type="button"
                   onClick={(e) => handleDeleteView(view.id, e)}
-                  className="opacity-60 hover:opacity-100 hover:text-rose-500 ms-1 p-0.5 rounded transition"
+                  aria-label={`Delete view ${view.name}`}
+                  className="opacity-60 hover:opacity-100 hover:text-rose-500 ms-1 p-1.5 rounded transition"
                   title="Delete preset"
                 >
-                  <Trash2 size={11} />
+                  <Trash2 size={11} aria-hidden="true" />
                 </button>
               </div>
             ))}
@@ -410,17 +415,19 @@ export function ERPDataGrid<T extends object>({
             <Search
               size={14}
               className="absolute start-3 top-1/2 -translate-y-1/2 text-sub pointer-events-none"
+              aria-hidden="true"
             />
             <input
               ref={searchInputRef}
-              type="text"
+              type="search"
+              aria-label={searchPlaceholder}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setCurrentPage(1);
               }}
               placeholder={searchPlaceholder}
-              className="w-full ps-9 pe-4 py-2 rounded-xl bg-soft/60 border border-line text-xs font-medium text-ink placeholder:text-sub focus:outline-none focus:border-brand-dark transition"
+              className="w-full min-h-11 ps-9 pe-4 py-2 rounded-xl bg-soft/60 border border-line text-xs font-medium text-ink placeholder:text-sub focus:outline-none focus:border-brand-dark transition"
             />
           </div>
 
@@ -505,25 +512,29 @@ export function ERPDataGrid<T extends object>({
             ref={tableRef}
             tabIndex={0}
             onKeyDown={handleTableKeyDown}
-            className="w-full text-start text-xs focus:outline-none"
+            className="w-full min-w-[760px] text-start text-xs focus:outline-none"
             aria-label={title || 'ERP Data Table'}
           >
             <thead>
               <tr className="border-b border-line bg-soft/40 text-sub font-black">
                 {columns.map((col) => {
                   const isSorted = sortColumn === col.key;
+                  const sortable = col.sortable !== false;
                   return (
                     <th
                       key={col.key}
-                      className={`p-3.5 text-start select-none ${col.className || ''} ${
-                        col.sortable !== false ? 'cursor-pointer hover:text-ink' : ''
-                      }`}
-                      onClick={() => col.sortable !== false && handleSort(col.key)}
+                      aria-sort={isSorted ? (sortDirection === 'asc' ? 'ascending' : 'descending') : undefined}
+                      className={`p-3.5 text-start select-none ${col.className || ''}`}
                     >
-                      <div className="inline-flex items-center gap-1.5">
-                        <span>{col.header}</span>
-                        {col.sortable !== false && (
-                          <span className="text-sub">
+                      {sortable ? (
+                        <button
+                          type="button"
+                          onClick={() => handleSort(col.key)}
+                          aria-label={`Sort by ${col.header}`}
+                          className="inline-flex items-center gap-1.5 rounded hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
+                        >
+                          <span>{col.header}</span>
+                          <span className="text-sub" aria-hidden="true">
                             {isSorted ? (
                               sortDirection === 'asc' ? (
                                 <ArrowUp size={13} className="text-brand-dark font-black" />
@@ -534,8 +545,10 @@ export function ERPDataGrid<T extends object>({
                               <ArrowUpDown size={12} className="opacity-40" />
                             )}
                           </span>
-                        )}
-                      </div>
+                        </button>
+                      ) : (
+                        <span>{col.header}</span>
+                      )}
                     </th>
                   );
                 })}
@@ -611,22 +624,22 @@ export function ERPDataGrid<T extends object>({
               type="button"
               disabled={validCurrentPage <= 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="p-1.5 rounded-lg border border-line text-sub hover:text-ink hover:bg-soft disabled:opacity-40 disabled:pointer-events-none transition"
+              className="min-w-9 min-h-9 p-1.5 rounded-lg border border-line text-sub hover:text-ink hover:bg-soft disabled:opacity-40 disabled:pointer-events-none transition grid place-items-center"
               aria-label="Previous Page"
             >
-              <ChevronLeft size={14} />
+              <ChevronLeft size={14} aria-hidden="true" />
             </button>
-            <span className="px-2 font-bold text-ink">
+            <span className="px-2 font-bold text-ink whitespace-nowrap">
               Page {validCurrentPage} of {totalPages}
             </span>
             <button
               type="button"
               disabled={validCurrentPage >= totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="p-1.5 rounded-lg border border-line text-sub hover:text-ink hover:bg-soft disabled:opacity-40 disabled:pointer-events-none transition"
+              className="min-w-9 min-h-9 p-1.5 rounded-lg border border-line text-sub hover:text-ink hover:bg-soft disabled:opacity-40 disabled:pointer-events-none transition grid place-items-center"
               aria-label="Next Page"
             >
-              <ChevronRight size={14} />
+              <ChevronRight size={14} aria-hidden="true" />
             </button>
           </div>
         </div>

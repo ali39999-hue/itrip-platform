@@ -187,13 +187,13 @@ export default function AccountPage() {
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-surface/15 text-xs font-bold mb-2 backdrop-blur-xs">
               <Sparkles size={13} />
-              <span>{lt(locale, { fa: 'سطح کاربری: مسافر طلایی فیروزه', en: 'Tier: Gold Traveler', ar: 'المستوى: مسافر ذهبي', zh: '会员等级：黄金旅客', ru: 'Уровень: Золотой' })}</span>
+              <span>{lt(locale, { fa: 'سطح کاربری: مسافر طلایی فیروزو', en: 'Tier: Gold Traveler', ar: 'المستوى: مسافر ذهبي', zh: '会员等级：黄金旅客', ru: 'Уровень: Золотой' })}</span>
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-black">
               {lt(locale, { fa: 'خوش آمدید،', en: 'Welcome back,', ar: 'أهلاً بك،', zh: '欢迎回来，', ru: 'Добро пожаловать,' })} {localizedUserName || user.firstNameFa || user.phone}
             </h1>
             <p className="text-surface/80 text-xs md:text-sm mt-1 leading-relaxed">
-              {lt(locale, { fa: 'مدیریت یکپارچه سفرها، مدارک هویتی، کیف پول و خدمات ویژه فیروزه', en: 'Manage bookings, identity documents, wallet and services in one place', ar: 'إدارة رحلاتك ووثائقك ومحفظتك في مكان واحد', zh: '集中管理您的行程、身份凭证与多币种钱包', ru: 'Управление поездками, документами и кошельком' })}
+              {lt(locale, { fa: 'مدیریت یکپارچه سفرها، مدارک هویتی، کیف پول و خدمات ویژه فیروزو', en: 'Manage bookings, identity documents, wallet and services in one place', ar: 'إدارة رحلاتك ووثائقك ومحفظتك في مكان واحد', zh: '集中管理您的行程、身份凭证与多币种钱包', ru: 'Управление поездками, документами и кошельком' })}
             </p>
           </div>
 

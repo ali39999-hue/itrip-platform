@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/auto-setup.mjs",
     "build": "next build",
     "start": "next start",
     "worker": "tsx src/workers/worker-entrypoint.ts",

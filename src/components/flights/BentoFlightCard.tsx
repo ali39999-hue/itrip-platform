@@ -6,6 +6,7 @@ import { Plane, Briefcase, ChevronDown, Armchair, BellDot, Scale, ShieldAlert } 
 import type { Flight } from '@/lib/types';
 import { num } from '@/lib/format';
 import { lt } from '@/lib/lt';
+import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { AirlineLogo } from './AirlineLogo';
 
 /* "3h 50m" → minutes (for sorting) */
@@ -56,6 +57,7 @@ export function BentoFlightCard({
 }: BentoFlightCardProps) {
   const t = useTranslations('Flights');
   const locale = useLocale();
+  const { formatAmount } = useDisplayCurrency();
   const [open, setOpen] = useState(false);
   const [compared, setCompared] = useState(false);
 
@@ -72,7 +74,7 @@ export function BentoFlightCard({
 
   return (
     <article
-      aria-label={`${airlineName} ${flight.flightNo}, ${originCity} to ${destCity}, ${flight.departureTime} - ${flight.arrivalTime}, ${num(priceInToman, locale)} ${t('toman')}`}
+      aria-label={`${airlineName} ${flight.flightNo}, ${originCity} to ${destCity}, ${flight.departureTime} - ${flight.arrivalTime}, ${formatAmount(priceInToman)}`}
       className="relative bg-surface rounded-2xl border border-line shadow-elev-1 hover:shadow-elev-2 hover:border-brand/40 transition-all group overflow-hidden"
     >
       {/* ========================================================================= */}
@@ -224,10 +226,7 @@ export function BentoFlightCard({
             <div className="text-end">
               <div className="flex items-baseline justify-end gap-1" dir="ltr">
                 <span className="text-lg font-black tracking-tight text-ink leading-none tabular-nums font-mono">
-                  {num(priceInToman, locale)}
-                </span>
-                <span className="text-[11px] font-bold text-sub" dir={['fa', 'ar'].includes(locale) ? 'rtl' : 'ltr'}>
-                  {t('toman')}
+                  {formatAmount(priceInToman)}
                 </span>
               </div>
             </div>
@@ -524,10 +523,7 @@ export function BentoFlightCard({
           <div className="my-auto py-2">
             <div className="flex items-baseline justify-center gap-1.5" dir="ltr">
               <span className="text-[23px] md:text-[26px] font-black tracking-tight text-ink leading-none tabular-nums font-mono">
-                {num(priceInToman, locale)}
-              </span>
-              <span className="text-[13px] font-bold text-sub" dir={['fa', 'ar'].includes(locale) ? 'rtl' : 'ltr'}>
-                {t('toman')}
+                {formatAmount(priceInToman)}
               </span>
             </div>
             <span className="text-[11.5px] font-medium text-sub mt-1.5 block">

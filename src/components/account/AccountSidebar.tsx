@@ -33,7 +33,7 @@ export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps)
   const userName = user
     ? userFullName || user.phone
     : lt(locale, {
-        fa: 'کاربر فیروزه',
+        fa: 'کاربر فیروزو',
         en: 'Firuzo Traveler',
         ar: 'مسافر فيروزو',
         zh: 'Firuzo 旅客',
@@ -54,7 +54,7 @@ export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps)
         {/* Loyalty Tier Badge */}
         <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-gold-soft border border-action/20 text-price text-[11px] font-black">
           <Star size={12} className="fill-action text-action" />
-          <span>{lt(locale, { fa: 'مسافر طلایی فیروزه', en: 'Gold Traveler', ar: 'مسافر ذهبي', zh: '黄金旅客', ru: 'Золотой уровень' })}</span>
+          <span>{lt(locale, { fa: 'مسافر طلایی فیروزو', en: 'Gold Traveler', ar: 'مسافر ذهبي', zh: '黄金旅客', ru: 'Золотой уровень' })}</span>
         </div>
         
         <p className="font-bold text-[11.5px] text-sub mt-2">

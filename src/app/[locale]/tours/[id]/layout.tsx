@@ -46,7 +46,7 @@ export async function generateMetadata({
   }
 
   const title = locale === 'fa'
-    ? `${tour.title} | تور مسافرتی فیروزه`
+    ? `${tour.title} | تور مسافرتی فیروزو`
     : `${tour.titleEn || tour.title} | Firuzo Travel Tours`;
 
   const description = locale === 'fa'

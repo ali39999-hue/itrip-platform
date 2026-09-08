@@ -8,6 +8,7 @@ import { Link } from '@/i18n/routing';
 import { shimmerDataUrl, getHotelImage } from '@/lib/image-utils';
 import { num, formatDistance } from '@/lib/format';
 import { lt, LText } from '@/lib/lt';
+import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import type { HotelCardProps } from './types';
 
 const AM_MAP: Record<string, LText> = {
@@ -49,6 +50,7 @@ export function HotelCard({
 }: HotelCardProps) {
   const locale = useLocale();
   const t = useTranslations('HotelsSearch');
+  const { formatAmount } = useDisplayCurrency();
 
   const queryParams = new URLSearchParams();
   if (checkin) queryParams.set('checkin', checkin);
@@ -64,14 +66,6 @@ export function HotelCard({
   React.useEffect(() => {
     setImgSrc(img);
   }, [img]);
-  const priceMillion = num(hotel.pricePerNight / 10000000, locale, {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  });
-  const totalMillion = num((hotel.pricePerNight * nights) / 10000000, locale, {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  });
 
   const distanceText = hotel.distanceKm !== undefined
     ? formatDistance(hotel.distanceKm, hotel.nearestPoiName, locale)
@@ -175,8 +169,7 @@ export function HotelCard({
               {t('perNightFrom')}
             </span>
             <div className="text-sm font-black text-brand-dark font-mono num flex items-baseline gap-1">
-              <span>{priceMillion}</span>
-              <span className="text-[10px] font-bold text-sub">{t('millionToman')}</span>
+              <span>{formatAmount(hotel.pricePerNight)}</span>
             </div>
           </div>
 
@@ -327,7 +320,7 @@ export function HotelCard({
                     ru: `Всего за ${num(nights, locale)} ноч.:`,
                   })}
                 </span>{' '}
-                <strong className="text-ink font-black font-mono">{totalMillion}</strong> {t('millionToman')}
+                <strong className="text-ink font-black font-mono">{formatAmount(hotel.pricePerNight * nights)}</strong>
               </div>
             </div>
 
@@ -335,8 +328,7 @@ export function HotelCard({
               <div className="text-end">
                 <span className="text-[11px] text-sub block font-medium">{t('perNightFrom')}</span>
                 <div className="text-base sm:text-lg font-black text-brand-dark font-mono num flex items-baseline gap-1">
-                  <span>{priceMillion}</span>
-                  <span className="text-xs font-bold text-sub">{t('millionToman')}</span>
+                  <span>{formatAmount(hotel.pricePerNight)}</span>
                 </div>
               </div>
               <Link

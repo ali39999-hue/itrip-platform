@@ -14,7 +14,6 @@ import {
   CheckCircle2, 
   ExternalLink
 } from 'lucide-react';
-import { redirect } from 'next/navigation';
 import { lt } from '@/lib/lt';
 
 function getItemIcon(type?: string) {
@@ -37,7 +36,51 @@ export default async function MyTripsPage({
   const isRtl = locale === 'fa' || locale === 'ar';
 
   if (!session?.user?.id) {
-    redirect(`/${locale}/login?callbackUrl=/${locale}/trips`);
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-24 pt-12" dir={isRtl ? 'rtl' : 'ltr'}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 sm:p-12 border border-slate-200 dark:border-slate-700 text-center shadow-sm space-y-6">
+            <div className="w-20 h-20 mx-auto rounded-3xl bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 grid place-items-center">
+              <Compass size={40} />
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+                {lt(locale, { fa: 'مشاهده و پیگیری سفرهای فیروزو', en: 'Track & Manage Your Firuzo Trips', ar: 'متابعة وإدارة رحلاتك في فيروزو', zh: '查看与管理您的 Firuzo 行程', ru: 'Просмотр и управление поездками Firuzo' })}
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
+                {lt(locale, {
+                  fa: 'برای مشاهده واچرها، بلیت‌های الکترونیکی و جزئیات پرواز و هتل، وارد حساب کاربری خود شوید یا جستجوی جدید را آغاز کنید.',
+                  en: 'Sign in to access your electronic tickets, hotel vouchers and itinerary details, or start a new search.',
+                  ar: 'سجّل الدخول للوصول إلى تذاكرك وقسائم الفنادق، أو ابدأ بحثاً جديداً.',
+                  zh: '请登录以查看您的电子行程单与酒店凭证，或开始新的预订。',
+                  ru: 'Войдите в аккаунт для доступа к билетам и ваучерам или начните новый поиск.',
+                })}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <Link
+                href={`/${locale}/auth?callbackUrl=/${locale}/trips`}
+                className="px-8 py-3.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl font-black text-sm transition shadow-md shadow-teal-600/20"
+              >
+                {lt(locale, { fa: 'ورود به حساب کاربری', en: 'Sign In to Account', ar: 'تسجيل الدخول', zh: '登录账户', ru: 'Войти в аккаунт' })}
+              </Link>
+              <Link
+                href={`/${locale}/flights/search`}
+                className="px-6 py-3.5 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl font-black text-sm transition"
+              >
+                {lt(locale, { fa: 'جستجوی پرواز', en: 'Search Flights', ar: 'بحث عن الطيران', zh: '搜索机票', ru: 'Поиск авиабилетов' })}
+              </Link>
+              <Link
+                href={`/${locale}/hotels/search`}
+                className="px-6 py-3.5 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl font-black text-sm transition"
+              >
+                {lt(locale, { fa: 'جستجوی هتل', en: 'Search Hotels', ar: 'بحث عن الفنادق', zh: '搜索酒店', ru: 'Поиск отелей' })}
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const { trips, independentBookings } = await getUserTripsData();
@@ -52,7 +95,7 @@ export default async function MyTripsPage({
             <div className="flex items-center gap-2 mb-1">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                {lt(locale, { fa: 'سیستم عامل یکپارچه سفر فیروزه', en: 'Firuzo Travel Operating System', ar: 'نظام تشغيل السفر فيروزو', zh: 'Firuzo 旅行操作系统', ru: 'Операционная система путешествий Firuzo' })}
+                {lt(locale, { fa: 'سیستم عامل یکپارچه سفر فیروزو', en: 'Firuzo Travel Operating System', ar: 'نظام تشغيل السفر فيروزو', zh: 'Firuzo 旅行操作系统', ru: 'Операционная система путешествий Firuzo' })}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
@@ -107,7 +150,7 @@ export default async function MyTripsPage({
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-lg mx-auto">
                 {lt(locale, {
-                  fa: 'با هوش مصنوعی سفرساز فیروزه می‌توانید در کمتر از ۱۰ ثانیه پرواز، هتل و تجربیات اختصاصی مقصدتان را بچینید و با یک کلیک رزرو کنید.',
+                  fa: 'با هوش مصنوعی سفرساز فیروزو می‌توانید در کمتر از ۱۰ ثانیه پرواز، هتل و تجربیات اختصاصی مقصدتان را بچینید و با یک کلیک رزرو کنید.',
                   en: 'With Firuzo AI Travel Planner, you can assemble flights, hotels, and signature destination experiences in under 10 seconds.',
                   ar: 'مع مخطط السفر بالذكاء الاصطناعي من فيروزو، يمكنك تجميع رحلات الطيران والفنادق والأنشطة في أقل من 10 ثوانٍ.',
                   zh: '借助 Firuzo AI 智能行程定制器，10秒内即刻为您生成专属机票、酒店与精选行程方案。',

@@ -169,6 +169,19 @@ export default function AdminContentPage() {
     loadData();
   }, [loadData]);
 
+  // Escape closes any open creation modal.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setTourModalOpen(false);
+      setExpModalOpen(false);
+      setTravelogueModalOpen(false);
+      setGuideModalOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   // Handlers: Tour
   async function handleCreateTour(e: React.FormEvent) {
     e.preventDefault();
@@ -330,13 +343,13 @@ export default function AdminContentPage() {
   }
 
   return (
-    <div className="p-4 sm:p-8 space-y-6 max-w-[1400px] mx-auto">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-surface border border-line shadow-xs">
         <div>
           <div className="flex items-center gap-2 text-brand-dark font-black text-xs sm:text-sm mb-1">
             <Compass size={18} />
-            <span>سامانه مدیریت محتوا و موجودی فیروزه (ERP CMS)</span>
+            <span>سامانه مدیریت محتوا و موجودی فیروزو (ERP CMS)</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-ink">
             مدیریت تورها، تجربه‌های اصیل، سفرنامه‌ها و راهنمای سفر
@@ -417,10 +430,10 @@ export default function AdminContentPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-line pb-3 overflow-x-auto scrollbar-none">
+      <div role="tablist" aria-label="Content sections" className="flex items-center gap-2 border-b border-line pb-3 overflow-x-auto scrollbar-none [&>button]:shrink-0 [&>button]:whitespace-nowrap">
         <button
           type="button"
-          onClick={() => setActiveTab('tours')}
+          role="tab" aria-selected={activeTab === 'tours'} onClick={() => setActiveTab('tours')}
           className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black flex items-center gap-2 transition cursor-pointer ${
             activeTab === 'tours'
               ? 'bg-brand text-surface shadow-xs'
@@ -433,7 +446,7 @@ export default function AdminContentPage() {
 
         <button
           type="button"
-          onClick={() => setActiveTab('experiences')}
+          role="tab" aria-selected={activeTab === 'experiences'} onClick={() => setActiveTab('experiences')}
           className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black flex items-center gap-2 transition cursor-pointer ${
             activeTab === 'experiences'
               ? 'bg-brand text-surface shadow-xs'
@@ -446,7 +459,7 @@ export default function AdminContentPage() {
 
         <button
           type="button"
-          onClick={() => setActiveTab('travelogues')}
+          role="tab" aria-selected={activeTab === 'travelogues'} onClick={() => setActiveTab('travelogues')}
           className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black flex items-center gap-2 transition cursor-pointer ${
             activeTab === 'travelogues'
               ? 'bg-brand text-surface shadow-xs'
@@ -459,7 +472,7 @@ export default function AdminContentPage() {
 
         <button
           type="button"
-          onClick={() => setActiveTab('guides')}
+          role="tab" aria-selected={activeTab === 'guides'} onClick={() => setActiveTab('guides')}
           className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black flex items-center gap-2 transition cursor-pointer ${
             activeTab === 'guides'
               ? 'bg-brand text-surface shadow-xs'
@@ -706,8 +719,8 @@ export default function AdminContentPage() {
 
       {/* Modal 1: Create Tour */}
       {tourModalOpen && (
-        <div className="fixed inset-0 z-[200] bg-ink/65 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-xl bg-surface rounded-3xl p-6 border border-line shadow-2xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[200] bg-ink/65 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto" onClick={() => setTourModalOpen(false)}>
+          <div role="dialog" aria-modal="true" aria-label="افزودن پکیج تور مسافرتی جدید" onClick={(e) => e.stopPropagation()} className="w-full max-w-xl bg-surface rounded-3xl p-6 border border-line shadow-2xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <h3 className="font-black text-base text-ink">افزودن پکیج تور مسافرتی جدید</h3>
               <button type="button" onClick={() => setTourModalOpen(false)} className="w-8 h-8 rounded-full bg-soft text-sub grid place-items-center cursor-pointer">
@@ -793,8 +806,8 @@ export default function AdminContentPage() {
 
       {/* Modal 2: Create Experience */}
       {expModalOpen && (
-        <div className="fixed inset-0 z-[200] bg-ink/65 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-lg bg-surface rounded-3xl p-6 border border-line shadow-2xl space-y-4 my-8">
+        <div className="fixed inset-0 z-[200] bg-ink/65 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto" onClick={() => setExpModalOpen(false)}>
+          <div role="dialog" aria-modal="true" aria-label="افزودن تجربه اصیل محلی" onClick={(e) => e.stopPropagation()} className="w-full max-w-lg bg-surface rounded-3xl p-6 border border-line shadow-2xl space-y-4 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <h3 className="font-black text-base text-ink">افزودن تجربه اصیل محلی</h3>
               <button type="button" onClick={() => setExpModalOpen(false)} className="w-8 h-8 rounded-full bg-soft text-sub grid place-items-center cursor-pointer">
@@ -875,8 +888,8 @@ export default function AdminContentPage() {
 
       {/* Modal 3: Create Travelogue */}
       {travelogueModalOpen && (
-        <div className="fixed inset-0 z-[200] bg-ink/65 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-lg bg-surface rounded-3xl p-6 border border-line shadow-2xl space-y-4 my-8">
+        <div className="fixed inset-0 z-[200] bg-ink/65 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto" onClick={() => setTravelogueModalOpen(false)}>
+          <div role="dialog" aria-modal="true" aria-label="افزودن سفرنامه جدید" onClick={(e) => e.stopPropagation()} className="w-full max-w-lg bg-surface rounded-3xl p-6 border border-line shadow-2xl space-y-4 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <h3 className="font-black text-base text-ink">افزودن سفرنامه جدید</h3>
               <button type="button" onClick={() => setTravelogueModalOpen(false)} className="w-8 h-8 rounded-full bg-soft text-sub grid place-items-center cursor-pointer">
@@ -925,8 +938,8 @@ export default function AdminContentPage() {
 
       {/* Modal 4: Create Guide */}
       {guideModalOpen && (
-        <div className="fixed inset-0 z-[200] bg-ink/65 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-lg bg-surface rounded-3xl p-6 border border-line shadow-2xl space-y-4 my-8">
+        <div className="fixed inset-0 z-[200] bg-ink/65 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto" onClick={() => setGuideModalOpen(false)}>
+          <div role="dialog" aria-modal="true" aria-label="افزودن راهنمای سفر و مقاله" onClick={(e) => e.stopPropagation()} className="w-full max-w-lg bg-surface rounded-3xl p-6 border border-line shadow-2xl space-y-4 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <h3 className="font-black text-base text-ink">افزودن راهنمای سفر و مقاله</h3>
               <button type="button" onClick={() => setGuideModalOpen(false)} className="w-8 h-8 rounded-full bg-soft text-sub grid place-items-center cursor-pointer">

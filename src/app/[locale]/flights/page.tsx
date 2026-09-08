@@ -106,7 +106,7 @@ export default function FlightsLandingPage() {
           <div className="space-y-2 text-center md:text-start">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 text-xs font-bold border border-teal-400/20">
               <Sparkles size={14} className="text-amber-300" />
-              <span>{lt(locale, { fa: 'هوش مصنوعی سفرساز فیروزه', en: 'Firuzo AI Trip Copilot', ar: 'مساعد السفر الذكي', zh: 'Firuzo AI 旅游定制', ru: 'AI планировщик путешествий' })}</span>
+              <span>{lt(locale, { fa: 'هوش مصنوعی سفرساز فیروزو', en: 'Firuzo AI Trip Copilot', ar: 'مساعد السفر الذكي', zh: 'Firuzo AI 旅游定制', ru: 'AI планировщик путешествий' })}</span>
             </div>
             <h3 className="text-xl md:text-2xl font-black text-white m-0">
               {lt(locale, { fa: 'هماهنگی همزمان پرواز، هتل و ترانسفر در چند ثانیه', en: 'Sync Flights, Stays & Transfers in Seconds', ar: 'تنسيق الطيران والفنادق والنقل في ثوانٍ', zh: '数秒内同步机票、酒店与接送服务', ru: 'Синхронизация рейсов, отелей и трансферов за секунды' })}

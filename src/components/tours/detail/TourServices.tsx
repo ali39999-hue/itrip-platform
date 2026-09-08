@@ -35,7 +35,7 @@ export function TourServices({ tour }: TourServicesProps) {
     },
     {
       title: lt(locale, { fa: 'بیمه‌نامه و مدارک سفر', en: 'Insurance & Vouchers', ar: 'وثيقة التأمين وقسائم السفر', zh: '保险单与电子凭证', ru: 'Страховка и ваучеры' }),
-      desc: lt(locale, { fa: 'بیمه مسافرتی به صورت خودکار توسط فیروزه صادر می‌شود', en: 'Travel insurance is issued automatically by Firuzo', ar: 'يتم إصدار وثيقة التأمين تلقائياً من فيروزو', zh: 'Firuzo 将自动为您出具正规旅行险', ru: 'Страховой полис оформляется автоматически' }),
+      desc: lt(locale, { fa: 'بیمه مسافرتی به صورت خودکار توسط فیروزو صادر می‌شود', en: 'Travel insurance is issued automatically by Firuzo', ar: 'يتم إصدار وثيقة التأمين تلقائياً من فيروزو', zh: 'Firuzo 将自动为您出具正规旅行险', ru: 'Страховой полис оформляется автоматически' }),
     },
   ];
 

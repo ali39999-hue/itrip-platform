@@ -346,7 +346,7 @@ export class ReferralDomainService {
       id: referral.id,
       code: referral.code,
       leaderId: referral.leaderId,
-      leaderName: referral.leader.name || 'سرگروه فیروزه',
+      leaderName: referral.leader.name || 'سرگروه فیروزو',
       leaderPhone: referral.leader.phone || '—',
       leaderEmail: referral.leader.email || '—',
       isActive: referral.isActive,

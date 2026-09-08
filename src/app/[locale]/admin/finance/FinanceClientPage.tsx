@@ -87,7 +87,7 @@ export function FinanceClientPage({
           type="button"
           onClick={handleReconciliation}
           disabled={reconciling}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm bg-brand text-surface hover:bg-brand-2 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm shrink-0"
+          className="inline-flex items-center justify-center gap-2 min-h-11 px-4 py-2.5 rounded-xl font-medium text-sm bg-brand text-surface hover:bg-brand-2 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm shrink-0"
         >
           {reconciling ? (
             <Loader2 size={16} className="animate-spin" aria-hidden="true" />
@@ -99,7 +99,7 @@ export function FinanceClientPage({
       </div>
 
       {reconciliationError && (
-        <div className="p-4 rounded-xl bg-danger/10 border border-danger/20 text-danger text-sm flex items-center gap-3">
+        <div role="alert" className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center gap-3">
           <AlertTriangle size={18} className="shrink-0" aria-hidden="true" />
           <span>{reconciliationError}</span>
         </div>
@@ -209,7 +209,7 @@ export function FinanceClientPage({
           </div>
           <button
             onClick={saveRates}
-            className={`w-full h-10 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+            className={`w-full min-h-11 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
               saved ? 'bg-success/20 text-success' : 'bg-brand hover:bg-brand-2 text-surface'
             }`}
           >
@@ -223,8 +223,8 @@ export function FinanceClientPage({
         {formattedTransactions.length === 0 ? (
           <p className="text-center text-sub py-12 text-sm">{lt(locale, { fa: 'تراکنشی ثبت نشده است', en: 'No transactions recorded', ar: 'لم يتم تسجيل أي معاملات', zh: '暂无交易记录', ru: 'Транзакций нет' })}</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-soft text-sub text-xs">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead className="bg-soft text-sub text-xs sticky top-0">
               <tr>
                 <th className="p-4 text-start font-medium">{lt(locale, { fa: 'شرح', en: 'Description', ar: 'الوصف', zh: '描述', ru: 'Описание' })}</th>
                 <th className="p-4 text-start font-medium">{lt(locale, { fa: 'کیف پول', en: 'Wallet', ar: 'المحفظة', zh: '钱包', ru: 'Кошелек' })}</th>

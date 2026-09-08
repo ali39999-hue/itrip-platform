@@ -12,8 +12,10 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useCountryStore } from '@/stores/country-store';
 import { countryName } from '@/lib/countries';
 import { normalizeBookingType, passengerSchema, type Passenger } from '@/lib/validations';
-import { createBookingDraft, payBooking, getWallet } from '@/actions/booking';
+import { createBookingDraft, payBooking, getWallet, repriceBookingAction } from '@/actions/booking';
+import { AlertTriangle } from 'lucide-react';
 import { useHydration } from '@/hooks/useHydration';
+import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 
 import { CheckoutStepper, type CheckoutPhase } from '@/components/checkout/CheckoutStepper';
 import { PassengerSection } from '@/components/checkout/PassengerSection';
@@ -35,6 +37,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const hydrated = useHydration();
   const { country } = useCountryStore();
+  const { currency } = useDisplayCurrency();
   const bookingContext = useBookingStore((s) => s.bookingContext);
   const setPassengers = useBookingStore((s) => s.setPassengers);
   const wallet = useBookingStore((s) => s.wallet);
@@ -57,6 +60,13 @@ export default function CheckoutPage() {
   const [confirmedRef, setConfirmedRef] = useState('');
   const [confirmedTitle, setConfirmedTitle] = useState('');
   const [idempotencyKey] = useState(() => uuidv4());
+  const [priceChangeInfo, setPriceChangeInfo] = useState<{
+    oldAmount: number;
+    newAmount: number;
+    diff: number;
+    currency: string;
+  } | null>(null);
+  const [priceChangeAccepted, setPriceChangeAccepted] = useState(false);
 
   const {
     register,
@@ -194,7 +204,6 @@ export default function CheckoutPage() {
 
   const baseAmount = bookingContext?.amount ?? 0;
   const itemTitle = bookingContext?.title ?? '';
-  const currency = 'IRR';
   const walletBalance = serverWallet ?? wallet.IRR ?? 0;
   const totalPayable = Math.max(0, baseAmount + (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0) - referralDiscountAmount);
 
@@ -306,6 +315,27 @@ export default function CheckoutPage() {
 
   async function handleFinalPayment() {
     setError('');
+
+    // Authoritative server-side reprice before payment (MONEY-007, MONEY-011)
+    if (draftBookingId && !priceChangeAccepted) {
+      try {
+        const repriceRes = await repriceBookingAction(draftBookingId, {
+          acceptPriceChange: false,
+        });
+        if (repriceRes && 'requiresCustomerAcceptance' in repriceRes && repriceRes.requiresCustomerAcceptance) {
+          setPriceChangeInfo({
+            oldAmount: repriceRes.oldTotalAmount ?? totalPayable,
+            newAmount: repriceRes.newTotalAmount ?? totalPayable,
+            diff: repriceRes.priceDifference ?? 0,
+            currency: repriceRes.currency || 'IRR',
+          });
+          return;
+        }
+      } catch (e) {
+        console.warn('Reprice pre-check warning:', e);
+      }
+    }
+
     trackFunnel('payment_started', {
       route: '/checkout',
       locale,
@@ -563,6 +593,77 @@ export default function CheckoutPage() {
             ctaLabel={tCheckout('confirmPay')}
             onCta={handleFinalPayment}
           />
+        )}
+        {/* Price Change Acceptance Modal (MONEY-011) */}
+        {priceChangeInfo && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-[250] bg-ink/65 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
+          >
+            <div className="bg-surface rounded-3xl p-6 sm:p-8 max-w-md w-full border border-line shadow-2xl space-y-5 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-600 mx-auto grid place-items-center">
+                <AlertTriangle size={28} />
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-black text-lg sm:text-xl text-ink">
+                  {lt(locale, {
+                    fa: 'به‌روزرسانی نرخ تأمین‌کننده',
+                    en: 'Supplier Price Updated',
+                    ar: 'تحديث سعر المزود',
+                    zh: '供应商价格已变动',
+                    ru: 'Цена поставщика обновилась',
+                  })}
+                </h3>
+                <p className="text-xs sm:text-sm text-sub leading-relaxed font-medium">
+                  {lt(locale, {
+                    fa: 'نرخ نهایی از سوی تأمین‌کننده رسمی به‌روزرسانی شده است. لطفاً پیش از پرداخت، مبلغ جدید را بررسی و تایید فرمایید.',
+                    en: 'The official supplier rate has been updated. Please review and accept the revised total before payment.',
+                    ar: 'تم تحديث السعر من قبل المزود. يرجى مراجعة المبلغ الجديد والموافقة عليه قبل الدفع.',
+                    zh: '供应商价格已实时更新，请在付款前确认最新应付总额。',
+                    ru: 'Цена поставщика изменилась. Пожалуйста, подтвердите новую сумму перед оплатой.',
+                  })}
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-soft border border-line space-y-2 text-xs font-bold">
+                <div className="flex justify-between text-sub">
+                  <span>{lt(locale, { fa: 'مبلغ قبلی:', en: 'Previous Total:', ar: 'السعر السابق:', zh: '原价：', ru: 'Прежняя цена:' })}</span>
+                  <span className="line-through font-mono">{formatMoney(priceChangeInfo.oldAmount, priceChangeInfo.currency, locale)}</span>
+                </div>
+                <div className="flex justify-between text-ink font-black text-sm pt-1 border-t border-line">
+                  <span>{lt(locale, { fa: 'مبلغ نهایی جدید:', en: 'New Total:', ar: 'السعر الجديد:', zh: '最新应付：', ru: 'Новая сумма:' })}</span>
+                  <span className="text-price font-mono">{formatMoney(priceChangeInfo.newAmount, priceChangeInfo.currency, locale)}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setPriceChangeInfo(null)}
+                  className="flex-1 h-12 rounded-xl bg-soft hover:bg-line/60 text-sub font-bold text-xs cursor-pointer transition"
+                >
+                  {lt(locale, { fa: 'انصراف', en: 'Decline', ar: 'إلغاء', zh: '取消', ru: 'Отмена' })}
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!draftBookingId) return;
+                    await repriceBookingAction(draftBookingId, {
+                      acceptPriceChange: true,
+                      customerAcceptedPrice: priceChangeInfo.newAmount,
+                    });
+                    setPriceChangeAccepted(true);
+                    setPriceChangeInfo(null);
+                    handleFinalPayment();
+                  }}
+                  className="flex-1 h-12 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs cursor-pointer transition shadow-md shadow-action/25"
+                >
+                  {lt(locale, { fa: 'تایید نرخ جدید و پرداخت', en: 'Accept & Pay', ar: 'موافقة ومتابعة الدفع', zh: '接受并支付', ru: 'Принять и оплатить' })}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

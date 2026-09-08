@@ -74,36 +74,44 @@ export function AdminGlobalSearch() {
     return () => clearTimeout(timer);
   }, [query]);
 
+  const searchLabel = lt(locale, {
+    fa: 'جستجوی سریع PNR، پرونده، مشتری…',
+    en: 'Search PNR, Travel File, customer…',
+    ar: 'بحث سريع عن PNR أو ملف أو عميل…',
+    zh: '快速搜索PNR、行程或客户…',
+    ru: 'Быстрый поиск PNR, досье, клиента…',
+  });
+
   return (
-    <div ref={containerRef} className="relative w-full max-w-xs md:max-w-sm">
+    <div ref={containerRef} role="search" className="relative w-full">
       <div className="relative flex items-center">
         <input
           ref={inputRef}
           type="text"
+          role="combobox"
+          aria-expanded={open && !!results}
+          aria-controls="admin-global-search-results"
+          aria-label={searchLabel}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => { if (results) setOpen(true); }}
-          placeholder={lt(locale, {
-            fa: 'جستجوی سریع PNR، پرونده، مشتری…',
-            en: 'Search PNR, Travel File, customer…',
-            ar: 'بحث سريع عن PNR أو ملف أو عميل…',
-            zh: '快速搜索PNR、行程或客户…',
-            ru: 'Быстрый поиск PNR, досье, клиента…',
-          })}
-          className="w-full h-9 ps-9 pe-14 rounded-xl bg-soft/80 border border-line text-xs font-bold text-ink placeholder:text-sub focus:bg-surface focus:border-brand focus:outline-none transition"
+          placeholder={searchLabel}
+          className="w-full min-h-11 ps-9 pe-14 rounded-xl bg-soft/80 border border-line text-xs font-bold text-ink placeholder:text-sub focus:bg-surface focus:border-brand focus:outline-none transition"
         />
-        <Search size={14} className="absolute start-3 text-sub pointer-events-none" />
+        <Search size={14} className="absolute start-3 text-sub pointer-events-none" aria-hidden="true" />
         {loading ? (
-          <Loader2 size={13} className="absolute end-3 text-brand animate-spin" />
+          <Loader2 size={13} className="absolute end-3 text-brand animate-spin" aria-hidden="true" />
         ) : query ? (
           <button
-            onClick={() => { setQuery(''); setOpen(false); }}
-            className="absolute end-2.5 w-4 h-4 rounded-full bg-sub/20 grid place-items-center text-sub hover:text-ink"
+            type="button"
+            onClick={() => { setQuery(''); setOpen(false); inputRef.current?.focus(); }}
+            aria-label={lt(locale, { fa: 'پاک کردن جستجو', en: 'Clear search', ar: 'مسح البحث', zh: '清除搜索', ru: 'Очистить поиск' })}
+            className="absolute end-2 w-7 h-7 rounded-full bg-sub/20 grid place-items-center text-sub hover:text-ink transition"
           >
-            <X size={10} />
+            <X size={12} aria-hidden="true" />
           </button>
         ) : (
-          <kbd className="absolute end-2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono font-black text-sub bg-surface border border-line rounded pointer-events-none shadow-2xs">
+          <kbd className="absolute end-2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono font-black text-sub bg-surface border border-line rounded pointer-events-none shadow-2xs" aria-hidden="true">
             ⌘K
           </kbd>
         )}
@@ -111,7 +119,7 @@ export function AdminGlobalSearch() {
 
       {/* Results Dropdown */}
       {open && results && (
-        <div className="absolute top-full mt-2 inset-x-0 bg-surface rounded-2xl border border-line shadow-xl z-50 max-h-96 overflow-y-auto p-2 space-y-2 animate-in fade-in zoom-in-95 duration-150">
+        <div id="admin-global-search-results" role="listbox" aria-label={searchLabel} className="absolute top-full mt-2 inset-x-0 bg-surface rounded-2xl border border-line shadow-xl z-50 max-h-96 overflow-y-auto p-2 space-y-2 animate-in fade-in zoom-in-95 duration-150">
           {Object.values(results).every((arr) => !arr || arr.length === 0) ? (
             <div className="p-4 text-center text-xs text-sub">
               {lt(locale, { fa: 'موردی یافت نشد', en: 'No results found', ar: 'لم يتم العثور على نتائج', zh: '未找到结果', ru: 'Ничего не найдено' })}
@@ -127,6 +135,8 @@ export function AdminGlobalSearch() {
                     <Link
                       key={t.id}
                       href={t.url}
+                      role="option"
+                      aria-selected="false"
                       onClick={() => setOpen(false)}
                       className="flex items-center justify-between p-2 rounded-xl hover:bg-soft transition text-xs"
                     >
@@ -150,6 +160,8 @@ export function AdminGlobalSearch() {
                     <Link
                       key={b.id}
                       href={b.url}
+                      role="option"
+                      aria-selected="false"
                       onClick={() => setOpen(false)}
                       className="flex items-center justify-between p-2 rounded-xl hover:bg-soft transition text-xs"
                     >
@@ -172,6 +184,8 @@ export function AdminGlobalSearch() {
                     <Link
                       key={c.id}
                       href={c.url}
+                      role="option"
+                      aria-selected="false"
                       onClick={() => setOpen(false)}
                       className="flex items-center justify-between p-2 rounded-xl hover:bg-soft transition text-xs"
                     >

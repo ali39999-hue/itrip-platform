@@ -236,6 +236,11 @@ export class OutboxConsumer {
                   identifier,
                   otpMessage
                 );
+              } else if (channel === 'bale') {
+                delivery = await notificationProvider.sendBale(
+                  identifier,
+                  otpMessage
+                );
               } else {
                 delivery = await notificationProvider.sendSms(
                   identifier,

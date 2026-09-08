@@ -196,7 +196,7 @@ export const otpRequestSchema = z.object({
     .trim()
     .min(5, "Identifier is too short")
     .max(80, "Identifier is too long"),
-  channel: z.enum(["phone", "email", "telegram", "whatsapp", "wechat"]).default("phone"),
+  channel: z.enum(["phone", "email", "telegram", "whatsapp", "wechat", "bale"]).default("phone"),
 });
 export type OtpRequest = z.infer<typeof otpRequestSchema>;
 

@@ -17,18 +17,18 @@ import { lt } from '@/lib/lt';
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const title = lt(locale, {
-    fa: 'فیروزه - پلتفرم یکپارچه سفر هوشمند | خرید بلیط هواپیما، هتل و تور',
+    fa: 'فیروزو - پلتفرم یکپارچه سفر هوشمند | خرید بلیط هواپیما، هتل و تور',
     en: 'Firuzo - Smart Unified Travel Platform | Flights, Hotels & Tours',
     ar: 'فيروزو - منصة السفر الذكية الموحدة | حجز طيران، فنادق وجولات',
     zh: 'Firuzo - 智能综合旅游平台 | 机票、酒店与旅游预订',
     ru: 'Firuzo - Платформа путешествий | Авиабилеты, отели и туры'
   });
   const description = lt(locale, {
-    fa: 'خرید آنلاین بلیط هواپیما، رزرو هتل، قطار، تورهای مسافرتی و بیمه سامان با تضمین کمترین قیمت و استرداد آنی در فیروزه.',
-    en: 'Book flight tickets, hotels, trains, travel packages and insurance with lowest price guarantee and instant refund on Firuzo.',
-    ar: 'حجز تذاكر الطيران والفنادق والقطارات والجولات السياحية مع ضمان أقل سعر.',
-    zh: '在 Firuzo 在线预订机票、酒店、火车票及旅游套餐，尊享全网低价与极速退改保障。',
-    ru: 'Онлайн бронирование авиабилетов, отелей, поездов и туров с гарантией лучшей цены.'
+    fa: 'خرید آنلاین بلیط هواپیما، رزرو هتل، قطار، تورهای مسافرتی و خدمات سفر با قیمت شفاف و استرداد طبق قوانین در فیروزو.',
+    en: 'Book flight tickets, hotels, trains, travel packages and concierge services with transparent pricing and standard refund policies on Firuzo.',
+    ar: 'حجز تذاكر الطيران والفنادق والقطارات والجولات السياحية مع شفافية الأسعار وسياسات الاسترداد المعتمدة.',
+    zh: '在 Firuzo 在线预订机票、酒店、火车票及旅游套餐，尊享透明价格与规范退改保障。',
+    ru: 'Онлайн бронирование авиабилетов, отелей, поездов и туров с прозрачными ценами.'
   });
 
   return {

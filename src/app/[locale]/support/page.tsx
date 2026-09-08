@@ -29,7 +29,7 @@ export default function SupportPage() {
     },
     {
       q: lt(locale, { fa: 'چرا رزرو بلیت و پرداخت با کارت شتاب و تتر به صورت آنی صادر می‌شود؟', en: 'How are bookings instantly issued with Shetab and USDT payments?', ar: 'لماذا تصدر التذاكر فورياً مع الدفع بشتاب وتيثر؟', zh: '为什么通过 Shetab 和 USDT 可以即时出票？', ru: 'Почему билеты оформляются мгновенно при оплате Shetab и USDT?' }),
-      a: lt(locale, { fa: 'پلتفرم فیروزه مستقیماً به سامانه تأمین‌کنندگان رسمی (GDS) و دفتر کل مالی متصل است. بلافاصله پس از تایید تراکنش درگاه شاپرک یا انتقال تتر TRC20، صندلی یا اتاق قطعی شده و کد رهگیری PNR صادر می‌شود.', en: 'Firuzo is directly integrated with official Global Distribution Systems (GDS) and automated ledgers, securing seats immediately upon gateway clearance.', ar: 'فيروزو متصل مباشرة بأنظمة التوزيع العالمية GDS وتصدر التذكرة فوراً بعد إتمام الدفع.', zh: 'Firuzo 直接连入全球分销系统 GDS 与自动化记账流水，支付成功后即刻锁定席位。', ru: 'Firuzo напрямую подключен к GDS и автоматически бронирует места сразу после оплаты.' }),
+      a: lt(locale, { fa: 'پلتفرم فیروزو مستقیماً به سامانه تأمین‌کنندگان رسمی (GDS) و دفتر کل مالی متصل است. بلافاصله پس از تایید تراکنش درگاه شاپرک یا انتقال تتر TRC20، صندلی یا اتاق قطعی شده و کد رهگیری PNR صادر می‌شود.', en: 'Firuzo is directly integrated with official Global Distribution Systems (GDS) and automated ledgers, securing seats immediately upon gateway clearance.', ar: 'فيروزو متصل مباشرة بأنظمة التوزيع العالمية GDS وتصدر التذكرة فوراً بعد إتمام الدفع.', zh: 'Firuzo 直接连入全球分销系统 GDS 与自动化记账流水，支付成功后即刻锁定席位。', ru: 'Firuzo напрямую подключен к GDS и автоматически бронирует места сразу после оплаты.' }),
     },
     {
       q: lt(locale, { fa: 'آیا بیمه مسافرتی سامان مورد قبول سفارتخانه‌های اروپایی است؟', en: 'Is Saman Travel Insurance officially accepted by European embassies?', ar: 'هل تأمين سامان معتمد لدى السفارات الأوروبية؟', zh: 'Saman 旅行保险被欧洲使领馆认可吗？', ru: 'Принимается ли страховка Saman европейскими посольствами?' }),
@@ -37,7 +37,7 @@ export default function SupportPage() {
     },
     {
       q: lt(locale, { fa: 'در صورت تاخیر یا لغو پرواز خارجی چه اقدامی انجام دهم؟', en: 'What should I do if my international flight is delayed or cancelled?', ar: 'ماذا أفعل في حال تأخر أو إلغاء رحلتي الدولية؟', zh: '国际航班延误或取消时我该怎么做？', ru: 'Что делать при задержке или отмене рейса?' }),
-      a: lt(locale, { fa: 'تیم پشتیبانی ۲۴ ساعته فیروزه از طریق سامانه رصد تاخیر پرواز مطلع شده و به صورت فعال جهت جابجایی رایگان صندلی یا صدور گواهی استرداد بدون جریمه در کنار شما خواهد بود.', en: 'Our 24/7 concierge actively tracks your flight and assists with free re-booking or full refund waiver certificates.', ar: 'يتابع فريق الكونسيرج رحلتك على مدار الساعة لتسهيل التعديل أو الاسترداد بدون غرامة.', zh: '我们的24小时管家团队会自动跟踪航班动态，协助免手续费改签或退款。', ru: 'Наша служба поддержки 24/7 отслеживает рейсы и помогает с бесплатным переоформлением.' }),
+      a: lt(locale, { fa: 'تیم پشتیبانی ۲۴ ساعته فیروزو از طریق سامانه رصد تاخیر پرواز مطلع شده و به صورت فعال جهت جابجایی رایگان صندلی یا صدور گواهی استرداد بدون جریمه در کنار شما خواهد بود.', en: 'Our 24/7 concierge actively tracks your flight and assists with free re-booking or full refund waiver certificates.', ar: 'يتابع فريق الكونسيرج رحلتك على مدار الساعة لتسهيل التعديل أو الاسترداد بدون غرامة.', zh: '我们的24小时管家团队会自动跟踪航班动态，协助免手续费改签或退款。', ru: 'Наша служба поддержки 24/7 отслеживает рейсы и помогает с бесплатным переоформлением.' }),
     },
   ];
 
@@ -97,7 +97,7 @@ export default function SupportPage() {
                   {lt(locale, { fa: 'هم‌اکنون در سفر هستید و با مشکل فرودگاهی یا پذیرش هتل مواجه شدید؟', en: 'Currently traveling and experiencing check-in or transit issues?', ar: 'هل تواجه مشكلة حالياً أثناء سفرك؟', zh: '正在旅行中遇到值机或入住问题？', ru: 'Возникли проблемы при регистрации или в поездке?' })}
                 </h3>
                 <p className="text-xs sm:text-sm text-surface/80 font-medium mt-0.5">
-                  {lt(locale, { fa: 'کانسیرژ فیروزه بدون وقفه از طریق تماس تلفنی و پیام‌رسان‌ها آماده راهبری و حل مشکل شماست.', en: 'Our concierge team resolves border, hotel, or flight issues instantly.', ar: 'فريقنا متاح فوراً لمساعدتك في أي طارئ سفر.', zh: 'Firuzo 专属旅行管家全天候协助解决行程问题。', ru: 'Служба консьерж-сервиса оперативно решит любой вопрос.' })}
+                  {lt(locale, { fa: 'کانسیرژ فیروزو بدون وقفه از طریق تماس تلفنی و پیام‌رسان‌ها آماده راهبری و حل مشکل شماست.', en: 'Our concierge team resolves border, hotel, or flight issues instantly.', ar: 'فريقنا متاح فوراً لمساعدتك في أي طارئ سفر.', zh: 'Firuzo 专属旅行管家全天候协助解决行程问题。', ru: 'Служба консьерж-сервиса оперативно решит любой вопрос.' })}
                 </p>
               </div>
             </div>
@@ -111,7 +111,7 @@ export default function SupportPage() {
                 <span>+98 (21) 9100-0000</span>
               </a>
               <a
-                href="https://t.me"
+                href={process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ? `https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}` : 'https://t.me/firuzo_support'}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="h-11 px-4 rounded-xl bg-surface/15 hover:bg-surface/25 border border-surface/20 text-surface font-bold text-xs transition flex items-center justify-center gap-1.5"

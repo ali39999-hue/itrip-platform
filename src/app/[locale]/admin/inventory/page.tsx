@@ -76,6 +76,16 @@ export default function AdminInventoryPage() {
     loadData();
   }, [loadData]);
 
+  // Escape closes the creation modal.
+  useEffect(() => {
+    if (!showModal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowModal(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showModal]);
+
   const handleCreateItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supplierId || !name.trim()) return;
@@ -95,7 +105,7 @@ export default function AdminInventoryPage() {
       setCode('');
       await loadData();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Error creating item');
+      setError(err instanceof Error ? err.message : 'Error creating item');
     } finally {
       setCreating(false);
     }
@@ -106,7 +116,7 @@ export default function AdminInventoryPage() {
       await updateAllotment(allotmentId, { stopSell: !currentStatus });
       await loadData();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Failed to update allotment');
+      setError(err instanceof Error ? err.message : 'Failed to update allotment');
     }
   };
 
@@ -124,15 +134,17 @@ export default function AdminInventoryPage() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button
+            type="button"
             onClick={loadData}
-            className="h-10 px-3 bg-surface border border-line text-sub rounded-xl hover:text-ink transition flex items-center gap-1.5 text-xs font-bold"
+            className="min-h-11 px-3 bg-surface border border-line text-sub rounded-xl hover:text-ink transition flex items-center gap-1.5 text-xs font-bold"
           >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
             {lt(locale, { fa: 'بروزرسانی', en: 'Refresh', ar: 'تحديث', zh: '刷新', ru: 'Обновить' })}
           </button>
           <button
+            type="button"
             onClick={() => setShowModal(true)}
-            className="h-10 px-4 bg-brand text-surface rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 hover:bg-brand-dark transition shadow-sm"
+            className="min-h-11 px-4 bg-brand text-surface rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 hover:bg-brand-dark transition shadow-sm"
           >
             <Plus size={16} />
             {lt(locale, { fa: 'افزودن آیتم انبار جدید', en: 'Add Inventory Item', ar: 'إضافة عنصر مخزون جديد', zh: '添加新库存项', ru: 'Добавить позицию' })}
@@ -141,9 +153,9 @@ export default function AdminInventoryPage() {
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-bold flex items-center gap-2">
-          <AlertCircle size={18} />
-          {error}
+        <div role="alert" className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-bold flex items-center gap-2">
+          <AlertCircle size={18} aria-hidden="true" />
+          <span>{error}</span>
         </div>
       )}
 
@@ -184,7 +196,7 @@ export default function AdminInventoryPage() {
                     <Building2 size={13} />
                     <span>{item.supplierName}</span>
                     <span>•</span>
-                    <span>{lt(locale, { fa: 'شناسه آیتم:', en: 'Item ID:', ar: 'معرف العنصر:', zh: '项目ID：', ru: 'ID:' })} <code className="font-mono text-ink">{item.id}</code></span>
+                    <span className="min-w-0 truncate">{lt(locale, { fa: 'شناسه آیتم:', en: 'Item ID:', ar: 'معرف العنصر:', zh: '项目ID：', ru: 'ID:' })} <code className="font-mono text-ink" title={item.id}>{item.id.length > 12 ? `${item.id.slice(0, 12)}…` : item.id}</code></span>
                   </div>
                 </div>
 
@@ -231,8 +243,10 @@ export default function AdminInventoryPage() {
                         <span className="font-bold">{lt(locale, { fa: 'مانده:', en: 'Avail:', ar: 'المتاح:', zh: '可用:', ru: 'Доступно:' })} {a.available}</span>
                       </div>
                       <button
+                        type="button"
                         onClick={() => toggleStopSell(a.id, a.stopSell)}
-                        className={`w-full py-1 text-[10px] font-bold rounded-md transition ${
+                        aria-pressed={a.stopSell}
+                        className={`w-full min-h-9 py-1 text-[10px] font-bold rounded-md transition ${
                           a.stopSell
                             ? 'bg-destructive text-surface hover:bg-destructive/90'
                             : 'bg-surface border border-line text-sub hover:text-ink'
@@ -251,8 +265,8 @@ export default function AdminInventoryPage() {
 
       {/* Add Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-xs grid place-items-center p-4">
-          <div className="bg-surface w-full max-w-md rounded-2xl border border-line p-6 shadow-xl space-y-4">
+        <div className="fixed inset-0 z-[200] bg-ink/65 backdrop-blur-xs grid place-items-center p-4 overflow-y-auto" onClick={() => setShowModal(false)}>
+          <div role="dialog" aria-modal="true" aria-label={lt(locale, { fa: 'تعریف آیتم انبار جدید', en: 'Add Inventory Item', ar: 'إضافة عنصر مخزون جديد', zh: '添加新库存项', ru: 'Добавить позицию' })} onClick={(e) => e.stopPropagation()} className="bg-surface w-full max-w-md rounded-2xl border border-line p-6 shadow-xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-ink">
               {lt(locale, { fa: 'تعریف آیتم انبار جدید', en: 'Add Inventory Item', ar: 'إضافة عنصر مخزون جديد', zh: '添加新库存项', ru: 'Добавить позицию' })}
             </h3>
@@ -359,14 +373,14 @@ export default function AdminInventoryPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="h-10 px-4 rounded-xl border border-line text-sub font-bold text-sm hover:bg-soft"
+                  className="min-h-11 px-4 rounded-xl border border-line text-sub font-bold text-sm hover:bg-soft"
                 >
                   {lt(locale, { fa: 'انصراف', en: 'Cancel', ar: 'إلغاء', zh: '取消', ru: 'Отмена' })}
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="h-10 px-5 rounded-xl bg-brand text-surface font-bold text-sm hover:bg-brand-dark disabled:opacity-50"
+                  className="min-h-11 px-5 rounded-xl bg-brand text-surface font-bold text-sm hover:bg-brand-dark disabled:opacity-50"
                 >
                   {creating ? '...' : lt(locale, { fa: 'ثبت و تخصیص سهمیه', en: 'Save & Allocate', ar: 'حفظ وتخصيص', zh: '保存并分配', ru: 'Сохранить' })}
                 </button>

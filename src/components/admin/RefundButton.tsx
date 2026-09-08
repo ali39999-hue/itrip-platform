@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { RotateCcw, AlertTriangle, X, CheckCircle2, Loader2 } from 'lucide-react';
@@ -14,6 +14,16 @@ export function RefundButton({ bookingId, reference }: { bookingId: string, refe
   const [openModal, setOpenModal] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const router = useRouter();
+
+  // Escape closes the confirmation modal (unless a refund is in flight).
+  useEffect(() => {
+    if (!openModal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isPending) setOpenModal(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [openModal, isPending]);
 
   const handleConfirmRefund = () => {
     setFeedback(null);
@@ -49,7 +59,7 @@ export function RefundButton({ bookingId, reference }: { bookingId: string, refe
           setOpenModal(true);
         }}
         disabled={isPending}
-        className="h-8 border-rose-warm/20 text-rose-warm hover:bg-rose-warm/10 focus-visible:ring-brand font-black text-xs gap-1.5"
+        className="min-h-9 border-rose-warm/20 text-rose-warm hover:bg-rose-warm/10 focus-visible:ring-brand font-black text-xs gap-1.5"
       >
         <RotateCcw size={13} aria-hidden="true" />
         <span>{lt(locale, { fa: 'استرداد', en: 'Refund', ar: 'استرداد', zh: '退款', ru: 'Возврат' })}</span>
@@ -57,8 +67,8 @@ export function RefundButton({ bookingId, reference }: { bookingId: string, refe
 
       {/* Modern In-App Confirmation Modal */}
       {openModal && (
-        <div className="fixed inset-0 z-[200] bg-deep/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-surface rounded-3xl p-6 border border-line shadow-elev-3 space-y-4">
+        <div className="fixed inset-0 z-[200] bg-deep/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200 overflow-y-auto" onClick={() => { if (!isPending) setOpenModal(false); }}>
+          <div role="dialog" aria-modal="true" aria-label={lt(locale, { fa: 'تأییدیه استرداد سفارش', en: 'Confirm booking refund', ar: 'تأكيد استرداد الحجز', zh: '确认订单退款', ru: 'Подтверждение возврата' })} onClick={(e) => e.stopPropagation()} className="w-full max-w-md bg-surface rounded-3xl p-6 border border-line shadow-elev-3 space-y-4 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <div className="flex items-center gap-2 text-rose-600 font-black text-sm">
                 <AlertTriangle size={18} />
@@ -91,7 +101,7 @@ export function RefundButton({ bookingId, reference }: { bookingId: string, refe
                     type="button"
                     onClick={() => setOpenModal(false)}
                     disabled={isPending}
-                    className="flex-1 h-11 rounded-xl bg-soft hover:bg-line/60 text-sub font-bold text-xs transition"
+                    className="flex-1 min-h-11 rounded-xl bg-soft hover:bg-line/60 text-sub font-bold text-xs transition"
                   >
                     انصراف
                   </button>
@@ -99,7 +109,7 @@ export function RefundButton({ bookingId, reference }: { bookingId: string, refe
                     type="button"
                     onClick={handleConfirmRefund}
                     disabled={isPending}
-                    className="flex-1 h-11 rounded-xl bg-rose-600 hover:bg-rose-700 text-surface font-black text-xs transition flex items-center justify-center gap-1.5 shadow-sm"
+                    className="flex-1 min-h-11 rounded-xl bg-rose-600 hover:bg-rose-700 text-surface font-black text-xs transition flex items-center justify-center gap-1.5 shadow-sm"
                   >
                     {isPending && <Loader2 size={14} className="animate-spin" />}
                     <span>تأیید و اجرای استرداد</span>

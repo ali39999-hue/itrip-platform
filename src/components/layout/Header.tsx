@@ -133,7 +133,7 @@ export function Header() {
         <div className="p-4 border-t border-line bg-soft/40 text-center">
           <p className="text-[11px] text-sub font-bold m-0">
             {lt(locale, {
-              fa: 'پلتفرم سفر هوشمند فیروزه · پشتیبانی ۲۴/۷',
+              fa: 'پلتفرم سفر هوشمند فیروزو · پشتیبانی ۲۴/۷',
               en: 'Firuzo Smart Travel Platform · 24/7 Support',
               ar: 'منصة فيروزو للسفر الذكي · دعم ٢٤/٧',
               zh: 'Firuzo 智能旅游平台 · 24/7 全天候支持',

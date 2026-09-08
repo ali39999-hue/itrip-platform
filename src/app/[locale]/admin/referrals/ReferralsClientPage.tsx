@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { ERPDataGrid, ColumnDef } from '@/components/admin/ERPDataGrid';
 import { LeaderDashboardRow } from '@/domains/referral/ReferralDomainService';
 import { settleLeaderRewardAction, createReferralCodeAction } from '@/actions/admin';
@@ -13,12 +14,10 @@ import {
   CheckCircle2,
   Clock,
   XCircle,
-  TrendingUp,
   CreditCard,
   Eye,
   Plus,
   X,
-  Phone,
   Mail,
   Loader2,
 } from 'lucide-react';
@@ -30,6 +29,7 @@ interface ReferralsClientPageProps {
 
 export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
   const locale = useLocale();
+  const router = useRouter();
   const [data, setData] = useState<LeaderDashboardRow[]>(initialData);
   const [selectedLeader, setSelectedLeader] = useState<LeaderDashboardRow | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -37,20 +37,29 @@ export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
   const [createLeaderId, setCreateLeaderId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [settlingId, setSettlingId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const numFmt = locale === 'fa' ? 'fa-IR' : 'en-US';
 
+  // Escape closes modals and disarms the two-step settle confirmation.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setShowCreateModal(false);
+      setSelectedLeader(null);
+      setConfirmingId(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const handleSettle = async (row: LeaderDashboardRow) => {
-    if (!confirm(lt(locale, {
-      fa: `آیا از ثبت تسویه پاداش سرگروه «${row.leaderName}» به مبلغ ${formatMoney(row.estimatedRewardAmount, 'IRR', locale)} اطمینان دارید؟`,
-      en: `Confirm settling ${formatMoney(row.estimatedRewardAmount, 'IRR', locale)} reward for ${row.leaderName}?`,
-      ar: `هل أنت متأكد من تسوية مكافأة القائد ${row.leaderName}؟`,
-      zh: `确认结算领队 ${row.leaderName} 的奖励？`,
-      ru: `Подтвердить выплату вознаграждения лидеру ${row.leaderName}?`,
-    }))) {
+    // Two-step inline confirmation instead of the blocking native confirm().
+    if (confirmingId !== row.id) {
+      setConfirmingId(row.id);
       return;
     }
-
+    setConfirmingId(null);
     setSettlingId(row.id);
     try {
       const res = await settleLeaderRewardAction(row.id);
@@ -93,7 +102,7 @@ export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
         setShowCreateModal(false);
         setCreateCode('');
         setCreateLeaderId('');
-        window.location.reload();
+        router.refresh();
       } else {
         toast.error(res.error || 'خطا در ایجاد کد');
       }
@@ -223,16 +232,35 @@ export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
           );
         }
         if (r.rewardPercent > 0 && r.estimatedRewardAmount > 0) {
+          const armed = confirmingId === r.id;
           return (
-            <button
-              type="button"
-              disabled={settlingId === r.id}
-              onClick={() => handleSettle(r)}
-              className="px-2.5 py-1 rounded-lg text-xs font-bold bg-brand text-surface hover:bg-brand-dark transition disabled:opacity-50 flex items-center gap-1"
-            >
-              {settlingId === r.id ? <Loader2 size={12} className="animate-spin" /> : <CreditCard size={12} />}
-              <span>تسویه پاداش</span>
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={settlingId === r.id}
+                onClick={() => handleSettle(r)}
+                aria-live="polite"
+                title={armed
+                  ? lt(locale, { fa: `تأیید تسویه ${formatMoney(r.estimatedRewardAmount, 'IRR', locale)} برای ${r.leaderName}؟ دوباره بزنید`, en: `Confirm settling ${formatMoney(r.estimatedRewardAmount, 'IRR', locale)} for ${r.leaderName}? Click again`, ar: 'اضغط مرة أخرى للتأكيد', zh: '再次点击确认', ru: 'Нажмите ещё раз для подтверждения' })
+                  : lt(locale, { fa: 'تسویه پاداش', en: 'Settle reward', ar: 'تسوية المكافأة', zh: '结算奖励', ru: 'Выплатить' })}
+                className={`min-h-9 px-2.5 rounded-lg text-xs font-bold transition disabled:opacity-50 flex items-center gap-1 ${
+                  armed ? 'bg-rose-600 text-surface hover:bg-rose-700' : 'bg-brand text-surface hover:bg-brand-dark'
+                }`}
+              >
+                {settlingId === r.id ? <Loader2 size={12} className="animate-spin" aria-hidden="true" /> : <CreditCard size={12} aria-hidden="true" />}
+                <span>{armed ? lt(locale, { fa: 'تأیید تسویه؟', en: 'Confirm?', ar: 'تأكيد؟', zh: '确认？', ru: 'Точно?' }) : 'تسویه پاداش'}</span>
+              </button>
+              {armed && settlingId !== r.id && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingId(null)}
+                  aria-label={lt(locale, { fa: 'انصراف از تسویه', en: 'Cancel settlement', ar: 'إلغاء التسوية', zh: '取消结算', ru: 'Отменить выплату' })}
+                  className="min-w-9 min-h-9 grid place-items-center rounded-lg border border-line text-sub hover:text-ink"
+                >
+                  <X size={13} aria-hidden="true" />
+                </button>
+              )}
+            </div>
           );
         }
         return <span className="text-sub text-xs">نصاب ناکافی</span>;
@@ -245,7 +273,7 @@ export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
         <button
           type="button"
           onClick={() => setSelectedLeader(r)}
-          className="p-1.5 rounded-lg border border-line hover:bg-soft text-sub hover:text-ink transition flex items-center gap-1 text-xs font-bold"
+          className="min-h-9 px-2 rounded-lg border border-line hover:bg-soft text-sub hover:text-ink transition flex items-center gap-1 text-xs font-bold"
           title="مشاهده لیست مسافران"
         >
           <Eye size={14} />
@@ -313,8 +341,8 @@ export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
 
       {/* Modal: View Travelers for a Leader */}
       {selectedLeader && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-surface rounded-3xl border border-line shadow-elev-3 w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setSelectedLeader(null)}>
+          <div role="dialog" aria-modal="true" aria-label={`مسافران سرگروه: ${selectedLeader.leaderName}`} onClick={(e) => e.stopPropagation()} className="bg-surface rounded-3xl border border-line shadow-elev-3 w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
             <div className="p-6 border-b border-line flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-black text-ink flex items-center gap-2">
@@ -384,8 +412,8 @@ export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
 
       {/* Modal: Create Referral Code */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-surface rounded-3xl border border-line shadow-elev-3 w-full max-w-md overflow-hidden">
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200 overflow-y-auto" onClick={() => setShowCreateModal(false)}>
+          <div role="dialog" aria-modal="true" aria-label="تعریف کد معرف سرگروه جدید" onClick={(e) => e.stopPropagation()} className="bg-surface rounded-3xl border border-line shadow-elev-3 w-full max-w-md overflow-hidden my-8">
             <div className="p-6 border-b border-line flex items-center justify-between">
               <h3 className="text-base font-black text-ink">تعریف کد معرف سرگروه جدید</h3>
               <button

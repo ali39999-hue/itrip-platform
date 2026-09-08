@@ -1,6 +1,7 @@
 import { createLogger } from '@/lib/observability/logger';
 import { ProductionWhatsappProvider } from './providers/ProductionWhatsappProvider';
 import { ProductionTelegramProvider } from './providers/ProductionTelegramProvider';
+import { ProductionBaleProvider } from './providers/ProductionBaleProvider';
 
 const notifLogger = createLogger('notification-provider');
 
@@ -17,6 +18,7 @@ export interface NotificationProvider {
   sendEmail(to: string, subject: string, body: string): Promise<NotificationResult>;
   sendWhatsApp(to: string, message: string): Promise<NotificationResult>;
   sendTelegram(to: string, message: string): Promise<NotificationResult>;
+  sendBale(to: string, message: string): Promise<NotificationResult>;
 }
 
 /**
@@ -37,6 +39,9 @@ export class ConsoleNotificationProvider implements NotificationProvider {
   }
 
   async sendEmail(to: string, subject: string, body: string): Promise<NotificationResult> {
+    if (process.env.RESEND_API_KEY) {
+      return new ProductionNotificationProvider().sendEmail(to, subject, body);
+    }
     const [userPart, domainPart] = to.split('@');
     const maskedEmail = domainPart ? `${userPart?.slice(0, 2)}***@${domainPart}` : '***';
     notifLogger.info('Dispatched Email (Dev Simulator)', { to: maskedEmail, subject, bodyPreview: `${body.slice(0, 60)}...` });
@@ -48,6 +53,10 @@ export class ConsoleNotificationProvider implements NotificationProvider {
   }
 
   async sendWhatsApp(to: string, message: string): Promise<NotificationResult> {
+    if (process.env.WHATSAPP_ACCESS_TOKEN || process.env.TWILIO_ACCOUNT_SID) {
+      const whatsappProvider = new ProductionWhatsappProvider();
+      return whatsappProvider.sendWhatsAppMessage(to, message);
+    }
     const maskedTo = to.length > 7 ? `${to.slice(0, 4)}***${to.slice(-2)}` : '***';
     notifLogger.info('Dispatched WhatsApp (Dev Simulator)', { to: maskedTo, message });
     return {
@@ -58,11 +67,29 @@ export class ConsoleNotificationProvider implements NotificationProvider {
   }
 
   async sendTelegram(to: string, message: string): Promise<NotificationResult> {
+    if (process.env.TELEGRAM_BOT_TOKEN) {
+      const telegramProvider = new ProductionTelegramProvider();
+      return telegramProvider.sendMessage(to, message);
+    }
     const maskedTo = to.length > 4 ? `${to.slice(0, 3)}***` : '***';
     notifLogger.info('Dispatched Telegram (Dev Simulator)', { to: maskedTo, message });
     return {
       success: true,
       messageId: `sim-tg-${Date.now()}`,
+      provider: this.name,
+    };
+  }
+
+  async sendBale(to: string, message: string): Promise<NotificationResult> {
+    if (process.env.BALE_BOT_TOKEN) {
+      const baleProvider = new ProductionBaleProvider();
+      return baleProvider.sendMessage(to, message);
+    }
+    const maskedTo = to.length > 4 ? `${to.slice(0, 3)}***` : '***';
+    notifLogger.info('Dispatched Bale (Dev Simulator)', { to: maskedTo, message });
+    return {
+      success: true,
+      messageId: `sim-bale-${Date.now()}`,
       provider: this.name,
     };
   }
@@ -200,6 +227,11 @@ export class ProductionNotificationProvider implements NotificationProvider {
   async sendTelegram(to: string, message: string): Promise<NotificationResult> {
     const telegramProvider = new ProductionTelegramProvider();
     return telegramProvider.sendMessage(to, message);
+  }
+
+  async sendBale(to: string, message: string): Promise<NotificationResult> {
+    const baleProvider = new ProductionBaleProvider();
+    return baleProvider.sendMessage(to, message);
   }
 }
 

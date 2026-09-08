@@ -145,7 +145,7 @@ export default function AutoBuyAccountPage() {
                 {lt(locale, { fa: 'ربات‌های خرید خودکار (رزرو در تاریخ و شرایط مشخص)', en: 'My Auto-Buy Rules & Monitoring Bots', ar: 'طلبات الشراء التلقائي', zh: '我的自动订票规则与任务', ru: 'Мои правила автопокупки' })}
               </h1>
               <p className="text-xs sm:text-sm font-medium text-sub mt-1">
-                {lt(locale, { fa: 'مقصد، تاریخ و بودجه خود را تعیین کنید؛ سیستم فیروزه به محض تحقق شروط، خرید را از کیف‌پول انجام می‌دهد.', en: 'Set your route, date and budget; Firuzo automatically secures the booking using your wallet as soon as conditions match.', ar: 'حدد التاريخ والوجهة والميزانية وسيقوم النظام بالشراء تلقائياً.', zh: '设定目的地、日期及预算，达到条件即刻自动从钱包扣款完成订票。', ru: 'Задайте маршрут, дату и бюджет — бот купит билет при выполнении условий.' })}
+                {lt(locale, { fa: 'مقصد، تاریخ و بودجه خود را تعیین کنید؛ سیستم فیروزو به محض تحقق شروط، خرید را از کیف‌پول انجام می‌دهد.', en: 'Set your route, date and budget; Firuzo automatically secures the booking using your wallet as soon as conditions match.', ar: 'حدد التاريخ والوجهة والميزانية وسيقوم النظام بالشراء تلقائياً.', zh: '设定目的地、日期及预算，达到条件即刻自动从钱包扣款完成订票。', ru: 'Задайте маршрут, дату и бюджет — бот купит билет при выполнении условий.' })}
               </p>
             </div>
 

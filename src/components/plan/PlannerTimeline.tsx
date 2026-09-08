@@ -119,7 +119,7 @@ export function PlannerTimeline({
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2 mb-1">
             <h3 className="text-sm font-black text-ink m-0">
-              {lt(locale, { fa: 'توصیه هوشمند سفر فیروزه', en: 'Firuzo Smart Travel Insight', ar: 'نصيحة فيروزو الذكية للسفر', zh: 'Firuzo 智能出行锦囊', ru: 'Умный совет путешественникам' })}
+              {lt(locale, { fa: 'توصیه هوشمند سفر فیروزو', en: 'Firuzo Smart Travel Insight', ar: 'نصيحة فيروزو الذكية للسفر', zh: 'Firuzo 智能出行锦囊', ru: 'Умный совет путешественникам' })}
             </h3>
             <button
               type="button"

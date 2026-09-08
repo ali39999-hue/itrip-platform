@@ -93,13 +93,13 @@ export default function TraveloguesPage() {
       <div>
         <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black text-brand-dark bg-mint border border-brand/20 rounded-full mb-3 shadow-xs">
           <BookOpen size={14} />
-          <span>{lt(locale, { fa: 'تجربه‌های واقعی مسافران فیروزه', en: 'Real Traveler Stories', ar: 'تجارب المسافرين الحقيقية', zh: '真实旅行者故事', ru: 'Реальные истории' })}</span>
+          <span>{lt(locale, { fa: 'تجربه‌های واقعی مسافران فیروزو', en: 'Real Traveler Stories', ar: 'تجارب المسافرين الحقيقية', zh: '真实旅行者故事', ru: 'Реальные истории' })}</span>
         </span>
         <h1 className="text-3xl sm:text-4xl font-black text-ink tracking-tight mb-2">
           {lt(locale, { fa: 'سفرنامه‌ها و روایت‌های سفر', en: 'Travelogues & Stories', ar: 'يوميات وتجارب السفر', zh: '旅行游记与体验', ru: 'Истории путешествий' })}
         </h1>
         <p className="text-xs sm:text-sm font-bold text-sub max-w-2xl leading-relaxed">
-          {lt(locale, { fa: 'داستان‌ها، تجربیات بدون سانسور و نکات طلایی مسافران فیروز از جاذبه‌ها و مقاصد گردشگری.', en: 'Unfiltered travel stories and genuine tips from Firuzo community.', ar: 'قصص وتجارب حقيقية من مجتمع مسافري فيروز.', zh: '来自 Firuzo 旅行社区的真实经历与实用建议。', ru: 'Честные истории и советы от путешественников Firuzo.' })}
+          {lt(locale, { fa: 'داستان‌ها، تجربیات بدون سانسور و نکات طلایی مسافران فیروزو از جاذبه‌ها و مقاصد گردشگری.', en: 'Unfiltered travel stories and genuine tips from Firuzo community.', ar: 'قصص وتجارب حقيقية من مجتمع مسافري فيروزو.', zh: '来自 Firuzo 旅行社区的真实经历与实用建议。', ru: 'Честные истории и советы от путешественников Firuzo.' })}
         </p>
       </div>
 

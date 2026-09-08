@@ -19,6 +19,7 @@ model User {
   telegramId     String?  @unique
   whatsappPhone   String?  @unique
   wechatId       String?  @unique
+  baleId         String?  @unique
   name           String?
   firstNameFa    String?
   lastNameFa     String?

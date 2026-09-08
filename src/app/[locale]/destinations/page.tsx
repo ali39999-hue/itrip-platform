@@ -46,7 +46,7 @@ export default function DestinationsPage() {
         <div className="relative z-10 max-w-2xl">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface/15 backdrop-blur-md text-mint-bright text-xs font-black mb-3 border border-surface/20">
             <Compass size={14} />
-            <span>{lt(locale, { fa: 'راهنمای مقاصد و سفرهای فیروزه', en: 'Firuzo Global Destinations Guide', ar: 'دليل الوجهات العالمية', zh: 'Firuzo 全球目的地指南', ru: 'Гид по направлениям Firuzo' })}</span>
+            <span>{lt(locale, { fa: 'راهنمای مقاصد و سفرهای فیروزو', en: 'Firuzo Global Destinations Guide', ar: 'دليل الوجهات العالمية', zh: 'Firuzo 全球目的地指南', ru: 'Гид по направлениям Firuzo' })}</span>
           </span>
           <h1 className="text-3xl sm:text-4xl font-black mb-2">{t('title')}</h1>
           <p className="text-surface/85 text-sm sm:text-base leading-relaxed mb-6">{t('subtitle')}</p>

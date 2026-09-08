@@ -70,14 +70,19 @@ export default async function TravelFilesPage() {
               const totalItems = (trip.bookings || []).reduce((sum: number, b: { items?: unknown[] }) => sum + (b.items?.length || 0), 0);
               return (
                 <div key={trip.id} className="bg-surface p-5 rounded-2xl border border-line hover:border-brand/40 transition shadow-sm space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className="inline-block px-2.5 py-0.5 rounded-md bg-brand-dark text-surface text-[11px] font-black tracking-wider mb-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <span className="inline-block px-2.5 py-0.5 rounded-md bg-brand-dark text-surface text-[11px] font-black tracking-wider mb-1" dir="ltr">
                         {trip.reference}
                       </span>
-                      <h3 className="text-base font-black text-ink">{trip.title}</h3>
+                      <h3 className="text-base font-black text-ink leading-snug break-words">{trip.title}</h3>
                     </div>
-                    <span className="px-2.5 py-1 rounded-full text-xs font-black bg-soft text-brand-dark">
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-black shrink-0 ${
+                      trip.status === 'COMPLETED' ? 'bg-success/10 text-success'
+                      : trip.status === 'CANCELLED' ? 'bg-destructive/10 text-destructive'
+                      : trip.status === 'IN_PROGRESS' || trip.status === 'BOOKED' ? 'bg-mint text-brand-dark'
+                      : 'bg-soft text-sub'
+                    }`}>
                       {trip.status}
                     </span>
                   </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { Plus, Users, ShieldAlert, CreditCard, Ban, X, CheckCircle2, Megaphone } from 'lucide-react';
@@ -21,6 +21,16 @@ export function QuickActionsBar() {
   const [alertTitle, setAlertTitle] = useState('');
   const [alertMessage, setAlertMessage] = useState('');
   const [sentSuccess, setSentSuccess] = useState(false);
+
+  // Escape closes the announcement modal.
+  useEffect(() => {
+    if (!alertModal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setAlertModal(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [alertModal]);
 
   const handleClick = (id: string) => {
     switch (id) {
@@ -74,8 +84,8 @@ export function QuickActionsBar() {
 
       {/* Global Announcement Modal */}
       {alertModal && (
-        <div className="fixed inset-0 z-[200] bg-deep/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-surface rounded-3xl p-6 border border-line shadow-elev-3 space-y-4">
+        <div className="fixed inset-0 z-[200] bg-deep/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200 overflow-y-auto" onClick={() => setAlertModal(false)}>
+          <div role="dialog" aria-modal="true" aria-label={lt(locale, { fa: 'ارسال اعلان سراسری', en: 'Send global announcement', ar: 'إرسال إعلان عام', zh: '发送全站公告', ru: 'Отправить общее оповещение' })} onClick={(e) => e.stopPropagation()} className="w-full max-w-md bg-surface rounded-3xl p-6 border border-line shadow-elev-3 space-y-4 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <div className="flex items-center gap-2 text-rose-600 font-black text-sm">
                 <Megaphone size={18} />
@@ -126,13 +136,13 @@ export function QuickActionsBar() {
                   <button
                     type="button"
                     onClick={() => setAlertModal(false)}
-                    className="flex-1 h-11 rounded-xl bg-soft text-sub font-bold text-xs"
+                    className="flex-1 min-h-11 rounded-xl bg-soft text-sub font-bold text-xs"
                   >
                     انصراف
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 h-11 rounded-xl bg-rose-600 hover:bg-rose-700 text-surface font-black text-xs transition shadow-sm"
+                    className="flex-1 min-h-11 rounded-xl bg-rose-600 hover:bg-rose-700 text-surface font-black text-xs transition shadow-sm"
                   >
                     انتشار فوری
                   </button>

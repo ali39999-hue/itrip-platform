@@ -1,12 +1,20 @@
 {
-  "generatedAt": "2026-09-06T11:39:08.881Z",
+  "generatedAt": "2026-09-08T07:49:18.404Z",
   "baseUrl": "http://localhost:3000",
   "pages": {
     "home": {
       "url": "http://localhost:3000/fa",
-      "violationCount": 0,
-      "byRule": [],
-      "passes": 25
+      "violationCount": 3,
+      "byRule": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 3,
+          "sampleTarget": ".gap-3.items-center.flex:nth-child(1) > .min-w-0 > .sm\\:text-\\[11px\\].sm\\:line-clamp-2.line-clamp-1"
+        }
+      ],
+      "passes": 29
     },
     "flights-landing": {
       "url": "http://localhost:3000/fa/flights",
@@ -24,7 +32,7 @@
       "url": "http://localhost:3000/fa/services",
       "violationCount": 0,
       "byRule": [],
-      "passes": 25
+      "passes": 26
     },
     "support": {
       "url": "http://localhost:3000/fa/support",

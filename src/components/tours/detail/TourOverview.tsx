@@ -35,7 +35,7 @@ export function TourOverview({ tour }: TourOverviewProps) {
     {
       icon: Headphones,
       title: lt(locale, { fa: 'پشتیبانی ۲۴ ساعته سفر', en: '24/7 Concierge Support', ar: 'دعم على مدار الساعة', zh: '24小时全程管家', ru: 'Круглосуточная поддержка' }),
-      desc: lt(locale, { fa: 'همراهی تیم پشتیبانی فیروزه از لحظه رزرو تا بازگشت به خانه', en: 'Dedicated assistance from booking until safe return home', ar: 'مرافقة فريق الدعم طوال الرحلة', zh: '从预订至返程全程管家护航', ru: 'Сопровождение с момента бронирования до дома' }),
+      desc: lt(locale, { fa: 'همراهی تیم پشتیبانی فیروزو از لحظه رزرو تا بازگشت به خانه', en: 'Dedicated assistance from booking until safe return home', ar: 'مرافقة فريق الدعم طوال الرحلة', zh: '从预订至返程全程管家护航', ru: 'Сопровождение с момента бронирования до дома' }),
     },
   ];
 
@@ -81,7 +81,7 @@ export function TourOverview({ tour }: TourOverviewProps) {
       {/* Trust & Value Perks */}
       <div className="pt-4 sm:pt-5 border-t border-line">
         <h3 className="text-sm sm:text-base font-black text-ink mb-3">
-          {lt(locale, { fa: 'چرا تورهای اختصاصی فیروزه؟', en: 'Why Choose Firuzo Tours?', ar: 'لماذا جولات فيروزو المتميزة؟', zh: '为什么选择 Firuzo 定制游？', ru: 'Почему выбирают туры Firuzo?' })}
+          {lt(locale, { fa: 'چرا تورهای اختصاصی فیروزو؟', en: 'Why Choose Firuzo Tours?', ar: 'لماذا جولات فيروزو المتميزة؟', zh: '为什么选择 Firuzo 定制游？', ru: 'Почему выбирают туры Firuzo?' })}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
           {perks.map((p, i) => {

@@ -147,14 +147,14 @@ export default function PlanPage() {
       try {
         await navigator.share({
           title: lt(locale, {
-            fa: 'برنامه سفر هوشمند فیروزه',
+            fa: 'برنامه سفر هوشمند فیروزو',
             en: 'Firuzo Smart Trip Itinerary',
             ar: 'خطة السفر الذكية من فيروزو',
             zh: 'Firuzo 智能行程规划',
             ru: 'Умный маршрут путешествия Firuzo',
           }),
           text: lt(locale, {
-            fa: 'برنامه اختصاصی سفر من در پلتفرم فیروزه را مشاهده کنید:',
+            fa: 'برنامه اختصاصی سفر من در پلتفرم فیروزو را مشاهده کنید:',
             en: 'Check out my custom travel itinerary on Firuzo:',
             ar: 'شاهد خطة سفري المخصصة على منصة فيروزو:',
             zh: '在 Firuzo 查看我的专属旅行规划：',

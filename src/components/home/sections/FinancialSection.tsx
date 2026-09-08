@@ -21,7 +21,7 @@ export function FinancialSection() {
         <div className="lg:col-span-7 space-y-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand/10 text-brand-dark text-xs font-bold">
             <Wallet size={16} />
-            <span>{lt(locale, { fa: 'کیف پول چندارزی فیروزه', en: 'Firuzo Multi-Currency Wallet', ar: 'محفظة فيروزو متعددة العملات', zh: 'Firuzo 多币种钱包', ru: 'Мультивалютный кошелек Firuzo' })}</span>
+            <span>{lt(locale, { fa: 'کیف پول چندارزی فیروزو', en: 'Firuzo Multi-Currency Wallet', ar: 'محفظة فيروزو متعددة العملات', zh: 'Firuzo 多币种钱包', ru: 'Мультивалютный кошелек Firuzo' })}</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-ink leading-tight">
             {lt(locale, { fa: 'پرداخت بدون دغدغه با ریال، تتر و کارت‌های بین‌المللی', en: 'Hassle-free payment with IRR, USDT & Intl Cards', ar: 'دفع بدون متاعب بالريال وتيثر والبطاقات الدولية', zh: '使用里亚尔、USDT和国际信用卡轻松支付', ru: 'Удобная оплата в IRR, USDT и международными картами' })}

@@ -116,7 +116,7 @@ export default function ServicesPage() {
         tag: lt(locale, { fa: 'تخصصی و تجاری', en: 'Business & Medical', ar: 'تخصصي', zh: '商务与医疗', ru: 'Деловой и мед.' })
       },
       {
-        title: lt(locale, { fa: 'مرکز پشتیبانی ۲۴/۷ فیروزه', en: '24/7 Concierge Support', ar: 'دعم كونسيرج على مدار الساعة', zh: '24/7 全天候管家客服', ru: 'Поддержка 24/7' }),
+        title: lt(locale, { fa: 'مرکز پشتیبانی ۲۴/۷ فیروزو', en: '24/7 Concierge Support', ar: 'دعم كونسيرج على مدار الساعة', zh: '24/7 全天候管家客服', ru: 'Поддержка 24/7' }),
         desc: lt(locale, { fa: 'پاسخگویی آنی از طریق تماس مستقیم، چت آنلاین و پیام‌رسان‌ها در تمام طول سفر', en: 'Around-the-clock assistance via hotline, live chat & messengers', ar: 'دعم مستمر عبر الهاتف والدردشة', zh: '电话、在线工单与即时聊天全渠道支持', ru: 'Круглосуточная помощь' }),
         icon: Headset,
         href: '/support',
@@ -174,7 +174,7 @@ export default function ServicesPage() {
           <div className="relative z-10 max-w-3xl mx-auto space-y-4">
             <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-surface/15 backdrop-blur-md text-mint-bright text-xs font-black border border-surface/20">
               <Sparkles size={14} />
-              <span>{lt(locale, { fa: 'دروازه جامع خدمات گردشگری فیروزه', en: 'Firuzo Comprehensive Travel Concierge', ar: 'بوابة خدمات فيروزو الشاملة', zh: 'Firuzo 综合旅行管家服务门户', ru: 'Единый портал туристических услуг' })}</span>
+              <span>{lt(locale, { fa: 'دروازه جامع خدمات گردشگری فیروزو', en: 'Firuzo Comprehensive Travel Concierge', ar: 'بوابة خدمات فيروزو الشاملة', zh: 'Firuzo 综合旅行管家服务门户', ru: 'Единый портал туристических услуг' })}</span>
             </span>
             <h1 className="font-black text-3xl sm:text-4xl md:text-5xl text-surface leading-tight tracking-tight">
               {t('title')}

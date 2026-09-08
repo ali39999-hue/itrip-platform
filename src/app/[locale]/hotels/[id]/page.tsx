@@ -17,12 +17,14 @@ import { HotelRooms } from '@/components/hotels/detail/HotelRooms';
 import { BookingPanel } from '@/components/hotels/detail/BookingPanel';
 import { Loader2 } from 'lucide-react';
 import { lt } from '@/lib/lt';
+import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 
 export default function HotelDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('HotelDetail');
+  const { formatAmount } = useDisplayCurrency();
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
 
   const [hotel, setHotel] = useState<DetailedHotelWithMeta | null>(null);
@@ -218,10 +220,7 @@ export default function HotelDetailPage() {
           <div className="text-base font-black text-brand-dark font-mono flex items-baseline gap-1">
             {/* totals.total is in foreign units (needs toman conversion);
                 hotel.pricePerNight from the API is already in Toman. */}
-            <span>{num(capacity.n > 0 ? toman(totals.total) : (hotel?.pricePerNight ?? 0), locale)}</span>
-            <span className="text-[11px] font-bold text-sub">
-              {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томан' })}
-            </span>
+            <span>{formatAmount(capacity.n > 0 ? toman(totals.total) : (hotel?.pricePerNight ?? 0))}</span>
           </div>
         </div>
 

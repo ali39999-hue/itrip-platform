@@ -1,6 +1,6 @@
 # BASE-003 / BASE-101 — Feature Reality Matrix
 
-Generated 2026-09-07 against HEAD `adb5501` (`adb55013bf29cffe16054a63e3513a441319f6fe`) on branch `main`.
+Generated 2026-09-08 against HEAD `4196538` (`4196538bd8735d4e0a25fe1757bafacb7156713f`) on branch `main`.
 Labels: **PRODUCTION-READY / COMPLETE / PARTIAL / LEGACY / MOCK / SIMULATED / BROKEN / MISSING**.
 Every claim below is evidence-backed (file:line) and regenerated automatically via `scripts/generate-reality-matrix.mjs`.
 This matrix supersedes the optimistic claims in README/PRODUCTION_READINESS/SECURITY_AUDIT where they conflict.
@@ -8,10 +8,10 @@ This matrix supersedes the optimistic claims in README/PRODUCTION_READINESS/SECU
 ## Repository Metrics at Current HEAD
 
 - **Version:** 1.5.0 (reconciled BASE-105)
-- **Commit SHA:** `adb5501` (`adb55013bf29cffe16054a63e3513a441319f6fe`)
+- **Commit SHA:** `4196538` (`4196538bd8735d4e0a25fe1757bafacb7156713f`)
 - **Prisma Models:** 62 models
-- **Database Migrations:** 20 migrations (reproducible via `prisma migrate deploy`)
-- **Unit & Integration Test Suites:** 48 test suites (148+ unit tests passing on isolated PostgreSQL 16)
+- **Database Migrations:** 21 migrations (reproducible via `prisma migrate deploy`)
+- **Unit & Integration Test Suites:** 49 test suites (148+ unit tests passing on isolated PostgreSQL 16)
 - **Runtime:** Node.js 20+ / Next.js 16.3 (App Router) / React 19.2
 
 ---
@@ -20,7 +20,7 @@ This matrix supersedes the optimistic claims in README/PRODUCTION_READINESS/SECU
 
 | Area | Status | Evidence & gaps |
 |---|---|---|
-| DB / migrations | PRODUCTION-READY (canonical PostgreSQL) | 62 models, 20 migrations, `migrate deploy` reproducible in CI; `prisma/dev.db` SQLite is dead weight |
+| DB / migrations | PRODUCTION-READY (canonical PostgreSQL) | 62 models, 21 migrations, `migrate deploy` reproducible in CI; `prisma/dev.db` SQLite is dead weight |
 | Relational RBAC | **CANONICAL (runtime)** | `requirePermission` / `getUserPermissions` / `hasErpRole` resolve solely via relational chain (`src/domains/identity/permission-service.ts:21-71`); JWT `role` claim relational (`src/auth.ts:278`); legacy `Role.permissions` JSON bypassed and neutralized to `'[]'` (`src/auth.ts:107`); `OrganizationMembership.roleId` FK referential integrity enforced (`prisma/schema.prisma:97`, `20260906120000_add_org_membership_role_fk`) |
 | Tenant isolation | **PRODUCTION-READY** | Multi-layer defense: middleware JWT permissions check (`src/middleware.ts`), `assertTenantAccess` guard (`permission-service.ts:134`), `createTenantScoper` Prisma extension for `Booking`, `Invoice`, `Trip`, `SettlementBatch`, `TravelDocument` (`src/domains/identity/tenant-scoper.ts`), and centralized `TenantRepository` (`src/domains/identity/TenantRepository.ts`) with DB foreign key constraints |
 | Money/pricing kernel | COMPLETE | `Money` over `Prisma.Decimal` (`src/lib/finance/index.ts`), 12-stage Decimal pricing pipeline (`src/lib/pricing/engine.ts`), no float Math.round on money in pricing/finance |

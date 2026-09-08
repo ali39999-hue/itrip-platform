@@ -130,11 +130,11 @@ export function ToursPromoModal() {
             type="button"
             onClick={() => setIsOpen(true)}
             className="bg-gradient-to-r from-brand to-brand-dark hover:from-brand-dark hover:to-brand text-surface text-xs font-black px-3.5 py-2 rounded-2xl shadow-elev-3 flex items-center gap-2 border border-surface/20 transition-all hover:scale-105 active:scale-95 animate-in fade-in slide-in-from-bottom-3 cursor-pointer"
-            title={lt(locale, { fa: 'مشاهده تورهای منتخب فیروزه', en: 'Explore Curated Tours', ar: 'استكشف الجولات المختارة', zh: '精选旅游特惠', ru: 'Особые туры Firuzo' })}
+            title={lt(locale, { fa: 'مشاهده تورهای منتخب فیروزو', en: 'Explore Curated Tours', ar: 'استكشف الجولات المختارة', zh: '精选旅游特惠', ru: 'Особые туры Firuzo' })}
           >
             <span className="w-2 h-2 rounded-full bg-mint-bright animate-ping" />
             <Compass size={16} className="text-mint-bright" />
-            <span>{lt(locale, { fa: 'تورهای دست‌چین فیروزه', en: 'Curated Tours', ar: 'جولات فيروزو', zh: '精选旅游', ru: 'Особые туры' })}</span>
+            <span>{lt(locale, { fa: 'تورهای دست‌چین فیروزو', en: 'Curated Tours', ar: 'جولات فيروزو', zh: '精选旅游', ru: 'Особые туры' })}</span>
           </button>
           <button
             type="button"
@@ -159,7 +159,7 @@ export function ToursPromoModal() {
           }}
           role="dialog"
           aria-modal="true"
-          aria-label={lt(locale, { fa: 'پاپ‌آپ معرفی تورهای فیروزه', en: 'Firuzo Curated Tours Promo', ar: 'جولات فيروزو', zh: 'Firuzo 旅游推介', ru: 'Туры Firuzo' })}
+          aria-label={lt(locale, { fa: 'پاپ‌آپ معرفی تورهای فیروزو', en: 'Firuzo Curated Tours Promo', ar: 'جولات فيروزو', zh: 'Firuzo 旅游推介', ru: 'Туры Firuzo' })}
         >
           <div className="relative w-full max-w-2xl bg-surface rounded-3xl overflow-hidden border border-line shadow-2xl flex flex-col my-6 animate-in zoom-in-95 duration-250">
             {/* Header / Top banner with glowing badge */}
@@ -170,7 +170,7 @@ export function ToursPromoModal() {
                 <div>
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface/15 backdrop-blur-md text-surface text-[11px] font-black border border-surface/20 mb-2">
                     <Sparkles size={13} className="text-mint-bright" />
-                    <span>{lt(locale, { fa: 'پیشنهاد ویژه مسافران فیروزه', en: 'Special Curated Experiences', ar: 'عروض حصرية لمسافري فيروزو', zh: 'Firuzo 贵宾专享精选', ru: 'Эксклюзивные впечатления' })}</span>
+                    <span>{lt(locale, { fa: 'پیشنهاد ویژه مسافران فیروزو', en: 'Special Curated Experiences', ar: 'عروض حصرية لمسافري فيروزو', zh: 'Firuzo 贵宾专享精选', ru: 'Эксклюзивные впечатления' })}</span>
                   </div>
                   <h2 className="text-xl sm:text-2xl font-black text-surface tracking-tight leading-snug">
                     {lt(locale, { fa: 'سفرهای اختصاصی، هتل‌های ۵ ستاره و خاطرات ماندگار', en: 'Curated Itineraries, 5-Star Luxury & Lifelong Memories', ar: 'رحلات حصرية وفنادق فاخرة', zh: '深度定制、五星级礼遇与难忘旅程', ru: 'Особые маршруты и 5-звёздочный комфорт' })}

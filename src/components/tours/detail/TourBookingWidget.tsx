@@ -75,6 +75,9 @@ export function TourBookingWidget({
     router.push('/checkout');
   }
 
+  const maxAvailable = activeDate ? activeDate.availableSeats : 0;
+  const isSoldOut = activeDate ? (activeDate.availableSeats <= 0) : false;
+
   return (
     <>
       {/* Desktop Sticky Booking Card */}
@@ -86,7 +89,7 @@ export function TourBookingWidget({
               {lt(locale, { fa: 'قیمت هر نفر از:', en: 'Price per person from:', ar: 'السعر للشخص يبدأ من:', zh: '起步参考价（每人）：', ru: 'Цена за человека от:' })}
             </span>
             <span className="inline-flex items-center gap-1 text-[11px] font-black text-brand-dark bg-mint border border-brand/20 px-2 py-0.5 rounded-full">
-              <Zap size={11} /> {lt(locale, { fa: 'تضمین بهترین نرخ', en: 'Best Rate Guaranteed', ar: 'أفضل سعر مضمون', zh: '最低价保障', ru: 'Лучшая цена' })}
+              <Zap size={11} /> {lt(locale, { fa: 'نرخ رسمی و مصوب', en: 'Official Direct Rate', ar: 'سعر رسمي معتمد', zh: '官方认证价格', ru: 'Официальный тариф' })}
             </span>
           </div>
 
@@ -148,7 +151,7 @@ export function TourBookingWidget({
               </span>
               <button
                 type="button"
-                disabled={adults >= (activeDate?.availableSeats || 10)}
+                disabled={isSoldOut || (adults + children) >= maxAvailable}
                 onClick={() => setAdults((prev) => prev + 1)}
                 className="w-8 h-8 rounded-lg bg-surface border border-line text-ink grid place-items-center hover:bg-soft transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
@@ -182,7 +185,7 @@ export function TourBookingWidget({
               </span>
               <button
                 type="button"
-                disabled={children >= 6}
+                disabled={isSoldOut || (adults + children) >= maxAvailable}
                 onClick={() => setChildren((prev) => prev + 1)}
                 className="w-8 h-8 rounded-lg bg-surface border border-line text-ink grid place-items-center hover:bg-soft transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
@@ -223,12 +226,17 @@ export function TourBookingWidget({
         {/* Action Button */}
         <button
           type="button"
+          disabled={isSoldOut}
           onClick={handleBook}
-          className="w-full h-12 rounded-2xl bg-action hover:bg-action-hover text-ink font-black text-sm flex items-center justify-center gap-2 transition active:scale-[0.98] shadow-md shadow-action/25 cursor-pointer mt-1"
+          className={`w-full h-12 rounded-2xl ${isSoldOut ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-action hover:bg-action-hover text-ink cursor-pointer'} font-black text-sm flex items-center justify-center gap-2 transition active:scale-[0.98] shadow-md shadow-action/25 mt-1`}
         >
-          <span>{lt(locale, { fa: 'رزرو تور و ادامه پرداخت', en: 'Book Tour & Proceed to Pay', ar: 'حجز الجولة ومتابعة الدفع', zh: '立即预订并结算', ru: 'Забронировать тур' })}</span>
-          <ArrowRight size={16} className="ltr:inline rtl:hidden" />
-          <ArrowLeft size={16} className="rtl:inline ltr:hidden" />
+          <span>{isSoldOut ? lt(locale, { fa: 'تکمیل ظرفیت این تاریخ', en: 'Sold Out for Selected Date', ar: 'المقاعد مكتملة لهذا التاريخ', zh: '该班期已满员', ru: 'Места распроданы' }) : lt(locale, { fa: 'رزرو تور و ادامه پرداخت', en: 'Book Tour & Proceed to Pay', ar: 'حجز الجولة ومتابعة الدفع', zh: '立即预订并结算', ru: 'Забронировать тур' })}</span>
+          {!isSoldOut && (
+            <>
+              <ArrowRight size={16} className="ltr:inline rtl:hidden" />
+              <ArrowLeft size={16} className="rtl:inline ltr:hidden" />
+            </>
+          )}
         </button>
 
         {/* Auto-Buy Bot Button */}
@@ -292,12 +300,17 @@ export function TourBookingWidget({
 
           <button
             type="button"
+            disabled={isSoldOut}
             onClick={handleBook}
-            className="h-10 px-4 sm:px-5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95 shadow-md shadow-action/25 cursor-pointer shrink-0"
+            className={`h-10 px-4 sm:px-5 rounded-xl ${isSoldOut ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-action hover:bg-action-hover text-ink cursor-pointer'} font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95 shadow-md shadow-action/25 shrink-0`}
           >
-            <span>{lt(locale, { fa: 'رزرو و پرداخت', en: 'Book & Pay', ar: 'حجز ودفع', zh: '立即预订', ru: 'Оплатить' })}</span>
-            <ArrowRight size={13} className="ltr:inline rtl:hidden" />
-            <ArrowLeft size={13} className="rtl:inline ltr:hidden" />
+            <span>{isSoldOut ? lt(locale, { fa: 'تکمیل ظرفیت', en: 'Sold Out', ar: 'مكتمل', zh: '已满', ru: 'Мест нет' }) : lt(locale, { fa: 'رزرو و پرداخت', en: 'Book & Pay', ar: 'حجز ودفع', zh: '立即预订', ru: 'Оплатить' })}</span>
+            {!isSoldOut && (
+              <>
+                <ArrowRight size={13} className="ltr:inline rtl:hidden" />
+                <ArrowLeft size={13} className="rtl:inline ltr:hidden" />
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -371,7 +384,7 @@ export function TourBookingWidget({
                   <span className="w-6 text-center font-mono font-black text-sm">{num(adults, locale)}</span>
                   <button
                     type="button"
-                    disabled={adults >= (activeDate?.availableSeats || 10)}
+                    disabled={isSoldOut || (adults + children) >= maxAvailable}
                     onClick={() => setAdults((prev) => prev + 1)}
                     className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 cursor-pointer"
                   >
@@ -401,7 +414,7 @@ export function TourBookingWidget({
                   <span className="w-6 text-center font-mono font-black text-sm">{num(children, locale)}</span>
                   <button
                     type="button"
-                    disabled={children >= 6}
+                    disabled={isSoldOut || (adults + children) >= maxAvailable}
                     onClick={() => setChildren((prev) => prev + 1)}
                     className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 cursor-pointer"
                   >

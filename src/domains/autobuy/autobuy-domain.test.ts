@@ -19,6 +19,7 @@ describe('Auto-Buy Domain & Smart Execution Suite', () => {
         phone: `+98912${Math.floor(1000000 + Math.random() * 9000000)}`,
         name: 'کاربر تست خرید خودکار',
         role: 'CUSTOMER',
+        nationalId: '0012345678',
       },
     });
     testUserId = user.id;
@@ -38,6 +39,10 @@ describe('Auto-Buy Domain & Smart Execution Suite', () => {
       await prisma.autoBuyRule.deleteMany({ where: { userId: testUserId } });
 
       for (const bId of createdBookingIds) {
+        await prisma.ledgerEntry.deleteMany({ where: { groupId: { contains: bId } } }).catch(() => {});
+        await prisma.ledgerEntry.deleteMany({ where: { referenceId: bId } }).catch(() => {});
+        await prisma.payment.deleteMany({ where: { bookingId: bId } }).catch(() => {});
+        await prisma.paymentIntent.deleteMany({ where: { bookingId: bId } }).catch(() => {});
         await prisma.bookingStatusHistory.deleteMany({ where: { bookingId: bId } }).catch(() => {});
         await prisma.priceSnapshot.deleteMany({ where: { bookingId: bId } }).catch(() => {});
         await prisma.bookingItem.deleteMany({ where: { bookingId: bId } }).catch(() => {});
@@ -45,6 +50,11 @@ describe('Auto-Buy Domain & Smart Execution Suite', () => {
       }
 
       await prisma.ledgerEntry.deleteMany({ where: { referenceType: 'TOPUP', referenceId: { contains: suffix } } }).catch(() => {});
+      const userAccounts = await prisma.account.findMany({ where: { ownerId: testUserId }, select: { id: true } });
+      const accIds = userAccounts.map((a) => a.id);
+      if (accIds.length > 0) {
+        await prisma.ledgerEntry.deleteMany({ where: { accountId: { in: accIds } } }).catch(() => {});
+      }
       await prisma.account.deleteMany({ where: { ownerId: testUserId } }).catch(() => {});
       await prisma.user.deleteMany({ where: { id: testUserId } }).catch(() => {});
     } catch (e) {

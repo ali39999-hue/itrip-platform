@@ -56,7 +56,7 @@ export default async function AdminBookingsPage({
               name="q"
               defaultValue={q}
               placeholder={lt(locale, { fa: 'جستجوی کد پیگیری یا عنوان...', en: 'Search reference code or title...', ar: 'ابحث برقم التتبع أو العنوان...', zh: '搜索订单号或标题...', ru: 'Поиск по коду или названию...' })}
-              className="h-10 w-full md:w-72 rounded-md border border-input bg-surface pe-9 ps-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="min-h-11 w-full md:w-72 rounded-md border border-input bg-surface pe-9 ps-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             />
           </form>
         </div>
@@ -66,8 +66,8 @@ export default async function AdminBookingsPage({
         {filtered.length === 0 ? (
           <p className="text-center text-sub py-16 text-sm">{lt(locale, { fa: 'رزروی یافت نشد', en: 'No bookings found', ar: 'لا توجد حجوزات', zh: '未找到预订', ru: 'Бронирования не найдены' })}</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-soft text-sub text-xs">
+          <table className="w-full min-w-[720px] text-sm">
+            <thead className="bg-soft text-sub text-xs sticky top-0">
               <tr>
                 <th className="p-4 text-start font-medium">{lt(locale, { fa: 'کد', en: 'Code', ar: 'الرمز', zh: '代码', ru: 'Код' })}</th>
                 <th className="p-4 text-start font-medium">{lt(locale, { fa: 'سرویس', en: 'Service', ar: 'الخدمة', zh: '服务', ru: 'Услуга' })}</th>

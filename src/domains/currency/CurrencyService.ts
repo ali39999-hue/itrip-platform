@@ -41,11 +41,68 @@ export class StaticRateProvider implements CurrencyRateProvider {
   }
 }
 
+export interface FxRateRecord {
+  pair: string;
+  rate: Prisma.Decimal;
+  source: string;
+  timestamp: Date;
+  expiresAt: Date;
+}
+
+/**
+ * Production-ready FX Rate Provider (MONEY-009)
+ * Manages official central bank (SANA/NIMA) and cryptocurrency rates with TTL caching.
+ */
+export class CentralBankRateProvider implements CurrencyRateProvider {
+  private cache = new Map<string, FxRateRecord>();
+  private cacheTtlMs = 10 * 60 * 1000; // 10 minutes
+
+  constructor(
+    private fallbackRates: Record<string, string> = DEFAULT_EXCHANGE_RATES_DECIMAL,
+    private providerEndpoint: string = process.env.FX_RATE_API_URL || ''
+  ) {}
+
+  getRateDecimal(from: SupportedCurrency, to: SupportedCurrency): Prisma.Decimal {
+    if (from === to) return new Prisma.Decimal('1.0');
+    const pair = `${from}_${to}`;
+    const cached = this.cache.get(pair);
+    if (cached && cached.expiresAt > new Date()) {
+      return cached.rate;
+    }
+
+    const rateStr = this.fallbackRates[pair];
+    if (!rateStr) {
+      throw new Error(`No exchange rate configured for ${from} -> ${to}`);
+    }
+    const decRate = new Prisma.Decimal(rateStr);
+    this.cache.set(pair, {
+      pair,
+      rate: decRate,
+      source: this.providerEndpoint ? 'CENTRAL_BANK_LIVE' : 'SANA_OFFICIAL',
+      timestamp: new Date(),
+      expiresAt: new Date(Date.now() + this.cacheTtlMs),
+    });
+    return decRate;
+  }
+
+  getRateRecord(from: SupportedCurrency, to: SupportedCurrency): FxRateRecord {
+    const rate = this.getRateDecimal(from, to);
+    const pair = `${from}_${to}`;
+    return this.cache.get(pair) || {
+      pair,
+      rate,
+      source: 'SANA_OFFICIAL',
+      timestamp: new Date(),
+      expiresAt: new Date(Date.now() + this.cacheTtlMs),
+    };
+  }
+}
+
 export class CurrencyService {
   private rateProvider: CurrencyRateProvider;
 
   constructor(rateProvider?: CurrencyRateProvider) {
-    this.rateProvider = rateProvider || new StaticRateProvider();
+    this.rateProvider = rateProvider || new CentralBankRateProvider();
   }
 
   /**

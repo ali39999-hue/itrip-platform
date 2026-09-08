@@ -27,6 +27,7 @@ interface User {
   telegramId?: string;
   whatsappPhone?: string;
   wechatId?: string;
+  baleId?: string;
 }
 
 interface AuthState {
