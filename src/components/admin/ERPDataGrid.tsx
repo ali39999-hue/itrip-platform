@@ -11,7 +11,10 @@ import {
   ChevronRight,
   Bookmark,
   Trash2,
+  Inbox,
+  ListFilter,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface ColumnDef<T> {
   key: string;
@@ -41,7 +44,7 @@ export interface ERPDataGridProps<T> {
   idAccessor?: (row: T) => string;
   onRowClick?: (row: T) => void;
   title?: string;
-  description?: string;
+  description?: React.ReactNode;
   searchPlaceholder?: string;
   defaultPageSize?: number;
   pageSizeOptions?: number[];
@@ -67,32 +70,25 @@ export function ERPDataGrid<T extends object>({
   savedViewStorageKey = 'erp_datagrid_views',
   actionsSlot,
 }: ERPDataGridProps<T>) {
-  // Search state
   const [search, setSearch] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Sorting state
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  // Filtering state (column key -> filter value)
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
 
-  // Pagination state
   const [pageSize, setPageSize] = useState(defaultPageSize);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Keyboard navigation state
   const [focusedRowIndex, setFocusedRowIndex] = useState<number>(-1);
   const tableRef = useRef<HTMLTableElement>(null);
 
-  // Saved views state
   const [savedViews, setSavedViews] = useState<SavedViewPreset[]>([]);
   const [activeViewId, setActiveViewId] = useState<string | null>(null);
   const [newViewName, setNewViewName] = useState('');
   const [showSaveViewModal, setShowSaveViewModal] = useState(false);
 
-  // Load saved views from localStorage
   useEffect(() => {
     try {
       const stored = localStorage.getItem(savedViewStorageKey);
@@ -104,7 +100,6 @@ export function ERPDataGrid<T extends object>({
     }
   }, [savedViewStorageKey]);
 
-  // Persist saved views
   const persistSavedViews = (views: SavedViewPreset[]) => {
     setSavedViews(views);
     try {
@@ -114,15 +109,12 @@ export function ERPDataGrid<T extends object>({
     }
   };
 
-  // Keyboard shortcut: '/' focuses search input
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Only handle if not already focused in an input/textarea
       const target = e.target as HTMLElement;
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
         return;
       }
-
       if (e.key === '/') {
         e.preventDefault();
         searchInputRef.current?.focus();
@@ -132,11 +124,9 @@ export function ERPDataGrid<T extends object>({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Filter & Search logic
   const filteredData = useMemo(() => {
     const getCell = (row: T, key: string): unknown => (row as Record<string, unknown>)[key];
     return data.filter((row) => {
-      // 1. Global text search
       if (search.trim()) {
         const query = search.toLowerCase();
         const matchesGlobal = columns.some((col) => {
@@ -146,8 +136,6 @@ export function ERPDataGrid<T extends object>({
         });
         if (!matchesGlobal) return false;
       }
-
-      // 2. Column filters
       for (const [key, filterVal] of Object.entries(columnFilters)) {
         if (!filterVal) continue;
         const col = columns.find((c) => c.key === key);
@@ -157,38 +145,31 @@ export function ERPDataGrid<T extends object>({
           return false;
         }
       }
-
       return true;
     });
   }, [data, search, columnFilters, columns]);
 
-  // Sorting logic
   const sortedData = useMemo(() => {
     if (!sortColumn) return filteredData;
     const col = columns.find((c) => c.key === sortColumn);
     if (!col) return filteredData;
-
     return [...filteredData].sort((a, b) => {
       const cellOf = (row: T, key: string): unknown => (row as Record<string, unknown>)[key];
       const valA = col.accessor ? col.accessor(a) : cellOf(a, sortColumn);
       const valB = col.accessor ? col.accessor(b) : cellOf(b, sortColumn);
-
       if (valA === valB) return 0;
       if (valA === null || valA === undefined) return 1;
       if (valB === null || valB === undefined) return -1;
-
       let comp = 0;
       if (typeof valA === 'number' && typeof valB === 'number') {
         comp = valA - valB;
       } else {
         comp = String(valA).localeCompare(String(valB));
       }
-
       return sortDirection === 'asc' ? comp : -comp;
     });
   }, [filteredData, sortColumn, sortDirection, columns]);
 
-  // Pagination calculations
   const totalItems = sortedData.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const validCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
@@ -198,7 +179,6 @@ export function ERPDataGrid<T extends object>({
     return sortedData.slice(startIndex, startIndex + pageSize);
   }, [sortedData, validCurrentPage, pageSize]);
 
-  // Handle Sort Click
   const handleSort = (columnKey: string) => {
     if (sortColumn === columnKey) {
       if (sortDirection === 'asc') {
@@ -213,10 +193,8 @@ export function ERPDataGrid<T extends object>({
     }
   };
 
-  // CSV Export
   const handleExportCsv = useCallback(() => {
     if (sortedData.length === 0) return;
-
     const headers = columns.map((c) => `"${c.header.replace(/"/g, '""')}"`).join(',');
     const rows = sortedData.map((row) => {
       return columns
@@ -235,7 +213,6 @@ export function ERPDataGrid<T extends object>({
         })
         .join(',');
     });
-
     const csvContent = [headers, ...rows].join('\r\n');
     const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -248,10 +225,8 @@ export function ERPDataGrid<T extends object>({
     URL.revokeObjectURL(url);
   }, [sortedData, columns]);
 
-  // Keyboard navigation on rows (Arrow Up / Down / Enter)
   const handleTableKeyDown = (e: React.KeyboardEvent<HTMLTableElement>) => {
     if (paginatedData.length === 0) return;
-
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setFocusedRowIndex((prev) => (prev < paginatedData.length - 1 ? prev + 1 : 0));
@@ -267,7 +242,6 @@ export function ERPDataGrid<T extends object>({
     }
   };
 
-  // Apply Saved View
   const applySavedView = (view: SavedViewPreset) => {
     setSearch(view.search);
     setSortColumn(view.sortColumn);
@@ -278,7 +252,6 @@ export function ERPDataGrid<T extends object>({
     setActiveViewId(view.id);
   };
 
-  // Reset View to Default
   const resetToDefaultView = () => {
     setSearch('');
     setSortColumn(null);
@@ -289,7 +262,6 @@ export function ERPDataGrid<T extends object>({
     setActiveViewId(null);
   };
 
-  // Save Current View
   const handleSaveView = () => {
     if (!newViewName.trim()) return;
     const newPreset: SavedViewPreset = {
@@ -308,7 +280,6 @@ export function ERPDataGrid<T extends object>({
     setShowSaveViewModal(false);
   };
 
-  // Delete Saved View
   const handleDeleteView = (viewId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const updated = savedViews.filter((v) => v.id !== viewId);
@@ -318,127 +289,122 @@ export function ERPDataGrid<T extends object>({
     }
   };
 
-  return (
-    <div className="space-y-4">
-      {/* Header & Controls Bar */}
-      <div className="bg-surface rounded-2xl border border-line p-4 shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          {title && (
-            <div>
-              <h2 className="text-lg font-black text-ink">{title}</h2>
-              {description && <p className="text-xs text-sub mt-0.5">{description}</p>}
-            </div>
-          )}
+  const hasActiveFilters = search || Object.keys(columnFilters).length > 0 || sortColumn;
+  const filterableCols = columns.filter((c) => c.filterable && c.filterOptions && c.filterOptions.length > 0);
+  const rangeStart = totalItems > 0 ? (validCurrentPage - 1) * pageSize + 1 : 0;
+  const rangeEnd = Math.min(validCurrentPage * pageSize, totalItems);
 
-          <div className="flex flex-wrap items-center gap-2 ms-auto">
-            {/* Saved Views Dropdown */}
-            <div className="flex items-center gap-1.5">
+  const pageNumbers = useMemo(() => {
+    const pages: number[] = [];
+    const start = Math.max(1, Math.min(validCurrentPage - 2, totalPages - 4));
+    const end = Math.min(totalPages, start + 4);
+    for (let p = start; p <= end; p++) pages.push(p);
+    return pages;
+  }, [validCurrentPage, totalPages]);
+
+  return (
+    <div className="space-y-3">
+      {/* Toolbar */}
+      <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-elev-1">
+        <div className="flex flex-col gap-3 p-4 sm:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            {title ? (
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h2 className="truncate text-[15px] font-black text-ink">{title}</h2>
+                  <span className="num shrink-0 rounded-full bg-soft px-2 py-0.5 text-[11px] font-black text-sub tabular-nums">
+                    {totalItems}
+                  </span>
+                </div>
+                {description && <p className="mt-1 text-xs font-medium text-sub">{description}</p>}
+              </div>
+            ) : <span />}
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={() => setShowSaveViewModal(true)}
-                className="inline-flex items-center gap-1 min-h-9 px-2.5 py-1.5 rounded-xl border border-line text-xs font-bold text-sub hover:text-ink hover:bg-soft transition"
-                title="Save current filters/sort as a custom view"
+                onClick={() => setShowSaveViewModal((v) => !v)}
+                aria-expanded={showSaveViewModal}
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line px-3 py-2 text-xs font-black text-sub transition hover:border-brand/40 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
                 <Bookmark size={13} aria-hidden="true" />
                 <span>Save View</span>
               </button>
-            </div>
-
-            {/* CSV Export Button */}
-            <button
-              type="button"
-              onClick={handleExportCsv}
-              disabled={sortedData.length === 0}
-              className="inline-flex items-center gap-1 min-h-9 px-3 py-1.5 rounded-xl bg-soft text-ink font-bold text-xs hover:bg-line/70 transition disabled:opacity-50"
-            >
-              <Download size={14} />
-              <span>Export CSV ({sortedData.length})</span>
-            </button>
-
-            {actionsSlot}
-          </div>
-        </div>
-
-        {/* View Presets Bar (if any saved views exist) */}
-        {savedViews.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-line/60">
-            <span className="text-[11px] font-bold text-sub flex items-center gap-1">
-              <Bookmark size={11} />
-              <span>Views:</span>
-            </span>
-            <button
-              type="button"
-              onClick={resetToDefaultView}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
-                activeViewId === null
-                  ? 'bg-brand-dark text-surface'
-                  : 'bg-soft text-sub hover:text-ink'
-              }`}
-            >
-              Default
-            </button>
-            {savedViews.map((view) => (
-              <div
-                key={view.id}
-                className={`group flex items-center gap-1 ps-2.5 pe-1 py-0.5 rounded-lg text-xs font-bold transition ${
-                  activeViewId === view.id
-                    ? 'bg-brand-dark text-surface'
-                    : 'bg-soft text-sub hover:text-ink'
-                }`}
+              <button
+                type="button"
+                onClick={handleExportCsv}
+                disabled={sortedData.length === 0}
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-deep px-3.5 py-2 text-xs font-black text-surface shadow-elev-1 transition hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50"
               >
-                <button
-                  type="button"
-                  onClick={() => applySavedView(view)}
-                  aria-pressed={activeViewId === view.id}
-                  className="py-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                >
-                  {view.name}
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => handleDeleteView(view.id, e)}
-                  aria-label={`Delete view ${view.name}`}
-                  className="opacity-60 hover:opacity-100 hover:text-rose-500 ms-1 p-1.5 rounded transition"
-                  title="Delete preset"
-                >
-                  <Trash2 size={11} aria-hidden="true" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Search & Column Filters Row */}
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          {/* Global Search Input */}
-          <div className="relative flex-1 w-full">
-            <Search
-              size={14}
-              className="absolute start-3 top-1/2 -translate-y-1/2 text-sub pointer-events-none"
-              aria-hidden="true"
-            />
-            <input
-              ref={searchInputRef}
-              type="search"
-              aria-label={searchPlaceholder}
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-              placeholder={searchPlaceholder}
-              className="w-full min-h-11 ps-9 pe-4 py-2 rounded-xl bg-soft/60 border border-line text-xs font-medium text-ink placeholder:text-sub focus:outline-none focus:border-brand-dark transition"
-            />
+                <Download size={14} aria-hidden="true" />
+                <span>Export CSV</span>
+                <span className="num rounded-md bg-surface/20 px-1.5 py-0.5 text-[10px] tabular-nums">{sortedData.length}</span>
+              </button>
+              {actionsSlot}
+            </div>
           </div>
 
-          {/* Quick Column Filter Selects */}
-          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            {columns
-              .filter((c) => c.filterable && c.filterOptions && c.filterOptions.length > 0)
-              .map((col) => (
-                <div key={col.key} className="flex items-center gap-1">
+          {/* Saved views */}
+          {savedViews.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 border-t border-line/60 pt-3">
+              <span className="me-1 inline-flex items-center gap-1 text-[11px] font-black text-sub">
+                <Bookmark size={11} aria-hidden="true" /> Views:
+              </span>
+              <button
+                type="button"
+                onClick={resetToDefaultView}
+                className={cn('rounded-lg px-2.5 py-1.5 text-xs font-black transition', activeViewId === null ? 'bg-deep text-surface' : 'bg-soft text-sub hover:text-ink')}
+              >
+                Default
+              </button>
+              {savedViews.map((view) => (
+                <span
+                  key={view.id}
+                  className={cn('group inline-flex items-center gap-0.5 rounded-lg py-0.5 pe-1 ps-2.5 text-xs font-black transition', activeViewId === view.id ? 'bg-deep text-surface' : 'bg-soft text-sub hover:text-ink')}
+                >
+                  <button type="button" onClick={() => applySavedView(view)} aria-pressed={activeViewId === view.id} className="rounded py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                    {view.name}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteView(view.id, e)}
+                    aria-label={`Delete view ${view.name}`}
+                    className="rounded p-1.5 opacity-60 transition hover:opacity-100 hover:text-rose-warm"
+                  >
+                    <Trash2 size={11} aria-hidden="true" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Search + filters */}
+          <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center">
+            <div className="relative min-w-0 flex-1">
+              <Search size={15} className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 text-sub/70" aria-hidden="true" />
+              <input
+                ref={searchInputRef}
+                type="search"
+                aria-label={searchPlaceholder}
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder={searchPlaceholder}
+                className="min-h-11 w-full rounded-xl border border-line bg-soft/50 py-2.5 pe-10 ps-10 text-[13px] font-medium text-ink transition placeholder:text-sub/60 focus:border-brand focus:bg-surface focus:outline-none focus:ring-2 focus:ring-brand/25"
+              />
+              <kbd aria-hidden="true" className="pointer-events-none absolute end-3 top-1/2 hidden -translate-y-1/2 rounded-md border border-line bg-surface px-1.5 py-0.5 font-mono text-[10px] font-black text-sub sm:block">/</kbd>
+            </div>
+            {filterableCols.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="hidden items-center gap-1 text-[11px] font-black text-sub sm:inline-flex">
+                  <ListFilter size={12} aria-hidden="true" />
+                </span>
+                {filterableCols.map((col) => (
                   <select
+                    key={col.key}
                     value={columnFilters[col.key] || ''}
+                    aria-label={`Filter by ${col.header}`}
                     onChange={(e) => {
                       const val = e.target.value;
                       setColumnFilters((prev) => {
@@ -449,7 +415,7 @@ export function ERPDataGrid<T extends object>({
                       });
                       setCurrentPage(1);
                     }}
-                    className="px-2.5 py-2 rounded-xl bg-soft/60 border border-line text-xs font-bold text-ink focus:outline-none focus:border-brand-dark transition"
+                    className="min-h-11 rounded-xl border border-line bg-soft/50 px-3 py-2 text-xs font-black text-ink transition focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
                   >
                     <option value="">All {col.header}</option>
                     {col.filterOptions!.map((opt) => (
@@ -458,65 +424,59 @@ export function ERPDataGrid<T extends object>({
                       </option>
                     ))}
                   </select>
-                </div>
-              ))}
-
-            {/* Clear All Filters Button */}
-            {(search || Object.keys(columnFilters).length > 0 || sortColumn) && (
-              <button
-                type="button"
-                onClick={resetToDefaultView}
-                className="px-2.5 py-2 rounded-xl border border-line/80 text-xs font-bold text-sub hover:text-ink hover:bg-soft transition"
-              >
-                Clear
-              </button>
+                ))}
+                {hasActiveFilters ? (
+                  <button
+                    type="button"
+                    onClick={resetToDefaultView}
+                    className="min-h-11 rounded-xl border border-rose-warm/30 bg-rose-warm/5 px-3 py-2 text-xs font-black text-rose-warm transition hover:bg-rose-warm/10"
+                  >
+                    Clear ×
+                  </button>
+                ) : null}
+              </div>
             )}
           </div>
         </div>
+
+        {showSaveViewModal && (
+          <div className="flex flex-col gap-2 border-t border-line/70 bg-soft/40 p-4 sm:flex-row sm:items-center">
+            <span className="inline-flex shrink-0 items-center gap-1.5 text-xs font-black text-ink">
+              <Bookmark size={14} className="text-brand-dark" aria-hidden="true" /> Save current view:
+            </span>
+            <input
+              type="text"
+              value={newViewName}
+              autoFocus
+              onChange={(e) => setNewViewName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSaveView(); }}
+              placeholder="e.g. Critical Exceptions, Flight Dossiers..."
+              className="min-h-10 flex-1 rounded-xl border border-line bg-surface px-3 py-2 text-xs font-medium text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
+            />
+            <div className="flex shrink-0 gap-2">
+              <button type="button" onClick={handleSaveView} disabled={!newViewName.trim()} className="min-h-10 rounded-xl bg-deep px-4 py-2 text-xs font-black text-surface transition hover:bg-brand-dark disabled:opacity-50">
+                Save
+              </button>
+              <button type="button" onClick={() => setShowSaveViewModal(false)} className="min-h-10 rounded-xl border border-line bg-surface px-4 py-2 text-xs font-black text-sub transition hover:text-ink">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Save View Modal / Inline Form */}
-      {showSaveViewModal && (
-        <div className="p-4 rounded-2xl bg-surface border border-line shadow-md flex items-center gap-3">
-          <Bookmark size={16} className="text-brand-dark" />
-          <span className="text-xs font-bold text-ink whitespace-nowrap">Save Current View:</span>
-          <input
-            type="text"
-            value={newViewName}
-            onChange={(e) => setNewViewName(e.target.value)}
-            placeholder="e.g. Critical Exceptions, Flight Dossiers..."
-            className="flex-1 px-3 py-1.5 rounded-xl bg-soft border border-line text-xs font-medium text-ink focus:outline-none focus:border-brand-dark"
-          />
-          <button
-            type="button"
-            onClick={handleSaveView}
-            disabled={!newViewName.trim()}
-            className="px-3 py-1.5 rounded-xl bg-brand text-surface text-xs font-bold hover:bg-brand-dark transition disabled:opacity-50"
-          >
-            Save
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowSaveViewModal(false)}
-            className="px-3 py-1.5 rounded-xl border border-line text-xs font-bold text-sub hover:text-ink"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
-
-      {/* DataGrid Table with Keyboard Navigation */}
-      <div className="bg-surface rounded-2xl border border-line overflow-hidden shadow-sm">
+      {/* Table */}
+      <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-elev-1">
         <div className="overflow-x-auto">
           <table
             ref={tableRef}
             tabIndex={0}
             onKeyDown={handleTableKeyDown}
-            className="w-full min-w-[760px] text-start text-xs focus:outline-none"
+            className="w-full min-w-[760px] text-start text-[13px] focus:outline-none"
             aria-label={title || 'ERP Data Table'}
           >
-            <thead>
-              <tr className="border-b border-line bg-soft/40 text-sub font-black">
+            <thead className="sticky top-0 z-10">
+              <tr className="border-b border-line bg-soft/80 text-sub backdrop-blur">
                 {columns.map((col) => {
                   const isSorted = sortColumn === col.key;
                   const sortable = col.sortable !== false;
@@ -524,30 +484,22 @@ export function ERPDataGrid<T extends object>({
                     <th
                       key={col.key}
                       aria-sort={isSorted ? (sortDirection === 'asc' ? 'ascending' : 'descending') : undefined}
-                      className={`p-3.5 text-start select-none ${col.className || ''}`}
+                      className={`whitespace-nowrap p-3.5 text-start text-[11px] font-black tracking-wide uppercase select-none ${col.className || ''}`}
                     >
                       {sortable ? (
                         <button
                           type="button"
                           onClick={() => handleSort(col.key)}
                           aria-label={`Sort by ${col.header}`}
-                          className="inline-flex items-center gap-1.5 rounded hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
+                          className="group inline-flex items-center gap-1.5 rounded-lg px-1 py-0.5 transition hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                         >
                           <span>{col.header}</span>
-                          <span className="text-sub" aria-hidden="true">
-                            {isSorted ? (
-                              sortDirection === 'asc' ? (
-                                <ArrowUp size={13} className="text-brand-dark font-black" />
-                              ) : (
-                                <ArrowDown size={13} className="text-brand-dark font-black" />
-                              )
-                            ) : (
-                              <ArrowUpDown size={12} className="opacity-40" />
-                            )}
+                          <span aria-hidden="true" className={cn('grid h-5 w-5 place-items-center rounded-md transition', isSorted ? 'bg-deep text-surface' : 'text-sub/40 group-hover:bg-line/50 group-hover:text-sub')}>
+                            {isSorted ? (sortDirection === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ArrowUpDown size={11} />}
                           </span>
                         </button>
                       ) : (
-                        <span>{col.header}</span>
+                        <span className="px-1">{col.header}</span>
                       )}
                     </th>
                   );
@@ -557,8 +509,18 @@ export function ERPDataGrid<T extends object>({
             <tbody className="divide-y divide-line/60">
               {paginatedData.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length} className="p-8 text-center text-sub font-medium">
-                    {emptyStateMessage}
+                  <td colSpan={columns.length} className="p-0">
+                    <div className="flex flex-col items-center px-6 py-12 text-center">
+                      <span className="grid h-12 w-12 place-items-center rounded-2xl bg-soft text-sub/50">
+                        <Inbox size={22} aria-hidden="true" />
+                      </span>
+                      <p className="mt-3 text-[13px] font-black text-ink">{emptyStateMessage}</p>
+                      {hasActiveFilters ? (
+                        <button type="button" onClick={resetToDefaultView} className="mt-3 min-h-10 rounded-xl border border-line px-4 py-2 text-xs font-black text-sub transition hover:border-brand/40 hover:text-ink">
+                          Clear search & filters
+                        </button>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -569,21 +531,22 @@ export function ERPDataGrid<T extends object>({
                       key={idAccessor(row)}
                       onClick={() => onRowClick && onRowClick(row)}
                       onMouseEnter={() => setFocusedRowIndex(idx)}
-                      className={`transition ${
-                        onRowClick ? 'cursor-pointer' : ''
-                      } ${isFocused ? 'bg-brand/5 ring-1 ring-inset ring-brand/30' : 'hover:bg-soft/30'}`}
+                      className={cn(
+                        'transition-colors',
+                        onRowClick && 'cursor-pointer',
+                        isFocused ? 'bg-brand/6 shadow-[inset_3px_0_0_0_var(--color-brand)]' : 'hover:bg-soft/50',
+                        idx % 2 === 1 && !isFocused && 'bg-soft/25',
+                      )}
                     >
-                      {columns.map((col) => {
-                        return (
-                          <td key={col.key} className={`p-3.5 text-ink ${col.className || ''}`}>
-                            {col.render
-                              ? col.render(row, idx)
-                              : col.accessor
+                      {columns.map((col) => (
+                        <td key={col.key} className={`p-3.5 align-middle text-ink ${col.className || ''}`}>
+                          {col.render
+                            ? col.render(row, idx)
+                            : col.accessor
                               ? (col.accessor(row) as React.ReactNode)
                               : ((row as Record<string, unknown>)[col.key] as React.ReactNode)}
-                          </td>
-                        );
-                      })}
+                        </td>
+                      ))}
                     </tr>
                   );
                 })
@@ -592,23 +555,22 @@ export function ERPDataGrid<T extends object>({
           </table>
         </div>
 
-        {/* Pagination & Summary Footer */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 border-t border-line/70 bg-soft/20 text-xs">
-          <div className="flex items-center gap-2 text-sub font-medium">
-            <span>
-              Showing {totalItems > 0 ? (validCurrentPage - 1) * pageSize + 1 : 0} to{' '}
-              {Math.min(validCurrentPage * pageSize, totalItems)} of {totalItems} entries
+        {/* Footer */}
+        <div className="flex flex-col gap-3 border-t border-line/70 bg-soft/30 p-3.5 text-xs sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 font-medium text-sub">
+            <span className="tabular-nums">
+              Showing <b className="font-black text-ink">{rangeStart}–{rangeEnd}</b> of <b className="font-black text-ink">{totalItems}</b>
             </span>
-            <span className="text-line">|</span>
-            <div className="flex items-center gap-1">
-              <span>Rows per page:</span>
+            <span aria-hidden="true" className="hidden h-4 w-px bg-line sm:block" />
+            <label className="inline-flex items-center gap-1.5">
+              <span>Rows:</span>
               <select
                 value={pageSize}
                 onChange={(e) => {
                   setPageSize(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="px-1.5 py-0.5 rounded border border-line bg-surface text-ink text-xs font-bold"
+                className="rounded-lg border border-line bg-surface px-1.5 py-1 text-xs font-black text-ink focus:border-brand focus:outline-none"
               >
                 {pageSizeOptions.map((opt) => (
                   <option key={opt} value={opt}>
@@ -616,30 +578,41 @@ export function ERPDataGrid<T extends object>({
                   </option>
                 ))}
               </select>
-            </div>
+            </label>
           </div>
-
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <button
               type="button"
               disabled={validCurrentPage <= 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="min-w-9 min-h-9 p-1.5 rounded-lg border border-line text-sub hover:text-ink hover:bg-soft disabled:opacity-40 disabled:pointer-events-none transition grid place-items-center"
+              onClick={() => { setCurrentPage((p) => Math.max(1, p - 1)); setFocusedRowIndex(-1); }}
+              className="grid h-9 w-9 place-items-center rounded-xl border border-line bg-surface text-sub transition hover:border-brand/40 hover:text-ink disabled:opacity-40 disabled:pointer-events-none rtl:rotate-180"
               aria-label="Previous Page"
             >
-              <ChevronLeft size={14} aria-hidden="true" />
+              <ChevronLeft size={15} aria-hidden="true" />
             </button>
-            <span className="px-2 font-bold text-ink whitespace-nowrap">
-              Page {validCurrentPage} of {totalPages}
-            </span>
+            {pageNumbers.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => { setCurrentPage(p); setFocusedRowIndex(-1); }}
+                aria-label={`Page ${p}`}
+                aria-current={p === validCurrentPage ? 'page' : undefined}
+                className={cn(
+                  'h-9 min-w-9 rounded-xl px-2 text-xs font-black tabular-nums transition',
+                  p === validCurrentPage ? 'bg-deep text-surface shadow-elev-1' : 'border border-line bg-surface text-sub hover:border-brand/40 hover:text-ink',
+                )}
+              >
+                {p}
+              </button>
+            ))}
             <button
               type="button"
               disabled={validCurrentPage >= totalPages}
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="min-w-9 min-h-9 p-1.5 rounded-lg border border-line text-sub hover:text-ink hover:bg-soft disabled:opacity-40 disabled:pointer-events-none transition grid place-items-center"
+              onClick={() => { setCurrentPage((p) => Math.min(totalPages, p + 1)); setFocusedRowIndex(-1); }}
+              className="grid h-9 w-9 place-items-center rounded-xl border border-line bg-surface text-sub transition hover:border-brand/40 hover:text-ink disabled:opacity-40 disabled:pointer-events-none rtl:rotate-180"
               aria-label="Next Page"
             >
-              <ChevronRight size={14} aria-hidden="true" />
+              <ChevronRight size={15} aria-hidden="true" />
             </button>
           </div>
         </div>

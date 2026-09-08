@@ -4,10 +4,21 @@ import { getLocale } from 'next-intl/server';
 import { lt } from '@/lib/lt';
 import { notFound } from 'next/navigation';
 import { Link } from '@/i18n/routing';
-import { ArrowLeft, AlertOctagon } from 'lucide-react';
+import { ArrowRight, Briefcase } from 'lucide-react';
 import { TravelFileWorkspaceClient } from './TravelFileWorkspaceClient';
+import { ErpBadge } from '@/components/admin/erp-ui';
+import { cn } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
+
+const STEPS = ['PLANNING', 'BOOKED', 'IN_PROGRESS', 'COMPLETED'] as const;
+
+function statusTone(status: string): 'green' | 'rose' | 'brand' | 'neutral' {
+  if (status === 'COMPLETED') return 'green';
+  if (status === 'CANCELLED') return 'rose';
+  if (status === 'IN_PROGRESS' || status === 'BOOKED') return 'brand';
+  return 'neutral';
+}
 
 export default async function TravelFileDetailPage({
   params,
@@ -37,66 +48,85 @@ export default async function TravelFileDetailPage({
     customerId: data.customer.id,
   });
 
+  const numFmt = locale === 'fa' ? 'fa-IR' : 'en-US';
+  const stepIndex = STEPS.indexOf(data.trip.status as (typeof STEPS)[number]);
+
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Navigation Breadcrumb */}
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-6xl space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Link
           href="/admin/travel-files"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-sub hover:text-brand-dark transition"
+          className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line bg-surface px-3.5 py-2 text-xs font-black text-sub shadow-elev-1 transition hover:border-brand/40 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
-          <ArrowLeft size={14} />
-          <span>{lt(locale, { fa: 'بازگشت به لیست پرونده‌ها', en: 'Back to Travel Files', ar: 'العودة لقائمة الملفات', zh: '返回档案列表', ru: 'Назад к списку' })}</span>
+          <ArrowRight size={14} aria-hidden="true" className="rtl:rotate-180" />
+          <span>{lt(locale, { fa: 'بازگشت به پرونده‌ها', en: 'Back to Travel Files', ar: 'العودة لقائمة الملفات', zh: '返回档案列表', ru: 'Назад к списку' })}</span>
         </Link>
-        <span className="px-3 py-1 rounded-full text-xs font-black bg-brand text-surface">
-          {data.trip.status}
-        </span>
+        <ErpBadge tone={statusTone(data.trip.status)} dot>{data.trip.status}</ErpBadge>
       </div>
 
       {/* Dossier Header Card */}
-      <div className="bg-surface p-6 rounded-3xl border border-line shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-md bg-brand-dark text-surface text-xs font-black tracking-wider">
-              {data.trip.reference}
+      <div className="relative overflow-hidden rounded-3xl border border-line bg-surface shadow-elev-1">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 h-1.5 bg-gradient-to-l from-brand-dark via-brand to-mint-bright"
+        />
+        <div className="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-start gap-3.5">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-deep text-mint-bright">
+              <Briefcase size={21} aria-hidden="true" />
             </span>
-            <h1 className="text-xl md:text-2xl font-black text-ink">{data.trip.title}</h1>
-          </div>
-          <p className="text-xs text-sub font-medium">
-            {lt(locale, { fa: 'شناسه یکتای سیستمی پرونده:', en: 'System Dossier ID:', ar: 'معرف الملف:', zh: '档案编号:', ru: 'ID дела:' })}{' '}
-            <code className="text-ink font-bold">{data.trip.id}</code>
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-6 border-t md:border-t-0 md:border-s border-line pt-4 md:pt-0 md:ps-6">
-          <div>
-            <span className="block text-[11px] font-bold text-sub uppercase">
-              {lt(locale, { fa: 'ارزش کل پرونده', en: 'Total Gross Value', ar: 'إجمالي القيمة', zh: '总价值', ru: 'Общая сумма' })}
-            </span>
-            <span className="text-xl font-black text-brand-dark">
-              {data.summary.totalGrossAmount.toLocaleString()} <span className="text-xs font-bold">{data.summary.currency}</span>
-            </span>
-          </div>
-
-          <div>
-            <span className="block text-[11px] font-bold text-sub uppercase">
-              {lt(locale, { fa: 'دریافتی ناخالص', en: 'Paid / Captured', ar: 'المدفوع', zh: '已支付', ru: 'Оплачено' })}
-            </span>
-            <span className="text-xl font-black text-emerald-600">
-              {data.summary.totalPaidAmount.toLocaleString()} <span className="text-xs font-bold">{data.summary.currency}</span>
-            </span>
-          </div>
-
-          {data.summary.hasBreachedSla && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-100 text-rose-800 text-xs font-black">
-              <AlertOctagon size={14} />
-              <span>SLA Breached</span>
+            <div className="min-w-0">
+              <span className="mb-1 inline-block rounded-lg bg-deep px-2.5 py-1 font-mono text-[11px] font-black tracking-wider text-surface" dir="ltr">
+                {data.trip.reference}
+              </span>
+              <h1 className="truncate text-xl font-black text-ink sm:text-2xl">{data.trip.title}</h1>
+              <p className="mt-1 truncate text-[11px] font-medium text-sub" dir="ltr" title={data.trip.id}>
+                ID: {data.trip.id}
+              </p>
+              {/* Status stepper */}
+              {stepIndex >= 0 && (
+                <ol className="mt-3 flex items-center gap-1" aria-label="Dossier progress">
+                  {STEPS.map((s, i) => (
+                    <li key={s} className="flex items-center gap-1">
+                      <span
+                        title={s}
+                        className={cn(
+                          'h-1.5 rounded-full transition-all',
+                          i <= stepIndex ? 'w-8 bg-brand' : 'w-4 bg-line',
+                        )}
+                      />
+                    </li>
+                  ))}
+                  <span className="ms-2 text-[10px] font-black text-sub">{stepIndex + 1}/4</span>
+                </ol>
+              )}
             </div>
-          )}
+          </div>
+
+          <div className="grid shrink-0 grid-cols-2 gap-2 sm:gap-3 lg:flex lg:items-center">
+            <div className="rounded-2xl bg-soft/60 px-4 py-3">
+              <span className="block text-[10px] font-black tracking-wide text-sub uppercase">
+                {lt(locale, { fa: 'ارزش کل', en: 'Gross value', ar: 'إجمالي القيمة', zh: '总价值', ru: 'Сумма' })}
+              </span>
+              <span className="num mt-0.5 block text-lg font-black text-brand-dark tabular-nums" dir="ltr">
+                {data.summary.totalGrossAmount.toLocaleString(numFmt)} <span className="text-[10px] font-bold text-sub">{data.summary.currency}</span>
+              </span>
+            </div>
+            <div className="rounded-2xl bg-success/8 px-4 py-3">
+              <span className="block text-[10px] font-black tracking-wide text-sub uppercase">
+                {lt(locale, { fa: 'دریافتی', en: 'Paid', ar: 'المدفوع', zh: '已收', ru: 'Оплачено' })}
+              </span>
+              <span className="num mt-0.5 block text-lg font-black text-success tabular-nums" dir="ltr">
+                {data.summary.totalPaidAmount.toLocaleString(numFmt)} <span className="text-[10px] font-bold text-sub">{data.summary.currency}</span>
+              </span>
+            </div>
+            {data.summary.hasBreachedSla && (
+              <ErpBadge tone="rose" className="col-span-2 justify-center lg:col-span-1">SLA BREACHED</ErpBadge>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Interactive Workspace with Consolidated Tabs & Actions */}
       <TravelFileWorkspaceClient data={data} locale={locale} />
     </div>
   );

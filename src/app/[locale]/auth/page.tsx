@@ -380,6 +380,40 @@ export default function AuthPage() {
 
                 {error && <div className="p-3 mb-4 rounded-xl bg-destructive/10 text-destructive text-xs font-bold">{error}</div>}
 
+                {/* Bale Messenger Guidance & Quick Start Link */}
+                {channel === 'bale' && (
+                  <div className="mb-4 p-3.5 bg-[#00A693]/10 border border-[#00A693]/30 rounded-2xl flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-[#00A693]">
+                        {lt(locale, {
+                          fa: 'بازوی رسمی فیروزو در بله (@firuzootpbot)',
+                          en: 'Official Firuzo Bot in Bale (@firuzootpbot)',
+                          ar: 'بوت فيروزو الرسمي في بله',
+                          zh: 'Firuzo Bale官方机器人',
+                          ru: 'Официальный бот Firuzo в Bale'
+                        })}
+                      </span>
+                      <a
+                        href="https://ble.ir/firuzootpbot"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-black bg-[#00A693] text-white px-2.5 py-1 rounded-xl shadow-xs hover:opacity-90 transition"
+                      >
+                        {lt(locale, { fa: 'باز کردن بازو در بله ↗', en: 'Open Bot ↗', ar: 'فتح البوت ↗', zh: '打开机器人 ↗', ru: 'Открыть бота ↗' })}
+                      </a>
+                    </div>
+                    <p className="text-[11px] text-sub leading-relaxed">
+                      {lt(locale, {
+                        fa: 'برای دریافت آنی کد در بله، یک‌بار وارد بازو شده و دکمه «شروع» را بزنید؛ سپس شناسه بله یا شماره خود را در کادر زیر وارد کنید.',
+                        en: 'Click Open Bot, hit Start once, then enter your Bale username, ID or phone below to receive your instant login code.',
+                        ar: 'اضغط على فتح البوت واضغط على ابدأ مرة واحدة، ثم أدخل معرفك لتلقي الرمز.',
+                        zh: '打开机器人点击启动一次，即可输入微信号接收验证码。',
+                        ru: 'Откройте бота и нажмите Start, затем введите имя пользователя для получения кода.'
+                      })}
+                    </p>
+                  </div>
+                )}
+
                 {/* Telegram Login Widget Container */}
                 {channel === 'telegram' && (
                   <div className="mb-4 p-3 bg-soft/60 rounded-2xl flex flex-col items-center justify-center gap-2 border border-line">

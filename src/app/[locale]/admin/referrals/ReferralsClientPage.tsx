@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { ERPDataGrid, ColumnDef } from '@/components/admin/ERPDataGrid';
+import { ErpHint, ErpModal, ErpPageHeader, erpFieldCls, erpLabelCls, erpPrimaryBtnCls, erpGhostBtnCls } from '@/components/admin/erp-ui';
 import { LeaderDashboardRow } from '@/domains/referral/ReferralDomainService';
 import { settleLeaderRewardAction, createReferralCodeAction } from '@/actions/admin';
 import { lt } from '@/lib/lt';
@@ -18,7 +19,6 @@ import {
   Eye,
   Plus,
   X,
-  Mail,
   Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -284,50 +284,44 @@ export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-ink flex items-center gap-2">
-            <Users className="text-brand-dark" size={26} />
-            <span>
+    <div className="space-y-4">
+      <ErpPageHeader
+        eyebrow={lt(locale, { fa: 'رشد · سرگروه‌ها', en: 'Growth · Leaders', ar: 'النمو · القادة', zh: '增长 · 领队', ru: 'Рост · Лидеры' })}
+        title={lt(locale, {
+          fa: 'کدهای معرف و پاداش سرگروه‌ها',
+          en: 'Referral Codes & Leader Rewards',
+          ar: 'رموز الإحالة ومكافآت القادة',
+          zh: '推荐码与领队奖励',
+          ru: 'Рефералы и вознаграждения лидеров',
+        })}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-1.5">
+            <span>{lt(locale, {
+              fa: 'محاسبه پویای پله‌های پاداش بر اساس مسافران تأییدشده منهای کنسلی‌ها',
+              en: 'Dynamic reward tiers from confirmed pax minus cancellations',
+              ar: 'حساب ديناميكي للمكافآت بناءً على الركاب المؤكدين',
+              zh: '根据已确认乘客扣除取消后动态计算奖励梯队',
+              ru: 'Динамический расчёт вознаграждений лидеров',
+            })}</span>
+            <ErpHint label={lt(locale, { fa: 'پله پاداش چطور حساب می‌شود؟', en: 'How is the reward tier calculated?', ar: 'كيف يُحسب مستوى المكافأة؟', zh: '奖励梯队如何计算？', ru: 'Как считается уровень?' })}>
               {lt(locale, {
-                fa: 'مدیریت کدهای معرف و پاداش سرگروه‌ها',
-                en: 'Referral Codes & Group Leader Rewards',
-                ar: 'إدارة رموز الإحالة ومكافآت القادة',
-                zh: '推荐码与领队奖励管理',
-                ru: 'Управление рефералами и вознаграждениями лидеров',
+                fa: 'مسافران تأییدشده منهای کنسلی‌ها. هر چه گروه بزرگ‌تر، درصد استرداد سرگروه بیشتر — تا سقف ۱۰۰٪. با «تسویه پاداش» سند مالی ثبت می‌شود.',
+                en: 'Confirmed travelers minus cancellations. The bigger the group, the higher the leader’s cashback percent — up to 100%. Settling posts a ledger voucher.',
+                ar: 'المسافرون المؤكدون ناقص الملغين. كلما كبرت المجموعة زادت النسبة حتى 100٪.',
+                zh: '已确认旅客减去取消。团队越大，领队返现比例越高 — 最高100%。结算会生成财务凭证。',
+                ru: 'Подтверждённые минус отмены. Больше группа — выше процент, до 100%. Выплата создаёт voucher.',
               })}
-            </span>
-          </h1>
-          <p className="text-sub text-xs mt-1">
-            {lt(locale, {
-              fa: 'محاسبهٔ پویای پله‌های پاداش سرگروه‌ها براساس مسافران تأییدشده منهای کنسلی‌ها',
-              en: 'Dynamic calculation of leader reward tiers based on confirmed passengers minus cancellations',
-              ar: 'حساب ديناميكي لمستويات المكافآت بناءً على الركاب المؤكدين',
-              zh: '根据已确认乘客扣除取消后动态计算领队奖励梯队',
-              ru: 'Динамический расчёт вознаграждений на основе подтверждённых пассажиров',
-            })}
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-action hover:bg-action-hover text-ink text-sm font-black shadow-sm transition"
-        >
-          <Plus size={16} />
-          <span>
-            {lt(locale, {
-              fa: 'تعریف کد معرف جدید',
-              en: 'Create Referral Code',
-              ar: 'إنشاء رمز إحالة جديد',
-              zh: '创建新推荐码',
-              ru: 'Создать промокод',
-            })}
+            </ErpHint>
           </span>
-        </button>
-      </div>
+        }
+        icon={<Users size={20} aria-hidden="true" />}
+        actions={
+          <button type="button" onClick={() => setShowCreateModal(true)} className={erpPrimaryBtnCls}>
+            <Plus size={15} aria-hidden="true" />
+            <span>{lt(locale, { fa: 'تعریف کد معرف جدید', en: 'Create Referral Code', ar: 'إنشاء رمز إحالة', zh: '创建推荐码', ru: 'Создать промокод' })}</span>
+          </button>
+        }
+      />
 
       {/* Main ERP DataGrid with CSV / Excel Export */}
       <ERPDataGrid
@@ -412,64 +406,50 @@ export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
 
       {/* Modal: Create Referral Code */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200 overflow-y-auto" onClick={() => setShowCreateModal(false)}>
-          <div role="dialog" aria-modal="true" aria-label="تعریف کد معرف سرگروه جدید" onClick={(e) => e.stopPropagation()} className="bg-surface rounded-3xl border border-line shadow-elev-3 w-full max-w-md overflow-hidden my-8">
-            <div className="p-6 border-b border-line flex items-center justify-between">
-              <h3 className="text-base font-black text-ink">تعریف کد معرف سرگروه جدید</h3>
-              <button
-                type="button"
-                onClick={() => setShowCreateModal(false)}
-                className="w-8 h-8 rounded-full bg-soft hover:bg-line/60 grid place-items-center text-sub hover:text-ink transition"
-              >
-                <X size={16} />
+        <ErpModal
+          title="تعریف کد معرف سرگروه جدید"
+          onClose={() => setShowCreateModal(false)}
+          footer={
+            <>
+              <button type="button" onClick={() => setShowCreateModal(false)} className={erpGhostBtnCls}>
+                انصراف
               </button>
+              <button type="submit" form="erp-referral-form" disabled={isSubmitting} className={erpPrimaryBtnCls}>
+                {isSubmitting && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
+                <span>ایجاد کد</span>
+              </button>
+            </>
+          }
+        >
+          <form id="erp-referral-form" onSubmit={handleCreateCode} className="space-y-4">
+            <div>
+              <label className={erpLabelCls} htmlFor="ref-code">کد معرف (یکتا و انگلیسی)</label>
+              <input
+                id="ref-code"
+                type="text"
+                required
+                placeholder="DAMAVAND1403"
+                value={createCode}
+                onChange={(e) => setCreateCode(e.target.value.toUpperCase())}
+                className={`${erpFieldCls} font-mono font-bold uppercase`}
+                dir="ltr"
+              />
             </div>
-
-            <form onSubmit={handleCreateCode} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-ink mb-1.5">کد معرف (یکتا و انگلیسی)</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="مثلاً DAMAVAND1403"
-                  value={createCode}
-                  onChange={(e) => setCreateCode(e.target.value.toUpperCase())}
-                  className="w-full h-11 px-3 rounded-xl border border-line bg-paper/50 font-mono font-bold uppercase text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-ink mb-1.5">شناسه کاربر سرگروه (User ID)</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="مثلاً usr_12345"
-                  value={createLeaderId}
-                  onChange={(e) => setCreateLeaderId(e.target.value)}
-                  className="w-full h-11 px-3 rounded-xl border border-line bg-paper/50 font-mono text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2.5 rounded-xl border border-line text-sub font-bold text-xs hover:bg-soft transition"
-                >
-                  انصراف
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-6 py-2.5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs shadow-sm transition disabled:opacity-50 flex items-center gap-1.5"
-                >
-                  {isSubmitting && <Loader2 size={14} className="animate-spin" />}
-                  <span>ایجاد کد</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            <div>
+              <label className={erpLabelCls} htmlFor="ref-leader">شناسه کاربر سرگروه (User ID)</label>
+              <input
+                id="ref-leader"
+                type="text"
+                required
+                placeholder="usr_12345"
+                value={createLeaderId}
+                onChange={(e) => setCreateLeaderId(e.target.value)}
+                className={`${erpFieldCls} font-mono`}
+                dir="ltr"
+              />
+            </div>
+          </form>
+        </ErpModal>
       )}
     </div>
   );

@@ -13,20 +13,20 @@ test.describe('ERP Content Management (CMS) Suite', () => {
     await expect(page.getByRole('heading', { name: /مدیریت تورها|Content Management/i, level: 1 })).toBeVisible({ timeout: 15000 });
 
     // 3. Tab 1: Tours modal check
-    await page.getByRole('button', { name: /افزودن تور جدید/i }).click();
+    await page.getByRole('button', { name: /افزودن تور جدید/i }).first().click();
     await expect(page.getByRole('heading', { name: /افزودن پکیج تور مسافرتی جدید/i })).toBeVisible();
     await page.getByRole('button', { name: /انصراف/i }).click();
 
     // 4. Tab 2: Experiences
-    await page.getByRole('button', { name: /تجربه‌های اصیل/i }).click();
+    await page.getByRole('tab', { name: /تجربه‌های اصیل/i }).click();
     await expect(page.getByRole('button', { name: /افزودن تجربه اصیل/i })).toBeVisible();
 
     // 5. Tab 3: Travelogues
-    await page.getByRole('button', { name: /سفرنامه‌ها/i }).click();
+    await page.getByRole('tab', { name: /سفرنامه‌ها/i }).click();
     await expect(page.getByRole('button', { name: /افزودن سفرنامه/i })).toBeVisible();
 
     // 6. Tab 4: Guides
-    await page.getByRole('button', { name: /راهنمای سفر/i }).click();
+    await page.getByRole('tab', { name: /راهنمای سفر/i }).click();
     await expect(page.getByRole('button', { name: /افزودن راهنمای سفر/i })).toBeVisible();
   });
 });

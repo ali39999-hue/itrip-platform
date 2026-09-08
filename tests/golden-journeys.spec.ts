@@ -11,7 +11,7 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
 
     // 1. Visit Flights search
     await page.goto('/fa/flights/search', { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveTitle(/iTrip|Firuzo|فیروزه/i);
+    await expect(page).toHaveTitle(/iTrip|Firuzo|فیروزه|فیروزو/i);
 
     // Verify search results presence and click first available ticket.
     // :visible skips hidden duplicates (e.g. mobile-only variants in the DOM).
@@ -65,7 +65,7 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
 
     // 1. Visit Hotel Search
     await page.goto('/fa/hotels/search', { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveTitle(/iTrip|Firuzo|فیروزه/i);
+    await expect(page).toHaveTitle(/iTrip|Firuzo|فیروزه|فیروزو/i);
 
     // Check hotel cards render with price
     const hotelCard = page.locator('div:has-text("هر شب از"), div:has-text("هر شب"), article').first();
@@ -139,7 +139,7 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
   test('Golden Journey 3: AI Smart Trip Planner -> Wizard -> Timeline View', async ({ page }) => {
     // 1. Visit AI Planner with destination param for instant deterministic timeline verification
     await page.goto('/fa/plan?dest=turkey&who=duo&days=4&bud=balanced&pace=balanced', { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveTitle(/iTrip|Firuzo|فیروزه/i);
+    await expect(page).toHaveTitle(/iTrip|Firuzo|فیروزه|فیروزو/i);
 
     // Verify generated plan header and days
     const resultHeader = page.locator('h1, h2').first();
@@ -153,12 +153,12 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
   test('Golden Journey 4: My Trips Management & Multi-Currency Wallet', async ({ page }) => {
     // 1. Visit My Trips
     await page.goto('/fa/my-trips', { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveTitle(/iTrip|Firuzo|فیروزه/i);
+    await expect(page).toHaveTitle(/iTrip|Firuzo|فیروزه|فیروزو/i);
     await expect(page.locator('h1, h2').first()).toBeVisible();
 
     // 2. Visit Wallet
     await page.goto('/fa/wallet', { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveTitle(/iTrip|Firuzo|فیروزه/i);
+    await expect(page).toHaveTitle(/iTrip|Firuzo|فیروزه|فیروزو/i);
     await expect(page.locator('h1').first()).toContainText('کیف پول');
 
     // Verify balance card presence
@@ -168,7 +168,7 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
   test('Golden Journey 5: Admin ERP Portal -> Security Gate & Bookings Structure', async ({ page }) => {
     // 1. Visit Admin Root
     await page.goto('/fa/admin', { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveTitle(/iTrip|Firuzo|فیروزه/i);
+    await expect(page).toHaveTitle(/iTrip|Firuzo|فیروزه|فیروزو/i);
     await expect(page.locator('h1, h2').first()).toBeVisible();
 
     // 2. Set Admin role and visit Admin Bookings

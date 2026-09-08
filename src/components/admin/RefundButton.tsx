@@ -72,7 +72,7 @@ export function RefundButton({ bookingId, reference }: { bookingId: string, refe
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <div className="flex items-center gap-2 text-rose-600 font-black text-sm">
                 <AlertTriangle size={18} />
-                <span>تأییدیه استرداد سفارش اداری</span>
+                <span>{lt(locale, { fa: 'تأیید استرداد سفارش', en: 'Confirm booking refund', ar: 'تأكيد استرداد الحجز', zh: '确认订单退款', ru: 'Подтверждение возврата' })}</span>
               </div>
               <button
                 type="button"
@@ -92,8 +92,10 @@ export function RefundButton({ bookingId, reference }: { bookingId: string, refe
             ) : (
               <>
                 <p className="text-xs text-sub leading-relaxed font-bold">
-                  آیا از اجرای عملیات استرداد سفارش با کد پیگیری <strong className="font-mono text-ink">#{reference}</strong> اطمینان دارید؟
-                  این عملیات تراز دوبل سند مالی را صادر کرده و وجه را به کیف پول یا حساب بانکی مشتری بازمی‌گرداند.
+                  {lt(locale, { fa: 'از استرداد سفارش با کد پیگیری مطمئنید؟', en: 'Refund the booking with this reference?', ar: 'هل أنت متأكد من استرداد الحجز؟', zh: '确定要退款此订单吗？', ru: 'Вернуть это бронирование?' })}{' '}
+                  <strong className="font-mono text-ink" dir="ltr">#{reference}</strong>
+                  <br />
+                  {lt(locale, { fa: 'سند مالی دوبل صادر می‌شود و وجه به کیف‌پول یا حساب مشتری برمی‌گردد.', en: 'A double-entry voucher is issued and funds return to the customer wallet or account.', ar: 'سيتم إصدار سند مالي مزدوج وإعادة المبلغ للعميل.', zh: '将生成复式凭证，款项退回客户钱包或账户。', ru: 'Будет выпущен двойной voucher, средства вернутся клиенту.' })}
                 </p>
 
                 <div className="flex gap-2.5 pt-2">
@@ -103,7 +105,7 @@ export function RefundButton({ bookingId, reference }: { bookingId: string, refe
                     disabled={isPending}
                     className="flex-1 min-h-11 rounded-xl bg-soft hover:bg-line/60 text-sub font-bold text-xs transition"
                   >
-                    انصراف
+                    {lt(locale, { fa: 'انصراف، بی‌خیال', en: 'Cancel, keep it', ar: 'إلغاء', zh: '取消', ru: 'Отмена' })}
                   </button>
                   <button
                     type="button"
@@ -112,7 +114,7 @@ export function RefundButton({ bookingId, reference }: { bookingId: string, refe
                     className="flex-1 min-h-11 rounded-xl bg-rose-600 hover:bg-rose-700 text-surface font-black text-xs transition flex items-center justify-center gap-1.5 shadow-sm"
                   >
                     {isPending && <Loader2 size={14} className="animate-spin" />}
-                    <span>تأیید و اجرای استرداد</span>
+                    <span>{lt(locale, { fa: 'تأیید و اجرای استرداد', en: 'Confirm & refund', ar: 'تأكيد واسترداد', zh: '确认并退款', ru: 'Подтвердить возврат' })}</span>
                   </button>
                 </div>
               </>

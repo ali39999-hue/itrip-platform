@@ -3,118 +3,102 @@ import { requirePermission } from '@/domains/identity/permission-service';
 import { getLocale } from 'next-intl/server';
 import { lt } from '@/lib/lt';
 import { Link } from '@/i18n/routing';
-import { Briefcase, User, Calendar, ExternalLink } from 'lucide-react';
+import { Briefcase, User, Calendar, ArrowUpLeft } from 'lucide-react';
+import { ErpBadge, ErpEmptyState, ErpPageHeader, ErpSectionCard } from '@/components/admin/erp-ui';
 
 export const dynamic = 'force-dynamic';
+
+function statusTone(status: string): 'green' | 'rose' | 'brand' | 'neutral' {
+  if (status === 'COMPLETED') return 'green';
+  if (status === 'CANCELLED') return 'rose';
+  if (status === 'IN_PROGRESS' || status === 'BOOKED') return 'brand';
+  return 'neutral';
+}
 
 export default async function TravelFilesPage() {
   await requirePermission(['booking:view:all', 'ops:override:cancel']);
   const locale = await getLocale();
-
-  // Query Trips (Travel Files) with aggregated Bookings and Users via Action Layer (BASE-006)
   const { trips } = await getAdminTravelFiles();
+  const numFmt = locale === 'fa' ? 'fa-IR' : 'en-US';
 
   return (
-    // AdminShell is provided by the admin layout; wrapping here renders a duplicate shell.
-    <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface p-6 rounded-2xl border border-line shadow-sm">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="p-2 rounded-xl bg-brand/10 text-brand-dark">
-                <Briefcase size={20} />
-              </span>
-              <h1 className="text-xl font-black text-ink">
-                {lt(locale, { fa: 'پرونده‌های جامع سفر (Travel Files)', en: 'Enterprise Travel Files', ar: 'ملفات السفر الشاملة', zh: '综合行程档案', ru: 'Комплексные файлы поездок' })}
-              </h1>
-            </div>
-            <p className="text-xs text-sub font-medium mt-1">
-              {lt(locale, {
-                fa: 'مشاهده و مدیریت یکپارچه مشتری، پروازها، هتل‌ها، ترانسفرها و وضعیت مالی هر پرونده سفر (ERP v2)',
-                en: 'Unified view of customers, flights, hotels, transfers, and ledger status per Travel File',
-                ar: 'عرض موحد للعملاء والرحلات والفنادق والنقل وحالة الدفاتر لكل ملف سفر',
-                zh: '统一查看客户、航班、酒店、接送及账目状态',
-                ru: 'Единый обзор клиентов, рейсов, отелей, трансферов и статуса бухгалтерии'
-              })}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1.5 rounded-xl bg-mint text-brand-dark text-xs font-black">
-              {trips.length} {lt(locale, { fa: 'پرونده ثبت‌شده', en: 'Files Recorded', ar: 'ملف مسجل', zh: '已记录档案', ru: 'файлов зарегистрировано' })}
-            </span>
-          </div>
-        </div>
+    <div className="space-y-4">
+      <ErpPageHeader
+        eyebrow="ERP v2 · Dossier"
+        title={lt(locale, { fa: 'پرونده‌های سفر', en: 'Travel Files', ar: 'ملفات السفر', zh: '行程档案', ru: 'Файлы поездок' })}
+        description={lt(locale, {
+          fa: 'نمای یکپارچه مشتری، پروازها، هتل‌ها، ترانسفرها و وضعیت مالی هر پرونده',
+          en: 'Unified view of customers, flights, hotels, transfers and ledger per file',
+          ar: 'عرض موحد للعملاء والرحلات والفنادق لكل ملف',
+          zh: '统一查看客户、航班、酒店及账目状态',
+          ru: 'Единый обзор клиентов, рейсов, отелей и бухгалтерии',
+        })}
+        icon={<Briefcase size={20} aria-hidden="true" />}
+        meta={
+          <ErpBadge tone="brand">
+            {trips.length.toLocaleString(numFmt)} {lt(locale, { fa: 'پرونده ثبت‌شده', en: 'files recorded', ar: 'ملف مسجل', zh: '个档案', ru: 'файлов' })}
+          </ErpBadge>
+        }
+      />
 
-        {/* Travel Files Grid / List */}
-        {trips.length === 0 ? (
-          <div className="bg-surface p-12 rounded-2xl border border-line text-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-soft grid place-items-center mx-auto text-sub">
-              <Briefcase size={24} />
-            </div>
-            <h3 className="text-base font-black text-ink">
-              {lt(locale, { fa: 'هنوز پرونده سفری ثبت نشده است', en: 'No Travel Files yet', ar: 'لا توجد ملفات سفر حتى الآن', zh: '暂无行程档案', ru: 'Файлов поездок пока нет' })}
-            </h3>
-            <p className="text-xs text-sub max-w-md mx-auto">
-              {lt(locale, {
-                fa: 'با رزرو بسته‌های سفر تجمیعی توسط کاربران یا ثبت در پنل آژانس، پرونده‌های سفر به همراه کد پیگیری یکتا در اینجا نمایش می‌یابند.',
-                en: 'When multi-item travel journeys are booked, their unified dossier and ledger timeline will appear here.',
-                ar: 'عند حجز رحلات السفر المجمعة، ستظهر ملفاتها هنا.',
-                zh: '当预订多项旅行行程时，其统一档案将在此显示。',
-                ru: 'При бронировании комплексных поездок их единое досье появится здесь.'
-              })}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {trips.map((trip) => {
-              const totalItems = (trip.bookings || []).reduce((sum: number, b: { items?: unknown[] }) => sum + (b.items?.length || 0), 0);
-              return (
-                <div key={trip.id} className="bg-surface p-5 rounded-2xl border border-line hover:border-brand/40 transition shadow-sm space-y-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <span className="inline-block px-2.5 py-0.5 rounded-md bg-brand-dark text-surface text-[11px] font-black tracking-wider mb-1" dir="ltr">
-                        {trip.reference}
-                      </span>
-                      <h3 className="text-base font-black text-ink leading-snug break-words">{trip.title}</h3>
-                    </div>
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-black shrink-0 ${
-                      trip.status === 'COMPLETED' ? 'bg-success/10 text-success'
-                      : trip.status === 'CANCELLED' ? 'bg-destructive/10 text-destructive'
-                      : trip.status === 'IN_PROGRESS' || trip.status === 'BOOKED' ? 'bg-mint text-brand-dark'
-                      : 'bg-soft text-sub'
-                    }`}>
-                      {trip.status}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs text-sub py-2 border-y border-line/60">
-                    <div className="flex items-center gap-1.5">
-                      <User size={13} className="text-brand-dark" />
-                      <span className="font-bold truncate">{trip.user?.name || trip.user?.email || 'Customer'}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Calendar size={13} className="text-brand-dark" />
-                      <span>{trip.startDate || 'TBD'}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-sub">
-                      {trip.bookings.length} {lt(locale, { fa: 'رزرو', en: 'Bookings', ar: 'حجوزات', zh: '项预订', ru: 'бронирований' })} ({totalItems} {lt(locale, { fa: 'آیتم', en: 'items', ar: 'عناصر', zh: '项目', ru: 'позиций' })})
-                    </span>
-                    <Link
-                      href={`/admin/travel-files/${trip.id}`}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-brand text-surface font-black hover:bg-brand-dark transition"
-                    >
-                      <span>{lt(locale, { fa: 'مشاهده پرونده', en: 'Open Dossier', ar: 'فتح الملف', zh: '打开档案', ru: 'Открыть дело' })}</span>
-                      <ExternalLink size={12} />
-                    </Link>
-                  </div>
-                </div>
-              );
+      {trips.length === 0 ? (
+        <ErpSectionCard>
+          <ErpEmptyState
+            icon={<Briefcase size={26} aria-hidden="true" />}
+            title={lt(locale, { fa: 'هنوز پرونده سفری ثبت نشده است', en: 'No travel files yet', ar: 'لا توجد ملفات سفر', zh: '暂无行程档案', ru: 'Файлов поездок пока нет' })}
+            description={lt(locale, {
+              fa: 'با رزرو بسته‌های تجمیعی توسط کاربران، پرونده‌ها با کد پیگیری یکتا اینجا نمایش داده می‌شوند.',
+              en: 'When multi-item journeys are booked, their unified dossiers appear here.',
+              ar: 'عند حجز الرحلات المجمعة ستظهر ملفاتها هنا.',
+              zh: '预订多项行程后，其统一档案将在此显示。',
+              ru: 'При бронировании комплексных поездок досье появятся здесь.',
             })}
-          </div>
-        )}
+          />
+        </ErpSectionCard>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {trips.map((trip) => {
+            const totalItems = (trip.bookings || []).reduce((sum: number, b: { items?: unknown[] }) => sum + (b.items?.length || 0), 0);
+            return (
+              <article key={trip.id} className="group flex flex-col justify-between gap-4 rounded-2xl border border-line bg-surface p-5 shadow-elev-1 transition-all hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-elev-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="mb-1.5 inline-block rounded-lg bg-deep px-2.5 py-1 font-mono text-[11px] font-black tracking-wider text-surface" dir="ltr">
+                      {trip.reference}
+                    </span>
+                    <h3 className="truncate text-[15px] font-black text-ink">{trip.title}</h3>
+                  </div>
+                  <ErpBadge tone={statusTone(trip.status)}>{trip.status}</ErpBadge>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-y border-line/60 py-2.5 text-xs font-bold text-sub">
+                  <span className="inline-flex min-w-0 items-center gap-1.5">
+                    <User size={13} className="shrink-0 text-brand-dark" aria-hidden="true" />
+                    <span className="truncate">{trip.user?.name || trip.user?.email || 'Customer'}</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Calendar size={13} className="shrink-0 text-brand-dark" aria-hidden="true" />
+                    <span className="tabular-nums">{trip.startDate || 'TBD'}</span>
+                  </span>
+                  <span className="ms-auto tabular-nums">
+                    {(trip.bookings?.length || 0).toLocaleString(numFmt)} {lt(locale, { fa: 'رزرو', en: 'bookings', ar: 'حجوزات', zh: '项预订', ru: 'броней' })} · {totalItems.toLocaleString(numFmt)} {lt(locale, { fa: 'آیتم', en: 'items', ar: 'عناصر', zh: '项目', ru: 'позиций' })}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-end">
+                  <Link
+                    href={`/admin/travel-files/${trip.id}`}
+                    className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-deep px-4 py-2 text-xs font-black text-surface shadow-elev-1 transition hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  >
+                    <span>{lt(locale, { fa: 'مشاهده پرونده', en: 'Open dossier', ar: 'فتح الملف', zh: '打开档案', ru: 'Открыть дело' })}</span>
+                    <ArrowUpLeft size={13} aria-hidden="true" className="rtl:rotate-90" />
+                  </Link>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

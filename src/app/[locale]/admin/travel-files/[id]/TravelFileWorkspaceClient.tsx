@@ -13,10 +13,7 @@ import {
   Receipt,
   RotateCcw,
   CheckCircle2,
-  AlertOctagon,
   MessageSquare,
-  UserCheck,
-  RefreshCw,
   Send,
 } from 'lucide-react';
 import {
@@ -34,6 +31,7 @@ import {
   resolveException,
 } from '@/actions/admin';
 import { lt } from '@/lib/lt';
+import { ErpAlert, ErpTabs } from '@/components/admin/erp-ui';
 
 export function TravelFileWorkspaceClient({
   data,
@@ -62,6 +60,8 @@ export function TravelFileWorkspaceClient({
   // Exception resolution state (ERP-103)
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [resolutionText, setResolutionText] = useState('');
+  // Two-step refund arming: first tap arms, second tap executes.
+  const [refundArmed, setRefundArmed] = useState(false);
 
   // Compute filtered timeline
   const filteredTimeline = TravelFileService.filterTimeline(data.timeline, {
@@ -119,6 +119,12 @@ export function TravelFileWorkspaceClient({
 
   const handleTriggerRefund = () => {
     if (!refundBookingId || !refundReason.trim()) return;
+    // First tap only arms the button — the money moves on the second tap.
+    if (!refundArmed) {
+      setRefundArmed(true);
+      return;
+    }
+    setRefundArmed(false);
     startTransition(async () => {
       try {
         const res = await triggerTravelFileRefund(data.trip.id, refundBookingId, {
@@ -132,6 +138,12 @@ export function TravelFileWorkspaceClient({
         setFeedback(`Error: ${err instanceof Error ? err.message : String(err)}`);
       }
     });
+  };
+
+  // Changing any refund input disarms the button again — the operator must
+  // re-confirm exactly what they see.
+  const disarmRefund = () => {
+    if (refundArmed) setRefundArmed(false);
   };
 
   const handleResolveException = (excId: string) => {
@@ -149,95 +161,25 @@ export function TravelFileWorkspaceClient({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Feedback Alert */}
+    <div className="space-y-4">
       {feedback && (
-        <div className="p-4 rounded-2xl bg-brand/10 border border-brand/20 text-brand-dark text-xs font-bold flex items-center justify-between">
-          <span>{feedback}</span>
-          <button type="button" onClick={() => setFeedback(null)} className="text-sub hover:text-ink">
-            Dismiss
-          </button>
-        </div>
+        <ErpAlert tone="info" onDismiss={() => setFeedback(null)}>
+          {feedback}
+        </ErpAlert>
       )}
 
-      {/* Navigation Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-line pb-3">
-        <button
-          type="button"
-          onClick={() => setActiveTab('overview')}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black transition ${
-            activeTab === 'overview'
-              ? 'bg-brand-dark text-surface'
-              : 'bg-soft/70 text-sub hover:text-ink'
-          }`}
-        >
-          <Briefcase size={14} />
-          <span>{lt(locale, { fa: 'خلاصه و رزروها', en: 'Overview & Bookings', ar: 'نظرة عامة', zh: '概览与预订', ru: 'Обзор и брони' })}</span>
-          <span className="ms-1 px-1.5 py-0.2 rounded-full text-[10px] bg-surface text-ink font-bold">
-            {data.bookings.length}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('timeline')}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black transition ${
-            activeTab === 'timeline'
-              ? 'bg-brand-dark text-surface'
-              : 'bg-soft/70 text-sub hover:text-ink'
-          }`}
-        >
-          <Clock size={14} />
-          <span>{lt(locale, { fa: 'تایم‌لاین عملیاتی', en: 'Operations Timeline', ar: 'الجدول الزمني', zh: '时间线', ru: 'Хронология' })}</span>
-          <span className="ms-1 px-1.5 py-0.2 rounded-full text-[10px] bg-surface text-ink font-bold">
-            {data.timeline.length}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('exceptions')}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black transition ${
-            activeTab === 'exceptions'
-              ? 'bg-brand-dark text-surface'
-              : 'bg-soft/70 text-sub hover:text-ink'
-          }`}
-        >
-          <AlertTriangle size={14} />
-          <span>{lt(locale, { fa: 'استثنائات و SLA', en: 'Exceptions & SLA', ar: 'الاستثناءات', zh: '异常与SLA', ru: 'Исключения и SLA' })}</span>
-          {data.summary.activeExceptionsCount > 0 && (
-            <span className="ms-1 px-1.5 py-0.2 rounded-full text-[10px] bg-rose-500 text-white font-bold">
-              {data.summary.activeExceptionsCount}
-            </span>
-          )}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('payments')}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black transition ${
-            activeTab === 'payments'
-              ? 'bg-brand-dark text-surface'
-              : 'bg-soft/70 text-sub hover:text-ink'
-          }`}
-        >
-          <CreditCard size={14} />
-          <span>{lt(locale, { fa: 'پرداخت و فاکتورها', en: 'Payments & Invoicing', ar: 'المدفوعات والفواتير', zh: '支付与发票', ru: 'Платежи и счета' })}</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('actions')}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black transition ${
-            activeTab === 'actions'
-              ? 'bg-brand-dark text-surface'
-              : 'bg-soft/70 text-sub hover:text-ink'
-          }`}
-        >
-          <MessageSquare size={14} />
-          <span>{lt(locale, { fa: 'عملیات و یادداشت‌ها', en: 'Actions & Notes', ar: 'الإجراءات', zh: '操作与附注', ru: 'Действия и заметки' })}</span>
-        </button>
-      </div>
+      <ErpTabs<'overview' | 'timeline' | 'exceptions' | 'payments' | 'actions'>
+        ariaLabel="Dossier sections"
+        value={activeTab}
+        onChange={setActiveTab}
+        options={[
+          { id: 'overview', label: lt(locale, { fa: 'خلاصه و رزروها', en: 'Overview & Bookings', ar: 'نظرة عامة', zh: '概览与预订', ru: 'Обзор и брони' }), count: data.bookings.length, icon: <Briefcase size={14} aria-hidden="true" /> },
+          { id: 'timeline', label: lt(locale, { fa: 'تایم‌لاین', en: 'Timeline', ar: 'الجدول الزمني', zh: '时间线', ru: 'Хронология' }), count: data.timeline.length, icon: <Clock size={14} aria-hidden="true" /> },
+          { id: 'exceptions', label: lt(locale, { fa: 'استثنائات', en: 'Exceptions', ar: 'الاستثناءات', zh: '异常', ru: 'Исключения' }), count: data.summary.activeExceptionsCount, icon: <AlertTriangle size={14} aria-hidden="true" /> },
+          { id: 'payments', label: lt(locale, { fa: 'پرداخت و فاکتور', en: 'Payments & Invoices', ar: 'المدفوعات والفواتير', zh: '支付与发票', ru: 'Платежи и счета' }), icon: <CreditCard size={14} aria-hidden="true" /> },
+          { id: 'actions', label: lt(locale, { fa: 'عملیات و یادداشت', en: 'Actions & Notes', ar: 'الإجراءات', zh: '操作与附注', ru: 'Действия' }), icon: <MessageSquare size={14} aria-hidden="true" /> },
+        ]}
+      />
 
       {/* TAB 1: OVERVIEW & BOOKINGS */}
       {activeTab === 'overview' && (
@@ -737,14 +679,14 @@ export function TravelFileWorkspaceClient({
           <div className="bg-surface rounded-3xl border border-line p-6 shadow-sm space-y-4">
             <h3 className="text-base font-black text-ink flex items-center gap-2">
               <RotateCcw size={18} className="text-brand-dark" />
-              <span>Trigger Booking Refund</span>
+              <span>{lt(locale, { fa: 'استرداد وجه رزرو', en: 'Trigger Booking Refund', ar: 'استرداد مبلغ الحجز', zh: '触发订单退款', ru: 'Возврат по брони' })}</span>
             </h3>
             <div className="space-y-3">
               <div>
                 <label className="block text-[11px] font-bold text-sub mb-1">Target Booking</label>
                 <select
                   value={refundBookingId}
-                  onChange={(e) => setRefundBookingId(e.target.value)}
+                  onChange={(e) => { setRefundBookingId(e.target.value); disarmRefund(); }}
                   className="w-full px-3 py-2 rounded-xl bg-soft border border-line text-xs font-bold"
                 >
                   {data.bookings.map((b) => (
@@ -761,7 +703,7 @@ export function TravelFileWorkspaceClient({
                   <input
                     type="number"
                     value={refundAmount || ''}
-                    onChange={(e) => setRefundAmount(Number(e.target.value))}
+                    onChange={(e) => { setRefundAmount(Number(e.target.value)); disarmRefund(); }}
                     placeholder="Full amount"
                     className="w-full px-3 py-2 rounded-xl bg-soft border border-line text-xs font-medium"
                   />
@@ -771,7 +713,7 @@ export function TravelFileWorkspaceClient({
                   <input
                     type="number"
                     value={refundPenalty || ''}
-                    onChange={(e) => setRefundPenalty(Number(e.target.value))}
+                    onChange={(e) => { setRefundPenalty(Number(e.target.value)); disarmRefund(); }}
                     placeholder="0"
                     className="w-full px-3 py-2 rounded-xl bg-soft border border-line text-xs font-medium"
                   />
@@ -783,20 +725,39 @@ export function TravelFileWorkspaceClient({
                 <input
                   type="text"
                   value={refundReason}
-                  onChange={(e) => setRefundReason(e.target.value)}
+                  onChange={(e) => { setRefundReason(e.target.value); disarmRefund(); }}
                   placeholder="e.g. Customer cancellation request under flexible policy"
                   className="w-full px-3 py-2 rounded-xl bg-soft border border-line text-xs font-medium"
                 />
               </div>
 
-              <button
-                type="button"
-                onClick={handleTriggerRefund}
-                disabled={isPending || !refundReason.trim()}
-                className="w-full py-2.5 rounded-xl bg-rose-600 text-white font-black text-xs hover:bg-rose-700 transition disabled:opacity-50"
-              >
-                Trigger Authorized Refund
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleTriggerRefund}
+                  disabled={isPending || !refundReason.trim()}
+                  aria-live="polite"
+                  title={refundArmed ? 'یک بار دیگر بزنید تا وجه واقعاً برگردد' : 'ابتدا مسلح می‌شود، با زدن دوباره اجرا می‌شود'}
+                  className={`flex-1 py-2.5 rounded-xl font-black text-xs transition disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-warm ${refundArmed ? 'bg-deep text-surface hover:bg-brand-dark' : 'bg-rose-600 text-white hover:bg-rose-700'}`}
+                >
+                  {refundArmed
+                    ? lt(locale, { fa: 'مطمئنید؟ دوباره بزنید تا اجرا شود', en: 'Sure? Tap again to execute', ar: 'متأكد؟ اضغط مرة أخرى للتنفيذ', zh: '确定？再点一次执行', ru: 'Точно? Нажмите ещё раз' })
+                    : lt(locale, { fa: 'ثبت استرداد مجاز', en: 'Trigger Authorized Refund', ar: 'تنفيذ الاسترداد المعتمد', zh: '触发授权退款', ru: 'Запустить возврат' })}
+                </button>
+                {refundArmed && !isPending && (
+                  <button
+                    type="button"
+                    onClick={() => setRefundArmed(false)}
+                    aria-label={lt(locale, { fa: 'انصراف از استرداد', en: 'Cancel refund', ar: 'إلغاء الاسترداد', zh: '取消退款', ru: 'Отменить возврат' })}
+                    className="min-h-10 min-w-10 grid place-items-center rounded-xl border border-line text-sub hover:text-ink transition"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              <p className="text-[11px] font-medium leading-relaxed text-sub">
+                {lt(locale, { fa: 'استرداد دو مرحله‌ای است: بار اول فقط آماده می‌شود تا اشتباهی پول برنگردد.', en: 'Refund is two-step: the first tap only arms it, so money never moves by accident.', ar: 'الاسترداد من خطوتين: الضغطة الأولى للتجهيز فقط.', zh: '退款分两步：第一次点击仅为确认预备，防止误操作。', ru: 'Возврат в два шага: первое нажатие только готовит.' })}
+              </p>
             </div>
           </div>
         </div>

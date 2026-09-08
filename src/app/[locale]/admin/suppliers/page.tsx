@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import {
   Building2, Plus, CheckCircle2,
-  AlertCircle, RefreshCw, Phone
+  AlertCircle, RefreshCw, Phone, Handshake
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { getAdminSuppliers, createAdminSupplier } from '@/actions/admin';
+import { ErpAlert, ErpBadge, ErpEmptyState, ErpModal, ErpPageHeader, ErpSectionCard, erpFieldCls, erpLabelCls, erpPrimaryBtnCls, erpGhostBtnCls } from '@/components/admin/erp-ui';
 
 interface SupplierData {
   id: string;
@@ -34,7 +35,6 @@ export default function AdminSuppliersPage() {
   const [showModal, setShowModal] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  // Form states
   const [name, setName] = useState('');
   const [type, setType] = useState('HOTEL');
   const [mode, setMode] = useState('ALLOTMENT');
@@ -57,16 +57,6 @@ export default function AdminSuppliersPage() {
   useEffect(() => {
     loadSuppliers();
   }, [loadSuppliers]);
-
-  // Escape closes the creation modal.
-  useEffect(() => {
-    if (!showModal) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setShowModal(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [showModal]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,202 +82,145 @@ export default function AdminSuppliersPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-ink flex items-center gap-2">
-            <Building2 className="text-brand" size={24} />
-            {lt(locale, { fa: 'مدیریت تامین‌کنندگان و همکاران تجاری', en: 'Suppliers & Partner Management', ar: 'إدارة الموردين والشركاء', zh: '供应商与合作伙伴管理', ru: 'Управление поставщиками' })}
-          </h1>
-          <p className="text-sm text-sub mt-1">
-            {lt(locale, { fa: 'تعریف هتل‌ها، ایرلاین‌ها و کارگزاران به همراه قرارداد و کمیسیون', en: 'Define hotels, airlines, and brokers with contracts and commissions', ar: 'تحديد الفنادق وشركات الطيران والوسطاء مع العقود والعمولات', zh: '定义酒店、航空公司及代理商合同与佣金', ru: 'Определение контрактов и комиссий поставщиков' })}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={loadSuppliers}
-            className="min-h-11 px-3 bg-surface border border-line text-sub rounded-xl hover:text-ink transition flex items-center gap-1.5 text-xs font-bold"
-          >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
-            {lt(locale, { fa: 'بروزرسانی', en: 'Refresh', ar: 'تحديث', zh: '刷新', ru: 'Обновить' })}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowModal(true)}
-            className="min-h-11 px-4 bg-brand text-surface rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 hover:bg-brand-dark transition shadow-sm"
-          >
-            <Plus size={16} />
-            {lt(locale, { fa: 'افزودن تامین‌کننده جدید', en: 'Add Supplier', ar: 'إضافة مورد جديد', zh: '添加新供应商', ru: 'Добавить поставщика' })}
-          </button>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <ErpPageHeader
+        eyebrow={lt(locale, { fa: 'کاتالوگ · تامین', en: 'Catalog · Supply', ar: 'الكتالوج · التوريد', zh: '目录 · 供应', ru: 'Каталог · Поставки' })}
+        title={lt(locale, { fa: 'تامین‌کنندگان و شرکای تجاری', en: 'Suppliers & Partners', ar: 'الموردون والشركاء', zh: '供应商与合作伙伴', ru: 'Поставщики и партнёры' })}
+        description={lt(locale, { fa: 'تعریف هتل‌ها، ایرلاین‌ها و کارگزاران به همراه قرارداد و کمیسیون', en: 'Define hotels, airlines and brokers with contracts and commissions', ar: 'تحديد الفنادق وشركات الطيران والوسطاء مع العقود والعمولات', zh: '定义酒店、航空公司及代理商合同与佣金', ru: 'Контракты и комиссии поставщиков' })}
+        icon={<Handshake size={20} aria-hidden="true" />}
+        meta={<ErpBadge tone="brand">{suppliers.length} {lt(locale, { fa: 'تامین‌کننده', en: 'suppliers', ar: 'مورد', zh: '个供应商', ru: 'поставщиков' })}</ErpBadge>}
+        actions={
+          <>
+            <button type="button" onClick={loadSuppliers} className={erpGhostBtnCls}>
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
+              {lt(locale, { fa: 'بروزرسانی', en: 'Refresh', ar: 'تحديث', zh: '刷新', ru: 'Обновить' })}
+            </button>
+            <button type="button" onClick={() => setShowModal(true)} className={erpPrimaryBtnCls}>
+              <Plus size={15} aria-hidden="true" />
+              {lt(locale, { fa: 'افزودن تامین‌کننده', en: 'Add Supplier', ar: 'إضافة مورد', zh: '添加供应商', ru: 'Добавить' })}
+            </button>
+          </>
+        }
+      />
 
       {error && (
-        <div role="alert" className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-bold flex items-center gap-2">
-          <AlertCircle size={18} aria-hidden="true" />
-          <span>{error}</span>
-        </div>
+        <ErpAlert tone="error" onDismiss={() => setError(null)}>{error}</ErpAlert>
       )}
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-40 bg-surface rounded-2xl border border-line animate-pulse" />
+            <div key={i} className="h-44 animate-pulse rounded-2xl border border-line bg-surface" />
           ))}
         </div>
       ) : suppliers.length === 0 ? (
-        <div className="bg-surface rounded-2xl border border-line p-12 text-center space-y-3">
-          <Building2 size={40} className="mx-auto text-sub/40" />
-          <h3 className="font-bold text-ink">
-            {lt(locale, { fa: 'هیچ تامین‌کننده‌ای ثبت نشده است', en: 'No suppliers registered yet', ar: 'لم يتم تسجيل موردين بعد', zh: '尚未注册供应商', ru: 'Поставщики еще не зарегистрированы' })}
-          </h3>
-          <p className="text-xs text-sub max-w-sm mx-auto">
-            {lt(locale, { fa: 'برای مدیریت سهمیه‌ها و انبار، ابتدا یک تامین‌کننده اضافه کنید.', en: 'To manage allotments and inventory, please add a supplier first.', ar: 'لإدارة الحصص والمخزون، يرجى إضافة مورد أولاً.', zh: '要管理配额和库存，请先添加供应商。', ru: 'Для управления квотами сначала добавьте поставщика.' })}
-          </p>
-        </div>
+        <ErpSectionCard>
+          <ErpEmptyState
+            icon={<Building2 size={26} aria-hidden="true" />}
+            title={lt(locale, { fa: 'هیچ تامین‌کننده‌ای ثبت نشده است', en: 'No suppliers yet', ar: 'لم يتم تسجيل موردين', zh: '尚未注册供应商', ru: 'Поставщиков пока нет' })}
+            description={lt(locale, { fa: 'برای مدیریت سهمیه‌ها و انبار، ابتدا یک تامین‌کننده اضافه کنید.', en: 'Add a supplier first to manage allotments and inventory.', ar: 'لإدارة الحصص والمخزون، أضف موردًا أولاً.', zh: '要管理配额和库存，请先添加供应商。', ru: 'Сначала добавьте поставщика.' })}
+            action={
+              <button type="button" onClick={() => setShowModal(true)} className={erpPrimaryBtnCls}>
+                <Plus size={15} aria-hidden="true" />
+                {lt(locale, { fa: 'افزودن تامین‌کننده', en: 'Add Supplier', ar: 'إضافة مورد', zh: '添加供应商', ru: 'Добавить' })}
+              </button>
+            }
+          />
+        </ErpSectionCard>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {suppliers.map((sup) => (
-            <div key={sup.id} className="bg-surface rounded-2xl border border-line p-5 shadow-sm space-y-3">
-              <div className="flex justify-between items-start">
-                <div className="p-2.5 bg-mint text-brand-dark rounded-xl font-black text-xs">
-                  {sup.type}
-                </div>
-                <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 ${
-                  sup.isActive ? 'bg-success/10 text-success' : 'bg-sub/10 text-sub'
-                }`}>
-                  <CheckCircle2 size={12} />
+            <article key={sup.id} className="flex flex-col justify-between gap-4 rounded-2xl border border-line bg-surface p-5 shadow-elev-1 transition-all hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-elev-2">
+              <div className="flex items-start justify-between gap-2">
+                <ErpBadge tone="brand">{sup.type}</ErpBadge>
+                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-black ${sup.isActive ? 'bg-success/10 text-success' : 'bg-soft text-sub'}`}>
+                  <CheckCircle2 size={12} aria-hidden="true" />
                   {sup.isActive ? 'Active' : 'Inactive'}
                 </span>
               </div>
               <div>
-                <h2 className="font-bold text-ink text-base">{sup.name}</h2>
-                <div className="flex items-center gap-2 mt-1 text-xs text-sub">
-                  <span>{sup.mode}</span>
-                  <span>•</span>
-                  <span>{sup.itemsCount} {lt(locale, { fa: 'آیتم انبار', en: 'Inventory items', ar: 'عناصر المخزون', zh: '库存项', ru: 'Элементов инвентаря' })}</span>
-                </div>
+                <h2 className="truncate text-[15px] font-black text-ink">{sup.name}</h2>
+                <p className="mt-1 text-xs font-bold text-sub">
+                  <span dir="ltr">{sup.mode}</span>
+                  <span className="mx-1.5" aria-hidden="true">•</span>
+                  <span>{sup.itemsCount} {lt(locale, { fa: 'آیتم انبار', en: 'inventory items', ar: 'عناصر المخزون', zh: '个库存项', ru: 'позиций' })}</span>
+                </p>
+                {sup.contact && (
+                  <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-sub">
+                    <Phone size={13} aria-hidden="true" /> <span dir="ltr">{sup.contact}</span>
+                  </p>
+                )}
               </div>
-
-              {sup.contact && (
-                <div className="text-xs text-sub flex items-center gap-1.5 pt-1">
-                  <Phone size={13} /> {sup.contact}
-                </div>
-              )}
-
-              <div className="pt-3 border-t border-line flex justify-between items-center text-xs">
-                <span className="text-sub">{lt(locale, { fa: 'کمیسیون پیش‌فرض:', en: 'Default Commission:', ar: 'العمولة الافتراضية:', zh: '默认佣金：', ru: 'Комиссия:' })}</span>
-                <span className="font-black text-brand-dark">
+              <div className="flex items-center justify-between border-t border-line/60 pt-3 text-xs">
+                <span className="font-bold text-sub">{lt(locale, { fa: 'کمیسیون پیش‌فرض', en: 'Default commission', ar: 'العمولة الافتراضية', zh: '默认佣金', ru: 'Комиссия' })}</span>
+                <span className="num rounded-lg bg-mint px-2 py-1 font-black text-brand-dark tabular-nums" dir="ltr">
                   {sup.contracts[0]?.commission ?? 0}%
                 </span>
               </div>
-            </div>
+            </article>
           ))}
         </div>
       )}
 
-      {/* Add Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-[200] bg-ink/65 backdrop-blur-xs grid place-items-center p-4 overflow-y-auto" onClick={() => setShowModal(false)}>
-          <div role="dialog" aria-modal="true" aria-label={lt(locale, { fa: 'افزودن تامین‌کننده جدید', en: 'Add New Supplier', ar: 'إضافة مورد جديد', zh: '添加新供应商', ru: 'Добавить поставщика' })} onClick={(e) => e.stopPropagation()} className="bg-surface w-full max-w-md rounded-2xl border border-line p-6 shadow-xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-ink">
-              {lt(locale, { fa: 'افزودن تامین‌کننده جدید', en: 'Add New Supplier', ar: 'إضافة مورد جديد', zh: '添加新供应商', ru: 'Добавить поставщика' })}
-            </h3>
-            <form onSubmit={handleCreate} className="space-y-3">
+        <ErpModal
+          title={lt(locale, { fa: 'افزودن تامین‌کننده جدید', en: 'Add New Supplier', ar: 'إضافة مورد جديد', zh: '添加新供应商', ru: 'Новый поставщик' })}
+          onClose={() => setShowModal(false)}
+          footer={
+            <>
+              <button type="button" onClick={() => setShowModal(false)} className={erpGhostBtnCls}>
+                {lt(locale, { fa: 'انصراف', en: 'Cancel', ar: 'إلغاء', zh: '取消', ru: 'Отмена' })}
+              </button>
+              <button type="submit" form="erp-supplier-form" disabled={creating} className={erpPrimaryBtnCls}>
+                {creating ? '…' : lt(locale, { fa: 'ثبت تامین‌کننده', en: 'Save Supplier', ar: 'حفظ المورد', zh: '保存供应商', ru: 'Сохранить' })}
+              </button>
+            </>
+          }
+        >
+          <form id="erp-supplier-form" onSubmit={handleCreate} className="space-y-3.5">
+            <div>
+              <label className={erpLabelCls} htmlFor="sup-name">
+                {lt(locale, { fa: 'نام تامین‌کننده', en: 'Supplier Name', ar: 'اسم المورد', zh: '供应商名称', ru: 'Название' })}
+              </label>
+              <input id="sup-name" type="text" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. هتل اسپیناس پالاس" className={erpFieldCls} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-sub mb-1">
-                  {lt(locale, { fa: 'نام تامین‌کننده', en: 'Supplier Name', ar: 'اسم المورد', zh: '供应商名称', ru: 'Название поставщика' })}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. هتل اسپیناس پالاس یا ماهان ایر"
-                  className="w-full h-10 px-3 rounded-xl border border-line text-sm focus:border-brand outline-hidden"
-                />
+                <label className={erpLabelCls} htmlFor="sup-type">{lt(locale, { fa: 'نوع خدمت', en: 'Service Type', ar: 'نوع الخدمة', zh: '服务类型', ru: 'Тип услуги' })}</label>
+                <select id="sup-type" value={type} onChange={(e) => setType(e.target.value)} className={erpFieldCls} dir="ltr">
+                  <option value="HOTEL">HOTEL</option>
+                  <option value="AIRLINE">AIRLINE</option>
+                  <option value="TOUR_OPERATOR">TOUR_OPERATOR</option>
+                  <option value="INSURANCE">INSURANCE</option>
+                </select>
               </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-sub mb-1">
-                    {lt(locale, { fa: 'نوع خدمت', en: 'Service Type', ar: 'نوع الخدمة', zh: '服务类型', ru: 'Тип услуги' })}
-                  </label>
-                  <select
-                    value={type}
-                    onChange={(e) => setType(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-line text-sm focus:border-brand outline-hidden bg-surface"
-                  >
-                    <option value="HOTEL">HOTEL</option>
-                    <option value="AIRLINE">AIRLINE</option>
-                    <option value="TOUR_OPERATOR">TOUR_OPERATOR</option>
-                    <option value="INSURANCE">INSURANCE</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-sub mb-1">
-                    {lt(locale, { fa: 'نحوه اتصال', en: 'Mode', ar: 'طريقة الاتصال', zh: '模式', ru: 'Режим' })}
-                  </label>
-                  <select
-                    value={mode}
-                    onChange={(e) => setMode(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-line text-sm focus:border-brand outline-hidden bg-surface"
-                  >
-                    <option value="ALLOTMENT">ALLOTMENT (سهمیه‌ای)</option>
-                    <option value="REALTIME_API">REALTIME_API (وب‌سرویس)</option>
-                    <option value="ON_REQUEST">ON_REQUEST (درخواست دستی)</option>
-                  </select>
-                </div>
+              <div>
+                <label className={erpLabelCls} htmlFor="sup-mode">{lt(locale, { fa: 'نحوه اتصال', en: 'Mode', ar: 'طريقة الاتصال', zh: '模式', ru: 'Режим' })}</label>
+                <select id="sup-mode" value={mode} onChange={(e) => setMode(e.target.value)} className={erpFieldCls} dir="ltr">
+                  <option value="ALLOTMENT">ALLOTMENT</option>
+                  <option value="REALTIME_API">REALTIME_API</option>
+                  <option value="ON_REQUEST">ON_REQUEST</option>
+                </select>
               </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-sub mb-1">
-                    {lt(locale, { fa: 'شماره تماس / ایمیل', en: 'Contact', ar: 'معلومات الاتصال', zh: '联系方式', ru: 'Контакты' })}
-                  </label>
-                  <input
-                    type="text"
-                    value={contact}
-                    onChange={(e) => setContact(e.target.value)}
-                    placeholder="+9821..."
-                    className="w-full h-10 px-3 rounded-xl border border-line text-sm focus:border-brand outline-hidden"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-sub mb-1">
-                    {lt(locale, { fa: 'نرخ کمیسیون (%)', en: 'Commission (%)', ar: 'نسبة العمولة (%)', zh: '佣金率 (%)', ru: 'Комиссия (%)' })}
-                  </label>
-                  <input
-                    type="number"
-                    value={commission}
-                    onChange={(e) => setCommission(e.target.value)}
-                    min="0"
-                    max="100"
-                    className="w-full h-10 px-3 rounded-xl border border-line text-sm focus:border-brand outline-hidden"
-                  />
-                </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={erpLabelCls} htmlFor="sup-contact">{lt(locale, { fa: 'تماس / ایمیل', en: 'Contact', ar: 'الاتصال', zh: '联系方式', ru: 'Контакты' })}</label>
+                <input id="sup-contact" type="text" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="+9821…" className={erpFieldCls} dir="ltr" />
               </div>
-
-              <div className="flex items-center justify-end gap-2 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="min-h-11 px-4 rounded-xl border border-line text-sub font-bold text-sm hover:bg-soft"
-                >
-                  {lt(locale, { fa: 'انصراف', en: 'Cancel', ar: 'إلغاء', zh: '取消', ru: 'Отмена' })}
-                </button>
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="min-h-11 px-5 rounded-xl bg-brand text-surface font-bold text-sm hover:bg-brand-dark disabled:opacity-50"
-                >
-                  {creating ? '...' : lt(locale, { fa: 'ثبت تامین‌کننده', en: 'Save Supplier', ar: 'حفظ المورد', zh: '保存供应商', ru: 'Сохранить' })}
-                </button>
+              <div>
+                <label className={erpLabelCls} htmlFor="sup-comm">{lt(locale, { fa: 'کمیسیون (٪)', en: 'Commission (%)', ar: 'العمولة (%)', zh: '佣金 (%)', ru: 'Комиссия (%)' })}</label>
+                <input id="sup-comm" type="number" value={commission} onChange={(e) => setCommission(e.target.value)} min="0" max="100" className={erpFieldCls} dir="ltr" />
               </div>
-            </form>
-          </div>
-        </div>
+            </div>
+            {error ? null : (
+              <p className="flex items-center gap-1.5 text-[11px] font-medium text-sub">
+                <AlertCircle size={12} aria-hidden="true" />
+                {lt(locale, { fa: 'قرارداد پیش‌فرض با همین کمیسیون ساخته می‌شود.', en: 'A default contract is created with this commission.', ar: 'يتم إنشاء عقد افتراضي بهذه العمولة.', zh: '将按此佣金创建默认合同。', ru: 'Контракт по умолчанию создастся с этой комиссией.' })}
+              </p>
+            )}
+          </form>
+        </ErpModal>
       )}
     </div>
   );

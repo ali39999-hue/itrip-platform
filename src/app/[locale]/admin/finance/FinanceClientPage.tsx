@@ -1,20 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Wallet, RefreshCcw, Save, ShieldCheck, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Wallet, RefreshCcw, Save, ShieldCheck, Loader2, Landmark, ArrowDownToLine, ArrowUpFromLine, ReceiptText } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { runLedgerReconciliation } from '@/actions/admin';
 import type { ReconciliationReport } from '@/domains/ledger/ReconciliationService';
-
-type Transaction = {
-   id: string;
-   description?: string;
-   wallet?: string;
-   resultWallet?: string;
-   amount: number;
-   resultAmount?: number;
-   status: string;
-};
+import { ErpAlert, ErpBadge, ErpHint, ErpPageHeader, ErpSectionCard, ErpStatCard, erpFieldCls, erpLabelCls } from '@/components/admin/erp-ui';
+import { ERPDataGrid, ColumnDef } from '@/components/admin/ERPDataGrid';
 
 export type DbTransaction = {
   id: string;
@@ -25,6 +17,14 @@ export type DbTransaction = {
     ownerType?: string | null;
     currency?: string | null;
   } | null;
+};
+
+type LedgerRow = {
+  id: string;
+  description: string;
+  wallet: string;
+  amount: number;
+  status: string;
 };
 
 export function FinanceClientPage({
@@ -66,193 +66,212 @@ export function FinanceClientPage({
     }
   }
 
-  // Transform db transactions to UI model
-  const formattedTransactions: Transaction[] = transactions.map((t) => ({
+  const rows: LedgerRow[] = transactions.map((t) => ({
     id: t.id,
-    description: t.referenceType ? `${t.referenceType} - ${t.referenceId || ''}` : 'Transaction',
-    wallet: t.account?.ownerType || undefined,
-    resultWallet: t.account?.currency || undefined,
+    description: t.referenceType ? `${t.referenceType}${t.referenceId ? ` · ${t.referenceId.slice(0, 8)}` : ''}` : 'Transaction',
+    wallet: [t.account?.ownerType, t.account?.currency].filter(Boolean).join(' · ') || '—',
     amount: Number(t.amount.toString()) || 0,
-    status: 'completed'
+    status: 'completed',
   }));
 
+  const ledgerColumns: ColumnDef<LedgerRow>[] = [
+    {
+      key: 'description',
+      header: lt(locale, { fa: 'شرح', en: 'Description', ar: 'الوصف', zh: '描述', ru: 'Описание' }),
+      sortable: true,
+      csvAccessor: (r) => r.description,
+      render: (r) => (
+        <span className="block min-w-40 max-w-72">
+          <span className="block truncate font-black text-ink" dir="ltr">{r.description}</span>
+          <span className="block truncate font-mono text-[10px] text-sub" dir="ltr">{r.id.slice(0, 12)}…</span>
+        </span>
+      ),
+    },
+    {
+      key: 'wallet',
+      header: lt(locale, { fa: 'کیف پول', en: 'Wallet', ar: 'المحفظة', zh: '钱包', ru: 'Кошелек' }),
+      sortable: true,
+      csvAccessor: (r) => r.wallet,
+      render: (r) => <span className="font-bold text-sub" dir="ltr">{r.wallet}</span>,
+    },
+    {
+      key: 'amount',
+      header: lt(locale, { fa: 'مبلغ', en: 'Amount', ar: 'المبلغ', zh: '金额', ru: 'Сумма' }),
+      sortable: true,
+      accessor: (r) => r.amount,
+      csvAccessor: (r) => r.amount,
+      render: (r) => (
+        <span className="num font-black text-ink tabular-nums" dir="ltr">{r.amount.toLocaleString(numFmt)}</span>
+      ),
+    },
+    {
+      key: 'status',
+      header: lt(locale, { fa: 'وضعیت', en: 'Status', ar: 'الحالة', zh: '状态', ru: 'Статус' }),
+      sortable: true,
+      filterable: true,
+      filterOptions: [{ label: 'Settled', value: 'completed' }],
+      csvAccessor: (r) => r.status,
+      render: () => (
+        <ErpBadge tone="green">{lt(locale, { fa: 'تسویه شده', en: 'Settled', ar: 'مستوفى', zh: '已结清', ru: 'Закрыто' })}</ErpBadge>
+      ),
+    },
+  ];
+
+  const net = inflow - outflow;
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{lt(locale, { fa: 'مدیریت مالی و خزانه‌داری', en: 'Finance & Treasury Management', ar: 'الإدارة المالية والخزينة', zh: '财务与国库管理', ru: 'Управление финансами и казначейством' })}</h1>
-          <p className="text-sm text-sub mt-1">{lt(locale, { fa: 'نظارت بر ترازهای چند ارزی، تراکنش‌ها و تعیین نرخ تسویه', en: 'Multi-currency balances, transactions, and settlement exchange rates', ar: 'أرصدة متعددة العملات والمعاملات وأسعار صرف التسویه', zh: '多币种余额、交易记录及结算汇率监控', ru: 'Мультивалютные балансы, транзакции и курсы взаиморасчетов' })}</p>
-        </div>
-        <button
-          type="button"
-          onClick={handleReconciliation}
-          disabled={reconciling}
-          className="inline-flex items-center justify-center gap-2 min-h-11 px-4 py-2.5 rounded-xl font-medium text-sm bg-brand text-surface hover:bg-brand-2 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm shrink-0"
-        >
-          {reconciling ? (
-            <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-          ) : (
-            <ShieldCheck size={16} aria-hidden="true" />
-          )}
-          <span>{lt(locale, { fa: 'اجرای تطبیق مالی', en: 'Run Reconciliation', ar: 'تشغيل المطابقة المالية', zh: '执行对账', ru: 'Запустить сверку' })}</span>
-        </button>
-      </div>
+    <div className="space-y-4">
+      <ErpPageHeader
+        eyebrow={lt(locale, { fa: 'مالی · خزانه‌داری', en: 'Finance · Treasury', ar: 'المالية · الخزينة', zh: '财务 · 资金', ru: 'Финансы · Казна' })}
+        title={lt(locale, { fa: 'مدیریت مالی و خزانه‌داری', en: 'Finance & Treasury Management', ar: 'الإدارة المالية والخزينة', zh: '财务与国库管理', ru: 'Управление финансами и казначейством' })}
+        description={lt(locale, { fa: 'ترازهای چندارزی، جریان امروز، نرخ تسویه و دفتر کل', en: 'Multi-currency balances, today’s flow, settlement rates and ledger', ar: 'الأرصدة والمعاملات وأسعار الصرف', zh: '多币种余额、今日流水、结算汇率与总账', ru: 'Балансы, потоки, курсы и журнал' })}
+        icon={<Landmark size={20} aria-hidden="true" />}
+        actions={
+          <button
+            type="button"
+            onClick={handleReconciliation}
+            disabled={reconciling}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-deep px-4 py-2.5 text-xs font-black text-surface shadow-elev-1 transition hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50"
+          >
+            {reconciling ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <ShieldCheck size={15} aria-hidden="true" />}
+            <span>{lt(locale, { fa: 'اجرای تطبیق مالی', en: 'Run Reconciliation', ar: 'تشغيل المطابقة', zh: '执行对账', ru: 'Запустить сверку' })}</span>
+          </button>
+        }
+      />
 
       {reconciliationError && (
-        <div role="alert" className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center gap-3">
-          <AlertTriangle size={18} className="shrink-0" aria-hidden="true" />
-          <span>{reconciliationError}</span>
-        </div>
+        <ErpAlert tone="error" onDismiss={() => setReconciliationError(null)}>{reconciliationError}</ErpAlert>
       )}
 
       {reconciliationReport && (
-        <div className="p-4 rounded-2xl bg-surface border border-line shadow-sm space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-line">
-            <div className="flex items-center gap-2.5">
-              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                reconciliationReport.isBalanced
-                  ? 'bg-success/15 text-success'
-                  : 'bg-rose-500/15 text-rose-600'
-              }`}>
-                {reconciliationReport.isBalanced ? (
-                  <>
-                    <CheckCircle2 size={14} aria-hidden="true" />
-                    <span>{lt(locale, { fa: 'تراز متوازن', en: 'Balanced', ar: 'متوازن', zh: '已平衡', ru: 'Сбалансировано' })}</span>
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle size={14} aria-hidden="true" />
-                    <span>{lt(locale, { fa: 'عدم تطابق تراز', en: 'Unbalanced', ar: 'غير متوازن', zh: '不平衡', ru: 'Дисбаланс' })}</span>
-                  </>
-                )}
-              </span>
-              <span className="text-xs text-sub">
-                {new Date(reconciliationReport.timestamp).toLocaleTimeString(numFmt)}
-              </span>
-            </div>
-            <div className="flex items-center gap-4 text-xs text-sub">
-              <div>
-                <span>{lt(locale, { fa: 'گروه‌های بررسی شده: ', en: 'Total groups checked: ', ar: 'إجمالي المجموعات المدققة: ', zh: '已核对分组：', ru: 'Проверено групп: ' })}</span>
-                <b className="text-ink font-semibold" dir="ltr">{reconciliationReport.totalGroupsChecked.toLocaleString(numFmt)}</b>
-              </div>
-              <div>
-                <span>{lt(locale, { fa: 'موارد عدم تطابق: ', en: 'Mismatches: ', ar: 'حالات عدم التطابق: ', zh: '不匹配项：', ru: 'Несоответствий: ' })}</span>
-                <b className={`font-semibold ${reconciliationReport.unbalancedGroupsCount > 0 ? 'text-rose-600' : 'text-success'}`} dir="ltr">
-                  {reconciliationReport.unbalancedGroupsCount.toLocaleString(numFmt)}
-                </b>
-              </div>
-            </div>
+        <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-elev-1">
+          <div className="p-4">
+            <ErpAlert tone={reconciliationReport.isBalanced ? 'success' : 'error'}>
+              {reconciliationReport.isBalanced
+                ? lt(locale, { fa: `تراز متوازن است · ${reconciliationReport.totalGroupsChecked.toLocaleString(numFmt)} گروه بررسی شد`, en: `Balanced · ${reconciliationReport.totalGroupsChecked} groups checked`, ar: 'متوازن', zh: '已平衡', ru: 'Сбалансировано' })
+                : lt(locale, { fa: `در ${reconciliationReport.unbalancedGroupsCount.toLocaleString(numFmt)} گروه مغایرت هست — جزئیات را پایین ببینید`, en: `${reconciliationReport.unbalancedGroupsCount} unbalanced groups — details below`, ar: 'توجد فروقات — التفاصيل أدناه', zh: '存在不平衡分组 — 详情如下', ru: 'Есть несбалансированные группы — детали ниже' })}
+            </ErpAlert>
           </div>
-
           {reconciliationReport.mismatches.length > 0 && (
-            <div className="text-xs text-rose-600 space-y-1">
-              <p className="font-semibold">{lt(locale, { fa: 'گروه‌های نامتوازن:', en: 'Unbalanced Groups:', ar: 'المجموعات غير المتطابقة:', zh: '不平衡分组：', ru: 'Несбалансированные группы:' })}</p>
-              <div className="max-h-32 overflow-y-auto space-y-1">
+            <details className="group border-t border-line/70">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-xs font-black text-ink transition hover:bg-soft/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand [&::-webkit-details-marker]:hidden">
+                <span>
+                  {lt(locale, { fa: `مشاهده ${reconciliationReport.mismatches.length.toLocaleString(numFmt)} گروه نامتوازن`, en: `View ${reconciliationReport.mismatches.length} unbalanced groups`, ar: 'عرض المجموعات غير المتوازنة', zh: '查看不平衡分组', ru: 'Показать несбалансированные группы' })}
+                </span>
+                <span aria-hidden="true" className="rounded-lg bg-soft px-2 py-1 text-[10px] text-sub transition group-open:rotate-180">▼</span>
+              </summary>
+              <ul className="max-h-56 space-y-1 overflow-y-auto border-t border-line/60 bg-soft/30 p-3">
                 {reconciliationReport.mismatches.map((m) => (
-                  <div key={m.groupId} className="flex justify-between border-b border-line/50 pb-1" dir="ltr">
-                    <span className="font-mono">{m.groupId}</span>
-                    <span>Debit: {m.totalDebit} | Credit: {m.totalCredit} | Diff: {m.diff} {m.currency}</span>
-                  </div>
+                  <li key={m.groupId} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line/60 bg-surface px-3 py-2 text-[11px]">
+                    <code className="font-mono font-black text-ink" dir="ltr">{m.groupId}</code>
+                    <span className="num font-bold text-sub tabular-nums" dir="ltr">
+                      Debit {m.totalDebit} · Credit {m.totalCredit} · <b className="text-rose-warm">Δ {m.diff} {m.currency}</b>
+                    </span>
+                  </li>
                 ))}
-              </div>
-            </div>
+              </ul>
+            </details>
           )}
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {([
-          ['IRR', lt(locale, { fa: 'صندوق ریالی', en: 'Rial Treasury', ar: 'خزينة الريال', zh: '里亚尔金库', ru: 'Риаловая казна' }), (balances?.IRR || 0).toLocaleString(numFmt), lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '托曼', ru: 'Toman' })],
-          ['USDT', lt(locale, { fa: 'صندوق تتر', en: 'USDT Treasury', ar: 'خزينة التيثر', zh: 'USDT 金库', ru: 'USDT-казна' }), (balances?.USDT || 0).toLocaleString(numFmt), 'USDT'],
-          ['AED', lt(locale, { fa: 'صندوق درهم', en: 'AED Treasury', ar: 'خزينة الدرهم', zh: '迪拉姆金库', ru: 'Дирхамовая казна' }), (balances?.AED || 0).toLocaleString(numFmt), 'AED'],
-        ] as const).map(([k, title, val, unit]) => (
-          <div key={k} className="bg-surface rounded-2xl border border-line p-5 shadow-sm">
-            <p className="flex items-center gap-2 text-sm text-sub mb-2">
-              <Wallet size={16} aria-hidden="true" /> {title}
-            </p>
-            <p className="text-xl font-bold text-ink" dir="ltr">{val} <span className="text-xs font-normal text-sub">{unit}</span></p>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-4">
+        <ErpStatCard icon={<Wallet size={17} aria-hidden="true" />} label={lt(locale, { fa: 'صندوق ریالی (تومان)', en: 'Rial treasury (Toman)', ar: 'خزينة الريال', zh: '里亚尔金库', ru: 'Риаловая казна' })} value={(balances?.IRR || 0).toLocaleString(numFmt)} tone="brand" />
+        <ErpStatCard icon={<Wallet size={17} aria-hidden="true" />} label={lt(locale, { fa: 'صندوق تتر (USDT)', en: 'USDT treasury', ar: 'خزينة التيثر', zh: 'USDT 金库', ru: 'USDT-казна' })} value={(balances?.USDT || 0).toLocaleString(numFmt)} tone="violet" />
+        <ErpStatCard icon={<ArrowDownToLine size={17} aria-hidden="true" />} label={lt(locale, { fa: 'ورودی امروز', en: 'Today’s inflow', ar: 'التدفق الداخل اليوم', zh: '今日流入', ru: 'Приток сегодня' })} value={inflow.toLocaleString(numFmt)} tone="green" />
+        <ErpStatCard icon={<ArrowUpFromLine size={17} aria-hidden="true" />} label={lt(locale, { fa: 'خالص امروز (ورودی−خروجی)', en: 'Today’s net', ar: 'الصافي اليوم', zh: '今日净额', ru: 'Нетто сегодня' })} value={net.toLocaleString(numFmt)} tone={net >= 0 ? 'green' : 'rose'} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div className="bg-surface rounded-2xl border border-line p-6">
-          <h2 className="font-bold text-ink mb-4">{lt(locale, { fa: 'ورودی / خروجی امروز', en: "Today's Inflow / Outflow", ar: 'التدفق الداخل / الخارج اليوم', zh: '今日流入/流出', ru: 'Приток / отток за сегодня' })}</h2>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-sub">{lt(locale, { fa: 'جمع شارژ کیف پول', en: 'Total wallet deposits', ar: 'إجمالي شحن المحفظة', zh: '钱包总充值', ru: 'Всего пополнений' })}</span>
-              <b dir="ltr" className="text-success">{inflow.toLocaleString(numFmt)}</b>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sub">{lt(locale, { fa: 'جمع پرداخت و قفل وجه', en: 'Total payments & fund locks', ar: 'إجمالي المدفوعات وحجز الأموال', zh: '支付及锁定总额', ru: 'Платежи и блокировки' })}</span>
-              <b dir="ltr" className="text-rose-warm">{outflow.toLocaleString(numFmt)}</b>
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+        <ErpSectionCard
+          className="lg:col-span-3"
+          title={lt(locale, { fa: 'جریان امروز', en: 'Today’s flow', ar: 'تدفق اليوم', zh: '今日流水', ru: 'Потоки сегодня' })}
+          subtitle={lt(locale, { fa: 'شارژ کیف‌پول در برابر پرداخت و قفل وجه', en: 'Deposits vs payments & locks', ar: 'الشحن مقابل المدفوعات', zh: '充值 vs 支付与锁定', ru: 'Пополнения vs платежи' })}
+          icon={<ReceiptText size={16} aria-hidden="true" />}
+        >
+          {(() => {
+            const total = Math.max(1, inflow + outflow);
+            const inPct = Math.round((inflow / total) * 100);
+            return (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-sub">{lt(locale, { fa: 'شارژ کیف‌پول', en: 'Wallet deposits', ar: 'شحن المحفظة', zh: '钱包充值', ru: 'Пополнения' })}</span>
+                  <b dir="ltr" className="num text-sm font-black text-success tabular-nums">{inflow.toLocaleString(numFmt)}</b>
+                </div>
+                <div className="h-3 overflow-hidden rounded-full bg-soft" role="img" aria-label={`${inPct}% inflow`}>
+                  <div className="h-full rounded-full bg-gradient-to-l from-brand-dark via-brand to-mint-bright transition-all" style={{ width: `${inPct}%` }} />
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-sub">{lt(locale, { fa: 'پرداخت و قفل وجه', en: 'Payments & locks', ar: 'المدفوعات والحجز', zh: '支付及锁定', ru: 'Платежи и блокировки' })}</span>
+                  <b dir="ltr" className="num text-sm font-black text-rose-warm tabular-nums">{outflow.toLocaleString(numFmt)}</b>
+                </div>
+              </div>
+            );
+          })()}
+        </ErpSectionCard>
 
-        <div className="bg-surface rounded-2xl border border-line p-6">
-          <h2 className="font-bold text-ink mb-4 flex items-center gap-2">
-            <RefreshCcw size={17} aria-hidden="true" /> {lt(locale, { fa: 'مدیریت نرخ ارز (تومان)', en: 'Exchange Rates (Toman)', ar: 'إدارة أسعار الصرف (تومان)', zh: '汇率管理（托曼）', ru: 'Курс обмена (Toman)' })}
-          </h2>
-          <div className="grid grid-cols-3 gap-3 mb-4">
+        <ErpSectionCard
+          className="lg:col-span-2"
+          title={lt(locale, { fa: 'نرخ ارز تسویه (تومان)', en: 'Settlement FX rates (Toman)', ar: 'أسعار الصرف (تومان)', zh: '结算汇率（托曼）', ru: 'Курсы (Toman)' })}
+          subtitle={
+            <span className="inline-flex flex-wrap items-center gap-1.5">
+              <span>{lt(locale, { fa: 'مبنای تبدیل بدهی ارزی به تومان', en: 'Basis for converting FX dues to Toman', ar: 'أساس تحويل المستحقات للعملة المحلية', zh: '外币欠款折算基础', ru: 'База пересчёта в томаны' })}</span>
+              <ErpHint label={lt(locale, { fa: 'این نرخ‌ها واقعی‌اند؟', en: 'Are these rates live?', ar: 'هل هذه الأسعار حقيقية؟', zh: '这些汇率是实时的吗？', ru: 'Курсы настоящие?' })}>
+                {lt(locale, {
+                  fa: 'فعلاً تمرینی است: ذخیره واقعی انجام نمی‌شود و روی سندی اثر نمی‌گذارد. برای اتصال به نرخ رسمی به تیم فنی بگویید.',
+                  en: 'Practice mode for now: nothing is really saved and no document is affected. Ask the tech team to connect the official rate feed.',
+                  ar: 'وضع تجريبي حاليًا: لا يتم حفظ شيء فعليًا. اطلب من الفريق التقني ربط الأسعار الرسمية.',
+                  zh: '目前为练习模式：不会真正保存，也不影响任何单据。如需对接官方汇率请联系技术团队。',
+                  ru: 'Пока тренировка: ничего не сохраняется и ни на что не влияет. Подключение курса — к техкоманде.',
+                })}
+              </ErpHint>
+            </span>
+          }
+          icon={<RefreshCcw size={16} aria-hidden="true" />}
+          actions={
+            <ErpBadge tone={saved ? 'green' : 'neutral'}>
+              {saved
+                ? lt(locale, { fa: 'ذخیره شد', en: 'Saved', ar: 'تم الحفظ', zh: '已保存', ru: 'Сохранено' })
+                : lt(locale, { fa: 'پیش‌نمایش', en: 'Preview', ar: 'معاينة', zh: '预览', ru: 'Превью' })}
+            </ErpBadge>
+          }
+        >
+          <div className="grid grid-cols-3 gap-2.5">
             {(['USDT', 'AED', 'EUR'] as const).map((c) => (
-              <label key={c} className="space-y-1.5">
-                <span className="text-[11px] font-bold text-sub" dir="ltr">{c}</span>
+              <div key={c}>
+                <label className={erpLabelCls} htmlFor={`fx-${c}`} dir="ltr">{c}</label>
                 <input
+                  id={`fx-${c}`}
                   type="number"
                   value={rates[c]}
                   onChange={(e) => setRates({ ...rates, [c]: e.target.value })}
-                  className="w-full h-10 rounded-md border border-input px-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  className={erpFieldCls}
+                  dir="ltr"
                 />
-              </label>
+              </div>
             ))}
           </div>
           <button
             onClick={saveRates}
-            className={`w-full min-h-11 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-              saved ? 'bg-success/20 text-success' : 'bg-brand hover:bg-brand-2 text-surface'
-            }`}
+            className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-deep px-4 py-2.5 text-xs font-black text-surface transition hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
-            <Save size={15} aria-hidden="true" /> {saved ? lt(locale, { fa: 'ذخیره شد (پیش‌نمایش)', en: 'Saved (Preview)', ar: 'تم الحفظ (معاينة)', zh: '已保存（预览）', ru: 'Сохранено (превью)' }) : lt(locale, { fa: 'ذخیره نرخ‌ها (دمو)', en: 'Save Rates (Demo)', ar: 'حفظ الأسعار (تجريبي)', zh: '保存汇率（演示）', ru: 'Сохранить курс (демо)' })}
+            <Save size={14} aria-hidden="true" />
+            {lt(locale, { fa: 'ذخیره نرخ‌ها (دمو)', en: 'Save rates (demo)', ar: 'حفظ الأسعار (تجريبي)', zh: '保存汇率（演示）', ru: 'Сохранить (демо)' })}
           </button>
-        </div>
+        </ErpSectionCard>
       </div>
 
-      <div className="bg-surface rounded-2xl border border-line overflow-x-auto">
-        <p className="p-5 font-bold text-ink border-b border-line">{lt(locale, { fa: 'دفتر کل تراکنش‌ها', en: 'Transaction Ledger', ar: 'سجل المعاملات', zh: '总账记录', ru: 'Журнал транзакций' })}</p>
-        {formattedTransactions.length === 0 ? (
-          <p className="text-center text-sub py-12 text-sm">{lt(locale, { fa: 'تراکنشی ثبت نشده است', en: 'No transactions recorded', ar: 'لم يتم تسجيل أي معاملات', zh: '暂无交易记录', ru: 'Транзакций нет' })}</p>
-        ) : (
-          <table className="w-full min-w-[640px] text-sm">
-            <thead className="bg-soft text-sub text-xs sticky top-0">
-              <tr>
-                <th className="p-4 text-start font-medium">{lt(locale, { fa: 'شرح', en: 'Description', ar: 'الوصف', zh: '描述', ru: 'Описание' })}</th>
-                <th className="p-4 text-start font-medium">{lt(locale, { fa: 'کیف پول', en: 'Wallet', ar: 'المحفظة', zh: '钱包', ru: 'Кошелек' })}</th>
-                <th className="p-4 text-end font-medium">{lt(locale, { fa: 'مبلغ', en: 'Amount', ar: 'المبلغ', zh: '金额', ru: 'Сумма' })}</th>
-                <th className="p-4 text-start font-medium">{lt(locale, { fa: 'وضعیت', en: 'Status', ar: 'الحالة', zh: '状态', ru: 'Статус' })}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {formattedTransactions.map((t) => (
-                <tr key={t.id} className="border-t border-line hover:bg-soft/60">
-                  <td className="p-4 text-ink">{t.description}</td>
-                  <td className="p-4 text-sub" dir="ltr">{t.wallet}{t.resultWallet ? ` ➔ ${t.resultWallet}` : ''}</td>
-                  <td className="p-4 text-end font-bold" dir="ltr">
-                    {(t.resultAmount && t.resultWallet ? t.resultAmount : t.amount).toLocaleString(numFmt)}
-                  </td>
-                  <td className="p-4">
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      t.status === 'completed' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
-                    }`}>
-                      {t.status === 'completed' ? lt(locale, { fa: 'تسویه شده', en: 'Settled', ar: 'مستوفى', zh: '已结清', ru: 'Закрыто' }) : lt(locale, { fa: 'قفل موقت', en: 'Temporarily Locked', ar: 'حجز مؤقت', zh: '临时锁定', ru: 'Временно заблокировано' })}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <ERPDataGrid<LedgerRow>
+        data={rows}
+        columns={ledgerColumns}
+        idAccessor={(r) => r.id}
+        title={lt(locale, { fa: 'دفتر کل تراکنش‌ها', en: 'Transaction ledger', ar: 'سجل المعاملات', zh: '总账记录', ru: 'Журнал транзакций' })}
+        description={lt(locale, { fa: 'آخرین اسناد دفتری ثبت‌شده در دیتابیس', en: 'Latest ledger entries in the database', ar: 'أحدث قيود الدفتر', zh: '数据库中的最新总账记录', ru: 'Последние записи журнала' })}
+        searchPlaceholder={lt(locale, { fa: 'جستجوی شرح یا کیف‌پول… ( / )', en: 'Search description or wallet… ( / )', ar: 'ابحث في الوصف…', zh: '搜索描述或钱包…', ru: 'Поиск по описанию…' })}
+        defaultPageSize={15}
+        emptyStateMessage={lt(locale, { fa: 'تراکنشی ثبت نشده است', en: 'No transactions recorded', ar: 'لم يتم تسجيل أي معاملات', zh: '暂无交易记录', ru: 'Транзакций нет' })}
+        savedViewStorageKey="erp_finance_views"
+      />
     </div>
   );
 }

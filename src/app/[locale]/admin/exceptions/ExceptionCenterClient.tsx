@@ -2,14 +2,14 @@
 
 import React, { useState, useTransition } from 'react';
 import {
-  AlertOctagon,
   Clock,
   UserCheck,
   Check,
   X,
-  Filter,
+  ShieldCheck,
 } from 'lucide-react';
 import { ERPDataGrid, ColumnDef } from '@/components/admin/ERPDataGrid';
+import { ErpAlert, ErpHint, ErpPageHeader, ErpTabs } from '@/components/admin/erp-ui';
 import { ExceptionStats } from '@/domains/erp/ExceptionCenterService';
 import { assignException, resolveException } from '@/actions/admin';
 import { lt } from '@/lib/lt';
@@ -99,10 +99,10 @@ export function ExceptionCenterClient({
       sortable: true,
       filterable: true,
       filterOptions: [
-        { label: 'CRITICAL', value: 'CRITICAL' },
-        { label: 'HIGH', value: 'HIGH' },
-        { label: 'MEDIUM', value: 'MEDIUM' },
-        { label: 'LOW', value: 'LOW' },
+        { label: `${lt(locale, { fa: 'بحرانی', en: 'Critical', ar: 'حرج', zh: '严重', ru: 'Критично' })} (CRITICAL)`, value: 'CRITICAL' },
+        { label: `${lt(locale, { fa: 'بالا', en: 'High', ar: 'عالٍ', zh: '高', ru: 'Высокая' })} (HIGH)`, value: 'HIGH' },
+        { label: `${lt(locale, { fa: 'متوسط', en: 'Medium', ar: 'متوسط', zh: '中', ru: 'Средняя' })} (MEDIUM)`, value: 'MEDIUM' },
+        { label: `${lt(locale, { fa: 'کم', en: 'Low', ar: 'منخفض', zh: '低', ru: 'Низкая' })} (LOW)`, value: 'LOW' },
       ],
       render: (row) => {
         const isCritical = row.severity === 'CRITICAL' || row.severity === 'HIGH';
@@ -222,9 +222,9 @@ export function ExceptionCenterClient({
       sortable: true,
       filterable: true,
       filterOptions: [
-        { label: 'OPEN', value: 'OPEN' },
-        { label: 'IN_PROGRESS', value: 'IN_PROGRESS' },
-        { label: 'RESOLVED', value: 'RESOLVED' },
+        { label: `${lt(locale, { fa: 'باز', en: 'Open', ar: 'مفتوح', zh: '待处理', ru: 'Открыт' })} (OPEN)`, value: 'OPEN' },
+        { label: `${lt(locale, { fa: 'در حال بررسی', en: 'In progress', ar: 'قيد المعالجة', zh: '处理中', ru: 'В работе' })} (IN_PROGRESS)`, value: 'IN_PROGRESS' },
+        { label: `${lt(locale, { fa: 'حل‌شده', en: 'Resolved', ar: 'محلول', zh: '已解决', ru: 'Решено' })} (RESOLVED)`, value: 'RESOLVED' },
       ],
       render: (row) => (
         <span className="px-2 py-0.5 rounded text-[10px] font-black bg-surface border border-line">
@@ -298,53 +298,50 @@ export function ExceptionCenterClient({
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      <ErpPageHeader
+        eyebrow={lt(locale, { fa: 'عملیات · پایش SLA', en: 'Operations · SLA watch', ar: 'العمليات · مراقبة SLA', zh: '运营 · SLA监控', ru: 'Операции · SLA' })}
+        title={lt(locale, { fa: 'مرکز خطا و استثنائات', en: 'Exception Center', ar: 'مركز الاستثناءات', zh: '异常中心', ru: 'Центр исключений' })}
+        description={
+          <span className="inline-flex flex-wrap items-center gap-1.5">
+            <span>{lt(locale, { fa: 'صف‌بندی مغایرت‌ها، ارجاع به اپراتور و حل با اعمال SLA', en: 'Queue discrepancies, assign operators and resolve under SLA', ar: 'إدارة الاستثناءات وتعيين المشغلين', zh: '异常排队、指派与SLA解决', ru: 'Очереди расхождений и решение по SLA' })}</span>
+            <ErpHint label={lt(locale, { fa: 'مهلت SLA چیست؟', en: 'What is the SLA deadline?', ar: 'ما هي مهلة SLA؟', zh: '什么是SLA期限？', ru: 'Что такое дедлайн SLA?' })}>
+              {lt(locale, {
+                fa: 'مهلت توافق‌شده برای حل هر خطا. وقتی شمارش معکوس تمام شود یعنی قول‌مان به مسافر عقب افتاده — اول قرمزها را ببندید!',
+                en: 'The agreed time limit for fixing each issue. When the countdown runs out, our promise to the traveler is overdue — close the red ones first!',
+                ar: 'المهلة المتفق عليها لحل كل مشكلة. عند انتهاء العد التنازلي تأخرنا عن وعدنا — ابدأ بالحمراء!',
+                zh: '解决每个问题的约定时间内。倒计时结束意味着我们对旅客失约 — 先处理红色项！',
+                ru: 'Согласованный срок решения каждой проблемы. Обратный отсчёт истёк — обещание нарушено: сначала красные!',
+              })}
+            </ErpHint>
+          </span>
+        }
+        icon={<ShieldCheck size={20} aria-hidden="true" />}
+      />
+
       {feedback && (
-        <div role="status" className="p-3.5 rounded-2xl bg-brand/10 border border-brand/20 text-brand-dark text-xs font-bold flex items-center justify-between gap-2">
-          <span>{feedback}</span>
-          <button type="button" onClick={() => setFeedback(null)} className="min-h-9 px-2 text-sub hover:text-ink shrink-0">
-            {lt(locale, { fa: 'بستن', en: 'Dismiss', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}
-          </button>
-        </div>
+        <ErpAlert tone="info" onDismiss={() => setFeedback(null)} dismissLabel={lt(locale, { fa: 'بستن', en: 'Dismiss', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}>
+          {feedback}
+        </ErpAlert>
       )}
 
-      {/* Standard Queue Tabs (ERP-104) */}
-      <div role="tablist" aria-label={lt(locale, { fa: 'صف‌های استثنا', en: 'Exception queues', ar: 'قوائم الاستثناءات', zh: '异常队列', ru: 'Очереди исключений' })} className="flex items-center gap-2 border-b border-line pb-3 overflow-x-auto scrollbar-none">
-        {queueTabs.map((q) => (
-          <button
-            key={q.id}
-            type="button"
-            role="tab"
-            aria-selected={selectedQueue === q.id}
-            onClick={() => setSelectedQueue(q.id)}
-            className={`shrink-0 whitespace-nowrap flex items-center gap-1.5 min-h-11 px-3 rounded-xl text-xs font-black transition ${
-              selectedQueue === q.id
-                ? 'bg-brand-dark text-surface'
-                : 'bg-soft text-sub hover:text-ink'
-            }`}
-          >
-            <span>{q.label}</span>
-            <span className="ms-1 px-1.5 py-0.5 rounded-full text-[10px] bg-surface text-ink font-bold">
-              {q.count}
-            </span>
-          </button>
-        ))}
-      </div>
+      <ErpTabs
+        ariaLabel={lt(locale, { fa: 'صف‌های استثنا', en: 'Exception queues', ar: 'قوائم الاستثناءات', zh: '异常队列', ru: 'Очереди исключений' })}
+        value={selectedQueue}
+        onChange={setSelectedQueue}
+        options={queueTabs.map((q) => ({ id: q.id, label: q.label, count: q.count }))}
+      />
 
-      {/* High Priority Alerts Banner */}
       {stats.breachedSlaCount > 0 && (
-        <div role="alert" className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2">
-          <AlertOctagon size={16} className="text-rose-600 shrink-0" aria-hidden="true" />
-          <span>
-            {lt(locale, {
-              fa: `${stats.breachedSlaCount} مورد از مهلت SLA عبور کرده‌اند و نیاز به اقدام فوری اپراتور دارند.`,
-              en: `${stats.breachedSlaCount} exceptions have breached their SLA deadline and require immediate operator intervention.`,
-              ar: `تجاوز ${stats.breachedSlaCount} استثناءً موعد SLA ويتطلب تدخلاً فوريًا.`,
-              zh: `${stats.breachedSlaCount} 项异常已超过SLA期限，需要立即处理。`,
-              ru: `${stats.breachedSlaCount} исключений нарушили SLA — требуется немедленное вмешательство.`,
-            })}
-          </span>
-        </div>
+        <ErpAlert tone="error">
+          {lt(locale, {
+            fa: `${stats.breachedSlaCount} مورد از مهلت SLA عبور کرده‌اند و نیاز به اقدام فوری اپراتور دارند.`,
+            en: `${stats.breachedSlaCount} exceptions have breached their SLA deadline and require immediate operator intervention.`,
+            ar: `تجاوز ${stats.breachedSlaCount} استثناءً موعد SLA ويتطلب تدخلاً فوريًا.`,
+            zh: `${stats.breachedSlaCount} 项异常已超过SLA期限，需要立即处理。`,
+            ru: `${stats.breachedSlaCount} исключений нарушили SLA — требуется немедленное вмешательство.`,
+          })}
+        </ErpAlert>
       )}
 
       {/* Reusable ERPDataGrid for Exceptions (ERP-105) */}
@@ -352,8 +349,8 @@ export function ExceptionCenterClient({
         data={filteredByQueue}
         columns={columns}
         idAccessor={(row) => row.id}
-        title={`Queue: ${selectedQueue.replace(/_/g, ' ')}`}
-        description="Filter, sort, and manage operational discrepancies with strict SLA enforcement"
+        title={queueTabs.find((q) => q.id === selectedQueue)?.label ?? selectedQueue.replace(/_/g, ' ')}
+        description={lt(locale, { fa: 'فیلتر، مرتب‌سازی و مدیریت مغایرت‌ها با اعمال SLA', en: 'Filter, sort and resolve discrepancies under SLA', ar: 'تصفية وترتيب الاستثناءات', zh: '筛选、排序并解决异常', ru: 'Фильтр и решение расхождений' })}
         savedViewStorageKey="exception_center_views"
       />
     </div>

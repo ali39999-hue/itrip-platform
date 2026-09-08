@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import {
-  Boxes, Plus, RefreshCw, AlertCircle, Calendar,
-  Lock, Building2
+  Boxes, Plus, RefreshCw, Calendar,
+  Lock, Building2, LockOpen
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import {
@@ -13,6 +13,8 @@ import {
   updateAllotment,
   getAdminSuppliers
 } from '@/actions/admin';
+import { ErpAlert, ErpBadge, ErpEmptyState, ErpHint, ErpModal, ErpPageHeader, ErpSectionCard, erpFieldCls, erpLabelCls, erpPrimaryBtnCls, erpGhostBtnCls } from '@/components/admin/erp-ui';
+import { cn } from '@/lib/utils';
 
 interface InventoryItemData {
   id: string;
@@ -43,7 +45,6 @@ export default function AdminInventoryPage() {
   const [showModal, setShowModal] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  // Form states
   const [supplierId, setSupplierId] = useState('');
   const [name, setName] = useState('');
   const [type, setType] = useState('HOTEL_ROOM');
@@ -75,16 +76,6 @@ export default function AdminInventoryPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  // Escape closes the creation modal.
-  useEffect(() => {
-    if (!showModal) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setShowModal(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [showModal]);
 
   const handleCreateItem = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,274 +111,200 @@ export default function AdminInventoryPage() {
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-ink flex items-center gap-2">
-            <Boxes className="text-brand" size={24} />
-            {lt(locale, { fa: 'مدیریت انبار و سهمیه‌ها (Allotment)', en: 'Inventory & Allotment Management', ar: 'إدارة المخزون والحصص', zh: '库存与配额管理', ru: 'Управление инвентарем и квотами' })}
-          </h1>
-          <p className="text-sm text-sub mt-1">
-            {lt(locale, { fa: 'کنترل ظرفیت روزانه، قفل‌های موقت (Hold) و جلوگیری از Overbooking', en: 'Control daily capacity, active holds, and prevent overselling', ar: 'التحكم في السعة اليومية والحجوزات المؤقتة ومنع الحجز الزائد', zh: '控制每日容量、临时锁定并防止超卖', ru: 'Контроль суточной емкости и предотвращение овербукинга' })}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={loadData}
-            className="min-h-11 px-3 bg-surface border border-line text-sub rounded-xl hover:text-ink transition flex items-center gap-1.5 text-xs font-bold"
-          >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
-            {lt(locale, { fa: 'بروزرسانی', en: 'Refresh', ar: 'تحديث', zh: '刷新', ru: 'Обновить' })}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowModal(true)}
-            className="min-h-11 px-4 bg-brand text-surface rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 hover:bg-brand-dark transition shadow-sm"
-          >
-            <Plus size={16} />
-            {lt(locale, { fa: 'افزودن آیتم انبار جدید', en: 'Add Inventory Item', ar: 'إضافة عنصر مخزون جديد', zh: '添加新库存项', ru: 'Добавить позицию' })}
-          </button>
-        </div>
-      </div>
+  const totalCells = items.reduce((s, i) => s + i.allotments.length, 0);
+  const blockedCells = items.reduce((s, i) => s + i.allotments.filter((a) => a.stopSell || a.available === 0).length, 0);
 
-      {error && (
-        <div role="alert" className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-bold flex items-center gap-2">
-          <AlertCircle size={18} aria-hidden="true" />
-          <span>{error}</span>
-        </div>
-      )}
+  return (
+    <div className="space-y-4">
+      <ErpPageHeader
+        eyebrow={lt(locale, { fa: 'کاتالوگ · ظرفیت', en: 'Catalog · Capacity', ar: 'الكتالوج · السعة', zh: '目录 · 容量', ru: 'Каталог · Ёмкость' })}
+        title={lt(locale, { fa: 'انبار و سهمیه‌ها', en: 'Inventory & Allotments', ar: 'المخزون والحصص', zh: '库存与配额', ru: 'Инвентарь и квоты' })}
+        description={lt(locale, { fa: 'ظرفیت روزانه، قفل‌های موقت و جلوگیری از فروش بیش از ظرفیت', en: 'Daily capacity, active holds and oversell protection', ar: 'السعة اليومية والحجز المؤقت ومنع التجاوز', zh: '每日容量、临时锁定与防超卖', ru: 'Суточные квоты и защита от овербукинга' })}
+        icon={<Boxes size={20} aria-hidden="true" />}
+        meta={
+          <>
+            <ErpBadge tone="brand">{items.length} {lt(locale, { fa: 'آیتم', en: 'items', ar: 'عناصر', zh: '个项目', ru: 'позиций' })}</ErpBadge>
+            <ErpBadge tone={blockedCells > 0 ? 'gold' : 'green'}>{blockedCells}/{totalCells} {lt(locale, { fa: 'روز مسدود', en: 'blocked days', ar: 'أيام محظورة', zh: '天受限', ru: 'дней закрыто' })}</ErpBadge>
+          </>
+        }
+        actions={
+          <>
+            <button type="button" onClick={loadData} className={erpGhostBtnCls}>
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
+              {lt(locale, { fa: 'بروزرسانی', en: 'Refresh', ar: 'تحديث', zh: '刷新', ru: 'Обновить' })}
+            </button>
+            <button type="button" onClick={() => setShowModal(true)} className={erpPrimaryBtnCls}>
+              <Plus size={15} aria-hidden="true" />
+              {lt(locale, { fa: 'آیتم جدید', en: 'Add Item', ar: 'إضافة عنصر', zh: '添加项目', ru: 'Добавить' })}
+            </button>
+          </>
+        }
+      />
+
+      {error && <ErpAlert tone="error" onDismiss={() => setError(null)}>{error}</ErpAlert>}
 
       {loading ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {[1, 2].map((i) => (
-            <div key={i} className="h-48 bg-surface rounded-2xl border border-line animate-pulse" />
+            <div key={i} className="h-48 animate-pulse rounded-2xl border border-line bg-surface" />
           ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="bg-surface rounded-2xl border border-line p-12 text-center space-y-3">
-          <Boxes size={40} className="mx-auto text-sub/40" />
-          <h3 className="font-bold text-ink">
-            {lt(locale, { fa: 'هیچ آیتم انباری تعریف نشده است', en: 'No inventory items created yet', ar: 'لم يتم إنشاء عناصر مخزون بعد', zh: '尚未创建库存项', ru: 'Инвентарь пока не создан' })}
-          </h3>
-          <p className="text-xs text-sub max-w-sm mx-auto">
-            {lt(locale, { fa: 'اتاق هتل یا صندلی پرواز جدیدی را به همراه ظرفیت روزانه تعریف نمایید.', en: 'Create a hotel room or flight allotment to enable live booking holds.', ar: 'أنشئ غرفة فندقية أو مقعد طيران لتمكين الحجز الفعلي.', zh: '创建酒店房间或航班配额以启用实时预订锁定。', ru: 'Создайте квоту номеров или мест для реального бронирования.' })}
-          </p>
-        </div>
+        <ErpSectionCard>
+          <ErpEmptyState
+            icon={<Boxes size={26} aria-hidden="true" />}
+            title={lt(locale, { fa: 'هیچ آیتم انباری تعریف نشده است', en: 'No inventory items yet', ar: 'لا توجد عناصر مخزون', zh: '尚未创建库存项', ru: 'Инвентаря пока нет' })}
+            description={lt(locale, { fa: 'اتاق هتل یا صندلی پرواز را با ظرفیت روزانه تعریف کنید.', en: 'Create a hotel room or flight allotment to enable live holds.', ar: 'أنشئ غرفة أو مقعدًا لتمكين الحجز.', zh: '创建酒店房间或航班配额以启用实时锁定。', ru: 'Создайте квоту для реального бронирования.' })}
+            action={<button type="button" onClick={() => setShowModal(true)} className={erpPrimaryBtnCls}><Plus size={15} aria-hidden="true" />{lt(locale, { fa: 'تعریف آیتم', en: 'Add Item', ar: 'إضافة عنصر', zh: '添加项目', ru: 'Добавить' })}</button>}
+          />
+        </ErpSectionCard>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {items.map((item) => (
-            <div key={item.id} className="bg-surface rounded-2xl border border-line p-5 shadow-sm space-y-4">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-line">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs px-2.5 py-0.5 rounded-full font-black bg-mint text-brand-dark">
-                      {item.type}
-                    </span>
-                    <h2 className="font-bold text-ink text-base">{item.name}</h2>
-                    {item.code && (
-                      <span className="text-xs text-sub bg-soft px-2 py-0.5 rounded-md font-mono">
-                        {item.code}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-sub">
-                    <Building2 size={13} />
-                    <span>{item.supplierName}</span>
-                    <span>•</span>
-                    <span className="min-w-0 truncate">{lt(locale, { fa: 'شناسه آیتم:', en: 'Item ID:', ar: 'معرف العنصر:', zh: '项目ID：', ru: 'ID:' })} <code className="font-mono text-ink" title={item.id}>{item.id.length > 12 ? `${item.id.slice(0, 12)}…` : item.id}</code></span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 text-xs">
-                  <div>
-                    <span className="text-sub block">{lt(locale, { fa: 'قیمت پایه', en: 'Base Price', ar: 'السعر الأساسي', zh: '基础价格', ru: 'Базовая цена' })}</span>
-                    <span className="font-black text-ink text-sm">
-                      {item.basePrice.toLocaleString()} {item.currency}
-                    </span>
-                  </div>
-                  <div className="ps-4 border-s border-line">
-                    <span className="text-sub block">{lt(locale, { fa: 'قفل‌های فعال (Hold)', en: 'Active Holds', ar: 'الحجوزات المؤقتة النشطة', zh: '活动锁定', ru: 'Активные холды' })}</span>
-                    <span className={`font-black text-sm ${item.activeHoldsCount > 0 ? 'text-warning' : 'text-sub'}`}>
-                      {item.activeHoldsCount}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Allotment Calendar Matrix */}
-              <div>
-                <h4 className="text-xs font-bold text-sub mb-2 flex items-center gap-1.5">
-                  <Calendar size={14} />
-                  {lt(locale, { fa: 'تقویم سهمیه روزانه و وضعیت توقف فروش (Stop-Sell)', en: 'Daily Allotment & Stop-Sell Status', ar: 'جدول الحصص اليومية وحالة إيقاف البيع', zh: '每日配额与停售状态', ru: 'Суточные квоты и статус остановки продаж' })}
-                </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
-                  {item.allotments.map((a) => (
+            <ErpSectionCard
+              key={item.id}
+              title={
+                <span className="flex min-w-0 flex-wrap items-center gap-2">
+                  <ErpBadge tone="brand">{item.type}</ErpBadge>
+                  <span className="truncate text-[15px] font-black text-ink">{item.name}</span>
+                  {item.code && <code className="rounded-md bg-soft px-2 py-0.5 font-mono text-[11px] text-sub" dir="ltr">{item.code}</code>}
+                </span>
+              }
+              subtitle={
+                <span className="inline-flex items-center gap-1.5">
+                  <Building2 size={12} aria-hidden="true" /> {item.supplierName}
+                </span>
+              }
+              actions={
+                <>
+                  <span className="hidden text-right text-[11px] font-bold text-sub sm:block">
+                    {lt(locale, { fa: 'قفل فعال', en: 'Active holds', ar: 'الحجز النشط', zh: '活动锁定', ru: 'Холды' })}
+                    <b className={cn('ms-1.5 font-black tabular-nums', item.activeHoldsCount > 0 ? 'text-price' : 'text-sub')}>{item.activeHoldsCount}</b>
+                  </span>
+                  <span className="text-right text-[11px] font-bold text-sub">
+                    {lt(locale, { fa: 'پایه', en: 'Base', ar: 'الأساسي', zh: '基础价', ru: 'База' })}
+                    <b className="num ms-1.5 text-[13px] font-black text-ink tabular-nums" dir="ltr">{item.basePrice.toLocaleString()} {item.currency}</b>
+                  </span>
+                </>
+              }
+            >
+              <h4 className="mb-2.5 flex items-center gap-1.5 text-xs font-black text-sub">
+                <Calendar size={14} aria-hidden="true" />
+                {lt(locale, { fa: 'تقویم سهمیه و توقف فروش', en: 'Allotment calendar & stop-sell', ar: 'جدول الحصص وإيقاف البيع', zh: '配额日历与停售', ru: 'Квоты и стоп-продажи' })}
+                <ErpHint label={lt(locale, { fa: 'توقف فروش چیست؟', en: 'What is stop-sell?', ar: 'ما هو إيقاف البيع؟', zh: '什么是停售？', ru: 'Что такое стоп-продажа?' })}>
+                  {lt(locale, {
+                    fa: 'با این دکمه فروش آن روز بسته می‌شود ولی رزروهای قبلی سر جایشان می‌مانند. برای روزهای پیک یا تعمیرات هتل استفاده کنید.',
+                    en: 'This button closes sales for that day, while existing bookings stay untouched. Use it for peak days or hotel maintenance.',
+                    ar: 'يغلق هذا الزر مبيعات ذلك اليوم مع بقاء الحجوزات السابقة. استخدمه لأيام الذروة أو الصيانة.',
+                    zh: '此按钮关闭当天的销售，已有预订不受影响。适用于高峰日或酒店维护。',
+                    ru: 'Кнопка закрывает продажи на этот день, старые брони остаются. Для пиковых дней или ремонта.',
+                  })}
+                </ErpHint>
+              </h4>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
+                {item.allotments.map((a) => {
+                  const blocked = a.stopSell;
+                  const soldOut = !blocked && a.available === 0;
+                  return (
                     <div
                       key={a.id}
-                      className={`p-2.5 rounded-xl border text-xs space-y-1.5 transition ${
-                        a.stopSell
-                          ? 'bg-destructive/5 border-destructive/20 text-destructive'
-                          : a.available === 0
-                          ? 'bg-warning/5 border-warning/20 text-warning'
-                          : 'bg-soft/40 border-line text-ink'
-                      }`}
+                      className={cn(
+                        'space-y-1.5 rounded-xl border p-2.5 text-xs transition',
+                        blocked ? 'border-destructive/25 bg-destructive/5'
+                          : soldOut ? 'border-gold/30 bg-gold-soft/50'
+                            : 'border-line bg-soft/40',
+                      )}
                     >
-                      <div className="font-bold flex justify-between items-center text-[11px]">
-                        <span>{a.date.slice(5)}</span>
-                        {a.stopSell && <Lock size={12} className="text-destructive" />}
+                      <div className="flex items-center justify-between text-[11px] font-black">
+                        <span className="tabular-nums" dir="ltr">{a.date.slice(5)}</span>
+                        {blocked ? <Lock size={12} className="text-destructive" aria-hidden="true" /> : soldOut ? <span className="text-[9px] font-black text-price">FULL</span> : <LockOpen size={12} className="text-success" aria-hidden="true" />}
                       </div>
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-sub">{lt(locale, { fa: 'ظرفیت:', en: 'Total:', ar: 'الإجمالي:', zh: '总额:', ru: 'Всего:' })} {a.total}</span>
-                        <span className="font-bold">{lt(locale, { fa: 'مانده:', en: 'Avail:', ar: 'المتاح:', zh: '可用:', ru: 'Доступно:' })} {a.available}</span>
+                      <div className="num flex justify-between text-[11px] tabular-nums">
+                        <span className="font-bold text-sub">{a.total}</span>
+                        <span className={cn('font-black', blocked ? 'text-destructive' : soldOut ? 'text-price' : 'text-success')}>{a.available}</span>
+                      </div>
+                      <div className="h-1 overflow-hidden rounded-full bg-surface" aria-hidden="true">
+                        <div className={cn('h-full rounded-full', blocked ? 'bg-destructive' : soldOut ? 'bg-gold' : 'bg-success')} style={{ width: `${a.total ? Math.round((a.available / a.total) * 100) : 0}%` }} />
                       </div>
                       <button
                         type="button"
                         onClick={() => toggleStopSell(a.id, a.stopSell)}
                         aria-pressed={a.stopSell}
-                        className={`w-full min-h-9 py-1 text-[10px] font-bold rounded-md transition ${
-                          a.stopSell
-                            ? 'bg-destructive text-surface hover:bg-destructive/90'
-                            : 'bg-surface border border-line text-sub hover:text-ink'
-                        }`}
+                        className={cn(
+                          'min-h-9 w-full rounded-lg py-1.5 text-[10px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+                          a.stopSell ? 'bg-destructive text-white hover:brightness-95' : 'border border-line bg-surface text-sub hover:text-ink',
+                        )}
                       >
-                        {a.stopSell ? 'Stop-Sell (بازگشایی)' : 'فعال (توقف فروش)'}
+                        {a.stopSell
+                          ? lt(locale, { fa: 'مسدود · بازگشایی', en: 'Blocked · Reopen', ar: 'محظور · فتح', zh: '已停售·重开', ru: 'Закрыто · Открыть' })
+                          : lt(locale, { fa: 'فعال · توقف فروش', en: 'Open · Stop-sell', ar: 'مفتوح · إيقاف', zh: '在售·停售', ru: 'Открыто · Стоп' })}
                       </button>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-            </div>
+            </ErpSectionCard>
           ))}
         </div>
       )}
 
-      {/* Add Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-[200] bg-ink/65 backdrop-blur-xs grid place-items-center p-4 overflow-y-auto" onClick={() => setShowModal(false)}>
-          <div role="dialog" aria-modal="true" aria-label={lt(locale, { fa: 'تعریف آیتم انبار جدید', en: 'Add Inventory Item', ar: 'إضافة عنصر مخزون جديد', zh: '添加新库存项', ru: 'Добавить позицию' })} onClick={(e) => e.stopPropagation()} className="bg-surface w-full max-w-md rounded-2xl border border-line p-6 shadow-xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-ink">
-              {lt(locale, { fa: 'تعریف آیتم انبار جدید', en: 'Add Inventory Item', ar: 'إضافة عنصر مخزون جديد', zh: '添加新库存项', ru: 'Добавить позицию' })}
-            </h3>
-            <form onSubmit={handleCreateItem} className="space-y-3">
+        <ErpModal
+          title={lt(locale, { fa: 'تعریف آیتم انبار جدید', en: 'Add Inventory Item', ar: 'إضافة عنصر مخزون', zh: '添加库存项', ru: 'Новая позиция' })}
+          subtitle={lt(locale, { fa: 'سهمیه روزانه به‌صورت خودکار تخصیص می‌یابد', en: 'Daily allotment is allocated automatically', ar: 'يتم تخصيص الحصص تلقائيًا', zh: '每日配额将自动分配', ru: 'Суточные квоты выделятся автоматически' })}
+          onClose={() => setShowModal(false)}
+          footer={
+            <>
+              <button type="button" onClick={() => setShowModal(false)} className={erpGhostBtnCls}>
+                {lt(locale, { fa: 'انصراف', en: 'Cancel', ar: 'إلغاء', zh: '取消', ru: 'Отмена' })}
+              </button>
+              <button type="submit" form="erp-inv-form" disabled={creating} className={erpPrimaryBtnCls}>
+                {creating ? '…' : lt(locale, { fa: 'ثبت و تخصیص سهمیه', en: 'Save & Allocate', ar: 'حفظ وتخصيص', zh: '保存并分配', ru: 'Сохранить' })}
+              </button>
+            </>
+          }
+        >
+          <form id="erp-inv-form" onSubmit={handleCreateItem} className="space-y-3.5">
+            <div>
+              <label className={erpLabelCls} htmlFor="inv-sup">{lt(locale, { fa: 'تامین‌کننده', en: 'Supplier', ar: 'المورد', zh: '供应商', ru: 'Поставщик' })}</label>
+              <select id="inv-sup" value={supplierId} onChange={(e) => setSupplierId(e.target.value)} required className={erpFieldCls}>
+                {suppliers.map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}
+              </select>
+            </div>
+            <div>
+              <label className={erpLabelCls} htmlFor="inv-name">{lt(locale, { fa: 'عنوان اتاق یا صندلی', en: 'Item Name', ar: 'اسم العنصر', zh: '项目名称', ru: 'Название' })}</label>
+              <input id="inv-name" type="text" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. اتاق دوتخته رویال" className={erpFieldCls} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-sub mb-1">
-                  {lt(locale, { fa: 'تامین‌کننده مربوطه', en: 'Supplier', ar: 'المورد', zh: '供应商', ru: 'Поставщик' })}
-                </label>
-                <select
-                  value={supplierId}
-                  onChange={(e) => setSupplierId(e.target.value)}
-                  required
-                  className="w-full h-10 px-3 rounded-xl border border-line text-sm focus:border-brand outline-hidden bg-surface"
-                >
-                  {suppliers.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
+                <label className={erpLabelCls} htmlFor="inv-type">{lt(locale, { fa: 'نوع آیتم', en: 'Item Type', ar: 'نوع العنصر', zh: '项目类型', ru: 'Тип' })}</label>
+                <select id="inv-type" value={type} onChange={(e) => setType(e.target.value)} className={erpFieldCls} dir="ltr">
+                  <option value="HOTEL_ROOM">HOTEL_ROOM</option>
+                  <option value="FLIGHT_SEAT">FLIGHT_SEAT</option>
+                  <option value="TOUR_SLOT">TOUR_SLOT</option>
                 </select>
               </div>
-
               <div>
-                <label className="block text-xs font-bold text-sub mb-1">
-                  {lt(locale, { fa: 'عنوان اتاق یا صندلی', en: 'Item Name', ar: 'اسم العنصر', zh: '项目名称', ru: 'Название' })}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. اتاق دوتخته رویال دلوکس"
-                  className="w-full h-10 px-3 rounded-xl border border-line text-sm focus:border-brand outline-hidden"
-                />
+                <label className={erpLabelCls} htmlFor="inv-code">{lt(locale, { fa: 'کد مرجع', en: 'Reference Code', ar: 'رمز المرجع', zh: '参考代码', ru: 'Код' })}</label>
+                <input id="inv-code" type="text" value={code} onChange={(e) => setCode(e.target.value)} placeholder="ESP_DLX_01" className={erpFieldCls} dir="ltr" />
               </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-sub mb-1">
-                    {lt(locale, { fa: 'نوع آیتم', en: 'Item Type', ar: 'نوع العنصر', zh: '项目类型', ru: 'Тип' })}
-                  </label>
-                  <select
-                    value={type}
-                    onChange={(e) => setType(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-line text-sm focus:border-brand outline-hidden bg-surface"
-                  >
-                    <option value="HOTEL_ROOM">HOTEL_ROOM</option>
-                    <option value="FLIGHT_SEAT">FLIGHT_SEAT</option>
-                    <option value="TOUR_SLOT">TOUR_SLOT</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-sub mb-1">
-                    {lt(locale, { fa: 'کد مرجع (اختیاری)', en: 'Reference Code', ar: 'رمز المرجع', zh: '参考代码', ru: 'Код' })}
-                  </label>
-                  <input
-                    type="text"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    placeholder="e.g. ESP_DLX_01"
-                    className="w-full h-10 px-3 rounded-xl border border-line text-sm focus:border-brand outline-hidden"
-                  />
-                </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className={erpLabelCls} htmlFor="inv-price">{lt(locale, { fa: 'قیمت پایه', en: 'Base Price', ar: 'السعر الأساسي', zh: '基础价格', ru: 'Цена' })}</label>
+                <input id="inv-price" type="number" value={basePrice} onChange={(e) => setBasePrice(e.target.value)} className={erpFieldCls} dir="ltr" />
               </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-sub mb-1">
-                    {lt(locale, { fa: 'قیمت پایه (IRR)', en: 'Base Price', ar: 'السعر الأساسي', zh: '基础价格', ru: 'Цена' })}
-                  </label>
-                  <input
-                    type="number"
-                    value={basePrice}
-                    onChange={(e) => setBasePrice(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-line text-sm focus:border-brand outline-hidden"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-sub mb-1">
-                    {lt(locale, { fa: 'ظرفیت در روز', en: 'Daily Capacity', ar: 'السعة اليومية', zh: '每日容量', ru: 'Емкость/день' })}
-                  </label>
-                  <input
-                    type="number"
-                    value={capacity}
-                    onChange={(e) => setCapacity(e.target.value)}
-                    min="1"
-                    className="w-full h-10 px-3 rounded-xl border border-line text-sm focus:border-brand outline-hidden"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-sub mb-1">
-                    {lt(locale, { fa: 'تعداد روزها', en: 'Days Ahead', ar: 'عدد الأيام', zh: '天数', ru: 'Дней' })}
-                  </label>
-                  <input
-                    type="number"
-                    value={days}
-                    onChange={(e) => setDays(e.target.value)}
-                    min="1"
-                    max="60"
-                    className="w-full h-10 px-3 rounded-xl border border-line text-sm focus:border-brand outline-hidden"
-                  />
-                </div>
+              <div>
+                <label className={erpLabelCls} htmlFor="inv-cap">{lt(locale, { fa: 'ظرفیت/روز', en: 'Capacity/day', ar: 'السعة اليومية', zh: '每日容量', ru: 'В день' })}</label>
+                <input id="inv-cap" type="number" value={capacity} onChange={(e) => setCapacity(e.target.value)} min="1" className={erpFieldCls} dir="ltr" />
               </div>
-
-              <div className="flex items-center justify-end gap-2 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="min-h-11 px-4 rounded-xl border border-line text-sub font-bold text-sm hover:bg-soft"
-                >
-                  {lt(locale, { fa: 'انصراف', en: 'Cancel', ar: 'إلغاء', zh: '取消', ru: 'Отмена' })}
-                </button>
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="min-h-11 px-5 rounded-xl bg-brand text-surface font-bold text-sm hover:bg-brand-dark disabled:opacity-50"
-                >
-                  {creating ? '...' : lt(locale, { fa: 'ثبت و تخصیص سهمیه', en: 'Save & Allocate', ar: 'حفظ وتخصيص', zh: '保存并分配', ru: 'Сохранить' })}
-                </button>
+              <div>
+                <label className={erpLabelCls} htmlFor="inv-days">{lt(locale, { fa: 'تعداد روز', en: 'Days', ar: 'الأيام', zh: '天数', ru: 'Дней' })}</label>
+                <input id="inv-days" type="number" value={days} onChange={(e) => setDays(e.target.value)} min="1" max="60" className={erpFieldCls} dir="ltr" />
               </div>
-            </form>
-          </div>
-        </div>
+            </div>
+          </form>
+        </ErpModal>
       )}
     </div>
   );

@@ -67,6 +67,18 @@ describe('Tours Service & Detailed Data Suite', () => {
     expect(t4?.durationDays).toBe(6);
   });
 
+  it('retrieves specific tour t5 (Isfahan 2.5-day VIP overland tour)', () => {
+    const t5 = getTourById('t5');
+    expect(t5).toBeDefined();
+    expect(t5?.city).toBe('اصفهان');
+    expect(t5?.durationDays).toBe(3);
+    expect(t5?.durationNights).toBe(1);
+    expect(t5?.price).toBe(9800000);
+    expect(t5?.transportType).toContain('اتوبوس VIP');
+    expect(t5?.itinerary?.length).toBe(3);
+    expect(t5?.departureDates?.some((d) => d.startDate === '2026-09-16')).toBe(true);
+  });
+
   it('returns undefined for non-existent tour id', () => {
     const missing = getTourById('non-existent-tour-999');
     expect(missing).toBeUndefined();

@@ -20,6 +20,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { num } from '@/lib/format';
+import { ErpModal, ErpPageHeader, ErpTabs, erpDangerBtnCls, erpPrimaryBtnCls, erpGhostBtnCls } from '@/components/admin/erp-ui';
 import {
   getAdminToursAction,
   createAdminTourAction,
@@ -100,6 +101,8 @@ export default function AdminContentPage() {
   const [expModalOpen, setExpModalOpen] = useState(false);
   const [travelogueModalOpen, setTravelogueModalOpen] = useState(false);
   const [guideModalOpen, setGuideModalOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<{ kind: 'tour' | 'exp' | 'travelogue' | 'guide'; id: string; title: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Submitting state
   const [submitting, setSubmitting] = useState(false);
@@ -217,15 +220,8 @@ export default function AdminContentPage() {
   }
 
   async function handleDeleteTour(id: string) {
-    if (!confirm('آیا از حذف این تور اطمینان دارید؟')) return;
-    setFeedback(null);
-    const res = await deleteAdminTourAction(id);
-    if (res.success) {
-      setFeedback({ msg: 'تور با موفقیت حذف شد.', type: 'success' });
-      await loadData();
-    } else {
-      setFeedback({ msg: res.error || 'خطا در حذف تور', type: 'error' });
-    }
+    const target = tours.find((t) => t.id === id);
+    setPendingDelete({ kind: 'tour', id, title: target?.title || '' });
   }
 
   // Handlers: Experience
@@ -260,12 +256,8 @@ export default function AdminContentPage() {
   }
 
   async function handleDeleteExp(id: string) {
-    if (!confirm('آیا از حذف این تجربه اطمینان دارید؟')) return;
-    const res = await deleteAdminExperienceAction(id);
-    if (res.success) {
-      setFeedback({ msg: 'تجربه با موفقیت حذف شد.', type: 'success' });
-      await loadData();
-    }
+    const target = experiences.find((e) => e.id === id);
+    setPendingDelete({ kind: 'exp', id, title: target?.title || '' });
   }
 
   // Handlers: Travelogue
@@ -297,12 +289,8 @@ export default function AdminContentPage() {
   }
 
   async function handleDeleteTravelogue(id: string) {
-    if (!confirm('آیا از حذف این سفرنامه اطمینان دارید؟')) return;
-    const res = await deleteAdminTravelogueAction(id);
-    if (res.success) {
-      setFeedback({ msg: 'سفرنامه حذف شد.', type: 'success' });
-      await loadData();
-    }
+    const target = travelogues.find((t) => t.id === id);
+    setPendingDelete({ kind: 'travelogue', id, title: target?.titleFa || '' });
   }
 
   // Handlers: Guide
@@ -334,86 +322,76 @@ export default function AdminContentPage() {
   }
 
   async function handleDeleteGuide(id: string) {
-    if (!confirm('آیا از حذف این راهنما اطمینان دارید؟')) return;
-    const res = await deleteAdminGuideAction(id);
-    if (res.success) {
-      setFeedback({ msg: 'راهنمای سفر حذف شد.', type: 'success' });
+    const target = guides.find((g) => g.id === id);
+    setPendingDelete({ kind: 'guide', id, title: target?.titleFa || '' });
+  }
+
+  // One friendly in-app confirmation for all four delete flows.
+  async function confirmPendingDelete() {
+    if (!pendingDelete || deleting) return;
+    setDeleting(true);
+    setFeedback(null);
+    try {
+      if (pendingDelete.kind === 'tour') {
+        const res = await deleteAdminTourAction(pendingDelete.id);
+        setFeedback(res.success ? { msg: 'تور با موفقیت حذف شد.', type: 'success' } : { msg: res.error || 'خطا در حذف تور', type: 'error' });
+      } else if (pendingDelete.kind === 'exp') {
+        const res = await deleteAdminExperienceAction(pendingDelete.id);
+        setFeedback(res.success ? { msg: 'تجربه با موفقیت حذف شد.', type: 'success' } : { msg: res.error || 'خطا در حذف تجربه', type: 'error' });
+      } else if (pendingDelete.kind === 'travelogue') {
+        const res = await deleteAdminTravelogueAction(pendingDelete.id);
+        setFeedback(res.success ? { msg: 'سفرنامه حذف شد.', type: 'success' } : { msg: res.error || 'خطا در حذف سفرنامه', type: 'error' });
+      } else {
+        const res = await deleteAdminGuideAction(pendingDelete.id);
+        setFeedback(res.success ? { msg: 'راهنمای سفر حذف شد.', type: 'success' } : { msg: res.error || 'خطا در حذف راهنما', type: 'error' });
+      }
+      setPendingDelete(null);
       await loadData();
+    } finally {
+      setDeleting(false);
     }
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-surface border border-line shadow-xs">
-        <div>
-          <div className="flex items-center gap-2 text-brand-dark font-black text-xs sm:text-sm mb-1">
-            <Compass size={18} />
-            <span>سامانه مدیریت محتوا و موجودی فیروزو (ERP CMS)</span>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-black text-ink">
-            مدیریت تورها، تجربه‌های اصیل، سفرنامه‌ها و راهنمای سفر
-          </h1>
-          <p className="text-xs sm:text-sm font-medium text-sub mt-1">
-            افزودن و ویرایش پکیج‌های اختصاصی، تجربیات محلی و مقالات گردشگری با انتشار آنی در پرتال مسافران.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={loadData}
-            className="h-10 px-3.5 rounded-xl border border-line bg-soft hover:bg-line/40 text-ink font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
-          >
-            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-            <span>به‌روزرسانی</span>
-          </button>
-
-          {activeTab === 'tours' && (
-            <button
-              type="button"
-              onClick={() => setTourModalOpen(true)}
-              className="h-10 px-4 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
-            >
-              <Plus size={15} />
-              <span>افزودن تور جدید</span>
+    <div className="space-y-4">
+      <ErpPageHeader
+        eyebrow="ERP CMS"
+        title="مدیریت تورها، تجربه‌ها، سفرنامه‌ها و راهنمای سفر"
+        description="افزودن و ویرایش پکیج‌های اختصاصی، تجربیات محلی و مقالات گردشگری با انتشار آنی در پرتال مسافران."
+        icon={<Compass size={20} aria-hidden="true" />}
+        actions={
+          <>
+            <button type="button" onClick={loadData} className={erpGhostBtnCls}>
+              <RefreshCw size={13} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
+              <span>به‌روزرسانی</span>
             </button>
-          )}
-
-          {activeTab === 'experiences' && (
-            <button
-              type="button"
-              onClick={() => setExpModalOpen(true)}
-              className="h-10 px-4 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
-            >
-              <Plus size={15} />
-              <span>افزودن تجربه اصیل</span>
-            </button>
-          )}
-
-          {activeTab === 'travelogues' && (
-            <button
-              type="button"
-              onClick={() => setTravelogueModalOpen(true)}
-              className="h-10 px-4 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
-            >
-              <Plus size={15} />
-              <span>افزودن سفرنامه</span>
-            </button>
-          )}
-
-          {activeTab === 'guides' && (
-            <button
-              type="button"
-              onClick={() => setGuideModalOpen(true)}
-              className="h-10 px-4 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
-            >
-              <Plus size={15} />
-              <span>افزودن راهنمای سفر</span>
-            </button>
-          )}
-        </div>
-      </div>
+            {activeTab === 'tours' && (
+              <button type="button" onClick={() => setTourModalOpen(true)} className={erpPrimaryBtnCls}>
+                <Plus size={15} aria-hidden="true" />
+                <span>افزودن تور جدید</span>
+              </button>
+            )}
+            {activeTab === 'experiences' && (
+              <button type="button" onClick={() => setExpModalOpen(true)} className={erpPrimaryBtnCls}>
+                <Plus size={15} aria-hidden="true" />
+                <span>افزودن تجربه اصیل</span>
+              </button>
+            )}
+            {activeTab === 'travelogues' && (
+              <button type="button" onClick={() => setTravelogueModalOpen(true)} className={erpPrimaryBtnCls}>
+                <Plus size={15} aria-hidden="true" />
+                <span>افزودن سفرنامه</span>
+              </button>
+            )}
+            {activeTab === 'guides' && (
+              <button type="button" onClick={() => setGuideModalOpen(true)} className={erpPrimaryBtnCls}>
+                <Plus size={15} aria-hidden="true" />
+                <span>افزودن راهنمای سفر</span>
+              </button>
+            )}
+          </>
+        }
+      />
 
       {/* Feedback banner */}
       {feedback && (
@@ -429,60 +407,17 @@ export default function AdminContentPage() {
         </div>
       )}
 
-      {/* Tabs */}
-      <div role="tablist" aria-label="Content sections" className="flex items-center gap-2 border-b border-line pb-3 overflow-x-auto scrollbar-none [&>button]:shrink-0 [&>button]:whitespace-nowrap">
-        <button
-          type="button"
-          role="tab" aria-selected={activeTab === 'tours'} onClick={() => setActiveTab('tours')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black flex items-center gap-2 transition cursor-pointer ${
-            activeTab === 'tours'
-              ? 'bg-brand text-surface shadow-xs'
-              : 'bg-surface border border-line text-sub hover:text-ink'
-          }`}
-        >
-          <Compass size={16} />
-          <span>تورهای مسافرتی ({tours.length})</span>
-        </button>
-
-        <button
-          type="button"
-          role="tab" aria-selected={activeTab === 'experiences'} onClick={() => setActiveTab('experiences')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black flex items-center gap-2 transition cursor-pointer ${
-            activeTab === 'experiences'
-              ? 'bg-brand text-surface shadow-xs'
-              : 'bg-surface border border-line text-sub hover:text-ink'
-          }`}
-        >
-          <Landmark size={16} />
-          <span>تجربه‌های اصیل ({experiences.length})</span>
-        </button>
-
-        <button
-          type="button"
-          role="tab" aria-selected={activeTab === 'travelogues'} onClick={() => setActiveTab('travelogues')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black flex items-center gap-2 transition cursor-pointer ${
-            activeTab === 'travelogues'
-              ? 'bg-brand text-surface shadow-xs'
-              : 'bg-surface border border-line text-sub hover:text-ink'
-          }`}
-        >
-          <BookOpen size={16} />
-          <span>سفرنامه‌ها ({travelogues.length})</span>
-        </button>
-
-        <button
-          type="button"
-          role="tab" aria-selected={activeTab === 'guides'} onClick={() => setActiveTab('guides')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black flex items-center gap-2 transition cursor-pointer ${
-            activeTab === 'guides'
-              ? 'bg-brand text-surface shadow-xs'
-              : 'bg-surface border border-line text-sub hover:text-ink'
-          }`}
-        >
-          <FileText size={16} />
-          <span>راهنمای سفر و مقالات ({guides.length})</span>
-        </button>
-      </div>
+      <ErpTabs<ContentTab>
+        ariaLabel="Content sections"
+        value={activeTab}
+        onChange={setActiveTab}
+        options={[
+          { id: 'tours', label: `تورهای مسافرتی`, count: tours.length, icon: <Compass size={14} aria-hidden="true" /> },
+          { id: 'experiences', label: `تجربه‌های اصیل`, count: experiences.length, icon: <Landmark size={14} aria-hidden="true" /> },
+          { id: 'travelogues', label: `سفرنامه‌ها`, count: travelogues.length, icon: <BookOpen size={14} aria-hidden="true" /> },
+          { id: 'guides', label: `راهنمای سفر و مقالات`, count: guides.length, icon: <FileText size={14} aria-hidden="true" /> },
+        ]}
+      />
 
       {/* Tab Content */}
       {loading ? (
@@ -555,10 +490,11 @@ export default function AdminContentPage() {
                         <button
                           type="button"
                           onClick={() => handleDeleteTour(t.id)}
+                          aria-label={`حذف تور: ${t.title}`}
                           className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
                           title="حذف تور"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={14} aria-hidden="true" />
                         </button>
                       </div>
                     </div>
@@ -613,9 +549,11 @@ export default function AdminContentPage() {
                         <button
                           type="button"
                           onClick={() => handleDeleteExp(exp.id)}
+                          aria-label={`حذف تجربه: ${exp.title}`}
+                          title="حذف تجربه"
                           className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={14} aria-hidden="true" />
                         </button>
                       </div>
                     </div>
@@ -657,9 +595,11 @@ export default function AdminContentPage() {
                         <button
                           type="button"
                           onClick={() => handleDeleteTravelogue(trv.id)}
+                          aria-label={`حذف سفرنامه: ${trv.titleFa}`}
+                          title="حذف سفرنامه"
                           className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={14} aria-hidden="true" />
                         </button>
                       </div>
                     </div>
@@ -701,6 +641,8 @@ export default function AdminContentPage() {
                         <button
                           type="button"
                           onClick={() => handleDeleteGuide(gd.id)}
+                          aria-label={`حذف راهنما: ${gd.titleFa}`}
+                          title="حذف راهنما"
                           className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
                         >
                           <Trash2 size={14} />
@@ -984,6 +926,43 @@ export default function AdminContentPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Friendly delete confirmation (replaces the native confirm dialog) */}
+      {pendingDelete && (
+        <ErpModal
+          title="حذف قطعی شود؟"
+          subtitle={
+            pendingDelete.kind === 'tour' ? 'این تور از سایت مسافران برداشته می‌شود.' :
+            pendingDelete.kind === 'exp' ? 'این تجربه از سایت مسافران برداشته می‌شود.' :
+            pendingDelete.kind === 'travelogue' ? 'این سفرنامه از سایت حذف می‌شود.' :
+            'این مقاله راهنما از سایت حذف می‌شود.'
+          }
+          onClose={() => { if (!deleting) setPendingDelete(null); }}
+          footer={
+            <>
+              <button type="button" onClick={() => setPendingDelete(null)} disabled={deleting} className={erpGhostBtnCls}>
+                انصراف، نگهش دار
+              </button>
+              <button type="button" onClick={confirmPendingDelete} disabled={deleting} className={erpDangerBtnCls}>
+                {deleting && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
+                <span>بله، حذف کن</span>
+              </button>
+            </>
+          }
+        >
+          <div className="flex items-start gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-rose-warm/10 text-rose-warm">
+              <Trash2 size={19} aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-black text-ink" dir="auto">{pendingDelete.title || '—'}</p>
+              <p className="mt-1 text-xs font-medium leading-relaxed text-sub">
+                این کار قابل بازگشت نیست. اگر فقط می‌خواهید موقتاً پنهان شود، به‌جای حذف از دکمه «پیش‌نویس» استفاده کنید.
+              </p>
+            </div>
+          </div>
+        </ErpModal>
       )}
     </div>
   );
