@@ -9,6 +9,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { ScanLine, CheckCircle2, Loader2, User, Lock, LogIn, Mail, Phone, Send, MessageCircle, QrCode, MessageSquare } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { Logo } from '@/components/layout/Logo';
+import { OtpPinInput } from '@/components/ui/OtpPinInput';
 import { AuthChannel, requestOtp, getWeChatAuthUrl } from '@/actions/auth';
 import type { TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
 
@@ -585,37 +586,56 @@ export default function AuthPage() {
               <div className="p-3.5 mb-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-2.5">
                 <CheckCircle2 size={18} className="text-emerald-600 flex-shrink-0" />
                 <span>
-                  {lt(locale, {
-                    fa: 'کد تأیید به حساب بله / پیام‌رسان شما ارسال گردید. لطفاً آن را در کادر زیر وارد کنید.',
-                    en: 'Verification code has been dispatched. Please enter it in the box below.',
-                    ar: 'تم إرسال رمز التحقق إلى حسابك. يرجى إدخاله في المربع أدناه.',
-                    zh: '验证码已发送至您的账号，请在下方输入。',
-                    ru: 'Код подтверждения отправлен. Пожалуйста, введите его ниже.'
-                  })}
+                  {channel === 'phone'
+                    ? lt(locale, {
+                        fa: 'کد ۴ رقمی از طریق پیامک برای شما ارسال شد. لطفاً آن را وارد کنید.',
+                        en: '4-digit verification code has been sent via SMS. Please enter it below.',
+                        ar: 'تم إرسال رمز التحقق المكون من 4 أرقام عبر الرسائل القصيرة.',
+                        zh: '4位验证码已通过短信发送，请在下方输入。',
+                        ru: '4-значный код подтверждения отправлен по SMS. Пожалуйста, введите его ниже.'
+                      })
+                    : lt(locale, {
+                        fa: 'کد تأیید به حساب شما ارسال گردید. لطفاً آن را در کادر زیر وارد کنید.',
+                        en: 'Verification code has been dispatched. Please enter it in the box below.',
+                        ar: 'تم إرسال رمز التحقق إلى حسابك. يرجى إدخاله في المربع أدناه.',
+                        zh: '验证码已发送至您的账号，请在下方输入。',
+                        ru: 'Код подтверждения отправлен. Пожалуйста, введите его ниже.'
+                      })}
                 </span>
               </div>
             )}
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label htmlFor="password" className="block text-xs font-bold text-sub mb-1">{t('otpLabel')}</label>
-                <input
-                  id="password"
-                  name="otp"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  autoFocus
-                  dir="ltr"
-                  maxLength={6}
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  placeholder="••••••"
-                  className="w-full h-12 rounded-xl border border-line px-4 text-center tracking-widest text-2xl font-mono font-black text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-xs"
-                />
+                <label className="block text-xs font-bold text-sub mb-3 text-center">
+                  {channel === 'phone'
+                    ? lt(locale, { fa: 'کد ۴ رقمی پیامک‌شده را وارد کنید', en: 'Enter the 4-digit SMS code', ar: 'أدخل رمز التحقق المكون من 4 أرقام', zh: '请输入4位短信验证码', ru: 'Введите 4-значный код из SMS' })
+                    : t('otpLabel')}
+                </label>
+
+                {/* 4-digit PIN Boxes for Phone, or 6-digit for other channels */}
+                <div className="my-2">
+                  <OtpPinInput
+                    length={channel === 'phone' ? 4 : 6}
+                    value={otp}
+                    onChange={(val) => {
+                      setOtp(val);
+                      if (error) setError('');
+                    }}
+                    onComplete={(completedVal) => {
+                      // Automatically trigger verify when all 4 digits are filled
+                      setTimeout(() => {
+                        const btn = document.getElementById('auth-verify-btn');
+                        btn?.click();
+                      }, 100);
+                    }}
+                    disabled={loading}
+                    autoFocus={true}
+                  />
+                </div>
                 
                 {/* Live Countdown / Resend Action */}
-                <div className="mt-2.5 flex items-center justify-between text-xs font-bold">
+                <div className="mt-4 flex items-center justify-between text-xs font-bold px-1">
                   {countdown > 0 ? (
                     <span className="text-sub flex items-center gap-1">
                       <span className="font-mono text-brand-dark font-black">{formatCountdown(countdown)}</span>
@@ -631,8 +651,10 @@ export default function AuthPage() {
                       {lt(locale, { fa: 'ارسال مجدد کد تأیید', en: 'Resend verification code', ar: 'إعادة إرسال الرمز', zh: '重新发送验证码', ru: 'Отправить код повторно' })}
                     </button>
                   )}
-                  <span className="text-[11px] text-sub">
-                    {lt(locale, { fa: 'کد ۶ رقمی', en: '6-digit code', ar: 'رمز من 6 أرقام', zh: '6位验证码', ru: '6-значный код' })}
+                  <span className="text-[11px] font-bold text-sub/80">
+                    {channel === 'phone'
+                      ? lt(locale, { fa: 'کد ۴ رقمی', en: '4-digit code', ar: 'رمز من 4 أرقام', zh: '4位验证码', ru: '4-значный код' })
+                      : lt(locale, { fa: 'کد ۶ رقمی', en: '6-digit code', ar: 'رمز من 6 أرقام', zh: '6位验证码', ru: '6-значный код' })}
                   </span>
                 </div>
               </div>
@@ -640,8 +662,8 @@ export default function AuthPage() {
               <button
                 id="auth-verify-btn"
                 onClick={verifyOtp}
-                disabled={loading || otp.trim().length < 4}
-                className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50"
+                disabled={loading || otp.trim().length < (channel === 'phone' ? 4 : 6)}
+                className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50 shadow-sm"
               >
                 {loading && <Loader2 size={16} className="animate-spin" />}
                 {t('verifyOtp')}
@@ -651,7 +673,7 @@ export default function AuthPage() {
                 onClick={() => setKycStep('phone')}
                 className="w-full text-xs font-bold text-sub hover:text-ink text-center pt-1"
               >
-                {lt(locale, { fa: 'تغییر روش یا شناسه ورود', en: 'Change method or identifier', ar: 'تغيير الطريقة أو المعرّف', zh: '更换登录方式或账号', ru: 'Изменить метод или идентификатор' })}
+                {lt(locale, { fa: 'تغییر روش یا شماره موبایل', en: 'Change method or phone number', ar: 'تغيير الطريقة أو رقم الهاتف', zh: '更换手机号或登录方式', ru: 'Изменить номер или способ' })}
               </button>
             </div>
           </div>

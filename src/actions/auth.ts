@@ -72,10 +72,11 @@ export async function requestOtp(data: unknown) {
     };
   } catch (err: unknown) {
     if (err && typeof err === 'object' && 'issues' in err) {
-      return { success: false, error: 'Invalid phone number or email' };
+      return { success: false, error: 'شماره موبایل یا ایمیل نامعتبر است' };
     }
+    const errMessage = err instanceof Error ? err.message : String(err);
     console.error('requestOtp server error:', err);
-    return { success: false, error: 'Failed to send verification code' };
+    return { success: false, error: errMessage || 'خطا در ارسال کد تأیید' };
   }
 }
 

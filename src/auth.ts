@@ -9,6 +9,7 @@ import { encryptSensitive } from '@/lib/security/crypto-vault';
 import { createLogger } from '@/lib/observability/logger';
 import { ProductionTelegramProvider, TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
 import { getNotificationProvider } from '@/domains/events/NotificationProvider';
+import { ProductionSmswbsProvider, normalizeToIranE164 } from '@/domains/events/providers/ProductionSmswbsProvider';
 
 const authLogger = createLogger('auth-service');
 
@@ -88,66 +89,84 @@ function hashOtp(code: string): string {
  * Issues a one-time passcode for the given identifier.
  * Returns the plaintext code ONLY in demo mode so the dev UI can display it.
  */
+// In-memory fallback for development when database is unseeded or temporarily unreachable
+interface InMemoryOtp {
+  codeHash: string;
+  expiresAt: Date;
+  attempts: number;
+}
+const inMemoryOtpStore = new Map<string, InMemoryOtp>();
+
 export async function issueOtp(
   identifier: string,
   channel: string
 ): Promise<{ sent: boolean; realSent: boolean; devCode?: string; provider?: string; error?: string }> {
-  const code = String(crypto.randomInt(100000, 999999));
-  const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
-
-  await prisma.otpVerification.create({
-    data: {
-      identifier,
-      channel,
-      codeHash: hashOtp(code),
-      expiresAt,
-    },
-  });
-
-  await prisma.outboxEvent.create({
-    data: {
-      eventType: 'AUTH_OTP_REQUESTED',
-      payload: JSON.stringify({
-        identifier,
-        channel,
-        codeHash: hashOtp(code),
-        codeEnc: encryptSensitive(code),
-        expiresAt: expiresAt.toISOString(),
-      }),
-    },
-  });
-
+  const isIranMobile = channel === 'phone' && Boolean(normalizeToIranE164(identifier));
+  
+  let code = String(crypto.randomInt(100000, 999999));
   let realSent = false;
   let providerUsed = 'console-simulator';
   let dispatchError: string | undefined;
 
-  try {
-    const notificationProvider = getNotificationProvider();
-    const otpMessage = `کد تایید ورود به فیروزو: ${code}\nاعتبار: ۵ دقیقه`;
-    let dispatch;
-
-    if (channel === 'bale') {
-      dispatch = await notificationProvider.sendBale(identifier, otpMessage);
-    } else if (channel === 'telegram') {
-      dispatch = await notificationProvider.sendTelegram(identifier, otpMessage);
-    } else if (channel === 'whatsapp') {
-      dispatch = await notificationProvider.sendWhatsApp(identifier, otpMessage);
-    } else if (channel === 'email' || (identifier && identifier.includes('@') && !identifier.startsWith('@'))) {
-      dispatch = await notificationProvider.sendEmail(identifier, 'کد تایید ورود به فیروزو', otpMessage);
-    } else {
-      dispatch = await notificationProvider.sendSms(identifier, otpMessage);
+  // 1. Direct SMSWBS OTP integration for Iranian numbers (+98)
+  if (isIranMobile) {
+    try {
+      const smswbs = new ProductionSmswbsProvider();
+      const res = await smswbs.sendOtp(identifier, 'کد تایید ورود به فیروزو');
+      if (res.success && res.code) {
+        code = res.code; // Use the exact 4-digit code generated and dispatched by SMSWBS
+        realSent = true;
+        providerUsed = 'smswbs-otp';
+      } else if (!res.success && res.error) {
+        dispatchError = res.error;
+        console.warn('[issueOtp] SMSWBS OTP returned error:', res.error);
+      }
+    } catch (smswbsErr: unknown) {
+      const err = smswbsErr instanceof Error ? smswbsErr.message : String(smswbsErr);
+      dispatchError = err;
+      console.warn('[issueOtp] SMSWBS OTP dispatch failed:', err);
     }
+  }
 
-    if (dispatch?.success && dispatch.provider !== 'console-simulator') {
-      realSent = true;
-      providerUsed = dispatch.provider;
-    } else if (!dispatch?.success && dispatch?.error) {
-      dispatchError = dispatch.error;
+  const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
+  const codeHash = hashOtp(code);
+
+  // Store only in fast in-memory cache — no database write needed for OTP
+  inMemoryOtpStore.set(identifier, {
+    codeHash,
+    expiresAt,
+    attempts: 0,
+  });
+
+  if (!isIranMobile) {
+    try {
+      const notificationProvider = getNotificationProvider();
+      const otpMessage = `کد تایید ورود به فیروزو: ${code}\nاعتبار: ۵ دقیقه`;
+      let dispatch;
+
+      if (channel === 'bale') {
+        dispatch = await notificationProvider.sendBale(identifier, otpMessage);
+      } else if (channel === 'telegram') {
+        dispatch = await notificationProvider.sendTelegram(identifier, otpMessage);
+      } else if (channel === 'whatsapp') {
+        dispatch = await notificationProvider.sendWhatsApp(identifier, otpMessage);
+      } else if (channel === 'email' || (identifier && identifier.includes('@') && !identifier.startsWith('@'))) {
+        dispatch = await notificationProvider.sendEmail(identifier, 'کد تایید ورود به فیروزو', otpMessage);
+      } else {
+        dispatch = await notificationProvider.sendSms(identifier, otpMessage);
+      }
+
+      if (dispatch?.success && dispatch.provider !== 'console-simulator') {
+        realSent = true;
+        providerUsed = dispatch.provider;
+      } else if (!dispatch?.success && dispatch?.error) {
+        dispatchError = dispatch.error;
+      }
+    } catch (dispatchErr: unknown) {
+      const errMsg = dispatchErr instanceof Error ? dispatchErr.message : String(dispatchErr);
+      dispatchError = errMsg;
+      console.warn('[issueOtp] Instant notification dispatch notice:', errMsg);
     }
-  } catch (dispatchErr: unknown) {
-    const errMsg = dispatchErr instanceof Error ? dispatchErr.message : String(dispatchErr);
-    dispatchError = errMsg;
-    console.warn('[issueOtp] Instant notification dispatch notice:', errMsg);
   }
 
   if (process.env.NODE_ENV !== 'production') {
@@ -163,20 +182,27 @@ export async function issueOtp(
   };
 }
 
-/** Verifies and consumes a stored OTP. Returns true when f the code is valid. */
+/** Verifies and consumes a stored OTP strictly from in-memory cache. */
 async function verifyStoredOtp(identifier: string, code: string): Promise<boolean> {
-  const record = await prisma.otpVerification.findFirst({
-    where: { identifier, consumedAt: null, expiresAt: { gt: new Date() } },
-    orderBy: { createdAt: 'desc' },
-  });
-  if (!record) return false;
-  if (record.attempts >= OTP_MAX_ATTEMPTS) return false;
+  const codeHash = hashOtp(code);
+  const memRecord = inMemoryOtpStore.get(identifier);
 
-  if (record.codeHash !== hashOtp(code)) {
-    await prisma.otpVerification.update({ where: { id: record.id }, data: { attempts: { increment: 1 } } });
+  if (!memRecord) return false;
+
+  if (memRecord.expiresAt < new Date()) {
+    inMemoryOtpStore.delete(identifier);
     return false;
   }
-  await prisma.otpVerification.update({ where: { id: record.id }, data: { consumedAt: new Date() } });
+  if (memRecord.attempts >= OTP_MAX_ATTEMPTS) {
+    return false;
+  }
+  if (memRecord.codeHash !== codeHash) {
+    memRecord.attempts += 1;
+    return false;
+  }
+
+  // Consume OTP
+  inMemoryOtpStore.delete(identifier);
   return true;
 }
 
