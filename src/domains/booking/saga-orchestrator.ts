@@ -11,7 +11,7 @@ import { businessMetrics } from '@/lib/observability/business-metrics';
 export interface ConfirmBookingSagaParams {
   bookingId: string;
   idempotencyKey: string;
-  paymentMethod: 'wallet_irr' | 'gateway_shetab' | 'wallet_usdt';
+  paymentMethod: 'wallet_irr' | 'gateway_shetab' | 'wallet_usdt' | 'gateway_ecardo';
   holdToken?: string;
 }
 

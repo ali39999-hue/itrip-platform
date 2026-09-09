@@ -45,14 +45,12 @@ async function handleCallback(req: NextRequest) {
   if (txId) {
     payment = await prisma.payment.findFirst({
       where: { gatewayRef: txId },
-      include: { booking: true },
     });
   }
 
   if (!payment && bookingId) {
     payment = await prisma.payment.findFirst({
       where: { bookingId },
-      include: { booking: true },
     });
   }
 

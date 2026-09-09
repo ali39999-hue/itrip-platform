@@ -164,6 +164,7 @@ export async function initiateEcardoPayment(bookingId: string, currency?: string
         },
         create: {
           bookingId: booking.id,
+          method: 'gateway_ecardo',
           gatewayRef: paymentRes.gatewayRef,
           amount: booking.totalAmount,
           currency: targetCurrency,
@@ -496,7 +497,7 @@ export async function getWallet() {
       return {
         success: false,
         error: 'Unauthorized',
-        balances: { IRR: 0, USDT: 0, AED: 0 },
+        balances: { IRR: 0, USDT: 0, AED: 0, USD: 0, CNY: 0 },
         transactions: [],
       };
     }
@@ -568,23 +569,24 @@ export async function getWallet() {
 
     allEntries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-      return {
-        success: true,
-        balances: {
-          IRR: balances.IRR ? balances.IRR.toNumber() : 0,
-          USDT: balances.USDT ? balances.USDT.toNumber() : 0,
-          AED: balances.AED ? balances.AED.toNumber() : 0,
-          USD: (balances as Record<string, import('@prisma/client').Prisma.Decimal | undefined>).USD ? (balances as Record<string, import('@prisma/client').Prisma.Decimal>).USD.toNumber() : 0,
-          CNY: (balances as Record<string, import('@prisma/client').Prisma.Decimal | undefined>).CNY ? (balances as Record<string, import('@prisma/client').Prisma.Decimal>).CNY.toNumber() : 0,
-        } as { IRR: number; USDT: number; AED: number; USD?: number; CNY?: number },
-        transactions: allEntries,
-      };
+    const moneyMap = balances as unknown as Record<string, { toNumber?: () => number } | undefined>;
+    return {
+      success: true,
+      balances: {
+        IRR: moneyMap.IRR?.toNumber ? moneyMap.IRR.toNumber() : 0,
+        USDT: moneyMap.USDT?.toNumber ? moneyMap.USDT.toNumber() : 0,
+        AED: moneyMap.AED?.toNumber ? moneyMap.AED.toNumber() : 0,
+        USD: moneyMap.USD?.toNumber ? moneyMap.USD.toNumber() : 0,
+        CNY: moneyMap.CNY?.toNumber ? moneyMap.CNY.toNumber() : 0,
+      },
+      transactions: allEntries,
+    };
   } catch (err: unknown) {
     console.error('getWallet server error:', err);
     return {
       success: false,
       error: 'Failed to fetch wallet',
-      balances: { IRR: 0, USDT: 0, AED: 0 },
+      balances: { IRR: 0, USDT: 0, AED: 0, USD: 0, CNY: 0 },
       transactions: [],
     };
   }

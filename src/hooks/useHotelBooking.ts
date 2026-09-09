@@ -2,7 +2,10 @@ import { useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ROOMS, PLANS, type RoomDef, type PlanId } from '@/lib/hotel-mock';
 
-export const TAX = 0.12;
+/**
+ * Canonical Hotel Accommodation VAT: 10% (aligned with TaxEngine TR jurisdiction rule)
+ */
+export const TAX = 0.10;
 export const WEEKEND_UPLIFT = 0.15;
 export const FREE_CANCEL_HOURS = 48;
 export const RATE_TOMAN = 2350;

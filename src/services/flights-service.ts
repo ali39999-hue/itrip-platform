@@ -190,24 +190,43 @@ export function searchFlights(params: FlightSearchParams): FlightSearchResponse 
   const fromLower = params.from?.trim().toLowerCase() || '';
   const toLower = params.to?.trim().toLowerCase() || '';
 
+  const resolvedFrom = resolveCityQuery(params.from);
+  const resolvedTo = resolveCityQuery(params.to);
+
+  const fromNeedles = [
+    fromLower,
+    resolvedFrom?.fa?.toLowerCase(),
+    resolvedFrom?.en?.toLowerCase(),
+    resolvedFrom?.airportCode?.toLowerCase(),
+  ].filter((s): s is string => Boolean(s));
+
+  const toNeedles = [
+    toLower,
+    resolvedTo?.fa?.toLowerCase(),
+    resolvedTo?.en?.toLowerCase(),
+    resolvedTo?.airportCode?.toLowerCase(),
+  ].filter((s): s is string => Boolean(s));
+
   // 1. Initial route pool filter
   const routePool = flights.filter((f) => {
-    if (fromLower) {
-      const matchOrigin =
-        f.originCity.toLowerCase().includes(fromLower) ||
-        f.origin.toLowerCase().includes(fromLower);
+    if (fromNeedles.length > 0) {
+      const matchOrigin = fromNeedles.some(
+        (n) => f.originCity.toLowerCase().includes(n) || f.origin.toLowerCase().includes(n)
+      );
       if (!matchOrigin) return false;
     }
-    if (toLower) {
-      const matchDest =
-        f.destinationCity.toLowerCase().includes(toLower) ||
-        f.destination.toLowerCase().includes(toLower);
+    if (toNeedles.length > 0) {
+      const matchDest = toNeedles.some(
+        (n) => f.destinationCity.toLowerCase().includes(n) || f.destination.toLowerCase().includes(n)
+      );
       if (!matchDest) return false;
     }
     return true;
   });
 
-  const basePool = routePool.length > 0 ? routePool : flights;
+  // Strict route filtering: if user queried a specific from/to, honor it without falling back to entire catalog
+  const isFilteredSearch = fromNeedles.length > 0 || toNeedles.length > 0;
+  const basePool = isFilteredSearch ? routePool : flights;
 
   // Calculate facets from route pool
   let minP = Infinity;

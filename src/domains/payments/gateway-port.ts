@@ -1,5 +1,6 @@
 import { Money } from '@/lib/finance';
 import crypto from 'crypto';
+import { EcardoGatewayAdapter } from './adapters/EcardoGatewayAdapter';
 
 export interface GatewayPaymentRequest {
   intentId: string;
@@ -399,6 +400,9 @@ export function getPaymentGateway(method: string): PaymentGatewayPort {
   if (method === 'wallet_irr' || method === 'wallet_usdt') {
     return new InternalWalletGatewayAdapter();
   }
+  if (method === 'gateway_ecardo') {
+    return new EcardoGatewayAdapter();
+  }
   const isProduction = process.env.NODE_ENV === 'production';
   if (!isProduction && process.env.DEMO_MODE === 'true') {
     return new DemoPaymentAdapter();
@@ -408,3 +412,4 @@ export function getPaymentGateway(method: string): PaymentGatewayPort {
 
 export * from './adapters/ShetabPspAdapter';
 export * from './adapters/CustomerRefundAdapter';
+export * from './adapters/EcardoGatewayAdapter';

@@ -294,11 +294,35 @@ function HotelsSearchInner() {
             )}
           </div>
 
-          {/* Map View Pane */}
+          {/* Map View Pane (Desktop Side-by-Side + Mobile Modal) */}
           {showMap && (
-            <div className="hidden lg:block lg:col-span-1 sticky top-24 h-[calc(100vh-120px)] rounded-2xl overflow-hidden border border-line shadow-elev-1">
-              <MapPane hotels={results} />
-            </div>
+            <>
+              <div className="hidden lg:block lg:col-span-1 sticky top-24 h-[calc(100vh-120px)] rounded-2xl overflow-hidden border border-line shadow-elev-1">
+                <MapPane hotels={results} />
+              </div>
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-label={lt(locale, { fa: 'نقشه اقامتگاه‌ها', en: 'Hotels Map', ar: 'خريطة الفنادق', zh: '酒店地图', ru: 'Карта отелей' })}
+                className="lg:hidden fixed inset-0 z-[120] bg-surface flex flex-col"
+              >
+                <div className="flex items-center justify-between p-4 border-b border-line bg-surface/95 backdrop-blur-md">
+                  <span className="font-black text-sm text-ink">
+                    {lt(locale, { fa: 'نمایش اقامتگاه‌ها روی نقشه', en: 'Hotels on Map', ar: 'الفنادق على الخريطة', zh: '地图上的酒店', ru: 'Отели на карте' })}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowMap(false)}
+                    className="px-3 py-1.5 rounded-xl bg-soft text-sub text-xs font-bold hover:text-ink cursor-pointer"
+                  >
+                    {lt(locale, { fa: 'بستن نقشه', en: 'Close Map', ar: 'إغلاق الخريطة', zh: '关闭地图', ru: 'Закрыть карту' })}
+                  </button>
+                </div>
+                <div className="flex-1 w-full h-full relative">
+                  <MapPane hotels={results} />
+                </div>
+              </div>
+            </>
           )}
         </div>
 
