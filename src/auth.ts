@@ -351,24 +351,37 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           });
 
           // Passwordless sign-up: first login creates a CUSTOMER account.
-          if (!user) {
-            user = await prisma.user.create({
-              data: {
-                id: crypto.randomUUID(),
-                email: identifier.includes('@') ? identifier : undefined,
-                phone: /^(\+?\d{7,15})$/.test(rawIdentifier) ? rawIdentifier : undefined,
-                telegramId: rawChannel === 'telegram' ? rawIdentifier : undefined,
-                whatsappPhone: rawChannel === 'whatsapp' ? rawIdentifier : undefined,
-                wechatId: rawChannel === 'wechat' ? rawIdentifier : undefined,
-                baleId: rawChannel === 'bale' ? rawIdentifier : undefined,
-                name: 'Firuzo User',
-                role: 'CUSTOMER',
-                isActive: true,
-              },
-            });
-            await ensureUserRole(user.id, 'CUSTOMER');
+          try {
+            if (!user) {
+              user = await prisma.user.create({
+                data: {
+                  id: crypto.randomUUID(),
+                  email: identifier.includes('@') ? identifier : undefined,
+                  phone: /^(\+?\d{7,15})$/.test(rawIdentifier) ? rawIdentifier : undefined,
+                  telegramId: rawChannel === 'telegram' ? rawIdentifier : undefined,
+                  whatsappPhone: rawChannel === 'whatsapp' ? rawIdentifier : undefined,
+                  wechatId: rawChannel === 'wechat' ? rawIdentifier : undefined,
+                  baleId: rawChannel === 'bale' ? rawIdentifier : undefined,
+                  name: 'کاربر فیروزو',
+                  firstNameFa: 'کاربر',
+                  lastNameFa: 'فیروزو',
+                  role: 'CUSTOMER',
+                  isActive: true,
+                },
+              });
+              await ensureUserRole(user.id, 'CUSTOMER');
+            }
+          } catch (dbErr) {
+            console.warn('[auth] Database unreachable during user creation fallback:', dbErr);
+            // Resilient session object when DB is unreachable
+            return {
+              id: `user_${rawIdentifier.replace(/\D/g, '') || Date.now()}`,
+              email: identifier.includes('@') ? identifier : `${rawIdentifier}@firuzo.com`,
+              name: 'کاربر فیروزو',
+              role: 'CUSTOMER',
+            };
           }
-          return { id: user.id, email: user.email || `${user.id}@firuzo.com`, name: user.name || 'User', role: user.role };
+          return { id: user.id, email: user.email || `${user.id}@firuzo.com`, name: user.name || user.firstNameFa || 'User', role: user.role };
         }
 
         // Multi-channel identity lookup
