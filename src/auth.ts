@@ -5,7 +5,6 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { ERP_STAFF_ROLES } from '@/domains/identity/permissions';
-import { encryptSensitive } from '@/lib/security/crypto-vault';
 import { createLogger } from '@/lib/observability/logger';
 import { ProductionTelegramProvider, TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
 import { getNotificationProvider } from '@/domains/events/NotificationProvider';
@@ -28,10 +27,7 @@ declare module 'next-auth' {
 let secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
 if (!secret) {
   if (process.env.NODE_ENV === 'production') {
-    // Self-healing: derive a stable deployment-bound secret so fresh deployments boot without crashing
-    const seed = process.env.DATABASE_URL || process.env.VERCEL_URL || process.env.HOSTNAME || 'firuzo-stable-entropy-fallback';
-    secret = crypto.createHmac('sha256', 'firuzo-auto-auth-secret-salt').update(seed).digest('hex');
-    console.warn('[auth] WARNING: AUTH_SECRET was not supplied in environment. Auto-derived a secure deployment-bound secret. Please set AUTH_SECRET in production settings when ready.');
+    throw new Error('[auth] FATAL: AUTH_SECRET or NEXTAUTH_SECRET must be explicitly configured in production.');
   } else {
     secret = 'dev-only-insecure-secret-never-use-in-production';
   }
@@ -178,7 +174,7 @@ export async function issueOtp(
     realSent,
     provider: providerUsed,
     error: dispatchError,
-    devCode: !realSent ? code : undefined,
+    devCode: (process.env.NODE_ENV !== 'production' && !realSent) ? code : undefined,
   };
 }
 
@@ -428,14 +424,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           console.warn('[auth] Database unreachable during credentials lookup:', dbErr);
         }
 
-        const expectedAdminPassword = process.env.ADMIN_PASSWORD || 'Admin@Firuzo2026!';
+        const expectedAdminPassword = process.env.ADMIN_PASSWORD || (process.env.NODE_ENV !== 'production' ? 'Admin@Firuzo2026!' : undefined);
         const isAdminIdentifier =
           identifier === 'admin@firuzo.com' ||
           rawIdentifier === '09120000000' ||
           rawIdentifier === '09123456789' ||
           identifier === 'admin';
 
-        if (!user && isAdminIdentifier) {
+        // In production, admin credentials MUST exist in the database with a verified password hash;
+        // ephemeral in-memory fallback is strictly restricted to development/testing environments.
+        if (!user && isAdminIdentifier && expectedAdminPassword && process.env.NODE_ENV !== 'production') {
           const isMatch =
             password === expectedAdminPassword ||
             password === `${expectedAdminPassword}Secure` ||
@@ -451,8 +449,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
         }
 
-        // Demo fallback auto-creation only if DEMO_MODE is true
-        if (!user && DEMO_MODE) {
+        // Demo fallback auto-creation only if DEMO_MODE is true AND strictly outside production
+        if (!user && DEMO_MODE && process.env.NODE_ENV !== 'production') {
           const email = identifier.includes('@') ? identifier : `${rawIdentifier.replace(/\D/g, '') || 'user'}@firuzo.com`;
           const demoHash = await bcrypt.hash('demo', 10);
 

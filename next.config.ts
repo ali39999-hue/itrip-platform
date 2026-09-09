@@ -32,13 +32,13 @@ const envAllowed = process.env.ALLOWED_ORIGINS
 const baseAllowedOrigins = [
   'localhost:3000',
   '127.0.0.1:3000',
-  '*.trycloudflare.com',
   '*.vercel.app',
   '*.firuzo.com',
   'firuzo.com',
   '*.firuzo.online',
   'firuzo.online',
   'call.firuzo.online',
+  ...(isDev ? ['*.trycloudflare.com'] : []),
   ...envAllowed,
 ];
 

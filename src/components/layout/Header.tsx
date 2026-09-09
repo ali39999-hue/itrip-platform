@@ -83,7 +83,7 @@ export function Header() {
             <span className="text-[10.5px] font-black text-sub block mb-1">
               {lt(locale, { fa: 'کشور مقصد سفر:', en: 'Destination:', ar: 'البلد الوجهة:', zh: '目的地国家：', ru: 'Направление:' })}
             </span>
-            <CountrySwitcher />
+            <CountrySwitcher showFullName />
           </div>
           <div className="shrink-0">
             <span className="text-[10.5px] font-black text-sub block mb-1">
@@ -147,12 +147,12 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-[80] bg-surface/90 backdrop-blur-md border-b border-line/80">
-      <div className="max-w-7xl 2xl:max-w-[1400px] mx-auto px-3 sm:px-4 md:px-8 h-16 flex items-center justify-between gap-2 md:gap-4">
+      <div className="w-full max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 2xl:px-8 h-16 flex items-center justify-between gap-2 md:gap-3 2xl:gap-4">
         {/* Brand Logo & Switchers */}
-        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           <Logo size="sm" hideTextOnMobile />
 
-          <div className="hidden sm:flex items-center gap-2">
+          <div className="hidden sm:flex items-center">
             <CountrySwitcher />
           </div>
           <div className="flex items-center">
@@ -164,15 +164,15 @@ export function Header() {
         <DesktopNav />
 
         {/* Search, User Account & Mobile Toggle */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Quick Command Search Button (Ctrl+K / Cmd+K) */}
           <button
             type="button"
             onClick={() => setCommandPaletteOpen(true)}
             aria-label="Search or jump to (Ctrl+K)"
-            className="hidden sm:inline-flex items-center gap-2 h-10 px-3 rounded-xl bg-soft/80 hover:bg-soft border border-line/80 text-sub hover:text-ink text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-2xs cursor-pointer"
+            className="hidden sm:inline-flex items-center justify-center gap-1.5 h-10 px-2.5 2xl:px-3 rounded-xl bg-soft/80 hover:bg-soft border border-line/80 text-sub hover:text-ink text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-2xs cursor-pointer"
           >
-            <Search size={14} className="text-brand-dark" aria-hidden="true" />
+            <Search size={15} className="text-brand-dark" aria-hidden="true" />
             <kbd className="hidden 2xl:inline-block px-1.5 py-0.5 rounded bg-surface border border-line text-[10px] font-mono font-black text-sub">
               ⌘K
             </kbd>

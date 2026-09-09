@@ -380,6 +380,98 @@ model Payment {
   @@index([idempotencyKey])
 }
 
+model DestinationBankCard {
+  id            String   @id @default(cuid())
+  bankName      String
+  accountHolder String
+  cardNumber    String
+  iban          String?
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  note          String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  receipts      CardTransferReceipt[]
+
+  @@index([isActive])
+}
+
+model CardTransferReceipt {
+  id              String               @id @default(cuid())
+  bookingId       String
+  paymentIntentId String?
+  bankCardId      String?
+  amount          Decimal
+  currency        String               @default("IRR")
+  trackingCode    String?
+  paymentDate     DateTime?
+  customerNote    String?
+  receiptImages   String               // JSON array of image URLs: ["/uploads/receipts/..."]
+  nationalIdImage String?
+  status          String               @default("PENDING_REVIEW") // PENDING_REVIEW, APPROVED, REJECTED
+  reviewerId      String?
+  reviewedAt      DateTime?
+  adminNote       String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  booking         Booking              @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bankCard        DestinationBankCard? @relation(fields: [bankCardId], references: [id], onDelete: SetNull)
+
+  @@index([bookingId])
+  @@index([status])
+}
+
+model DestinationCryptoWallet {
+  id            String   @id @default(cuid())
+  network       String   // "TRC20", "BEP20", "TON", "ERC20"
+  currency      String   @default("USDT")
+  walletAddress String
+  networkLabel  String
+  memoOrTag     String?
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  note          String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  receipts      CryptoPaymentReceipt[]
+
+  @@index([isActive])
+  @@index([network])
+}
+
+model CryptoPaymentReceipt {
+  id              String                   @id @default(cuid())
+  bookingId       String
+  paymentIntentId String?
+  cryptoWalletId  String?
+  network         String                   // "TRC20"
+  currency        String                   @default("USDT")
+  amountUsdt      Decimal
+  amountIrr       Decimal
+  fxRate          Decimal
+  txHash          String
+  senderAddress   String?
+  receiptImage    String?
+  onChainVerified Boolean                  @default(false)
+  onChainData     String?                  // JSON response from block explorer
+  status          String                   @default("PENDING_REVIEW") // PENDING_REVIEW, APPROVED, REJECTED
+  reviewerId      String?
+  reviewedAt      DateTime?
+  adminNote       String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+
+  booking         Booking                  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  cryptoWallet    DestinationCryptoWallet? @relation(fields: [cryptoWalletId], references: [id], onDelete: SetNull)
+
+  @@index([bookingId])
+  @@index([txHash])
+  @@index([status])
+}
+
 // ==================== 3. Core: Trip & Booking State Machine ====================
 
 model Trip {
@@ -442,6 +534,8 @@ model Booking {
   priceSnapshots  PriceSnapshot[]
   autoBuyRules    AutoBuyRule[]
   referral        BookingReferral?
+  cardReceipts    CardTransferReceipt[]
+  cryptoReceipts  CryptoPaymentReceipt[]
   
   @@index([customerId])
   @@index([organizationId])

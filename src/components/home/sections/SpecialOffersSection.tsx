@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { Link } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCountryStore } from '@/stores/country-store';
-import { COUNTRIES, EXPERIENCE_CATEGORY_META } from '@/lib/countries';
+import { COUNTRIES, experienceCategoryLabel } from '@/lib/countries';
 import { countryNameL } from './countryNames';
 import { formatMoney } from '@/lib/money';
 import { CATEGORY_ICONS } from '@/components/shared/CountryExperiences';
@@ -64,9 +64,7 @@ export function SpecialOffersSection() {
         <div ref={scrollRef} className="flex overflow-x-auto snap-x snap-mandatory pb-5 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 hide-scrollbar">
           {offers.map((offer) => {
             const Icon = CATEGORY_ICONS[offer.category];
-            const catLabel = locale === 'fa'
-              ? EXPERIENCE_CATEGORY_META[offer.category].fa
-              : EXPERIENCE_CATEGORY_META[offer.category].en;
+            const catLabel = experienceCategoryLabel(offer.category, locale);
             const title = locale === 'fa' ? offer.title : offer.titleEn;
             const desc = locale === 'fa' ? offer.desc : offer.descEn;
             const when = locale === 'fa' ? offer.when : offer.whenEn;

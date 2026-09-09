@@ -629,7 +629,7 @@ export default function AuthPage() {
                       setOtp(val);
                       if (error) setError('');
                     }}
-                    onComplete={(completedVal) => {
+                    onComplete={() => {
                       // Automatically trigger verify when all 4 digits are filled
                       setTimeout(() => {
                         const btn = document.getElementById('auth-verify-btn');

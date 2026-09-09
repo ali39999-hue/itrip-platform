@@ -10,10 +10,11 @@ import {
   LayoutDashboard, BriefcaseBusiness, Wallet,
   PlaneTakeoff, ExternalLink, ShieldCheck, UserCheck, Activity,
   Building2, Boxes, PanelLeftClose, PanelLeftOpen, FolderKanban, Users, Menu, X,
-  ChevronLeft, Keyboard,
+  ChevronLeft, Keyboard, ReceiptText,
 } from 'lucide-react';
 import { lt, LText } from '@/lib/lt';
 import { cn } from '@/lib/utils';
+import { getPendingReceiptsCount } from '@/actions/receipts';
 
 type NavItem = { href: string; label: LText; icon: typeof LayoutDashboard };
 type NavGroup = { id: string; title: LText; items: NavItem[] };
@@ -48,6 +49,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: { fa: 'مالی', en: 'Finance', ar: 'المالية', zh: '财务', ru: 'Финансы' },
     items: [
       { href: '/admin/finance', label: { fa: 'مالی و تراکنش‌ها', en: 'Finance & Transactions', ar: 'المالية والمعاملات', zh: '财务与交易', ru: 'Финансы и транзакции' }, icon: Wallet },
+      { href: '/admin/finance/receipts', label: { fa: 'بررسی رسیدها (پیمنتینو)', en: 'Receipts Review (Paymentino)', ar: 'مراجعة الإيصالات (بيمينتينو)', zh: '回执审核 (Paymentino)', ru: 'Проверка квитанций (Paymentino)' }, icon: ReceiptText },
     ],
   },
   {
@@ -96,7 +98,20 @@ export function AdminShell({
   });
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
   const shortcutsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getPendingReceiptsCount()
+      .then((cnt) => {
+        if (!cancelled) setPendingCount(cnt);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   useEffect(() => {
     try {
@@ -209,7 +224,12 @@ export function AdminShell({
                   />
                   <Icon size={18} className="shrink-0" aria-hidden="true" />
                   {!collapsed && <span className="min-w-0 truncate">{lt(locale, n.label)}</span>}
-                  {!collapsed && active && (
+                  {n.href === '/admin/finance/receipts' && pendingCount > 0 && !collapsed && (
+                    <span className="ms-auto inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-black rounded-full bg-rose-600 text-white animate-pulse">
+                      {pendingCount}
+                    </span>
+                  )}
+                  {!collapsed && active && n.href !== '/admin/finance/receipts' && (
                     <ChevronLeft
                       size={14}
                       aria-hidden="true"
@@ -387,6 +407,17 @@ export function AdminShell({
               <div className="min-w-0 flex-1 md:max-w-md">
                 <AdminGlobalSearch />
               </div>
+
+              {pendingCount > 0 && (
+                <Link
+                  href="/admin/finance/receipts"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-[11px] font-black hover:bg-amber-100 transition shadow-xs"
+                  title="فیش‌های کارت به کارت در انتظار بررسی"
+                >
+                  <span className="w-2 h-2 rounded-full bg-amber-600 animate-ping shrink-0" />
+                  <span>{pendingCount} فیش نیازمند بررسی</span>
+                </Link>
+              )}
 
               <div className="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
                 <div ref={shortcutsRef} className="relative">

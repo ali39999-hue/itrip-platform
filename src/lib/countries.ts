@@ -369,26 +369,58 @@ export const COUNTRIES: Record<CountryId, CountryConfig> = {
 
 export const COUNTRY_ORDER: CountryId[] = ['iran', 'turkey', 'uae', 'georgia', 'russia', 'oman', 'china'];
 
-export const EXPERIENCE_CATEGORY_META: Record<ExperienceCategory, { fa: string; en: string }> = {
-  yacht: { fa: 'یات و قایق', en: 'Yacht & Boat' },
-  festival: { fa: 'جشنواره', en: 'Festival' },
-  culture: { fa: 'فرهنگ', en: 'Culture' },
-  nature: { fa: 'طبیعت', en: 'Nature' },
-  wellness: { fa: 'سلامت و اسپا', en: 'Wellness & Spa' },
-  nightlife: { fa: 'شبانه', en: 'Nightlife' },
-  adventure: { fa: 'ماجراجویی', en: 'Adventure' },
-  theater: { fa: 'تئاتر و باله', en: 'Theatre & Ballet' },
-  exhibition: { fa: 'نمایشگاه', en: 'Exhibition' },
+export const LOCALIZED_COUNTRY_NAMES: Record<CountryId, { fa: string; en: string; ar: string; zh: string; ru: string }> = {
+  iran: { fa: 'ایران', en: 'Iran', ar: 'إيران', zh: '伊朗', ru: 'Иран' },
+  turkey: { fa: 'ترکیه', en: 'Turkey', ar: 'تركيا', zh: '土耳其', ru: 'Турция' },
+  uae: { fa: 'امارات', en: 'UAE', ar: 'الإمارات', zh: '阿联酋', ru: 'ОАЭ' },
+  georgia: { fa: 'گرجستان', en: 'Georgia', ar: 'جورجيا', zh: '格鲁吉亚', ru: 'Грузия' },
+  russia: { fa: 'روسیه', en: 'Russia', ar: 'روسيا', zh: '俄罗斯', ru: 'Россия' },
+  oman: { fa: 'عمان', en: 'Oman', ar: 'عُمان', zh: '阿曼', ru: 'Оман' },
+  china: { fa: 'چین', en: 'China', ar: 'الصين', zh: '中国', ru: 'Китай' },
 };
 
-/** انتخاب فیلد دوزبانه بر اساس لوکال */
+export const EXPERIENCE_CATEGORY_META: Record<ExperienceCategory, { fa: string; en: string; ar: string; zh: string; ru: string }> = {
+  yacht: { fa: 'یات و قایق', en: 'Yacht & Boat', ar: 'يخوت وقوارب', zh: '游艇与游船', ru: 'Яхты и катера' },
+  festival: { fa: 'جشنواره', en: 'Festival', ar: 'مهرجان', zh: '节庆活动', ru: 'Фестиваль' },
+  culture: { fa: 'فرهنگ', en: 'Culture', ar: 'ثقافة', zh: '文化探索', ru: 'Культура' },
+  nature: { fa: 'طبیعت', en: 'Nature', ar: 'طبيعة', zh: '自然风光', ru: 'Природа' },
+  wellness: { fa: 'سلامت و اسپا', en: 'Wellness & Spa', ar: 'صحة واستجمام', zh: '康养水疗', ru: 'Оздоровление и спа' },
+  nightlife: { fa: 'شبانه', en: 'Nightlife', ar: 'حياة ليلية', zh: '夜生活', ru: 'Ночная жизнь' },
+  adventure: { fa: 'ماجراجویی', en: 'Adventure', ar: 'مغامرة', zh: '户外探险', ru: 'Приключения' },
+  theater: { fa: 'تئاتر و باله', en: 'Theatre & Ballet', ar: 'مسرح وباليه', zh: '剧院与芭蕾', ru: 'Театр и балет' },
+  exhibition: { fa: 'نمایشگاه', en: 'Exhibition', ar: 'معرض', zh: '展览会', ru: 'Выставка' },
+};
+
+export function experienceCategoryLabel(cat: ExperienceCategory, locale: string): string {
+  const meta = EXPERIENCE_CATEGORY_META[cat];
+  if (!meta) return cat;
+  switch (locale) {
+    case 'fa': return meta.fa;
+    case 'ar': return meta.ar;
+    case 'zh': return meta.zh;
+    case 'ru': return meta.ru;
+    case 'en':
+    default:
+      return meta.en;
+  }
+}
+
+/** انتخاب فیلد چندزبانه بر اساس لوکال */
 export function pick(locale: string, fa: string, en: string) {
-  return locale === 'en' ? en : fa;
+  return locale === 'fa' ? fa : en;
 }
 
 /** نام کشور بر اساس لوکال */
 export function countryName(id: CountryId, locale: string) {
-  const c = COUNTRIES[id];
-  if (!c) return id;
-  return locale === 'en' ? c.nameEn : c.nameFa;
+  const names = LOCALIZED_COUNTRY_NAMES[id];
+  if (!names) return id;
+  switch (locale) {
+    case 'fa': return names.fa;
+    case 'ar': return names.ar;
+    case 'zh': return names.zh;
+    case 'ru': return names.ru;
+    case 'en':
+    default:
+      return names.en;
+  }
 }

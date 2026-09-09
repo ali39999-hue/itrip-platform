@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import type { Flight } from '@/lib/types';
+import { resolveCityQuery } from '@/lib/cities';
 
 export interface RawFlightRoute {
   origin: string;

@@ -2,7 +2,7 @@ import { createLogger } from '@/lib/observability/logger';
 import { ProductionWhatsappProvider } from './providers/ProductionWhatsappProvider';
 import { ProductionTelegramProvider } from './providers/ProductionTelegramProvider';
 import { ProductionBaleProvider } from './providers/ProductionBaleProvider';
-import { ProductionSmsProvider } from './providers/ProductionSmsProvider';
+import { ProductionSmsProvider, SmsSendOptions } from './providers/ProductionSmsProvider';
 
 const notifLogger = createLogger('notification-provider');
 
@@ -15,7 +15,7 @@ export interface NotificationResult {
 
 export interface NotificationProvider {
   name: string;
-  sendSms(to: string, message: string): Promise<NotificationResult>;
+  sendSms(to: string, message: string, options?: SmsSendOptions): Promise<NotificationResult>;
   sendEmail(to: string, subject: string, body: string): Promise<NotificationResult>;
   sendWhatsApp(to: string, message: string): Promise<NotificationResult>;
   sendTelegram(to: string, message: string): Promise<NotificationResult>;
@@ -29,7 +29,8 @@ export interface NotificationProvider {
 export class ConsoleNotificationProvider implements NotificationProvider {
   name = 'console-simulator';
 
-  async sendSms(to: string, message: string): Promise<NotificationResult> {
+  async sendSms(to: string, message: string, options?: SmsSendOptions): Promise<NotificationResult> {
+    void options;
     const maskedTo = to.length > 7 ? `${to.slice(0, 4)}***${to.slice(-2)}` : '***';
     notifLogger.info('Dispatched SMS (Dev Simulator)', { to: maskedTo, message });
     return {
@@ -120,7 +121,7 @@ export class ProductionNotificationProvider implements NotificationProvider {
     return process.env.NODE_ENV === 'production';
   }
 
-  async sendSms(to: string, message: string): Promise<NotificationResult> {
+  async sendSms(to: string, message: string, options?: SmsSendOptions): Promise<NotificationResult> {
     const hasConfig = Boolean(
       this.apiKey ||
       (this.apiKey === undefined && (
@@ -141,12 +142,12 @@ export class ProductionNotificationProvider implements NotificationProvider {
         };
       }
       console.warn('[Notification:SMS] Missing SMS provider credentials; falling back to simulation.');
-      return new ConsoleNotificationProvider().sendSms(to, message);
+      return new ConsoleNotificationProvider().sendSms(to, message, options);
     }
 
     try {
       const smsProvider = new ProductionSmsProvider();
-      const res = await smsProvider.sendSms(to, message);
+      const res = await smsProvider.sendSms(to, message, options);
       if (res.status === 'FAILED') {
         return {
           success: false,

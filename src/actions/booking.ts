@@ -83,7 +83,11 @@ export async function validateReferralCodeAction(code: string) {
   }
 }
 
-export async function payBooking(bookingId: string, method: 'wallet_irr' | 'gateway_shetab', idempotencyKey: string) {
+export async function payBooking(
+  bookingId: string,
+  method: 'wallet_irr' | 'gateway_shetab' | 'gateway_ecardo',
+  idempotencyKey: string
+) {
   try {
     const session = await safeAuth();
     if (!session || !session.user) return { success: false, error: 'Unauthorized' };
@@ -112,6 +116,79 @@ export async function payBooking(bookingId: string, method: 'wallet_irr' | 'gate
     console.error('payBooking saga error:', err);
     const message = err instanceof Error ? err.message : 'Payment processing failed';
     return { success: false, error: message };
+  }
+}
+
+/**
+ * Direct eCardo Gateway Payment Initialization (corridor Iran-China / International)
+ * Generates an official payment session URL on ecardo.ir and redirects user directly.
+ */
+export async function initiateEcardoPayment(bookingId: string, currency?: string) {
+  try {
+    const session = await safeAuth();
+    if (!session || !session.user) return { success: false, error: 'Unauthorized' };
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      select: { id: true, customerId: true, totalAmount: true, currency: true, status: true },
+    });
+
+    if (!booking) return { success: false, error: 'Booking not found' };
+    if (['CONFIRMED', 'CANCELLED', 'REFUNDED'].includes(booking.status)) {
+      return { success: false, error: 'Booking is not payable in its current state' };
+    }
+
+    const { EcardoGatewayAdapter } = await import('@/domains/payments/gateway-port');
+    const { Money } = await import('@/lib/finance');
+    const { getAppBaseUrl } = await import('@/lib/runtime-url');
+
+    const targetCurrency = (currency || booking.currency || 'USD').toUpperCase();
+    const adapter = new EcardoGatewayAdapter();
+
+    const paymentRes = await adapter.createPayment({
+      intentId: `intent_ecardo_${booking.id}`,
+      bookingId: booking.id,
+      amount: new Money(booking.totalAmount, targetCurrency),
+      callbackUrl: `${getAppBaseUrl()}/api/payments/ecardo/callback?bookingId=${booking.id}`,
+      customerInfo: {
+        email: session.user.email || undefined,
+      },
+    });
+
+    if (paymentRes.success && paymentRes.redirectUrl) {
+      await prisma.payment.upsert({
+        where: { idempotencyKey: `ecardo_${booking.id}_${paymentRes.gatewayRef}` },
+        update: {
+          gatewayRef: paymentRes.gatewayRef,
+          status: 'PENDING',
+        },
+        create: {
+          bookingId: booking.id,
+          gatewayRef: paymentRes.gatewayRef,
+          amount: booking.totalAmount,
+          currency: targetCurrency,
+          status: 'PENDING',
+          idempotencyKey: `ecardo_${booking.id}_${paymentRes.gatewayRef}`,
+        },
+      });
+
+      return {
+        success: true,
+        redirectUrl: paymentRes.redirectUrl,
+        gatewayRef: paymentRes.gatewayRef,
+      };
+    }
+
+    return {
+      success: false,
+      error: paymentRes.error || 'Failed to initialize Ecardo payment',
+    };
+  } catch (err: unknown) {
+    console.error('initiateEcardoPayment error:', err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Ecardo payment initialization error',
+    };
   }
 }
 
@@ -180,7 +257,20 @@ export async function getMyBookings() {
       },
     });
 
-    return { success: true, bookings };
+    const sanitizedBookings = bookings.map((b) => ({
+      ...b,
+      totalAmount: Number(b.totalAmount),
+      items: b.items.map((it) => ({
+        ...it,
+        netCost: Number(it.netCost),
+        markup: Number(it.markup),
+        taxAmount: Number(it.taxAmount),
+        feeAmount: Number(it.feeAmount),
+        sellPrice: Number(it.sellPrice),
+      })),
+    }));
+
+    return { success: true, bookings: sanitizedBookings };
   } catch (err: unknown) {
     console.error('getMyBookings server error:', err);
     return { success: false, error: 'Failed to fetch bookings', bookings: [] };
@@ -282,51 +372,58 @@ export async function getBookingTimelineAction(bookingId: string) {
   }
 }
 
-export async function requestWalletTopUp(amountIrr: number) {
+export async function requestWalletTopUp(
+  amount: number,
+  options?: { currency?: string; gateway?: 'shetab' | 'ecardo' }
+) {
   try {
     const session = await safeAuth();
     if (!session || !session.user) return { success: false, error: 'Unauthorized' };
-    if (!Number.isFinite(amountIrr) || amountIrr < 10000) {
-      return { success: false, error: 'Minimum top-up is 10,000' };
+    const currency = (options?.currency || 'IRR').toUpperCase();
+    const gateway = options?.gateway || (currency === 'IRR' ? 'shetab' : 'ecardo');
+
+    const minAmount = (currency === 'IRR' || currency === 'IRT') ? 10000 : 1;
+    if (!Number.isFinite(amount) || amount < minAmount) {
+      return { success: false, error: `Minimum top-up is ${minAmount} ${currency}` };
     }
 
     const { PaymentDomainService } = await import('@/domains/payments/PaymentDomainService');
-    const { ShetabGatewayAdapter } = await import('@/domains/payments/gateway-port');
+    const { ShetabGatewayAdapter, EcardoGatewayAdapter } = await import('@/domains/payments/gateway-port');
     const { Money } = await import('@/lib/finance');
 
     const idempotencyKey = `topup_intent_${session.user.id}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 
-    const moneyAmount = new Money(amountIrr, 'IRR');
+    const moneyAmount = new Money(amount, currency);
 
     // Create durable PaymentIntent for this wallet charge (PAY-001)
     const intent = await PaymentDomainService.createPaymentIntent({
       bookingId: `wallet_topup_${session.user.id}`,
       amount: moneyAmount,
-      currency: 'IRR',
+      currency,
       idempotencyKey,
       ttlMinutes: 20,
     });
 
-    // In demo mode, immediately settle via ledger for local verification
-    if (process.env.DEMO_MODE === 'true' && process.env.NODE_ENV !== 'production') {
+    // In demo mode without real gateway config, settle via ledger for local verification
+    if (process.env.DEMO_MODE === 'true' && process.env.NODE_ENV !== 'production' && !process.env.ECARDO_PUBLIC_KEY) {
       const { GeneralLedgerService } = await import('@/domains/ledger/GeneralLedgerService');
       await GeneralLedgerService.postTopUp({
         groupId: `topup_grp_${intent.id}`,
         userId: session.user.id,
         amount: moneyAmount,
-        currency: 'IRR',
+        currency,
         referenceId: intent.id,
       });
       revalidatePath('/wallet');
       return { success: true, intentId: intent.id };
     }
 
-    // In production, initiate Shetab gateway payment request via adapter
-    const adapter = new ShetabGatewayAdapter();
+    // Initiate gateway payment request via selected adapter (Ecardo or Shetab)
+    const adapter = gateway === 'ecardo' ? new EcardoGatewayAdapter() : new ShetabGatewayAdapter();
     const gwRes = await adapter.createPayment({
       intentId: intent.id,
       bookingId: intent.bookingId,
-      amount: new Money(intent.amount, 'IRR'),
+      amount: new Money(intent.amount, currency),
       callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/payments/callback`,
       customerInfo: {
         email: session.user.email || undefined,
@@ -471,15 +568,17 @@ export async function getWallet() {
 
     allEntries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    return {
-      success: true,
-      balances: {
-        IRR: balances.IRR ? balances.IRR.toNumber() : 0,
-        USDT: balances.USDT ? balances.USDT.toNumber() : 0,
-        AED: balances.AED ? balances.AED.toNumber() : 0,
-      } as { IRR: number; USDT: number; AED: number },
-      transactions: allEntries,
-    };
+      return {
+        success: true,
+        balances: {
+          IRR: balances.IRR ? balances.IRR.toNumber() : 0,
+          USDT: balances.USDT ? balances.USDT.toNumber() : 0,
+          AED: balances.AED ? balances.AED.toNumber() : 0,
+          USD: (balances as Record<string, import('@prisma/client').Prisma.Decimal | undefined>).USD ? (balances as Record<string, import('@prisma/client').Prisma.Decimal>).USD.toNumber() : 0,
+          CNY: (balances as Record<string, import('@prisma/client').Prisma.Decimal | undefined>).CNY ? (balances as Record<string, import('@prisma/client').Prisma.Decimal>).CNY.toNumber() : 0,
+        } as { IRR: number; USDT: number; AED: number; USD?: number; CNY?: number },
+        transactions: allEntries,
+      };
   } catch (err: unknown) {
     console.error('getWallet server error:', err);
     return {

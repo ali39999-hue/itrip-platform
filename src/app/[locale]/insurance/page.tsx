@@ -148,7 +148,7 @@ export default function InsurancePage() {
                   <div className="flex flex-col gap-5">
                     <div className="flex justify-between items-start">
                       <div className="flex flex-col gap-1 text-start">
-                        <h3 className="font-black text-xl text-ink">{plan.name}</h3>
+                        <h3 className="font-black text-xl text-ink">{locale === 'fa' ? plan.name : (plan.nameEn || plan.name)}</h3>
                         <span className="text-xs font-black text-brand-dark bg-mint px-2 py-0.5 rounded-md self-start">
                           {locale === 'fa' ? `سقف پوشش €${plan.coverageEur.toLocaleString('fa-IR')}` : `Coverage up to €${plan.coverageEur.toLocaleString('en-US')}`}
                         </span>
@@ -160,7 +160,13 @@ export default function InsurancePage() {
 
                     <div className="text-start pt-2 border-t border-line/50">
                       <span className="text-[11px] text-sub block font-bold mb-1">
-                        حق بیمه ({duration} روز):
+                        {lt(locale, {
+                          fa: `حق بیمه (${duration} روز):`,
+                          en: `Premium (${duration} days):`,
+                          ar: `قسط التأمين (${duration} أيام):`,
+                          zh: `保费 (${duration} 天)：`,
+                          ru: `Страховая премия (${duration} дн.):`,
+                        })}
                       </span>
                       <span className="font-black text-2xl text-price font-mono num">
                         {calculatedPrice.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
@@ -177,7 +183,7 @@ export default function InsurancePage() {
                             <XCircle size={15} className="text-sub shrink-0" />
                           )}
                           <span className={`text-xs font-bold ${feat.included ? 'text-ink' : 'text-sub line-through'}`}>
-                            {feat.text}
+                            {locale === 'fa' ? feat.text : (feat.textEn || feat.text)}
                           </span>
                         </div>
                       ))}

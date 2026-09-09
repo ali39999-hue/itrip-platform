@@ -147,7 +147,9 @@ export default function VisaPage() {
                 <div className="p-5 flex flex-col gap-3">
                   <div className="flex justify-between items-center pb-2 border-b border-line/60">
                     <span className="text-xs font-bold text-sub">{lt(locale, { fa: 'نوع ویزا', en: 'Visa Type', ar: 'نوع التأشيرة', zh: '签证类型', ru: 'Тип визы' })}</span>
-                    <span className="text-xs font-black text-ink">{v.type}</span>
+                    <span className="text-xs font-black text-ink">
+                      {lt(locale, { fa: v.type, en: v.typeEn || 'Tourist', ar: 'سياحية', zh: '旅游签证', ru: 'Туристическая' })}
+                    </span>
                   </div>
                   
                   <div className="flex justify-between items-center pb-2 border-b border-line/60">

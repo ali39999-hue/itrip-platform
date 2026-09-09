@@ -19,6 +19,7 @@ export function PopularFlightsSection() {
       toFa: 'مشهد',
       toEn: 'Mashhad',
       airlineFa: 'ایران ایر',
+      airlineEn: 'Iran Air',
       duration: '۱.۵ ساعت',
       durationEn: '1h 30m',
       price: 24800000,
@@ -30,6 +31,7 @@ export function PopularFlightsSection() {
       toFa: 'استانبول',
       toEn: 'Istanbul',
       airlineFa: 'ترکیش ایرلاینز',
+      airlineEn: 'Turkish Airlines',
       duration: '۳.۵ ساعت',
       durationEn: '3h 50m',
       price: 96000000,
@@ -41,6 +43,7 @@ export function PopularFlightsSection() {
       toFa: 'دبی',
       toEn: 'Dubai',
       airlineFa: 'امارات',
+      airlineEn: 'Emirates',
       duration: '۲.۵ ساعت',
       durationEn: '2h 25m',
       price: 128000000,
@@ -52,6 +55,7 @@ export function PopularFlightsSection() {
       toFa: 'کیش',
       toEn: 'Kish',
       airlineFa: 'کیش ایر',
+      airlineEn: 'Kish Air',
       duration: '۱.۸ ساعت',
       durationEn: '1h 45m',
       price: 28500000,
@@ -63,6 +67,7 @@ export function PopularFlightsSection() {
       toFa: 'تهران',
       toEn: 'Tehran',
       airlineFa: 'ماهان',
+      airlineEn: 'Mahan Air',
       duration: '۱.۳ ساعت',
       durationEn: '1h 20m',
       price: 26000000,
@@ -74,6 +79,7 @@ export function PopularFlightsSection() {
       toFa: 'تفلیس',
       toEn: 'Tbilisi',
       airlineFa: 'ماهان',
+      airlineEn: 'Mahan Air',
       duration: '۲.۶ ساعت',
       durationEn: '2h 40m',
       price: 84500000,
@@ -144,7 +150,7 @@ export function PopularFlightsSection() {
                 <Clock size={12} className="text-brand-dark shrink-0" aria-hidden="true" />
                 <span>{locale === 'fa' ? r.duration : r.durationEn}</span>
                 <span>•</span>
-                <span className="truncate">{r.airlineFa}</span>
+                <span className="truncate">{locale === 'fa' ? r.airlineFa : r.airlineEn}</span>
               </div>
             </div>
 

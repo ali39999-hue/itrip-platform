@@ -31,12 +31,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const allRoutes = [...staticRoutes, ...hotelRoutes, ...travelogueRoutes];
 
-  return locales.flatMap((locale) =>
-    allRoutes.map((route) => ({
+  return allRoutes.flatMap((route) => {
+    const languages: Record<string, string> = {};
+    for (const l of locales) {
+      languages[l] = `${siteUrl}/${l}${route}`;
+    }
+
+    return locales.map((locale) => ({
       url: `${siteUrl}/${locale}${route}`,
       lastModified: new Date(),
       changeFrequency: route === '' ? ('daily' as const) : ('weekly' as const),
       priority: route === '' ? 1.0 : route.startsWith('/hotels/') ? 0.8 : 0.7,
-    }))
-  );
+      alternates: {
+        languages,
+      },
+    }));
+  });
 }

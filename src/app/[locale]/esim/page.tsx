@@ -13,12 +13,12 @@ import { Input } from '@/components/ui/input';
 import { lt } from '@/lib/lt';
 
 const POPULAR_DESTINATIONS = [
-  { id: 'turkey', label: { fa: 'ترکیه', en: 'Turkey', ar: 'تركيا', zh: '土耳其', ru: 'Турция' }, key: 'ترکیه' },
-  { id: 'uae', label: { fa: 'امارات', en: 'UAE', ar: 'الإمارات', zh: '阿联酋', ru: 'ОАЭ' }, key: 'امارات' },
-  { id: 'georgia', label: { fa: 'گرجستان', en: 'Georgia', ar: 'جورجيا', zh: '格鲁吉亚', ru: 'Грузия' }, key: 'گرجستان' },
-  { id: 'russia', label: { fa: 'روسیه', en: 'Russia', ar: 'روسيا', zh: '俄罗斯', ru: 'Россия' }, key: 'روسیه' },
-  { id: 'oman', label: { fa: 'عمان', en: 'Oman', ar: 'عمان', zh: '阿曼', ru: 'Оман' }, key: 'عمان' },
-  { id: 'europe', label: { fa: 'اروپا', en: 'Europe', ar: 'أوروبا', zh: '欧洲', ru: 'Европа' }, key: 'اروپا' },
+  { id: 'turkey', label: { fa: 'ترکیه', en: 'Turkey', ar: 'تركيا', zh: '土耳其', ru: 'Турция' }, keyFa: 'ترکیه', keyEn: 'Turkey' },
+  { id: 'uae', label: { fa: 'امارات', en: 'UAE', ar: 'الإمارات', zh: '阿联酋', ru: 'ОАЭ' }, keyFa: 'امارات', keyEn: 'UAE' },
+  { id: 'georgia', label: { fa: 'گرجستان', en: 'Georgia', ar: 'جورجيا', zh: '格鲁吉亚', ru: 'Грузия' }, keyFa: 'گرجستان', keyEn: 'Georgia' },
+  { id: 'russia', label: { fa: 'روسیه', en: 'Russia', ar: 'روسيا', zh: '俄罗斯', ru: 'Россия' }, keyFa: 'روسیه', keyEn: 'Russia' },
+  { id: 'oman', label: { fa: 'عمان', en: 'Oman', ar: 'عمان', zh: '阿曼', ru: 'Оман' }, keyFa: 'عمان', keyEn: 'Oman' },
+  { id: 'europe', label: { fa: 'اروپا', en: 'Europe', ar: 'أوروبا', zh: '欧洲', ru: 'Европа' }, keyFa: 'اروپا', keyEn: 'Europe' },
 ];
 
 export default function EsimPage() {
@@ -29,14 +29,19 @@ export default function EsimPage() {
   const [query, setQuery] = useState('');
   const [compatibilityModal, setCompatibilityModal] = useState(false);
 
-  const filteredPackages = ESIM_PACKAGES.filter((p) =>
-    p.country.toLowerCase().includes(query.toLowerCase())
-  );
+  const filteredPackages = ESIM_PACKAGES.filter((p) => {
+    const q = query.toLowerCase().trim();
+    if (!q) return true;
+    const cFa = (p.countryFa || p.country).toLowerCase();
+    const cEn = (p.countryEn || p.country).toLowerCase();
+    return cFa.includes(q) || cEn.includes(q);
+  });
 
   function buy(pkg: (typeof ESIM_PACKAGES)[number]) {
+    const countryTitle = locale === 'fa' ? (pkg.countryFa || pkg.country) : (pkg.countryEn || pkg.country);
     setBookingContext({
       type: 'esim',
-      title: `eSIM ${pkg.country}`,
+      title: `eSIM ${countryTitle}`,
       subtitle: `${pkg.dataGb} GB • ${pkg.validityDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дн.' })}`,
       amount: pkg.price,
       travelDate: daysFromNow(3),
@@ -84,20 +89,23 @@ export default function EsimPage() {
           {/* Quick Filter Chips for Popular Destinations */}
           <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
             <span className="text-xs text-surface/80 font-bold">{lt(locale, { fa: 'مقاصد محبوب:', en: 'Popular:', ar: 'شائع:', zh: '热门：', ru: 'Популярные:' })}</span>
-            {POPULAR_DESTINATIONS.map((dest) => (
-              <button
-                key={dest.id}
-                type="button"
-                onClick={() => setQuery(dest.key)}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition ${
-                  query === dest.key
-                    ? 'bg-action text-ink font-black shadow-xs'
-                    : 'bg-surface/20 hover:bg-surface/30 text-surface'
-                }`}
-              >
-                {lt(locale, dest.label)}
-              </button>
-            ))}
+            {POPULAR_DESTINATIONS.map((dest) => {
+              const chipKey = locale === 'fa' ? dest.keyFa : dest.keyEn;
+              return (
+                <button
+                  key={dest.id}
+                  type="button"
+                  onClick={() => setQuery(chipKey)}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition ${
+                    query.toLowerCase() === chipKey.toLowerCase()
+                      ? 'bg-action text-ink font-black shadow-xs'
+                      : 'bg-surface/20 hover:bg-surface/30 text-surface'
+                  }`}
+                >
+                  {lt(locale, dest.label)}
+                </button>
+              );
+            })}
             {query && (
               <button
                 type="button"
@@ -157,7 +165,9 @@ export default function EsimPage() {
                     </span>
                   </div>
 
-                  <h3 className="font-black text-[18px] text-ink mb-3">{pkg.country}</h3>
+                  <h3 className="font-black text-[18px] text-ink mb-3">
+                    {locale === 'fa' ? (pkg.countryFa || pkg.country) : (pkg.countryEn || pkg.country)}
+                  </h3>
 
                   <div className="py-4 border-y border-line flex justify-between items-baseline mb-4">
                     <span className="font-black text-[24px] text-brand-dark">{pkg.dataGb} GB</span>

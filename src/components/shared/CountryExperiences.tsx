@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { useCountryStore } from '@/stores/country-store';
 import {
-  COUNTRIES, EXPERIENCE_CATEGORY_META, countryName,
+  COUNTRIES, experienceCategoryLabel, countryName,
   type CountryId, type ExperienceCategory, type SignatureExperience,
 } from '@/lib/countries';
 import { num } from '@/lib/format';
@@ -79,8 +79,7 @@ export function useExperiences() {
     descOf: (e: SignatureExperience) => (locale === 'fa' ? e.desc : e.descEn),
     whereOf: (e: SignatureExperience) => (locale === 'fa' ? e.where : e.whereEn),
     whenOf: (e: SignatureExperience) => (locale === 'fa' ? e.when : e.whenEn),
-    catOf: (cat: ExperienceCategory) =>
-      locale === 'fa' ? EXPERIENCE_CATEGORY_META[cat].fa : EXPERIENCE_CATEGORY_META[cat].en,
+    catOf: (cat: ExperienceCategory) => experienceCategoryLabel(cat, locale),
   };
 }
 

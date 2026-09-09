@@ -218,10 +218,10 @@ export function ContactDock() {
                   <p className="text-xs font-bold text-sub m-0 mb-3">{t('sosPick')}</p>
                   <div className="grid grid-cols-2 gap-2 mb-4">
                     {[
-                      { id: 'en', label: 'English · انگلیسی' },
-                      { id: 'ar', label: 'العربية · عربی' },
-                      { id: 'ru', label: 'Русский · روسی' },
-                      { id: 'zh', label: '中文 · چینی' },
+                      { id: 'en', label: lt(locale, { fa: 'English (انگلیسی)', en: 'English', ar: 'الإنجليزية', zh: '英语', ru: 'Английский' }) },
+                      { id: 'ar', label: lt(locale, { fa: 'العربية (عربی)', en: 'Arabic', ar: 'العربية', zh: '阿拉伯语', ru: 'Арабский' }) },
+                      { id: 'ru', label: lt(locale, { fa: 'Русский (روسی)', en: 'Russian', ar: 'الروسية', zh: '俄语', ru: 'Русский' }) },
+                      { id: 'zh', label: lt(locale, { fa: '中文 (چینی)', en: 'Chinese', ar: 'الصينية', zh: '中文', ru: 'Китайский' }) },
                     ].map((l) => (
                       <button
                         key={l.id}

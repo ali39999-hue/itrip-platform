@@ -196,7 +196,9 @@ export function Footer() {
               <span>{lt(locale, { fa: 'پلتفرم مورد تایید سازمان هواپیمایی کشوری و میراث فرهنگی', en: 'Certified by Civil Aviation Organization & Cultural Heritage', ar: 'معتمد من هيئة الطيران المدني والتراث', zh: '民航局与文化遗产认证平台', ru: 'Сертифицированная платформа гражданской авиации' })}</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="px-2.5 py-1 rounded-lg bg-soft border border-line text-[11px] font-mono text-ink">SHETAB / شاپرک</span>
+              <span className="px-2.5 py-1 rounded-lg bg-soft border border-line text-[11px] font-mono text-ink">
+                {lt(locale, { fa: 'SHETAB / شاپرک', en: 'SHETAB / Shaparak', ar: 'SHETAB / شتاب', zh: 'SHETAB / Shaparak', ru: 'SHETAB / Shaparak' })}
+              </span>
               <span className="px-2.5 py-1 rounded-lg bg-soft border border-line text-[11px] font-mono text-ink">USDT (TRC-20)</span>
               <span className="px-2.5 py-1 rounded-lg bg-soft border border-line text-[11px] font-mono text-ink">VISA / MASTERCARD</span>
             </div>

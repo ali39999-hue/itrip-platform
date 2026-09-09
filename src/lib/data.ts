@@ -257,73 +257,79 @@ export const HOTELS: Hotel[] = [
 export const TOURS: Tour[] = DETAILED_TOURS;
 
 export const TRANSFERS: TransferOption[] = [
-  { id: 'tr1', vehicleType: 'سانروف ساینا', vehicleTypeEn: 'Saipa Saina Sunroof', from: 'فرودگاه امام خمینی', to: 'مرکز تهران', price: 3200000, capacity: 4, luggage: 3, durationMinutes: 75 },
-  { id: 'tr2', vehicleType: 'ون هیوندای ستاریا', vehicleTypeEn: 'Hyundai Staria Van', from: 'فرودگاه مشهد', to: 'حرم مطهر', price: 4500000, capacity: 7, luggage: 6, durationMinutes: 40 },
-  { id: 'tr3', vehicleType: 'مرسدس E-Class (VIP)', vehicleTypeEn: 'Mercedes E-Class VIP', from: 'فرودگاه استانبول IST', to: 'تاکسیم', price: 12500000, capacity: 3, luggage: 3, durationMinutes: 55 },
-  { id: 'tr4', vehicleType: 'تویوتا هایس', vehicleTypeEn: 'Toyota Hiace', from: 'فرودگاه دبی DXB', to: 'مارینا', price: 18000000, capacity: 10, luggage: 10, durationMinutes: 35 },
-  { id: 'tr5', vehicleType: 'مرسدس V-Class', vehicleTypeEn: 'Mercedes V-Class', from: 'فرودگاه مسکو SVO', to: 'میدان سرخ', price: 21000000, capacity: 5, luggage: 5, durationMinutes: 50 },
-  { id: 'tr6', vehicleType: 'تویوتا لندکروز ۴×۴', vehicleTypeEn: 'Toyota Land Cruiser 4×4', from: 'فرودگاه مسقط MCT', to: 'مسقط قدیم', price: 14500000, capacity: 4, luggage: 4, durationMinutes: 30 },
-  { id: 'tr7', vehicleType: 'ون مرسدس', vehicleTypeEn: 'Mercedes Van', from: 'فرودگاه تفلیس TBS', to: 'شهر قدیم', price: 8500000, capacity: 6, luggage: 5, durationMinutes: 35 },
+  { id: 'tr1', vehicleType: 'سانروف ساینا', vehicleTypeEn: 'Saipa Saina Sunroof', from: 'فرودگاه امام خمینی', fromEn: 'Imam Khomeini Airport (IKA)', to: 'مرکز تهران', toEn: 'Tehran City Center', price: 3200000, capacity: 4, luggage: 3, durationMinutes: 75 },
+  { id: 'tr2', vehicleType: 'ون هیوندای ستاریا', vehicleTypeEn: 'Hyundai Staria Van', from: 'فرودگاه مشهد', fromEn: 'Mashhad Airport (MHD)', to: 'حرم مطهر', toEn: 'Holy Shrine', price: 4500000, capacity: 7, luggage: 6, durationMinutes: 40 },
+  { id: 'tr3', vehicleType: 'مرسدس E-Class (VIP)', vehicleTypeEn: 'Mercedes E-Class VIP', from: 'فرودگاه استانبول IST', fromEn: 'Istanbul Airport (IST)', to: 'تاکسیم', toEn: 'Taksim Square', price: 12500000, capacity: 3, luggage: 3, durationMinutes: 55 },
+  { id: 'tr4', vehicleType: 'تویوتا هایس', vehicleTypeEn: 'Toyota Hiace', from: 'فرودگاه دبی DXB', fromEn: 'Dubai Airport (DXB)', to: 'مارینا', toEn: 'Dubai Marina', price: 18000000, capacity: 10, luggage: 10, durationMinutes: 35 },
+  { id: 'tr5', vehicleType: 'مرسدس V-Class', vehicleTypeEn: 'Mercedes V-Class', from: 'فرودگاه مسکو SVO', fromEn: 'Moscow Airport (SVO)', to: 'میدان سرخ', toEn: 'Red Square', price: 21000000, capacity: 5, luggage: 5, durationMinutes: 50 },
+  { id: 'tr6', vehicleType: 'تویوتا لندکروز ۴×۴', vehicleTypeEn: 'Toyota Land Cruiser 4×4', from: 'فرودگاه مسقط MCT', fromEn: 'Muscat Airport (MCT)', to: 'مسقط قدیم', toEn: 'Old Muscat', price: 14500000, capacity: 4, luggage: 4, durationMinutes: 30 },
+  { id: 'tr7', vehicleType: 'ون مرسدس', vehicleTypeEn: 'Mercedes Van', from: 'فرودگاه تفلیس TBS', fromEn: 'Tbilisi Airport (TBS)', to: 'شهر قدیم', toEn: 'Old Town', price: 8500000, capacity: 6, luggage: 5, durationMinutes: 35 },
 ];
 
 export const VISA_SERVICES = [
-  { id: 'v-tr', countryFa: 'ترکیه', countryEn: 'Turkey', processingDays: 5, price: 48000000, type: 'توریستی', approvalRate: 96 },
-  { id: 'v-ae', countryFa: 'امارات', countryEn: 'UAE', processingDays: 3, price: 65000000, type: 'توریستی', approvalRate: 98 },
-  { id: 'v-ge', countryFa: 'گرجستان', countryEn: 'Georgia', processingDays: 7, price: 35000000, type: 'توریستی', approvalRate: 94 },
-  { id: 'v-ru', countryFa: 'روسیه', countryEn: 'Russia', processingDays: 10, price: 72000000, type: 'توریستی', approvalRate: 91 },
+  { id: 'v-tr', countryFa: 'ترکیه', countryEn: 'Turkey', processingDays: 5, price: 48000000, type: 'توریستی', typeEn: 'Tourist', approvalRate: 96 },
+  { id: 'v-ae', countryFa: 'امارات', countryEn: 'UAE', processingDays: 3, price: 65000000, type: 'توریستی', typeEn: 'Tourist', approvalRate: 98 },
+  { id: 'v-ge', countryFa: 'گرجستان', countryEn: 'Georgia', processingDays: 7, price: 35000000, type: 'توریستی', typeEn: 'Tourist', approvalRate: 94 },
+  { id: 'v-ru', countryFa: 'روسیه', countryEn: 'Russia', processingDays: 10, price: 72000000, type: 'توریستی', typeEn: 'Tourist', approvalRate: 91 },
 ];
 
 export const ESIM_PACKAGES = [
-  { id: 'e1', country: 'ترکیه', dataGb: 10, validityDays: 15, price: 2800000 },
-  { id: 'e2', country: 'امارات', dataGb: 20, validityDays: 30, price: 4900000 },
-  { id: 'e3', country: 'اروپا (۳۹ کشور)', dataGb: 15, validityDays: 21, price: 5500000 },
-  { id: 'e4', country: 'گرجستان', dataGb: 8, validityDays: 14, price: 2200000 },
-  { id: 'e5', country: 'روسیه', dataGb: 10, validityDays: 15, price: 3900000 },
-  { id: 'e6', country: 'عمان', dataGb: 8, validityDays: 14, price: 2600000 },
+  { id: 'e1', country: 'ترکیه', countryEn: 'Turkey', countryFa: 'ترکیه', dataGb: 10, validityDays: 15, price: 2800000 },
+  { id: 'e2', country: 'امارات', countryEn: 'UAE', countryFa: 'امارات', dataGb: 20, validityDays: 30, price: 4900000 },
+  { id: 'e3', country: 'اروپا (۳۹ کشور)', countryEn: 'Europe (39 Countries)', countryFa: 'اروپا (۳۹ کشور)', dataGb: 15, validityDays: 21, price: 5500000 },
+  { id: 'e4', country: 'گرجستان', countryEn: 'Georgia', countryFa: 'گرجستان', dataGb: 8, validityDays: 14, price: 2200000 },
+  { id: 'e5', country: 'روسیه', countryEn: 'Russia', countryFa: 'روسیه', dataGb: 10, validityDays: 15, price: 3900000 },
+  { id: 'e6', country: 'عمان', countryEn: 'Oman', countryFa: 'عمان', dataGb: 8, validityDays: 14, price: 2600000 },
 ];
 
 export const INSURANCE_PLANS: InsurancePlan[] = [
   { 
     id: 'i1', 
     name: 'استاندارد', 
+    nameEn: 'Standard',
     type: 'standard',
     subtitle: 'مناسب برای سفرهای کوتاه',
+    subtitleEn: 'Ideal for short vacations',
     price: 350000, 
     priceLabel: 'پایه',
     coverageEur: 10000, 
     features: [
-      { text: 'پوشش هزینه‌های پزشکی تا ۱۰,۰۰۰ یورو', included: true },
-      { text: 'جبران خسارت تاخیر پرواز', included: true },
-      { text: 'مفقود شدن بار', included: false },
+      { text: 'پوشش هزینه‌های پزشکی تا ۱۰,۰۰۰ یورو', textEn: 'Medical expenses cover up to €10,000', included: true },
+      { text: 'جبران خسارت تاخیر پرواز', textEn: 'Flight delay compensation', included: true },
+      { text: 'مفقود شدن بار', textEn: 'Lost baggage compensation', included: false },
     ]
   },
   { 
     id: 'i2', 
     name: 'طلایی', 
+    nameEn: 'Golden Schengen',
     type: 'premium',
     subtitle: 'پوشش کامل و آرامش مطلق',
+    subtitleEn: 'Full Schengen & embassy compliance',
     price: 780000, 
     priceLabel: 'پایه',
     coverageEur: 50000, 
     features: [
-      { text: 'پوشش هزینه‌های پزشکی تا ۵۰,۰۰۰ یورو', included: true },
-      { text: 'جبران خسارت تاخیر پرواز', included: true },
-      { text: 'مفقود شدن بار کامل', included: true },
-      { text: 'بازگشت پیش از موعد', included: true },
+      { text: 'پوشش هزینه‌های پزشکی تا ۵۰,۰۰۰ یورو', textEn: 'Medical expenses cover up to €50,000', included: true },
+      { text: 'جبران خسارت تاخیر پرواز', textEn: 'Flight delay compensation', included: true },
+      { text: 'مفقود شدن بار کامل', textEn: 'Comprehensive lost baggage cover', included: true },
+      { text: 'بازگشت پیش از موعد', textEn: 'Emergency trip return cover', included: true },
     ]
   },
   { 
     id: 'i3', 
     name: 'خانواده', 
+    nameEn: 'Family & VIP',
     type: 'family',
     subtitle: 'اقتصادی برای سفرهای گروهی',
+    subtitleEn: 'Full multi-traveler protection',
     price: 1200000, 
     priceLabel: 'خانواده ۴ نفره',
     coverageEur: 30000, 
     features: [
-      { text: 'پوشش هزینه‌های پزشکی تا ۳۰,۰۰۰ یورو (هر نفر)', included: true },
-      { text: 'جبران خسارت تاخیر پرواز', included: true },
-      { text: 'پوشش‌های ویژه کودکان', included: true },
+      { text: 'پوشش هزینه‌های پزشکی تا ۳۰,۰۰۰ یورو (هر نفر)', textEn: 'Medical expenses cover up to €30,000 per person', included: true },
+      { text: 'جبران خسارت تاخیر پرواز', textEn: 'Flight delay compensation', included: true },
+      { text: 'پوشش‌های ویژه کودکان', textEn: 'Special children assistance & care', included: true },
     ]
   },
 ];

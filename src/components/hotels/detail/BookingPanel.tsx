@@ -157,7 +157,7 @@ export function BookingPanel({ booking, onBook }: BookingPanelProps) {
 
         <div className="p-3 border border-line/70 rounded-xl bg-soft/50 flex items-start gap-2 text-[11px] font-bold text-sub leading-snug">
           <ShieldCheck size={15} className="text-brand shrink-0 mt-0.5" />
-          <span>{worst === 'free' ? `${locale === 'fa' ? `کنسلی رایگان تا ${fmtDate(dl)}.` : `Free cancellation until ${fmtDate(dl)}.`}` : (lt(locale, { fa: 'تابع شرایط استرداد هتل.', en: 'Subject to hotel cancellation policies.', ar: 'خاضع لسياسات الإلغال الخاصة بالفندق.', zh: '以酒店取消政策为准。', ru: 'Согласно правилам отмены отеля.' }))}</span>
+          <span>{worst === 'free' ? `${locale === 'fa' ? `کنسلی رایگان تا ${fmtDate(dl)}.` : `Free cancellation until ${fmtDate(dl)}.`}` : (lt(locale, { fa: 'تابع شرایط استرداد هتل.', en: 'Subject to hotel cancellation policies.', ar: 'خاضع لسياسات الإلغاء الخاصة بالفندق.', zh: '以酒店取消政策为准。', ru: 'Согласно правилам отмены отеля.' }))}</span>
         </div>
       </div>
     </aside>

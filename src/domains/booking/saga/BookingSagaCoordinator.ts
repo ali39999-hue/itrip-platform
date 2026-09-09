@@ -26,7 +26,7 @@ const sagaLogger = createLogger('booking-saga-coordinator');
 export interface ConfirmBookingSagaParams {
   bookingId: string;
   idempotencyKey: string;
-  paymentMethod: 'wallet_irr' | 'gateway_shetab' | 'wallet_usdt';
+  paymentMethod: 'wallet_irr' | 'gateway_shetab' | 'wallet_usdt' | 'gateway_ecardo';
   holdToken?: string;
   supplierCallFn?: (ctx: Record<string, unknown>) => Promise<{ pnr: string; ticketNumbers?: string[]; externalBookingId?: string }>;
   voidSupplierFn?: (ctx: Record<string, unknown>, snapshot: Record<string, unknown>) => Promise<void>;

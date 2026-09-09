@@ -141,7 +141,9 @@ export interface TransferOption {
   vehicleType: string;
   vehicleTypeEn: string;
   from: string;
+  fromEn?: string;
   to: string;
+  toEn?: string;
   price: number;
   capacity: number;
   luggage: number;
@@ -210,10 +212,12 @@ export interface KycProfile {
 export interface InsurancePlan {
   id: string;
   name: string;
+  nameEn?: string;
   type: 'standard' | 'premium' | 'family';
   subtitle: string;
+  subtitleEn?: string;
   price: number;
   priceLabel: string;
   coverageEur: number;
-  features: { text: string; included: boolean }[];
+  features: { text: string; textEn?: string; included: boolean }[];
 }

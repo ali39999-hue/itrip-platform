@@ -12,7 +12,7 @@ export function UserAccountMenu() {
   const ct = useTranslations('Common');
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
       {/* ERP is reachable via the account page, nav dropdown and mobile drawer —
           a standalone header badge overcrowds the bar when signed in. */}
 

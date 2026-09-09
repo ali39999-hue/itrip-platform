@@ -92,35 +92,33 @@ const vazirmatn = Vazirmatn({
   variable: "--font-vazirmatn",
   subsets: ["arabic", "latin"],
   weight: ["400", "500", "700", "800", "900"],
-});
-
-const vazirmatnHeading = Vazirmatn({
-  variable: "--font-heading-vazir",
-  subsets: ["arabic", "latin"],
-  weight: ["800", "900"],
+  preload: false,
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  preload: false,
 });
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
+  preload: false,
 });
 
 const notoSans = Noto_Sans({
   variable: "--font-noto",
   subsets: ["latin", "cyrillic"],
   weight: ["400", "500", "700", "900"],
+  preload: false,
 });
 
 const notoSansSC = Noto_Sans_SC({
   variable: "--font-noto-sc",
   weight: ["400", "500", "700", "900"],
-  preload: true,
+  preload: false,
 });
 
 const LOCALE_FONT: Record<string, { variable: string }> = {
@@ -142,7 +140,7 @@ const LOCALE_FONT_VAR: Record<string, { sans: string; heading: string }> = {
     sans: 'var(--font-iranyekan), IRANYekanXFaNum, IRANYekanX, var(--font-yekan-bakh), "Yekan Bakh", sans-serif',
     heading: 'var(--font-iranyekan), IRANYekanXFaNum, IRANYekanX, var(--font-yekan-bakh), "Yekan Bakh", sans-serif'
   },
-  ar: { sans: 'var(--font-vazirmatn)', heading: 'var(--font-heading-vazir)' },
+  ar: { sans: 'var(--font-vazirmatn)', heading: 'var(--font-vazirmatn)' },
   en: { sans: 'var(--font-jakarta)', heading: 'var(--font-jakarta)' },
   ru: { sans: 'var(--font-noto)', heading: 'var(--font-noto)' },
   zh: { sans: 'var(--font-noto-sc)', heading: 'var(--font-noto-sc)' },
@@ -174,6 +172,16 @@ export async function generateMetadata({
       template: `%s | ${brand('name')}`,
     },
     description: t('description'),
+    alternates: {
+      canonical: `/${locale}`,
+      languages: {
+        fa: '/fa',
+        en: '/en',
+        ar: '/ar',
+        zh: '/zh',
+        ru: '/ru',
+      },
+    },
     manifest: "/manifest.json",
     icons: {
       icon: [
@@ -218,7 +226,7 @@ export default async function RootLayout({
       dir={dir}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
-      className={`${font.variable} ${plusJakartaSans.variable} ${iranYekan.variable} ${yekanBakh.variable} ${vazirmatnHeading.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${font.variable} ${plusJakartaSans.variable} ${iranYekan.variable} ${yekanBakh.variable} ${vazirmatn.variable} ${geistMono.variable} h-full antialiased`}
       style={
         {
           '--font-app-sans': (LOCALE_FONT_VAR[locale] ?? LOCALE_FONT_VAR.fa).sans,

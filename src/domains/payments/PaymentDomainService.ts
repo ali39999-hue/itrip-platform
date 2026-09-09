@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { Money } from '@/lib/finance';
-import { DemoPaymentAdapter, InternalWalletGatewayAdapter } from './gateway-port';
+import { DemoPaymentAdapter, InternalWalletGatewayAdapter, EcardoGatewayAdapter } from './gateway-port';
 import { ShetabPspAdapter, validateLivePspConfiguration } from './adapters/ShetabPspAdapter';
 import { GeneralLedgerService } from '../ledger/GeneralLedgerService';
 import { OperationalExceptionService, ExceptionSeverity } from '../finance/three-way-reconciliation';
@@ -11,7 +11,7 @@ import { getAppBaseUrl } from '@/lib/runtime-url';
 export interface InitiatePaymentParams {
   bookingId?: string;
   idempotencyKey: string;
-  method: 'wallet_irr' | 'gateway_shetab' | 'wallet_usdt';
+  method: 'wallet_irr' | 'gateway_shetab' | 'wallet_usdt' | 'gateway_ecardo';
   amount: Money; // MONEY-101: Money is the only core financial input
   currency?: string;
   rawPayload?: Record<string, unknown>;
@@ -73,6 +73,9 @@ export class PaymentDomainService {
   private static getAdapter(method: string) {
     if (method === 'wallet_irr' || method === 'wallet_usdt') {
       return new InternalWalletGatewayAdapter();
+    }
+    if (method === 'gateway_ecardo') {
+      return new EcardoGatewayAdapter();
     }
     const isProduction = process.env.NODE_ENV === 'production';
     if (!isProduction && process.env.DEMO_MODE === 'true') {
@@ -211,8 +214,8 @@ export class PaymentDomainService {
     const gatewayRef = gatewayRes.gatewayRef;
 
     // PAY-103: PSP authority is mandatory. Local state alone can never mean successful payment.
-    // Wallet is internal balance, but Shetab gateway payments MUST remain PENDING until signed authority arrives.
-    let initialStatus: 'PENDING' | 'SUCCESS' = params.method === 'gateway_shetab' ? 'PENDING' : 'SUCCESS';
+    // Wallet is internal balance, but gateway payments MUST remain PENDING until signed authority arrives.
+    let initialStatus: 'PENDING' | 'SUCCESS' = (params.method === 'gateway_shetab' || params.method === 'gateway_ecardo') ? 'PENDING' : 'SUCCESS';
     if (adapter.isDemo && initialStatus !== 'SUCCESS' && gatewayRes.status !== 'SUCCESS' && adapter.verifyPayment) {
       try {
         const verifyRes = await adapter.verifyPayment({

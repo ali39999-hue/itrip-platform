@@ -22,7 +22,9 @@ import { PassengerSection } from '@/components/checkout/PassengerSection';
 import { AddonsSection, ESIM_PRICE, INSURANCE_PRICE } from '@/components/checkout/AddonsSection';
 import { ReferralInputSection } from '@/components/checkout/ReferralInputSection';
 import { PriceBreakdownTable } from '@/components/checkout/PriceBreakdownTable';
-import { PaymentGatewaySelector } from '@/components/checkout/PaymentGatewaySelector';
+import { PaymentGatewaySelector, type PaymentMethodType } from '@/components/checkout/PaymentGatewaySelector';
+import { CardTransferPaymentView } from '@/components/checkout/CardTransferPaymentView';
+import { CryptoPaymentView } from '@/components/checkout/CryptoPaymentView';
 import { IssuingModal } from '@/components/checkout/IssuingModal';
 import { SuccessConfirmation } from '@/components/checkout/SuccessConfirmation';
 import { StickyMobileBar } from '@/components/checkout/StickyMobileBar';
@@ -51,7 +53,7 @@ export default function CheckoutPage() {
   const [referralDiscountAmount, setReferralDiscountAmount] = useState(0);
   const [draftBookingId, setDraftBookingId] = useState<string | null>(null);
   const [serverWallet, setServerWallet] = useState<number | null>(null);
-  const [method, setMethod] = useState<'wallet_irr' | 'gateway'>('wallet_irr');
+  const [method, setMethod] = useState<PaymentMethodType>('gateway_ecardo');
   const [scanning, setScanning] = useState(false);
   const [passportScanned, setPassportScanned] = useState(false);
   const [error, setError] = useState('');
@@ -104,18 +106,25 @@ export default function CheckoutPage() {
     return () => clearInterval(t);
   }, [phase]);
 
-  // Real server wallet balance (authoritative for wallet payments).
+  // Real server wallet balance (authoritative for wallet payments, locale-adapted).
   useEffect(() => {
     let cancelled = false;
     getWallet()
       .then((res) => {
-        if (!cancelled && res.success) setServerWallet(res.balances.IRR ?? 0);
+        if (!cancelled && res.success && res.balances) {
+          const bal = locale === 'zh'
+            ? (res.balances.CNY ?? 0)
+            : locale === 'en' || locale === 'ru'
+            ? (res.balances.USDT ?? res.balances.USD ?? 0)
+            : (res.balances.IRR ?? 0);
+          setServerWallet(bal);
+        }
       })
       .catch(() => undefined);
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [locale]);
 
   // Wait for the persisted store before deciding — avoids a false empty state.
   if (!hydrated) {
@@ -345,6 +354,30 @@ export default function CheckoutPage() {
     setPhase('issuing');
     setIssueStep(0);
 
+    // Direct redirect flow for eCardo Multi-Currency Gateway
+    if (method === 'gateway_ecardo') {
+      if (!draftBookingId) {
+        setError(lt(locale, { fa: 'ابتدا اطلاعات مسافر را ثبت کنید.', en: 'Submit passenger details first.', ar: 'أدخل بيانات المسافر أولاً.', zh: '请先提交乘客信息。', ru: 'Сначала укажите данные пассажира.' }));
+        setPhase('payment');
+        return;
+      }
+      try {
+        const { initiateEcardoPayment } = await import('@/actions/booking');
+        const initRes = await initiateEcardoPayment(draftBookingId, currency);
+        if (initRes.success && initRes.redirectUrl) {
+          window.location.href = initRes.redirectUrl;
+          return;
+        }
+        setError(initRes.error || 'Failed to initialize Ecardo payment session');
+        setPhase('payment');
+        return;
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Ecardo gateway error');
+        setPhase('payment');
+        return;
+      }
+    }
+
     const animationDelay = (ms: number, fn: () => void) => setTimeout(fn, ms);
 
     // The animation is a progress indicator — the payment itself is awaited
@@ -493,60 +526,84 @@ export default function CheckoutPage() {
         {/* Phase 2: Payment & Review */}
         {phase === 'payment' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in fade-in duration-300">
-            {/* Gateway Column */}
+            {/* Gateway / Transfer Column */}
             <div className="lg:col-span-7 space-y-6">
-              <PaymentGatewaySelector
-                method={method}
-                setMethod={setMethod}
-                walletBalance={walletBalance}
-                totalPayable={baseAmount + (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0)}
-              />
+              {method === 'card_transfer' && draftBookingId ? (
+                <CardTransferPaymentView
+                  bookingId={draftBookingId}
+                  onBackToMethods={() => setMethod('gateway')}
+                  onSuccess={() => {
+                    setConfirmedRef(draftBookingId);
+                    setConfirmedTitle(itemTitle);
+                    setPhase('success');
+                  }}
+                />
+              ) : method === 'crypto_usdt' && draftBookingId ? (
+                <CryptoPaymentView
+                  bookingId={draftBookingId}
+                  onBackToMethods={() => setMethod('gateway')}
+                  onSuccess={() => {
+                    setConfirmedRef(draftBookingId);
+                    setConfirmedTitle(itemTitle);
+                    setPhase('success');
+                  }}
+                />
+              ) : (
+                <>
+                  <PaymentGatewaySelector
+                    method={method}
+                    setMethod={setMethod}
+                    walletBalance={walletBalance}
+                    totalPayable={baseAmount + (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0)}
+                  />
 
-              {/* Contextual Trust Banner */}
-              <div className="p-4 rounded-2xl bg-mint/40 border border-brand/20 flex items-center gap-3 text-xs text-brand-dark font-bold">
-                <span className="w-8 h-8 rounded-full bg-mint flex items-center justify-center shrink-0 shadow-xs">
-                  🛡️
-                </span>
-                <p className="leading-relaxed">
-                  {lt(locale, {
-                    fa: 'تراکنش امن با پروتکل رمزنگاری ۲۵۶ بیتی. صدور آنی واچر رسمی و ضمانت استرداد وجه طبق قوانین کنسلی.',
-                    en: 'Secure 256-bit encrypted transaction. Instant official voucher issuance and refund guarantee per cancellation policy.',
-                    ar: 'معاملة آمنة مع تشفير 256 بت. إصدار فوري للقسيمة الرسمية وضمان الاسترداد حسب سياسة الإلغاء.',
-                    zh: '256位加密安全交易。即时出具官方凭证，并按照退订政策提供退款保障。',
-                    ru: 'Безопасная транзакция с 256-битным шифрованием. Мгновенная выдача ваучера и гарантия возврата по правилам отмены.',
-                  })}
-                </p>
-              </div>
+                  {/* Contextual Trust Banner */}
+                  <div className="p-4 rounded-2xl bg-mint/40 border border-brand/20 flex items-center gap-3 text-xs text-brand-dark font-bold">
+                    <span className="w-8 h-8 rounded-full bg-mint flex items-center justify-center shrink-0 shadow-xs">
+                      🛡️
+                    </span>
+                    <p className="leading-relaxed">
+                      {lt(locale, {
+                        fa: 'تراکنش امن با پروتکل رمزنگاری ۲۵۶ بیتی. صدور آنی واچر رسمی و ضمانت استرداد وجه طبق قوانین کنسلی.',
+                        en: 'Secure 256-bit encrypted transaction. Instant official voucher issuance and refund guarantee per cancellation policy.',
+                        ar: 'معاملة آمنة مع تشفير 256 بت. إصدار فوري للقسيمة الرسمية وضمان الاسترداد حسب سياسة الإلغاء.',
+                        zh: '256位加密安全交易。即时出具官方凭证，并按照退订政策提供退款保障。',
+                        ru: 'Безопасная транзакция с 256-битным шифрованием. Мгновенная выдача ваучера и гарантия возврата по правилам отмены.',
+                      })}
+                    </p>
+                  </div>
 
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setPhase('passengers')}
-                  className="text-[13px] font-bold text-sub hover:text-ink underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded"
-                >
-                  {lt(locale, {
-                    fa: '← بازگشت به ویرایش مشخصات',
-                    en: '← Back to Edit Details',
-                    ar: '← العودة لتعديل البيانات',
-                    zh: '← 返回修改乘客信息',
-                    ru: '← Вернуться к редактированию',
-                  })}
-                </button>
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setPhase('passengers')}
+                      className="text-[13px] font-bold text-sub hover:text-ink underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded"
+                    >
+                      {lt(locale, {
+                        fa: '← بازگشت به ویرایش مشخصات',
+                        en: '← Back to Edit Details',
+                        ar: '← العودة لتعديل البيانات',
+                        zh: '← 返回修改乘客信息',
+                        ru: '← Вернуться к редактированию',
+                      })}
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={handleFinalPayment}
-                  className="w-full sm:w-auto min-h-[54px] px-10 rounded-xl bg-action hover:bg-action-hover text-ink text-[16px] font-black shadow-md transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
-                >
-                  {lt(locale, {
-                    fa: 'پرداخت نهایی و صدور آنی واچر',
-                    en: 'Complete Payment & Issue Voucher',
-                    ar: 'الدفع النهائي وإصدار القسيمة',
-                    zh: '确认支付并即时出票',
-                    ru: 'Оплатить и получить ваучер',
-                  })}
-                </button>
-              </div>
+                    <button
+                      type="button"
+                      onClick={handleFinalPayment}
+                      className="w-full sm:w-auto min-h-[54px] px-10 rounded-xl bg-action hover:bg-action-hover text-ink text-[16px] font-black shadow-md transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+                    >
+                      {lt(locale, {
+                        fa: 'پرداخت نهایی و صدور آنی واچر',
+                        en: 'Complete Payment & Issue Voucher',
+                        ar: 'الدفع النهائي وإصدار القسيمة',
+                        zh: '确认支付并即时出票',
+                        ru: 'Оплатить и получить ваучер',
+                      })}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Sticky Order Summary Sidebar (Payment Phase) */}

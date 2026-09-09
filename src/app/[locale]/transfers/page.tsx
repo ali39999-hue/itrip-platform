@@ -224,28 +224,40 @@ export default function TransfersPage() {
                 <div className="flex-grow flex flex-col justify-between">
                   <div>
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-black text-[18px] text-ink">{tr.vehicleType}</h3>
+                      <h3 className="font-black text-[18px] text-ink">{locale === 'fa' ? tr.vehicleType : (tr.vehicleTypeEn || tr.vehicleType)}</h3>
                       <div className="flex items-center gap-1 text-gold text-xs font-bold">
                         <Star size={14} className="fill-gold" />
-                        <span>۴.۹</span>
+                        <span>{lt(locale, { fa: '۴.۹', en: '4.9', ar: '٤.٩', zh: '4.9', ru: '4.9' })}</span>
                       </div>
                     </div>
                     
                     <p className="text-xs font-bold text-sub mb-4 flex items-center gap-1.5">
-                      <span>{tr.from}</span>
+                      <span>{locale === 'fa' ? tr.from : (tr.fromEn || tr.from)}</span>
                       <ArrowRight size={12} className="ltr:inline rtl:hidden text-brand-dark" />
                       <ArrowLeft size={12} className="rtl:inline ltr:hidden text-brand-dark" />
-                      <span>{tr.to}</span>
+                      <span>{locale === 'fa' ? tr.to : (tr.toEn || tr.to)}</span>
                     </p>
 
                     <div className="flex flex-wrap gap-4 text-xs font-bold text-sub">
                       <span className="flex items-center gap-1.5 bg-soft px-3 py-1.5 rounded-lg">
                         <Users size={14} className="text-brand-dark" />
-                        {locale === 'fa' ? `ظرفیت تا ${tr.capacity.toLocaleString('fa-IR')} نفر` : `Capacity up to ${tr.capacity}`}
+                        {lt(locale, {
+                          fa: `ظرفیت تا ${tr.capacity.toLocaleString('fa-IR')} نفر`,
+                          en: `Capacity up to ${tr.capacity} pax`,
+                          ar: `سعة حتى ${tr.capacity} ركاب`,
+                          zh: `可容纳 ${tr.capacity} 人`,
+                          ru: `Вместимость до ${tr.capacity} чел.`
+                        })}
                       </span>
                       <span className="flex items-center gap-1.5 bg-soft px-3 py-1.5 rounded-lg">
                         <Luggage size={14} className="text-brand-dark" />
-                        {locale === 'fa' ? `ظرفیت ${tr.luggage.toLocaleString('fa-IR')} چمدان` : `Luggage: ${tr.luggage}`}
+                        {lt(locale, {
+                          fa: `ظرفیت ${tr.luggage.toLocaleString('fa-IR')} چمدان`,
+                          en: `Luggage: ${tr.luggage}`,
+                          ar: `الحقائب: ${tr.luggage}`,
+                          zh: `行李额: ${tr.luggage} 件`,
+                          ru: `Багаж: ${tr.luggage}`
+                        })}
                       </span>
                       <span className="flex items-center gap-1.5 bg-soft px-3 py-1.5 rounded-lg">
                         <Clock size={14} className="text-brand-dark" />
@@ -265,7 +277,7 @@ export default function TransfersPage() {
 
                     <button
                       onClick={() => reserve(tr)}
-                      aria-label={`رزرو ${tr.vehicleType}`}
+                      aria-label={`${t('bookTransfer')} - ${locale === 'fa' ? tr.vehicleType : (tr.vehicleTypeEn || tr.vehicleType)}`}
                       className="bg-action hover:bg-action-hover text-ink px-6 py-3 rounded-xl font-black text-[13px] transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                     >
                       {t('bookTransfer')}

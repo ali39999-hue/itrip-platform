@@ -22,10 +22,12 @@ export default function WalletPage() {
   const locale = useLocale();
   const router = useRouter();
 
-  const [wallet, setWallet] = useState<{ IRR: number; USDT: number; AED: number }>({
+  const [wallet, setWallet] = useState<{ IRR: number; USDT: number; AED: number; USD?: number; CNY?: number }>({
     IRR: 0,
     USDT: 0,
     AED: 0,
+    USD: 0,
+    CNY: 0,
   });
   const [transactions, setTransactions] = useState<Array<{
     id: string;
@@ -40,6 +42,8 @@ export default function WalletPage() {
   const [actionError, setActionError] = useState('');
 
   const [depositAmount, setDepositAmount] = useState('');
+  const [depositCurrency, setDepositCurrency] = useState<'IRR' | 'USD' | 'USDT' | 'CNY'>('IRR');
+  const [depositGateway, setDepositGateway] = useState<'ecardo' | 'shetab'>('ecardo');
   const [charging, setCharging] = useState(false);
 
   const [exFrom, setExFrom] = useState<'IRR' | 'USDT' | 'AED'>('IRR');
@@ -83,8 +87,15 @@ export default function WalletPage() {
     setCharging(true);
     setActionError('');
     try {
-      const res = await requestWalletTopUp(amt);
+      const res = await requestWalletTopUp(amt, {
+        currency: depositCurrency,
+        gateway: depositGateway,
+      });
       if (res.success) {
+        if (res.redirectUrl) {
+          window.location.href = res.redirectUrl;
+          return;
+        }
         setDepositAmount('');
         setReloadTick((tick) => tick + 1);
       } else if (res.error === 'Unauthorized') {
@@ -175,12 +186,12 @@ export default function WalletPage() {
       ) : (
         <>
           {/* Balance Cards with Mobile Snap Carousel */}
-          <div className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:grid-cols-3 gap-4 md:gap-6 mb-8 pb-2 md:pb-0 scrollbar-none">
-            <div className="shrink-0 w-[84vw] sm:w-[320px] md:w-auto snap-start bg-gradient-to-br from-brand to-brand-dark rounded-3xl p-6 text-surface shadow-elev-2 relative overflow-hidden flex flex-col justify-between">
+          <div className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:grid-cols-4 gap-4 md:gap-4 mb-8 pb-2 md:pb-0 scrollbar-none">
+            <div className="shrink-0 w-[84vw] sm:w-[260px] md:w-auto snap-start bg-gradient-to-br from-brand to-brand-dark rounded-3xl p-5 text-surface shadow-elev-2 relative overflow-hidden flex flex-col justify-between">
               <span className="text-xs font-black opacity-80 block mb-1">
-                {lt(locale, { fa: 'IRR (تومان)', en: 'IRR (Toman)', ar: 'IRR (تومان)', zh: 'IRR (托曼)', ru: 'IRR (Томан)' })}
+                {lt(locale, { fa: 'IRR (تومان ایران)', en: 'IRR (Iran Toman)', ar: 'IRR (تومان)', zh: 'IRR (伊朗托曼)', ru: 'IRR (Томан)' })}
               </span>
-              <span className="text-3xl font-black font-mono num block mb-4">
+              <span className="text-2xl font-black font-mono num block mb-3">
                 {wallet.IRR.toLocaleString(
                   lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })
                 )}
@@ -188,41 +199,40 @@ export default function WalletPage() {
               <span className="text-[11px] font-bold opacity-75">{t('primaryBalance')}</span>
             </div>
 
-            <div className="shrink-0 w-[84vw] sm:w-[320px] md:w-auto snap-start bg-surface border border-line rounded-3xl p-6 shadow-xs flex flex-col justify-between">
+            <div className="shrink-0 w-[84vw] sm:w-[260px] md:w-auto snap-start bg-surface border border-line rounded-3xl p-5 shadow-xs flex flex-col justify-between">
               <div>
                 <span className="text-xs font-black text-sub block mb-1">USDT (Tether)</span>
                 <span className="text-2xl font-black text-ink font-mono num block mb-1">
-                  $
-                  {wallet.USDT.toLocaleString(
-                    lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })
-                  )}
+                  ${wallet.USDT.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                 </span>
               </div>
               <span className="text-[11px] font-bold text-sub">
-                ≈ {(wallet.USDT * CURRENCY_TO_TOMAN.USDT).toLocaleString(
-                  lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })
-                )}{' '}
+                ≈ {(wallet.USDT * CURRENCY_TO_TOMAN.USDT).toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}{' '}
                 {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
               </span>
             </div>
 
-            <div className="shrink-0 w-[84vw] sm:w-[320px] md:w-auto snap-start bg-surface border border-line rounded-3xl p-6 shadow-xs flex flex-col justify-between">
+            <div className="shrink-0 w-[84vw] sm:w-[260px] md:w-auto snap-start bg-surface border border-line rounded-3xl p-5 shadow-xs flex flex-col justify-between">
               <div>
-                <span className="text-xs font-black text-sub block mb-1">
-                  {lt(locale, { fa: 'AED (درهم امارات)', en: 'AED (Emirati Dirham)', ar: 'AED (درهم إماراتي)', zh: 'AED (阿联酋迪拉姆)', ru: 'AED (Дирхам ОАЭ)' })}
-                </span>
+                <span className="text-xs font-black text-sub block mb-1">USD (US Dollar)</span>
                 <span className="text-2xl font-black text-ink font-mono num block mb-1">
-                  {lt(locale, { fa: 'درهم ', en: 'AED ', ar: 'د.إ ', zh: 'AED ', ru: 'AED ' })}
-                  {wallet.AED.toLocaleString(
-                    lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })
-                  )}
+                  ${(wallet.USD || 0).toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                 </span>
               </div>
               <span className="text-[11px] font-bold text-sub">
-                ≈ {(wallet.AED * CURRENCY_TO_TOMAN.AED).toLocaleString(
-                  lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })
-                )}{' '}
-                {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
+                {lt(locale, { fa: 'ولت دلاری ای‌کاردو', en: 'eCardo USD Wallet', ar: 'محفظة دولار إيكاردو', zh: 'eCardo 美元钱包', ru: 'USD кошелек eCardo' })}
+              </span>
+            </div>
+
+            <div className="shrink-0 w-[84vw] sm:w-[260px] md:w-auto snap-start bg-surface border border-line rounded-3xl p-5 shadow-xs flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-black text-sub block mb-1">CNY (人民币 / 元)</span>
+                <span className="text-2xl font-black text-ink font-mono num block mb-1">
+                  ¥{(wallet.CNY || 0).toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
+                </span>
+              </div>
+              <span className="text-[11px] font-bold text-sub">
+                {lt(locale, { fa: 'ولت یوان چین ای‌کاردو', en: 'eCardo CNY Wallet', ar: 'محفظة يوان إيكاردو', zh: 'eCardo 人民币钱包', ru: 'CNY кошелек eCardo' })}
               </span>
             </div>
           </div>
@@ -231,14 +241,19 @@ export default function WalletPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
             {/* Deposit / Topup */}
             <div className="bg-surface border border-line rounded-2xl p-6 md:p-8 shadow-sm">
-              <h2 className="font-black text-xl text-ink mb-2">{t('deposit')}</h2>
-              <p className="text-xs font-bold text-sub mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="font-black text-xl text-ink">{t('deposit')}</h2>
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  eCardo Gateway
+                </span>
+              </div>
+              <p className="text-xs font-bold text-sub mb-4">
                 {lt(locale, {
-                  fa: 'افزایش موجودی ریالی از طریق کلیه کارت‌های عضو شتاب',
-                  en: 'Top up your Rial balance instantly via Shetab cards',
-                  ar: 'اشحن رصيدك بالريال فوراً عبر بطاقات شتاب',
-                  zh: '通过 Shetab 银行卡即时充值里亚尔余额',
-                  ru: 'Мгновенно пополните риалевый баланс картами Shetab',
+                  fa: 'شارژ آنلاین چند ارزی از طریق درگاه ای‌کاردو (ویزا، مسترکارت، وی‌چت، علی‌پی، شتاب، تتر)',
+                  en: 'Online multi-currency deposit via eCardo (Visa, Mastercard, WeChat, Alipay, Shetab, USDT)',
+                  ar: 'شحن رصيد متعدد العملات عبر بوابة إيكاردو (فيزا، ماستركارد، وي شات، علي بي، شتاب، تيثر)',
+                  zh: '通过 eCardo 易卡通进行跨国多币种充值（支持信用卡、微信、支付宝、Shetab、USDT）',
+                  ru: 'Мультивалютное пополнение через шлюз eCardo',
                 })}
               </p>
 
@@ -249,14 +264,72 @@ export default function WalletPage() {
               )}
 
               <div className="space-y-4">
+                {/* Gateway Picker */}
+                <div>
+                  <label className="block text-xs font-bold text-sub mb-1.5">
+                    {lt(locale, { fa: 'درگاه پرداخت:', en: 'Payment Gateway:', ar: 'بوابة الدفع:', zh: '支付网关：', ru: 'Платежный шлюз:' })}
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDepositGateway('ecardo')}
+                      className={`p-2.5 rounded-xl border text-xs font-black transition text-start flex items-center justify-between ${
+                        depositGateway === 'ecardo'
+                          ? 'bg-mint/40 border-brand text-brand-dark shadow-xs'
+                          : 'bg-soft border-line text-sub hover:border-brand/40'
+                      }`}
+                    >
+                      <span>{lt(locale, { fa: 'درگاه ای‌کاردو (بین‌المللی)', en: 'eCardo Gateway', ar: 'بوابة إيكاردو', zh: 'eCardo 跨国网关', ru: 'eCardo' })}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand/10 text-brand-dark font-bold">USD/USDT/CNY</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setDepositGateway('shetab'); setDepositCurrency('IRR'); }}
+                      className={`p-2.5 rounded-xl border text-xs font-black transition text-start flex items-center justify-between ${
+                        depositGateway === 'shetab'
+                          ? 'bg-mint/40 border-brand text-brand-dark shadow-xs'
+                          : 'bg-soft border-line text-sub hover:border-brand/40'
+                      }`}
+                    >
+                      <span>{lt(locale, { fa: 'شاپرک (شتاب ریالی)', en: 'Shetab Shaparak', ar: 'شتاب شاابراك', zh: 'Shetab 银行卡', ru: 'Shetab' })}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-bold">IRR</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Currency Picker (if eCardo) */}
+                {depositGateway === 'ecardo' && (
+                  <div>
+                    <label className="block text-xs font-bold text-sub mb-1.5">
+                      {lt(locale, { fa: 'ارز واریزی:', en: 'Deposit Currency:', ar: 'عملة الإيداع:', zh: '充值币种：', ru: 'Валюта:' })}
+                    </label>
+                    <div className="grid grid-cols-4 gap-2">
+                      {(['IRR', 'USDT', 'USD', 'CNY'] as const).map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => setDepositCurrency(c)}
+                          className={`py-2 px-1 rounded-xl border text-xs font-black transition text-center ${
+                            depositCurrency === c
+                              ? 'bg-brand text-surface border-brand shadow-xs'
+                              : 'bg-soft border-line text-sub hover:border-brand/40'
+                          }`}
+                        >
+                          {c === 'IRR' ? 'تومان (IRR)' : c}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-xs font-bold text-sub mb-1">
                     {lt(locale, {
-                      fa: 'مبلغ شارژ (تومان)',
-                      en: 'Amount (Toman)',
-                      ar: 'مبلغ الشحن (تومان)',
-                      zh: '充值金额（图曼）',
-                      ru: 'Сумма пополнения (томанов)',
+                      fa: `مبلغ شارژ (${depositCurrency === 'IRR' ? 'تومان' : depositCurrency})`,
+                      en: `Amount (${depositCurrency})`,
+                      ar: `المبلغ (${depositCurrency})`,
+                      zh: `充值金额（${depositCurrency}）`,
+                      ru: `Сумма (${depositCurrency})`,
                     })}
                   </label>
                   <Input

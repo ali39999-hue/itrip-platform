@@ -40,6 +40,8 @@ function assertSafeSmsUrl(urlStr: string): URL {
     'smswbs.ir',
     'www.smswbs.ir',
     'smshooshmand.com',
+    'sms.hupa.ir',
+    'www.sms.hupa.ir',
     'api.kavenegar.com',
     'api2.ippanel.com',
   ]);
@@ -100,7 +102,7 @@ export class ProductionSmsProvider {
     this.defaultSender =
       options?.defaultSender ||
       process.env.SMS_SENDER_LINE ||
-      '10008800';
+      '50004001764868';
   }
 
   private static isProduction(): boolean {
@@ -323,6 +325,8 @@ export class ProductionSmsProvider {
     const otpBody = {
       username,
       api_password: password,
+      user: username,
+      pass: password,
       mobile: localMobile,
       footer: 'سامانه فیروزو',
     };
@@ -336,10 +340,10 @@ export class ProductionSmsProvider {
         signal: AbortSignal.timeout(5000),
       });
     } catch (netErr) {
-      throw new Error(`SMSWBS transport error: ${netErr instanceof Error ? netErr.message : String(netErr)}`);
+      console.warn(`[SMSWBS:OTP] send_OTP transport error: ${netErr instanceof Error ? netErr.message : String(netErr)}`);
     }
 
-    if (otpRes.ok) {
+    if (otpRes && otpRes.ok) {
       const data = (await otpRes.json()) as { errCode?: number; result?: string | number };
       if (data.errCode === 0 || (data.errCode !== undefined && data.errCode >= 0)) {
         return {
@@ -361,9 +365,14 @@ export class ProductionSmsProvider {
     const sendBody = {
       username,
       api_password: password,
+      user: username,
+      pass: password,
       from: options?.sender || this.defaultSender,
+      fromNum: options?.sender || this.defaultSender,
       to: [localMobile],
+      toNum: [localMobile],
       text: message,
+      messageContent: message,
     };
 
     const sendRes = await fetch(safeSendUrl, {

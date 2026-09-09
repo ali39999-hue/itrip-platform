@@ -56,7 +56,7 @@ export interface ConfirmPaymentCommand {
   actorId: string;
   bookingId: string;
   idempotencyKey: string;
-  paymentMethod: 'wallet_irr' | 'gateway_shetab' | 'wallet_usdt';
+  paymentMethod: 'wallet_irr' | 'gateway_shetab' | 'wallet_usdt' | 'gateway_ecardo';
   holdToken?: string;
 }
 
