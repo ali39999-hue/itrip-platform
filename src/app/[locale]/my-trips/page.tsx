@@ -180,7 +180,9 @@ export default function MyTripsPage() {
           const d = JSON.parse(firstItem.details);
           const tName = (d.itemTitle || d.title || '').toLowerCase();
           detailsMatch = tName.includes(q);
-        } catch {}
+        } catch {
+          // Ignore invalid details JSON during title search
+        }
       }
       return refMatch || detailsMatch;
     });
@@ -382,7 +384,9 @@ export default function MyTripsPage() {
                 if (firstItem?.details) {
                   try {
                     detailsObj = JSON.parse(firstItem.details);
-                  } catch {}
+                  } catch {
+                    detailsObj = {};
+                  }
                 }
 
                 const title = (detailsObj.itemTitle as string) || (detailsObj.title as string) || `${bType} Booking`;

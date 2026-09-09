@@ -53,7 +53,7 @@ export default function CheckoutPage() {
   const [referralDiscountAmount, setReferralDiscountAmount] = useState(0);
   const [draftBookingId, setDraftBookingId] = useState<string | null>(null);
   const [serverWallet, setServerWallet] = useState<number | null>(null);
-  const [method, setMethod] = useState<PaymentMethodType>('gateway_ecardo');
+  const [method, setMethod] = useState<PaymentMethodType>('wallet_irr');
   const [scanning, setScanning] = useState(false);
   const [passportScanned, setPassportScanned] = useState(false);
   const [error, setError] = useState('');

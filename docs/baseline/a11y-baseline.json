@@ -1,19 +1,11 @@
 {
-  "generatedAt": "2026-09-08T09:31:29.567Z",
+  "generatedAt": "2026-09-09T12:09:05.213Z",
   "baseUrl": "http://localhost:3000",
   "pages": {
     "home": {
       "url": "http://localhost:3000/fa",
-      "violationCount": 1,
-      "byRule": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "help": "Elements must meet minimum color contrast ratio thresholds",
-          "nodes": 1,
-          "sampleTarget": ".bg-rose-500\\/10 > span"
-        }
-      ],
+      "violationCount": 0,
+      "byRule": [],
       "passes": 29
     },
     "flights-landing": {
