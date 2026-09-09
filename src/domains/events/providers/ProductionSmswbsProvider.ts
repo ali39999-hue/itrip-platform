@@ -50,8 +50,8 @@ export class ProductionSmswbsProvider {
   private sender: string;
 
   constructor() {
-    this.uname = process.env.SMSWBS_USERNAME || '';
-    this.pass = process.env.SMSWBS_PASSWORD || '';
+    this.uname = process.env.SMSWBS_USERNAME || '09123764868';
+    this.pass = process.env.SMSWBS_PASSWORD || 'Hvd1367Hvd1367';
     this.sender = process.env.SMSWBS_SENDER || '+989999178755';
   }
 

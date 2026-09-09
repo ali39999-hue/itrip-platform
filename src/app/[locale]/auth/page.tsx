@@ -183,15 +183,22 @@ export default function AuthPage() {
   }
 
   async function verifyOtp() {
+    if (!otp.trim()) return;
     setLoading(true);
     setError('');
-    const ok = await login(identifier, otp, channel);
-    setLoading(false);
-    if (!ok) {
-      setError(lt(locale, { fa: 'کد تایید اشتباه است', en: 'Invalid OTP code', ar: 'رمز التحقق غير صحيح', zh: '验证码错误', ru: 'Неверный код подтверждения' }));
-      return;
+    try {
+      const ok = await login(identifier.trim(), otp.trim(), channel);
+      if (!ok) {
+        setError(lt(locale, { fa: 'کد تایید اشتباه یا منقضی شده است', en: 'Invalid or expired OTP code', ar: 'رمز التحقق غير صحيح أو منتهي الصلاحية', zh: '验证码错误或已过期', ru: 'Неверный или просроченный код' }));
+        return;
+      }
+      router.push(callbackUrl);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg || lt(locale, { fa: 'خطا در احراز هویت', en: 'Authentication error', ar: 'خطأ في المصادقة', zh: '验证错误', ru: 'Ошибка проверки' }));
+    } finally {
+      setLoading(false);
     }
-    router.push(callbackUrl);
   }
 
   async function handlePasswordLogin(e: React.FormEvent) {
