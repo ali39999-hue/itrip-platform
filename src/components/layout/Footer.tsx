@@ -61,7 +61,9 @@ export function Footer() {
     if (locale === 'fa') {
       currentDisplayYear = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { year: 'numeric' }).format(new Date());
     }
-  } catch {}
+  } catch {
+    currentDisplayYear = String(currentGregorianYear);
+  }
 
   return (
     <footer className="mt-20">

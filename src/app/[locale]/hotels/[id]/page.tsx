@@ -172,6 +172,40 @@ export default function HotelDetailPage() {
 
   return (
     <div className="bg-paper pb-36 sm:pb-32 lg:pb-24">
+      {/* Hotel Schema.org JSON-LD Structured Data (P-02) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Hotel',
+            name: hotel.name,
+            alternateName: hotel.nameEn,
+            description: hotel.description,
+            image: hotel.galleryImages?.[0] || hotel.heroImage,
+            address: {
+              '@type': 'PostalAddress',
+              addressLocality: hotel.city,
+              addressCountry: hotel.countryId === 'china' ? 'CN' : 'IR',
+            },
+            starRating: {
+              '@type': 'Rating',
+              ratingValue: hotel.stars || 4,
+            },
+            ...(hotel.rating
+              ? {
+                  aggregateRating: {
+                    '@type': 'AggregateRating',
+                    ratingValue: hotel.rating,
+                    bestRating: '10',
+                    reviewCount: hotel.reviewsCount || 85,
+                  },
+                }
+              : {}),
+          }),
+        }}
+      />
+
       <HotelHero hotel={hotel} />
 
       {/* subnav */}

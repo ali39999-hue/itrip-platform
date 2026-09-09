@@ -145,7 +145,9 @@ export default function MyTripsPage() {
     try {
       const d = b.items?.[0]?.details ? JSON.parse(b.items[0].details) : null;
       if (d?.travelDate) return new Date(d.travelDate);
-    } catch {}
+    } catch {
+      // Unparseable legacy item details fallback to createdAt
+    }
     return new Date(b.createdAt);
   };
 

@@ -234,6 +234,27 @@ export default async function RootLayout({
         } as React.CSSProperties
       }
     >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'TravelAgency',
+              name: 'Firuzo',
+              alternateName: 'فیروزو',
+              url: 'https://firuzo.com',
+              logo: 'https://firuzo.com/logo.png',
+              description: 'پلتفرم جامع رزرواسیون آنلاین پرواز، هتل و خدمات سفر',
+              priceRange: '$$',
+              address: {
+                '@type': 'PostalAddress',
+                addressCountry: 'IR',
+              },
+            }),
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-paper text-ink pb-[calc(68px+env(safe-area-inset-bottom,0px))] lg:pb-0 overflow-x-clip">
         <a
           href="#main-content"

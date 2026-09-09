@@ -17,8 +17,8 @@ export async function POST(req: NextRequest) {
 async function handleCallback(req: NextRequest) {
   const url = new URL(req.url);
   let txId = url.searchParams.get('transaction_id') || url.searchParams.get('txId') || url.searchParams.get('ref') || '';
-  let status = url.searchParams.get('status') || '';
-  let bookingId = url.searchParams.get('bookingId') || '';
+  let status = (url.searchParams.get('status') || '').toLowerCase();
+  let bookingId = url.searchParams.get('bookingId') || url.searchParams.get('order_id') || '';
 
   // Also parse form data or json if POST
   if (req.method === 'POST') {
@@ -26,14 +26,14 @@ async function handleCallback(req: NextRequest) {
     if (contentType.includes('application/json')) {
       const json = await req.json().catch(() => ({}));
       txId = txId || json.transaction_id || json.txId || json.ref || '';
-      status = status || json.status || '';
-      bookingId = bookingId || json.bookingId || '';
+      status = (status || json.status || '').toLowerCase();
+      bookingId = bookingId || json.bookingId || json.order_id || '';
     } else if (contentType.includes('application/x-www-form-urlencoded') || contentType.includes('multipart/form-data')) {
       const formData = await req.formData().catch(() => null);
       if (formData) {
         txId = txId || (formData.get('transaction_id') as string) || (formData.get('ref') as string) || '';
-        status = status || (formData.get('status') as string) || '';
-        bookingId = bookingId || (formData.get('bookingId') as string) || '';
+        status = (status || (formData.get('status') as string) || '').toLowerCase();
+        bookingId = bookingId || (formData.get('bookingId') as string) || (formData.get('order_id') as string) || '';
       }
     }
   }
@@ -54,7 +54,7 @@ async function handleCallback(req: NextRequest) {
     });
   }
 
-  const isSuccessful = status === 'success' || status === '1' || status === 'OK' || status === 'paid';
+  const isSuccessful = status === 'success' || status === 'completed' || status === '1' || status === 'ok' || status === 'paid';
 
   if (payment) {
     const resolvedBookingId = payment.bookingId || bookingId;

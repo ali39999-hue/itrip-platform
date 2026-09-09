@@ -144,7 +144,9 @@ export default function TripDetailsPage({
   if (firstItem?.details) {
     try {
       detailsObj = JSON.parse(firstItem.details);
-    } catch {}
+    } catch {
+      detailsObj = {};
+    }
   }
 
   const title =

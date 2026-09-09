@@ -27,8 +27,8 @@ export class EcardoGatewayAdapter implements PaymentGatewayPort {
 
   constructor(config?: EcardoGatewayConfig) {
     this.baseUrl = (config?.baseUrl || process.env.ECARDO_BASE_URL || 'https://ecardo.ir').replace(/\/+$/, '');
-    this.publicKey = config?.publicKey || process.env.ECARDO_PUBLIC_KEY || '';
-    this.secretKey = config?.secretKey || process.env.ECARDO_SECRET_KEY || '';
+    this.publicKey = config?.publicKey !== undefined ? config.publicKey : (process.env.ECARDO_PUBLIC_KEY || '');
+    this.secretKey = config?.secretKey !== undefined ? config.secretKey : (process.env.ECARDO_SECRET_KEY || '');
     this.timeoutMs = config?.timeoutMs || 15000;
   }
 

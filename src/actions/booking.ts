@@ -149,7 +149,7 @@ export async function initiateEcardoPayment(bookingId: string, currency?: string
       intentId: `intent_ecardo_${booking.id}`,
       bookingId: booking.id,
       amount: new Money(booking.totalAmount, targetCurrency),
-      callbackUrl: `${getAppBaseUrl()}/api/payments/ecardo/callback?bookingId=${booking.id}`,
+      callbackUrl: `${getAppBaseUrl()}/api/payments/ecardo/callback?bookingId=${booking.id}&order_id=${booking.id}`,
       customerInfo: {
         email: session.user.email || undefined,
       },
