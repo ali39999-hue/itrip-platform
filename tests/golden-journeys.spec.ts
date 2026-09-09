@@ -40,7 +40,7 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
 
     // 4. Pay through the customer wallet (instant internal settlement) and
     // ride out the issuing animation to the final voucher.
-    const walletRadio = page.locator('input[name="paymentMethod"]').first();
+    const walletRadio = page.locator('input[name="paymentMethod"][value="wallet_irr"], input[name="paymentMethod"]').first();
     await walletRadio.check();
     const payBtn = page.locator('button:has-text("پرداخت نهایی و صدور آنی واچر")').first();
     await expect(payBtn).toBeVisible();

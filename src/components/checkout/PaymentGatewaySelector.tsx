@@ -58,7 +58,77 @@ export function PaymentGatewaySelector({
 
       <div className="grid grid-cols-1 gap-3">
         {/* ========================================================================= */}
-        {/* 1. ECARDO MULTI-CURRENCY GATEWAY (FEATURED / ICONIC)                       */}
+        {/* 1. LOCALE-ADAPTED WALLET (FIROUZO & ECARDO WALLET)                         */}
+        {/* ========================================================================= */}
+        <label
+          className={`flex items-start gap-3.5 p-4 rounded-xl border transition cursor-pointer ${
+            method === 'wallet_irr'
+              ? 'border-brand bg-mint/30 shadow-elev-1'
+              : 'border-line/80 bg-surface hover:border-brand/40'
+          }`}
+        >
+          <input
+            type="radio"
+            name="paymentMethod"
+            value="wallet_irr"
+            checked={method === 'wallet_irr'}
+            onChange={() => setMethod('wallet_irr')}
+            className="mt-1 w-4 h-4 text-brand focus:ring-brand accent-brand cursor-pointer"
+          />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <Wallet size={17} className="text-brand-dark shrink-0" aria-hidden="true" />
+                <strong className="text-[14px] font-bold text-ink">
+                  {locale === 'zh'
+                    ? 'Firuzo 账户钱包 (CNY / USDT)'
+                    : locale === 'en' || locale === 'ru'
+                    ? 'Firuzo Multi-Currency Wallet (USD / USDT)'
+                    : 'کیف پول کاربر (فیروزو / ای‌کاردو)'}
+                </strong>
+              </div>
+              <span className="text-[12px] font-bold font-mono text-sub">
+                {lt(locale, { fa: 'موجودی:', en: 'Balance:', ar: 'الرصيد:', zh: '余额：', ru: 'Баланс:' })}{' '}
+                {formatMoney(walletBalance, localizedCurrency, locale)}
+              </span>
+            </div>
+            <p className="text-[12px] text-sub">
+              {hasEnoughWallet
+                ? lt(locale, {
+                    fa: 'پرداخت آنی و کسر مستقیم از اعتبار کیف‌پول بدون هدایت به درگاه',
+                    en: 'Instant checkout with direct deduction from your wallet balance',
+                    ar: 'دفع فوري وخصم مباشر من رصيد المحفظة',
+                    zh: '即时支付，直接从钱包余额扣除',
+                    ru: 'Мгновенная оплата и прямое списание с баланса'
+                  })
+                : lt(locale, {
+                    fa: 'موجودی کیف‌پول کافی نیست. درگاه ای‌کاردو یا شاپرک را انتخاب کنید.',
+                    en: 'Insufficient wallet balance. Please choose eCardo or Shetab gateway below.',
+                    ar: 'رصيد المحفظة غير كافٍ. يرجى اختيار بوابة إيكاردو أو شتاب أدناه.',
+                    zh: '钱包余额不足，请选择 eCardo 易卡通或银行网关支付。',
+                    ru: 'Недостаточно средств на кошельке. Выберите шлюز eCardo یا Shetab.'
+                  })}
+            </p>
+            {!hasEnoughWallet && (
+              <button
+                type="button"
+                onClick={() => setMethod('gateway_ecardo')}
+                className="mt-1.5 text-[12px] font-black text-brand-dark underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded"
+              >
+                {lt(locale, {
+                  fa: 'انتخاب درگاه پرداخت آنلاین ↗',
+                  en: 'Switch to Online Gateway ↗',
+                  ar: 'الانتقال إلى بوابة الدفع الإلكتروني ↗',
+                  zh: '选择线上支付网关 ↗',
+                  ru: 'Перейти к онлайн-оплате ↗'
+                })}
+              </button>
+            )}
+          </div>
+        </label>
+
+        {/* ========================================================================= */}
+        {/* 2. ECARDO MULTI-CURRENCY GATEWAY (FEATURED / ICONIC)                       */}
         {/* ========================================================================= */}
         <label
           className={`relative flex items-start gap-3.5 p-4 rounded-xl border-2 transition-all cursor-pointer ${
@@ -70,6 +140,7 @@ export function PaymentGatewaySelector({
           <input
             type="radio"
             name="paymentMethod"
+            value="gateway_ecardo"
             checked={method === 'gateway_ecardo'}
             onChange={() => setMethod('gateway_ecardo')}
             className="mt-1 w-4 h-4 text-brand focus:ring-brand accent-brand cursor-pointer"
@@ -87,7 +158,7 @@ export function PaymentGatewaySelector({
                       en: 'eCardo Multi-Currency Gateway',
                       ar: 'بوابة إيكاردو متعددة العملات الدولية',
                       zh: 'eCardo 易卡通跨国多币种网关',
-                      ru: 'Мультивалютный международный шлюз eCardo'
+                      ru: 'Мультивалютный международный шлюز eCardo'
                     })}
                   </strong>
                 </div>
@@ -146,75 +217,6 @@ export function PaymentGatewaySelector({
                 USDT
               </span>
             </div>
-          </div>
-        </label>
-
-        {/* ========================================================================= */}
-        {/* 2. LOCALE-ADAPTED WALLET (FIROUZO & ECARDO WALLET)                         */}
-        {/* ========================================================================= */}
-        <label
-          className={`flex items-start gap-3.5 p-4 rounded-xl border transition cursor-pointer ${
-            method === 'wallet_irr'
-              ? 'border-brand bg-mint/30 shadow-elev-1'
-              : 'border-line/80 bg-surface hover:border-brand/40'
-          }`}
-        >
-          <input
-            type="radio"
-            name="paymentMethod"
-            checked={method === 'wallet_irr'}
-            onChange={() => setMethod('wallet_irr')}
-            className="mt-1 w-4 h-4 text-brand focus:ring-brand accent-brand cursor-pointer"
-          />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-2">
-                <Wallet size={17} className="text-brand-dark shrink-0" aria-hidden="true" />
-                <strong className="text-[14px] font-bold text-ink">
-                  {locale === 'zh'
-                    ? 'Firuzo 账户钱包 (CNY / USDT)'
-                    : locale === 'en' || locale === 'ru'
-                    ? 'Firuzo Multi-Currency Wallet (USD / USDT)'
-                    : 'کیف پول کاربر (فیروزو / ای‌کاردو)'}
-                </strong>
-              </div>
-              <span className="text-[12px] font-bold font-mono text-sub">
-                {lt(locale, { fa: 'موجودی:', en: 'Balance:', ar: 'الرصيد:', zh: '余额：', ru: 'Баланс:' })}{' '}
-                {formatMoney(walletBalance, localizedCurrency, locale)}
-              </span>
-            </div>
-            <p className="text-[12px] text-sub">
-              {hasEnoughWallet
-                ? lt(locale, {
-                    fa: 'پرداخت آنی و کسر مستقیم از اعتبار کیف‌پول بدون هدایت به درگاه',
-                    en: 'Instant checkout with direct deduction from your wallet balance',
-                    ar: 'دفع فوري وخصم مباشر من رصيد المحفظة',
-                    zh: '即时支付，直接从钱包余额扣除',
-                    ru: 'Мгновенная оплата и прямое списание с баланса'
-                  })
-                : lt(locale, {
-                    fa: 'موجودی کیف‌پول کافی نیست. درگاه ای‌کاردو یا شاپرک را انتخاب کنید.',
-                    en: 'Insufficient wallet balance. Please choose eCardo or Shetab gateway below.',
-                    ar: 'رصيد المحفظة غير كافٍ. يرجى اختيار بوابة إيكاردو أو شتاب أدناه.',
-                    zh: '钱包余额不足，请选择 eCardo 易卡通或银行网关支付。',
-                    ru: 'Недостаточно средств на кошельке. Выберите шлюз eCardo или Shetab.'
-                  })}
-            </p>
-            {!hasEnoughWallet && (
-              <button
-                type="button"
-                onClick={() => setMethod('gateway_ecardo')}
-                className="mt-1.5 text-[12px] font-black text-brand-dark underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded"
-              >
-                {lt(locale, {
-                  fa: 'پرداخت مستقیم با درگاه ای‌کاردو',
-                  en: 'Pay directly via eCardo Gateway',
-                  ar: 'الدفع عبر بوابة إيكاردو',
-                  zh: '使用 eCardo 网关直接支付',
-                  ru: 'Оплатить через eCardo'
-                })}
-              </button>
-            )}
           </div>
         </label>
 
