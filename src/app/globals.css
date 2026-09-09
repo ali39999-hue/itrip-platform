@@ -480,6 +480,15 @@
 }
 .shine-card:hover::before { transform: translateX(120%); }
 
+/* ---- Call-center widget (call.firuzo.online) integration ---- */
+/* The widget's own FAB is hidden everywhere: ContactDock is the single call
+   entry point now and opens the widget panel programmatically (the opened
+   .fzw2-ovl/.fzw2-panel siblings are unaffected by this rule). */
+.fzw2-fabwrap { display: none !important; }
+/* The widget's toast ships with z-index: 2147483001, which would float above
+   every app modal — cap it below them. */
+.fzw2-toast { z-index: 95 !important; }
+
 /* ---- Global polish ---- */
 * { -webkit-tap-highlight-color: transparent; }
 html { scroll-behavior: smooth; }
@@ -493,5 +502,5 @@ button, a, input, select, [role="button"] { transition: color .18s ease, backgro
 input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .55; }
 input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }

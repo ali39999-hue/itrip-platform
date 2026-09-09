@@ -66,7 +66,7 @@ export function PopularFlightsSection() {
       duration: '۱.۳ ساعت',
       durationEn: '1h 20m',
       price: 26000000,
-      img: 'https://images.unsplash.com/photo-1579762715118-a6f1d4b934f1?auto=format&fit=crop&q=75&w=600',
+      img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Nasir-al_molk_-1.jpg/960px-Nasir-al_molk_-1.jpg',
     },
     {
       fromFa: 'تهران',

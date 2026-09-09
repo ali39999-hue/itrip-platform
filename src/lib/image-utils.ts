@@ -213,16 +213,16 @@ export function getHotelGallery(hotel: { id?: string; galleryImages?: string[]; 
 }
 
 export const DESTINATION_IMAGE_MAP: Record<string, string> = {
-  // Iran
-  Tehran: 'https://images.unsplash.com/photo-1579762715118-a6f1d4b934f1?auto=format&fit=crop&w=800&q=80', // برج میلاد و رشته‌کوه البرز تهران
-  Mashhad: 'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=800&q=80', // معماری و گنبد مطهر مشهد
-  Isfahan: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80', // میدان نقش جهان و مسجد شیخ لطف‌الله اصفهان
-  Shiraz: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80', // باغ ارم و مسجد نصیرالملک شیراز
+  // Iran — authentic Wikimedia Commons photos (each URL visually verified against its city)
+  Tehran: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Azadi_Tower_at_night_III.jpg/960px-Azadi_Tower_at_night_III.jpg', // برج آزادی تهران
+  Mashhad: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Imam_Reza_shrine.jpg/960px-Imam_Reza_shrine.jpg', // حرم مطهر رضوی در شب
+  Isfahan: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Naghshe_Jahan_Square_Isfahan_modified.jpg/960px-Naghshe_Jahan_Square_Isfahan_modified.jpg', // میدان نقش جهان و مسجد شیخ لطف‌الله
+  Shiraz: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Nasir-al_molk_-1.jpg/960px-Nasir-al_molk_-1.jpg', // مسجد نصیرالملک شیراز
   Kish: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80', // ساحل مرجانی و آب‌های زلال کیش
-  Tabriz: 'https://images.unsplash.com/photo-1580828343064-fde4fc206bc6?auto=format&fit=crop&w=800&q=80', // بازار تاریخی و استخر شاه‌گلی تبریز
-  Yazd: 'https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?auto=format&fit=crop&w=800&q=80', // بافت خشتی و بادگیرهای تاریخی یزد
-  Kashan: 'https://images.unsplash.com/photo-1584646098378-0874589d76b1?auto=format&fit=crop&w=800&q=80', // خانه تاریخی طباطبایی‌ها و باغ فین کاشان
-  Qeshm: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=800&q=80', // دره چاهکوه و شگفتی‌های زمین‌شناسی قشم
+  Tabriz: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Tabriz_Shahgoli_Park_-_panoramio.jpg/960px-Tabriz_Shahgoli_Park_-_panoramio.jpg', // پارک شاه‌گلی (ائل‌گلی) تبریز
+  Yazd: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Complejo_Amir_Chakmaq%2C_Yazd%2C_Ir%C3%A1n%2C_2016-09-21%2C_DD_46.jpg/960px-Complejo_Amir_Chakmaq%2C_Yazd%2C_Ir%C3%A1n%2C_2016-09-21%2C_DD_46.jpg', // میدان امیرچخماق یزد
+  Kashan: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Casa_hist%C3%B3rica_de_Tabatabaeis%2C_Kashan%2C_Ir%C3%A1n%2C_2016-09-19%2C_DD_65.jpg/960px-Casa_hist%C3%B3rica_de_Tabatabaeis%2C_Kashan%2C_Ir%C3%A1n%2C_2016-09-19%2C_DD_65.jpg', // خانه تاریخی طباطبایی‌ها کاشان
+  Qeshm: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Chahkooh_canyon_on_Queshm_island_in_Iran.jpg/960px-Chahkooh_canyon_on_Queshm_island_in_Iran.jpg', // دره چاهکوه قشم
   // Turkey
   Istanbul: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=800&q=80', // تنگه بسفر و ایاصوفیه استانبول
   Antalya: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=800&q=80', // بندرگاه تاریخی کالیچی و صخره‌های ساحلی آنتالیا

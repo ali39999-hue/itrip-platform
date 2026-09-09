@@ -189,13 +189,10 @@ async function ensureUserRole(userId: string, roleName: string): Promise<void> {
   const role = await prisma.role.upsert({
     where: { name: roleName },
     update: {},
-    create: {
-      name: roleName,
-      // IAM-003: the legacy JSON column is never read at runtime — persist an
-      // empty compat shell. Permission authority lives in RolePermission rows.
-      permissions: '[]',
-      description: `${roleName} Role`,
-    },
+      create: {
+        name: roleName,
+        description: `${roleName} Role`,
+      },
   });
   await prisma.userRole.upsert({
     where: { userId_roleId: { userId, roleId: role.id } },

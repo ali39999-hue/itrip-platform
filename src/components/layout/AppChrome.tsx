@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { BottomNav } from '@/components/layout/BottomNav';
-import { SosInterpreter } from '@/components/shared/SosInterpreter';
+import { ContactDock } from '@/components/shared/ContactDock';
 import { ToursPromoModal } from '@/components/tours/ToursPromoModal';
 import { Toaster } from 'sonner';
 
@@ -29,7 +29,7 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
       </main>
       <Footer />
       <BottomNav />
-      <SosInterpreter />
+      <ContactDock />
       <ToursPromoModal />
       <Toaster position="top-center" richColors closeButton />
     </>

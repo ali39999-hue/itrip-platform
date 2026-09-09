@@ -129,12 +129,13 @@ export function ToursPromoModal() {
           <button
             type="button"
             onClick={() => setIsOpen(true)}
-            className="bg-gradient-to-r from-brand to-brand-dark hover:from-brand-dark hover:to-brand text-surface text-xs font-black px-3.5 py-2 rounded-2xl shadow-elev-3 flex items-center gap-2 border border-surface/20 transition-all hover:scale-105 active:scale-95 animate-in fade-in slide-in-from-bottom-3 cursor-pointer"
+            aria-label={lt(locale, { fa: 'مشاهده تورهای منتخب فیروزو', en: 'Explore Curated Tours', ar: 'استكشف الجولات المختارة', zh: '精选旅游特惠', ru: 'Особые туры Firuzo' })}
+            className="bg-gradient-to-r from-brand to-brand-dark hover:from-brand-dark hover:to-brand text-surface text-xs font-black px-3.5 py-2 max-lg:px-0 max-lg:size-11 max-lg:justify-center rounded-2xl shadow-elev-3 flex items-center gap-2 border border-surface/20 transition-all hover:scale-105 active:scale-95 animate-in fade-in slide-in-from-bottom-3 cursor-pointer"
             title={lt(locale, { fa: 'مشاهده تورهای منتخب فیروزو', en: 'Explore Curated Tours', ar: 'استكشف الجولات المختارة', zh: '精选旅游特惠', ru: 'Особые туры Firuzo' })}
           >
             <span className="w-2 h-2 rounded-full bg-mint-bright animate-ping" />
             <Compass size={16} className="text-mint-bright" />
-            <span>{lt(locale, { fa: 'تورهای دست‌چین فیروزو', en: 'Curated Tours', ar: 'جولات فيروزو', zh: '精选旅游', ru: 'Особые туры' })}</span>
+            <span className="max-lg:hidden">{lt(locale, { fa: 'تورهای دست‌چین فیروزو', en: 'Curated Tours', ar: 'جولات فيروزو', zh: '精选旅游', ru: 'Особые туры' })}</span>
           </button>
           <button
             type="button"

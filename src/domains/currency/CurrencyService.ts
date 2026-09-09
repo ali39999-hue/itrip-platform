@@ -55,33 +55,72 @@ export interface FxRateRecord {
  */
 export class CentralBankRateProvider implements CurrencyRateProvider {
   private cache = new Map<string, FxRateRecord>();
-  private cacheTtlMs = 10 * 60 * 1000; // 10 minutes
+  private cacheTtlMs = 15 * 60 * 1000; // 15 minutes
 
   constructor(
     private fallbackRates: Record<string, string> = DEFAULT_EXCHANGE_RATES_DECIMAL,
-    private providerEndpoint: string = process.env.FX_RATE_API_URL || ''
-  ) {}
+    private providerEndpoint: string = process.env.FX_RATE_API_URL || 'https://api.exchangerate-api.com/v4/latest/'
+  ) {
+    this.prefetchRates().catch(() => {});
+  }
+
+  private async prefetchRates() {
+    try {
+      if (process.env.DEMO_MODE === 'true' && !process.env.FX_API_KEY) return;
+      const res = await fetch(`${this.providerEndpoint}USD`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const rates = data.rates;
+      if (rates && rates['IRR'] && rates['AED']) {
+        const usdToIrr = rates['IRR'];
+        const usdToAed = rates['AED'];
+        // Compute IRR <-> AED and AED <-> USDT
+        const irrToAed = (usdToAed / usdToIrr).toFixed(8);
+        const aedToIrr = (usdToIrr / usdToAed).toFixed(2);
+        
+        const now = new Date();
+        const expiresAt = new Date(Date.now() + this.cacheTtlMs);
+
+        this.cache.set('IRR_AED', { pair: 'IRR_AED', rate: new Prisma.Decimal(irrToAed), source: 'CENTRAL_BANK_LIVE', timestamp: now, expiresAt });
+        this.cache.set('AED_IRR', { pair: 'AED_IRR', rate: new Prisma.Decimal(aedToIrr), source: 'CENTRAL_BANK_LIVE', timestamp: now, expiresAt });
+        this.cache.set('USDT_AED', { pair: 'USDT_AED', rate: new Prisma.Decimal(usdToAed.toString()), source: 'CENTRAL_BANK_LIVE', timestamp: now, expiresAt });
+        this.cache.set('AED_USDT', { pair: 'AED_USDT', rate: new Prisma.Decimal((1/usdToAed).toFixed(4)), source: 'CENTRAL_BANK_LIVE', timestamp: now, expiresAt });
+        this.cache.set('USDT_IRR', { pair: 'USDT_IRR', rate: new Prisma.Decimal(usdToIrr.toString()), source: 'CENTRAL_BANK_LIVE', timestamp: now, expiresAt });
+        this.cache.set('IRR_USDT', { pair: 'IRR_USDT', rate: new Prisma.Decimal((1/usdToIrr).toFixed(8)), source: 'CENTRAL_BANK_LIVE', timestamp: now, expiresAt });
+      }
+    } catch (e) {
+      console.warn('[FX] Failed to prefetch live rates. Using defaults.', e);
+    }
+  }
 
   getRateDecimal(from: SupportedCurrency, to: SupportedCurrency): Prisma.Decimal {
     if (from === to) return new Prisma.Decimal('1.0');
     const pair = `${from}_${to}`;
     const cached = this.cache.get(pair);
+    
     if (cached && cached.expiresAt > new Date()) {
       return cached.rate;
     }
 
-    const rateStr = this.fallbackRates[pair];
+    if (!cached || cached.expiresAt <= new Date()) {
+      this.prefetchRates().catch(() => {});
+    }
+
+    const rateStr = cached?.rate.toString() || this.fallbackRates[pair];
     if (!rateStr) {
       throw new Error(`No exchange rate configured for ${from} -> ${to}`);
     }
     const decRate = new Prisma.Decimal(rateStr);
-    this.cache.set(pair, {
-      pair,
-      rate: decRate,
-      source: this.providerEndpoint ? 'CENTRAL_BANK_LIVE' : 'SANA_OFFICIAL',
-      timestamp: new Date(),
-      expiresAt: new Date(Date.now() + this.cacheTtlMs),
-    });
+    
+    if (!cached) {
+      this.cache.set(pair, {
+        pair,
+        rate: decRate,
+        source: 'SANA_OFFICIAL',
+        timestamp: new Date(),
+        expiresAt: new Date(Date.now() + this.cacheTtlMs),
+      });
+    }
     return decRate;
   }
 

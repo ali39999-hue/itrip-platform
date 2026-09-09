@@ -15,6 +15,8 @@ import {
   ListFilter,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLocale } from 'next-intl';
+import { lt } from '@/lib/lt';
 
 export interface ColumnDef<T> {
   key: string;
@@ -63,13 +65,32 @@ export function ERPDataGrid<T extends object>({
   onRowClick,
   title,
   description,
-  searchPlaceholder = 'Search records (Press "/" to focus)...',
+  searchPlaceholder,
   defaultPageSize = 10,
   pageSizeOptions = [10, 25, 50, 100],
-  emptyStateMessage = 'No records found matching criteria',
+  emptyStateMessage,
   savedViewStorageKey = 'erp_datagrid_views',
   actionsSlot,
 }: ERPDataGridProps<T>) {
+  const locale = useLocale();
+  const resolvedSearchPlaceholder =
+    searchPlaceholder ??
+    lt(locale, {
+      fa: 'جستجوی رکوردها (فوکوس با کلید "/")...',
+      en: 'Search records (Press "/" to focus)...',
+      ar: 'البحث في السجلات (اضغط "/" للتركيز)...',
+      zh: '搜索记录（按 "/" 聚焦）...',
+      ru: 'Поиск записей (нажмите "/" для фокуса)...',
+    });
+  const resolvedEmptyMessage =
+    emptyStateMessage ??
+    lt(locale, {
+      fa: 'رکوردی مطابق این فیلترها پیدا نشد',
+      en: 'No records found matching criteria',
+      ar: 'لا توجد سجلات مطابقة للمعايير',
+      zh: '未找到符合条件的记录',
+      ru: 'Записи по критериям не найдены',
+    });
   const [search, setSearch] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -327,7 +348,7 @@ export function ERPDataGrid<T extends object>({
                 className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-line px-3 py-2 text-xs font-black text-sub transition hover:border-brand/40 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
                 <Bookmark size={13} aria-hidden="true" />
-                <span>Save View</span>
+                <span>{lt(locale, { fa: 'ذخیره نما', en: 'Save View', ar: 'حفظ العرض', zh: '保存视图', ru: 'Сохранить вид' })}</span>
               </button>
               <button
                 type="button"
@@ -336,7 +357,7 @@ export function ERPDataGrid<T extends object>({
                 className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-deep px-3.5 py-2 text-xs font-black text-surface shadow-elev-1 transition hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50"
               >
                 <Download size={14} aria-hidden="true" />
-                <span>Export CSV</span>
+                <span>{lt(locale, { fa: 'خروجی CSV', en: 'Export CSV', ar: 'تصدير CSV', zh: '导出 CSV', ru: 'Экспорт CSV' })}</span>
                 <span className="num rounded-md bg-surface/20 px-1.5 py-0.5 text-[10px] tabular-nums">{sortedData.length}</span>
               </button>
               {actionsSlot}
@@ -384,13 +405,13 @@ export function ERPDataGrid<T extends object>({
               <input
                 ref={searchInputRef}
                 type="search"
-                aria-label={searchPlaceholder}
+                aria-label={resolvedSearchPlaceholder}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
                   setCurrentPage(1);
                 }}
-                placeholder={searchPlaceholder}
+                placeholder={resolvedSearchPlaceholder}
                 className="min-h-11 w-full rounded-xl border border-line bg-soft/50 py-2.5 pe-10 ps-10 text-[13px] font-medium text-ink transition placeholder:text-sub/60 focus:border-brand focus:bg-surface focus:outline-none focus:ring-2 focus:ring-brand/25"
               />
               <kbd aria-hidden="true" className="pointer-events-none absolute end-3 top-1/2 hidden -translate-y-1/2 rounded-md border border-line bg-surface px-1.5 py-0.5 font-mono text-[10px] font-black text-sub sm:block">/</kbd>
@@ -514,7 +535,7 @@ export function ERPDataGrid<T extends object>({
                       <span className="grid h-12 w-12 place-items-center rounded-2xl bg-soft text-sub/50">
                         <Inbox size={22} aria-hidden="true" />
                       </span>
-                      <p className="mt-3 text-[13px] font-black text-ink">{emptyStateMessage}</p>
+                      <p className="mt-3 text-[13px] font-black text-ink">{resolvedEmptyMessage}</p>
                       {hasActiveFilters ? (
                         <button type="button" onClick={resetToDefaultView} className="mt-3 min-h-10 rounded-xl border border-line px-4 py-2 text-xs font-black text-sub transition hover:border-brand/40 hover:text-ink">
                           Clear search & filters
@@ -559,11 +580,14 @@ export function ERPDataGrid<T extends object>({
         <div className="flex flex-col gap-3 border-t border-line/70 bg-soft/30 p-3.5 text-xs sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 font-medium text-sub">
             <span className="tabular-nums">
-              Showing <b className="font-black text-ink">{rangeStart}–{rangeEnd}</b> of <b className="font-black text-ink">{totalItems}</b>
+              {lt(locale, { fa: 'نمایش', en: 'Showing', ar: 'عرض', zh: '显示', ru: 'Показано' })}{' '}
+              <b className="font-black text-ink">{rangeStart}–{rangeEnd}</b>{' '}
+              {lt(locale, { fa: 'از', en: 'of', ar: 'من', zh: '共', ru: 'из' })}{' '}
+              <b className="font-black text-ink">{totalItems}</b>
             </span>
             <span aria-hidden="true" className="hidden h-4 w-px bg-line sm:block" />
             <label className="inline-flex items-center gap-1.5">
-              <span>Rows:</span>
+              <span>{lt(locale, { fa: 'ردیف:', en: 'Rows:', ar: 'صفوف:', zh: '行数：', ru: 'Строк:' })}</span>
               <select
                 value={pageSize}
                 onChange={(e) => {

@@ -59,7 +59,6 @@ export async function GET(req: NextRequest) {
       update: {},
       create: {
         name: 'CUSTOMER',
-        permissions: '[]',
         description: 'Customer Role',
       },
     });
@@ -122,7 +121,6 @@ export async function POST(req: NextRequest) {
         update: {},
         create: {
           name: 'CUSTOMER',
-          permissions: '[]',
           description: 'Customer Role',
         },
       });

@@ -21,16 +21,13 @@ import {
   Plane,
   Building,
   Briefcase,
-  Eye,
-  EyeOff,
-  AlertCircle,
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
 export default function AccountPage() {
   const locale = useLocale();
   const router = useRouter();
-  const { user, kyc, updateKyc } = useAuthStore();
+  const { user, updateKyc } = useAuthStore();
   const localizedUserName = useLocalizedUserName();
 
   const [wallet, setWallet] = useState<{ IRR: number; USDT: number; AED: number }>({
@@ -49,15 +46,6 @@ export default function AccountPage() {
   }>>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [maskDocuments, setMaskDocuments] = useState(true);
-  const [nowTimestamp] = useState(() => Date.now());
-
-  const maskStr = (str?: string) => {
-    if (!str) return '—';
-    if (!maskDocuments) return str;
-    if (str.length <= 4) return '••••';
-    return str.slice(0, 2) + '••••' + str.slice(-2);
-  };
 
   const [formState, setFormState] = useState({
     firstNameFa: user?.firstNameFa || '',
@@ -66,9 +54,6 @@ export default function AccountPage() {
     lastNameEn: user?.lastNameEn || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    nationalId: kyc?.nationalId || '',
-    passportNo: kyc?.passportNo || '',
-    passportExpiry: kyc?.passportExpiry || '',
   });
 
   useEffect(() => {
@@ -94,9 +79,6 @@ export default function AccountPage() {
             lastNameFa: prev.lastNameFa || kycRes.kyc!.lastNameFa,
             firstNameEn: prev.firstNameEn || kycRes.kyc!.firstNameEn,
             lastNameEn: prev.lastNameEn || kycRes.kyc!.lastNameEn,
-            nationalId: kycRes.kyc!.nationalId,
-            passportNo: kycRes.kyc!.passportNo,
-            passportExpiry: kycRes.kyc!.passportExpiry,
           }));
         }
       } catch (e) {
@@ -121,9 +103,6 @@ export default function AccountPage() {
         lastNameFa: formState.lastNameFa,
         firstNameEn: formState.firstNameEn,
         lastNameEn: formState.lastNameEn,
-        nationalId: formState.nationalId,
-        passportNo: formState.passportNo,
-        passportExpiry: formState.passportExpiry,
       });
       setIsEditing(false);
     } catch (e) {
@@ -171,7 +150,7 @@ export default function AccountPage() {
     );
   }
 
-  const kycDone = (kyc.step === 'approved' && user.kycApproved) || Boolean(kyc.nationalId || formState.nationalId);
+  const kycDone = user.kycApproved;
 
   return (
     <div className="flex flex-col md:flex-row w-full max-w-[1280px] mx-auto px-4 md:px-10 py-6 md:py-8 gap-6 md:gap-8">
@@ -324,22 +303,11 @@ export default function AccountPage() {
                 <UserRound size={20} />
               </div>
               <div>
-                <h2 className="text-lg font-black text-ink">{lt(locale, { fa: 'اطلاعات پروفایل و پاسپورت', en: 'Profile & Passport Info', ar: 'الملف الشخصي والجواز', zh: '个人资料与护照信息', ru: 'Профиль и паспорт' })}</h2>
+                <h2 className="text-lg font-black text-ink">{lt(locale, { fa: 'اطلاعات پروفایل', en: 'Profile Info', ar: 'الملف الشخصي والجواز', zh: '个人资料与护照信息', ru: 'Профиль и паспорт' })}</h2>
                 <p className="text-xs font-bold text-sub">{lt(locale, { fa: 'مورد استفاده در صدور پرواز، هتل و خدمات ویزا', en: 'Used for issuing flight tickets, hotel rooms & visas', ar: 'تُستخدم لإصدار تذاكر الطيران والفنادق والتأشيرة', zh: '用于预订机票、酒店及办理签证', ru: 'Используется для оформления билетов и виз' })}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {!isEditing && (
-                <button
-                  type="button"
-                  onClick={() => setMaskDocuments(!maskDocuments)}
-                  className="h-9 px-3 rounded-xl border border-line bg-soft text-sub hover:text-ink text-xs font-bold transition flex items-center gap-1.5"
-                  title="ماسک امنیتی اسناد"
-                >
-                  {maskDocuments ? <EyeOff size={14} /> : <Eye size={14} />}
-                  <span>{maskDocuments ? 'نمایش اسناد' : 'مخفی‌سازی'}</span>
-                </button>
-              )}
               {isEditing && (
                 <Button
                   variant="outline"
@@ -400,34 +368,6 @@ export default function AccountPage() {
 
               <div>
                 <span className="block text-xs font-bold text-sub mb-1">
-                  {lt(locale, { fa: 'کد ملی / شناسه اقامت', en: 'National ID', ar: 'الرقم الوطني', zh: '国民身份证号', ru: 'Национальный ID' })}
-                </span>
-                <span className="text-sm font-black text-ink font-mono">{maskStr(kyc.nationalId || formState.nationalId)}</span>
-              </div>
-
-              <div>
-                <span className="block text-xs font-bold text-sub mb-1">
-                  {lt(locale, { fa: 'شماره گذرنامه', en: 'Passport Number', ar: 'رقم جواز السفر', zh: '护照号码', ru: 'Номер паспорта' })}
-                </span>
-                <span className="text-sm font-black text-ink font-mono">{maskStr(kyc.passportNo || formState.passportNo)}</span>
-              </div>
-
-              <div>
-                <span className="block text-xs font-bold text-sub mb-1">
-                  {lt(locale, { fa: 'تاریخ انقضای گذرنامه', en: 'Passport Expiry', ar: 'تاريخ انتهاء الجواز', zh: '护照有效期', ru: 'Срок действия паспорта' })}
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-black text-ink font-mono">{kyc.passportExpiry || formState.passportExpiry || '—'}</span>
-                  {kyc.passportExpiry && new Date(kyc.passportExpiry).getTime() - nowTimestamp < 180 * 86400000 && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
-                      <AlertCircle size={10} /> اعتبار زیر ۶ ماه
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <span className="block text-xs font-bold text-sub mb-1">
                   {lt(locale, { fa: 'شناسه تلگرام / پیام‌رسان', en: 'Connected Messengers', ar: 'المراسلات المتصلة', zh: '已绑定的社交账号', ru: 'Подключенные мессенджеры' })}
                 </span>
                 <span className="text-sm font-black text-ink font-mono">
@@ -465,40 +405,6 @@ export default function AccountPage() {
                   value={formState.firstNameEn}
                   placeholder="ALI MOHAMMADI"
                   onChange={(e) => setFormState({ ...formState, firstNameEn: e.target.value.toUpperCase() })}
-                  className="w-full h-11 rounded-xl border border-line px-3 text-sm font-bold font-mono bg-surface"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'کد ملی', en: 'National ID', ar: 'الرقم الوطني', zh: '身份证号', ru: 'Национальный ID' })}</label>
-                <input
-                  type="text"
-                  dir="ltr"
-                  maxLength={10}
-                  value={formState.nationalId}
-                  onChange={(e) => setFormState({ ...formState, nationalId: e.target.value })}
-                  className="w-full h-11 rounded-xl border border-line px-3 text-sm font-bold font-mono bg-surface"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'شماره پاسپورت', en: 'Passport No', ar: 'رقم الجواز', zh: '护照号', ru: 'Номер паспорта' })}</label>
-                <input
-                  type="text"
-                  dir="ltr"
-                  value={formState.passportNo}
-                  onChange={(e) => setFormState({ ...formState, passportNo: e.target.value.toUpperCase() })}
-                  className="w-full h-11 rounded-xl border border-line px-3 text-sm font-bold font-mono bg-surface"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'تاریخ انقضای پاسپورت', en: 'Passport Expiry', ar: 'انتهاء الجواز', zh: '护照有效期', ru: 'Срок действия' })}</label>
-                <input
-                  type="date"
-                  dir="ltr"
-                  value={formState.passportExpiry}
-                  onChange={(e) => setFormState({ ...formState, passportExpiry: e.target.value })}
                   className="w-full h-11 rounded-xl border border-line px-3 text-sm font-bold font-mono bg-surface"
                 />
               </div>

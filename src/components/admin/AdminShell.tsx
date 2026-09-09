@@ -226,7 +226,13 @@ export function AdminShell({
   );
 
   return (
-    <div className="mesh-bg min-h-screen">
+    <div className="min-h-screen bg-soft/30 relative">
+      {/* Grid pattern lives on its own layer: the .bg-grid-fade mask must never
+          wrap content, or the radial mask fades real page content toward the
+          document bottom on long pages. */}
+      <div aria-hidden="true" className="bg-grid-fade pointer-events-none absolute inset-0" />
+      <div className="spotlight top-0 end-[20%]" />
+      <div className="spotlight top-[50%] start-[10%] animate-pulse" />
       <a
         href="#admin-main"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:start-2 focus:z-[300] focus:rounded-xl focus:bg-brand focus:px-4 focus:py-2 focus:text-xs focus:font-black focus:text-surface"

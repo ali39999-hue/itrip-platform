@@ -33,7 +33,7 @@ function formatTime(iso: string, locale: string): string {
 export function LiveActivityFeed({ events }: { events: LiveEventDTO[] }) {
   const locale = useLocale();
   return (
-    <section aria-label={lt(locale, { fa: 'رخدادهای زنده', en: 'Live feed', ar: 'البث المباشر', zh: '实时动态', ru: 'Живая лента' })} className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-elev-1">
+    <section aria-label={lt(locale, { fa: 'رخدادهای زنده', en: 'Live feed', ar: 'البث المباشر', zh: '实时动态', ru: 'Живая лента' })} className="flex h-full flex-col overflow-hidden rounded-2xl glass-card shine-card shadow-elev-1">
       <header className="flex items-center justify-between gap-3 border-b border-line/70 px-5 py-4">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-mint text-brand-dark">

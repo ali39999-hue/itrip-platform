@@ -2,6 +2,7 @@ import { requirePermission, getTenantAuthContext, assertTenantAccess } from '@/d
 import { TravelFileService } from '@/domains/erp/TravelFileService';
 import { getLocale } from 'next-intl/server';
 import { lt } from '@/lib/lt';
+import { toPlain } from '@/lib/serialize';
 import { notFound } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { ArrowRight, Briefcase } from 'lucide-react';
@@ -32,11 +33,15 @@ export default async function TravelFileDetailPage({
 
   let data;
   try {
-    data = await TravelFileService.getTravelFile(id, {
-      userId: user.id,
-      permissions: Array.from(tenantCtx.permissions),
-      isSuperAdmin: tenantCtx.isSuperAdmin,
-    });
+    // toPlain: Prisma Decimals (booking totals, item prices) cannot cross the
+    // Server → Client Component boundary as class instances.
+    data = toPlain(
+      await TravelFileService.getTravelFile(id, {
+        userId: user.id,
+        permissions: Array.from(tenantCtx.permissions),
+        isSuperAdmin: tenantCtx.isSuperAdmin,
+      })
+    );
   } catch {
     notFound();
   }

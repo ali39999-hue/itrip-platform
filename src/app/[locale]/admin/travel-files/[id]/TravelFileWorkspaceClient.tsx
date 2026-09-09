@@ -585,7 +585,7 @@ export function TravelFileWorkspaceClient({
                     <div className="flex items-center justify-between">
                       <span className="font-black text-ink">{inv.invoiceNumber}</span>
                       <span className="font-black text-brand-dark">
-                        {inv.totalAmount.toLocaleString()} {inv.currency}
+                        {Number(inv.totalAmount).toLocaleString()} {inv.currency}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sub text-[11px]">
@@ -691,7 +691,7 @@ export function TravelFileWorkspaceClient({
                 >
                   {data.bookings.map((b) => (
                     <option key={b.id} value={b.id}>
-                      {b.reference} ({b.totalAmount.toLocaleString()} {b.currency})
+                      {b.reference} ({Number(b.totalAmount).toLocaleString()} {b.currency})
                     </option>
                   ))}
                 </select>

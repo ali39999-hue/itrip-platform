@@ -103,8 +103,9 @@ export async function middleware(request: NextRequest) {
 
         if (matchingRoute) {
           const requiredPerms = ROUTE_REQUIRED_PERMISSIONS[matchingRoute];
-          // Canonical relational check: user must possess at least one of the route's required permissions
-          const hasAccess = requiredPerms.some((p) => userPerms.includes(p));
+          // Canonical relational check: user must possess at least one of the route's required
+          // permissions. `'*'` is only ever minted server-side for SUPER_ADMIN (src/auth.ts).
+          const hasAccess = userPerms.includes('*') || requiredPerms.some((p) => userPerms.includes(p));
           if (!hasAccess) {
             return withCorrelation(NextResponse.redirect(new URL('/' + locale + '/account', request.url)));
           }

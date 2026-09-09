@@ -6,7 +6,6 @@ import { signIn, signOut, safeAuth, issueOtp, normalizeIdentifier, getPhoneLooku
 import { prisma } from '@/lib/prisma';
 import { profileUpdateSchema, otpRequestSchema } from '@/lib/validations';
 import { RateLimiter } from '@/lib/security/rate-limiter';
-import { encryptSensitive, decryptSensitive } from '@/lib/security/crypto-vault';
 import { hasErpRole } from '@/domains/identity/permission-service';
 import { ProductionTelegramProvider, TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
 import { getAppBaseUrl } from '@/lib/runtime-url';
@@ -135,11 +134,9 @@ export async function verifyOtpAndLogin(identifier: string, otp: string, channel
       telegramId: true,
       whatsappPhone: true,
       wechatId: true,
-      baleId: true,
-      nationalId: true,
-      passportNo: true,
-    },
-  });
+        baleId: true,
+      },
+    });
 
   if (!user) {
     return { success: false, error: 'Account not found' };
@@ -156,7 +153,7 @@ export async function verifyOtpAndLogin(identifier: string, otp: string, channel
       email: user.email || (channel === 'email' ? identifier : undefined),
       firstNameFa: user.firstNameFa || user.name || 'کاربر',
       lastNameFa: user.lastNameFa || 'فیروزه',
-      kycApproved: Boolean(user.nationalId),
+      kycApproved: false,
       role,
       channel,
       telegramId: user.telegramId || (channel === 'telegram' ? identifier : undefined),
@@ -221,7 +218,6 @@ export async function loginWithTelegram(payload: TelegramAuthPayload) {
       update: {},
       create: {
         name: 'CUSTOMER',
-        permissions: '[]',
         description: 'Customer Role',
       },
     });
@@ -244,7 +240,7 @@ export async function loginWithTelegram(payload: TelegramAuthPayload) {
       email: user.email || undefined,
       firstNameFa: user.firstNameFa || user.name || fullName,
       lastNameFa: user.lastNameFa || '',
-      kycApproved: Boolean(user.nationalId),
+      kycApproved: false,
       role,
       channel: 'telegram' as const,
       telegramId: user.telegramId || telegramId,
@@ -314,7 +310,6 @@ export async function loginWithPassword(identifier: string, password: string) {
         name: true,
         firstNameFa: true,
         lastNameFa: true,
-        nationalId: true,
       },
     });
   } catch (dbErr) {
@@ -335,7 +330,6 @@ export async function loginWithPassword(identifier: string, password: string) {
       name: 'Firuzo Admin',
       firstNameFa: 'مدیر',
       lastNameFa: 'سیستم',
-      nationalId: '0012345678',
     };
   }
 
@@ -354,7 +348,7 @@ export async function loginWithPassword(identifier: string, password: string) {
       email: user.email || undefined,
       firstNameFa: user.firstNameFa || user.name || 'مدیر',
       lastNameFa: user.lastNameFa || 'سیستم',
-      kycApproved: Boolean(user.nationalId),
+      kycApproved: false,
       role,
     },
   };
@@ -382,11 +376,6 @@ export async function updateProfileDetails(data: unknown) {
         lastNameEn: parsed.lastNameEn,
         email: parsed.email,
         phone: parsed.phone,
-        // PII is AES-256-GCM encrypted at rest (Section 34); legacy plaintext
-        // rows decrypt transparently on read via decryptSensitive.
-        nationalId: parsed.nationalId ? encryptSensitive(parsed.nationalId) : parsed.nationalId,
-        passportNo: parsed.passportNo ? encryptSensitive(parsed.passportNo) : parsed.passportNo,
-        passportExpiry: parsed.passportExpiry,
       },
     });
     return { success: true, user: { id: updated.id, name: updated.name, role: updated.role } };
@@ -411,9 +400,6 @@ export async function getMyKyc(): Promise<{
     lastNameFa: string;
     firstNameEn: string;
     lastNameEn: string;
-    nationalId: string;
-    passportNo: string;
-    passportExpiry: string;
     kycApproved: boolean;
   };
 }> {
@@ -430,9 +416,6 @@ export async function getMyKyc(): Promise<{
         lastNameFa: true,
         firstNameEn: true,
         lastNameEn: true,
-        nationalId: true,
-        passportNo: true,
-        passportExpiry: true,
       },
     });
 
@@ -447,10 +430,7 @@ export async function getMyKyc(): Promise<{
         lastNameFa: user.lastNameFa || '',
         firstNameEn: user.firstNameEn || '',
         lastNameEn: user.lastNameEn || '',
-        nationalId: user.nationalId ? decryptSensitive(user.nationalId) : '',
-        passportNo: user.passportNo ? decryptSensitive(user.passportNo) : '',
-        passportExpiry: user.passportExpiry || '',
-        kycApproved: Boolean(user.nationalId),
+        kycApproved: false,
       },
     };
   } catch (err: unknown) {
@@ -484,7 +464,6 @@ export async function getSessionUser() {
         whatsappPhone: true,
         wechatId: true,
         baleId: true,
-        nationalId: true,
       },
     });
     if (!user) return { success: false as const };
@@ -500,7 +479,7 @@ export async function getSessionUser() {
         email: user.email || undefined,
         firstNameFa: user.firstNameFa || user.name || 'کاربر',
         lastNameFa: user.lastNameFa || 'فیروزه',
-        kycApproved: Boolean(user.nationalId),
+        kycApproved: false,
         role,
         telegramId: user.telegramId || undefined,
         whatsappPhone: user.whatsappPhone || undefined,

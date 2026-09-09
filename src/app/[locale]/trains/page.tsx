@@ -233,7 +233,7 @@ export default function TrainsPage() {
         </aside>
 
         {/* Results List */}
-        <section className="flex-1 flex flex-col gap-4">
+        <section className="flex-1 min-w-0 flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-1">
             <h2 className="font-black text-ink text-lg sm:text-xl">
               {list.length.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} {lt(locale, { fa: 'سرویس موجود', en: 'Available Services', ar: 'الخدمات المتاحة', zh: '可用服务', ru: 'Доступные услуги' })}
@@ -269,8 +269,8 @@ export default function TrainsPage() {
               key={s.id}
               className="bg-surface rounded-2xl border border-line p-5 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-elev-1 hover:shadow-elev-2 transition-all hover:border-brand/40"
             >
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-3">
+              <div className="flex flex-col gap-2 min-w-0">
+                <div className="flex items-center gap-3 min-w-0">
                   <span className="w-10 h-10 rounded-xl bg-mint grid place-items-center text-brand-dark">
                     {s.kind === 'train' ? <TrainFront size={20} aria-hidden="true" /> : <BusFront size={20} aria-hidden="true" />}
                   </span>
@@ -289,7 +289,7 @@ export default function TrainsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-6 mt-3 pt-3 border-t border-line/60">
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-3 pt-3 border-t border-line/60">
                   <div className="flex items-center gap-2">
                     <CircleDot size={14} className="text-brand" aria-hidden="true" />
                     <span className="font-mono font-black text-[16px] text-ink" dir="ltr">{s.dep}</span>
