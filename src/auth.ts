@@ -182,8 +182,25 @@ export async function issueOtp(
   };
 }
 
-/** Verifies and consumes a stored OTP strictly from in-memory cache. */
+/** Verifies and consumes a stored OTP via SMSWBS API check_OTP with in-memory fallback. */
 async function verifyStoredOtp(identifier: string, code: string): Promise<boolean> {
+  const isIranMobile = Boolean(normalizeToIranE164(identifier));
+
+  // 1. Direct validation via SMSWBS check_OTP API for Iranian mobile numbers
+  if (isIranMobile) {
+    try {
+      const smswbs = new ProductionSmswbsProvider();
+      const checkRes = await smswbs.checkOtp(identifier, code);
+      if (checkRes.valid) {
+        inMemoryOtpStore.delete(identifier);
+        return true;
+      }
+    } catch (smswbsErr) {
+      console.warn('[verifyStoredOtp] SMSWBS check_OTP call failed, checking in-memory fallback:', smswbsErr);
+    }
+  }
+
+  // 2. In-memory fallback check
   const codeHash = hashOtp(code);
   const memRecord = inMemoryOtpStore.get(identifier);
 

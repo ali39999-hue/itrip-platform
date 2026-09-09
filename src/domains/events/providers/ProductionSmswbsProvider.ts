@@ -10,6 +10,12 @@ export interface SmswbsOtpResult {
   rawResponse?: Record<string, unknown>;
 }
 
+export interface SmswbsCheckResult {
+  valid: boolean;
+  error?: string;
+  rawResponse?: Record<string, unknown>;
+}
+
 /**
  * Normalizes phone number strictly for Iranian numbers.
  * Supports:
@@ -36,7 +42,9 @@ export function normalizeToIranE164(phone: string): string | null {
 }
 
 export class ProductionSmswbsProvider {
-  readonly endpoint = 'http://smswbs.ir/class/sms/restful/OTP/send_OTP.php';
+  readonly sendEndpoint = 'http://smswbs.ir/class/sms/restful/OTP/send_OTP.php';
+  readonly checkEndpoint = 'http://smswbs.ir/class/sms/restful/OTP/check_OTP.php';
+
   private uname: string;
   private pass: string;
   private sender: string;
@@ -49,7 +57,7 @@ export class ProductionSmswbsProvider {
 
   /**
    * Generates and sends a 4-digit random OTP to the Iranian (+98) recipient.
-   * Matches the user requirement:
+   * Matches:
    * URL: http://smswbs.ir/class/sms/restful/OTP/send_OTP.php
    * Body:
    * {
@@ -85,7 +93,7 @@ export class ProductionSmswbsProvider {
     };
 
     try {
-      const res = await fetch(this.endpoint, {
+      const res = await fetch(this.sendEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -121,7 +129,6 @@ export class ProductionSmswbsProvider {
         };
       }
 
-      // Handle duplicate/recent request code returned by provider
       const errMessage = String(data.result || `SMSWBS error code: ${data.errCode}`);
       logger.warn('SMSWBS OTP dispatch returned non-zero code', {
         errCode: data.errCode,
@@ -138,6 +145,84 @@ export class ProductionSmswbsProvider {
       logger.error('SMSWBS OTP dispatch failed with exception', { error: errorStr });
       return {
         success: false,
+        error: errorStr,
+      };
+    }
+  }
+
+  /**
+   * Verifies the OTP code via SMSWBS remote API endpoint:
+   * URL: http://smswbs.ir/class/sms/restful/OTP/check_OTP.php
+   * Body:
+   * {
+   *   "uname": "09123764868",
+   *   "pass": "Hvd1367Hvd1367",
+   *   "code": "کد دریافتی کاربر",
+   *   "to": "+98..."
+   * }
+   */
+  async checkOtp(phoneInput: string, code: string): Promise<SmswbsCheckResult> {
+    const to = normalizeToIranE164(phoneInput);
+    if (!to) {
+      return {
+        valid: false,
+        error: 'شماره موبایل نامعتبر است',
+      };
+    }
+
+    const payload = {
+      uname: this.uname,
+      pass: this.pass,
+      code: code.trim(),
+      to,
+    };
+
+    try {
+      const res = await fetch(this.checkEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!res.ok) {
+        throw new Error(`SMSWBS check HTTP error: ${res.status}`);
+      }
+
+      const data = (await res.json()) as {
+        errCode?: number;
+        result?: string | number;
+      };
+
+      // SMSWBS returns errCode: 0 on successful validation
+      if (data.errCode === 0) {
+        logger.info('SMSWBS OTP verification succeeded', {
+          to: `${to.slice(0, 5)}***${to.slice(-2)}`,
+        });
+        return {
+          valid: true,
+          rawResponse: data as Record<string, unknown>,
+        };
+      }
+
+      const errMessage = String(data.result || `کد تایید نادرست است (کد خطا: ${data.errCode})`);
+      logger.warn('SMSWBS OTP check returned invalid code', {
+        errCode: data.errCode,
+        result: data.result,
+      });
+
+      return {
+        valid: false,
+        error: errMessage,
+        rawResponse: data as Record<string, unknown>,
+      };
+    } catch (err: unknown) {
+      const errorStr = err instanceof Error ? err.message : String(err);
+      logger.error('SMSWBS OTP check request failed', { error: errorStr });
+      return {
+        valid: false,
         error: errorStr,
       };
     }
