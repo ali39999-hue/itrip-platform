@@ -61,7 +61,7 @@ export function PaymentGatewaySelector({
         <div>
           <h2 className="text-[16px] font-black text-ink">
             {lt(locale, {
-              fa: 'انتخاب روش و ارز پرداخت',
+              fa: 'انتخاب روش پرداخت (درگاه و ارز)',
               en: 'Select Payment Method & Currency',
               ar: 'اختر طريقة وعملة الدفع',
               zh: '选择支付方式与币种',

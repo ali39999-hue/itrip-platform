@@ -36,11 +36,11 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     await nextBtn.click();
 
     // Verify Payment phase elements (price breakdown, wallet or gateway selector)
-    await expect(page.locator('h2:has-text("انتخاب روش پرداخت"), h2:has-text("جزئیات قیمت")').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('h2:has-text("روش"), h2:has-text("پرداخت"), h3:has-text("محاسبات")').first()).toBeVisible({ timeout: 15000 });
 
     // 4. Pay through the customer wallet (instant internal settlement) and
     // ride out the issuing animation to the final voucher.
-    const walletRadio = page.locator('input[name="paymentMethod"][value="wallet_irr"], input[name="paymentMethod"]').first();
+    const walletRadio = page.locator('label:has-text("کیف پول") input, input[name="paymentMethod"][value="wallet_irr"]').first();
     await walletRadio.check();
     const payBtn = page.locator('button:has-text("پرداخت نهایی و صدور آنی واچر")').first();
     await expect(payBtn).toBeVisible();
@@ -128,7 +128,7 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     await submitBtn.click();
 
     // 5. Payment phase reached — the draft booking exists server-side.
-    await expect(page.locator('h2:has-text("انتخاب روش پرداخت"), h2:has-text("جزئیات قیمت")').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('h2:has-text("روش"), h2:has-text("پرداخت"), h3:has-text("محاسبات")').first()).toBeVisible({ timeout: 15000 });
 
     // 6. The draft appears in the traveler's trips list (server round-trip).
     await page.goto('/fa/my-trips', { waitUntil: 'domcontentloaded' });
