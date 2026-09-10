@@ -67,7 +67,11 @@ export function HotelSearchHeader({
 }: HotelSearchHeaderProps) {
   const locale = useLocale();
   const { country } = useCountryStore();
-  const c = COUNTRIES[country] || COUNTRIES['turkey'];
+  // Mirror the API country resolution in useHotelFilters: an explicit China
+  // query searches the China catalogue even when the store country is Iran.
+  const isChinaQuery = /پکن|beijing|china|چین/i.test(query || '');
+  const effectiveCountry = isChinaQuery ? 'china' : country;
+  const c = COUNTRIES[effectiveCountry] || COUNTRIES['iran'] || COUNTRIES['turkey'];
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [destSuggestionsOpen, setDestSuggestionsOpen] = useState(false);
@@ -218,7 +222,7 @@ export function HotelSearchHeader({
                     <span className="block text-[10px] font-black text-sub">
                       {lt(locale, { fa: 'تاریخ خروج', en: 'Check-out', ar: 'تسجيل المغادرة', zh: '退房日期', ru: 'Дата выезда' })}
                     </span>
-                    <span className="text-[9.5px] font-black px-1.5 py-0.2 rounded-md bg-mint-bright/20 text-brand-dark">
+                    <span className="text-[9.5px] font-black px-1.5 py-0.5 rounded-md bg-mint-bright/20 text-brand-dark">
                       {num(nights, locale)} {lt(locale, { fa: 'شب', en: 'nights', ar: 'ليالٍ', zh: '晚', ru: 'ноч.' })}
                     </span>
                   </div>
@@ -405,7 +409,12 @@ export function HotelSearchHeader({
       <div className="border-b border-line bg-gradient-to-b from-deep to-[#04302f] text-[#cfe8e5]">
         <div className="max-w-[1400px] mx-auto px-4 md:px-8 flex items-center gap-2.5 flex-wrap py-2 text-[11px] font-bold">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-surface/15 bg-surface/5">
-            {lt(locale, { fa: 'کشور مقصد:', en: 'Destination country:', ar: 'بلد الوجهة:', zh: '目的地国家：', ru: 'Страна назначения:' })} <b className="text-mint-bright">{c.flag} {locale === 'fa' ? c.nameFa : c.nameEn}</b>
+            {lt(locale, { fa: 'کشور مقصد:', en: 'Destination country:', ar: 'بلد الوجهة:', zh: '目的地国家：', ru: 'Страна назначения:' })}{' '}
+            {query.trim() ? (
+              <b className="text-mint-bright">{c.flag} {locale === 'fa' ? c.nameFa : c.nameEn}</b>
+            ) : (
+              <b className="text-mint-bright">{lt(locale, { fa: 'همه مقاصد', en: 'All destinations', ar: 'جميع الوجهات', zh: '所有目的地', ru: 'Все направления' })}</b>
+            )}
           </span>
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-surface/15 bg-surface/5">
             {lt(locale, { fa: 'ارز تسویه:', en: 'Settlement currency:', ar: 'عملة التسوية:', zh: '结算货币：', ru: 'Валюта расчётов:' })} <b className="text-mint-bright" dir="ltr">{c.currency}</b>
@@ -440,7 +449,7 @@ export function HotelSearchHeader({
             </h1>
           </div>
           <div className="pb-1">
-            <span className="px-3 py-1.5 rounded-xl bg-surface border border-line text-xs font-black text-ink shadow-xs">
+            <span className="px-3 py-1.5 rounded-xl bg-surface border border-line text-xs font-black text-ink shadow-xs whitespace-nowrap">
               {num(resultsCount, locale)}{' '}
               {lt(locale, { fa: 'اقامتگاه یافت شد', en: 'stays found', ar: 'إقامة متاحة', zh: '家住宿可用', ru: 'вариантов найдено' })}
             </span>
@@ -526,11 +535,57 @@ export function HotelSearchHeader({
                   >
                     <Minus size={12} />
                   </button>
-                  <span className="w-5 text-center text-xs font-bold font-mono">{adults}</span>
+                  <span className="w-5 text-center text-xs font-bold font-mono">{num(adults, locale)}</span>
                   <button
                     type="button"
                     onClick={() => onAdultsChange?.(Math.min(9, adults + 1))}
                     disabled={adults >= 9}
+                    className="w-7 h-7 rounded-lg bg-surface border border-line grid place-items-center disabled:opacity-40"
+                  >
+                    <Plus size={12} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-soft rounded-xl border border-line">
+                <span className="text-xs font-bold text-ink">{lt(locale, { fa: 'تعداد کودکان', en: 'Children', ar: 'الأطفال', zh: '儿童', ru: 'Дети' })}</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onChildrenCountChange?.(Math.max(0, childrenCount - 1))}
+                    disabled={childrenCount <= 0}
+                    className="w-7 h-7 rounded-lg bg-surface border border-line grid place-items-center disabled:opacity-40"
+                  >
+                    <Minus size={12} />
+                  </button>
+                  <span className="w-5 text-center text-xs font-bold font-mono">{num(childrenCount, locale)}</span>
+                  <button
+                    type="button"
+                    onClick={() => onChildrenCountChange?.(Math.min(6, childrenCount + 1))}
+                    disabled={childrenCount >= 6}
+                    className="w-7 h-7 rounded-lg bg-surface border border-line grid place-items-center disabled:opacity-40"
+                  >
+                    <Plus size={12} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-soft rounded-xl border border-line">
+                <span className="text-xs font-bold text-ink">{lt(locale, { fa: 'تعداد اتاق', en: 'Rooms', ar: 'الغرف', zh: '房间数', ru: 'Номера' })}</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onRoomsChange?.(Math.max(1, rooms - 1))}
+                    disabled={rooms <= 1}
+                    className="w-7 h-7 rounded-lg bg-surface border border-line grid place-items-center disabled:opacity-40"
+                  >
+                    <Minus size={12} />
+                  </button>
+                  <span className="w-5 text-center text-xs font-bold font-mono">{num(rooms, locale)}</span>
+                  <button
+                    type="button"
+                    onClick={() => onRoomsChange?.(Math.min(5, rooms + 1))}
+                    disabled={rooms >= 5}
                     className="w-7 h-7 rounded-lg bg-surface border border-line grid place-items-center disabled:opacity-40"
                   >
                     <Plus size={12} />

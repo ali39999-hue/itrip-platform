@@ -127,6 +127,7 @@ function HotelsSearchInner() {
     toggleFreeCancel,
     resetAll,
     results,
+    totalCount,
     currentPage,
     setCurrentPage,
     totalPages,
@@ -182,7 +183,7 @@ function HotelsSearchInner() {
             if (childrenCount) params.set('children', String(childrenCount));
             router.push(`/hotels/search?${params.toString()}`);
           }}
-          resultsCount={results.length}
+          resultsCount={totalCount}
           checkin={checkin}
           onCheckinChange={setCheckin}
           checkout={checkout}
@@ -460,7 +461,7 @@ function HotelsSearchInner() {
           onToggleFreeCancel={toggleFreeCancel}
           facets={facets}
           onResetAll={resetAll}
-          resultsCount={results.length}
+          resultsCount={totalCount}
         />
 
         {/* Compare Bottom Bar */}

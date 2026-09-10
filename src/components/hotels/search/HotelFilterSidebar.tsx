@@ -90,7 +90,7 @@ export function HotelFilterSidebar({
     amenities.size +
     (minScore ? 1 : 0) +
     (freeCancel ? 1 : 0) +
-    (minPrice > 0 || maxPrice < 25_000_000 ? 1 : 0);
+    (minPrice > 0 || maxPrice < 20 ? 1 : 0);
 
   return (
     <aside className="sticky top-[90px] hidden lg:block max-h-[calc(100vh-100px)] overflow-y-auto p-4 border border-line rounded-2xl bg-surface shadow-xs scrollbar-thin space-y-4">

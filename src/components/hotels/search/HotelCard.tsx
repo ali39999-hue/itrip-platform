@@ -14,6 +14,8 @@ import type { HotelCardProps } from './types';
 const AM_MAP: Record<string, LText> = {
   wifi: { fa: 'وای‌فای رایگان', en: 'Free Wi-Fi', ar: 'واي فاي مجاني', zh: '免费无线', ru: 'Бесплатный Wi-Fi' },
   pool: { fa: 'استخر', en: 'Pool', ar: 'مسبح', zh: '游泳池', ru: 'Бассейн' },
+  breakfast: { fa: 'صبحانه رایگان', en: 'Free Breakfast', ar: 'إفطار مجاني', zh: '免费早餐', ru: 'Бесплатный завтрак' },
+  bar: { fa: 'کافی‌شاپ', en: 'Cafe & Bar', ar: 'مقهى', zh: '咖啡厅', ru: 'Кафе-бар' },
   spa: { fa: 'مرکز اسپا', en: 'Spa', ar: 'سبا', zh: '水疗中心', ru: 'Спа' },
   restaurant: { fa: 'رستوران سنتی', en: 'Restaurant', ar: 'مطعم', zh: '特色餐厅', ru: 'Ресторан' },
   parking: { fa: 'پارکینگ اختصاصی', en: 'Parking', ar: 'موقف سيارات', zh: '专属停车', ru: 'Парковка' },
@@ -137,7 +139,7 @@ export function HotelCard({
                   {locale === 'fa' ? hotel.city : hotel.cityEn}
                 </span>
                 {hotel.propertyType && hotel.propertyType !== 'hotel' && (
-                  <span className="px-1.5 py-0.2 rounded bg-soft text-brand-dark text-[9.5px] font-black border border-line">
+                  <span className="px-1.5 py-0.5 rounded bg-soft text-brand-dark text-[9.5px] font-black border border-line">
                     {hotel.propertyType === 'apartment' ? 'آپارتمان' : hotel.propertyType === 'boutique' ? 'سنتی' : 'ویلا'}
                   </span>
                 )}
@@ -290,10 +292,12 @@ export function HotelCard({
                 <MapPin size={12} className="text-brand shrink-0" aria-hidden="true" />
                 <span>{distanceText}</span>
               </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-black border border-emerald-200">
-                <Coffee size={12} className="text-emerald-700" aria-hidden="true" />
-                <span>{lt(locale, { fa: 'صبحانه بوفه رایگان', en: 'Free Breakfast', ar: 'إفطار مجاني', zh: '免费早餐', ru: 'Бесплатный завтрак' })}</span>
-              </span>
+              {hotel.amenities.includes('breakfast') && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-black border border-emerald-200">
+                  <Coffee size={12} className="text-emerald-700" aria-hidden="true" />
+                  <span>{lt(locale, { fa: 'صبحانه بوفه رایگان', en: 'Free Breakfast', ar: 'إفطار مجاني', zh: '免费早餐', ru: 'Бесплатный завтрак' })}</span>
+                </span>
+              )}
               {hotel.rating >= 8.5 && (
                 <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-50 text-rose-700 text-xs font-black border border-rose-200">
                   <Flame size={12} className="text-rose-600" aria-hidden="true" />

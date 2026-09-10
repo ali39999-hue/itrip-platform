@@ -280,17 +280,37 @@ export function useHotelFilters({
       });
     }
 
-    if (maxPrice < 20) {
+    if (minPrice > 0 || maxPrice < 20) {
       out.push({
         key: 'price',
-        label: lt(locale, {
-          fa: `تا ${num(maxPrice, locale)} م تومان`,
-          en: `Up to ${num(maxPrice, locale)}M Toman`,
-          ar: `حتى ${num(maxPrice, locale)} م تومان`,
-          zh: `最高 ${num(maxPrice, locale)}M 图曼`,
-          ru: `До ${num(maxPrice, locale)}M томан`,
-        }),
-        clear: () => setMaxPriceState(20),
+        label:
+          minPrice > 0 && maxPrice < 20
+            ? lt(locale, {
+                fa: `از ${num(minPrice, locale)} تا ${num(maxPrice, locale)} م تومان`,
+                en: `${num(minPrice, locale)}M - ${num(maxPrice, locale)}M Toman`,
+                ar: `من ${num(minPrice, locale)} حتى ${num(maxPrice, locale)} م تومان`,
+                zh: `${num(minPrice, locale)}M 至 ${num(maxPrice, locale)}M 图曼`,
+                ru: `От ${num(minPrice, locale)}M до ${num(maxPrice, locale)}M томан`,
+              })
+            : minPrice > 0
+              ? lt(locale, {
+                  fa: `از ${num(minPrice, locale)} م تومان`,
+                  en: `From ${num(minPrice, locale)}M Toman`,
+                  ar: `من ${num(minPrice, locale)} م تومان`,
+                  zh: `${num(minPrice, locale)}M 图曼起`,
+                  ru: `От ${num(minPrice, locale)}M томан`,
+                })
+              : lt(locale, {
+                  fa: `تا ${num(maxPrice, locale)} م تومان`,
+                  en: `Up to ${num(maxPrice, locale)}M Toman`,
+                  ar: `حتى ${num(maxPrice, locale)} م تومان`,
+                  zh: `最高 ${num(maxPrice, locale)}M 图曼`,
+                  ru: `До ${num(maxPrice, locale)}M томан`,
+                }),
+        clear: () => {
+          setMinPriceState(0);
+          setMaxPriceState(20);
+        },
       });
     }
 
@@ -353,6 +373,7 @@ export function useHotelFilters({
     return out;
   }, [
     hotelName,
+    minPrice,
     maxPrice,
     stars,
     propertyTypes,
