@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { PlaneTakeoff, PlaneLanding, Calendar, ArrowLeftRight, Search, Building2, ChevronDown, X, Plane } from 'lucide-react';
+import { PlaneTakeoff, PlaneLanding, ArrowLeftRight, Search, X } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
-import { CITIES, type CityOption } from '@/lib/data';
+import { CITIES } from '@/lib/data';
 import { num } from '@/lib/format';
 import { lt } from '@/lib/lt';
 import { JalaliDatePicker } from '@/components/ui/DatePicker';

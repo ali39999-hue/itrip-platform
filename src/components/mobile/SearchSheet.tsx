@@ -9,9 +9,6 @@ import {
   Calendar,
   Users,
   ArrowUpDown,
-  X,
-  Clock,
-  Sparkles,
   MapPin,
   ChevronRight,
 } from 'lucide-react';
@@ -52,8 +49,6 @@ export function SearchSheet({
   );
 
   const [departDate, setDepartDate] = useState<string>(daysFromNow(3));
-  const [returnDate, setReturnDate] = useState<string>(daysFromNow(7));
-  const [isRoundTrip, setIsRoundTrip] = useState(false);
 
   const [passengers, setPassengers] = useState<PassengerCount>({
     adults: 1,

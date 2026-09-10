@@ -31,9 +31,19 @@ export const CATEGORY_ICONS: Record<ExperienceCategory, LucideIcon> = {
 };
 
 export function useExperiences() {
-  const { country } = useCountryStore();
+  const { country: storeCountry, setCountry } = useCountryStore();
+  const searchParams = useSearchParams();
+  const urlCountry = searchParams?.get('country') as CountryId | null;
+  const country = urlCountry && COUNTRIES[urlCountry] ? urlCountry : storeCountry;
+
+  useEffect(() => {
+    if (urlCountry && COUNTRIES[urlCountry] && urlCountry !== storeCountry) {
+      setCountry(urlCountry);
+    }
+  }, [urlCountry, storeCountry, setCountry]);
+
   const locale = useLocale();
-  const c = COUNTRIES[country];
+  const c = COUNTRIES[country] || COUNTRIES.iran;
   const isEn = locale === 'en';
   const [dbExperiences, setDbExperiences] = useState<SignatureExperience[]>([]);
 
@@ -164,7 +174,6 @@ export function CountryExperiencesSection({
   const { c, experiences, titleOf, descOf, whereOf, whenOf, catOf } = useExperiences();
   const locale = useLocale();
   const t = useTranslations('Experiences');
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [filter, setFilter] = useState<'all' | ExperienceCategory>('all');
   const [selectedExp, setSelectedExp] = useState<SignatureExperience | null>(null);
@@ -172,13 +181,14 @@ export function CountryExperiencesSection({
   useEffect(() => {
     const cityOrTitle = searchParams?.get('city');
     if (cityOrTitle && experiences.length > 0 && !selectedExp) {
-      const needle = decodeURIComponent(cityOrTitle).toLowerCase();
+      const needle = decodeURIComponent(cityOrTitle.replace(/\+/g, ' ')).trim().toLowerCase();
       const matched = experiences.find(
         (e) =>
           e.title.toLowerCase().includes(needle) ||
           (e.titleEn && e.titleEn.toLowerCase().includes(needle)) ||
           e.where.toLowerCase().includes(needle) ||
-          (e.whereEn && e.whereEn.toLowerCase().includes(needle))
+          (e.whereEn && e.whereEn.toLowerCase().includes(needle)) ||
+          needle.includes(e.title.toLowerCase())
       );
       if (matched) {
         setSelectedExp(matched);

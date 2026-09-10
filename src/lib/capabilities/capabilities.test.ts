@@ -51,6 +51,6 @@ describe('Product Capability Registry (CAP-001)', () => {
     expect(summary['payment.wallet']).toBeDefined();
     expect(summary['payment.wallet'].status).toBe('LIVE');
     expect(summary['payment.wallet'].badgeLabel.fa).toBe('فعال');
-    expect((summary['payment.wallet'] as any).evidencePath).toBeUndefined();
+    expect((summary['payment.wallet'] as Record<string, unknown>).evidencePath).toBeUndefined();
   });
 });

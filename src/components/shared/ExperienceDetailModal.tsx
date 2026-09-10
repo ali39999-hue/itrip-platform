@@ -7,7 +7,6 @@ import { useLocale } from 'next-intl';
 import { useBookingStore } from '@/stores/booking-store';
 import {
   type SignatureExperience,
-  type ExperienceCategory,
   experienceCategoryLabel,
 } from '@/lib/countries';
 import { CATEGORY_ICONS } from './CountryExperiences';
@@ -20,8 +19,6 @@ import {
   X,
   MapPin,
   Calendar,
-  Users,
-  ShieldCheck,
   CheckCircle2,
   Lock,
   ArrowLeft,

@@ -1,9 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { useTranslations, useLocale } from 'next-intl';
-import { shimmerDataUrl } from '@/lib/image-utils';
 import {
   Phone, Mail, MessageSquare, Send, CheckCircle2, Headphones,
   ChevronDown, Clock, Zap

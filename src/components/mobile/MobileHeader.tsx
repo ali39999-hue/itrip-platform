@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from '@/i18n/routing';
-import { ArrowLeft, ArrowRight, Search, Globe, Headphones, Menu } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Search, Headphones } from 'lucide-react';
 import { Logo } from '@/components/layout/Logo';
 import { useLocale } from 'next-intl';
 

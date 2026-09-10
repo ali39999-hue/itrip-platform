@@ -4,7 +4,7 @@ import { Suspense, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/i18n/routing';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { SlidersHorizontal } from 'lucide-react';
 import type { Hotel } from '@/lib/types';
 import { lt } from '@/lib/lt';

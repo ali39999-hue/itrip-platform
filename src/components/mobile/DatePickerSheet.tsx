@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/Sheet';
-import { CalendarDays, Check, ArrowRight, ArrowLeft } from 'lucide-react';
+import { CalendarDays, Check } from 'lucide-react';
 import { dualDate } from '@/lib/jalali';
 import { daysFromNow } from '@/lib/utils';
 import { useLocale } from 'next-intl';

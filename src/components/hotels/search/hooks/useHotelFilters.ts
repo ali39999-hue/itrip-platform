@@ -37,6 +37,7 @@ export function useHotelFilters({
   const locale = useLocale();
   const { country } = useCountryStore();
 
+  const [currentPage, setCurrentPage] = useState(1);
   const [query, setQuery] = useState(initialCity);
 
   useEffect(() => {
@@ -48,7 +49,6 @@ export function useHotelFilters({
   const [hotelName, setHotelName] = useState(initialHotelName);
   const [sort, setSortState] = useState<SortKey>(initialSort);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
 
   const [minPrice, setMinPriceState] = useState(initialMinPrice);
   const [maxPrice, setMaxPriceState] = useState(initialMaxPrice);
@@ -185,27 +185,27 @@ export function useHotelFilters({
   const setQueryValue = useCallback((value: string) => {
     setQuery(value);
     setCurrentPage(1);
-  }, []);
+  }, [setCurrentPage]);
 
   const setHotelNameValue = useCallback((value: string) => {
     setHotelName(value);
     setCurrentPage(1);
-  }, []);
+  }, [setCurrentPage]);
 
   const setSort = useCallback((newSort: SortKey) => {
     setSortState(newSort);
     setCurrentPage(1);
-  }, []);
+  }, [setCurrentPage]);
 
   const setMinPrice = useCallback((price: number) => {
     setMinPriceState(price);
     setCurrentPage(1);
-  }, []);
+  }, [setCurrentPage]);
 
   const setMaxPrice = useCallback((price: number) => {
     setMaxPriceState(price);
     setCurrentPage(1);
-  }, []);
+  }, [setCurrentPage]);
 
   const toggleStar = useCallback((s: number) => {
     setStars((prev) => {
@@ -218,7 +218,7 @@ export function useHotelFilters({
       return next;
     });
     setCurrentPage(1);
-  }, []);
+  }, [setCurrentPage]);
 
   const togglePropertyType = useCallback((pt: HotelPropertyType) => {
     setPropertyTypes((prev) => {
@@ -231,7 +231,7 @@ export function useHotelFilters({
       return next;
     });
     setCurrentPage(1);
-  }, []);
+  }, [setCurrentPage]);
 
   const toggleAmenity = useCallback((am: string) => {
     setAmenities((prev) => {
@@ -244,17 +244,17 @@ export function useHotelFilters({
       return next;
     });
     setCurrentPage(1);
-  }, []);
+  }, [setCurrentPage]);
 
   const setMinScore = useCallback((score: number) => {
     setMinScoreState(score);
     setCurrentPage(1);
-  }, []);
+  }, [setCurrentPage]);
 
   const toggleFreeCancel = useCallback(() => {
     setFreeCancelState((prev) => !prev);
     setCurrentPage(1);
-  }, []);
+  }, [setCurrentPage]);
 
   const resetAll = useCallback(() => {
     setHotelName('');
@@ -266,7 +266,7 @@ export function useHotelFilters({
     setMinScoreState(0);
     setFreeCancelState(false);
     setCurrentPage(1);
-  }, []);
+  }, [setCurrentPage]);
 
   const results = hotels;
 

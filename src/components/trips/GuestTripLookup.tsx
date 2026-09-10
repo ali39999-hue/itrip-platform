@@ -5,7 +5,25 @@ import { useLocale } from 'next-intl';
 import { findBookingByReference } from '@/actions/trips';
 import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
-import { Search, Loader2, CheckCircle2, AlertCircle, FileText, Calendar, CreditCard } from 'lucide-react';
+import { Search, Loader2, AlertCircle, FileText } from 'lucide-react';
+
+interface LookupBookingItem {
+  id: string;
+  serviceType: string;
+  title: string;
+  unitPrice: number;
+}
+
+interface LookupBooking {
+  id: string;
+  reference: string;
+  status: string;
+  paymentStatus: string;
+  totalAmount: number;
+  currency: string;
+  createdAt: Date;
+  items: LookupBookingItem[];
+}
 
 export function GuestTripLookup() {
   const locale = useLocale();
@@ -13,7 +31,7 @@ export function GuestTripLookup() {
   const [contact, setContact] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [booking, setBooking] = useState<any | null>(null);
+  const [booking, setBooking] = useState<LookupBooking | null>(null);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +76,7 @@ export function GuestTripLookup() {
           );
         }
       } else {
-        setBooking(res.booking);
+        setBooking(res.booking || null);
       }
     } catch {
       setError(
@@ -189,7 +207,7 @@ export function GuestTripLookup() {
           </div>
 
           <div className="space-y-2">
-            {booking.items?.map((item: any) => (
+            {booking.items?.map((item: LookupBookingItem) => (
               <div key={item.id} className="flex items-center justify-between text-xs py-1 border-b border-line/30 last:border-0">
                 <div className="flex items-center gap-2">
                   <FileText size={14} className="text-brand-dark shrink-0" />
