@@ -46,6 +46,20 @@ for (const pay of payments) {
 }
 console.log('Stale payments to delete:', stalePaymentIds.length);
 
+// 5. Test outbox events (aggregateId: test_sys or UNKNOWN_EVENT_*)
+const staleTestOutbox = await p.outboxEvent.findMany({
+  where: {
+    OR: [
+      { aggregateId: 'test_sys' },
+      { eventType: { startsWith: 'UNKNOWN_EVENT_' } },
+      { payload: '{}' },
+    ],
+  },
+  select: { id: true },
+});
+const staleTestOutboxIds = staleTestOutbox.map((o) => o.id);
+console.log('Stale test outbox events to delete:', staleTestOutboxIds.length);
+
 // Execute deletions
 if (staleExceptionIds.length) {
   const d = await p.operationalException.deleteMany({ where: { id: { in: staleExceptionIds } } });
@@ -58,6 +72,10 @@ if (orphanRefundIds.length) {
 if (stalePaymentIds.length) {
   const d = await p.payment.deleteMany({ where: { id: { in: stalePaymentIds } } });
   console.log('deleted stale payments:', d.count);
+}
+if (staleTestOutboxIds.length) {
+  const d = await p.outboxEvent.deleteMany({ where: { id: { in: staleTestOutboxIds } } });
+  console.log('deleted stale test outbox events:', d.count);
 }
 if (testSupplierIds.length) {
   // explicit cascade cleanup, then suppliers

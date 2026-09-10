@@ -154,7 +154,7 @@ export function ToursPromoModal() {
       {/* Main Promo Popup Modal */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-[260] bg-ink/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200 overflow-y-auto"
+          className="fixed inset-0 z-[260] bg-ink/65 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-5 animate-in fade-in duration-200 overflow-y-auto"
           onClick={(e) => {
             if (e.target === e.currentTarget) handleClose();
           }}
@@ -162,7 +162,8 @@ export function ToursPromoModal() {
           aria-modal="true"
           aria-label={lt(locale, { fa: 'پاپ‌آپ معرفی تورهای فیروزو', en: 'Firuzo Curated Tours Promo', ar: 'جولات فيروزو', zh: 'Firuzo 旅游推介', ru: 'Туры Firuzo' })}
         >
-          <div className="relative w-full max-w-2xl bg-surface rounded-3xl overflow-hidden border border-line shadow-2xl flex flex-col my-6 animate-in zoom-in-95 duration-250">
+          <div className="relative w-full max-w-2xl bg-surface rounded-t-3xl sm:rounded-3xl overflow-hidden border-t sm:border border-line shadow-2xl flex flex-col max-h-[90vh] my-0 sm:my-6 animate-in slide-in-from-bottom sm:slide-in-from-none sm:zoom-in-95 duration-250">
+            <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto mt-2.5 mb-1" />
             {/* Header / Top banner with glowing badge */}
             <div className="relative p-5 sm:p-6 bg-gradient-to-r from-deep via-brand-dark to-deep text-surface overflow-hidden">
               <div className="absolute -top-12 -end-12 w-48 h-48 bg-mint/15 rounded-full blur-2xl pointer-events-none" />
@@ -185,9 +186,11 @@ export function ToursPromoModal() {
                   type="button"
                   onClick={handleClose}
                   aria-label={lt(locale, { fa: 'بستن پنجره', en: 'Close modal', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}
-                  className="w-9 h-9 rounded-full bg-surface/10 hover:bg-surface/25 text-surface grid place-items-center transition cursor-pointer shrink-0"
+                  className="min-w-[44px] min-h-[44px] rounded-full bg-surface/10 hover:bg-surface/25 text-surface grid place-items-center transition cursor-pointer shrink-0 active:scale-95"
                 >
-                  <X size={18} />
+                  <div className="w-8 h-8 rounded-full bg-surface/20 grid place-items-center">
+                    <X size={18} />
+                  </div>
                 </button>
               </div>
 

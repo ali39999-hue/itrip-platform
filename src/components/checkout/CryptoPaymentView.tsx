@@ -499,7 +499,7 @@ export function CryptoPaymentView({
           <AlertCircle size={16} className="text-amber-700 shrink-0" />
           <span>نکته بسیار مهم کارمزد انتقال شبکه (Network Fee):</span>
         </div>
-        <p className="leading-relaxed text-[11px] text-amber-800 pr-5">
+        <p className="leading-relaxed text-[11px] text-amber-800 ps-5">
           هنگام واریز از صرافی (مانند نوبیتکس، والکس، کوینکس یا بایننس) یا کیف پول، لطفاً دقت فرمایید که کارمزد انتقال شبکه را جداگانه بپردازید تا دقیقاً مبلغ{' '}
           <strong className="font-mono text-amber-950 underline">{booking?.amountUsdt} USDT</strong> خالص به حساب فیروزو بنشیند.
         </p>

@@ -64,12 +64,13 @@ export function EditStayModal({ isOpen, onClose, booking }: EditStayModalProps) 
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-ink/60 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-ink/60 backdrop-blur-xs animate-in fade-in duration-200"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-3xl bg-surface border border-line shadow-elev-3 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
+        className="w-full max-w-lg rounded-t-3xl sm:rounded-3xl bg-surface border-t sm:border border-line shadow-elev-3 overflow-hidden flex flex-col max-h-[88vh] animate-in slide-in-from-bottom sm:slide-in-from-none sm:zoom-in-95 duration-200"
       >
+        <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto mt-2.5 mb-1" />
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-line flex items-center justify-between bg-soft/40">
           <div className="flex items-center gap-2">
@@ -90,9 +91,11 @@ export function EditStayModal({ isOpen, onClose, booking }: EditStayModalProps) 
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="w-8 h-8 rounded-full bg-soft hover:bg-line grid place-items-center text-sub hover:text-ink transition cursor-pointer"
+            className="min-w-[44px] min-h-[44px] rounded-full text-sub hover:text-ink grid place-items-center transition cursor-pointer"
           >
-            <X size={16} />
+            <div className="w-8 h-8 rounded-full bg-soft hover:bg-line grid place-items-center">
+              <X size={16} />
+            </div>
           </button>
         </div>
 
@@ -231,14 +234,14 @@ export function EditStayModal({ isOpen, onClose, booking }: EditStayModalProps) 
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl border border-line bg-surface text-sub hover:text-ink text-xs font-bold transition cursor-pointer"
+            className="min-h-11 px-4 rounded-xl border border-line bg-surface text-sub hover:text-ink text-xs font-bold transition cursor-pointer flex items-center justify-center"
           >
             {lt(locale, { fa: 'انصراف', en: 'Cancel', ar: 'إلغاء', zh: '取消', ru: 'Отмена' })}
           </button>
           <button
             type="button"
             onClick={handleSave}
-            className="px-6 py-2.5 rounded-xl bg-brand hover:bg-brand-dark text-surface text-xs font-black shadow-sm transition active:scale-95 cursor-pointer flex items-center gap-2"
+            className="w-full sm:w-auto min-h-11 px-6 rounded-xl bg-brand hover:bg-brand-dark text-surface text-xs font-black shadow-sm transition active:scale-95 cursor-pointer flex items-center justify-center gap-2"
           >
             <Check size={15} />
             <span>

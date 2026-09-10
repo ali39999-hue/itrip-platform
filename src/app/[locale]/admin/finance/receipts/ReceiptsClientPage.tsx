@@ -304,13 +304,13 @@ export function ReceiptsClientPage({
         {/* Search Bar */}
         <form onSubmit={handleSearch} className="flex items-center gap-2 w-full md:w-80">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-sub absolute right-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-sub absolute start-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={activeChannel === 'card' ? 'جستجو با کد پیگیری، شماره رزرو یا تلفن...' : 'جستجو با هش TxID، آدرس یا رزرو...'}
-              className="w-full pr-9 pl-3 py-2 rounded-xl border border-line bg-paper text-[12px] text-ink outline-none focus:border-brand transition"
+              className="w-full pe-9 ps-3 py-2 rounded-xl border border-line bg-paper text-[12px] text-ink outline-none focus:border-brand transition"
             />
           </div>
           <button

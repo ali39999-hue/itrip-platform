@@ -47,13 +47,14 @@ export function HotelCompareModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="hotel-compare-modal-title"
-      className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-6 bg-deep/70 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-deep/70 backdrop-blur-sm animate-in fade-in duration-200"
     >
-      <div className="w-full max-w-5xl max-h-[90vh] bg-surface rounded-3xl border border-line shadow-elev-3 flex flex-col overflow-hidden">
+      <div className="w-full max-w-5xl max-h-[90vh] bg-surface rounded-t-3xl sm:rounded-3xl border-t sm:border border-line shadow-elev-3 flex flex-col overflow-hidden">
+        <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto mt-2.5 mb-1" />
         {/* Header */}
-        <div className="px-6 py-4 border-b border-line flex items-center justify-between bg-surface/90">
+        <div className="px-5 sm:px-6 py-4 border-b border-line flex items-center justify-between bg-surface/90">
           <div>
-            <h3 id="hotel-compare-modal-title" className="text-lg font-black text-ink">
+            <h3 id="hotel-compare-modal-title" className="text-base sm:text-lg font-black text-ink">
               {lt(locale, {
                 fa: `مقایسه رو در روی اقامتگاه‌ها (${num(comparedHotels.length, locale)} مورد)`,
                 en: `Side-by-Side Comparison (${num(comparedHotels.length, locale)} stays)`,
@@ -76,7 +77,7 @@ export function HotelCompareModal({
             type="button"
             onClick={onClose}
             aria-label={lt(locale, { fa: 'بستن', en: 'Close', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}
-            className="w-9 h-9 rounded-full bg-soft text-sub hover:text-ink grid place-items-center transition"
+            className="min-w-[44px] min-h-[44px] rounded-full bg-soft text-sub hover:text-ink grid place-items-center transition active:scale-95"
           >
             <X size={20} />
           </button>

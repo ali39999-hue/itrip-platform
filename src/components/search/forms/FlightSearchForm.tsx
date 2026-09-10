@@ -138,11 +138,11 @@ export function FlightSearchForm({
           type="button"
           onClick={handleSwap}
           aria-label={t('swap')}
-          className={`sm:hidden grid absolute -bottom-4 end-5 z-30 w-8 h-8 place-items-center rounded-full bg-surface border border-line shadow-md text-brand-dark active:scale-95 hover:bg-mint transition-transform duration-300 cursor-pointer ${
+          className={`sm:hidden grid absolute -bottom-5 end-5 z-30 w-10 h-10 place-items-center rounded-full bg-surface border border-line shadow-md text-brand-dark active:scale-95 hover:bg-mint transition-transform duration-300 cursor-pointer ${
             swapped ? 'rotate-180' : ''
           }`}
         >
-          <ArrowLeftRight size={14} className="rotate-90" aria-hidden="true" />
+          <ArrowLeftRight size={16} className="rotate-90" aria-hidden="true" />
         </button>
       </div>
 

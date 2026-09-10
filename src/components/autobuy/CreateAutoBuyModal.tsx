@@ -122,8 +122,9 @@ export function CreateAutoBuyModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[250] bg-ink/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200 overflow-y-auto">
-      <div className="w-full max-w-xl bg-surface rounded-3xl p-5 sm:p-7 border border-line shadow-2xl space-y-5 my-8">
+    <div className="fixed inset-0 z-[250] bg-ink/65 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-5 animate-in fade-in duration-200 overflow-y-auto">
+      <div className="w-full max-w-xl bg-surface rounded-t-3xl sm:rounded-3xl p-5 sm:p-7 border-t sm:border border-line shadow-2xl space-y-5 my-0 sm:my-8 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom sm:slide-in-from-none sm:zoom-in-95 duration-200">
+        <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto -mt-2 mb-2" />
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-line">
           <div className="flex items-center gap-2.5">
@@ -142,9 +143,12 @@ export function CreateAutoBuyModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-soft text-sub hover:text-ink grid place-items-center cursor-pointer transition"
+            className="min-w-[44px] min-h-[44px] rounded-full text-sub hover:text-ink grid place-items-center cursor-pointer transition active:scale-95"
+            aria-label="Close"
           >
-            <X size={18} />
+            <div className="w-8 h-8 rounded-full bg-soft grid place-items-center">
+              <X size={18} />
+            </div>
           </button>
         </div>
 
@@ -380,18 +384,18 @@ export function CreateAutoBuyModal({
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-2 flex items-center justify-end gap-2.5">
+          <div className="pt-2 flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="h-11 px-5 rounded-xl bg-soft hover:bg-line/40 text-ink font-bold text-xs transition cursor-pointer"
+              className="w-full sm:w-auto min-h-11 px-5 rounded-xl bg-soft hover:bg-line/40 text-ink font-bold text-xs transition cursor-pointer flex items-center justify-center active:scale-95"
             >
               انصراف
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="h-11 px-6 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs transition flex items-center gap-2 shadow-md shadow-action/25 cursor-pointer disabled:opacity-50"
+              className="w-full sm:w-auto min-h-11 px-6 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs transition flex items-center justify-center gap-2 shadow-md shadow-action/25 cursor-pointer disabled:opacity-50 active:scale-95"
             >
               {loading ? (
                 <>

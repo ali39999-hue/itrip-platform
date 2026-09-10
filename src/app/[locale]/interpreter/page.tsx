@@ -14,7 +14,7 @@ import { daysFromNow } from '@/lib/utils';
 import { num } from '@/lib/format';
 import {
   Languages, Clock, Siren, BookOpenText, Star, MapPin, Check, Plus,
-  PhoneCall, PhoneOff, Users, Sparkles, Wallet, ArrowLeft, Volume2, Copy
+  PhoneCall, PhoneOff, Users, Sparkles, Wallet, ArrowLeft, Volume2, Copy, ChevronDown
 } from 'lucide-react';
 
 type SosPhase = 'idle' | 'connecting' | 'live';
@@ -291,7 +291,7 @@ export default function InterpreterPage() {
             <h2 className="text-xl font-black m-0 mb-1 inline-flex items-center gap-2"><BookOpenText size={20} className="text-brand-dark" /> {t('kit')}</h2>
             <p className="text-[12px] font-bold text-sub m-0">{t('kitSub')}</p>
           </div>
-          <span className={`w-9 h-9 rounded-full bg-soft text-brand-dark grid place-items-center shrink-0 transition-transform ${kitOpen ? 'rotate-180' : ''}`}><ArrowLeft size={16} className="-rotate-90" /></span>
+          <span className={`w-9 h-9 rounded-full bg-soft text-brand-dark grid place-items-center shrink-0 transition-transform ${kitOpen ? 'rotate-180' : ''}`}><ChevronDown size={18} /></span>
         </button>
         {kitOpen && (
           <div className="px-6 pb-6">
@@ -342,7 +342,7 @@ export default function InterpreterPage() {
           <Wallet size={17} /> {t('moneyLink', { country: countryName(country, locale) })}
         </p>
         <button onClick={() => router.push('/wallet')} className="min-h-10 px-5 rounded-full bg-surface border border-gold/40 text-price font-black text-[12.5px] inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
-          {isEn ? 'Go to wallet' : 'رفتن به کیف پول'} <ArrowLeft size={14} />
+          {isEn ? 'Go to wallet' : 'رفتن به کیف پول'} <ArrowLeft size={14} className="ltr:rotate-180" />
         </button>
       </div>
 

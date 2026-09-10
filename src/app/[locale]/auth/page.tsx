@@ -45,6 +45,7 @@ export default function AuthPage() {
   const [expiry, setExpiry] = useState(kyc?.passportExpiry || '');
   const [countdown, setCountdown] = useState(120);
   const [isRealSent, setIsRealSent] = useState<boolean>(false);
+  const [devCode, setDevCode] = useState<string | undefined>(undefined);
 
   // Already signed-in users don't need the auth flow — send them on their way.
   useEffect(() => {
@@ -176,6 +177,7 @@ export default function AuthPage() {
       }
       setOtp(''); // Require user to input the real code sent to their app
       setIsRealSent(Boolean(res.realSent));
+      setDevCode(res.devCode);
       setKycStep('otp');
     } finally {
       setSending(false);
@@ -591,7 +593,7 @@ export default function AuthPage() {
 
             {error && <div className="p-3 mb-4 rounded-xl bg-destructive/10 text-destructive text-xs font-bold">{error}</div>}
 
-            {isRealSent && (
+            {isRealSent ? (
               <div className="p-3.5 mb-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-2.5">
                 <CheckCircle2 size={18} className="text-emerald-600 flex-shrink-0" />
                 <span>
@@ -612,7 +614,18 @@ export default function AuthPage() {
                       })}
                 </span>
               </div>
-            )}
+            ) : devCode ? (
+              <div className="p-3.5 mb-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-bold flex items-center justify-between gap-2.5">
+                <span>{lt(locale, { fa: `کد دسترسی موقت: ${devCode}`, en: `Verification Code: ${devCode}` })}</span>
+                <button
+                  type="button"
+                  onClick={() => setOtp(devCode)}
+                  className="px-2.5 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-[11px] transition cursor-pointer"
+                >
+                  {lt(locale, { fa: 'درج خودکار', en: 'Auto-fill' })}
+                </button>
+              </div>
+            ) : null}
 
             <div className="space-y-5">
               <div>

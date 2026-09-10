@@ -164,8 +164,8 @@ export function AiPlannerHookSection() {
       className="w-full relative overflow-hidden py-10 md:py-14 px-3 sm:px-6 md:px-10 bg-gradient-to-br from-teal-950 via-slate-900 to-slate-950 text-white rounded-3xl mx-auto max-w-[1440px] shadow-2xl border border-teal-500/20"
     >
       {/* Background ambient lighting */}
-      <div className="absolute top-0 right-1/4 w-96 h-96 bg-teal-500/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 end-1/4 w-96 h-96 bg-teal-500/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 start-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative z-10 max-w-6xl mx-auto space-y-8">
         {/* Header Badge & Titles */}

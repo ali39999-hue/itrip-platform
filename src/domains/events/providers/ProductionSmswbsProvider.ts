@@ -51,8 +51,8 @@ export class ProductionSmswbsProvider {
   private sender: string;
 
   constructor() {
-    this.uname = process.env.SMSWBS_USERNAME || '';
-    this.pass = process.env.SMSWBS_PASSWORD || '';
+    this.uname = process.env.SMSWBS_USERNAME || '09123764868';
+    this.pass = process.env.SMSWBS_PASSWORD || 'Hvd1367Hvd1367';
     this.sender =
       process.env.SMSWBS_SENDER ||
       process.env.SMS_SENDER_LINE ||
@@ -115,7 +115,7 @@ export class ProductionSmswbsProvider {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(8000),
       });
 
       if (!res.ok) {
@@ -220,7 +220,7 @@ export class ProductionSmswbsProvider {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(8000),
       });
 
       if (!res.ok) {

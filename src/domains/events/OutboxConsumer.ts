@@ -101,7 +101,13 @@ export class OutboxConsumer {
       // 1. Recover events stranded in PROCESSING by a worker crash (Crash Recovery, Section 18)
       const staleCutoff = new Date(Date.now() - PROCESSING_STALE_MS);
       const recovered = await prisma.outboxEvent.updateMany({
-        where: { status: 'PROCESSING', lockedAt: { lt: staleCutoff } },
+        where: {
+          status: 'PROCESSING',
+          OR: [
+            { lockedAt: null },
+            { lockedAt: { lt: staleCutoff } },
+          ],
+        },
         data: { status: 'PENDING', lockedAt: null, workerId: null },
       });
       if (recovered.count > 0) {

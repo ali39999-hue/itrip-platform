@@ -533,12 +533,12 @@ export function CardTransferPaymentView({
                   <button
                     type="button"
                     onClick={() => removeReceiptFile(idx)}
-                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center opacity-90 hover:opacity-100 transition shadow-sm"
+                    className="absolute top-1 end-1 w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center opacity-90 hover:opacity-100 transition shadow-sm"
                     title="حذف این تصویر"
                   >
                     <X size={13} />
                   </button>
-                  <span className="absolute bottom-1 left-1 text-[10px] font-mono bg-black/60 text-white px-1.5 py-0.5 rounded">
+                  <span className="absolute bottom-1 start-1 text-[10px] font-mono bg-black/60 text-white px-1.5 py-0.5 rounded">
                     #{idx + 1}
                   </span>
                 </div>
@@ -610,7 +610,7 @@ export function CardTransferPaymentView({
               type="file"
               accept="image/jpeg,image/png,image/webp"
               onChange={handleNationalIdChange}
-              className="block w-full text-[12px] text-sub file:mr-4 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[12px] file:font-bold file:bg-mint file:text-brand-dark hover:file:bg-mint/80 cursor-pointer"
+              className="block w-full text-[12px] text-sub file:me-4 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[12px] file:font-bold file:bg-mint file:text-brand-dark hover:file:bg-mint/80 cursor-pointer"
             />
           ) : (
             <div className="flex items-center gap-3">

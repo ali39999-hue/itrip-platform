@@ -98,7 +98,7 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
             <button
               onClick={() => setFav(!fav)}
               aria-label={lt(locale, { fa: 'علاقه‌مندی', en: 'Add to favorites', ar: 'المفضلة', zh: '收藏', ru: 'В избранное' })}
-              className={`w-10 h-10 grid place-items-center border rounded-xl bg-surface ${
+              className={`min-w-[44px] min-h-[44px] grid place-items-center border rounded-xl bg-surface active:scale-95 transition ${
                 fav ? 'text-rose-warm border-destructive/30 bg-destructive/10' : 'border-line text-sub'
               }`}
             >
@@ -134,7 +134,7 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
           <button
             type="button"
             onClick={() => setLbIndex(0)}
-            className="absolute bottom-3 end-3 px-3 py-1.5 rounded-xl bg-surface/90 backdrop-blur-md text-ink text-xs font-black shadow-xs flex items-center gap-1.5 active:scale-95 transition"
+            className="absolute bottom-3 end-3 min-h-[44px] px-3.5 py-2 rounded-xl bg-surface/90 backdrop-blur-md text-ink text-xs font-black shadow-xs flex items-center gap-1.5 active:scale-95 transition"
           >
             <span>{t('morePhotos', { count: galleryList.length })}</span>
           </button>

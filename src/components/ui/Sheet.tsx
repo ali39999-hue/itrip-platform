@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface SheetProps {
@@ -57,8 +58,6 @@ export function SheetContent({
     onEscape: () => onOpenChange(false),
   });
 
-  if (!open) return null;
-
   const sideClasses = {
     bottom:
       'inset-x-0 bottom-0 max-h-[85vh] rounded-t-3xl border-t animate-in slide-in-from-bottom duration-300',
@@ -69,31 +68,49 @@ export function SheetContent({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[150] bg-ink/60 backdrop-blur-sm animate-in fade-in duration-200"
-      onClick={() => onOpenChange(false)}
-    >
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        className={`fixed z-[151] bg-surface border-line p-6 shadow-elev-3 overflow-y-auto ${sideClasses[side]} ${className}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {side === 'bottom' && (
-          <div className="w-12 h-1.5 rounded-full bg-line/80 mx-auto mb-4 cursor-grab" />
-        )}
-        <button
-          type="button"
+    <AnimatePresence>
+      {open && (
+        <div
+          className="fixed inset-0 z-[150] bg-ink/60 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={() => onOpenChange(false)}
-          className="absolute top-4 end-4 w-8 h-8 rounded-full bg-soft text-sub hover:text-ink hover:bg-line/40 grid place-items-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-          aria-label={closeAriaLabel}
         >
-          <X size={16} />
-        </button>
-        {children}
-      </div>
-    </div>
+          <motion.div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            drag={side === 'bottom' ? 'y' : false}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0.05, bottom: 0.6 }}
+            onDragEnd={(_, info) => {
+              if (side === 'bottom' && (info.offset.y > 80 || info.velocity.y > 350)) {
+                onOpenChange(false);
+              }
+            }}
+            initial={side === 'bottom' ? { y: '100%' } : undefined}
+            animate={side === 'bottom' ? { y: 0 } : undefined}
+            exit={side === 'bottom' ? { y: '100%' } : undefined}
+            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            className={`fixed z-[151] bg-surface border-line p-6 shadow-elev-3 overflow-y-auto ${sideClasses[side]} ${className}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {side === 'bottom' && (
+              <div className="w-12 h-1.5 rounded-full bg-line/80 mx-auto mb-4 cursor-grab active:cursor-grabbing touch-none select-none" />
+            )}
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="absolute top-3 end-3 min-w-[44px] min-h-[44px] rounded-full text-sub hover:text-ink hover:bg-line/40 grid place-items-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              aria-label={closeAriaLabel}
+            >
+              <div className="w-8 h-8 rounded-full bg-soft grid place-items-center">
+                <X size={16} />
+              </div>
+            </button>
+            {children}
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }
 

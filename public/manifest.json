@@ -1,9 +1,13 @@
 {
-  "name": "فیروزو",
-  "short_name": "Firuzo",
+  "name": "فیروزه | سامانه جامع سفر و رزرواسیون",
+  "short_name": "فیروزه",
+  "description": "سوپراپ جامع رزرواسیون پرواز، هتل، اقامتگاه و تجربه‌های اصیل گردشگری فیروزه",
   "start_url": "/fa",
   "display": "standalone",
-  "background_color": "#f4f8f8",
+  "orientation": "portrait",
+  "dir": "rtl",
+  "lang": "fa",
+  "background_color": "#fafcfc",
   "theme_color": "#00a9a5",
   "icons": [
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },

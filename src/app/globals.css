@@ -111,6 +111,24 @@
   font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Safe Area insets for notch, Dynamic Island, and home indicator */
+@utility safe-bottom {
+  bottom: env(safe-area-inset-bottom, 0px);
+}
+@utility safe-top {
+  top: env(safe-area-inset-top, 0px);
+}
+@utility safe-pb {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+@utility safe-pt {
+  padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+}
+@utility touch-target {
+  min-width: 44px;
+  min-height: 44px;
+}
+
 /*
  * Design system: FIRUZO v1.0 (Downloads/firuzo-tokens.css)
  * فیروزه‌ای #00A9A5 (brand) / #046E6B (brand-dark — تنها فیروزه‌ای مجاز برای متن روی سفید)

@@ -73,172 +73,173 @@ export function BentoFlightCard({
   const destCity = flight.destinationCity || flight.destination.replace(/\s*\([A-Z]{3}\)/, '');
 
   return (
-    <article
-      aria-label={`${airlineName} ${flight.flightNo}, ${originCity} to ${destCity}, ${flight.departureTime} - ${flight.arrivalTime}, ${formatAmount(priceInToman)}`}
-      className="relative bg-surface rounded-2xl border border-line shadow-elev-1 hover:shadow-elev-2 hover:border-brand/40 transition-all group overflow-hidden"
-    >
-      {/* ========================================================================= */}
-      {/* 1. MOBILE COMPACT TICKET VIEW (< MD) — FLYTODAY MOBILE STANDARD          */}
-      {/* ========================================================================= */}
-      <div className="md:hidden p-4 flex flex-col gap-3">
-        {/* Mobile Top Row: Airline info & Urgency/Discount Badge */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5">
-            <AirlineLogo airline={flight.airline} airlineEn={flight.airlineEn} size={30} />
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <h4 className="font-extrabold text-[13.5px] text-ink leading-tight">
-                {airlineName}
-              </h4>
-              <span className="text-[10px] px-2 py-0.5 rounded-md bg-soft text-sub font-bold border border-line">
-                {business ? 'Business' : 'Economy'}
-              </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-md bg-mint text-brand-dark font-bold border border-brand/20">
-                {flight.ticketType === 'charter'
-                  ? lt(locale, { fa: 'چارتری', en: 'Charter', ar: 'عارضة', zh: '包机', ru: 'Чартер' })
-                  : lt(locale, { fa: 'سیستمی', en: 'Systemic', ar: 'منتظمة', zh: '正班', ru: 'Регулярный' })}
-              </span>
-            </div>
-          </div>
-
-          {/* Badge */}
-          <div>
-            {flight.seatsLeft <= 3 ? (
-              <span role="status" className="inline-flex items-center gap-1 text-[11px] font-black text-rose-600 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-md">
-                <BellDot size={12} />
-                <span>{lt(locale, { fa: `${num(flight.seatsLeft, locale)} صندلی`, en: `${num(flight.seatsLeft, locale)} left`, ar: `${num(flight.seatsLeft, locale)} مقاعد`, zh: `剩${num(flight.seatsLeft, locale)}位`, ru: `Осталось ${num(flight.seatsLeft, locale)}` })}</span>
-              </span>
-            ) : isCheapest || flight.price < 26_000_000 ? (
-              <span role="status" className="text-[11px] font-black text-emerald-700 bg-emerald-100/70 dark:bg-emerald-950/50 dark:text-emerald-300 px-2 py-0.5 rounded-md">
-                {lt(locale, { fa: 'ارزان‌ترین', en: 'Cheapest', ar: 'الأرخص', zh: '最实惠', ru: 'Эконом' })}
-              </span>
-            ) : null}
-          </div>
-        </div>
-
-        {/* Mobile Middle Row: Times & Flight Line (Compact) */}
-        <div className="flex items-center justify-between gap-2 py-1">
-          {/* Departure */}
-          <div className="flex flex-col items-start shrink-0 min-w-[62px]">
-            <span className="text-xl font-black text-neutral-900 dark:text-ink font-mono tracking-tight leading-none" dir="ltr">
-              {flight.departureTime}
-            </span>
-            <span className="text-xs font-black text-neutral-800 dark:text-ink mt-1">
-              {originCity}
-            </span>
-            <span className="text-[10px] font-bold text-neutral-400 dark:text-sub font-mono">
-              {originIata}
-            </span>
-          </div>
-
-          {/* Dotted Flight Line */}
-          <div className="flex-1 mx-2 flex flex-col items-center justify-center min-w-0">
-            <span className="text-[10.5px] font-bold text-neutral-500 dark:text-sub mb-1 whitespace-nowrap">
-              {durationLocalized(flight.duration, locale)}
-            </span>
-            <div className="w-full relative flex items-center justify-between">
-              <span className="w-1.5 h-1.5 rounded-full bg-neutral-700 dark:bg-mint-bright shrink-0" />
-              <div className="flex-1 mx-1.5 relative flex items-center justify-center">
-                <span className="w-full border-t border-dotted border-neutral-400 dark:border-line" />
-                <span className="absolute px-1.5 py-0.5 bg-[#FDF6EE] dark:bg-surface text-[#197678] dark:text-mint-bright">
-                  <Plane size={14} fill="currentColor" className="-rotate-45 rtl:-scale-x-100" />
+      <article
+        aria-label={`${airlineName} ${flight.flightNo}, ${originCity} to ${destCity}, ${flight.departureTime} - ${flight.arrivalTime}, ${formatAmount(priceInToman)}`}
+        className="relative bg-white dark:bg-surface rounded-2xl border border-slate-200/90 dark:border-line/80 shadow-[0_2px_12px_rgba(5,63,62,0.06)] hover:shadow-lg hover:border-brand/40 transition-all group overflow-hidden active:scale-[0.99] duration-100"
+      >
+        {/* ========================================================================= */}
+        {/* 1. MOBILE COMPACT TICKET VIEW (< MD) — FLYTODAY MOBILE STANDARD          */}
+        {/* ========================================================================= */}
+        <div className="md:hidden p-4 flex flex-col gap-3">
+          {/* Mobile Top Row: Airline info & Urgency/Discount Badge */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <AirlineLogo airline={flight.airline} airlineEn={flight.airlineEn} size={36} />
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h4 className="font-black text-sm text-slate-900 dark:text-ink leading-tight">
+                  {airlineName}
+                </h4>
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-soft text-slate-700 dark:text-sub font-bold border border-line">
+                  {business ? 'Business' : 'Economy'}
                 </span>
-              </div>
-              <span className="w-1.5 h-1.5 rounded-full bg-neutral-700 dark:bg-mint-bright shrink-0" />
-            </div>
-            <span className="text-[10px] font-bold text-neutral-500 dark:text-sub mt-1">
-              {flight.stops === 0
-                ? lt(locale, { fa: 'مستقیم', en: 'Non-stop', ar: 'مباشر', zh: '直飞', ru: 'Прямой' })
-                : `${num(flight.stops, locale)} ${t('stops')}`}
-            </span>
-          </div>
-
-          {/* Arrival */}
-          <div className="flex flex-col items-end shrink-0 min-w-[62px]">
-            <span className="text-xl font-black text-neutral-900 dark:text-ink font-mono tracking-tight leading-none" dir="ltr">
-              {flight.arrivalTime}
-            </span>
-            <span className="text-xs font-black text-neutral-800 dark:text-ink mt-1">
-              {destCity}
-            </span>
-            <span className="text-[10px] font-bold text-neutral-400 dark:text-sub font-mono">
-              {destIata}
-            </span>
-            {overnight && (
-              <span className="text-[9px] text-rose-500 font-bold">
-                {t('plusOneDay')}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile Bottom Row: Price & Action CTA (FlyToday layout) */}
-        <div className="pt-2.5 border-t border-[#F0E9DD] dark:border-line/70 flex items-center justify-between gap-3">
-          {/* Left: Baggage, details toggle & compare */}
-          <div className="flex items-center gap-2 text-xs text-neutral-600 dark:text-sub flex-wrap">
-            <span className="flex items-center gap-1 font-bold text-[11px]">
-              <Briefcase size={12} className="text-[#197678] dark:text-mint-bright" />
-              {flight.baggage}
-            </span>
-            <button
-              type="button"
-              onClick={() => setOpen(!open)}
-              aria-expanded={open}
-              aria-label={t('flightDetails')}
-              className="text-[11px] font-bold text-neutral-500 hover:text-amber-600 flex items-center gap-0.5"
-            >
-              <span>{t('flightDetails')}</span>
-              <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
-            </button>
-
-            {onToggleCompare && (
-              <button
-                type="button"
-                onClick={onToggleCompare}
-                className={`text-[10.5px] font-black px-2 py-0.5 rounded-md transition-all flex items-center gap-1 border ${
-                  isCompared
-                    ? 'bg-amber-100 border-amber-400 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 shadow-xs'
-                    : 'bg-surface/90 border-neutral-300 dark:border-line text-neutral-600 dark:text-sub hover:text-ink'
-                }`}
-              >
-                <Scale size={11} className={isCompared ? 'text-amber-700' : 'text-sub'} />
-                <span>
-                  {isCompared
-                    ? lt(locale, { fa: 'در مقایسه', en: 'Comparing', ar: 'في المقارنة', zh: '已对比', ru: 'В сравнении' })
-                    : lt(locale, { fa: 'مقایسه', en: 'Compare', ar: 'مقارنة', zh: '比较', ru: 'Сравнить' })}
-                </span>
-              </button>
-            )}
-
-            {onShowRefundRules && (
-              <button
-                type="button"
-                onClick={() => onShowRefundRules(flight)}
-                className="text-[10.5px] font-bold text-brand-dark hover:underline flex items-center gap-0.5"
-              >
-                <ShieldAlert size={11} className="text-brand-dark" aria-hidden="true" />
-                <span>{lt(locale, { fa: 'قوانین استرداد', en: 'Refund', ar: 'إلغاء', zh: '退改', ru: 'Возврат' })}</span>
-              </button>
-            )}
-          </div>
-
-          {/* Right: Price & CTA Button */}
-          <div className="flex items-center gap-2">
-            <div className="text-end">
-              <div className="flex items-baseline justify-end gap-1" dir="ltr">
-                <span className="text-lg font-black tracking-tight text-ink leading-none tabular-nums font-mono">
-                  {formatAmount(priceInToman)}
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-mint text-brand-dark font-black border border-brand/20">
+                  {flight.ticketType === 'charter'
+                    ? lt(locale, { fa: 'چارتری', en: 'Charter', ar: 'عارضة', zh: '包机', ru: 'Чартер' })
+                    : lt(locale, { fa: 'سیستمی', en: 'Systemic', ar: 'منتظمة', zh: '正班', ru: 'Регулярный' })}
                 </span>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={onSelect}
-              className="h-9 px-3.5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs transition active:scale-95 shadow-xs cursor-pointer"
-            >
-              {t('selectTicket')}
-            </button>
+
+            {/* Badge */}
+            <div>
+              {flight.seatsLeft <= 3 ? (
+                <span role="status" className="inline-flex items-center gap-1 text-[11px] font-black text-rose-600 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-md">
+                  <BellDot size={12} />
+                  <span>{lt(locale, { fa: `${num(flight.seatsLeft, locale)} صندلی`, en: `${num(flight.seatsLeft, locale)} left`, ar: `${num(flight.seatsLeft, locale)} مقاعد`, zh: `剩${num(flight.seatsLeft, locale)}位`, ru: `Осталось ${num(flight.seatsLeft, locale)}` })}</span>
+                </span>
+              ) : isCheapest || flight.price < 26_000_000 ? (
+                <span role="status" className="text-[11px] font-black text-emerald-700 bg-emerald-100/70 dark:bg-emerald-950/50 dark:text-emerald-300 px-2 py-0.5 rounded-md">
+                  {lt(locale, { fa: 'ارزان‌ترین', en: 'Cheapest', ar: 'الأرخص', zh: '最实惠', ru: 'Эконом' })}
+                </span>
+              ) : null}
+            </div>
           </div>
-        </div>
+
+          {/* Mobile Middle Row: Times & Flight Line (Compact) */}
+          <div className="flex items-center justify-between gap-2 py-1">
+            {/* Departure */}
+            <div className="flex flex-col items-start shrink-0 min-w-[62px]">
+              <span className="text-2xl font-black text-slate-900 dark:text-ink font-mono tracking-tight leading-none" dir="ltr">
+                {flight.departureTime}
+              </span>
+              <span className="text-xs font-black text-slate-800 dark:text-ink mt-1">
+                {originCity}
+              </span>
+              <span className="text-[10px] font-bold text-slate-400 dark:text-sub font-mono">
+                {originIata}
+              </span>
+            </div>
+
+            {/* Dotted Flight Line */}
+            <div className="flex-1 mx-2 flex flex-col items-center justify-center min-w-0">
+              <span className="text-[10.5px] font-bold text-slate-500 dark:text-sub mb-1 whitespace-nowrap">
+                {durationLocalized(flight.duration, locale)}
+              </span>
+              <div className="w-full relative flex items-center justify-between">
+                <span className="w-1.5 h-1.5 rounded-full bg-brand dark:bg-mint-bright shrink-0" />
+                <div className="flex-1 mx-1.5 relative flex items-center justify-center">
+                  <span className="w-full border-t border-dashed border-slate-300 dark:border-line" />
+                  <span className="absolute p-1 rounded-full bg-mint text-brand-dark shadow-2xs border border-brand/20">
+                    <Plane size={13} fill="currentColor" className="-rotate-45 rtl:-scale-x-100" />
+                  </span>
+                </div>
+                <span className="w-1.5 h-1.5 rounded-full bg-brand dark:bg-mint-bright shrink-0" />
+              </div>
+              <span className="text-[10px] font-bold text-slate-500 dark:text-sub mt-1">
+                {flight.stops === 0
+                  ? lt(locale, { fa: 'مستقیم', en: 'Non-stop', ar: 'مباشر', zh: '直飞', ru: 'Прямой' })
+                  : `${num(flight.stops, locale)} ${t('stops')}`}
+              </span>
+            </div>
+
+            {/* Arrival */}
+            <div className="flex flex-col items-end shrink-0 min-w-[62px]">
+              <span className="text-2xl font-black text-slate-900 dark:text-ink font-mono tracking-tight leading-none" dir="ltr">
+                {flight.arrivalTime}
+              </span>
+              <span className="text-xs font-black text-slate-800 dark:text-ink mt-1">
+                {destCity}
+              </span>
+              <span className="text-[10px] font-bold text-slate-400 dark:text-sub font-mono">
+                {destIata}
+              </span>
+              {overnight && (
+                <span className="text-[9px] text-rose-500 font-bold">
+                  {t('plusOneDay')}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Mobile Bottom Row: Price & Action CTA (FlyToday layout) */}
+          <div className="pt-2.5 border-t border-slate-100 dark:border-line/70 flex items-center justify-between gap-3">
+            {/* Left: Baggage, details toggle & compare */}
+            <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-sub flex-wrap">
+              <span className="flex items-center gap-1 font-bold text-[11px]">
+                <Briefcase size={12} className="text-brand dark:text-mint-bright" />
+                {flight.baggage}
+              </span>
+              <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                aria-expanded={open}
+                aria-label={t('flightDetails')}
+                className="min-h-[44px] text-[11px] font-bold text-slate-500 hover:text-amber-600 flex items-center gap-0.5 px-1 active:scale-95 transition"
+              >
+                <span>{t('flightDetails')}</span>
+                <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+              </button>
+
+              {onToggleCompare && (
+                <button
+                  type="button"
+                  onClick={onToggleCompare}
+                  className={`min-h-[44px] text-[10.5px] font-black px-2.5 py-1 rounded-xl transition-all flex items-center gap-1 border active:scale-95 ${
+                    isCompared
+                      ? 'bg-amber-100 border-amber-400 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 shadow-xs'
+                      : 'bg-surface/90 border-neutral-300 dark:border-line text-neutral-600 dark:text-sub hover:text-ink'
+                  }`}
+                >
+                  <Scale size={11} className={isCompared ? 'text-amber-700' : 'text-sub'} />
+                  <span>
+                    {isCompared
+                      ? lt(locale, { fa: 'در مقایسه', en: 'Comparing', ar: 'في المقارنة', zh: '已对比', ru: 'В сравнении' })
+                      : lt(locale, { fa: 'مقایسه', en: 'Compare', ar: 'مقارنة', zh: '比较', ru: 'Сравнить' })}
+                  </span>
+                </button>
+              )}
+
+              {onShowRefundRules && (
+                <button
+                  type="button"
+                  onClick={() => onShowRefundRules(flight)}
+                  className="min-h-[44px] text-[10.5px] font-bold text-brand-dark hover:underline flex items-center gap-0.5 px-1 active:scale-95 transition"
+                >
+                  <ShieldAlert size={11} className="text-brand-dark" aria-hidden="true" />
+                  <span>{lt(locale, { fa: 'قوانین استرداد', en: 'Refund', ar: 'إلغاء', zh: '退改', ru: 'Возврат' })}</span>
+                </button>
+              )}
+            </div>
+
+            {/* Right: Price & CTA Button */}
+            <div className="flex items-center gap-2.5">
+              <div className="text-end flex flex-col items-end">
+                <div className="flex items-baseline gap-1" dir="ltr">
+                  <span className="text-xl font-black tracking-tight text-[#9C6209] dark:text-amber-400 leading-none tabular-nums font-mono">
+                    {formatAmount(priceInToman)}
+                  </span>
+                  <span className="text-[11px] font-black text-slate-500">تومان</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={onSelect}
+                className="min-h-11 px-4.5 rounded-xl bg-action hover:bg-action-hover active:bg-action-active text-slate-950 font-black text-xs sm:text-sm transition active:scale-95 shadow-[0_4px_14px_rgba(240,166,42,0.4)] cursor-pointer flex items-center justify-center shrink-0"
+              >
+                {t('selectTicket')}
+              </button>
+            </div>
+          </div>
 
         {/* Mobile Collapsed Details */}
         {open && (
@@ -313,10 +314,10 @@ export function BentoFlightCard({
 
                 {/* Fine dotted line */}
                 <div className="flex-1 mx-2.5 relative flex items-center justify-center">
-                  <span className="w-full border-t-2 border-dotted border-neutral-300 dark:border-line" />
+                  <span className="w-full border-t-2 border-dashed border-slate-200 dark:border-line" />
                   {/* Plane icon centered on the line — در RTL به سمت چپ (جهت پرواز) */}
-                  <span className="absolute px-2.5 py-1.5 bg-[#FDF6EE] dark:bg-surface text-[#197678] dark:text-mint-bright">
-                    <Plane size={18} fill="currentColor" className="-rotate-45 rtl:-scale-x-100" />
+                  <span className="absolute p-1.5 rounded-full bg-mint text-brand-dark shadow-2xs border border-brand/20">
+                    <Plane size={16} fill="currentColor" className="-rotate-45 rtl:-scale-x-100" />
                   </span>
                 </div>
 
@@ -351,7 +352,7 @@ export function BentoFlightCard({
           </div>
 
           {/* Bottom row: مقایسه (start) — جزئیات پرواز (میانی) — بار مجاز (end) */}
-          <div className="mt-4 pt-3 border-t border-[#F0E9DD] dark:border-line/70 flex items-center justify-between gap-2 text-xs text-neutral-500">
+          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-line/70 flex items-center justify-between gap-2 text-xs text-neutral-500">
             {/* Compare checkbox */}
             <label className="flex items-center gap-2 cursor-pointer select-none text-neutral-500 hover:text-neutral-800 dark:text-sub dark:hover:text-ink transition-colors">
               <input
@@ -428,7 +429,7 @@ export function BentoFlightCard({
 
           {/* Expanded details container */}
           {open && (
-            <div className="animate-in fade-in slide-in-from-top-2 duration-200 mt-3 p-4 bg-[#FAF3E7] dark:bg-soft/70 border border-[#F0E9DD] dark:border-line/70 rounded-xl grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
+            <div className="animate-in fade-in slide-in-from-top-2 duration-200 mt-3 p-4 bg-slate-50 dark:bg-soft/70 border border-slate-200 dark:border-line rounded-xl grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
               <div>
                 <b className="block text-[10.5px] text-neutral-400 dark:text-sub font-bold mb-0.5">
                   {lt(locale, { fa: 'شماره پرواز', en: 'Flight No', ar: 'رقم الرحلة', zh: '航班号', ru: 'Номер рейса' })}

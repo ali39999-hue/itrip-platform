@@ -49,6 +49,17 @@ export function ExperienceDetailModal({
   const [selectedDate, setSelectedDate] = useState(() => daysFromNow(3));
   const [withInterpreter, setWithInterpreter] = useState(false);
 
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !experience) return null;
 
   const title = locale === 'fa' ? experience.title : (experience.titleEn || experience.title);
@@ -102,7 +113,7 @@ export function ExperienceDetailModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="experience-title"
-      className="fixed inset-0 z-[160] flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
+      className="fixed inset-0 z-[160] flex items-end sm:items-center justify-center p-0 sm:p-5 overflow-y-auto"
     >
       {/* Backdrop */}
       <div
@@ -112,7 +123,8 @@ export function ExperienceDetailModal({
       />
 
       {/* Modal Dialog Card */}
-      <div className="relative z-10 w-full max-w-2xl bg-surface rounded-3xl shadow-2xl border border-line overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200 my-auto">
+      <div className="relative z-10 w-full max-w-2xl bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl border-t sm:border border-line overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom sm:slide-in-from-none sm:zoom-in-95 duration-200 my-0 sm:my-auto">
+        <div className="sm:hidden absolute top-2 inset-x-0 mx-auto z-20 w-12 h-1.5 rounded-full bg-white/70 shadow-xs" />
         {/* Top Media Header with Close Button */}
         <div className="relative w-full h-52 sm:h-64 shrink-0 bg-soft">
           <Image
@@ -131,9 +143,11 @@ export function ExperienceDetailModal({
             type="button"
             onClick={onClose}
             aria-label="بستن"
-            className="absolute top-4 end-4 w-9 h-9 rounded-full bg-surface/80 hover:bg-surface text-ink backdrop-blur-md grid place-items-center active:scale-95 transition shadow-sm"
+            className="absolute top-4 end-4 min-w-[44px] min-h-[44px] rounded-full bg-surface/80 hover:bg-surface text-ink backdrop-blur-md grid place-items-center active:scale-95 transition shadow-sm"
           >
-            <X size={18} />
+            <div className="w-8 h-8 rounded-full bg-surface/90 grid place-items-center">
+              <X size={18} />
+            </div>
           </button>
 
           {/* Badges on Hero */}
@@ -268,7 +282,7 @@ export function ExperienceDetailModal({
         </div>
 
         {/* Sticky Action Footer -> DIRECT TO CHECKOUT */}
-        <div className="p-4 sm:p-5 border-t border-line bg-surface flex items-center justify-between gap-4 shadow-elev-1">
+        <div className="p-4 sm:p-5 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-line bg-surface flex items-center justify-between gap-4 shadow-elev-1">
           <div>
             <span className="text-[11px] font-bold text-sub block">مبلغ کل و نهایی:</span>
             <div className="flex items-baseline gap-1">

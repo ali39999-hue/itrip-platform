@@ -91,11 +91,18 @@ export default async function HomePage() {
         </div>
       )}
 
+      {/* On Mobile: Quick Access Service Icons Grid right at top (Snapp/Alibaba Super-App Pattern) */}
+      <div className="md:hidden">
+        <QuickServicesBar />
+      </div>
+
       {/* 1. Hero & Unified Flight/Hotel/Tour Search Engine */}
       <HeroSection override={hero ?? undefined} />
 
-      {/* 2. Sleek Quick Access Service Bar (FlyToday / Alibaba pattern) */}
-      <QuickServicesBar />
+      {/* On Desktop: Sleek Quick Access Service Bar below Hero */}
+      <div className="hidden md:block">
+        <QuickServicesBar />
+      </div>
 
       <div className="flex flex-col gap-8 md:gap-14 pt-4 md:pt-8 pb-16">
         {/* 3. High-Impact Promotional Banners */}

@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useRouter } from '@/i18n/routing';
+import { useRouter, usePathname } from '@/i18n/routing';
 import { useCountryStore } from '@/stores/country-store';
 import {
   COUNTRIES, experienceCategoryLabel, countryName,
@@ -174,13 +174,21 @@ export function CountryExperiencesSection({
   const { c, experiences, titleOf, descOf, whereOf, whenOf, catOf } = useExperiences();
   const locale = useLocale();
   const t = useTranslations('Experiences');
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [filter, setFilter] = useState<'all' | ExperienceCategory>('all');
   const [selectedExp, setSelectedExp] = useState<SignatureExperience | null>(null);
+  const lastHandledCityRef = useRef<string | null>(null);
 
   useEffect(() => {
     const cityOrTitle = searchParams?.get('city');
-    if (cityOrTitle && experiences.length > 0 && !selectedExp) {
+    if (!cityOrTitle) {
+      lastHandledCityRef.current = null;
+      return;
+    }
+    if (cityOrTitle && experiences.length > 0 && lastHandledCityRef.current !== cityOrTitle) {
+      lastHandledCityRef.current = cityOrTitle;
       const needle = decodeURIComponent(cityOrTitle.replace(/\+/g, ' ')).trim().toLowerCase();
       const matched = experiences.find(
         (e) =>
@@ -194,7 +202,17 @@ export function CountryExperiencesSection({
         setSelectedExp(matched);
       }
     }
-  }, [searchParams, experiences, selectedExp]);
+  }, [searchParams, experiences]);
+
+  const handleClose = () => {
+    setSelectedExp(null);
+    const params = new URLSearchParams(searchParams?.toString() || '');
+    if (params.has('city')) {
+      params.delete('city');
+      const newQuery = params.toString();
+      router.replace(newQuery ? `${pathname}?${newQuery}` : pathname, { scroll: false });
+    }
+  };
 
   const cats = useMemo(() => {
     const set = new Set<ExperienceCategory>(experiences.map((e) => e.category));
@@ -276,7 +294,7 @@ export function CountryExperiencesSection({
       <ExperienceDetailModal
         experience={selectedExp}
         isOpen={Boolean(selectedExp)}
-        onClose={() => setSelectedExp(null)}
+        onClose={handleClose}
       />
     </section>
   );

@@ -39,7 +39,7 @@ export function SearchModeTabs({ activeTab, onTabChange }: SearchModeTabsProps) 
               role="tab"
               aria-selected={active}
               onClick={() => onTabChange(id)}
-              className={`min-h-[44px] px-2 sm:px-5 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 rounded-xl transition-all font-black text-[11.5px] sm:text-[13.5px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer ${
+              className={`min-h-[44px] px-2 sm:px-5 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 rounded-xl transition-all font-black text-[11.5px] sm:text-[13.5px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer active:scale-95 duration-100 ${
                 active
                   ? 'bg-brand-dark text-surface shadow-md shadow-brand/25'
                   : 'text-ink/80 hover:text-brand-dark hover:bg-surface/60'

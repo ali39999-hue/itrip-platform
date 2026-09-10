@@ -26,6 +26,14 @@ const PAGES = [
 
 const IMPACT_ORDER = ['critical', 'serious', 'moderate', 'minor'];
 
+try {
+  await fetch(BASE, { signal: AbortSignal.timeout(3000) });
+} catch (err) {
+  console.error(`[gate:a11y] Error: Cannot connect to server at ${BASE}.`);
+  console.error(`Please ensure the Next.js server is running (e.g. 'npm run dev' or 'npm start') before executing gate:a11y.`);
+  process.exit(1);
+}
+
 const browser = await chromium.launch();
 const context = await browser.newContext();
 const page = await context.newPage();

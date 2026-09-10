@@ -297,7 +297,7 @@ export function CityAutocomplete({
           className="md:hidden fixed inset-0 z-[150] bg-surface flex flex-col animate-in fade-in slide-in-from-bottom-3 duration-200"
         >
           {/* Mobile Sheet Top Bar */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-line bg-paper/80 backdrop-blur-md">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-line bg-paper/80 backdrop-blur-md pt-[max(0.75rem,env(safe-area-inset-top))]">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-mint grid place-items-center text-brand-dark">
                 <MapPin size={16} aria-hidden="true" />
@@ -318,10 +318,12 @@ export function CityAutocomplete({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="w-9 h-9 rounded-full bg-soft text-ink grid place-items-center active:scale-95 transition"
+              className="min-w-[44px] min-h-[44px] rounded-full text-ink grid place-items-center active:scale-95 transition"
               aria-label={lt(locale, { fa: 'بستن', en: 'Close', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}
             >
-              <X size={18} />
+              <div className="w-8 h-8 rounded-full bg-soft grid place-items-center">
+                <X size={18} />
+              </div>
             </button>
           </div>
 
@@ -424,7 +426,7 @@ export function CityAutocomplete({
                     key={city.id}
                     type="button"
                     onClick={() => handleSelect(cityName)}
-                    className={`w-full flex items-center justify-between p-3 rounded-2xl transition text-start border ${
+                    className={`w-full min-h-[52px] flex items-center justify-between p-3 rounded-2xl transition text-start border active:scale-[0.99] duration-100 ${
                       isSelected
                         ? 'bg-mint border-brand/40 text-brand-dark'
                         : 'bg-surface border-transparent hover:bg-soft text-ink'

@@ -86,7 +86,7 @@ export function HotelCard({
   return (
     <article
       aria-label={`${locale === 'fa' ? hotel.name : hotel.nameEn}, ${hotel.stars} stars, ${locale === 'fa' ? hotel.city : hotel.cityEn}`}
-      className="bg-surface border border-line rounded-2xl p-3.5 sm:p-5 hover:border-brand/40 transition-all shadow-elev-1 hover:shadow-elev-2 group"
+      className="bg-white dark:bg-surface border border-slate-200/90 dark:border-line rounded-2xl p-3.5 sm:p-5 hover:border-brand/40 transition-all shadow-[0_2px_12px_rgba(5,63,62,0.06)] hover:shadow-md group active:scale-[0.99] duration-100"
     >
       {/* ========================================================================= */}
       {/* 1. MOBILE COMPACT VIEW (< MD) — FLYTODAY MOBILE STANDARD                  */}
@@ -115,9 +115,11 @@ export function HotelCard({
               type="button"
               onClick={onFav}
               aria-label={t('addFav')}
-              className="absolute top-1.5 end-1.5 w-8 h-8 rounded-full bg-surface/90 backdrop-blur-xs text-ink grid place-items-center shadow-xs active:scale-90 transition"
+              className="absolute top-0 end-0 w-11 h-11 grid place-items-center active:scale-90 transition"
             >
-              <Heart size={14} className={fav ? 'fill-rose-warm text-rose-warm' : 'text-sub'} aria-hidden="true" />
+              <div className="w-8 h-8 rounded-full bg-surface/90 backdrop-blur-xs text-ink grid place-items-center shadow-xs">
+                <Heart size={14} className={fav ? 'fill-rose-warm text-rose-warm' : 'text-sub'} aria-hidden="true" />
+              </div>
             </button>
           </div>
 
@@ -176,20 +178,23 @@ export function HotelCard({
         </div>
 
         {/* Bottom Row: Price & Booking CTA */}
-        <div className="pt-2 border-t border-line/60 flex items-center justify-between gap-2">
-          <div>
+        <div className="pt-2.5 border-t border-slate-100 dark:border-line/60 flex items-center justify-between gap-2">
+          <div className="flex flex-col">
             <span className="text-[10px] text-sub block font-bold leading-none mb-0.5">
               {t('perNightFrom')}
             </span>
-            <div className="text-sm font-black text-brand-dark font-mono num flex items-baseline gap-1">
-              <span>{formatAmount(priceToman)}</span>
+            <div className="flex items-baseline gap-1" dir="ltr">
+              <span className="text-lg font-black text-[#9C6209] dark:text-amber-400 font-mono tabular-nums leading-none">
+                {formatAmount(priceToman)}
+              </span>
+              <span className="text-[11px] font-black text-sub">تومان</span>
             </div>
           </div>
 
           <Link
             href={`/hotels/${hotel.id}${queryString}`}
             aria-label={`${t('viewAndBook')} - ${locale === 'fa' ? hotel.name : hotel.nameEn}`}
-            className="h-9 px-4 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs flex items-center justify-center transition active:scale-95 shadow-xs"
+            className="min-h-11 px-5 rounded-xl bg-action hover:bg-action-hover active:bg-action-active text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center transition active:scale-95 shadow-[0_4px_14px_rgba(240,166,42,0.35)]"
           >
             {t('viewAndBook')}
           </Link>

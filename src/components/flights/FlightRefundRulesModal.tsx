@@ -72,9 +72,10 @@ export function FlightRefundRulesModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="refund-rules-title"
-      className="fixed inset-0 z-[170] flex items-center justify-center p-4 bg-deep/70 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-[170] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-deep/70 backdrop-blur-xs animate-in fade-in duration-200"
     >
-      <div className="w-full max-w-lg bg-surface rounded-3xl border border-line shadow-elev-3 overflow-hidden flex flex-col">
+      <div className="w-full max-w-lg bg-surface rounded-t-3xl sm:rounded-3xl border-t sm:border border-line shadow-elev-3 overflow-hidden flex flex-col max-h-[88vh]">
+        <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto mt-2.5 mb-1" />
         {/* Header */}
         <div className="p-5 border-b border-line flex items-center justify-between bg-mint/30">
           <div className="flex items-center gap-2.5">
@@ -107,9 +108,11 @@ export function FlightRefundRulesModal({
             type="button"
             onClick={onClose}
             aria-label={lt(locale, { fa: 'بستن', en: 'Close', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}
-            className="w-8 h-8 rounded-full bg-soft text-sub hover:text-ink grid place-items-center transition"
+            className="min-w-[44px] min-h-[44px] rounded-full text-sub hover:text-ink grid place-items-center transition"
           >
-            <X size={18} />
+            <div className="w-8 h-8 rounded-full bg-soft grid place-items-center">
+              <X size={18} />
+            </div>
           </button>
         </div>
 
@@ -155,7 +158,7 @@ export function FlightRefundRulesModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-2.5 rounded-xl bg-brand hover:bg-brand-dark text-surface text-xs font-black transition active:scale-95 cursor-pointer shadow-sm"
+            className="w-full sm:w-auto min-h-11 px-6 rounded-xl bg-brand hover:bg-brand-dark text-surface text-xs font-black transition active:scale-95 cursor-pointer shadow-sm flex items-center justify-center"
           >
             {lt(locale, { fa: 'متوجه شدم', en: 'Got it', ar: 'فهمت ذلك', zh: '了解', ru: 'Понятно' })}
           </button>

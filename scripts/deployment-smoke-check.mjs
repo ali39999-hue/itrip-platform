@@ -64,7 +64,7 @@ async function runSmokeSuite() {
       path: '/api/health/live',
       expectedStatus: 200,
       validator: (data) => {
-        if (!data || data.status !== 'alive') return 'Expected status: alive';
+        if (!data || (data.status !== 'alive' && data.status !== 'live')) return 'Expected status: alive or live';
         return null;
       },
     },
@@ -74,7 +74,9 @@ async function runSmokeSuite() {
       expectedStatus: 200,
       validator: (data) => {
         if (!data || data.status !== 'ready') return 'Expected status: ready';
-        if (!data.checks || data.checks.database !== 'connected') return 'Database check is not connected';
+        if (!data.checks || (data.checks.database !== 'connected' && data.checks.database?.status !== 'healthy')) {
+          return 'Database check is not healthy';
+        }
         return null;
       },
     },

@@ -273,18 +273,20 @@ export function HotelSearchHeader({
                         type="button"
                         onClick={() => onRoomsChange?.(Math.max(1, rooms - 1))}
                         disabled={rooms <= 1}
-                        className="w-8 h-8 rounded-lg bg-soft border border-line grid place-items-center disabled:opacity-30 hover:bg-line/50 transition cursor-pointer"
+                        className="w-10 h-10 rounded-xl bg-soft border border-line grid place-items-center disabled:opacity-30 hover:bg-line/50 active:scale-95 transition cursor-pointer"
+                        aria-label={lt(locale, { fa: 'کاهش اتاق', en: 'Decrease rooms', ar: 'تقليل الغرف', zh: '减少房间', ru: 'Уменьшить' })}
                       >
-                        <Minus size={13} />
+                        <Minus size={14} />
                       </button>
-                      <span className="w-5 text-center text-xs font-black font-mono">{num(rooms, locale)}</span>
+                      <span className="w-6 text-center text-sm font-black font-mono">{num(rooms, locale)}</span>
                       <button
                         type="button"
                         onClick={() => onRoomsChange?.(Math.min(5, rooms + 1))}
                         disabled={rooms >= 5}
-                        className="w-8 h-8 rounded-lg bg-soft border border-line grid place-items-center disabled:opacity-30 hover:bg-line/50 transition cursor-pointer"
+                        className="w-10 h-10 rounded-xl bg-soft border border-line grid place-items-center disabled:opacity-30 hover:bg-line/50 active:scale-95 transition cursor-pointer"
+                        aria-label={lt(locale, { fa: 'افزایش اتاق', en: 'Increase rooms', ar: 'زيادة الغرف', zh: '增加房间', ru: 'Увеличить' })}
                       >
-                        <Plus size={13} />
+                        <Plus size={14} />
                       </button>
                     </div>
                   </div>
@@ -300,18 +302,20 @@ export function HotelSearchHeader({
                         type="button"
                         onClick={() => onAdultsChange?.(Math.max(1, adults - 1))}
                         disabled={adults <= 1}
-                        className="w-8 h-8 rounded-lg bg-soft border border-line grid place-items-center disabled:opacity-30 hover:bg-line/50 transition cursor-pointer"
+                        className="w-10 h-10 rounded-xl bg-soft border border-line grid place-items-center disabled:opacity-30 hover:bg-line/50 active:scale-95 transition cursor-pointer"
+                        aria-label={lt(locale, { fa: 'کاهش بزرگسال', en: 'Decrease adults', ar: 'تقليل البالغين', zh: '减少成人', ru: 'Уменьшить' })}
                       >
-                        <Minus size={13} />
+                        <Minus size={14} />
                       </button>
-                      <span className="w-5 text-center text-xs font-black font-mono">{num(adults, locale)}</span>
+                      <span className="w-6 text-center text-sm font-black font-mono">{num(adults, locale)}</span>
                       <button
                         type="button"
                         onClick={() => onAdultsChange?.(Math.min(9, adults + 1))}
                         disabled={adults >= 9}
-                        className="w-8 h-8 rounded-lg bg-soft border border-line grid place-items-center disabled:opacity-30 hover:bg-line/50 transition cursor-pointer"
+                        className="w-10 h-10 rounded-xl bg-soft border border-line grid place-items-center disabled:opacity-30 hover:bg-line/50 active:scale-95 transition cursor-pointer"
+                        aria-label={lt(locale, { fa: 'افزایش بزرگسال', en: 'Increase adults', ar: 'زيادة البالغين', zh: '增加成人', ru: 'Увеличить' })}
                       >
-                        <Plus size={13} />
+                        <Plus size={14} />
                       </button>
                     </div>
                   </div>
@@ -327,18 +331,20 @@ export function HotelSearchHeader({
                         type="button"
                         onClick={() => onChildrenCountChange?.(Math.max(0, childrenCount - 1))}
                         disabled={childrenCount <= 0}
-                        className="w-8 h-8 rounded-lg bg-soft border border-line grid place-items-center disabled:opacity-30 hover:bg-line/50 transition cursor-pointer"
+                        className="w-10 h-10 rounded-xl bg-soft border border-line grid place-items-center disabled:opacity-30 hover:bg-line/50 active:scale-95 transition cursor-pointer"
+                        aria-label={lt(locale, { fa: 'کاهش کودک', en: 'Decrease children', ar: 'تقليل الأطفال', zh: '减少儿童', ru: 'Уменьшить' })}
                       >
-                        <Minus size={13} />
+                        <Minus size={14} />
                       </button>
-                      <span className="w-5 text-center text-xs font-black font-mono">{num(childrenCount, locale)}</span>
+                      <span className="w-6 text-center text-sm font-black font-mono">{num(childrenCount, locale)}</span>
                       <button
                         type="button"
                         onClick={() => onChildrenCountChange?.(Math.min(6, childrenCount + 1))}
                         disabled={childrenCount >= 6}
-                        className="w-8 h-8 rounded-lg bg-soft border border-line grid place-items-center disabled:opacity-30 hover:bg-line/50 transition cursor-pointer"
+                        className="w-10 h-10 rounded-xl bg-soft border border-line grid place-items-center disabled:opacity-30 hover:bg-line/50 active:scale-95 transition cursor-pointer"
+                        aria-label={lt(locale, { fa: 'افزایش کودک', en: 'Increase children', ar: 'زيادة الأطفال', zh: '增加儿童', ru: 'Увеличить' })}
                       >
-                        <Plus size={13} />
+                        <Plus size={14} />
                       </button>
                     </div>
                   </div>
