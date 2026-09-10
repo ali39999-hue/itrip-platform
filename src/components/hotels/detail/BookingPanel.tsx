@@ -6,14 +6,17 @@ import { fa, stayDate } from '@/lib/hotel-format';
 import { ROOMS, PLANS, type PlanId } from '@/lib/hotel-mock';
 import { quote, toman, type useHotelBooking, FREE_CANCEL_HOURS } from '@/hooks/useHotelBooking';
 import { lt } from '@/lib/lt';
+import { num } from '@/lib/format';
+import type { Hotel } from '@/lib/types';
 
 interface BookingPanelProps {
   booking: ReturnType<typeof useHotelBooking>;
+  hotel?: Hotel | null;
   onBook: () => void;
   onOpenEdit?: () => void;
 }
 
-export function BookingPanel({ booking, onBook, onOpenEdit }: BookingPanelProps) {
+export function BookingPanel({ booking, hotel, onBook, onOpenEdit }: BookingPanelProps) {
   const t = useTranslations('HotelDetail');
   const ariaT = useTranslations('Common.aria');
   const locale = useLocale();
@@ -27,13 +30,20 @@ export function BookingPanel({ booking, onBook, onOpenEdit }: BookingPanelProps)
     checkin,
     checkout,
     nights,
+    isLive,
   } = booking;
 
-  const cheapest = Math.min(...ROOMS.flatMap((r) => r.plans.map((p) => quote(r, p, nights, 0).total)));
-  const panelAmount = capacity.n > 0 ? totals.total : cheapest;
-  const totalToman = toman(totals.total);
-  const taxToman = toman(totals.tax);
-  const extraToman = totals.extra > 0 ? toman(totals.extra) : 0;
+  const liveRooms = isLive && hotel?.roomTypes && hotel.roomTypes.length > 0 ? hotel.roomTypes : null;
+  const liveById = new Map((liveRooms || []).map((r) => [String(r.id), r]));
+  const cheapestLive = liveRooms
+    ? Math.min(...liveRooms.map((r) => Math.round((r.pricePerNight || 0) / 10) * Math.max(1, nights.length) * 1.1))
+    : 0;
+  const cheapestMock = Math.min(...ROOMS.flatMap((r) => r.plans.map((p) => quote(r, p, nights, 0).total)));
+  const cheapest = liveRooms ? cheapestLive : cheapestMock;
+  const panelAmount = capacity.n > 0 ? (isLive ? Math.round(totals.total) : toman(totals.total)) : (liveRooms ? Math.round(cheapest) : toman(cheapest));
+  const totalToman = isLive ? Math.round(totals.total) : toman(totals.total);
+  const taxToman = isLive ? Math.round(totals.tax) : toman(totals.tax);
+  const extraToman = totals.extra > 0 ? (isLive ? Math.round(totals.extra) : toman(totals.extra)) : 0;
   const subToman = Math.max(0, totalToman - taxToman - extraToman);
   const tomanLabel = lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' });
 
@@ -58,7 +68,7 @@ export function BookingPanel({ booking, onBook, onOpenEdit }: BookingPanelProps)
           {capacity.n ? `${locale === 'fa' ? `جمع ${fa(capacity.n)} اتاق برای ${fa(nights.length)} شب` : `Total ${capacity.n} rooms for ${nights.length} nights`}` : (lt(locale, { fa: 'شروع قیمت برای اقامت شما', en: 'Starting rate for your dates', ar: 'السعر الابتدائي لتواريخ إقامتك', zh: '您所选日期的起步价', ru: 'Стартовая цена на ваши даты' }))}
         </div>
         <div className="flex items-baseline gap-1.5">
-          <b className="text-[26px] font-black text-price num">{fa(toman(panelAmount))}</b>
+          <b className="text-[26px] font-black text-price num">{num(Math.round(panelAmount), locale)}</b>
           <small className="text-xs font-extrabold text-sub">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</small>
         </div>
       </div>
@@ -114,6 +124,36 @@ export function BookingPanel({ booking, onBook, onOpenEdit }: BookingPanelProps)
           ) : (
             Object.entries(sel).map(([k, q]) => {
               const [rid, pid] = k.split('|') as [string, PlanId];
+              if (liveRooms) {
+                const room = liveById.get(rid);
+                if (!room) return null;
+                const priceToman = Math.round((room.pricePerNight || 0) / 10);
+                const itemTotalToman = priceToman * Math.max(1, nights.length) * q * 1.1;
+                return (
+                  <div key={k} className="flex items-start gap-2 p-2.5 border border-mint-bright/60 rounded-xl bg-mint/30">
+                    <div className="flex-1 min-w-0">
+                      <b className="block text-xs font-black">{num(q, locale)} × {room.name}</b>
+                      <span className="block text-[10.5px] font-bold text-sub">
+                        {room.breakfast
+                          ? lt(locale, { fa: 'با صبحانه', en: 'With breakfast', ar: 'مع الإفطار', zh: '含早餐', ru: 'С завтраком' })
+                          : lt(locale, { fa: 'بدون صبحانه', en: 'Room only', ar: 'بدون إفطار', zh: '无早餐', ru: 'Без завтрака' })}
+                      </span>
+                    </div>
+                    <div className="text-end shrink-0">
+                      <span className="text-xs font-black whitespace-nowrap block text-price">
+                        {num(Math.round(itemTotalToman), locale)} {tomanLabel}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setSel((s) => { const n = { ...s }; delete n[k]; return n; })}
+                      aria-label={ariaT('remove')}
+                      className="w-[22px] h-[22px] grid place-items-center rounded-full bg-mint text-sub shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                );
+              }
               const r = ROOMS.find((x) => x.id === rid)!;
               const qt = quote(r, pid, nights, Math.min(children, r.capC));
               const itemTotalToman = toman(qt.total * q);
@@ -149,24 +189,24 @@ export function BookingPanel({ booking, onBook, onOpenEdit }: BookingPanelProps)
             <div className="flex justify-between items-center text-[12.5px] font-bold text-sub">
               <span>{lt(locale, { fa: 'مبلغ اتاق‌ها', en: 'Rooms total', ar: 'إجمالي الغرف', zh: '房费合计', ru: 'Итого за номера' })}</span>
               <div className="text-end">
-                <b className="text-ink">{fa(subToman)} {tomanLabel}</b>
-                <span className="text-[10px] text-sub font-mono block">({fa(totals.sub)} TRY)</span>
+                <b className="text-ink">{num(subToman, locale)} {tomanLabel}</b>
+                {!isLive && <span className="text-[10px] text-sub font-mono block">({fa(totals.sub)} TRY)</span>}
               </div>
             </div>
             {totals.extra > 0 && (
               <div className="flex justify-between items-center text-[12.5px] font-bold text-sub">
                 <span>{lt(locale, { fa: 'تخت اضافه کودک', en: 'Extra child bed', ar: 'سرير أطفال إضافي', zh: '儿童加床', ru: 'Детская кровать' })}</span>
                 <div className="text-end">
-                  <b className="text-ink">{fa(extraToman)} {tomanLabel}</b>
-                  <span className="text-[10px] text-sub font-mono block">({fa(totals.extra)} TRY)</span>
+                  <b className="text-ink">{num(extraToman, locale)} {tomanLabel}</b>
+                  {!isLive && <span className="text-[10px] text-sub font-mono block">({fa(totals.extra)} TRY)</span>}
                 </div>
               </div>
             )}
             <div className="flex justify-between items-center text-[12.5px] font-bold text-sub">
               <span>{lt(locale, { fa: 'مالیات و عوارض اقامت (۱۰٪)', en: 'Taxes and fees (10%)', ar: 'الضرائب والرسوم (10%)', zh: '税费 (10%)', ru: 'Налоги и сборы (10%)' })}</span>
               <div className="text-end">
-                <b className="text-ink">{fa(taxToman)} {tomanLabel}</b>
-                <span className="text-[10px] text-sub font-mono block">({fa(totals.tax)} TRY)</span>
+                <b className="text-ink">{num(taxToman, locale)} {tomanLabel}</b>
+                {!isLive && <span className="text-[10px] text-sub font-mono block">({fa(totals.tax)} TRY)</span>}
               </div>
             </div>
             <div className="flex justify-between items-center text-[12.5px] font-bold text-sub">
@@ -175,12 +215,14 @@ export function BookingPanel({ booking, onBook, onOpenEdit }: BookingPanelProps)
             </div>
             <div className="flex justify-between items-baseline pt-2.5 border-t border-line text-[15px] font-black">
               <span>{lt(locale, { fa: 'مبلغ قابل پرداخت', en: 'Total payable', ar: 'المبلغ المستحق', zh: '应付金额', ru: 'К оплате' })}</span>
-              <span className="text-[19px] text-price font-black">{fa(totalToman)} {tomanLabel}</span>
+              <span className="text-[19px] text-price font-black">{num(totalToman, locale)} {tomanLabel}</span>
             </div>
-            <div className="flex justify-between text-[10.5px] font-bold text-sub">
-              <span>{lt(locale, { fa: 'معادل ارزی هتل', en: 'Hotel base currency', ar: 'العملة الأساسية للفندق', zh: '酒店基础货币', ru: 'Базовая валюта отеля' })}</span>
-              <span className="font-mono font-bold">{fa(totals.total)} TRY</span>
-            </div>
+            {!isLive && (
+              <div className="flex justify-between text-[10.5px] font-bold text-sub">
+                <span>{lt(locale, { fa: 'معادل ارزی هتل', en: 'Hotel base currency', ar: 'العملة الأساسية للفندق', zh: '酒店基础货币', ru: 'Базовая валюта отеля' })}</span>
+                <span className="font-mono font-bold">{fa(totals.total)} TRY</span>
+              </div>
+            )}
           </div>
         )}
 

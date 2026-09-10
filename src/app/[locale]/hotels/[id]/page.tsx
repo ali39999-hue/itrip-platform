@@ -32,7 +32,8 @@ export default function HotelDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notFoundState, setNotFoundState] = useState(false);
 
-  const booking = useHotelBooking();
+  const liveRooms = hotel?.roomTypes && hotel.roomTypes.length > 0 ? hotel.roomTypes : hotel?.detailedRooms;
+  const booking = useHotelBooking(liveRooms);
   const { setSel, bestCombo, capacity, totals } = booking;
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -143,12 +144,14 @@ export default function HotelDetailPage() {
 
   function handleBook() {
     const hotelTitle = locale === 'fa' ? hotel!.name : (hotel!.nameEn || hotel!.name);
+    // Live rooms price in Toman already; mock catalogue prices in TRY need conversion.
+    const amountToman = booking.isLive ? Math.round(totals.total) : toman(totals.total);
     setBookingContext({
       type: 'hotels',
       id: hotel!.id,
       title: hotelTitle,
       subtitle: `${num(capacity.n, locale)} ${t('navRooms')} • ${num(booking.nights.length, locale)} ${t('duration')} • ${t('passengersSummary', { adults: booking.adults, children: booking.children })}`,
-      amount: toman(totals.total),
+      amount: amountToman,
       travelDate: booking.checkin,
     });
     router.push('/checkout');
@@ -235,6 +238,7 @@ export default function HotelDetailPage() {
           <HotelLocation hotel={hotel} />
           <HotelRooms
             booking={booking}
+            hotel={hotel}
             onApplyCombo={handleApplyCombo}
             onOpenEdit={() => setIsEditModalOpen(true)}
           />
@@ -247,6 +251,7 @@ export default function HotelDetailPage() {
         <div className="lg:sticky lg:top-36">
           <BookingPanel
             booking={booking}
+            hotel={hotel}
             onBook={handleBook}
             onOpenEdit={() => setIsEditModalOpen(true)}
           />
@@ -269,9 +274,9 @@ export default function HotelDetailPage() {
               : lt(locale, { fa: 'شروع نرخ هر شب', en: 'Starting per night', ar: 'السعر للّيلة', zh: '每晚起', ru: 'За ночь от' })}
           </span>
           <div className="text-base font-black text-brand-dark font-mono flex items-baseline gap-1">
-            {/* totals.total is in foreign units (needs toman conversion);
-                hotel.pricePerNight from the API is already in Toman. */}
-            <span>{formatAmount(capacity.n > 0 ? toman(totals.total) : (hotel?.pricePerNight ?? 0))}</span>
+            {/* Live totals are already in Toman; mock totals need TRY conversion.
+                Fallback pricePerNight from the API is in IRR, convert to Toman. */}
+            <span>{formatAmount(capacity.n > 0 ? (booking.isLive ? Math.round(totals.total) : toman(totals.total)) : Math.round((hotel?.pricePerNight ?? 0) / 10))}</span>
           </div>
         </div>
 

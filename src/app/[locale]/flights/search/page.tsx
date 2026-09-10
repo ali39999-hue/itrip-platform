@@ -320,7 +320,8 @@ function FlightSearchInner() {
       id: f.id,
       title: `${localizedAirportLabel(f.origin, locale)} ✈ ${localizedAirportLabel(f.destination, locale)} (${f.flightNo})`,
       subtitle: `${locale === 'fa' ? f.airline : (f.airlineEn || f.airline)} • ${f.departureTime}`,
-      amount: f.price,
+      // Flight catalog prices are in IRR; booking context amounts are in Toman.
+      amount: Math.round(f.price / 10),
       travelDate,
     });
     router.push('/checkout');

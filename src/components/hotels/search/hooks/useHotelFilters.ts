@@ -13,29 +13,43 @@ interface UseHotelFiltersProps {
   initialCity?: string;
   initialSort?: SortKey;
   initialMaxPrice?: number;
+  initialMinPrice?: number;
+  initialStars?: number[];
+  initialPropertyTypes?: HotelPropertyType[];
+  initialAmenities?: string[];
+  initialMinScore?: number;
+  initialFreeCancel?: boolean;
+  initialHotelName?: string;
 }
 
 export function useHotelFilters({
   initialCity = '',
   initialSort = 'rec',
   initialMaxPrice = 20,
+  initialMinPrice = 0,
+  initialStars = [],
+  initialPropertyTypes = [],
+  initialAmenities = [],
+  initialMinScore = 0,
+  initialFreeCancel = false,
+  initialHotelName = '',
 }: UseHotelFiltersProps = {}) {
   const locale = useLocale();
   const { country } = useCountryStore();
 
   const [query, setQuery] = useState(initialCity);
-  const [hotelName, setHotelName] = useState('');
+  const [hotelName, setHotelName] = useState(initialHotelName);
   const [sort, setSortState] = useState<SortKey>(initialSort);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const [minPrice, setMinPriceState] = useState(0);
+  const [minPrice, setMinPriceState] = useState(initialMinPrice);
   const [maxPrice, setMaxPriceState] = useState(initialMaxPrice);
-  const [stars, setStars] = useState<Set<number>>(new Set());
-  const [propertyTypes, setPropertyTypes] = useState<Set<HotelPropertyType>>(new Set());
-  const [amenities, setAmenities] = useState<Set<string>>(new Set());
-  const [minScore, setMinScoreState] = useState(0);
-  const [freeCancel, setFreeCancelState] = useState(false);
+  const [stars, setStars] = useState<Set<number>>(new Set(initialStars));
+  const [propertyTypes, setPropertyTypes] = useState<Set<HotelPropertyType>>(new Set(initialPropertyTypes));
+  const [amenities, setAmenities] = useState<Set<string>>(new Set(initialAmenities));
+  const [minScore, setMinScoreState] = useState(initialMinScore);
+  const [freeCancel, setFreeCancelState] = useState(initialFreeCancel);
 
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);

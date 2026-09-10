@@ -34,13 +34,15 @@ export default function FlightCheckoutPage() {
           type: 'flights' as const,
           title: `${f.originCity} ✈ ${f.destinationCity} (${f.flightNo})`,
           subtitle: `${f.airline} • ${f.departureTime}`,
-          amount: f.price,
+          // Static catalogue prices are in IRR; booking context amounts are in Toman.
+          amount: Math.round(f.price / 10),
           travelDate: '',
           id: f.id,
         }
       : null;
   }, [bookingContext]);
 
+  // All amounts here are in Toman (booking context unit). Addons are in Toman.
   const baseFare = flight?.amount ?? 0;
   const taxFare = Math.round(baseFare * TAX_RATE);
   const subtotal = baseFare + taxFare;
@@ -148,11 +150,11 @@ export default function FlightCheckoutPage() {
               </div>
               <div className="flex justify-between text-sm text-sub mb-2">
                 <span>{t('adultPassengerCount')}</span>
-                <span className="num">{num(baseFare, locale)} IRR</span>
+                <span className="num">{num(baseFare, locale)} {locale === 'fa' ? 'تومان' : 'Toman'}</span>
               </div>
               <div className="flex justify-between text-sm text-sub">
                 <span>{t('taxesAndFees')}</span>
-                <span className="num">{num(taxFare, locale)} IRR</span>
+                <span className="num">{num(taxFare, locale)} {locale === 'fa' ? 'تومان' : 'Toman'}</span>
               </div>
             </div>
 
@@ -163,13 +165,13 @@ export default function FlightCheckoutPage() {
                 {hasEsim && (
                   <div className="flex justify-between text-sm text-sub">
                     <span>{t('touristEsim')}</span>
-                    <span className="num">{num(ESIM_PRICE, locale)} IRR</span>
+                    <span className="num">{num(ESIM_PRICE, locale)} {locale === 'fa' ? 'تومان' : 'Toman'}</span>
                   </div>
                 )}
                 {hasInsurance && (
                   <div className="flex justify-between text-sm text-sub">
                     <span>{t('travelInsurance')}</span>
-                    <span className="num">{num(INSURANCE_PRICE, locale)} IRR</span>
+                    <span className="num">{num(INSURANCE_PRICE, locale)} {locale === 'fa' ? 'تومان' : 'Toman'}</span>
                   </div>
                 )}
               </div>
@@ -181,7 +183,7 @@ export default function FlightCheckoutPage() {
                 <span className="font-bold text-ink">{t('amountPayable')}</span>
                 <div className="text-start">
                   <p className="text-2xl font-black text-price num">{num(total, locale)}</p>
-                  <p className="text-xs text-sub">IRR</p>
+                  <p className="text-xs text-sub">{locale === 'fa' ? 'تومان' : 'Toman'}</p>
                 </div>
               </div>
             </div>
@@ -210,7 +212,7 @@ export default function FlightCheckoutPage() {
             مبلغ کل قابل پرداخت
           </span>
           <div className="flex items-baseline gap-1.5 font-mono">
-            <span className="text-base font-black text-brand-dark">{num(Math.round(total / 10), locale)}</span>
+            <span className="text-base font-black text-brand-dark">{num(total, locale)}</span>
             <span className="text-[11px] font-bold text-sub">تومان</span>
           </div>
         </div>

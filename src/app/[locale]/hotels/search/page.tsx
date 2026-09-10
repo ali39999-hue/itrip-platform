@@ -50,7 +50,53 @@ function HotelsSearchInner() {
   const router = useRouter();
   const locale = useLocale();
   const searchParams = useSearchParams();
-  const initialCity = searchParams.get('city') || '';
+  // Accept both `city` (new) and `destination` (legacy SearchWidget) params.
+  const initialCity =
+    searchParams.get('city') || searchParams.get('destination') || searchParams.get('q') || '';
+  // Backward compat: legacy landing links used `?type=5star|boutique|resort|budget`.
+  const legacyType = (searchParams.get('type') || '').toLowerCase();
+  const parseNumList = (v: string | null) =>
+    (v || '')
+      .split(',')
+      .map((s) => Number(s.trim()))
+      .filter((n) => !isNaN(n) && n > 0);
+  const parseStrList = (v: string | null) =>
+    (v || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  const initialStars = (() => {
+    const fromParam = parseNumList(searchParams.get('stars'));
+    if (fromParam.length > 0) return fromParam;
+    if (legacyType === '5star') return [5];
+    return [];
+  })();
+  const initialPropertyTypes = (() => {
+    const fromParam = parseStrList(searchParams.get('propertyTypes'));
+    if (fromParam.length > 0) return fromParam as Array<'hotel' | 'apartment' | 'boutique' | 'villa'>;
+    if (legacyType === 'boutique') return ['boutique' as const];
+    if (legacyType === 'resort') return ['villa' as const];
+    return [];
+  })();
+  const initialAmenities = (() => {
+    const fromParam = parseStrList(searchParams.get('amenities'));
+    if (fromParam.length > 0) return fromParam;
+    if (legacyType === 'resort') return ['pool'];
+    return [];
+  })();
+  const initialMaxPrice = (() => {
+    const v = searchParams.get('maxPrice');
+    if (v && !isNaN(Number(v))) return Number(v);
+    if (legacyType === 'budget') return 4;
+    return 20;
+  })();
+  const initialMinScore = (() => {
+    const v = searchParams.get('minScore');
+    return v && !isNaN(Number(v)) ? Number(v) : 0;
+  })();
+  const initialFreeCancel = searchParams.get('freeCancel') === 'true';
+  const initialHotelName = searchParams.get('hotelName') || '';
+  const initialSort = (searchParams.get('sort') as 'cheap' | 'score' | 'stars' | 'rec') || 'rec';
   const [checkin, setCheckin] = useState(searchParams.get('checkin') || '2026-09-22');
   const [checkout, setCheckout] = useState(searchParams.get('checkout') || '2026-09-26');
   const [adults, setAdults] = useState(searchParams.get('adults') ? Number(searchParams.get('adults')) : 2);
@@ -88,7 +134,17 @@ function HotelsSearchInner() {
     facets,
     chips,
     activeFiltersCount,
-  } = useHotelFilters({ initialCity });
+  } = useHotelFilters({
+    initialCity,
+    initialSort,
+    initialMaxPrice,
+    initialStars,
+    initialPropertyTypes,
+    initialAmenities,
+    initialMinScore,
+    initialFreeCancel,
+    initialHotelName,
+  });
 
   const { favs, cmp, toggleFav, toggleCmp } = useHotelComparison();
 

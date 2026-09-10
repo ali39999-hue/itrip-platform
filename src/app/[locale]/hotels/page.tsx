@@ -20,7 +20,7 @@ export default function HotelsLandingPage() {
       price: 4800000,
       img: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=600&q=80',
       stars: 5,
-      query: '5star',
+      query: 'stars=5',
     },
     {
       title: { fa: 'بوتیک‌هتل‌های سنتی', en: 'Traditional Boutique Hotels', ar: 'فنادق بووتيك تقليدية', zh: '传统精品酒店', ru: 'Традиционные бутик-отели' },
@@ -29,7 +29,7 @@ export default function HotelsLandingPage() {
       price: 2600000,
       img: '/images/isfahan/sheikh-lotfollah.jpg',
       stars: 4,
-      query: 'boutique',
+      query: 'propertyTypes=boutique',
     },
     {
       title: { fa: 'ریزورت‌ها و اقامتگاه‌های ساحلی', en: 'Beach Resorts & Stays', ar: 'منتجعات وإقامات شاطئية', zh: '海滨度假村与住宿', ru: 'Пляжные курорты и Residence' },
@@ -38,7 +38,7 @@ export default function HotelsLandingPage() {
       price: 3900000,
       img: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&q=80',
       stars: 5,
-      query: 'resort',
+      query: 'propertyTypes=villa&amenities=pool',
     },
     {
       title: { fa: 'هتل‌های اقتصادی و نزدیک مرکز', en: 'Budget Hotels Near Center', ar: 'فنادق اقتصادية قريبة من المركز', zh: '市中心经济型酒店', ru: 'Бюджетные отели в центре' },
@@ -47,7 +47,7 @@ export default function HotelsLandingPage() {
       price: 1500000,
       img: 'https://images.unsplash.com/photo-1591088398332-8a7791972843?w=600&q=80',
       stars: 3,
-      query: 'budget',
+      query: 'maxPrice=4',
     },
   ];
 
@@ -93,7 +93,7 @@ export default function HotelsLandingPage() {
           {hotelCollections.map((col, idx) => (
             <Link
               key={idx}
-              href={`/hotels/search?type=${col.query}`}
+              href={`/hotels/search?${col.query}`}
               className="shrink-0 w-[84vw] sm:w-auto snap-start group relative h-80 rounded-3xl overflow-hidden shadow-elev-1 hover:shadow-elev-3 transition-all flex flex-col justify-between p-5"
             >
               <Image

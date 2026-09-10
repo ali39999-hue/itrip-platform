@@ -110,10 +110,11 @@ export class OutboxConsumer {
 
       // 2. Concurrency-Safe Claim
       const now = new Date();
+      const queryTime = new Date(now.getTime() + 2000); // 2s clock skew tolerance
       const pendingEvents = await prisma.outboxEvent.findMany({
         where: {
           status: 'PENDING',
-          availableAt: { lte: now },
+          availableAt: { lte: queryTime },
         },
         orderBy: { availableAt: 'asc' },
         take: 20,

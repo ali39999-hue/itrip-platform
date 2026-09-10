@@ -77,6 +77,10 @@ export function HotelCard({
         }
       );
 
+  // API prices are in IRR (Rials); display layer works in Toman (IRR / 10).
+  // Mirrors BentoFlightCard's `priceInToman` conversion.
+  const priceToman = Math.round(hotel.pricePerNight / 10);
+
   return (
     <article
       aria-label={`${locale === 'fa' ? hotel.name : hotel.nameEn}, ${hotel.stars} stars, ${locale === 'fa' ? hotel.city : hotel.cityEn}`}
@@ -176,7 +180,7 @@ export function HotelCard({
               {t('perNightFrom')}
             </span>
             <div className="text-sm font-black text-brand-dark font-mono num flex items-baseline gap-1">
-              <span>{formatAmount(hotel.pricePerNight)}</span>
+              <span>{formatAmount(priceToman)}</span>
             </div>
           </div>
 
@@ -338,7 +342,7 @@ export function HotelCard({
                     ru: `Всего за ${num(nights, locale)} ноч.:`,
                   })}
                 </span>{' '}
-                <strong className="text-ink font-black font-mono">{formatAmount(hotel.pricePerNight * nights)}</strong>
+                <strong className="text-ink font-black font-mono">{formatAmount(priceToman * nights)}</strong>
               </div>
             </div>
 
@@ -346,7 +350,7 @@ export function HotelCard({
               <div className="text-end">
                 <span className="text-[11px] text-sub block font-medium">{t('perNightFrom')}</span>
                 <div className="text-base sm:text-lg font-black text-brand-dark font-mono num flex items-baseline gap-1">
-                  <span>{formatAmount(hotel.pricePerNight)}</span>
+                  <span>{formatAmount(priceToman)}</span>
                 </div>
               </div>
               <Link

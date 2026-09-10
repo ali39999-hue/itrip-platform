@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ROOMS, PLANS, type RoomDef, type PlanId } from '@/lib/hotel-mock';
+import type { RoomType } from '@/lib/types';
 
 /**
  * Canonical Hotel Accommodation VAT: 10% (aligned with TaxEngine TR jurisdiction rule)
@@ -61,7 +62,7 @@ export function quote(room: RoomDef, plan: PlanId, nightsList: Date[], childrenI
   };
 }
 
-export function useHotelBooking() {
+export function useHotelBooking(liveRooms?: RoomType[]) {
   const searchParams = useSearchParams();
 
   // Read initial values from URL query parameters if present
@@ -79,10 +80,36 @@ export function useHotelBooking() {
 
   const nights = useMemo(() => nightsOf(checkin, checkout), [checkin, checkout]);
 
+  // Live pricing mode: use the hotel's real roomTypes (IRR prices) instead of
+  // the static Istanbul mock catalogue. Totals are computed directly in Toman
+  // (IRR / 10) with 10% tax — no TRY conversion.
+  const liveRoomList = useMemo(
+    () => (liveRooms && liveRooms.length > 0 ? liveRooms : null),
+    [liveRooms]
+  );
+  const isLive = liveRoomList !== null;
+  const liveById = useMemo(() => {
+    const m = new Map<string, RoomType>();
+    liveRoomList?.forEach((r) => m.set(String(r.id), r));
+    return m;
+  }, [liveRoomList]);
+
   const takenOf = (rid: string) =>
-    Object.entries(sel).filter(([k]) => k.startsWith(rid + '|')).reduce((s, [, q]) => s + q, 0);
+    Object.entries(sel).filter(([k]) => k === rid || k.startsWith(rid + '|')).reduce((s, [, q]) => s + q, 0);
 
   const totals = useMemo(() => {
+    if (liveRoomList) {
+      let sub = 0;
+      Object.entries(sel).forEach(([k, q]) => {
+        const rid = k.split('|')[0];
+        const room = liveById.get(rid);
+        if (!room) return;
+        const priceToman = Math.round((room.pricePerNight || 0) / 10);
+        sub += priceToman * Math.max(1, nights.length) * q;
+      });
+      const tax = Math.round(sub * TAX);
+      return { sub, tax, extra: 0, total: sub + tax };
+    }
     let sub = 0, tax = 0, extra = 0, total = 0;
     Object.entries(sel).forEach(([k, q]) => {
       const [rid, pid] = k.split('|') as [string, PlanId];
@@ -96,9 +123,20 @@ export function useHotelBooking() {
       total += qt.total * q;
     });
     return { sub, tax, extra, total };
-  }, [sel, children, nights]);
+  }, [sel, children, nights, liveRoomList, liveById]);
 
   const capacity = useMemo(() => {
+    if (liveRoomList) {
+      let a = 0, n = 0;
+      Object.entries(sel).forEach(([k, q]) => {
+        const rid = k.split('|')[0];
+        const room = liveById.get(rid);
+        if (!room) return;
+        a += (room.capacity || 2) * q;
+        n += q;
+      });
+      return { a, c: 99, n };
+    }
     let a = 0, c = 0, n = 0;
     Object.entries(sel).forEach(([k, q]) => {
       const rid = k.split('|')[0];
@@ -109,9 +147,51 @@ export function useHotelBooking() {
       n += q;
     });
     return { a, c, n };
-  }, [sel]);
+  }, [sel, liveRoomList, liveById]);
 
   const bestCombo = useMemo(() => {
+    if (liveRoomList) {
+      // Live mode: cheapest combination of real rooms covering adult capacity.
+      // Cost is in Toman (no TRY conversion).
+      type LiveOpt = { id: string; name: string; capacity: number; cost: number; available: number };
+      const opts: LiveOpt[] = liveRoomList.map((r) => ({
+        id: String(r.id),
+        name: r.name,
+        capacity: r.capacity || 2,
+        cost: Math.round((r.pricePerNight || 0) / 10) * Math.max(1, nights.length) * 1.1,
+        available: r.available ?? 5,
+      }));
+      let best: { cost: number; pick: Array<{ r: RoomDef; p: PlanId; cost: number }> } | null = null;
+      const walk = (start: number, pick: LiveOpt[]) => {
+        if (pick.length) {
+          const a = pick.reduce((s, o) => s + o.capacity, 0);
+          const cost = pick.reduce((s, o) => s + o.cost, 0);
+          const counts: Record<string, number> = {};
+          pick.forEach((o) => (counts[o.id] = (counts[o.id] || 0) + 1));
+          const fitsLeft = Object.entries(counts).every(
+            ([id, n]) => n <= (liveById.get(id)?.available ?? 5)
+          );
+          if (a >= adults && fitsLeft && (!best || cost < best.cost)) {
+            best = {
+              cost: Math.round(cost),
+              pick: pick.map((o) => ({
+                r: { id: o.id, name: o.name, size: 0, bed: '', view: '', capA: o.capacity, capC: 0, base: 0, left: o.available, art: 0, am: [], plans: ['bb' as PlanId] },
+                p: 'bb' as PlanId,
+                cost: Math.round(o.cost),
+              })),
+            };
+          }
+        }
+        if (pick.length === 3) return;
+        for (let i = start; i < opts.length; i++) {
+          pick.push(opts[i]);
+          walk(i, pick);
+          pick.pop();
+        }
+      };
+      walk(0, []);
+      return best;
+    }
     type Opt = { r: RoomDef; p: PlanId; cost: number };
     const opts: Opt[] = [];
     ROOMS.forEach((r) => r.plans.forEach((p) => opts.push({ r, p, cost: quote(r, p, nights, Math.min(children, r.capC)).total })));
@@ -135,7 +215,7 @@ export function useHotelBooking() {
     };
     walk(0, []);
     return best as { cost: number; pick: Opt[] } | null;
-  }, [adults, children, nights]);
+  }, [adults, children, nights, liveRoomList, liveById]);
 
   return {
     checkin,
@@ -153,6 +233,7 @@ export function useHotelBooking() {
     totals,
     capacity,
     bestCombo,
+    isLive,
   };
 }
 

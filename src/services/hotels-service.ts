@@ -209,7 +209,19 @@ function loadIranHotels(): DetailedHotelWithMeta[] {
         });
       }
 
-      const defaultPrice = h.price_range?.min && h.price_range.min > 0 ? h.price_range.min : (minRoomPrice !== Infinity ? minRoomPrice : 38_000_000);
+      const resolvedMinRoom = minRoomPrice !== Infinity ? minRoomPrice : 38_000_000;
+      // price_range.min in the master file is stored ~10x smaller than room
+      // prices (Toman vs IRR). Prefer the authoritative room prices; only use
+      // price_range when it is consistent with them.
+      let defaultPrice = resolvedMinRoom;
+      const rangeMin = h.price_range?.min;
+      if (rangeMin && rangeMin > 0) {
+        if (rangeMin >= resolvedMinRoom * 0.5 && rangeMin <= resolvedMinRoom * 1.5) {
+          defaultPrice = rangeMin;
+        } else if (rangeMin * 10 >= resolvedMinRoom * 0.5 && rangeMin * 10 <= resolvedMinRoom * 1.5) {
+          defaultPrice = rangeMin * 10;
+        }
+      }
       const rating = h.reviews_summary?.average_score ? Number((h.reviews_summary.average_score).toFixed(1)) : 8.5;
       const reviews = h.reviews_summary?.total_reviews || 120;
 
