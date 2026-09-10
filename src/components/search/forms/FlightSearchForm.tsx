@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, ArrowLeftRight } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { Search, ArrowLeftRight, Plus } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
+import { lt } from '@/lib/lt';
 import { CityAutocomplete } from '../CityAutocomplete';
 import { JalaliDatePicker } from '@/components/ui/DatePicker';
 import { TravelerPicker } from '../TravelerPicker';
@@ -49,11 +50,18 @@ export function FlightSearchForm({
   onErrorClear,
 }: FlightSearchFormProps) {
   const t = useTranslations('Search');
-  const [tripType, setTripType] = useState<'round' | 'oneWay'>('round');
+  const locale = useLocale();
+  const [tripType, setTripType] = useState<'round' | 'oneWay'>('oneWay');
+  const [swapped, setSwapped] = useState(false);
+
+  function handleSwap() {
+    setSwapped((prev) => !prev);
+    swap();
+  }
 
   return (
     <>
-      {/* Trip Type Selector (One-Way / Round-Trip) */}
+      {/* Trip Type Selector (One-Way / Round-Trip) — Alibaba & FlyToday Standard */}
       <div className="col-span-1 sm:col-span-12 flex items-center justify-between pb-1">
         <div
           role="radiogroup"
@@ -63,31 +71,38 @@ export function FlightSearchForm({
           <button
             type="button"
             role="radio"
-            aria-checked={tripType === 'round'}
-            onClick={() => setTripType('round')}
-            className={`min-h-[36px] px-4 py-1.5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none ${
-              tripType === 'round'
-                ? 'bg-surface text-brand-dark shadow-xs'
-                : 'text-sub hover:text-ink'
-            }`}
-          >
-            {t('roundTrip')}
-          </button>
-          <button
-            type="button"
-            role="radio"
             aria-checked={tripType === 'oneWay'}
             onClick={() => {
               setTripType('oneWay');
               setDate2('');
             }}
-            className={`min-h-[36px] px-4 py-1.5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none ${
+            className={`min-h-[36px] px-4 py-1.5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer ${
               tripType === 'oneWay'
                 ? 'bg-surface text-brand-dark shadow-xs'
                 : 'text-sub hover:text-ink'
             }`}
           >
             {t('oneWay')}
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={tripType === 'round'}
+            onClick={() => {
+              setTripType('round');
+              if (!date2 && date1) {
+                const d = new Date(date1);
+                d.setDate(d.getDate() + 3);
+                setDate2(d.toISOString().slice(0, 10));
+              }
+            }}
+            className={`min-h-[36px] px-4 py-1.5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer ${
+              tripType === 'round'
+                ? 'bg-surface text-brand-dark shadow-xs'
+                : 'text-sub hover:text-ink'
+            }`}
+          >
+            {t('roundTrip')}
           </button>
         </div>
       </div>
@@ -109,9 +124,11 @@ export function FlightSearchForm({
         {/* Floating Swap button on Tablet & Desktop (horizontal alignment) */}
         <button
           type="button"
-          onClick={swap}
+          onClick={handleSwap}
           aria-label={t('swap')}
-          className="hidden sm:grid absolute top-1/2 -translate-y-1/2 -end-3.5 z-20 w-7 h-7 place-items-center rounded-full bg-surface border border-line shadow-elev-2 text-brand-dark hover:bg-mint hover:scale-110 active:scale-95 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
+          className={`hidden sm:grid absolute top-1/2 -translate-y-1/2 -end-4 z-30 w-8 h-8 place-items-center rounded-full bg-surface border border-line shadow-elev-2 text-brand-dark hover:bg-mint hover:scale-110 active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer ${
+            swapped ? 'rotate-180' : ''
+          }`}
         >
           <ArrowLeftRight size={13} aria-hidden="true" />
         </button>
@@ -119,9 +136,11 @@ export function FlightSearchForm({
         {/* Floating Swap button on Mobile only (< sm, vertical stack) */}
         <button
           type="button"
-          onClick={swap}
+          onClick={handleSwap}
           aria-label={t('swap')}
-          className="sm:hidden grid absolute -bottom-3.5 end-5 z-20 w-8 h-8 place-items-center rounded-full bg-surface border border-line shadow-md text-brand-dark active:rotate-180 hover:bg-mint transition-transform duration-300 cursor-pointer"
+          className={`sm:hidden grid absolute -bottom-4 end-5 z-30 w-8 h-8 place-items-center rounded-full bg-surface border border-line shadow-md text-brand-dark active:scale-95 hover:bg-mint transition-transform duration-300 cursor-pointer ${
+            swapped ? 'rotate-180' : ''
+          }`}
         >
           <ArrowLeftRight size={14} className="rotate-90" aria-hidden="true" />
         </button>
@@ -138,7 +157,7 @@ export function FlightSearchForm({
           label={t('to')}
           placeholder={t('toPlaceholder')}
           id="search-to-input"
-          className="ps-3.5 sm:ps-7"
+          className="ps-3.5 sm:ps-5"
         />
       </div>
 
@@ -165,18 +184,31 @@ export function FlightSearchForm({
           <div
             role="button"
             tabIndex={0}
-            onClick={() => setTripType('round')}
+            onClick={() => {
+              setTripType('round');
+              if (!date2 && date1) {
+                const d = new Date(date1);
+                d.setDate(d.getDate() + 3);
+                setDate2(d.toISOString().slice(0, 10));
+              }
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 setTripType('round');
+                if (!date2 && date1) {
+                  const d = new Date(date1);
+                  d.setDate(d.getDate() + 3);
+                  setDate2(d.toISOString().slice(0, 10));
+                }
               }
             }}
-            aria-label={`${t('dateReturn')} (${t('roundTrip')})`}
-            className="w-full min-h-[58px] px-3.5 py-2 rounded-2xl bg-soft/60 border border-dashed border-line text-sub flex items-center justify-center cursor-pointer hover:border-brand/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand transition group"
+            aria-label={lt(locale, { fa: 'افزودن تاریخ برگشت', en: 'Add return date', ar: 'إضافة تاريخ العودة', zh: '添加返程日期', ru: 'Добавить дату возврата' })}
+            className="w-full min-h-[58px] px-3.5 py-2 rounded-2xl bg-soft/60 border border-dashed border-line text-sub flex items-center justify-center cursor-pointer hover:border-brand/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand transition group select-none"
           >
-            <span className="text-xs font-bold group-hover:text-brand-dark">
-              + {t('dateReturn')} ({t('roundTrip')})
+            <span className="text-xs font-bold text-sub group-hover:text-brand-dark flex items-center gap-1.5">
+              <Plus size={13} className="text-brand-dark" />
+              <span>{lt(locale, { fa: 'افزودن تاریخ برگشت', en: 'Add return date', ar: 'إضافة تاريخ العودة', zh: '添加返程日期', ru: 'Добавить дату возврата' })}</span>
             </span>
           </div>
         )}
@@ -200,7 +232,7 @@ export function FlightSearchForm({
       {/* Submit Button */}
       <button
         type="submit"
-        className="col-span-1 sm:col-span-6 lg:col-span-2 min-h-[58px] px-6 rounded-2xl bg-action hover:bg-action-hover text-ink text-[15px] font-black shadow-elev-1 hover:shadow-elev-2 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+        className="col-span-1 sm:col-span-6 lg:col-span-2 min-h-[58px] px-6 rounded-2xl bg-action hover:bg-action-hover text-ink text-[15px] font-black shadow-elev-1 hover:shadow-elev-2 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
       >
         <Search size={18} />
         <span>{t('btnFlights')}</span>

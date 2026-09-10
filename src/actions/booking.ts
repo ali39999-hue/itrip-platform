@@ -121,9 +121,16 @@ export async function payBooking(
 
 /**
  * Direct eCardo Gateway Payment Initialization (corridor Iran-China / International)
- * Generates an official payment session URL on ecardo.ir and redirects user directly.
+ * Supports dynamic currency conversion (DCC) and payment instrument selection.
+ * Automatically converts booking base amount (IRR) into target currency (USD, USDT, CNY, IRR).
  */
-export async function initiateEcardoPayment(bookingId: string, currency?: string) {
+export async function initiateEcardoPayment(
+  bookingId: string,
+  options?: {
+    targetCurrency?: string;
+    paymentInstrument?: 'visa_mastercard' | 'crypto_usdt' | 'wechat_alipay' | 'shetab_card';
+  } | string
+) {
   try {
     const session = await safeAuth();
     if (!session || !session.user) return { success: false, error: 'Unauthorized' };
@@ -140,15 +147,46 @@ export async function initiateEcardoPayment(bookingId: string, currency?: string
 
     const { EcardoGatewayAdapter } = await import('@/domains/payments/gateway-port');
     const { Money } = await import('@/lib/finance');
+    const { defaultCurrencyService } = await import('@/domains/currency/CurrencyService');
     const { getAppBaseUrl } = await import('@/lib/runtime-url');
 
-    const targetCurrency = (currency || booking.currency || 'USD').toUpperCase();
+    const rawTargetCurrency = typeof options === 'string'
+      ? options
+      : options?.targetCurrency || (
+          options?.paymentInstrument === 'crypto_usdt' ? 'USDT' :
+          options?.paymentInstrument === 'wechat_alipay' ? 'CNY' :
+          options?.paymentInstrument === 'shetab_card' ? 'IRR' : 'USD'
+        );
+
+    const paymentInstrument = typeof options === 'object' ? options?.paymentInstrument : undefined;
+
+    let targetCurrency = (rawTargetCurrency || 'USD').toUpperCase();
+    if (targetCurrency === 'TOMAN') targetCurrency = 'IRT';
+
+    const sourceCurrency = (booking.currency || 'IRR').toUpperCase();
+    const sourceMoney = new Money(booking.totalAmount, sourceCurrency);
+
+    // Automatic Real-Time FX Conversion (MONEY-001, MONEY-004)
+    let paymentMoney: import('@/lib/finance').Money;
+    let fxSnapshot: import('@/lib/finance').FxSnapshot | undefined;
+
+    if (sourceCurrency === targetCurrency || (sourceCurrency === 'IRR' && targetCurrency === 'IRT')) {
+      paymentMoney = sourceMoney;
+    } else {
+      const conv = defaultCurrencyService.convertMoney(
+        sourceMoney,
+        (targetCurrency === 'IRT' ? 'IRR' : targetCurrency) as import('@/domains/currency/CurrencyService').SupportedCurrency
+      );
+      paymentMoney = conv.converted;
+      fxSnapshot = conv.snapshot;
+    }
+
     const adapter = new EcardoGatewayAdapter();
 
     const paymentRes = await adapter.createPayment({
       intentId: `intent_ecardo_${booking.id}`,
       bookingId: booking.id,
-      amount: new Money(booking.totalAmount, targetCurrency),
+      amount: paymentMoney,
       callbackUrl: `${getAppBaseUrl()}/api/payments/ecardo/callback?bookingId=${booking.id}&order_id=${booking.id}`,
       customerInfo: {
         email: session.user.email || undefined,
@@ -156,20 +194,34 @@ export async function initiateEcardoPayment(bookingId: string, currency?: string
     });
 
     if (paymentRes.success && paymentRes.redirectUrl) {
+      const payloadMeta = JSON.stringify({
+        originalAmount: booking.totalAmount.toString(),
+        originalCurrency: sourceCurrency,
+        settledAmount: paymentMoney.toString(),
+        settledCurrency: targetCurrency,
+        fxRate: fxSnapshot?.fxRate.toString() || '1.0',
+        fxSource: fxSnapshot?.fxSource || 'PARITY',
+        paymentInstrument,
+      });
+
       await prisma.payment.upsert({
         where: { idempotencyKey: `ecardo_${booking.id}_${paymentRes.gatewayRef}` },
         update: {
           gatewayRef: paymentRes.gatewayRef,
+          amount: paymentMoney.toDecimal(),
+          currency: targetCurrency,
           status: 'PENDING',
+          rawPayload: payloadMeta,
         },
         create: {
           bookingId: booking.id,
           method: 'gateway_ecardo',
           gatewayRef: paymentRes.gatewayRef,
-          amount: booking.totalAmount,
+          amount: paymentMoney.toDecimal(),
           currency: targetCurrency,
           status: 'PENDING',
           idempotencyKey: `ecardo_${booking.id}_${paymentRes.gatewayRef}`,
+          rawPayload: payloadMeta,
         },
       });
 
@@ -177,6 +229,8 @@ export async function initiateEcardoPayment(bookingId: string, currency?: string
         success: true,
         redirectUrl: paymentRes.redirectUrl,
         gatewayRef: paymentRes.gatewayRef,
+        amount: paymentMoney.toNumber(),
+        currency: targetCurrency,
       };
     }
 

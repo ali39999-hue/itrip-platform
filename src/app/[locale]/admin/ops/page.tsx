@@ -6,6 +6,7 @@ import { safeAuth } from '@/auth';
 import { hasErpRole } from '@/domains/identity/permission-service';
 import { redirect } from 'next/navigation';
 import { ErpBadge, ErpEmptyState, ErpHint, ErpPageHeader, ErpSectionCard } from '@/components/admin/erp-ui';
+import { OpsRetryButton } from '@/components/admin/OpsRetryButton';
 
 export default async function AdminOpsPage() {
   const locale = await getLocale();
@@ -72,7 +73,10 @@ export default async function AdminOpsPage() {
                 <li key={event.id} className="px-5 py-4 transition hover:bg-soft/50">
                   <div className="mb-1.5 flex items-start justify-between gap-2">
                     <span className="break-all font-mono text-xs font-black text-ink" dir="ltr">{event.eventType}</span>
-                    <ErpBadge tone={event.status === 'FAILED' ? 'rose' : 'gold'}>{event.status}</ErpBadge>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <ErpBadge tone={event.status === 'FAILED' ? 'rose' : 'gold'}>{event.status}</ErpBadge>
+                      {event.status !== 'PENDING' && <OpsRetryButton eventId={event.id} />}
+                    </div>
                   </div>
                   <p className="truncate font-mono text-[11px] text-sub" dir="ltr" title={event.payload}>{event.payload}</p>
                   <p className="num mt-1.5 text-[10px] font-bold text-sub tabular-nums">{new Date(event.createdAt).toLocaleString(numFmt)}</p>

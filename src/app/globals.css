@@ -489,6 +489,14 @@
    every app modal — cap it below them. */
 .fzw2-toast { z-index: 95 !important; }
 
+/* In ERP admin back-office, hide the call center widget so it doesn't block admin workflow */
+body:has([data-admin-root]) .fzw2-ovl,
+body:has([data-admin-root]) .fzw2-panel,
+body:has([data-admin-root]) .fzw2-fabwrap,
+body:has([data-admin-root]) .fzw2-toast {
+  display: none !important;
+}
+
 /* ---- Global polish ---- */
 * { -webkit-tap-highlight-color: transparent; }
 html { scroll-behavior: smooth; }

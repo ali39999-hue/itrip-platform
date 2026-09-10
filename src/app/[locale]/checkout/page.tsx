@@ -22,7 +22,7 @@ import { PassengerSection } from '@/components/checkout/PassengerSection';
 import { AddonsSection, ESIM_PRICE, INSURANCE_PRICE } from '@/components/checkout/AddonsSection';
 import { ReferralInputSection } from '@/components/checkout/ReferralInputSection';
 import { PriceBreakdownTable } from '@/components/checkout/PriceBreakdownTable';
-import { PaymentGatewaySelector, type PaymentMethodType } from '@/components/checkout/PaymentGatewaySelector';
+import { PaymentGatewaySelector, type PaymentMethodType, type EcardoInstrument } from '@/components/checkout/PaymentGatewaySelector';
 import { CardTransferPaymentView } from '@/components/checkout/CardTransferPaymentView';
 import { CryptoPaymentView } from '@/components/checkout/CryptoPaymentView';
 import { IssuingModal } from '@/components/checkout/IssuingModal';
@@ -53,7 +53,8 @@ export default function CheckoutPage() {
   const [referralDiscountAmount, setReferralDiscountAmount] = useState(0);
   const [draftBookingId, setDraftBookingId] = useState<string | null>(null);
   const [serverWallet, setServerWallet] = useState<number | null>(null);
-  const [method, setMethod] = useState<PaymentMethodType>('wallet_irr');
+  const [method, setMethod] = useState<PaymentMethodType>('gateway_ecardo');
+  const [selectedInstrument, setSelectedInstrument] = useState<EcardoInstrument>('visa_mastercard');
   const [scanning, setScanning] = useState(false);
   const [passportScanned, setPassportScanned] = useState(false);
   const [error, setError] = useState('');
@@ -363,7 +364,9 @@ export default function CheckoutPage() {
       }
       try {
         const { initiateEcardoPayment } = await import('@/actions/booking');
-        const initRes = await initiateEcardoPayment(draftBookingId, currency);
+        const initRes = await initiateEcardoPayment(draftBookingId, {
+          paymentInstrument: selectedInstrument,
+        });
         if (initRes.success && initRes.redirectUrl) {
           window.location.href = initRes.redirectUrl;
           return;
@@ -555,6 +558,8 @@ export default function CheckoutPage() {
                     setMethod={setMethod}
                     walletBalance={walletBalance}
                     totalPayable={baseAmount + (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0)}
+                    selectedInstrument={selectedInstrument}
+                    setSelectedInstrument={setSelectedInstrument}
                   />
 
                   {/* Contextual Trust Banner */}

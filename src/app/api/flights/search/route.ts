@@ -21,6 +21,10 @@ export async function GET(request: NextRequest) {
     const minPrice = searchParams.get('minPrice') ? Number(searchParams.get('minPrice')) : undefined;
     const maxPrice = searchParams.get('maxPrice') ? Number(searchParams.get('maxPrice')) : undefined;
 
+    const ticketType = (searchParams.get('ticketType') as FlightSearchParams['ticketType']) || undefined;
+    const cabinClass = (searchParams.get('cabinClass') as FlightSearchParams['cabinClass']) || undefined;
+    const timeOfDay = (searchParams.get('timeOfDay') as FlightSearchParams['timeOfDay']) || undefined;
+
     const sort = (searchParams.get('sort') as FlightSearchParams['sort']) || 'price';
     const page = searchParams.get('page') ? Number(searchParams.get('page')) : 1;
     const limit = searchParams.get('limit') ? Number(searchParams.get('limit')) : 25;
@@ -33,6 +37,9 @@ export async function GET(request: NextRequest) {
       stops,
       minPrice,
       maxPrice,
+      ticketType,
+      cabinClass,
+      timeOfDay,
       sort,
       page,
       limit,

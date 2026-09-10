@@ -11,7 +11,9 @@ const intlMiddleware = createMiddleware(routing);
 
 // Define route access mapped strictly to canonical relational permissions (IAM-107)
 const ROUTE_REQUIRED_PERMISSIONS: Record<string, string[]> = {
+  '/admin/finance/settlements': ['finance:view', 'finance:reports:view', 'finance:settlement:match'],
   '/admin/finance': ['finance:view', 'finance:reports:view'],
+  '/admin/users': ['user:manage', 'ops:override:cancel'],
   '/admin/bookings': ['booking:view:all'],
   '/admin/ops': ['ops:override:cancel'],
   '/admin/content': ['catalog:hotels:edit', 'catalog:flights:edit'],
@@ -48,10 +50,17 @@ export async function middleware(request: NextRequest) {
   }
 
   // 1b. Skip auth & i18n for _next, static files, fonts, and public assets
+  // robots.txt / sitemap.xml are app metadata routes — locale-prefixed variants
+  // don't exist, so they must never be handed to intlMiddleware.
   if (
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/fonts/') ||
     pathname === '/favicon.ico' ||
+    pathname === '/robots.txt' ||
+    pathname === '/sitemap.xml' ||
+    pathname === '/manifest.json' ||
+    pathname === '/sw.js' ||
+    pathname === '/offline.html' ||
     pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|woff|woff2|ttf|eot|ico)$/)
   ) {
     return withCorrelation(NextResponse.next());
@@ -128,7 +137,8 @@ export const config = {
   matcher: [
     // Include /api for CSRF and correlation tracing
     '/api/:path*',
-    // Apply middleware to all pages except _next/static, _next/image, favicon.ico, fonts
-    '/((?!_next/static|_next/image|favicon.ico|fonts).*)',
+    // Apply middleware to all pages except _next/static, _next/image, favicon.ico, fonts,
+    // and root-level SEO/PWA endpoints (robots.txt, sitemap.xml, manifest.json, sw.js, offline.html)
+    '/((?!_next/static|_next/image|favicon.ico|fonts|robots.txt|sitemap.xml|manifest.json|sw.js|offline.html).*)',
   ],
 };

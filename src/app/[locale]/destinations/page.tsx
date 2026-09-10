@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
@@ -10,6 +11,20 @@ import { formatMoney } from '@/lib/money';
 import { MapPin, ArrowLeft, ArrowRight, Compass, BookOpenText, Check, Plane, Building2, Calendar, Sparkles } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
+interface ExperienceItem {
+  category: string;
+  title: string;
+  titleEn: string;
+  desc: string;
+  descEn: string;
+  where: string;
+  whereEn: string;
+  when: string;
+  whenEn: string;
+  fromPrice: number;
+  image?: string;
+}
+
 export default function DestinationsPage() {
   const t = useTranslations('Destinations');
   const router = useRouter();
@@ -17,6 +32,50 @@ export default function DestinationsPage() {
   const isEn = locale === 'en';
   const { country, setCountry } = useCountryStore();
   const c = COUNTRIES[country];
+
+  // Dynamic signature experiences from CMS / Database
+  const [dbExperiences, setDbExperiences] = useState<ExperienceItem[]>([]);
+
+  useEffect(() => {
+    fetch(`/api/experiences?country=${encodeURIComponent(country)}`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          setDbExperiences(
+            json.data.map((exp: ExperienceItem) => ({
+              category: exp.category,
+              title: exp.title,
+              titleEn: exp.titleEn,
+              desc: exp.desc,
+              descEn: exp.descEn,
+              where: exp.where,
+              whereEn: exp.whereEn,
+              when: exp.when,
+              whenEn: exp.whenEn,
+              fromPrice: Number(exp.fromPrice),
+              image: exp.image || undefined,
+            }))
+          );
+        } else {
+          setDbExperiences([]);
+        }
+      })
+      .catch(() => {
+        setDbExperiences([]);
+      });
+  }, [country]);
+
+  const allExperiences = useMemo(() => {
+    // Prepend dynamic DB experiences ahead of static seeds
+    const merged: ExperienceItem[] = [...dbExperiences, ...c.signatureExperiences];
+    const unique: ExperienceItem[] = [];
+    for (const item of merged) {
+      if (!unique.some((u) => u.title === item.title)) {
+        unique.push(item);
+      }
+    }
+    return unique;
+  }, [dbExperiences, c.signatureExperiences]);
 
   return (
     <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-8 pb-16 space-y-10">
@@ -101,7 +160,7 @@ export default function DestinationsPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {c.cities.map((city) => {
-            const photoUrl = DESTINATION_IMAGE_MAP[city.en] || DESTINATION_IMAGE_MAP[city.fa] || 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Naghshe_Jahan_Square_Isfahan_modified.jpg/960px-Naghshe_Jahan_Square_Isfahan_modified.jpg';
+            const photoUrl = DESTINATION_IMAGE_MAP[city.en] || DESTINATION_IMAGE_MAP[city.fa] || '/images/isfahan/sheikh-lotfollah.jpg';
             return (
               <button
                 key={city.en}
@@ -151,8 +210,8 @@ export default function DestinationsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {c.signatureExperiences.map((exp, i) => {
-            const photo = CATEGORY_PHOTO_MAP[exp.category] || CATEGORY_PHOTO_MAP.culture;
+          {allExperiences.map((exp, i) => {
+            const photo = exp.image || CATEGORY_PHOTO_MAP[exp.category] || CATEGORY_PHOTO_MAP.culture;
             return (
               <div key={i} className="rounded-2xl border border-line bg-surface overflow-hidden shadow-xs flex flex-col justify-between group hover:border-brand/40 transition">
                 <div className="relative h-40 w-full overflow-hidden bg-soft">

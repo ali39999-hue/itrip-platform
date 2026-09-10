@@ -126,7 +126,7 @@ export const useBookingStore = create<BookingState>()(
         set({
           wallet: {
             ...wallet,
-            [from]: wallet[from] - amount,
+            [from]: (wallet[from] || 0) - amount,
             [to]: (wallet[to] || 0) + converted,
           },
           transactions: [

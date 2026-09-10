@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { Sparkles, BedDouble, Ruler, Eye, Users, Check, Flame, Ban, Coffee, Clock, Wallet, Minus, Plus } from 'lucide-react';
+import { Sparkles, BedDouble, Ruler, Eye, Users, Check, Flame, Ban, Coffee, Clock, Wallet, Calendar } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -18,9 +18,10 @@ import { lt } from '@/lib/lt';
 interface HotelRoomsProps {
   booking: ReturnType<typeof useHotelBooking>;
   onApplyCombo: () => void;
+  onOpenEdit?: () => void;
 }
 
-export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
+export function HotelRooms({ booking, onApplyCombo, onOpenEdit }: HotelRoomsProps) {
   const t = useTranslations('HotelDetail');
   const locale = useLocale();
   const {
@@ -30,15 +31,12 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
     bestCombo,
     capacity,
     adults,
-    setAdults,
     children,
-    setChildren,
     checkin,
     checkout,
     nights
   } = booking;
   const [openBd, setOpenBd] = useState<string | null>(null);
-  const [guestPickerOpen, setGuestPickerOpen] = useState(false);
   const rooms = getRoomsForLocale(locale);
   const plans = getPlansForLocale(locale);
 
@@ -52,102 +50,60 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
       {/* Interactive Booking Bar (Dates + Editable Guests) */}
       <div className="flex items-center gap-4 flex-wrap p-3.5 border border-mint-bright/60 rounded-xl bg-mint/30 mb-4 justify-between">
         <div className="flex items-center gap-4 flex-wrap">
-          <div>
+          <button
+            type="button"
+            onClick={onOpenEdit}
+            className="text-start hover:opacity-80 transition cursor-pointer group bg-transparent border-0 p-0"
+          >
             <span className="block text-[10.5px] font-extrabold text-sub">{t('checkIn')}</span>
-            <b className="text-[13px] font-black">{stayDateShort(new Date(checkin + 'T00:00:00'), locale)}</b>
-          </div>
-          <div>
+            <b className="text-[13px] font-black text-brand-dark group-hover:underline underline-offset-2">
+              {stayDateShort(new Date(checkin + 'T00:00:00'), locale)}
+            </b>
+          </button>
+          <button
+            type="button"
+            onClick={onOpenEdit}
+            className="text-start hover:opacity-80 transition cursor-pointer group bg-transparent border-0 p-0"
+          >
             <span className="block text-[10.5px] font-extrabold text-sub">{t('checkOut')}</span>
-            <b className="text-[13px] font-black">{stayDateShort(new Date(checkout + 'T00:00:00'), locale)}</b>
-          </div>
+            <b className="text-[13px] font-black text-brand-dark group-hover:underline underline-offset-2">
+              {stayDateShort(new Date(checkout + 'T00:00:00'), locale)}
+            </b>
+          </button>
           <div>
             <span className="block text-[10.5px] font-extrabold text-sub">{t('duration')}</span>
-            <b className="text-[13px] font-black">{t('nightsCount', { nights: nights.length })}</b>
+            <span className="px-2 py-0.5 rounded-full bg-surface border border-brand/20 text-brand-dark text-xs font-black inline-block">
+              {t('nightsCount', { nights: nights.length })}
+            </span>
           </div>
-          <div className="relative">
-            <span className="block text-[10.5px] font-extrabold text-sub">{t('capacity')}</span>
-            <button
-              type="button"
-              onClick={() => setGuestPickerOpen(!guestPickerOpen)}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-line bg-surface text-ink text-[12px] font-black hover:border-brand transition shadow-2xs"
-            >
-              <Users size={14} className="text-brand" />
-              <span>{t('passengersSummary', { adults, children })}</span>
-              <span className="text-[10px] text-brand-dark underline ms-1">
-                {lt(locale, { fa: '(تغییر نفرات)', en: '(Change)', ar: '(تعديل)', zh: '(修改人数)', ru: '(Изменить)' })}
-              </span>
-            </button>
-
-            {guestPickerOpen && (
-              <div className="absolute top-[calc(100%+6px)] start-0 z-50 w-64 p-3.5 rounded-2xl bg-surface border border-line shadow-elev-3 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-ink">
-                    {lt(locale, { fa: 'بزرگسال', en: 'Adults', ar: 'البالغين', zh: '成人', ru: 'Взрослые' })}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setAdults(Math.max(1, adults - 1))}
-                      disabled={adults <= 1}
-                      className="w-7 h-7 rounded-lg bg-soft border border-line grid place-items-center disabled:opacity-40"
-                    >
-                      <Minus size={12} />
-                    </button>
-                    <span className="w-5 text-center text-xs font-bold font-mono">{adults}</span>
-                    <button
-                      type="button"
-                      onClick={() => setAdults(Math.min(9, adults + 1))}
-                      disabled={adults >= 9}
-                      className="w-7 h-7 rounded-lg bg-soft border border-line grid place-items-center disabled:opacity-40"
-                    >
-                      <Plus size={12} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-ink">
-                    {lt(locale, { fa: 'کودک', en: 'Children', ar: 'الأطفال', zh: '儿童', ru: 'Дети' })}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setChildren(Math.max(0, children - 1))}
-                      disabled={children <= 0}
-                      className="w-7 h-7 rounded-lg bg-soft border border-line grid place-items-center disabled:opacity-40"
-                    >
-                      <Minus size={12} />
-                    </button>
-                    <span className="w-5 text-center text-xs font-bold font-mono">{children}</span>
-                    <button
-                      type="button"
-                      onClick={() => setChildren(Math.min(6, children + 1))}
-                      disabled={children >= 6}
-                      className="w-7 h-7 rounded-lg bg-soft border border-line grid place-items-center disabled:opacity-40"
-                    >
-                      <Plus size={12} />
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setGuestPickerOpen(false)}
-                  className="w-full py-1.5 rounded-lg bg-brand text-surface text-xs font-bold hover:bg-brand-dark"
-                >
-                  {lt(locale, { fa: 'تایید نفرات', en: 'Done', ar: 'تأكيد', zh: '确定', ru: 'Готово' })}
-                </button>
-              </div>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={onOpenEdit}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line bg-surface text-ink text-[12px] font-black hover:border-brand transition shadow-2xs cursor-pointer"
+          >
+            <Users size={14} className="text-brand" />
+            <span>{t('passengersSummary', { adults, children })}</span>
+            <span className="text-[10px] text-brand-dark underline ms-1">
+              {lt(locale, { fa: '(تغییر نفرات)', en: '(Change)', ar: '(تعديل)', zh: '(修改人数)', ru: '(Изменить)' })}
+            </span>
+          </button>
         </div>
 
         <button
           type="button"
-          onClick={() => setGuestPickerOpen(true)}
-          className="px-3 py-1.5 rounded-lg border border-brand/40 bg-surface text-brand-dark text-xs font-bold hover:bg-mint transition"
+          onClick={onOpenEdit}
+          className="px-3.5 py-1.5 rounded-lg border border-brand bg-brand text-surface text-xs font-bold hover:bg-brand-dark transition shadow-xs cursor-pointer flex items-center gap-1.5"
         >
-          {lt(locale, { fa: 'ویرایش مسافران و تاریخ', en: 'Edit party & dates', ar: 'تعديل المسافرين والتاريخ', zh: '编辑人数和日期', ru: 'Изменить гостей и даты' })}
+          <Calendar size={13} />
+          <span>
+            {lt(locale, {
+              fa: 'ویرایش مسافران و تاریخ',
+              en: 'Edit party & dates',
+              ar: 'تعديل المسافرين والتاريخ',
+              zh: '编辑人数和日期',
+              ru: 'Изменить гостей и даты',
+            })}
+          </span>
         </button>
       </div>
 
@@ -269,11 +225,26 @@ export function HotelRooms({ booking, onApplyCombo }: HotelRoomsProps) {
                                   <td className="py-1 font-bold text-sub">
                                     {stayDateShort(n.date, locale)}
                                   </td>
-                                  <td className="py-1 text-end font-extrabold">{fa(n.price)} TRY</td>
+                                  <td className="py-1 text-end font-extrabold">
+                                    <span>{fa(toman(n.price))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
+                                    <span className="text-[10px] text-sub font-mono ms-1.5">({fa(n.price)} TRY)</span>
+                                  </td>
                                 </tr>
                               ))}
-                              <tr><td className="py-1 font-bold">{lt(locale, { fa: `مالیات و عوارض (${fa(TAX * 100)}٪)`, en: `Taxes & Fees (${TAX * 100}%)`, ar: `الضرائب والرسوم (${TAX * 100}%)`, zh: `税费 (${TAX * 100}%)`, ru: `Налоги и сборы (${TAX * 100}%)` })}</td><td className="py-1 text-end font-extrabold">{fa(q.tax)} TRY</td></tr>
-                              <tr><td className="pt-1 font-black">{lt(locale, { fa: 'جمع کل یک اتاق', en: 'Total per room', ar: 'الإجمالي لكل غرفة', zh: '每间房合计', ru: 'Итого за номер' })}</td><td className="pt-1 text-end font-black">{fa(q.total)} TRY</td></tr>
+                              <tr>
+                                <td className="py-1 font-bold">{lt(locale, { fa: `مالیات و عوارض (${fa(TAX * 100)}٪)`, en: `Taxes & Fees (${TAX * 100}%)`, ar: `الضرائب والرسوم (${TAX * 100}%)`, zh: `税费 (${TAX * 100}%)`, ru: `Налоги и сборы (${TAX * 100}%)` })}</td>
+                                <td className="py-1 text-end font-extrabold">
+                                  <span>{fa(toman(q.tax))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
+                                  <span className="text-[10px] text-sub font-mono ms-1.5">({fa(q.tax)} TRY)</span>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="pt-1 font-black">{lt(locale, { fa: 'جمع کل یک اتاق', en: 'Total per room', ar: 'الإجمالي لكل غرفة', zh: '每间房合计', ru: 'Итого за номер' })}</td>
+                                <td className="pt-1 text-end font-black text-price">
+                                  <span>{fa(toman(q.total))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
+                                  <span className="text-[10px] text-sub font-mono ms-1.5">({fa(q.total)} TRY)</span>
+                                </td>
+                              </tr>
                             </tbody>
                           </table>
                         </div>

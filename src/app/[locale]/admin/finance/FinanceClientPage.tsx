@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Wallet, RefreshCcw, Save, ShieldCheck, Loader2, Landmark, ArrowDownToLine, ArrowUpFromLine, ReceiptText } from 'lucide-react';
+import { Link } from '@/i18n/routing';
+import { Wallet, RefreshCcw, Save, ShieldCheck, Loader2, Landmark, ArrowDownToLine, ArrowUpFromLine, ReceiptText, HandCoins } from 'lucide-react';
 import { lt } from '@/lib/lt';
-import { runLedgerReconciliation } from '@/actions/admin';
+import { runLedgerReconciliation, saveAdminFxRates } from '@/actions/admin';
 import type { ReconciliationReport } from '@/domains/ledger/ReconciliationService';
 import { ErpAlert, ErpBadge, ErpHint, ErpPageHeader, ErpSectionCard, ErpStatCard, erpFieldCls, erpLabelCls } from '@/components/admin/erp-ui';
 import { ERPDataGrid, ColumnDef } from '@/components/admin/ERPDataGrid';
@@ -13,6 +14,7 @@ export type DbTransaction = {
   referenceType?: string | null;
   referenceId?: string | null;
   amount: number | string | { toString(): string };
+  direction?: string | null;
   account?: {
     ownerType?: string | null;
     currency?: string | null;
@@ -32,25 +34,50 @@ export function FinanceClientPage({
   balances,
   inflow,
   outflow,
-  transactions
+  transactions,
+  initialRates = { USDT: '41800', AED: '1140', EUR: '45500' },
+  isCustomRates = false,
 }: {
   locale: string;
   balances: Record<string, number>;
   inflow: number;
   outflow: number;
   transactions: DbTransaction[];
+  initialRates?: { USDT: string; AED: string; EUR: string };
+  isCustomRates?: boolean;
 }) {
   const numFmt = locale === 'fa' ? 'fa-IR' : 'en-US';
 
-  const [rates, setRates] = useState({ USDT: '41800', AED: '1140', EUR: '45500' });
-  const [saved, setSaved] = useState(false);
+  const [rates, setRates] = useState(initialRates);
+  const [saved, setSaved] = useState(isCustomRates);
+  const [savingRates, setSavingRates] = useState(false);
+  const [fxFeedback, setFxFeedback] = useState<{ tone: 'success' | 'error'; msg: string } | null>(null);
   const [reconciling, setReconciling] = useState(false);
   const [reconciliationReport, setReconciliationReport] = useState<ReconciliationReport | null>(null);
   const [reconciliationError, setReconciliationError] = useState<string | null>(null);
 
-  function saveRates() {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  async function saveRates() {
+    setSavingRates(true);
+    setFxFeedback(null);
+    try {
+      const res = await saveAdminFxRates(rates);
+      if (res.success) {
+        setSaved(true);
+        setFxFeedback({
+          tone: 'success',
+          msg: lt(locale, {
+            fa: 'نرخ‌های جدید در پایگاه داده ذخیره و به عنوان مبنای تسویه فعال شد.',
+            en: 'New exchange rates successfully saved to database as active settlement baseline.',
+          }),
+        });
+      } else {
+        setFxFeedback({ tone: 'error', msg: res.error || 'خطا در ذخیره نرخ ارز' });
+      }
+    } catch (err: unknown) {
+      setFxFeedback({ tone: 'error', msg: err instanceof Error ? err.message : 'خطا در ذخیره نرخ ارز' });
+    } finally {
+      setSavingRates(false);
+    }
   }
 
   async function handleReconciliation() {
@@ -71,7 +98,7 @@ export function FinanceClientPage({
     description: t.referenceType ? `${t.referenceType}${t.referenceId ? ` · ${t.referenceId.slice(0, 8)}` : ''}` : 'Transaction',
     wallet: [t.account?.ownerType, t.account?.currency].filter(Boolean).join(' · ') || '—',
     amount: Number(t.amount.toString()) || 0,
-    status: 'completed',
+    status: t.direction === 'CREDIT' ? 'credit' : 'debit',
   }));
 
   const ledgerColumns: ColumnDef<LedgerRow>[] = [
@@ -106,13 +133,20 @@ export function FinanceClientPage({
     },
     {
       key: 'status',
-      header: lt(locale, { fa: 'وضعیت', en: 'Status', ar: 'الحالة', zh: '状态', ru: 'Статус' }),
+      header: lt(locale, { fa: 'جهت', en: 'Direction', ar: 'الاتجاه', zh: '方向', ru: 'Тип' }),
       sortable: true,
       filterable: true,
-      filterOptions: [{ label: 'Settled', value: 'completed' }],
+      filterOptions: [
+        { label: lt(locale, { fa: 'بدهکار', en: 'Debit' }), value: 'debit' },
+        { label: lt(locale, { fa: 'بستانکار', en: 'Credit' }), value: 'credit' },
+      ],
       csvAccessor: (r) => r.status,
-      render: () => (
-        <ErpBadge tone="green">{lt(locale, { fa: 'تسویه شده', en: 'Settled', ar: 'مستوفى', zh: '已结清', ru: 'Закрыто' })}</ErpBadge>
+      render: (r) => (
+        <ErpBadge tone={r.status === 'credit' ? 'green' : 'gold'}>
+          {r.status === 'credit'
+            ? lt(locale, { fa: 'بستانکار', en: 'Credit', ar: 'دائن', zh: '贷方', ru: 'Кредит' })
+            : lt(locale, { fa: 'بدهکار', en: 'Debit', ar: 'مدين', zh: '借方', ru: 'Дебет' })}
+        </ErpBadge>
       ),
     },
   ];
@@ -127,15 +161,24 @@ export function FinanceClientPage({
         description={lt(locale, { fa: 'ترازهای چندارزی، جریان امروز، نرخ تسویه و دفتر کل', en: 'Multi-currency balances, today’s flow, settlement rates and ledger', ar: 'الأرصدة والمعاملات وأسعار الصرف', zh: '多币种余额、今日流水、结算汇率与总账', ru: 'Балансы, потоки, курсы и журнал' })}
         icon={<Landmark size={20} aria-hidden="true" />}
         actions={
-          <button
-            type="button"
-            onClick={handleReconciliation}
-            disabled={reconciling}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-deep px-4 py-2.5 text-xs font-black text-surface shadow-elev-1 transition hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50"
-          >
-            {reconciling ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <ShieldCheck size={15} aria-hidden="true" />}
-            <span>{lt(locale, { fa: 'اجرای تطبیق مالی', en: 'Run Reconciliation', ar: 'تشغيل المطابقة', zh: '执行对账', ru: 'Запустить сверку' })}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin/finance/settlements"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-mint px-4 py-2.5 text-xs font-black text-brand-dark shadow-xs transition hover:bg-mint/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
+            >
+              <HandCoins size={15} aria-hidden="true" />
+              <span>{lt(locale, { fa: 'تسویه‌حساب تامین‌کنندگان', en: 'Supplier Settlements', ar: 'تسويات الموردين', zh: '供应商结算', ru: 'Расчёты с поставщиками' })}</span>
+            </Link>
+            <button
+              type="button"
+              onClick={handleReconciliation}
+              disabled={reconciling}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-deep px-4 py-2.5 text-xs font-black text-surface shadow-elev-1 transition hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50 cursor-pointer"
+            >
+              {reconciling ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <ShieldCheck size={15} aria-hidden="true" />}
+              <span>{lt(locale, { fa: 'اجرای تطبیق مالی', en: 'Run Reconciliation', ar: 'تشغيل المطابقة', zh: '执行对账', ru: 'Запустить сверку' })}</span>
+            </button>
+          </div>
         }
       />
 
@@ -216,13 +259,13 @@ export function FinanceClientPage({
           subtitle={
             <span className="inline-flex flex-wrap items-center gap-1.5">
               <span>{lt(locale, { fa: 'مبنای تبدیل بدهی ارزی به تومان', en: 'Basis for converting FX dues to Toman', ar: 'أساس تحويل المستحقات للعملة المحلية', zh: '外币欠款折算基础', ru: 'База пересчёта в томаны' })}</span>
-              <ErpHint label={lt(locale, { fa: 'این نرخ‌ها واقعی‌اند؟', en: 'Are these rates live?', ar: 'هل هذه الأسعار حقيقية؟', zh: '这些汇率是实时的吗？', ru: 'Курсы настоящие?' })}>
+              <ErpHint label={lt(locale, { fa: 'این نرخ‌ها چطور کار می‌کنند؟', en: 'How do these rates work?', ar: 'كيف تعمل هذه الأسعار؟', zh: '这些汇率如何运作？', ru: 'Как работают курсы?' })}>
                 {lt(locale, {
-                  fa: 'فعلاً تمرینی است: ذخیره واقعی انجام نمی‌شود و روی سندی اثر نمی‌گذارد. برای اتصال به نرخ رسمی به تیم فنی بگویید.',
-                  en: 'Practice mode for now: nothing is really saved and no document is affected. Ask the tech team to connect the official rate feed.',
-                  ar: 'وضع تجريبي حاليًا: لا يتم حفظ شيء فعليًا. اطلب من الفريق التقني ربط الأسعار الرسمية.',
-                  zh: '目前为练习模式：不会真正保存，也不影响任何单据。如需对接官方汇率请联系技术团队。',
-                  ru: 'Пока тренировка: ничего не сохраняется и ни на что не влияет. Подключение курса — к техкоманде.',
+                  fa: 'نرخ‌ها در پایگاه داده پلتفرم ذخیره می‌شوند و به عنوان مبنای محاسبه تسویه ارزی و ارزش ریالی کیف پول‌های تتر/درهم به کار می‌روند.',
+                  en: 'Rates are securely persisted to the platform database and serve as the baseline for multi-currency settlements and wallet balances.',
+                  ar: 'تُحفظ الأسعار في قاعدة البيانات وتُستخدم كأساس لتسوية العملات.',
+                  zh: '汇率保存在平台数据库中，作为多币种结算和钱包余额的折算基准。',
+                  ru: 'Курсы сохраняются в базе данных и служат базой для валютных расчетов.',
                 })}
               </ErpHint>
             </span>
@@ -231,11 +274,18 @@ export function FinanceClientPage({
           actions={
             <ErpBadge tone={saved ? 'green' : 'neutral'}>
               {saved
-                ? lt(locale, { fa: 'ذخیره شد', en: 'Saved', ar: 'تم الحفظ', zh: '已保存', ru: 'Сохранено' })
-                : lt(locale, { fa: 'پیش‌نمایش', en: 'Preview', ar: 'معاينة', zh: '预览', ru: 'Превью' })}
+                ? lt(locale, { fa: 'ذخیره در دیتابیس', en: 'Saved in DB', ar: 'محفوظ', zh: '已存库', ru: 'В базе данных' })
+                : lt(locale, { fa: 'پیش‌فرض سیستم', en: 'Default', ar: 'افتراضي', zh: '默认', ru: 'По умолчанию' })}
             </ErpBadge>
           }
         >
+          {fxFeedback && (
+            <div className="mb-3">
+              <ErpAlert tone={fxFeedback.tone} onDismiss={() => setFxFeedback(null)}>
+                {fxFeedback.msg}
+              </ErpAlert>
+            </div>
+          )}
           <div className="grid grid-cols-3 gap-2.5">
             {(['USDT', 'AED', 'EUR'] as const).map((c) => (
               <div key={c}>
@@ -253,10 +303,11 @@ export function FinanceClientPage({
           </div>
           <button
             onClick={saveRates}
-            className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-deep px-4 py-2.5 text-xs font-black text-surface transition hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            disabled={savingRates}
+            className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-deep px-4 py-2.5 text-xs font-black text-surface transition hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60 cursor-pointer"
           >
-            <Save size={14} aria-hidden="true" />
-            {lt(locale, { fa: 'ذخیره نرخ‌ها (دمو)', en: 'Save rates (demo)', ar: 'حفظ الأسعار (تجريبي)', zh: '保存汇率（演示）', ru: 'Сохранить (демо)' })}
+            {savingRates ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Save size={14} aria-hidden="true" />}
+            {lt(locale, { fa: 'ذخیره در پایگاه داده', en: 'Save rates to database', ar: 'حفظ في قاعدة البيانات', zh: '保存到数据库', ru: 'Сохранить в базу' })}
           </button>
         </ErpSectionCard>
       </div>

@@ -8,6 +8,7 @@ import { Money } from '@/lib/finance';
 import { GeneralLedgerService } from '@/domains/ledger/GeneralLedgerService';
 import { InvoiceDomainService } from '@/domains/finance/InvoiceDomainService';
 import { verifyTronTransactionOnChain, DEFAULT_USDT_TO_IRR_RATE } from '@/lib/crypto/tron-verifier';
+import { requirePermission } from '@/domains/identity/permission-service';
 
 export interface CryptoWalletDto {
   id: string;
@@ -367,15 +368,7 @@ export async function reviewCryptoPayment(
   adminNote?: string
 ) {
   try {
-    const session = await safeAuth();
-    if (!session || !session.user) {
-      return { success: false, error: 'احراز هویت الزامی است' };
-    }
-
-    const isStaff = session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN';
-    if (!isStaff) {
-      return { success: false, error: 'تنها مدیران سیستم مجاز به بررسی و تایید هستند' };
-    }
+    const admin = await requirePermission(['finance:post', 'payment:capture', 'finance:view']);
 
     const receipt = await prisma.cryptoPaymentReceipt.findUnique({
       where: { id: receiptId },
@@ -405,7 +398,7 @@ export async function reviewCryptoPayment(
           where: { id: receipt.id },
           data: {
             status: 'APPROVED',
-            reviewerId: session.user.id,
+            reviewerId: admin.id,
             reviewedAt: now,
             adminNote: adminNote || 'تأیید شد',
           },
@@ -433,7 +426,7 @@ export async function reviewCryptoPayment(
               network: receipt.network,
               amountUsdt: Number(receipt.amountUsdt),
               txHash: receipt.txHash,
-              approvedBy: session.user.id,
+              approvedBy: admin.id,
             }),
           },
         });
@@ -527,7 +520,7 @@ export async function reviewCryptoPayment(
             bookingId: booking.id,
             fromStatus: booking.status,
             toStatus: 'CONFIRMED',
-            actor: session.user.id || 'ADMIN',
+            actor: admin.id || 'ADMIN',
             reason: `پرداخت تتر (${receipt.amountUsdt} USDT / هش: ${receipt.txHash}) توسط کارشناس مالی تأیید و سفارش قطعی شد. ${adminNote ? 'یادداشت: ' + adminNote : ''}`,
           },
         });
@@ -545,7 +538,7 @@ export async function reviewCryptoPayment(
           where: { id: receipt.id },
           data: {
             status: 'REJECTED',
-            reviewerId: session.user.id,
+            reviewerId: admin.id,
             reviewedAt: now,
             adminNote: adminNote || 'تراکنش رمزارز رد شد',
           },
@@ -556,7 +549,7 @@ export async function reviewCryptoPayment(
             bookingId: booking.id,
             fromStatus: booking.status,
             toStatus: booking.status,
-            actor: session.user.id || 'ADMIN',
+            actor: admin.id || 'ADMIN',
             reason: `تراکنش تتر توسط مدیر مالی رد شد: ${adminNote || 'تراکنش نامعتبر'}`,
           },
         });
@@ -584,15 +577,7 @@ export async function listCryptoPayments(filters?: {
   limit?: number;
 }) {
   try {
-    const session = await safeAuth();
-    if (!session || !session.user) {
-      return { success: false, error: 'احراز هویت الزامی است', data: [], total: 0 };
-    }
-
-    const isStaff = session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN';
-    if (!isStaff) {
-      return { success: false, error: 'دسترسی غیرمجاز', data: [], total: 0 };
-    }
+    await requirePermission('finance:view');
 
     const page = filters?.page || 1;
     const limit = filters?.limit || 20;
@@ -606,11 +591,11 @@ export async function listCryptoPayments(filters?: {
 
     if (filters?.search) {
       whereClause.OR = [
-        { txHash: { contains: filters.search, mode: 'insensitive' } },
-        { senderAddress: { contains: filters.search, mode: 'insensitive' } },
-        { booking: { reference: { contains: filters.search, mode: 'insensitive' } } },
-        { booking: { customer: { name: { contains: filters.search, mode: 'insensitive' } } } },
-        { booking: { customer: { phone: { contains: filters.search, mode: 'insensitive' } } } },
+        { txHash: { contains: filters.search } },
+        { senderAddress: { contains: filters.search } },
+        { booking: { reference: { contains: filters.search } } },
+        { booking: { customer: { name: { contains: filters.search } } } },
+        { booking: { customer: { phone: { contains: filters.search } } } },
       ];
     }
 

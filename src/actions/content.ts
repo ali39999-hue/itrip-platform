@@ -3,6 +3,7 @@
 import { safeAuth } from '@/auth';
 import { revalidatePath } from 'next/cache';
 import { ContentDomainService } from '@/domains/content/ContentDomainService';
+import { SiteContentService, SITE_CONTENT_KEYS, type SiteContentKey } from '@/domains/content/SiteContentService';
 import { sanitizeUserObject } from '@/lib/security/content-sanitizer';
 
 async function checkAdminAuth() {
@@ -19,12 +20,72 @@ async function checkAdminAuth() {
   }
 }
 
+function revalidateContentPaths() {
+  revalidatePath('/[locale]/admin/content', 'page');
+  revalidatePath('/[locale]', 'page');
+  revalidatePath('/[locale]/tours', 'page');
+  revalidatePath('/[locale]/destinations', 'page');
+  revalidatePath('/[locale]/travelogues', 'page');
+  revalidatePath('/[locale]/guide', 'page');
+}
+
+/** Converts any Prisma Decimal or non-plain object into a standard plain serializable structure */
+function sanitizeExperience(exp: Record<string, unknown>) {
+  return {
+    id: String(exp.id || ''),
+    countryId: String(exp.countryId || 'iran'),
+    category: String(exp.category || 'culture'),
+    title: String(exp.title || ''),
+    titleEn: String(exp.titleEn || ''),
+    desc: String(exp.desc || ''),
+    descEn: String(exp.descEn || ''),
+    where: String(exp.where || ''),
+    whereEn: String(exp.whereEn || ''),
+    when: String(exp.when || ''),
+    whenEn: String(exp.whenEn || ''),
+    fromPrice: typeof exp.fromPrice === 'object' && exp.fromPrice !== null ? Number(exp.fromPrice.toString()) : (Number(exp.fromPrice) || 0),
+    image: exp.image ? String(exp.image) : null,
+    isActive: Boolean(exp.isActive),
+    createdAt: exp.createdAt instanceof Date ? exp.createdAt.toISOString() : String(exp.createdAt || ''),
+    updatedAt: exp.updatedAt instanceof Date ? exp.updatedAt.toISOString() : String(exp.updatedAt || ''),
+  };
+}
+
+function sanitizeTour(t: Record<string, unknown>) {
+  return {
+    ...t,
+    id: String(t.id || ''),
+    title: String(t.title || ''),
+    titleEn: String(t.titleEn || ''),
+    city: String(t.city || ''),
+    cityEn: t.cityEn ? String(t.cityEn) : null,
+    country: String(t.country || 'ایران'),
+    countryEn: t.countryEn ? String(t.countryEn) : null,
+    durationDays: Number(t.durationDays || 3),
+    durationNights: Number(t.durationNights || 2),
+    category: String(t.category || 'cultural'),
+    isPublished: Boolean(t.isPublished),
+    price: typeof t.price === 'object' && t.price !== null ? Number(t.price.toString()) : (Number(t.price) || 0),
+    childPrice: t.childPrice != null ? (typeof t.childPrice === 'object' ? Number(t.childPrice.toString()) : Number(t.childPrice)) : null,
+    departureDates: Array.isArray(t.departureDates)
+      ? t.departureDates.map((d: Record<string, unknown>) => ({
+          ...d,
+          price: typeof d.price === 'object' && d.price !== null ? Number(d.price.toString()) : (Number(d.price) || 0),
+          childPrice: d.childPrice != null ? (typeof d.childPrice === 'object' ? Number(d.childPrice.toString()) : Number(d.childPrice)) : null,
+        }))
+      : [],
+    itineraryDays: Array.isArray(t.itineraryDays) ? t.itineraryDays : [],
+    createdAt: t.createdAt instanceof Date ? t.createdAt.toISOString() : String(t.createdAt || ''),
+    updatedAt: t.updatedAt instanceof Date ? t.updatedAt.toISOString() : String(t.updatedAt || ''),
+  };
+}
+
 // ==================== 1. TOURS CRUD ====================
 
 export async function getPublicToursAction() {
   try {
     const tours = await ContentDomainService.getTours();
-    return { success: true, tours: tours.filter((t) => t.isPublished) };
+    return { success: true, tours: (tours || []).filter((t: { isPublished?: boolean }) => t?.isPublished).map(sanitizeTour) };
   } catch (e: unknown) {
     console.error('getPublicToursAction error:', e);
     return { success: false, error: e instanceof Error ? e.message : 'Failed to fetch tours', tours: [] };
@@ -37,7 +98,7 @@ export async function getAdminToursAction() {
     if (!isAuthed) return { success: false, error: 'Unauthorized', tours: [] };
 
     const tours = await ContentDomainService.getTours();
-    return { success: true, tours };
+    return { success: true, tours: (tours || []).filter(Boolean).map(sanitizeTour) };
   } catch (e: unknown) {
     console.error('getAdminToursAction error:', e);
     return { success: false, error: e instanceof Error ? e.message : 'Failed to fetch tours', tours: [] };
@@ -51,13 +112,27 @@ export async function createAdminTourAction(data: Parameters<typeof ContentDomai
 
     const sanitized = sanitizeUserObject(data);
     const created = await ContentDomainService.createTour(sanitized);
-    revalidatePath('/[locale]/admin/content', 'page');
-    revalidatePath('/[locale]/tours', 'page');
+    revalidateContentPaths();
 
-    return { success: true, tour: created };
+    return { success: true, tour: sanitizeTour(created) };
   } catch (e: unknown) {
     console.error('createAdminTourAction error:', e);
     return { success: false, error: e instanceof Error ? e.message : 'خطا در ثبت تور' };
+  }
+}
+
+export async function updateAdminTourAction(id: string, data: Parameters<typeof ContentDomainService.updateTour>[1]) {
+  try {
+    const isAuthed = await checkAdminAuth();
+    if (!isAuthed) return { success: false, error: 'Unauthorized' };
+
+    const sanitized = sanitizeUserObject(data);
+    const updated = await ContentDomainService.updateTour(id, sanitized);
+    revalidateContentPaths();
+    return { success: true, tour: sanitizeTour(updated) };
+  } catch (e: unknown) {
+    console.error('updateAdminTourAction error:', e);
+    return { success: false, error: e instanceof Error ? e.message : 'خطا در ویرایش تور' };
   }
 }
 
@@ -67,8 +142,7 @@ export async function deleteAdminTourAction(tourId: string) {
     if (!isAuthed) return { success: false, error: 'Unauthorized' };
 
     await ContentDomainService.deleteTour(tourId);
-    revalidatePath('/[locale]/admin/content', 'page');
-    revalidatePath('/[locale]/tours', 'page');
+    revalidateContentPaths();
 
     return { success: true };
   } catch (e: unknown) {
@@ -83,9 +157,8 @@ export async function toggleAdminTourPublishAction(tourId: string, isPublished: 
     if (!isAuthed) return { success: false, error: 'Unauthorized' };
 
     const updated = await ContentDomainService.toggleTourPublish(tourId, isPublished);
-    revalidatePath('/[locale]/admin/content', 'page');
-    revalidatePath('/[locale]/tours', 'page');
-    return { success: true, tour: updated };
+    revalidateContentPaths();
+    return { success: true, tour: sanitizeTour(updated) };
   } catch (e: unknown) {
     console.error('toggleAdminTourPublishAction error:', e);
     return { success: false, error: e instanceof Error ? e.message : 'خطا در تغییر وضعیت انتشار' };
@@ -96,8 +169,8 @@ export async function toggleAdminTourPublishAction(tourId: string, isPublished: 
 
 export async function getPublicExperiencesAction(countryId?: string) {
   try {
-    const experiences = await ContentDomainService.getExperiences(countryId);
-    return { success: true, experiences };
+    const experiences = await ContentDomainService.getExperiences(countryId, true);
+    return { success: true, experiences: (experiences || []).filter(Boolean).map(sanitizeExperience) };
   } catch (e: unknown) {
     console.error('getPublicExperiencesAction error:', e);
     return { success: false, error: e instanceof Error ? e.message : 'Failed to fetch experiences', experiences: [] };
@@ -106,9 +179,10 @@ export async function getPublicExperiencesAction(countryId?: string) {
 
 export async function getAdminExperiencesAction(countryId?: string) {
   try {
-    // Return published experiences directly if called by client components
+    const isAuthed = await checkAdminAuth();
+    if (!isAuthed) return { success: false, error: 'Unauthorized', experiences: [] };
     const experiences = await ContentDomainService.getExperiences(countryId);
-    return { success: true, experiences };
+    return { success: true, experiences: (experiences || []).filter(Boolean).map(sanitizeExperience) };
   } catch (e: unknown) {
     console.error('getAdminExperiencesAction error:', e);
     return { success: false, error: e instanceof Error ? e.message : 'Failed to fetch experiences', experiences: [] };
@@ -122,14 +196,27 @@ export async function createAdminExperienceAction(data: Parameters<typeof Conten
 
     const sanitized = sanitizeUserObject(data);
     const created = await ContentDomainService.createExperience(sanitized);
-    revalidatePath('/[locale]/admin/content', 'page');
-    revalidatePath('/[locale]/destinations', 'page');
-    revalidatePath('/[locale]/tours', 'page');
+    revalidateContentPaths();
 
-    return { success: true, experience: created };
+    return { success: true, experience: sanitizeExperience(created) };
   } catch (e: unknown) {
     console.error('createAdminExperienceAction error:', e);
     return { success: false, error: e instanceof Error ? e.message : 'خطا در ثبت تجربه اصیل' };
+  }
+}
+
+export async function updateAdminExperienceAction(id: string, data: Parameters<typeof ContentDomainService.updateExperience>[1]) {
+  try {
+    const isAuthed = await checkAdminAuth();
+    if (!isAuthed) return { success: false, error: 'Unauthorized' };
+
+    const sanitized = sanitizeUserObject(data);
+    const updated = await ContentDomainService.updateExperience(id, sanitized);
+    revalidateContentPaths();
+    return { success: true, experience: sanitizeExperience(updated) };
+  } catch (e: unknown) {
+    console.error('updateAdminExperienceAction error:', e);
+    return { success: false, error: e instanceof Error ? e.message : 'خطا در ویرایش تجربه اصیل' };
   }
 }
 
@@ -139,9 +226,7 @@ export async function deleteAdminExperienceAction(id: string) {
     if (!isAuthed) return { success: false, error: 'Unauthorized' };
 
     await ContentDomainService.deleteExperience(id);
-    revalidatePath('/[locale]/admin/content', 'page');
-    revalidatePath('/[locale]/destinations', 'page');
-    revalidatePath('/[locale]/tours', 'page');
+    revalidateContentPaths();
 
     return { success: true };
   } catch (e: unknown) {
@@ -164,6 +249,8 @@ export async function getPublicTraveloguesAction() {
 
 export async function getAdminTraveloguesAction() {
   try {
+    const isAuthed = await checkAdminAuth();
+    if (!isAuthed) return { success: false, error: 'Unauthorized', travelogues: [] };
     const travelogues = await ContentDomainService.getTravelogues();
     return { success: true, travelogues };
   } catch (e: unknown) {
@@ -179,13 +266,27 @@ export async function createAdminTravelogueAction(data: Parameters<typeof Conten
 
     const sanitized = sanitizeUserObject(data);
     const created = await ContentDomainService.createTravelogue(sanitized);
-    revalidatePath('/[locale]/admin/content', 'page');
-    revalidatePath('/[locale]/travelogues', 'page');
+    revalidateContentPaths();
 
     return { success: true, travelogue: created };
   } catch (e: unknown) {
     console.error('createAdminTravelogueAction error:', e);
     return { success: false, error: e instanceof Error ? e.message : 'خطا در ثبت سفرنامه' };
+  }
+}
+
+export async function updateAdminTravelogueAction(id: string, data: Parameters<typeof ContentDomainService.updateTravelogue>[1]) {
+  try {
+    const isAuthed = await checkAdminAuth();
+    if (!isAuthed) return { success: false, error: 'Unauthorized' };
+
+    const sanitized = sanitizeUserObject(data);
+    const updated = await ContentDomainService.updateTravelogue(id, sanitized);
+    revalidateContentPaths();
+    return { success: true, travelogue: updated };
+  } catch (e: unknown) {
+    console.error('updateAdminTravelogueAction error:', e);
+    return { success: false, error: e instanceof Error ? e.message : 'خطا در ویرایش سفرنامه' };
   }
 }
 
@@ -195,8 +296,7 @@ export async function deleteAdminTravelogueAction(id: string) {
     if (!isAuthed) return { success: false, error: 'Unauthorized' };
 
     await ContentDomainService.deleteTravelogue(id);
-    revalidatePath('/[locale]/admin/content', 'page');
-    revalidatePath('/[locale]/travelogues', 'page');
+    revalidateContentPaths();
 
     return { success: true };
   } catch (e: unknown) {
@@ -219,6 +319,8 @@ export async function getPublicGuidesAction() {
 
 export async function getAdminGuidesAction() {
   try {
+    const isAuthed = await checkAdminAuth();
+    if (!isAuthed) return { success: false, error: 'Unauthorized', guides: [] };
     const guides = await ContentDomainService.getGuides();
     return { success: true, guides };
   } catch (e: unknown) {
@@ -234,13 +336,27 @@ export async function createAdminGuideAction(data: Parameters<typeof ContentDoma
 
     const sanitized = sanitizeUserObject(data);
     const created = await ContentDomainService.createGuide(sanitized);
-    revalidatePath('/[locale]/admin/content', 'page');
-    revalidatePath('/[locale]/guide', 'page');
+    revalidateContentPaths();
 
     return { success: true, guide: created };
   } catch (e: unknown) {
     console.error('createAdminGuideAction error:', e);
     return { success: false, error: e instanceof Error ? e.message : 'خطا در ثبت راهنما' };
+  }
+}
+
+export async function updateAdminGuideAction(id: string, data: Parameters<typeof ContentDomainService.updateGuide>[1]) {
+  try {
+    const isAuthed = await checkAdminAuth();
+    if (!isAuthed) return { success: false, error: 'Unauthorized' };
+
+    const sanitized = sanitizeUserObject(data);
+    const updated = await ContentDomainService.updateGuide(id, sanitized);
+    revalidateContentPaths();
+    return { success: true, guide: updated };
+  } catch (e: unknown) {
+    console.error('updateAdminGuideAction error:', e);
+    return { success: false, error: e instanceof Error ? e.message : 'خطا در ویرایش راهنما' };
   }
 }
 
@@ -250,12 +366,60 @@ export async function deleteAdminGuideAction(id: string) {
     if (!isAuthed) return { success: false, error: 'Unauthorized' };
 
     await ContentDomainService.deleteGuide(id);
-    revalidatePath('/[locale]/admin/content', 'page');
-    revalidatePath('/[locale]/guide', 'page');
+    revalidateContentPaths();
 
     return { success: true };
   } catch (e: unknown) {
     console.error('deleteAdminGuideAction error:', e);
     return { success: false, error: e instanceof Error ? e.message : 'خطا در حذف راهنما' };
+  }
+}
+
+// ==================== 5. SITE CONTENT (page-level overrides) ====================
+
+export async function getSiteContentAction() {
+  try {
+    const isAuthed = await checkAdminAuth();
+    if (!isAuthed) return { success: false, error: 'Unauthorized', entries: [] };
+    const entries = await SiteContentService.list();
+    return { success: true, entries };
+  } catch (e: unknown) {
+    console.error('getSiteContentAction error:', e);
+    return { success: false, error: e instanceof Error ? e.message : 'خطا در دریافت محتوای صفحات', entries: [] };
+  }
+}
+
+export async function saveSiteContentAction(key: string, payload: unknown) {
+  try {
+    const isAuthed = await checkAdminAuth();
+    if (!isAuthed) return { success: false, error: 'Unauthorized' };
+    if (!SITE_CONTENT_KEYS.includes(key as SiteContentKey)) {
+      return { success: false, error: 'کلید محتوا نامعتبر است.' };
+    }
+
+    const session = await safeAuth();
+    const entry = await SiteContentService.upsert(key as SiteContentKey, payload, session?.user?.id);
+    revalidateContentPaths();
+    return { success: true, entry };
+  } catch (e: unknown) {
+    console.error('saveSiteContentAction error:', e);
+    return { success: false, error: e instanceof Error ? e.message : 'خطا در ذخیره محتوای صفحه' };
+  }
+}
+
+export async function resetSiteContentAction(key: string) {
+  try {
+    const isAuthed = await checkAdminAuth();
+    if (!isAuthed) return { success: false, error: 'Unauthorized' };
+    if (!SITE_CONTENT_KEYS.includes(key as SiteContentKey)) {
+      return { success: false, error: 'کلید محتوا نامعتبر است.' };
+    }
+
+    await SiteContentService.remove(key as SiteContentKey);
+    revalidateContentPaths();
+    return { success: true };
+  } catch (e: unknown) {
+    console.error('resetSiteContentAction error:', e);
+    return { success: false, error: e instanceof Error ? e.message : 'خطا در بازگردانی محتوای پیش‌فرض' };
   }
 }

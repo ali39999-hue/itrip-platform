@@ -18,26 +18,33 @@ import {
   Calendar,
   X,
   Loader2,
+  Pencil,
+  Wand2,
 } from 'lucide-react';
 import { num } from '@/lib/format';
 import { ErpModal, ErpPageHeader, ErpTabs, erpDangerBtnCls, erpPrimaryBtnCls, erpGhostBtnCls } from '@/components/admin/erp-ui';
+import { SiteContentTab } from '@/components/admin/SiteContentTab';
 import {
   getAdminToursAction,
   createAdminTourAction,
+  updateAdminTourAction,
   deleteAdminTourAction,
   toggleAdminTourPublishAction,
   getAdminExperiencesAction,
   createAdminExperienceAction,
+  updateAdminExperienceAction,
   deleteAdminExperienceAction,
   getAdminTraveloguesAction,
   createAdminTravelogueAction,
+  updateAdminTravelogueAction,
   deleteAdminTravelogueAction,
   getAdminGuidesAction,
   createAdminGuideAction,
+  updateAdminGuideAction,
   deleteAdminGuideAction,
 } from '@/actions/content';
 
-type ContentTab = 'tours' | 'experiences' | 'travelogues' | 'guides';
+type ContentTab = 'site' | 'tours' | 'experiences' | 'travelogues' | 'guides';
 
 export interface TourAdminItem {
   id: string;
@@ -51,6 +58,8 @@ export interface TourAdminItem {
   isPublished?: boolean;
   heroImage?: string | null;
   summary?: string | null;
+  hotelName?: string | null;
+  transportType?: string | null;
 }
 
 export interface ExperienceAdminItem {
@@ -86,7 +95,7 @@ export interface GuideAdminItem {
 
 export default function AdminContentPage() {
   const locale = useLocale();
-  const [activeTab, setActiveTab] = useState<ContentTab>('tours');
+  const [activeTab, setActiveTab] = useState<ContentTab>('site');
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
@@ -103,6 +112,15 @@ export default function AdminContentPage() {
   const [guideModalOpen, setGuideModalOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<{ kind: 'tour' | 'exp' | 'travelogue' | 'guide'; id: string; title: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Editing state (null = create mode)
+  const [editingTourId, setEditingTourId] = useState<string | null>(null);
+  const [editingExpId, setEditingExpId] = useState<string | null>(null);
+  const [editingTravelogueId, setEditingTravelogueId] = useState<string | null>(null);
+  const [editingGuideId, setEditingGuideId] = useState<string | null>(null);
+
+  // Per-item pending flags for inline toggles
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   // Submitting state
   const [submitting, setSubmitting] = useState(false);
@@ -145,6 +163,11 @@ export default function AdminContentPage() {
   const [gdBodyFa, setGdBodyFa] = useState('');
 
   const loadData = useCallback(async () => {
+    if (activeTab === 'site') {
+      // SiteContentTab fetches its own data — just clear the initial loading flag.
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       if (activeTab === 'tours') {
@@ -183,15 +206,45 @@ export default function AdminContentPage() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, []);  // Handlers: Tour
+  function openCreateTour() {
+    setEditingTourId(null);
+    setTourTitle('');
+    setTourTitleEn('');
+    setTourCity('');
+    setTourCountry('ایران');
+    setTourDurationDays(3);
+    setTourPrice(85000000);
+    setTourCategory('cultural');
+    setTourHotel('');
+    setTourTransport('');
+    setTourSummary('');
+    setTourHeroImage('');
+    setTourModalOpen(true);
+  }
 
-  // Handlers: Tour
+  function openEditTour(t: TourAdminItem) {
+    setEditingTourId(t.id);
+    setTourTitle(t.title);
+    setTourTitleEn(t.titleEn || '');
+    setTourCity(t.city);
+    setTourCountry(t.country || 'ایران');
+    setTourDurationDays(t.durationDays);
+    setTourPrice(Number(t.price));
+    setTourCategory(t.category);
+    setTourHotel(t.hotelName || '');
+    setTourTransport(t.transportType || '');
+    setTourSummary(t.summary || '');
+    setTourHeroImage(t.heroImage || '');
+    setTourModalOpen(true);
+  }
+
   async function handleCreateTour(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setFeedback(null);
     try {
-      const res = await createAdminTourAction({
+      const payload = {
         title: tourTitle,
         titleEn: tourTitleEn || tourTitle,
         city: tourCity,
@@ -203,13 +256,19 @@ export default function AdminContentPage() {
         transportType: tourTransport || undefined,
         summary: tourSummary,
         heroImage: tourHeroImage || undefined,
-      });
+      };
+      const res = editingTourId
+        ? await updateAdminTourAction(editingTourId, payload)
+        : await createAdminTourAction(payload);
 
       if (res.success) {
-        setFeedback({ msg: 'تور جدید با موفقیت اضافه شد.', type: 'success' });
+        setFeedback({ msg: editingTourId ? 'تور با موفقیت ویرایش شد.' : 'تور جدید با موفقیت اضافه شد.', type: 'success' });
         setTourModalOpen(false);
-        setTourTitle('');
-        setTourCity('');
+        if (!editingTourId) {
+          setTourTitle('');
+          setTourCity('');
+        }
+        setEditingTourId(null);
         await loadData();
       } else {
         setFeedback({ msg: res.error || 'خطا در ثبت تور', type: 'error' });
@@ -219,18 +278,61 @@ export default function AdminContentPage() {
     }
   }
 
+  async function handleToggleTourPublish(t: TourAdminItem) {
+    if (togglingId) return;
+    setTogglingId(t.id);
+    setFeedback(null);
+    try {
+      const res = await toggleAdminTourPublishAction(t.id, !t.isPublished);
+      if (res.success) {
+        setTours((prev) => prev.map((x) => (x.id === t.id ? { ...x, isPublished: !t.isPublished } : x)));
+        setFeedback({ msg: t.isPublished ? `تور «${t.title}» به پیش‌نویس تبدیل شد.` : `تور «${t.title}» منتشر شد.`, type: 'success' });
+      } else {
+        setFeedback({ msg: res.error || 'خطا در تغییر وضعیت انتشار', type: 'error' });
+      }
+    } finally {
+      setTogglingId(null);
+    }
+  }
+
   async function handleDeleteTour(id: string) {
     const target = tours.find((t) => t.id === id);
     setPendingDelete({ kind: 'tour', id, title: target?.title || '' });
   }
 
   // Handlers: Experience
+  function openCreateExp() {
+    setEditingExpId(null);
+    setExpCountry('iran');
+    setExpCategory('culture');
+    setExpTitle('');
+    setExpTitleEn('');
+    setExpDesc('');
+    setExpWhere('');
+    setExpWhen('');
+    setExpFromPrice(15000000);
+    setExpModalOpen(true);
+  }
+
+  function openEditExp(exp: ExperienceAdminItem) {
+    setEditingExpId(exp.id);
+    setExpCountry(exp.countryId);
+    setExpCategory(exp.category);
+    setExpTitle(exp.title);
+    setExpTitleEn(exp.titleEn || '');
+    setExpDesc(exp.desc || '');
+    setExpWhere(exp.where || '');
+    setExpWhen(exp.when || '');
+    setExpFromPrice(Number(exp.fromPrice));
+    setExpModalOpen(true);
+  }
+
   async function handleCreateExp(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setFeedback(null);
     try {
-      const res = await createAdminExperienceAction({
+      const payload = {
         countryId: expCountry,
         category: expCategory,
         title: expTitle,
@@ -239,13 +341,19 @@ export default function AdminContentPage() {
         where: expWhere,
         when: expWhen,
         fromPrice: expFromPrice,
-      });
+      };
+      const res = editingExpId
+        ? await updateAdminExperienceAction(editingExpId, payload)
+        : await createAdminExperienceAction(payload);
 
       if (res.success) {
-        setFeedback({ msg: 'تجربه اصیل با موفقیت اضافه شد.', type: 'success' });
+        setFeedback({ msg: editingExpId ? 'تجربه اصیل با موفقیت ویرایش شد.' : 'تجربه اصیل با موفقیت اضافه شد.', type: 'success' });
         setExpModalOpen(false);
-        setExpTitle('');
-        setExpDesc('');
+        if (!editingExpId) {
+          setExpTitle('');
+          setExpDesc('');
+        }
+        setEditingExpId(null);
         await loadData();
       } else {
         setFeedback({ msg: res.error || 'خطا در ثبت تجربه', type: 'error' });
@@ -261,24 +369,50 @@ export default function AdminContentPage() {
   }
 
   // Handlers: Travelogue
+  function openCreateTravelogue() {
+    setEditingTravelogueId(null);
+    setTrvTitleFa('');
+    setTrvDestFa('');
+    setTrvUserName('');
+    setTrvImage('');
+    setTrvContentFa('');
+    setTravelogueModalOpen(true);
+  }
+
+  function openEditTravelogue(trv: TravelogueAdminItem) {
+    setEditingTravelogueId(trv.id);
+    setTrvTitleFa(trv.titleFa);
+    setTrvDestFa(trv.destFa || '');
+    setTrvUserName(trv.userName || '');
+    setTrvImage(trv.image || '');
+    setTrvContentFa(trv.contentFa || '');
+    setTravelogueModalOpen(true);
+  }
+
   async function handleCreateTravelogue(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setFeedback(null);
     try {
-      const res = await createAdminTravelogueAction({
+      const payload = {
         titleFa: trvTitleFa,
         destFa: trvDestFa,
         userName: trvUserName,
-        image: trvImage || 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=800&auto=format&fit=crop&q=80',
+        image: trvImage || undefined,
         contentFa: trvContentFa,
-      });
+      };
+      const res = editingTravelogueId
+        ? await updateAdminTravelogueAction(editingTravelogueId, payload)
+        : await createAdminTravelogueAction(payload);
 
       if (res.success) {
-        setFeedback({ msg: 'سفرنامه با موفقیت ثبت شد.', type: 'success' });
+        setFeedback({ msg: editingTravelogueId ? 'سفرنامه با موفقیت ویرایش شد.' : 'سفرنامه با موفقیت ثبت شد.', type: 'success' });
         setTravelogueModalOpen(false);
-        setTrvTitleFa('');
-        setTrvContentFa('');
+        if (!editingTravelogueId) {
+          setTrvTitleFa('');
+          setTrvContentFa('');
+        }
+        setEditingTravelogueId(null);
         await loadData();
       } else {
         setFeedback({ msg: res.error || 'خطا در ثبت سفرنامه', type: 'error' });
@@ -294,24 +428,50 @@ export default function AdminContentPage() {
   }
 
   // Handlers: Guide
+  function openCreateGuide() {
+    setEditingGuideId(null);
+    setGdTitleFa('');
+    setGdCategoryFa('نکات سفر');
+    setGdReadTime('۵ دقیقه');
+    setGdExcerptFa('');
+    setGdBodyFa('');
+    setGuideModalOpen(true);
+  }
+
+  function openEditGuide(gd: GuideAdminItem) {
+    setEditingGuideId(gd.id);
+    setGdTitleFa(gd.titleFa);
+    setGdCategoryFa(gd.categoryFa || 'نکات سفر');
+    setGdReadTime(gd.readTime || '۵ دقیقه');
+    setGdExcerptFa(gd.excerptFa || '');
+    setGdBodyFa(gd.bodyFa || '');
+    setGuideModalOpen(true);
+  }
+
   async function handleCreateGuide(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setFeedback(null);
     try {
-      const res = await createAdminGuideAction({
+      const payload = {
         titleFa: gdTitleFa,
         categoryFa: gdCategoryFa,
         readTime: gdReadTime,
         excerptFa: gdExcerptFa,
         bodyFa: gdBodyFa,
-      });
+      };
+      const res = editingGuideId
+        ? await updateAdminGuideAction(editingGuideId, payload)
+        : await createAdminGuideAction(payload);
 
       if (res.success) {
-        setFeedback({ msg: 'راهنمای سفر با موفقیت ثبت شد.', type: 'success' });
+        setFeedback({ msg: editingGuideId ? 'راهنمای سفر با موفقیت ویرایش شد.' : 'راهنمای سفر با موفقیت ثبت شد.', type: 'success' });
         setGuideModalOpen(false);
-        setGdTitleFa('');
-        setGdExcerptFa('');
+        if (!editingGuideId) {
+          setGdTitleFa('');
+          setGdExcerptFa('');
+        }
+        setEditingGuideId(null);
         await loadData();
       } else {
         setFeedback({ msg: res.error || 'خطا در ثبت راهنما', type: 'error' });
@@ -361,30 +521,32 @@ export default function AdminContentPage() {
         icon={<Compass size={20} aria-hidden="true" />}
         actions={
           <>
-            <button type="button" onClick={loadData} className={erpGhostBtnCls}>
-              <RefreshCw size={13} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
-              <span>به‌روزرسانی</span>
-            </button>
+            {activeTab !== 'site' && (
+              <button type="button" onClick={loadData} className={erpGhostBtnCls}>
+                <RefreshCw size={13} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
+                <span>به‌روزرسانی</span>
+              </button>
+            )}
             {activeTab === 'tours' && (
-              <button type="button" onClick={() => setTourModalOpen(true)} className={erpPrimaryBtnCls}>
+              <button type="button" onClick={openCreateTour} className={erpPrimaryBtnCls}>
                 <Plus size={15} aria-hidden="true" />
                 <span>افزودن تور جدید</span>
               </button>
             )}
             {activeTab === 'experiences' && (
-              <button type="button" onClick={() => setExpModalOpen(true)} className={erpPrimaryBtnCls}>
+              <button type="button" onClick={openCreateExp} className={erpPrimaryBtnCls}>
                 <Plus size={15} aria-hidden="true" />
                 <span>افزودن تجربه اصیل</span>
               </button>
             )}
             {activeTab === 'travelogues' && (
-              <button type="button" onClick={() => setTravelogueModalOpen(true)} className={erpPrimaryBtnCls}>
+              <button type="button" onClick={openCreateTravelogue} className={erpPrimaryBtnCls}>
                 <Plus size={15} aria-hidden="true" />
                 <span>افزودن سفرنامه</span>
               </button>
             )}
             {activeTab === 'guides' && (
-              <button type="button" onClick={() => setGuideModalOpen(true)} className={erpPrimaryBtnCls}>
+              <button type="button" onClick={openCreateGuide} className={erpPrimaryBtnCls}>
                 <Plus size={15} aria-hidden="true" />
                 <span>افزودن راهنمای سفر</span>
               </button>
@@ -412,6 +574,7 @@ export default function AdminContentPage() {
         value={activeTab}
         onChange={setActiveTab}
         options={[
+          { id: 'site', label: `محتوای صفحات سایت`, icon: <Wand2 size={14} aria-hidden="true" /> },
           { id: 'tours', label: `تورهای مسافرتی`, count: tours.length, icon: <Compass size={14} aria-hidden="true" /> },
           { id: 'experiences', label: `تجربه‌های اصیل`, count: experiences.length, icon: <Landmark size={14} aria-hidden="true" /> },
           { id: 'travelogues', label: `سفرنامه‌ها`, count: travelogues.length, icon: <BookOpen size={14} aria-hidden="true" /> },
@@ -427,6 +590,9 @@ export default function AdminContentPage() {
         </div>
       ) : (
         <>
+          {/* TAB 0: SITE CONTENT */}
+          {activeTab === 'site' && <SiteContentTab />}
+
           {/* TAB 1: TOURS */}
           {activeTab === 'tours' && (
             <div className="space-y-4">
@@ -475,27 +641,39 @@ export default function AdminContentPage() {
                         )}
                       </div>
 
-                      <div className="pt-3 border-t border-line/60 flex items-center justify-between">
+                      <div className="pt-3 border-t border-line/60 flex items-center justify-between gap-2">
                         <button
                           type="button"
-                          onClick={() => toggleAdminTourPublishAction(t.id, !t.isPublished)}
-                          className={`px-3 py-1 rounded-xl text-xs font-black flex items-center gap-1 cursor-pointer transition ${
+                          onClick={() => handleToggleTourPublish(t)}
+                          disabled={togglingId === t.id}
+                          className={`px-3 py-1 rounded-xl text-xs font-black flex items-center gap-1 cursor-pointer transition disabled:opacity-60 ${
                             t.isPublished ? 'bg-mint text-brand-dark' : 'bg-soft text-sub'
                           }`}
                         >
-                          {t.isPublished ? <Eye size={13} /> : <EyeOff size={13} />}
+                          {togglingId === t.id ? <Loader2 size={13} className="animate-spin" /> : t.isPublished ? <Eye size={13} /> : <EyeOff size={13} />}
                           <span>{t.isPublished ? 'منتشر شده' : 'پیش‌نویس'}</span>
                         </button>
 
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteTour(t.id)}
-                          aria-label={`حذف تور: ${t.title}`}
-                          className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
-                          title="حذف تور"
-                        >
-                          <Trash2 size={14} aria-hidden="true" />
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => openEditTour(t)}
+                            aria-label={`ویرایش تور: ${t.title}`}
+                            title="ویرایش تور"
+                            className="w-8 h-8 rounded-xl bg-brand/10 text-brand-dark hover:bg-brand/20 grid place-items-center transition cursor-pointer"
+                          >
+                            <Pencil size={14} aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTour(t.id)}
+                            aria-label={`حذف تور: ${t.title}`}
+                            className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
+                            title="حذف تور"
+                          >
+                            <Trash2 size={14} aria-hidden="true" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -545,7 +723,16 @@ export default function AdminContentPage() {
                         </div>
                       </div>
 
-                      <div className="pt-2 border-t border-line/60 flex justify-end">
+                      <div className="pt-2 border-t border-line/60 flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openEditExp(exp)}
+                          aria-label={`ویرایش تجربه: ${exp.title}`}
+                          title="ویرایش تجربه"
+                          className="w-8 h-8 rounded-xl bg-brand/10 text-brand-dark hover:bg-brand/20 grid place-items-center transition cursor-pointer"
+                        >
+                          <Pencil size={14} aria-hidden="true" />
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteExp(exp.id)}
@@ -591,7 +778,16 @@ export default function AdminContentPage() {
                         </p>
                       </div>
 
-                      <div className="pt-2 border-t border-line/60 flex justify-end">
+                      <div className="pt-2 border-t border-line/60 flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openEditTravelogue(trv)}
+                          aria-label={`ویرایش سفرنامه: ${trv.titleFa}`}
+                          title="ویرایش سفرنامه"
+                          className="w-8 h-8 rounded-xl bg-brand/10 text-brand-dark hover:bg-brand/20 grid place-items-center transition cursor-pointer"
+                        >
+                          <Pencil size={14} aria-hidden="true" />
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteTravelogue(trv.id)}
@@ -637,7 +833,16 @@ export default function AdminContentPage() {
                         </p>
                       </div>
 
-                      <div className="pt-2 border-t border-line/60 flex justify-end">
+                      <div className="pt-2 border-t border-line/60 flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openEditGuide(gd)}
+                          aria-label={`ویرایش راهنما: ${gd.titleFa}`}
+                          title="ویرایش راهنما"
+                          className="w-8 h-8 rounded-xl bg-brand/10 text-brand-dark hover:bg-brand/20 grid place-items-center transition cursor-pointer"
+                        >
+                          <Pencil size={14} aria-hidden="true" />
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteGuide(gd.id)}
@@ -664,8 +869,8 @@ export default function AdminContentPage() {
         <div className="fixed inset-0 z-[200] bg-ink/65 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto" onClick={() => setTourModalOpen(false)}>
           <div role="dialog" aria-modal="true" aria-label="افزودن پکیج تور مسافرتی جدید" onClick={(e) => e.stopPropagation()} className="w-full max-w-xl bg-surface rounded-3xl p-6 border border-line shadow-2xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-line">
-              <h3 className="font-black text-base text-ink">افزودن پکیج تور مسافرتی جدید</h3>
-              <button type="button" onClick={() => setTourModalOpen(false)} className="w-8 h-8 rounded-full bg-soft text-sub grid place-items-center cursor-pointer">
+              <h3 className="font-black text-base text-ink">{editingTourId ? 'ویرایش پکیج تور' : 'افزودن پکیج تور مسافرتی جدید'}</h3>
+              <button type="button" onClick={() => { setTourModalOpen(false); setEditingTourId(null); }} className="w-8 h-8 rounded-full bg-soft text-sub grid place-items-center cursor-pointer">
                 <X size={16} />
               </button>
             </div>
@@ -735,10 +940,10 @@ export default function AdminContentPage() {
               </div>
 
               <div className="pt-2 flex justify-end gap-2">
-                <button type="button" onClick={() => setTourModalOpen(false)} className="h-10 px-4 rounded-xl bg-soft text-ink font-bold text-xs cursor-pointer">انصراف</button>
+                <button type="button" onClick={() => { setTourModalOpen(false); setEditingTourId(null); }} className="h-10 px-4 rounded-xl bg-soft text-ink font-bold text-xs cursor-pointer">انصراف</button>
                 <button type="submit" disabled={submitting} className="h-10 px-5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs transition flex items-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer">
                   {submitting && <Loader2 size={13} className="animate-spin" />}
-                  <span>ثبت و انتشار تور</span>
+                  <span>{editingTourId ? 'ذخیره تغییرات تور' : 'ثبت و انتشار تور'}</span>
                 </button>
               </div>
             </form>
@@ -751,8 +956,8 @@ export default function AdminContentPage() {
         <div className="fixed inset-0 z-[200] bg-ink/65 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto" onClick={() => setExpModalOpen(false)}>
           <div role="dialog" aria-modal="true" aria-label="افزودن تجربه اصیل محلی" onClick={(e) => e.stopPropagation()} className="w-full max-w-lg bg-surface rounded-3xl p-6 border border-line shadow-2xl space-y-4 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-line">
-              <h3 className="font-black text-base text-ink">افزودن تجربه اصیل محلی</h3>
-              <button type="button" onClick={() => setExpModalOpen(false)} className="w-8 h-8 rounded-full bg-soft text-sub grid place-items-center cursor-pointer">
+              <h3 className="font-black text-base text-ink">{editingExpId ? 'ویرایش تجربه اصیل' : 'افزودن تجربه اصیل محلی'}</h3>
+              <button type="button" onClick={() => { setExpModalOpen(false); setEditingExpId(null); }} className="w-8 h-8 rounded-full bg-soft text-sub grid place-items-center cursor-pointer">
                 <X size={16} />
               </button>
             </div>
@@ -817,10 +1022,10 @@ export default function AdminContentPage() {
               </div>
 
               <div className="pt-2 flex justify-end gap-2">
-                <button type="button" onClick={() => setExpModalOpen(false)} className="h-10 px-4 rounded-xl bg-soft text-ink font-bold text-xs cursor-pointer">انصراف</button>
+                <button type="button" onClick={() => { setExpModalOpen(false); setEditingExpId(null); }} className="h-10 px-4 rounded-xl bg-soft text-ink font-bold text-xs cursor-pointer">انصراف</button>
                 <button type="submit" disabled={submitting} className="h-10 px-5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer">
                   {submitting && <Loader2 size={13} className="animate-spin" />}
-                  <span>ثبت تجربه</span>
+                  <span>{editingExpId ? 'ذخیره تغییرات' : 'ثبت تجربه'}</span>
                 </button>
               </div>
             </form>
@@ -833,8 +1038,8 @@ export default function AdminContentPage() {
         <div className="fixed inset-0 z-[200] bg-ink/65 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto" onClick={() => setTravelogueModalOpen(false)}>
           <div role="dialog" aria-modal="true" aria-label="افزودن سفرنامه جدید" onClick={(e) => e.stopPropagation()} className="w-full max-w-lg bg-surface rounded-3xl p-6 border border-line shadow-2xl space-y-4 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-line">
-              <h3 className="font-black text-base text-ink">افزودن سفرنامه جدید</h3>
-              <button type="button" onClick={() => setTravelogueModalOpen(false)} className="w-8 h-8 rounded-full bg-soft text-sub grid place-items-center cursor-pointer">
+              <h3 className="font-black text-base text-ink">{editingTravelogueId ? 'ویرایش سفرنامه' : 'افزودن سفرنامه جدید'}</h3>
+              <button type="button" onClick={() => { setTravelogueModalOpen(false); setEditingTravelogueId(null); }} className="w-8 h-8 rounded-full bg-soft text-sub grid place-items-center cursor-pointer">
                 <X size={16} />
               </button>
             </div>
@@ -867,10 +1072,10 @@ export default function AdminContentPage() {
               </div>
 
               <div className="pt-2 flex justify-end gap-2">
-                <button type="button" onClick={() => setTravelogueModalOpen(false)} className="h-10 px-4 rounded-xl bg-soft text-ink font-bold text-xs cursor-pointer">انصراف</button>
+                <button type="button" onClick={() => { setTravelogueModalOpen(false); setEditingTravelogueId(null); }} className="h-10 px-4 rounded-xl bg-soft text-ink font-bold text-xs cursor-pointer">انصراف</button>
                 <button type="submit" disabled={submitting} className="h-10 px-5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer">
                   {submitting && <Loader2 size={13} className="animate-spin" />}
-                  <span>انتشار سفرنامه</span>
+                  <span>{editingTravelogueId ? 'ذخیره تغییرات' : 'انتشار سفرنامه'}</span>
                 </button>
               </div>
             </form>
@@ -883,8 +1088,8 @@ export default function AdminContentPage() {
         <div className="fixed inset-0 z-[200] bg-ink/65 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto" onClick={() => setGuideModalOpen(false)}>
           <div role="dialog" aria-modal="true" aria-label="افزودن راهنمای سفر و مقاله" onClick={(e) => e.stopPropagation()} className="w-full max-w-lg bg-surface rounded-3xl p-6 border border-line shadow-2xl space-y-4 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-line">
-              <h3 className="font-black text-base text-ink">افزودن راهنمای سفر و مقاله</h3>
-              <button type="button" onClick={() => setGuideModalOpen(false)} className="w-8 h-8 rounded-full bg-soft text-sub grid place-items-center cursor-pointer">
+              <h3 className="font-black text-base text-ink">{editingGuideId ? 'ویرایش راهنمای سفر' : 'افزودن راهنمای سفر و مقاله'}</h3>
+              <button type="button" onClick={() => { setGuideModalOpen(false); setEditingGuideId(null); }} className="w-8 h-8 rounded-full bg-soft text-sub grid place-items-center cursor-pointer">
                 <X size={16} />
               </button>
             </div>
@@ -917,10 +1122,10 @@ export default function AdminContentPage() {
               </div>
 
               <div className="pt-2 flex justify-end gap-2">
-                <button type="button" onClick={() => setGuideModalOpen(false)} className="h-10 px-4 rounded-xl bg-soft text-ink font-bold text-xs cursor-pointer">انصراف</button>
+                <button type="button" onClick={() => { setGuideModalOpen(false); setEditingGuideId(null); }} className="h-10 px-4 rounded-xl bg-soft text-ink font-bold text-xs cursor-pointer">انصراف</button>
                 <button type="submit" disabled={submitting} className="h-10 px-5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer">
                   {submitting && <Loader2 size={13} className="animate-spin" />}
-                  <span>ثبت راهنما</span>
+                  <span>{editingGuideId ? 'ذخیره تغییرات' : 'ثبت راهنما'}</span>
                 </button>
               </div>
             </form>

@@ -35,36 +35,30 @@ export function useExperiences() {
   const [dbExperiences, setDbExperiences] = useState<SignatureExperience[]>([]);
 
   useEffect(() => {
-    import('@/actions/content').then(({ getPublicExperiencesAction }) => {
-      getPublicExperiencesAction(country).then((res) => {
-        if (res.success && res.experiences && res.experiences.length > 0) {
-          const formatted: SignatureExperience[] = res.experiences.map((exp: {
-            title: string;
-            titleEn?: string | null;
-            desc?: string | null;
-            descEn?: string | null;
-            category: string;
-            where?: string | null;
-            whereEn?: string | null;
-            when?: string | null;
-            whenEn?: string | null;
-            fromPrice: number | { toString(): string };
-          }) => ({
-            title: exp.title,
-            titleEn: exp.titleEn || exp.title,
-            desc: exp.desc || '',
-            descEn: exp.descEn || exp.desc || '',
+    fetch(`/api/experiences?country=${encodeURIComponent(country)}`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          const formatted: SignatureExperience[] = json.data.map((exp: Record<string, unknown>) => ({
+            title: String(exp.title || ''),
+            titleEn: String(exp.titleEn || exp.title || ''),
+            desc: String(exp.desc || ''),
+            descEn: String(exp.descEn || exp.desc || ''),
             category: exp.category as SignatureExperience['category'],
-            where: exp.where || '',
-            whereEn: exp.whereEn || exp.where || '',
-            when: exp.when || '',
-            whenEn: exp.whenEn || exp.when || '',
+            where: String(exp.where || ''),
+            whereEn: String(exp.whereEn || exp.where || ''),
+            when: String(exp.when || ''),
+            whenEn: String(exp.whenEn || exp.when || ''),
             fromPrice: Number(exp.fromPrice),
           }));
           setDbExperiences(formatted);
+        } else {
+          setDbExperiences([]);
         }
+      })
+      .catch(() => {
+        setDbExperiences([]);
       });
-    }).catch(() => {});
   }, [country]);
 
   const allExperiences = useMemo(() => {

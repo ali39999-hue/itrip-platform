@@ -30,6 +30,7 @@ export function CityAutocomplete({
   const locale = useLocale();
   const { country } = useCountryStore();
   const [open, setOpen] = useState(false);
+  const [typedQuery, setTypedQuery] = useState('');
   const [mobileSearchQuery, setMobileSearchQuery] = useState('');
   const [highlightIdx, setHighlightIdx] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -42,8 +43,8 @@ export function CityAutocomplete({
 
   const candidateCities = currentCountryCities.length > 0 ? currentCountryCities : CITIES;
 
-  // Desktop search uses input value; mobile uses mobileSearchQuery if open
-  const activeSearch = open ? (mobileSearchQuery || value) : value;
+  // If user explicitly typed a query, filter by it. Otherwise show all candidate cities.
+  const activeSearch = open ? (mobileSearchQuery || typedQuery) : '';
 
   const filteredCities = activeSearch.trim()
     ? CITIES.filter(
@@ -61,6 +62,7 @@ export function CityAutocomplete({
       // Close desktop popover if clicked outside
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
+        setTypedQuery('');
       }
     }
     if (open) {
@@ -83,7 +85,17 @@ export function CityAutocomplete({
   function handleSelect(cityName: string) {
     onChange(cityName);
     setOpen(false);
+    setTypedQuery('');
     setMobileSearchQuery('');
+  }
+
+  function handleClear(e: React.MouseEvent) {
+    e.stopPropagation();
+    onChange('');
+    setTypedQuery('');
+    setMobileSearchQuery('');
+    setOpen(true);
+    inputRef.current?.focus();
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -106,97 +118,173 @@ export function CityAutocomplete({
       handleSelect(selected);
     } else if (e.key === 'Escape') {
       setOpen(false);
+      setTypedQuery('');
     }
   }
 
   return (
     <div
       ref={containerRef}
-      className={`relative w-full min-h-[58px] px-3.5 py-2 rounded-2xl bg-surface border border-line/80 hover:border-brand focus-within:border-brand focus-within:ring-2 focus-within:ring-brand flex items-center gap-2.5 transition ${className}`}
+      className={`relative w-full min-h-[58px] px-3.5 py-2 rounded-2xl bg-surface border border-line/80 hover:border-brand focus-within:border-brand focus-within:ring-2 focus-within:ring-brand flex items-center gap-2 transition ${className}`}
     >
       <MapPin size={18} className="text-brand-dark shrink-0" aria-hidden="true" />
       <div className="w-full min-w-0 flex flex-col justify-center">
         <label htmlFor={id} className="block text-[11px] font-bold text-sub select-none leading-none mb-1">
           {label}
         </label>
-        <input
-          ref={inputRef}
-          id={id}
-          value={value}
-          onChange={(e) => {
-            onChange(e.target.value);
-            setOpen(true);
-            setHighlightIdx(0);
-          }}
-          onFocus={() => {
-            setOpen(true);
-            setMobileSearchQuery('');
-          }}
-          onClick={() => {
-            setOpen(true);
-            setMobileSearchQuery('');
-          }}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          autoComplete="off"
-          role="combobox"
-          aria-expanded={open}
-          aria-controls={`${id}-listbox`}
-          aria-haspopup="listbox"
-          aria-autocomplete="list"
-          className="w-full bg-transparent border-0 outline-0 p-0 text-[13px] font-bold text-ink placeholder:text-sub focus:ring-0 leading-tight"
-        />
+        <div className="relative flex items-center w-full">
+          <input
+            ref={inputRef}
+            id={id}
+            value={value}
+            onChange={(e) => {
+              onChange(e.target.value);
+              setTypedQuery(e.target.value);
+              setOpen(true);
+              setHighlightIdx(0);
+            }}
+            onFocus={(e) => {
+              setOpen(true);
+              setTypedQuery('');
+              e.target.select();
+            }}
+            onClick={() => {
+              setOpen(true);
+              setTypedQuery('');
+            }}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            autoComplete="off"
+            role="combobox"
+            aria-expanded={open}
+            aria-controls={`${id}-listbox`}
+            aria-haspopup="listbox"
+            aria-autocomplete="list"
+            className="w-full bg-transparent border-0 outline-0 p-0 text-[13px] font-bold text-ink placeholder:text-sub/50 focus:ring-0 leading-tight pe-5"
+          />
+          {value && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="absolute end-0 p-0.5 text-sub hover:text-ink transition cursor-pointer"
+              title={lt(locale, { fa: 'پاک کردن', en: 'Clear', ar: 'مسح', zh: '清除', ru: 'Очистить' })}
+            >
+              <X size={13} />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* ================= DESKTOP DROPDOWN (MD+) ================= */}
-      {open && filteredCities.length > 0 && (
+      {/* ================= DESKTOP DROPDOWN (MD+) — ALIBABA & FLYTODAY STYLE ================= */}
+      {open && (
         <div
           id={`${id}-listbox`}
           role="listbox"
-          className="hidden md:block absolute top-[calc(100%+8px)] start-0 z-[100] w-full min-w-[240px] max-h-64 overflow-y-auto p-1.5 rounded-2xl bg-surface border border-line shadow-elev-3 animate-in fade-in slide-in-from-top-2 duration-200"
+          className="hidden md:block absolute top-[calc(100%+8px)] start-0 z-[100] w-full min-w-[280px] max-h-72 overflow-y-auto p-2.5 rounded-2xl bg-surface border border-line shadow-elev-3 animate-in fade-in slide-in-from-top-2 duration-200"
         >
-          <div className="px-2 py-1 text-[11px] font-bold text-sub border-b border-line/50 mb-1">
-            {lt(locale, {
-              fa: `شهرهای ${countryNameL(country, locale)}`,
-              en: `Cities in ${countryNameL(country, locale)}`,
-              ar: `المدن في ${countryNameL(country, locale)}`,
-              zh: `${countryNameL(country, locale)} 城市列表`,
-              ru: `Города: ${countryNameL(country, locale)}`,
-            })}
+          {/* Popular Cities Quick Access Chips */}
+          {!typedQuery && (
+            <div className="pb-2 mb-2 border-b border-line/60">
+              <span className="text-[10.5px] font-black text-sub block mb-1.5 px-1">
+                {lt(locale, {
+                  fa: 'شهرهای پرتردد (انتخاب سریع)',
+                  en: 'Popular Cities (Quick Select)',
+                  ar: 'المدن الأكثر طلباً',
+                  zh: '热门城市（快捷选择）',
+                  ru: 'Популярные города',
+                })}
+              </span>
+              <div className="flex flex-wrap gap-1">
+                {popularCities.slice(0, 8).map((pc) => {
+                  const name = locale === 'fa' ? pc.nameFa : pc.nameEn;
+                  const isCurrent = value === name;
+                  return (
+                    <button
+                      key={pc.id}
+                      type="button"
+                      onClick={() => handleSelect(name)}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                        isCurrent
+                          ? 'bg-brand text-surface shadow-2xs font-black'
+                          : 'bg-soft hover:bg-mint hover:text-brand-dark text-ink'
+                      }`}
+                    >
+                      <span>{name}</span>
+                      <span className={`text-[9.5px] font-mono ${isCurrent ? 'text-surface/80' : 'text-sub'}`}>
+                        {pc.airportCode}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="px-1 py-1 text-[10.5px] font-bold text-sub">
+            {typedQuery
+              ? lt(locale, {
+                  fa: `نتایج جستجو (${filteredCities.length} شهر)`,
+                  en: `Search results (${filteredCities.length})`,
+                  ar: `النتائج (${filteredCities.length})`,
+                  zh: `搜索结果 (${filteredCities.length})`,
+                  ru: `Результаты (${filteredCities.length})`,
+                })
+              : lt(locale, {
+                  fa: `همه شهرهای ${countryNameL(country, locale)}`,
+                  en: `All cities in ${countryNameL(country, locale)}`,
+                  ar: `جميع المدن`,
+                  zh: `全部城市`,
+                  ru: `Все города`,
+                })}
           </div>
-          {filteredCities.map((city, idx) => {
-            const cityName = locale === 'fa' ? city.nameFa : city.nameEn;
-            const isSelected = value === cityName;
-            const isHighlighted = idx === highlightIdx;
-            return (
-              <button
-                key={city.id}
-                type="button"
-                role="option"
-                aria-selected={isSelected}
-                onClick={() => handleSelect(cityName)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-bold transition text-start ${
-                  isHighlighted || isSelected
-                    ? 'bg-mint text-brand-dark'
-                    : 'text-ink hover:bg-soft'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <MapPin size={14} className={isSelected ? 'text-brand-dark' : 'text-sub'} />
-                  <span>{cityName}</span>
-                  {city.nameEn !== cityName && (
-                    <span className="text-[11px] text-sub">({city.nameEn})</span>
-                  )}
-                  {city.airportCode && (
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-soft text-sub font-black">
-                      {city.airportCode}
-                    </span>
-                  )}
-                </div>
-                {isSelected && <Check size={14} className="text-brand-dark" />}
-              </button>
-            );
-          })}
+
+          {filteredCities.length === 0 ? (
+            <div className="py-4 text-center text-xs text-sub font-bold">
+              {lt(locale, {
+                fa: 'شهری با این مشخصات یافت نشد',
+                en: 'No cities found',
+                ar: 'لم يتم العثور على مدن',
+                zh: '未找到相关城市',
+                ru: 'Город не найден',
+              })}
+            </div>
+          ) : (
+            <div className="space-y-0.5">
+              {filteredCities.map((city, idx) => {
+                const cityName = locale === 'fa' ? city.nameFa : city.nameEn;
+                const isSelected = value === cityName;
+                const isHighlighted = idx === highlightIdx;
+                return (
+                  <button
+                    key={city.id}
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => handleSelect(cityName)}
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-[12.5px] font-bold transition text-start cursor-pointer ${
+                      isHighlighted || isSelected
+                        ? 'bg-mint text-brand-dark'
+                        : 'text-ink hover:bg-soft'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <MapPin size={13} className={isSelected ? 'text-brand-dark' : 'text-sub'} />
+                      <span className="truncate">{cityName}</span>
+                      {city.nameEn !== cityName && (
+                        <span className="text-[11px] text-sub truncate">({city.nameEn})</span>
+                      )}
+                      {city.airportCode && (
+                        <span className="text-[9.5px] font-mono px-1.5 py-0.2 rounded bg-soft text-sub font-black">
+                          {city.airportCode}
+                        </span>
+                      )}
+                    </div>
+                    {isSelected && <Check size={13} className="text-brand-dark shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

@@ -17,12 +17,17 @@ export function useSearchFormState(initialTab: SearchTabId = 'flights') {
   const locale = useLocale();
   const t = useTranslations('Search');
 
-  const [tab, setTab] = useState<SearchTabId>(initialTab);
+  const isFa = locale === 'fa';
+  const defaultFrom = isFa ? 'تهران' : 'Tehran';
+  const defaultTo = isFa ? 'مشهد' : 'Mashhad';
+  const defaultHotelCity = isFa ? 'مشهد' : 'Mashhad';
+
+  const [tab, setTabState] = useState<SearchTabId>(initialTab);
   const [query, setQuery] = useState('');
-  const [dest, setDest] = useState('');
-  const [routeTo, setRouteTo] = useState('');
-  const [date1, setDate1] = useState('');
-  const [date2, setDate2] = useState('');
+  const [dest, setDest] = useState(initialTab === 'hotels' ? defaultHotelCity : defaultFrom);
+  const [routeTo, setRouteTo] = useState(defaultTo);
+  const [date1, setDate1] = useState('2026-09-22');
+  const [date2, setDate2] = useState(initialTab === 'hotels' ? '2026-09-26' : '');
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
   const [rooms, setRooms] = useState(1);
@@ -31,6 +36,22 @@ export function useSearchFormState(initialTab: SearchTabId = 'flights') {
   const [tourType, setTourType] = useState('recreational');
 
   const tabDef = SEARCH_TABS.find((tb) => tb.id === tab)!;
+
+  function setTab(newTab: SearchTabId) {
+    setTabState(newTab);
+    setError('');
+    if (newTab === 'hotels') {
+      if (!dest.trim() || dest === defaultFrom) {
+        setDest(defaultHotelCity);
+      }
+      if (!date2) {
+        setDate2('2026-09-26');
+      }
+    } else if (newTab === 'flights') {
+      if (!dest.trim()) setDest(defaultFrom);
+      if (!routeTo.trim()) setRouteTo(defaultTo);
+    }
+  }
 
   function submit(e?: React.FormEvent) {
     if (e) e.preventDefault();
@@ -43,29 +64,28 @@ export function useSearchFormState(initialTab: SearchTabId = 'flights') {
       return;
     }
 
-    if (!dest.trim()) {
-      setError(tabDef.routeMode ? t('errFrom') : t('errDest'));
-      return;
-    }
-    if (tabDef.routeMode && !routeTo.trim()) {
-      setError(t('errDest'));
-      return;
-    }
+    // Gracefully fallback to sensible standard destinations if left empty
+    const effectiveFrom = dest.trim() || defaultFrom;
+    const effectiveTo = routeTo.trim() || defaultTo;
+    const effectiveDest = dest.trim() || defaultHotelCity;
+
     setError('');
 
     let q = '';
     if (tabDef.routeMode) {
-      q = `?from=${encodeURIComponent(dest)}&to=${encodeURIComponent(routeTo)}`;
+      q = `?from=${encodeURIComponent(effectiveFrom)}&to=${encodeURIComponent(effectiveTo)}`;
       if (date1) q += `&depart=${encodeURIComponent(date1)}`;
       if (date2) q += `&return=${encodeURIComponent(date2)}`;
       q += `&adults=${adults}&children=${children}`;
     } else if (tab === 'hotels') {
-      q = `?city=${encodeURIComponent(dest)}`;
-      if (date1) q += `&checkin=${encodeURIComponent(date1)}`;
-      if (date2) q += `&checkout=${encodeURIComponent(date2)}`;
+      const checkinDate = date1 || '2026-09-22';
+      const checkoutDate = date2 || '2026-09-26';
+      q = `?city=${encodeURIComponent(effectiveDest)}&destination=${encodeURIComponent(effectiveDest)}`;
+      if (checkinDate) q += `&checkin=${encodeURIComponent(checkinDate)}`;
+      if (checkoutDate) q += `&checkout=${encodeURIComponent(checkoutDate)}`;
       q += `&rooms=${rooms}&adults=${adults}`;
     } else {
-      q = `?city=${encodeURIComponent(dest)}&type=${encodeURIComponent(tourType)}`;
+      q = `?city=${encodeURIComponent(effectiveDest)}&type=${encodeURIComponent(tourType)}`;
     }
 
     router.push(`${ROUTES[tab]}${q}`);

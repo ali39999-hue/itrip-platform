@@ -55,17 +55,26 @@ function HotelsSearchInner() {
   const [checkout, setCheckout] = useState(searchParams.get('checkout') || '2026-09-26');
   const [adults, setAdults] = useState(searchParams.get('adults') ? Number(searchParams.get('adults')) : 2);
   const [childrenCount, setChildrenCount] = useState(searchParams.get('children') ? Number(searchParams.get('children')) : 0);
+  const [rooms, setRooms] = useState(searchParams.get('rooms') ? Number(searchParams.get('rooms')) : 1);
 
   const {
     query,
     setQuery,
+    hotelName,
+    setHotelName,
     sort,
     setSort,
     loading,
+    minPrice,
+    setMinPrice,
     maxPrice,
     setMaxPrice,
     stars,
     toggleStar,
+    propertyTypes,
+    togglePropertyType,
+    amenities,
+    toggleAmenity,
     minScore,
     setMinScore,
     freeCancel,
@@ -76,6 +85,7 @@ function HotelsSearchInner() {
     setCurrentPage,
     totalPages,
     priceBuckets,
+    facets,
     chips,
     activeFiltersCount,
   } = useHotelFilters({ initialCity });
@@ -85,6 +95,11 @@ function HotelsSearchInner() {
   const [showMap, setShowMap] = useState(false);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [compareModalOpen, setCompareModalOpen] = useState(false);
+
+  const nights = Math.max(
+    1,
+    Math.round((new Date(checkout).getTime() - new Date(checkin).getTime()) / (1000 * 60 * 60 * 24)) || 1
+  );
 
   const comparedHotels = results.filter((h) => cmp.has(h.id));
 
@@ -120,6 +135,8 @@ function HotelsSearchInner() {
           onAdultsChange={setAdults}
           childrenCount={childrenCount}
           onChildrenCountChange={setChildrenCount}
+          rooms={rooms}
+          onRoomsChange={setRooms}
         />
 
         <HotelSearchToolbar
@@ -170,6 +187,34 @@ function HotelsSearchInner() {
           </button>
           <button
             type="button"
+            onClick={() => toggleAmenity('breakfast')}
+            className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${amenities.has('breakfast') ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+          >
+            {lt(locale, { fa: 'صبحانه رایگان', en: 'Free Breakfast', ar: 'إفطار مجاني', zh: '免费早餐', ru: 'Бесплатный завтрак' })}
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleAmenity('pool')}
+            className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${amenities.has('pool') ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+          >
+            {lt(locale, { fa: 'دارای استخر', en: 'Swimming Pool', ar: 'مسبح', zh: '有泳池', ru: 'С бассейном' })}
+          </button>
+          <button
+            type="button"
+            onClick={() => togglePropertyType('apartment')}
+            className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${propertyTypes.has('apartment') ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+          >
+            {lt(locale, { fa: 'هتل‌آپارتمان', en: 'Apartment Hotel', ar: 'شقق فندقية', zh: '公寓酒店', ru: 'Апарт-отель' })}
+          </button>
+          <button
+            type="button"
+            onClick={() => togglePropertyType('boutique')}
+            className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${propertyTypes.has('boutique') ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+          >
+            {lt(locale, { fa: 'سنتی و بوم‌گردی', en: 'Boutique & Traditional', ar: 'بوتيك وتقليدي', zh: '精品传统住宿', ru: 'Бутик' })}
+          </button>
+          <button
+            type="button"
             onClick={() => setMinScore(minScore === 9 ? 0 : 9)}
             className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${minScore === 9 ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
           >
@@ -185,13 +230,22 @@ function HotelsSearchInner() {
             <HotelFilterSidebar
               maxPrice={maxPrice}
               onMaxPriceChange={setMaxPrice}
+              minPrice={minPrice}
+              onMinPriceChange={setMinPrice}
               priceBuckets={priceBuckets}
               stars={stars}
               onToggleStar={toggleStar}
+              propertyTypes={propertyTypes}
+              onTogglePropertyType={togglePropertyType}
+              amenities={amenities}
+              onToggleAmenity={toggleAmenity}
+              hotelName={hotelName}
+              onHotelNameChange={setHotelName}
               minScore={minScore}
               onMinScoreChange={setMinScore}
               freeCancel={freeCancel}
               onToggleFreeCancel={toggleFreeCancel}
+              facets={facets}
               onResetAll={resetAll}
             />
           </div>
@@ -213,6 +267,7 @@ function HotelsSearchInner() {
                       onFav={() => toggleFav(hotel.id)}
                       cmpChecked={cmp.has(hotel.id)}
                       onCmp={() => toggleCmp(hotel.id)}
+                      nights={nights}
                       checkin={checkin}
                       checkout={checkout}
                       adults={adults}
@@ -332,13 +387,22 @@ function HotelsSearchInner() {
           onClose={() => setMobileFilterOpen(false)}
           maxPrice={maxPrice}
           onMaxPriceChange={setMaxPrice}
+          minPrice={minPrice}
+          onMinPriceChange={setMinPrice}
           priceBuckets={priceBuckets}
           stars={stars}
           onToggleStar={toggleStar}
+          propertyTypes={propertyTypes}
+          onTogglePropertyType={togglePropertyType}
+          amenities={amenities}
+          onToggleAmenity={toggleAmenity}
+          hotelName={hotelName}
+          onHotelNameChange={setHotelName}
           minScore={minScore}
           onMinScoreChange={setMinScore}
           freeCancel={freeCancel}
           onToggleFreeCancel={toggleFreeCancel}
+          facets={facets}
           onResetAll={resetAll}
           resultsCount={results.length}
         />

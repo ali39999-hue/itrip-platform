@@ -22,7 +22,7 @@ export class BookingSagaOrchestrator {
   static async confirmBookingSaga(params: ConfirmBookingSagaParams) {
     return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Row-lock the booking to serialize concurrent confirmations (BOOK-014)
-      await tx.$queryRaw`SELECT id FROM Booking WHERE id = ${params.bookingId} FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM "Booking" WHERE id = ${params.bookingId} FOR UPDATE`;
 
       const booking = await tx.booking.findUnique({
         where: { id: params.bookingId },

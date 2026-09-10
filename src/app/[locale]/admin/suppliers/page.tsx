@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import {
   Building2, Plus, CheckCircle2,
-  AlertCircle, RefreshCw, Phone, Handshake
+  AlertCircle, RefreshCw, Phone, Handshake, ArrowLeft
 } from 'lucide-react';
+import { Link } from '@/i18n/routing';
 import { lt } from '@/lib/lt';
 import { getAdminSuppliers, createAdminSupplier } from '@/actions/admin';
 import { ErpAlert, ErpBadge, ErpEmptyState, ErpModal, ErpPageHeader, ErpSectionCard, erpFieldCls, erpLabelCls, erpPrimaryBtnCls, erpGhostBtnCls } from '@/components/admin/erp-ui';
@@ -32,6 +33,7 @@ export default function AdminSuppliersPage() {
   const [suppliers, setSuppliers] = useState<SupplierData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [creating, setCreating] = useState(false);
 
@@ -63,6 +65,7 @@ export default function AdminSuppliersPage() {
     if (!name.trim()) return;
     try {
       setCreating(true);
+      setError(null);
       await createAdminSupplier({
         name,
         type,
@@ -70,6 +73,7 @@ export default function AdminSuppliersPage() {
         contact: contact || undefined,
         commission: Number(commission) || 0,
       });
+      setSuccess(lt(locale, { fa: `تامین‌کننده «${name}» با موفقیت ثبت شد.`, en: `Supplier "${name}" was created successfully.`, ar: `تم تسجيل المورد "${name}" بنجاح.`, zh: `供应商“${name}”创建成功。`, ru: `Поставщик «${name}» успешно создан.` }));
       setShowModal(false);
       setName('');
       setContact('');
@@ -105,6 +109,10 @@ export default function AdminSuppliersPage() {
 
       {error && (
         <ErpAlert tone="error" onDismiss={() => setError(null)}>{error}</ErpAlert>
+      )}
+
+      {success && (
+        <ErpAlert tone="success" onDismiss={() => setSuccess(null)}>{success}</ErpAlert>
       )}
 
       {loading ? (
@@ -157,6 +165,13 @@ export default function AdminSuppliersPage() {
                   {sup.contracts[0]?.commission ?? 0}%
                 </span>
               </div>
+              <Link
+                href={`/admin/suppliers/${sup.id}`}
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-brand/10 px-3 py-2 text-xs font-black text-brand-dark transition hover:bg-brand/20 cursor-pointer"
+              >
+                <span>{lt(locale, { fa: 'مدیریت اتصال‌ها و مدارک', en: 'Manage connections & credentials', ar: 'إدارة الاتصالات وبيانات الاعتماد', zh: '管理连接与凭证', ru: 'Подключения и доступы' })}</span>
+                <ArrowLeft size={13} className="ltr:rotate-180" aria-hidden="true" />
+              </Link>
             </article>
           ))}
         </div>

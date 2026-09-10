@@ -48,7 +48,11 @@ export function TravelerPicker({
   }, [open, setOpen]);
 
   const guestSummary = showRooms
-    ? t('guestSummary', { rooms, adults, children: childrenCount })
+    ? childrenCount > 0
+      ? `${num(adults, locale)} ${t('adult')}، ${num(childrenCount, locale)} ${t('child')} • ${num(rooms, locale)} ${t('room')}`
+      : rooms > 1
+        ? `${num(adults, locale)} ${t('adult')} • ${num(rooms, locale)} ${t('room')}`
+        : `${num(adults, locale)} ${t('adult')}`
     : `${num(adults + childrenCount, locale)} ${lt(locale, { fa: 'مسافر', en: 'passengers', ar: 'مسافر', zh: '位乘客', ru: 'пасс.' })}`;
 
   const fieldLabel = showRooms

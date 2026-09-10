@@ -52,7 +52,7 @@ export function RelatedTours({ tours }: RelatedToursProps) {
         {tours.map((t) => {
           const title = locale === 'fa' ? t.title : (t.titleEn || t.title);
           const city = locale === 'fa' ? t.city : (t.cityEn || t.city);
-          const img = t.heroImage || (t.gallery && t.gallery[0]) || 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&q=80&w=800';
+          const img = t.heroImage || (t.gallery && t.gallery[0]) || '/images/isfahan/sheikh-lotfollah.jpg';
 
           return (
             <Link

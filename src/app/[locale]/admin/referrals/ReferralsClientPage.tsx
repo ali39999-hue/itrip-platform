@@ -65,8 +65,8 @@ export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
       const res = await settleLeaderRewardAction(row.id);
       if (res.success) {
         toast.success(lt(locale, {
-          fa: 'پاداش با موفقیت تسویه شد و سند مالی ثبت گردید.',
-          en: 'Reward settled successfully and financial record logged.',
+          fa: 'پاداش با موفقیت تسویه و در پرونده سرگروه و لاگ حسابرسی ثبت شد.',
+          en: 'Reward settled and recorded in the leader file and audit log.',
           ar: 'تمت تسوية المكافأة بنجاح.',
           zh: '奖励已成功结算。',
           ru: 'Вознаграждение успешно выплачено.',

@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations, useLocale } from 'next-intl';
-import { Ban, Check, ShieldCheck, X } from 'lucide-react';
+import { Ban, Check, ShieldCheck, X, Calendar, Users } from 'lucide-react';
 import { fa, stayDate } from '@/lib/hotel-format';
 import { ROOMS, PLANS, type PlanId } from '@/lib/hotel-mock';
 import { quote, toman, type useHotelBooking, FREE_CANCEL_HOURS } from '@/hooks/useHotelBooking';
@@ -10,9 +10,10 @@ import { lt } from '@/lib/lt';
 interface BookingPanelProps {
   booking: ReturnType<typeof useHotelBooking>;
   onBook: () => void;
+  onOpenEdit?: () => void;
 }
 
-export function BookingPanel({ booking, onBook }: BookingPanelProps) {
+export function BookingPanel({ booking, onBook, onOpenEdit }: BookingPanelProps) {
   const t = useTranslations('HotelDetail');
   const ariaT = useTranslations('Common.aria');
   const locale = useLocale();
@@ -30,6 +31,11 @@ export function BookingPanel({ booking, onBook }: BookingPanelProps) {
 
   const cheapest = Math.min(...ROOMS.flatMap((r) => r.plans.map((p) => quote(r, p, nights, 0).total)));
   const panelAmount = capacity.n > 0 ? totals.total : cheapest;
+  const totalToman = toman(totals.total);
+  const taxToman = toman(totals.tax);
+  const extraToman = totals.extra > 0 ? toman(totals.extra) : 0;
+  const subToman = Math.max(0, totalToman - taxToman - extraToman);
+  const tomanLabel = lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' });
 
   const needs: string[] = [];
   if (capacity.n > 0) {
@@ -59,20 +65,46 @@ export function BookingPanel({ booking, onBook }: BookingPanelProps) {
       
       <div className="p-4 flex flex-col gap-2.5">
         <div className="grid grid-cols-2 gap-2">
-          <div className="p-2.5 border border-line rounded-xl">
-            <span className="block text-[10px] font-extrabold text-sub">{t('checkIn')}</span>
-            <b className="text-[12.5px] font-black">{fmtDate(new Date(checkin + 'T00:00:00'))}</b>
-          </div>
-          <div className="p-2.5 border border-line rounded-xl">
-            <span className="block text-[10px] font-extrabold text-sub">{t('checkOut')}</span>
-            <b className="text-[12.5px] font-black">{fmtDate(new Date(checkout + 'T00:00:00'))}</b>
-          </div>
+          <button
+            type="button"
+            onClick={onOpenEdit}
+            className="p-2.5 border border-line rounded-xl text-start hover:border-brand transition group cursor-pointer bg-surface"
+          >
+            <div className="flex items-center justify-between">
+              <span className="block text-[10px] font-extrabold text-sub">{t('checkIn')}</span>
+              <Calendar size={12} className="text-sub group-hover:text-brand transition" />
+            </div>
+            <b className="text-[12.5px] font-black group-hover:text-brand-dark transition">{fmtDate(new Date(checkin + 'T00:00:00'))}</b>
+          </button>
+          <button
+            type="button"
+            onClick={onOpenEdit}
+            className="p-2.5 border border-line rounded-xl text-start hover:border-brand transition group cursor-pointer bg-surface"
+          >
+            <div className="flex items-center justify-between">
+              <span className="block text-[10px] font-extrabold text-sub">{t('checkOut')}</span>
+              <Calendar size={12} className="text-sub group-hover:text-brand transition" />
+            </div>
+            <b className="text-[12.5px] font-black group-hover:text-brand-dark transition">{fmtDate(new Date(checkout + 'T00:00:00'))}</b>
+          </button>
         </div>
         
-        <div className="p-2.5 border border-line rounded-xl">
-          <span className="block text-[10px] font-extrabold text-sub">{t('capacity')}</span>
-          <b className="text-[12.5px] font-black">{t('passengersSummary', { adults, children })}</b>
-        </div>
+        <button
+          type="button"
+          onClick={onOpenEdit}
+          className="w-full p-2.5 border border-line rounded-xl text-start hover:border-brand transition group cursor-pointer bg-surface"
+        >
+          <div className="flex items-center justify-between">
+            <span className="block text-[10px] font-extrabold text-sub">{t('capacity')}</span>
+            <Users size={12} className="text-sub group-hover:text-brand transition" />
+          </div>
+          <div className="flex items-center justify-between">
+            <b className="text-[12.5px] font-black group-hover:text-brand-dark transition">{t('passengersSummary', { adults, children })}</b>
+            <span className="text-[10px] font-bold text-brand-dark underline">
+              {lt(locale, { fa: 'ویرایش', en: 'Edit', ar: 'تعديل', zh: '修改', ru: 'Изменить' })}
+            </span>
+          </div>
+        </button>
 
         <div className="flex flex-col gap-1.5">
           {capacity.n === 0 ? (
@@ -84,13 +116,21 @@ export function BookingPanel({ booking, onBook }: BookingPanelProps) {
               const [rid, pid] = k.split('|') as [string, PlanId];
               const r = ROOMS.find((x) => x.id === rid)!;
               const qt = quote(r, pid, nights, Math.min(children, r.capC));
+              const itemTotalToman = toman(qt.total * q);
               return (
                 <div key={k} className="flex items-start gap-2 p-2.5 border border-mint-bright/60 rounded-xl bg-mint/30">
                   <div className="flex-1 min-w-0">
                     <b className="block text-xs font-black">{fa(q)} × {r.name}</b>
                     <span className="block text-[10.5px] font-bold text-sub">{PLANS[pid].name}</span>
                   </div>
-                  <span className="text-xs font-black whitespace-nowrap">{fa(qt.total * q)} TRY</span>
+                  <div className="text-end shrink-0">
+                    <span className="text-xs font-black whitespace-nowrap block text-price">
+                      {fa(itemTotalToman)} {tomanLabel}
+                    </span>
+                    <span className="text-[10px] text-sub font-mono block">
+                      ({fa(qt.total * q)} TRY)
+                    </span>
+                  </div>
                   <button
                     onClick={() => setSel((s) => { const n = { ...s }; delete n[k]; return n; })}
                     aria-label={ariaT('remove')}
@@ -105,32 +145,41 @@ export function BookingPanel({ booking, onBook }: BookingPanelProps) {
         </div>
 
         {capacity.n > 0 && (
-          <div className="flex flex-col gap-1.5">
-            <div className="flex justify-between text-[12.5px] font-bold text-sub">
+          <div className="flex flex-col gap-1.5 pt-1">
+            <div className="flex justify-between items-center text-[12.5px] font-bold text-sub">
               <span>{lt(locale, { fa: 'مبلغ اتاق‌ها', en: 'Rooms total', ar: 'إجمالي الغرف', zh: '房费合计', ru: 'Итого за номера' })}</span>
-              <b>{fa(totals.sub)} TRY</b>
+              <div className="text-end">
+                <b className="text-ink">{fa(subToman)} {tomanLabel}</b>
+                <span className="text-[10px] text-sub font-mono block">({fa(totals.sub)} TRY)</span>
+              </div>
             </div>
             {totals.extra > 0 && (
-              <div className="flex justify-between text-[12.5px] font-bold text-sub">
+              <div className="flex justify-between items-center text-[12.5px] font-bold text-sub">
                 <span>{lt(locale, { fa: 'تخت اضافه کودک', en: 'Extra child bed', ar: 'سرير أطفال إضافي', zh: '儿童加床', ru: 'Детская кровать' })}</span>
-                <b>{fa(totals.extra)} TRY</b>
+                <div className="text-end">
+                  <b className="text-ink">{fa(extraToman)} {tomanLabel}</b>
+                  <span className="text-[10px] text-sub font-mono block">({fa(totals.extra)} TRY)</span>
+                </div>
               </div>
             )}
-            <div className="flex justify-between text-[12.5px] font-bold text-sub">
-              <span>{lt(locale, { fa: 'مالیات و عوارض اقامت', en: 'Taxes and fees', ar: 'الضرائب والرسوم', zh: '税费', ru: 'Налоги и сборы' })}</span>
-              <b>{fa(totals.tax)} TRY</b>
+            <div className="flex justify-between items-center text-[12.5px] font-bold text-sub">
+              <span>{lt(locale, { fa: 'مالیات و عوارض اقامت (۱۰٪)', en: 'Taxes and fees (10%)', ar: 'الضرائب والرسوم (10%)', zh: '税费 (10%)', ru: 'Налоги и сборы (10%)' })}</span>
+              <div className="text-end">
+                <b className="text-ink">{fa(taxToman)} {tomanLabel}</b>
+                <span className="text-[10px] text-sub font-mono block">({fa(totals.tax)} TRY)</span>
+              </div>
             </div>
-            <div className="flex justify-between text-[12.5px] font-bold text-sub">
-              <span>{lt(locale, { fa: 'کارمزد درگاه', en: 'Gateway fee', ar: 'رسوم البوابة', zh: '网关手续费', ru: 'Комиссия шлюза' })}</span>
+            <div className="flex justify-between items-center text-[12.5px] font-bold text-sub">
+              <span>{lt(locale, { fa: 'کارمزد درگاه پرداخت', en: 'Payment gateway fee', ar: 'رسوم بوابة الدفع', zh: '支付网关手续费', ru: 'Комиссия платежа' })}</span>
               <b className="text-success">{lt(locale, { fa: 'رایگان', en: 'Free', ar: 'مجاني', zh: '免费', ru: 'Бесплатно' })}</b>
             </div>
-            <div className="flex justify-between pt-2.5 border-t border-line text-[15px] font-black">
+            <div className="flex justify-between items-baseline pt-2.5 border-t border-line text-[15px] font-black">
               <span>{lt(locale, { fa: 'مبلغ قابل پرداخت', en: 'Total payable', ar: 'المبلغ المستحق', zh: '应付金额', ru: 'К оплате' })}</span>
-              <span>{fa(totals.total)} TRY</span>
+              <span className="text-[19px] text-price font-black">{fa(totalToman)} {tomanLabel}</span>
             </div>
             <div className="flex justify-between text-[10.5px] font-bold text-sub">
-              <span>{lt(locale, { fa: 'معادل تقریبی', en: 'Approx. equivalent', ar: 'ما يعادل تقريباً', zh: '约合', ru: 'Примерный эквивалент' })}</span>
-              <span>{fa(toman(totals.total))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
+              <span>{lt(locale, { fa: 'معادل ارزی هتل', en: 'Hotel base currency', ar: 'العملة الأساسية للفندق', zh: '酒店基础货币', ru: 'Базовая валюта отеля' })}</span>
+              <span className="font-mono font-bold">{fa(totals.total)} TRY</span>
             </div>
           </div>
         )}

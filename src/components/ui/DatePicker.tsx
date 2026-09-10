@@ -25,6 +25,7 @@ interface JalaliDatePickerProps {
   className?: string;
   error?: boolean;
   id?: string;
+  format?: string;
 }
 
 export function JalaliDatePicker({
@@ -37,6 +38,7 @@ export function JalaliDatePicker({
   className = '',
   error,
   id = 'jalali-date-picker',
+  format,
 }: JalaliDatePickerProps) {
   const locale = useLocale();
   const isFa = locale === 'fa';
@@ -95,7 +97,7 @@ export function JalaliDatePicker({
           containerClassName="w-full"
           inputClass="w-full bg-transparent border-0 outline-0 p-0 text-[13px] font-bold text-ink cursor-pointer placeholder:text-sub focus:ring-0 leading-tight"
           placeholder={placeholder || defaultPlaceholder}
-          format={isFa ? 'YYYY/MM/DD' : 'YYYY-MM-DD'}
+          format={format || (isFa ? 'YYYY/MM/DD' : 'YYYY-MM-DD')}
         />
       </div>
     </div>

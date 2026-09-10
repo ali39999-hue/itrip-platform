@@ -70,11 +70,8 @@ if (!isDev && process.env.DEMO_MODE === 'true') {
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ['@prisma/client', 'bcryptjs'],
-  typescript: {
-    // Existing TS errors are pre-existing schema mismatches; skip during build.
-    // Run `npm run typecheck` locally for full type-checking.
-    ignoreBuildErrors: true,
-  },
+  // Build-time type checking stays enabled: `npm run typecheck` must pass
+  // before any build (the old ignoreBuildErrors gate is intentionally gone).
   env: {
     NEXT_PUBLIC_APP_VERSION: appVersion,
     NEXT_PUBLIC_COMMIT_SHA: commitSha,

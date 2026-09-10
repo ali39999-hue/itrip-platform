@@ -42,6 +42,7 @@ export default function AdminInventoryPage() {
   const [suppliers, setSuppliers] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [togglingAllotmentId, setTogglingAllotmentId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [creating, setCreating] = useState(false);
 
@@ -103,11 +104,22 @@ export default function AdminInventoryPage() {
   };
 
   const toggleStopSell = async (allotmentId: string, currentStatus: boolean) => {
+    if (togglingAllotmentId) return;
+    setTogglingAllotmentId(allotmentId);
+    setError(null);
     try {
       await updateAllotment(allotmentId, { stopSell: !currentStatus });
-      await loadData();
+      // Optimistic flip keeps the grid responsive; loadData reconciles with the engine's answer.
+      setItems((prev) =>
+        prev.map((i) => ({
+          ...i,
+          allotments: i.allotments.map((a) => (a.id === allotmentId ? { ...a, stopSell: !currentStatus, available: !currentStatus ? a.available : a.available } : a)),
+        })),
+      );
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to update allotment');
+    } finally {
+      setTogglingAllotmentId(null);
     }
   };
 
@@ -229,15 +241,18 @@ export default function AdminInventoryPage() {
                       <button
                         type="button"
                         onClick={() => toggleStopSell(a.id, a.stopSell)}
+                        disabled={togglingAllotmentId === a.id}
                         aria-pressed={a.stopSell}
                         className={cn(
-                          'min-h-9 w-full rounded-lg py-1.5 text-[10px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+                          'min-h-9 w-full rounded-lg py-1.5 text-[10px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60',
                           a.stopSell ? 'bg-destructive text-white hover:brightness-95' : 'border border-line bg-surface text-sub hover:text-ink',
                         )}
                       >
-                        {a.stopSell
-                          ? lt(locale, { fa: 'مسدود · بازگشایی', en: 'Blocked · Reopen', ar: 'محظور · فتح', zh: '已停售·重开', ru: 'Закрыто · Открыть' })
-                          : lt(locale, { fa: 'فعال · توقف فروش', en: 'Open · Stop-sell', ar: 'مفتوح · إيقاف', zh: '在售·停售', ru: 'Открыто · Стоп' })}
+                        {togglingAllotmentId === a.id
+                          ? '…'
+                          : a.stopSell
+                            ? lt(locale, { fa: 'مسدود · بازگشایی', en: 'Blocked · Reopen', ar: 'محظور · فتح', zh: '已停售·重开', ru: 'Закрыто · Открыть' })
+                            : lt(locale, { fa: 'فعال · توقف فروش', en: 'Open · Stop-sell', ar: 'مفتوح · إيقاف', zh: '在售·停售', ru: 'Открыто · Стоп' })}
                       </button>
                     </div>
                   );

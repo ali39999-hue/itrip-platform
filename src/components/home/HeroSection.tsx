@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCountryStore } from '@/stores/country-store';
 import type { CountryId } from '@/lib/countries';
 import { SearchWidget } from '@/components/search/SearchWidget';
 import { shimmerDataUrl } from '@/lib/image-utils';
+import type { HeroOverride } from '@/domains/content/SiteContentService';
 
 const HERO_IMAGES: Record<CountryId, string> = {
   iran: 'https://images.unsplash.com/photo-1596484552834-6a58f850e0a1?auto=format&fit=crop&q=80&w=2560',
@@ -18,12 +19,18 @@ const HERO_IMAGES: Record<CountryId, string> = {
   china: 'https://images.unsplash.com/photo-1508804052814-cd3ba865a116?auto=format&fit=crop&q=80&w=2560',
 };
 
-export function HeroSection() {
+export function HeroSection({ override }: { override?: HeroOverride } = {}) {
   const { country } = useCountryStore();
+  const locale = useLocale();
   const t = useTranslations('Hero');
   const [imgError, setImgError] = useState(false);
-  
-  const currentHeroImg = HERO_IMAGES[country] || HERO_IMAGES['turkey'];
+
+  const cmsTitle = override?.title?.[locale === 'fa' ? 'fa' : 'en']?.trim();
+  const cmsSubtitle = override?.subtitle?.[locale === 'fa' ? 'fa' : 'en']?.trim();
+  const currentHeroImg =
+    (override?.imageUrl && override.imageUrl !== '' ? override.imageUrl : null) ||
+    HERO_IMAGES[country] ||
+    HERO_IMAGES['turkey'];
 
   return (
     <section className="relative w-full min-h-[560px] md:min-h-[640px] lg:min-h-[680px] flex items-center justify-center overflow-visible py-6 md:py-12">
@@ -51,10 +58,16 @@ export function HeroSection() {
       <div className="relative z-[70] w-full max-w-[1280px] px-3 sm:px-6 md:px-8 mx-auto flex flex-col items-center">
         {/* Editorial Scale Typography */}
         <h1 className="text-surface text-center mb-2 max-w-4xl text-2xl sm:text-3xl md:text-5xl lg:text-[48px] leading-[1.3] font-black drop-shadow-md">
-          {t('titleA')} <span className="text-mint-bright">{t('titleB')}</span> {t('titleC')}
+          {cmsTitle ? (
+            cmsTitle
+          ) : (
+            <>
+              {t('titleA')} <span className="text-mint-bright">{t('titleB')}</span> {t('titleC')}
+            </>
+          )}
         </h1>
         <p className="text-surface/90 text-center font-bold mb-6 md:mb-8 max-w-2xl text-xs sm:text-sm md:text-base leading-relaxed drop-shadow-sm">
-          {t('subtitle')}
+          {cmsSubtitle || t('subtitle')}
         </p>
 
         <SearchWidget />

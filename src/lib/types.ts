@@ -22,6 +22,8 @@ export interface Flight {
   refundable?: boolean;
 }
 
+export type HotelPropertyType = 'hotel' | 'apartment' | 'boutique' | 'villa';
+
 export interface Hotel {
   id: string;
   name: string;
@@ -44,6 +46,7 @@ export interface Hotel {
   nearestPoiName?: string;
   freeCancellation: boolean;
   roomTypes: RoomType[];
+  propertyType?: HotelPropertyType;
 }
 
 export interface RoomType {
@@ -188,10 +191,10 @@ export interface Booking {
 export interface WalletTransaction {
   id: string;
   type: 'deposit' | 'withdraw' | 'exchange' | 'payment' | 'refund';
-  wallet: 'IRR' | 'USDT' | 'AED';
+  wallet: 'IRR' | 'USDT' | 'AED' | 'USD' | 'CNY';
   amount: number;
   resultAmount?: number;
-  resultWallet?: 'IRR' | 'USDT' | 'AED';
+  resultWallet?: 'IRR' | 'USDT' | 'AED' | 'USD' | 'CNY';
   description: string;
   createdAt: string;
   status: 'completed' | 'locked' | 'failed';

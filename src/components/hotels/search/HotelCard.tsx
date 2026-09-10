@@ -132,11 +132,18 @@ export function HotelCard({
                 <span className="text-[11px] text-sub font-bold truncate">
                   {locale === 'fa' ? hotel.city : hotel.cityEn}
                 </span>
+                {hotel.propertyType && hotel.propertyType !== 'hotel' && (
+                  <span className="px-1.5 py-0.2 rounded bg-soft text-brand-dark text-[9.5px] font-black border border-line">
+                    {hotel.propertyType === 'apartment' ? 'آپارتمان' : hotel.propertyType === 'boutique' ? 'سنتی' : 'ویلا'}
+                  </span>
+                )}
               </div>
 
               {/* Hotel Name */}
               <h3 className="text-sm font-black text-ink leading-snug line-clamp-2">
-                {locale === 'fa' ? hotel.name : hotel.nameEn}
+                <Link href={`/hotels/${hotel.id}${queryString}`} className="hover:text-brand hover:underline">
+                  {locale === 'fa' ? hotel.name : hotel.nameEn}
+                </Link>
               </h3>
 
               {/* Distance to Center */}
@@ -231,9 +238,20 @@ export function HotelCard({
                     ))}
                   </div>
                   <span className="text-xs text-sub font-bold">{locale === 'fa' ? hotel.city : hotel.cityEn}</span>
+                  {hotel.propertyType && hotel.propertyType !== 'hotel' && (
+                    <span className="px-2 py-0.5 rounded-md bg-soft text-brand-dark text-[10.5px] font-black border border-line">
+                      {hotel.propertyType === 'apartment'
+                        ? lt(locale, { fa: 'هتل‌آپارتمان', en: 'Apartment Hotel', ar: 'شقق فندقية', zh: '公寓酒店', ru: 'Апарт-отель' })
+                        : hotel.propertyType === 'boutique'
+                        ? lt(locale, { fa: 'سنتی و بوم‌گردی', en: 'Boutique & Traditional', ar: 'بوتيك', zh: '精品传统', ru: 'Бутик' })
+                        : lt(locale, { fa: 'ویلا و سوئیت', en: 'Villa & Suite', ar: 'فيلا', zh: '别墅', ru: 'Вилла' })}
+                    </span>
+                  )}
                 </div>
                 <h3 className="text-base sm:text-lg font-black text-ink group-hover:text-brand-dark transition-colors">
-                  {locale === 'fa' ? hotel.name : hotel.nameEn}
+                  <Link href={`/hotels/${hotel.id}${queryString}`} className="hover:underline">
+                    {locale === 'fa' ? hotel.name : hotel.nameEn}
+                  </Link>
                 </h3>
                 {locale === 'fa' && (
                   <p className="text-xs text-sub font-mono">{hotel.nameEn}</p>

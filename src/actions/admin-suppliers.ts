@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { requirePermission } from '@/domains/identity/permission-service';
 import { revalidatePath } from 'next/cache';
+import { randomUUID } from 'node:crypto';
 
 export async function getSupplierDetail(supplierId: string) {
   await requirePermission('inventory:manage');
@@ -62,22 +63,23 @@ export async function addSupplierConnection(data: {
 export async function rotateSupplierCredential(data: {
   connectionId: string;
   supplierId: string;
-  credentialRef: string;
+  /** New vault reference; minted server-side when omitted so plaintext secrets never round-trip through the client. */
+  credentialRef?: string;
 }) {
   await requirePermission('inventory:manage');
-  
+
   await prisma.$transaction(async (tx) => {
     // Deprecate old active credentials for this connection
     await tx.supplierCredential.updateMany({
       where: { supplierConnectionId: data.connectionId, rotationState: 'ACTIVE' },
       data: { rotationState: 'DEPRECATED', expiresAt: new Date(Date.now() + 24 * 3600 * 1000) },
     });
-    
+
     // Create new active credential
     await tx.supplierCredential.create({
       data: {
         supplierConnectionId: data.connectionId,
-        credentialRef: data.credentialRef,
+        credentialRef: data.credentialRef || `vault:${randomUUID()}`,
         rotationState: 'ACTIVE',
       },
     });

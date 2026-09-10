@@ -15,6 +15,7 @@ import { HotelHero } from '@/components/hotels/detail/HotelHero';
 import { HotelOverview, HotelLocation, HotelAmenities, HotelReviews, HotelPolicies } from '@/components/hotels/detail/HotelInfo';
 import { HotelRooms } from '@/components/hotels/detail/HotelRooms';
 import { BookingPanel } from '@/components/hotels/detail/BookingPanel';
+import { EditStayModal } from '@/components/hotels/detail/EditStayModal';
 import { Loader2 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
@@ -34,6 +35,7 @@ export default function HotelDetailPage() {
   const booking = useHotelBooking();
   const { setSel, bestCombo, capacity, totals } = booking;
 
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [toast, setToast] = useState('');
   const [activeSec, setActiveSec] = useState('overview');
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -231,7 +233,11 @@ export default function HotelDetailPage() {
         <div className="flex flex-col gap-6 min-w-0">
           <HotelOverview hotel={hotel} />
           <HotelLocation hotel={hotel} />
-          <HotelRooms booking={booking} onApplyCombo={handleApplyCombo} />
+          <HotelRooms
+            booking={booking}
+            onApplyCombo={handleApplyCombo}
+            onOpenEdit={() => setIsEditModalOpen(true)}
+          />
           <HotelAmenities />
           <HotelReviews hotel={hotel} />
           <HotelPolicies checkinDate={booking.checkin} />
@@ -239,9 +245,20 @@ export default function HotelDetailPage() {
 
         {/* sticky booking summary */}
         <div className="lg:sticky lg:top-36">
-          <BookingPanel booking={booking} onBook={handleBook} />
+          <BookingPanel
+            booking={booking}
+            onBook={handleBook}
+            onOpenEdit={() => setIsEditModalOpen(true)}
+          />
         </div>
       </div>
+
+      {/* Edit Stay Dates and Guests Modal */}
+      <EditStayModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        booking={booking}
+      />
 
       {/* ================= MOBILE STICKY RESERVATION BAR (FLYTODAY / BOOKING.COM STYLE) ================= */}
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-[86] bg-surface/98 backdrop-blur-xl border-t border-line px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] flex items-center justify-between gap-4">

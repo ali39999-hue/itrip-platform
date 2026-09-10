@@ -20,13 +20,13 @@ export const shimmerDataUrl = (w: number = 700, h: number = 475) =>
 export const CATEGORY_PHOTO_MAP: Record<string, string> = {
   yacht: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80',
   festival: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80',
-  culture: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80',
+  culture: '/images/isfahan/sheikh-lotfollah-exterior.jpg', // مسجد شیخ لطف‌الله و بافت فرهنگی اصفهان
   nature: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
   wellness: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80',
   nightlife: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80',
   adventure: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=800&q=80',
   theater: 'https://images.unsplash.com/photo-1514306191717-452ec28c7814?auto=format&fit=crop&w=800&q=80', // سالن اپرا و تئاتر مجلل
-  exhibition: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=800&q=80',
+  exhibition: '/images/isfahan/bazaar-handicrafts.jpg', // نمایشگاه دائمی و بازار صنایع‌دستی اصفهان
 };
 
 export const HOTEL_IMAGE_MAP: Record<string, string> = {
@@ -53,9 +53,17 @@ export const HOTEL_GALLERIES: Record<string, string[]> = {
   h2: [
     'https://www.eghamat24.com/app/public/hotel_images/original/Esfahan-Abbasi-31.jpg',
     'https://www.eghamat24.com/app/public/hotel_images/original/Esfahan-Abbasi-48.jpg',
-    'https://www.eghamat24.com/app/public/hotel_images/original/Esfahan-Abbasi-70.jpg',
-    'https://www.eghamat24.com/app/public/hotel_images/original/Esfahan-Abbasi-47.jpg',
-    'https://www.eghamat24.com/app/public/hotel_images/original/Esfahan-Abbasi-44.jpg',
+    '/images/isfahan/ali-qapu.jpg',
+    '/images/isfahan/sheikh-lotfollah-exterior.jpg',
+    '/images/isfahan/sheikh-lotfollah.jpg',
+    '/images/isfahan/khaju-bridge.jpg',
+    '/images/isfahan/khaju-pavilion.jpg',
+    '/images/isfahan/khaju-day.jpg',
+    '/images/isfahan/chehel-sotoun.jpg',
+    '/images/isfahan/menar-jonban.jpg',
+    '/images/isfahan/shah-mosque.jpg',
+    '/images/isfahan/jameh-mosque.jpg',
+    '/images/isfahan/bazaar-handicrafts.jpg',
   ],
   h3: [
     'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=1200&q=80',
@@ -149,7 +157,14 @@ const FORBIDDEN_HOST_PATTERNS = [
  * rejects private/loopback/localhost addresses, and does not point to video files.
  */
 export function isSafeImageUrl(rawUrl?: string): boolean {
-  if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.startsWith('http')) return false;
+  if (!rawUrl || typeof rawUrl !== 'string') return false;
+
+  // Allow local static images under /images/
+  if (rawUrl.startsWith('/images/')) {
+    return !rawUrl.includes('..');
+  }
+
+  if (!rawUrl.startsWith('http')) return false;
 
   // Reject malformed doubled URLs (e.g. https://domain.comhttps://...)
   if (rawUrl.indexOf('http', 4) !== -1) return false;
@@ -216,7 +231,7 @@ export const DESTINATION_IMAGE_MAP: Record<string, string> = {
   // Iran — authentic Wikimedia Commons photos (each URL visually verified against its city)
   Tehran: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Azadi_Tower_at_night_III.jpg/960px-Azadi_Tower_at_night_III.jpg', // برج آزادی تهران
   Mashhad: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Imam_Reza_shrine.jpg/960px-Imam_Reza_shrine.jpg', // حرم مطهر رضوی در شب
-  Isfahan: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Naghshe_Jahan_Square_Isfahan_modified.jpg/960px-Naghshe_Jahan_Square_Isfahan_modified.jpg', // میدان نقش جهان و مسجد شیخ لطف‌الله
+  Isfahan: '/images/isfahan/sheikh-lotfollah.jpg', // مسجد شیخ لطف‌الله اصفهان (تصویر باکیفیت واقعی)
   Shiraz: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Nasir-al_molk_-1.jpg/960px-Nasir-al_molk_-1.jpg', // مسجد نصیرالملک شیراز
   Kish: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80', // ساحل مرجانی و آب‌های زلال کیش
   Tabriz: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Tabriz_Shahgoli_Park_-_panoramio.jpg/960px-Tabriz_Shahgoli_Park_-_panoramio.jpg', // پارک شاه‌گلی (ائل‌گلی) تبریز
@@ -253,3 +268,18 @@ export const DESTINATION_IMAGE_MAP: Record<string, string> = {
   Shanghai: 'https://images.unsplash.com/photo-1474181487882-5abf3f0ba6c2?auto=format&fit=crop&w=800&q=80', // باند شانگهای و برج مروارید خاور
   Guangzhou: 'https://images.unsplash.com/photo-1513622470522-26c3c8a854bc?auto=format&fit=crop&w=800&q=80', // برج کانتون و خط آسمان گوانگژو
 };
+
+export const ISFAHAN_LANDMARKS = {
+  aliQapu: '/images/isfahan/ali-qapu.jpg',
+  sheikhLotfollah: '/images/isfahan/sheikh-lotfollah.jpg',
+  sheikhLotfollahExterior: '/images/isfahan/sheikh-lotfollah-exterior.jpg',
+  khajuBridge: '/images/isfahan/khaju-bridge.jpg',
+  khajuPavilion: '/images/isfahan/khaju-pavilion.jpg',
+  khajuDay: '/images/isfahan/khaju-day.jpg',
+  isfahanEmblem: '/images/isfahan/isfahan-emblem.jpg',
+  shahMosque: '/images/isfahan/shah-mosque.jpg',
+  bazaarHandicrafts: '/images/isfahan/bazaar-handicrafts.jpg',
+  jamehMosque: '/images/isfahan/jameh-mosque.jpg',
+  chehelSotoun: '/images/isfahan/chehel-sotoun.jpg',
+  menarJonban: '/images/isfahan/menar-jonban.jpg',
+} as const;

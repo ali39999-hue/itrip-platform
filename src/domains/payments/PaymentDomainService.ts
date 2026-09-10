@@ -384,9 +384,11 @@ export class PaymentDomainService {
 
     const adapter = (gatewayName.startsWith('SHETAB') && !isDemo)
       ? new ShetabPspAdapter()
-      : isDemo
-        ? new DemoPaymentAdapter()
-        : new ShetabPspAdapter();
+      : gatewayName.startsWith('ECARDO')
+        ? new EcardoGatewayAdapter()
+        : isDemo
+          ? new DemoPaymentAdapter()
+          : new ShetabPspAdapter();
 
     if (adapter.verifyWebhook && (params.rawPayload || params.rawBody) && params.signature) {
       const rawString = params.rawBody || JSON.stringify(params.rawPayload);

@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { ERP_STAFF_ROLES } from '@/domains/identity/permissions';
+import { encryptSensitive } from '@/lib/security/crypto-vault';
 import { createLogger } from '@/lib/observability/logger';
 import { ProductionTelegramProvider, TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
 import { getNotificationProvider } from '@/domains/events/NotificationProvider';
@@ -127,7 +128,7 @@ export async function issueOtp(
   const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
   const codeHash = hashOtp(code);
 
-  // 1. Store in PostgreSQL database
+  // 1. Store in database with outbox event
   try {
     await prisma.otpVerification.create({
       data: {
@@ -149,6 +150,11 @@ export async function issueOtp(
           expiresAt: expiresAt.toISOString(),
         }),
       },
+    });
+
+    // Housekeeping: drop rows that expired more than a day ago.
+    await prisma.otpVerification.deleteMany({
+      where: { expiresAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
     });
   } catch (dbErr) {
     console.warn('[issueOtp] Database unreachable for OTP persistence (fallback to in-memory):', dbErr);
@@ -218,12 +224,15 @@ async function verifyStoredOtp(identifier: string, code: string): Promise<boolea
       const checkRes = await smswbs.checkOtp(identifier, cleanCode);
       if (checkRes.valid) {
         inMemoryOtpStore.delete(identifier);
+        // Consume the persisted row too so it cannot be replayed elsewhere.
         try {
           await prisma.otpVerification.updateMany({
             where: { identifier, consumedAt: null },
             data: { consumedAt: new Date() },
           });
-        } catch { /* database update best effort */ }
+        } catch (consumeErr) {
+          console.warn('[verifyStoredOtp] OTP DB consume failed:', consumeErr);
+        }
         return true;
       }
       authLogger.warn('SMSWBS check_OTP rejected code', { identifier, error: checkRes.error });
@@ -240,13 +249,16 @@ async function verifyStoredOtp(identifier: string, code: string): Promise<boolea
     });
 
     if (record) {
-      if (record.attempts < OTP_MAX_ATTEMPTS && record.codeHash === codeHash) {
-        await prisma.otpVerification.update({ where: { id: record.id }, data: { consumedAt: new Date() } });
-        inMemoryOtpStore.delete(identifier);
-        return true;
-      } else {
-        await prisma.otpVerification.update({ where: { id: record.id }, data: { attempts: { increment: 1 } } });
+      if (record.attempts >= OTP_MAX_ATTEMPTS) {
+        return false;
       }
+      if (record.codeHash !== codeHash) {
+        await prisma.otpVerification.update({ where: { id: record.id }, data: { attempts: { increment: 1 } } });
+        return false;
+      }
+      await prisma.otpVerification.update({ where: { id: record.id }, data: { consumedAt: new Date() } });
+      inMemoryOtpStore.delete(identifier);
+      return true;
     }
   } catch (dbErr) {
     console.warn('[verifyStoredOtp] Database unreachable for OTP verification, checking in-memory fallback:', dbErr);

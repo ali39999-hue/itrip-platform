@@ -122,7 +122,7 @@ const MOCK_TRAVELOGUES: Record<string, TravelogueItem> = {
       ru: 'Исфахан, Иран',
     },
     userName: 'Reza Tehrani',
-    image: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=800&auto=format&fit=crop&q=80',
+    image: '/images/isfahan/sheikh-lotfollah.jpg',
     content: {
       fa: 'اصفهان شاهکار هنر و فرهنگ صفوی است. گنبد فیروزه‌ای شیخ لطف‌الله، کاشی‌کاری‌های مسجد امام و صرف چای سنتی در حیاط باصفای هتل عباسی لحظاتی ماندگار را در دفترچه خاطرات این سفر رقم زد.',
       en: 'Isfahan is a crowning triumph of Safavid heritage. The turquoise dome of Sheikh Lotfollah, Imam Mosque tilework, and evening Persian tea in the courtyard of Abbasi Hotel made this journey truly unforgettable.',

@@ -8,6 +8,7 @@ import {
   GatewayVerifyResponse,
   WebhookVerificationResult,
 } from '../gateway-port';
+import { getAppBaseUrl } from '@/lib/runtime-url';
 
 export interface EcardoGatewayConfig {
   baseUrl?: string;
@@ -79,11 +80,26 @@ export class EcardoGatewayAdapter implements PaymentGatewayPort {
       });
 
       const data = await resp.json().catch(() => ({}));
-      if (!resp.ok || data.status !== 'success' || !data.token) {
+      const isSuccess = data.status === 'success' || data.status === true || data.status === '1' || data.status === 1;
+      if (!resp.ok || !isSuccess) {
         throw new Error(data.message || `Failed to obtain Ecardo access token (HTTP ${resp.status})`);
       }
 
-      return data.token as string;
+      // Official doc + WooCommerce caveat: the success payload field name has been
+      // observed as token, access_token, payment_url, or nested under data.*
+      const tokenValue =
+        data.token ||
+        data.access_token ||
+        data.payment_url ||
+        data.data?.token ||
+        data.data?.access_token ||
+        data.data?.payment_url;
+
+      if (!tokenValue || typeof tokenValue !== 'string') {
+        throw new Error(data.message || `Ecardo access token response missing token field (HTTP ${resp.status})`);
+      }
+
+      return tokenValue;
     } finally {
       clearTimeout(timeout);
     }
@@ -129,11 +145,34 @@ export class EcardoGatewayAdapter implements PaymentGatewayPort {
 
     const description = `Firuzo ${req.bookingId ? req.bookingId.slice(-6) : 'Booking'}`.slice(0, 20);
 
+    // Official doc: ipn_url (max 255) is the authoritative server-to-server
+    // status notification. Without it the capture would depend solely on the
+    // untrusted browser callback, which the doc checklist forbids.
+    const ipnUrl = `${getAppBaseUrl()}/api/payments/webhook?gateway=ecardo`.slice(0, 255);
+    const cancelUrl = `${getAppBaseUrl()}/checkout`.slice(0, 255);
+    const customerEmail = req.customerInfo?.email?.slice(0, 50);
+
+    const bodyPayload: Record<string, unknown> = {
+      amount: formattedAmount,
+      currency: targetCurrency,
+      transaction_id: rawTxId,
+      order_id: rawTxId,
+      description,
+      ipn_url: ipnUrl,
+      callback_url: req.callbackUrl,
+      success_url: req.callbackUrl,
+      cancel_url: cancelUrl,
+      ...(customerEmail ? { customer_email: customerEmail } : {}),
+      ...(req.customerInfo?.phone ? { customer_phone: req.customerInfo.phone } : {}),
+    };
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
 
     try {
-      const resp = await fetch(endpoint, {
+      // Support both REST Merchant API endpoint (/merchant/make-payment)
+      // and WooCommerce plugin endpoint (/merchant/payment/create)
+      let resp = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -141,26 +180,55 @@ export class EcardoGatewayAdapter implements PaymentGatewayPort {
           'Authorization': `Bearer ${token}`,
           'User-Agent': 'FiruzoTravel/1.0',
         },
-        body: JSON.stringify({
-          amount: formattedAmount,
-          currency: targetCurrency,
-          transaction_id: rawTxId,
-          description,
-          callback_url: req.callbackUrl,
-        }),
+        body: JSON.stringify(bodyPayload),
         signal: controller.signal,
       });
 
+      // Fallback if primary endpoint returns 404 (e.g. WooCommerce-style backend)
+      if (resp.status === 404) {
+        const altEndpoint = `${this.baseUrl}/api/merchant/payment/create`;
+        if (altEndpoint !== endpoint) {
+          this.assertAllowedHost(altEndpoint);
+          resp = await fetch(altEndpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${token}`,
+              'User-Agent': 'FiruzoTravel/1.0',
+            },
+            body: JSON.stringify(bodyPayload),
+            signal: controller.signal,
+          });
+        }
+      }
+
       const data = await resp.json().catch(() => ({}));
-      if (!resp.ok || data.status !== 'success' || !data.payment_url) {
-        const errMsg = Array.isArray(data.message) ? data.message.join('; ') : (data.message || `Payment creation failed (HTTP ${resp.status})`);
+      const isSuccess =
+        data.status === 'success' ||
+        data.status === true ||
+        data.status === '1' ||
+        data.status === 1 ||
+        data.result === 'success';
+
+      const paymentUrl =
+        (data.payment_url as string | undefined) ||
+        (data.data?.payment_url as string | undefined) ||
+        (data.redirect as string | undefined) ||
+        (data.redirectUrl as string | undefined) ||
+        (data.url as string | undefined);
+
+      if (!resp.ok || !isSuccess || !paymentUrl) {
+        const errMsg = Array.isArray(data.message)
+          ? data.message.join('; ')
+          : (data.message || data.error || `Payment creation failed (HTTP ${resp.status})`);
         throw new Error(errMsg);
       }
 
       return {
         success: true,
         gatewayRef: rawTxId,
-        redirectUrl: data.payment_url as string,
+        redirectUrl: paymentUrl,
         status: 'PENDING_CUSTOMER',
         rawResponse: data,
       };
@@ -182,14 +250,19 @@ export class EcardoGatewayAdapter implements PaymentGatewayPort {
       };
     }
 
-    // eCardo callback or merchant verification
-    // When customer completes payment and returns with transaction status:
+    // Official eCardo Merchant API documents only three endpoints
+    // (access-token, make-payment, IPN) — there is NO server-side verify
+    // endpoint. Per the release checklist, the browser callback is UX-only
+    // and must never be treated as the final capture authority: settlement is
+    // confirmed exclusively by the HMAC-signed IPN handled via verifyWebhook.
     return {
-      verified: true,
+      verified: false,
       transactionId: `ecardo_${req.gatewayRef}`,
       settledAmount: req.expectedAmount,
       settledCurrency: req.expectedAmount.currency,
-      status: 'CAPTURED',
+      status: 'FAILED',
+      errorCode: 'IPN_REQUIRED',
+      error: 'Ecardo has no verify endpoint: capture authority is the signed IPN webhook only',
     };
   }
 
@@ -201,40 +274,79 @@ export class EcardoGatewayAdapter implements PaymentGatewayPort {
       // invalid json
     }
 
-    const eventId = String(payload.eventId || payload.transaction_id || 'ecardo_evt');
-    const bookingId = String(payload.bookingId || '');
-    const gatewayRef = String(payload.gatewayRef || payload.transaction_id || '');
-    const amountVal = Number(payload.amount) || 0;
-    const currencyVal = String(payload.currency || 'USD').toUpperCase();
-    const eventTime = Number(payload.timestamp) || Date.now();
+    // Official IPN shape: { status, signature, data: { transaction_id, total_amount, ... } }
+    const data = (payload.data && typeof payload.data === 'object' ? payload.data : payload) as Record<string, unknown>;
 
-    // If secret key is provided, verify HMAC signature if signature is sent
-    if (this.secretKey && signature) {
-      const computed = crypto.createHmac('sha256', this.secretKey).update(rawBody).digest('hex');
-      const sigBuf = Buffer.from(signature);
-      const computedBuf = Buffer.from(computed);
-      if (sigBuf.length !== computedBuf.length || !crypto.timingSafeEqual(sigBuf, computedBuf)) {
-        return {
-          valid: false,
-          gatewayName: this.name,
-          eventId,
-          eventType: 'payment.failed',
-          bookingId,
-          gatewayRef,
-          settledAmount: Money.zero(currencyVal),
-          settledCurrency: currencyVal,
-          timestamp: eventTime,
-          merchantId: this.publicKey,
-          error: 'Invalid Ecardo webhook cryptographic signature',
-        };
-      }
+    const eventId = String(payload.eventId || data.transaction_id || payload.transaction_id || 'ecardo_evt');
+    const bookingId = String(payload.bookingId || data.bookingId || '');
+    const gatewayRef = String(payload.gatewayRef || data.transaction_id || payload.transaction_id || '');
+    const amountVal = Number(data.total_amount ?? payload.amount) || 0;
+    const currencyVal = String(data.currency || payload.currency || 'USD').toUpperCase();
+    const statusRaw = String(payload.status || data.status || '').toLowerCase();
+    const eventTime = Number(payload.timestamp || data.timestamp) || Date.now();
+
+    const rejection = (error: string, eventType: string) =>
+      ({
+        valid: false as const,
+        gatewayName: this.name,
+        eventId,
+        eventType,
+        bookingId,
+        gatewayRef,
+        settledAmount: Money.zero(currencyVal),
+        settledCurrency: currencyVal,
+        timestamp: eventTime,
+        merchantId: this.publicKey,
+        error,
+      });
+
+    // Fail closed without the signing secret or the signature (PAY-005)
+    if (!this.secretKey) {
+      return rejection('Ecardo webhook secret is not configured (ECARDO_SECRET_KEY missing)', 'payment.failed');
     }
+    if (!signature) {
+      return rejection('Ecardo webhook signature missing: verification fails closed', 'payment.failed');
+    }
+
+    const timingSafeHexEqual = (received: string, computed: string): boolean => {
+      const a = Buffer.from(received);
+      const b = Buffer.from(computed);
+      return a.length === b.length && crypto.timingSafeEqual(a, b);
+    };
+
+    // 1. Official documented algorithm: HMAC-SHA256(transaction_id + total_amount, secret_key)
+    const txId = String(data.transaction_id || payload.transaction_id || '');
+    const totalAmt = data.total_amount !== undefined
+      ? String(data.total_amount)
+      : payload.total_amount !== undefined
+        ? String(payload.total_amount)
+        : String(data.amount ?? payload.amount ?? '');
+
+    const documentedSig = crypto
+      .createHmac('sha256', this.secretKey)
+      .update(`${txId}${totalAmt}`)
+      .digest('hex');
+
+    if (!timingSafeHexEqual(signature, documentedSig)) {
+      return rejection('Invalid Ecardo webhook cryptographic signature', 'payment.failed');
+    }
+
+    // Fail-Closed: only explicit successful statuses allow capture.
+    const isSuccessStatus =
+      statusRaw === 'success' ||
+      statusRaw === 'completed' ||
+      statusRaw === 'paid' ||
+      statusRaw === 'ok' ||
+      statusRaw === '1' ||
+      statusRaw === 'true';
+
+    const eventType = isSuccessStatus ? 'payment.captured' : 'payment.failed';
 
     return {
       valid: true,
       gatewayName: this.name,
       eventId,
-      eventType: 'payment.captured',
+      eventType,
       bookingId,
       gatewayRef,
       settledAmount: new Money(amountVal, currencyVal),

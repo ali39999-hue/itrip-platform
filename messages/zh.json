@@ -829,7 +829,8 @@
     "email": "电子邮件支持",
     "liveChat": "在线实时咨询",
     "contactForm": "提交工单与留言",
-    "sendMessage": "发送留言"
+    "sendMessage": "发送留言",
+    "submit": "发送留言"
   },
   "Snapp": {
     "title": "Snapp 在线充值",

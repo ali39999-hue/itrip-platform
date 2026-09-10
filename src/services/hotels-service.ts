@@ -1,8 +1,39 @@
 import path from 'path';
 import fs from 'fs';
-import type { Hotel, RoomType } from '@/lib/types';
+import type { Hotel, RoomType, HotelPropertyType } from '@/lib/types';
 import { formatDistance } from '@/lib/format';
 import { HOTELS } from '@/lib/data';
+
+export function detectPropertyType(name: string, nameEn?: string): HotelPropertyType {
+  const n = (name + ' ' + (nameEn || '')).toLowerCase();
+  if (n.includes('آپارتمان') || n.includes('apartment')) return 'apartment';
+  if (
+    n.includes('بوتیک') ||
+    n.includes('سنتی') ||
+    n.includes('اقامتگاه') ||
+    n.includes('سرای') ||
+    n.includes('عمارت') ||
+    n.includes('کاروانسرا') ||
+    n.includes('خانه') ||
+    n.includes('boutique') ||
+    n.includes('traditional')
+  ) {
+    return 'boutique';
+  }
+  if (
+    n.includes('ویلا') ||
+    n.includes('سوئیت') ||
+    n.includes('مجتمع') ||
+    n.includes('کلبه') ||
+    n.includes('villa') ||
+    n.includes('suite') ||
+    n.includes('ریزورت') ||
+    n.includes('resort')
+  ) {
+    return 'villa';
+  }
+  return 'hotel';
+}
 
 function getCanonicalHotels(): DetailedHotelWithMeta[] {
   return HOTELS.map((h) => {
@@ -14,6 +45,7 @@ function getCanonicalHotels(): DetailedHotelWithMeta[] {
       detailedRooms: h.roomTypes,
       description: h.description,
       address: h.address,
+      propertyType: h.propertyType || detectPropertyType(h.name, h.nameEn),
     };
   });
 }
@@ -109,20 +141,26 @@ const AMENITY_TAG_MAP: Record<string, string> = {
   استخر: 'pool',
   جکوزی: 'spa',
   ماساژ: 'spa',
+  اسپا: 'spa',
   'اینترنت در لابی': 'wifi',
   'اینترنت در اتاق': 'wifi',
+  اینترنت: 'wifi',
+  وای‌فای: 'wifi',
   پارکینگ: 'parking',
   رستوران: 'restaurant',
   'کافی شاپ': 'restaurant',
   'ترانسفر فرودگاهی': 'shuttle',
   'سرویس حرم': 'shuttle',
+  ترانسفر: 'shuttle',
   'سالن ورزشی': 'gym',
   'وسایل بدنسازی': 'gym',
+  باشگاه: 'gym',
+  صبحانه: 'breakfast',
   باغ: 'garden',
   'چایخانه سنتی': 'teahouse',
 };
 
-function normalizeIranAmenities(rawList: string[] = []): string[] {
+function normalizeIranAmenities(rawList: string[] = [], roomsHaveBreakfast: boolean = false): string[] {
   const set = new Set<string>();
   for (const am of rawList) {
     for (const [key, slug] of Object.entries(AMENITY_TAG_MAP)) {
@@ -131,6 +169,7 @@ function normalizeIranAmenities(rawList: string[] = []): string[] {
       }
     }
   }
+  if (roomsHaveBreakfast) set.add('breakfast');
   if (!set.has('wifi')) set.add('wifi');
   if (set.size < 3) set.add('restaurant');
   return Array.from(set);
@@ -183,14 +222,15 @@ function loadIranHotels(): DetailedHotelWithMeta[] {
         nameEn: h.hotel_slug?.replace(/-/g, ' ') || h.hotel_name,
         city: c.city_name,
         cityEn: c.city_slug || c.city_name,
-        stars: h.stars && h.stars > 0 ? Math.min(h.stars, 5) : 4,
+        stars: h.stars && h.stars > 0 ? Math.min(h.stars, 5) : 3,
         rating: rating,
         reviewsCount: reviews,
         pricePerNight: defaultPrice,
         imageQuery: 'luxury-hotel',
-        amenities: normalizeIranAmenities(h.amenities),
+        amenities: normalizeIranAmenities(h.amenities, h.rooms?.some((r) => r.breakfast_included ?? true)),
         distanceFromCenter: distance,
         freeCancellation: true,
+        propertyType: detectPropertyType(h.hotel_name, h.hotel_slug),
         roomTypes: roomTypes.length > 0 ? roomTypes : [
           { id: 'r_std', name: 'اتاق دبل استاندارد', capacity: 2, breakfast: true, pricePerNight: defaultPrice, available: 4 },
           { id: 'r_dlx', name: 'سوییت دولوکس', capacity: 3, breakfast: true, pricePerNight: Math.round(defaultPrice * 1.35), available: 2 }
@@ -276,12 +316,13 @@ function loadChinaHotels(): DetailedHotelWithMeta[] {
       reviewsCount: ch.reviews_summary?.total_reviews || 850,
       pricePerNight: defaultPrice,
       imageQuery: 'beijing-hotel',
-      amenities: ['wifi', 'restaurant', 'spa', 'gym', 'shuttle'],
+      amenities: ['wifi', 'restaurant', 'spa', 'gym', 'shuttle', 'breakfast'],
       distanceFromCenter: distText,
       distanceFromCenterEn: distTextEn,
       distanceKm: isNaN(poiDistanceKm as number) ? undefined : poiDistanceKm,
       nearestPoiName: firstPoi?.name,
       freeCancellation: true,
+      propertyType: detectPropertyType(cleanHotelName, cleanHotelNameEn),
       roomTypes: roomTypes.length > 0 ? roomTypes : [
         { id: 'r_std', name: 'Deluxe King Room', capacity: 2, breakfast: true, pricePerNight: defaultPrice, available: 6 },
         { id: 'r_suite', name: 'Executive Suite', capacity: 2, breakfast: true, pricePerNight: Math.round(defaultPrice * 1.4), available: 3 }
@@ -303,15 +344,33 @@ function loadChinaHotels(): DetailedHotelWithMeta[] {
 export interface HotelSearchParams {
   query?: string;
   city?: string;
+  hotelName?: string;
   country?: 'iran' | 'china' | 'all';
   stars?: number[];
   minPrice?: number;
   maxPrice?: number;
   minScore?: number;
   freeCancel?: boolean;
+  propertyTypes?: HotelPropertyType[];
+  amenities?: string[];
   sort?: 'cheap' | 'score' | 'stars' | 'rec';
   page?: number;
   limit?: number;
+}
+
+export interface HotelFacets {
+  starCounts: Record<number, number>;
+  propertyTypeCounts: Record<HotelPropertyType, number>;
+  amenityCounts: Record<string, number>;
+  freeCancelCount: number;
+  scoreCounts: {
+    score9: number;
+    score8: number;
+    score7: number;
+  };
+  totalCount: number;
+  minPriceToman: number;
+  maxPriceToman: number;
 }
 
 export interface HotelSearchResponse {
@@ -321,6 +380,7 @@ export interface HotelSearchResponse {
   totalPages: number;
   priceBuckets: number[];
   cities: Array<{ name: string; nameEn: string; count: number }>;
+  facets: HotelFacets;
 }
 
 export function searchHotels(params: HotelSearchParams): HotelSearchResponse {
@@ -343,32 +403,140 @@ export function searchHotels(params: HotelSearchParams): HotelSearchResponse {
     }
   }
 
-  const q = (params.query || params.city || '').trim().toLowerCase();
+  // Base destination pool filtering
+  const targetCity = (params.city || '').trim().toLowerCase();
+  let destinationPool = pool;
 
-  const filtered = pool.filter((h) => {
-    if (q) {
+  if (targetCity) {
+    const matched = pool.filter(
+      (h) => h.city.toLowerCase().includes(targetCity) || h.cityEn.toLowerCase().includes(targetCity)
+    );
+    if (matched.length > 0) destinationPool = matched;
+  } else if (params.query) {
+    const qTrim = params.query.trim().toLowerCase();
+    const matchedByCity = pool.filter(
+      (h) => h.city.toLowerCase() === qTrim || h.cityEn.toLowerCase() === qTrim
+    );
+    if (matchedByCity.length > 0) {
+      destinationPool = matchedByCity;
+    }
+  }
+
+  // Calculate facets and stats on destinationPool
+  const starCounts: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+  const propertyTypeCounts: Record<HotelPropertyType, number> = {
+    hotel: 0,
+    apartment: 0,
+    boutique: 0,
+    villa: 0,
+  };
+  const amenityCounts: Record<string, number> = {
+    wifi: 0,
+    pool: 0,
+    spa: 0,
+    restaurant: 0,
+    parking: 0,
+    shuttle: 0,
+    gym: 0,
+    breakfast: 0,
+  };
+  let freeCancelCount = 0;
+  const scoreCounts = { score9: 0, score8: 0, score7: 0 };
+  let minPriceIrrFound = Infinity;
+  let maxPriceIrrFound = 0;
+
+  for (const h of destinationPool) {
+    const s = Math.round(h.stars);
+    if (s >= 1 && s <= 5) {
+      starCounts[s] = (starCounts[s] || 0) + 1;
+    }
+    const pt = h.propertyType || 'hotel';
+    propertyTypeCounts[pt] = (propertyTypeCounts[pt] || 0) + 1;
+
+    for (const am of h.amenities || []) {
+      if (amenityCounts[am] !== undefined) {
+        amenityCounts[am]++;
+      }
+    }
+    if (h.freeCancellation) freeCancelCount++;
+    if (h.rating >= 9.0) scoreCounts.score9++;
+    if (h.rating >= 8.0) scoreCounts.score8++;
+    if (h.rating >= 7.0) scoreCounts.score7++;
+
+    if (h.pricePerNight < minPriceIrrFound) minPriceIrrFound = h.pricePerNight;
+    if (h.pricePerNight > maxPriceIrrFound) maxPriceIrrFound = h.pricePerNight;
+  }
+
+  const facets: HotelFacets = {
+    starCounts,
+    propertyTypeCounts,
+    amenityCounts,
+    freeCancelCount,
+    scoreCounts,
+    totalCount: destinationPool.length,
+    minPriceToman: minPriceIrrFound !== Infinity ? Math.round(minPriceIrrFound / 10_000_000) : 1,
+    maxPriceToman: maxPriceIrrFound > 0 ? Math.ceil(maxPriceIrrFound / 10_000_000) : 25,
+  };
+
+  // Now filter the destinationPool by all active criteria
+  const hotelNameTerm = (params.hotelName || '').trim().toLowerCase();
+  const generalQuery = (params.query && !targetCity ? params.query : '').trim().toLowerCase();
+
+  const filtered = destinationPool.filter((h) => {
+    // 1. Hotel name search filter
+    if (hotelNameTerm) {
+      const matchName =
+        h.name.toLowerCase().includes(hotelNameTerm) ||
+        h.nameEn.toLowerCase().includes(hotelNameTerm);
+      if (!matchName) return false;
+    }
+
+    // 2. General query (if not already matched to city)
+    if (generalQuery && destinationPool === pool) {
       const match =
-        h.name.toLowerCase().includes(q) ||
-        h.nameEn.toLowerCase().includes(q) ||
-        h.city.toLowerCase().includes(q) ||
-        h.cityEn.toLowerCase().includes(q);
+        h.name.toLowerCase().includes(generalQuery) ||
+        h.nameEn.toLowerCase().includes(generalQuery) ||
+        h.city.toLowerCase().includes(generalQuery) ||
+        h.cityEn.toLowerCase().includes(generalQuery) ||
+        h.address?.toLowerCase().includes(generalQuery);
       if (!match) return false;
     }
 
+    // 3. Stars filter
     if (params.stars && params.stars.length > 0) {
-      if (!params.stars.includes(h.stars)) return false;
+      if (!params.stars.includes(Math.round(h.stars))) return false;
     }
 
+    // 4. Property type filter
+    if (params.propertyTypes && params.propertyTypes.length > 0) {
+      const pt = h.propertyType || 'hotel';
+      if (!params.propertyTypes.includes(pt)) return false;
+    }
+
+    // 5. Amenities filter
+    if (params.amenities && params.amenities.length > 0) {
+      const hasAll = params.amenities.every((am) => (h.amenities || []).includes(am));
+      if (!hasAll) return false;
+    }
+
+    // 6. Minimum guest rating score
     if (params.minScore && h.rating < params.minScore) {
       return false;
     }
 
+    // 7. Free cancellation
     if (params.freeCancel && !h.freeCancellation) {
       return false;
     }
 
-    if (params.maxPrice && h.pricePerNight / 1_000_000 > params.maxPrice) {
-      return false;
+    // 8. Price filter (supports Toman [<= 250] and IRR [> 250])
+    if (params.maxPrice !== undefined) {
+      const maxIrr = params.maxPrice <= 250 ? params.maxPrice * 10_000_000 : params.maxPrice;
+      if (h.pricePerNight > maxIrr) return false;
+    }
+    if (params.minPrice !== undefined) {
+      const minIrr = params.minPrice <= 250 ? params.minPrice * 10_000_000 : params.minPrice;
+      if (h.pricePerNight < minIrr) return false;
     }
 
     return true;
@@ -390,8 +558,9 @@ export function searchHotels(params: HotelSearchParams): HotelSearchResponse {
 
   // Calculate 14 price histogram buckets for sidebar filter
   const buckets = new Array(14).fill(0);
-  filtered.forEach((h) => {
-    const idx = Math.min(13, Math.max(0, Math.floor((h.pricePerNight / 1_000_000 / 180) * 14)));
+  destinationPool.forEach((h) => {
+    const priceTomanM = h.pricePerNight / 10_000_000;
+    const idx = Math.min(13, Math.max(0, Math.floor((priceTomanM / 20) * 14)));
     buckets[idx]++;
   });
   const maxB = Math.max(...buckets, 1);
@@ -427,6 +596,7 @@ export function searchHotels(params: HotelSearchParams): HotelSearchResponse {
     totalPages,
     priceBuckets,
     cities,
+    facets,
   };
 }
 

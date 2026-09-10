@@ -155,11 +155,22 @@ export async function GET() {
   }
 
   // 4. Payment Gateway Environment Configuration
+  // Healthy when ANY configured live gateway has its credentials present:
+  // Shetab PSP (SHETAB_*) or eCardo merchant API (ECARDO_*).
   const isDemo = process.env.DEMO_MODE === 'true';
-  const hasMerchantCredentials = Boolean(process.env.SHETAB_MERCHANT_ID || isDemo);
+  const hasShetabCredentials = Boolean(process.env.SHETAB_MERCHANT_ID && process.env.SHETAB_SECRET_KEY);
+  const hasEcardoCredentials = Boolean(process.env.ECARDO_PUBLIC_KEY && process.env.ECARDO_SECRET_KEY);
+  const gatewayMode = isDemo
+    ? 'mode: DEMO_SANDBOX'
+    : hasShetabCredentials
+      ? 'mode: PRODUCTION_SHETAB'
+      : hasEcardoCredentials
+        ? 'mode: PRODUCTION_ECARDO'
+        : 'mode: MISSING_MERCHANT_ID';
+  const hasMerchantCredentials = isDemo || hasShetabCredentials || hasEcardoCredentials;
   checks.paymentGateway = {
     status: hasMerchantCredentials ? 'healthy' : 'degraded',
-    details: isDemo ? 'mode: DEMO_SANDBOX' : hasMerchantCredentials ? 'mode: PRODUCTION_CONFIGURED' : 'mode: MISSING_MERCHANT_ID',
+    details: gatewayMode,
   };
 
   // 5. Ledger Double-Entry Balance Probe (cached, at most one full scan / 5 min)

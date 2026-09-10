@@ -22,7 +22,7 @@ export function DestinationsSection() {
     { fa: 'شیراز', en: 'Shiraz', href: '/hotels/search?city=شیراز', gradient: 'from-emerald-500 to-teal-800' },
   ]).map((city) => {
     const cityName = locale === 'fa' ? city.fa : city.en;
-    const img = DESTINATION_IMAGE_MAP[city.en] || DESTINATION_IMAGE_MAP[city.fa] || 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Naghshe_Jahan_Square_Isfahan_modified.jpg/960px-Naghshe_Jahan_Square_Isfahan_modified.jpg';
+    const img = DESTINATION_IMAGE_MAP[city.en] || DESTINATION_IMAGE_MAP[city.fa] || '/images/isfahan/sheikh-lotfollah.jpg';
     const desc = lt(locale, {
       fa: `کشف جاذبه‌های برتر، فرهنگ غنی و اقامتگاه‌های لوکس ${city.fa}`,
       en: `Discover top attractions, culture & luxury stays in ${city.en}`,

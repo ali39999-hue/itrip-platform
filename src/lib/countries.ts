@@ -34,6 +34,7 @@ export interface SignatureExperience {
   whenEn: string;
   /** قیمت شروع به تومان (نمایشی) */
   fromPrice: number;
+  image?: string;
 }
 
 export interface CountryConfig {
@@ -85,8 +86,9 @@ const X = (
   whereEn: string,
   when: string,
   whenEn: string,
-  fromPrice: number
-): SignatureExperience => ({ title, titleEn, desc, descEn, category, where, whereEn, when, whenEn, fromPrice });
+  fromPrice: number,
+  image?: string
+): SignatureExperience => ({ title, titleEn, desc, descEn, category, where, whereEn, when, whenEn, fromPrice, image });
 
 export const COUNTRIES: Record<CountryId, CountryConfig> = {
   iran: {
@@ -123,7 +125,9 @@ export const COUNTRIES: Record<CountryId, CountryConfig> = {
       X('جشن سده زرتشتی', 'Sadeh Festival', 'جشن آتش هزارساله زرتشتیان پنجاه روز مانده به نوروز', 'Zoroastrian fire festival, fifty days before Nowruz', 'festival', 'یزد و کرمان', 'Yazd & Kerman', '۳۰ ژانویه', 'January 30', 1800000),
       X('تعزیه محرم', 'Taziyeh of Muharram', 'نمایش آیینی تعزیه — تئاتر اصیل و ثبت‌شده یونسکو', 'Ritual passion play — Iran\u2019s UNESCO-listed indigenous theatre', 'theater', 'تکیه‌های یزد و تهران', 'Tekyehs of Yazd & Tehran', 'ماه محرم', 'Muharram', 950000),
       X('غار نمکدان و چاهکوه', 'Namakdan Salt Cave & Chahkooh', 'طولانی‌ترین غار نمکی جهان، دره ستاره‌ها و کوه‌های رنگین‌کمانی هرمز', 'World\u2019s longest salt cave, Valley of Stars and Hormuz rainbow mountains', 'nature', 'قشم و هرمز', 'Qeshm & Hormuz', 'اکتبر تا آوریل', 'Oct–Apr', 1100000),
-      X('کارگاه فرش‌بافی و بازار صنایع‌دستی', 'Carpet Weaving Workshop', 'بافت فرش کنار استادکاران کاشان و اصفهان؛ بازارهای سنتی به‌عنوان نمایشگاه دائمی', 'Weave alongside master artisans in Kashan & Isfahan; traditional bazaars as living craft expos', 'exhibition', 'کاشان و اصفهان', 'Kashan & Isfahan', 'تمام سال', 'Year-round', 1500000),
+      X('کارگاه فرش‌بافی و بازار صنایع‌دستی', 'Carpet Weaving Workshop', 'بافت فرش کنار استادکاران کاشان و اصفهان؛ بازارهای سنتی به‌عنوان نمایشگاه دائمی', 'Weave alongside master artisans in Kashan & Isfahan; traditional bazaars as living craft expos', 'exhibition', 'کاشان و اصفهان', 'Kashan & Isfahan', 'تمام سال', 'Year-round', 1500000, '/images/isfahan/bazaar-handicrafts.jpg'),
+      X('نغمه‌های شبانه پل خواجو و زاینده‌رود', 'Khaju Bridge Evening Acoustics', 'پیاده‌روی شبانه و گوش سپردن به نوای آواز سنتی در دهانه‌های سنگی پل تاریخی خواجو', 'Evening walk and traditional singing in the stone acoustics of historic Khaju Bridge', 'culture', 'پل خواجو، اصفهان', 'Khaju Bridge, Isfahan', 'تمام سال', 'Year-round', 450000, '/images/isfahan/khaju-bridge.jpg'),
+      X('دیدار از کاخ چهلستون و منارجنبان', 'Chehel Sotoun & Menar Jonban Tour', 'کوشک صفوی با نقاشی‌های بی‌نظیر دیواری و پدیده شگفت‌انگیز معماری منارجنبان', 'Safavid pavilion with breathtaking wall paintings and the enigmatic shaking minarets', 'culture', 'اصفهان', 'Isfahan', 'تمام سال', 'Year-round', 750000, '/images/isfahan/chehel-sotoun.jpg'),
       X('کویرگردی و کاروانسرا', 'Desert Safari & Caravanserai', 'کویرمرنجاب و یزد با اقامت شبانه در کاروانسراهای بازسازی‌شده', 'Maranjab & Yazd desert with an overnight in restored caravanserais', 'adventure', 'یزد و مرنجاب', 'Yazd & Maranjab', 'پاییز و زمستان', 'Autumn & winter', 3200000),
       X('چشمه‌های آبگرم سرعین', 'Sarein Hot Springs', 'آب‌های گرم طبیعی گنداب در دامنه سبلان', 'Natural thermal waters of Gendab on the slopes of Sabalan', 'wellness', 'سرعین، اردبیل', 'Sarein, Ardabil', 'تمام سال', 'Year-round', 800000),
     ],

@@ -35,9 +35,9 @@ export class InventoryEngine {
       // 1. Lock the allotment row FOR UPDATE to prevent race conditions
       const rows: Array<{ id: string; total: number; booked: number; stopSell: boolean }> =
         await client.$queryRaw`
-          SELECT id, total, booked, stopSell
-          FROM Allotment
-          WHERE inventoryItemId = ${params.inventoryItemId} AND date = ${params.date}
+          SELECT id, total, booked, "stopSell"
+          FROM "Allotment"
+          WHERE "inventoryItemId" = ${params.inventoryItemId} AND date = ${params.date}
           FOR UPDATE
         `;
 
@@ -140,8 +140,8 @@ export class InventoryEngine {
         status: string;
         expiresAt: Date;
       }> = await client.$queryRaw`
-        SELECT id, inventoryItemId, allotmentDate, token, quantity, status, expiresAt
-        FROM InventoryHold
+        SELECT id, "inventoryItemId", "allotmentDate", token, quantity, status, "expiresAt"
+        FROM "InventoryHold"
         WHERE token = ${token}
         FOR UPDATE
       `;
@@ -167,9 +167,9 @@ export class InventoryEngine {
 
       // Atomic conditional update on allotment: booked + quantity <= total (Section 6)
       const updateCount: number = await client.$executeRaw`
-        UPDATE Allotment
+        UPDATE "Allotment"
         SET booked = booked + ${hold.quantity}
-        WHERE inventoryItemId = ${hold.inventoryItemId}
+        WHERE "inventoryItemId" = ${hold.inventoryItemId}
           AND date = ${hold.allotmentDate}
           AND (booked + ${hold.quantity}) <= total
       `;
@@ -208,7 +208,7 @@ export class InventoryEngine {
         status: InventoryHoldStatus;
       }> = await client.$queryRaw`
         SELECT id, status
-        FROM InventoryHold
+        FROM "InventoryHold"
         WHERE token = ${token}
         FOR UPDATE
       `;
@@ -316,8 +316,8 @@ export class InventoryEngine {
 
     const rows: Array<{ id: string; total: number; booked: number; stopSell: boolean }> =
       await client.$queryRaw`
-        SELECT id, total, booked, stopSell
-        FROM Allotment
+        SELECT id, total, booked, "stopSell"
+        FROM "Allotment"
         WHERE id = ${id}
         FOR UPDATE
       `;
@@ -361,8 +361,8 @@ export class InventoryEngine {
         quantity: number;
         status: string;
       }> = await client.$queryRaw`
-        SELECT id, inventoryItemId, allotmentDate, quantity, status
-        FROM InventoryHold
+        SELECT id, "inventoryItemId", "allotmentDate", quantity, status
+        FROM "InventoryHold"
         WHERE token = ${token}
         FOR UPDATE
       `;
@@ -379,9 +379,9 @@ export class InventoryEngine {
         // Guarded decrement: only fires while booked >= quantity, so repeated
         // compensation can never push booked negative (double-release safety).
         const restoredCount: number = await client.$executeRaw`
-          UPDATE Allotment
+          UPDATE "Allotment"
           SET booked = booked - ${hold.quantity}
-          WHERE inventoryItemId = ${hold.inventoryItemId}
+          WHERE "inventoryItemId" = ${hold.inventoryItemId}
             AND date = ${hold.allotmentDate}
             AND booked >= ${hold.quantity}
         `;

@@ -219,7 +219,7 @@ describe('Booking Lifecycle & Relational History Suite (BOOK-001 to BOOK-005)', 
       userId: testUserId,
       amount: new Money(5_000_000, 'IRR'),
       currency: 'IRR',
-      referenceId: 'TEST_SEED',
+      referenceId: `TEST_SEED_${suffix}`,
     });
 
     // 2. Launch two concurrent confirmation saga attempts simultaneously

@@ -1,40 +1,39 @@
-// Prisma Schema for iTrip/Firuzo Travel Platform - MySQL/MariaDB Master Model
+// Prisma Schema for iTrip/Firuzo Travel Platform - PostgreSQL Master Model v2
 // Single Source of Truth for Production, Staging, CI and Development
 
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-1.1.x", "debian-openssl-1.1.x"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 // ==================== 1. Identity & RBAC ====================
 
 model User {
-  id             String   @id @default(cuid()) @db.VarChar(191)
-  email          String?  @unique @db.VarChar(191)
-  phone          String?  @unique @db.VarChar(191)
-  telegramId     String?  @unique @db.VarChar(191)
-  whatsappPhone  String?  @unique @db.VarChar(191)
-  wechatId       String?  @unique @db.VarChar(191)
-  baleId         String?  @unique @db.VarChar(191)
-  name           String?  @db.VarChar(191)
-  firstNameFa    String?  @db.VarChar(191)
-  lastNameFa     String?  @db.VarChar(191)
-  firstNameEn    String?  @db.VarChar(191)
-  lastNameEn     String?  @db.VarChar(191)
-  role           String   @default("CUSTOMER") @db.VarChar(50) // SUPER_ADMIN, FINANCE, OPS, CUSTOMER
-  passwordHash   String?  @db.VarChar(255)
+  id             String   @id @default(cuid())
+  email          String?  @unique
+  phone          String?  @unique
+  telegramId     String?  @unique
+  whatsappPhone   String?  @unique
+  wechatId       String?  @unique
+  baleId         String?  @unique
+  name           String?
+  firstNameFa    String?
+  lastNameFa     String?
+  firstNameEn    String?
+  lastNameEn     String?
+  role           String   @default("CUSTOMER") // SUPER_ADMIN, FINANCE, OPS, CUSTOMER
+  passwordHash   String?
   isActive       Boolean  @default(true)
-  avatar         String?  @db.Text
-  nationalId     String?  @db.VarChar(50)
-  passportNo     String?  @db.VarChar(50)
-  passportExpiry String?  @db.VarChar(50)
-  language       String   @default("fa") @db.VarChar(10)
-  currency       String   @default("IRR") @db.VarChar(10)
+  avatar         String?
+  nationalId     String?
+  passportNo     String?
+  passportExpiry String?
+  language       String   @default("fa")
+  currency       String   @default("IRR")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -50,64 +49,64 @@ model User {
 
 // B2B & Organization Structure (IAM-003)
 model Organization {
-  id              String   @id @default(cuid()) @db.VarChar(191)
-  type            String   @default("AGENCY") @db.VarChar(50) // AGENCY, CORPORATE, PARTNER, INTERNAL
-  legalName       String   @db.VarChar(255)
-  displayName     String   @db.VarChar(255)
-  registrationNo  String?  @db.VarChar(100)
-  taxNo           String?  @db.VarChar(100)
-  status          String   @default("ACTIVE") @db.VarChar(50) // ACTIVE, SUSPENDED, PENDING
-  defaultCurrency String   @default("IRR") @db.VarChar(10)
-  timezone        String   @default("Asia/Tehran") @db.VarChar(100)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id              String                   @id @default(cuid())
+  type            String                   @default("AGENCY") // AGENCY, CORPORATE, PARTNER, INTERNAL
+  legalName       String
+  displayName     String
+  registrationNo  String?
+  taxNo           String?
+  status          String                   @default("ACTIVE") // ACTIVE, SUSPENDED, PENDING
+  defaultCurrency String                   @default("IRR")
+  timezone        String                   @default("Asia/Tehran")
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
 
-  memberships       OrganizationMembership[]
-  branches          OrganizationBranch[]
-  bookings          Booking[]
-  trips             Trip[]
-  invoices          Invoice[]
-  settlementBatches SettlementBatch[]
-  travelDocuments   TravelDocument[]
+  memberships             OrganizationMembership[]
+  branches                OrganizationBranch[]
+  bookings                Booking[]
+  trips                   Trip[]
+  invoices                Invoice[]
+  settlementBatches       SettlementBatch[]
+  travelDocuments         TravelDocument[]
 
   @@index([status])
 }
 
 model OrganizationBranch {
-  id             String   @id @default(cuid()) @db.VarChar(191)
-  organizationId String   @db.VarChar(191)
-  name           String   @db.VarChar(255)
-  code           String?  @db.VarChar(50)
-  timezone       String   @default("Asia/Tehran") @db.VarChar(100)
-  status         String   @default("ACTIVE") @db.VarChar(50)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id              String       @id @default(cuid())
+  organizationId  String
+  name            String
+  code            String?
+  timezone        String       @default("Asia/Tehran")
+  status          String       @default("ACTIVE")
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  organization      Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  members           OrganizationMembership[]
-  bookings          Booking[]
-  trips             Trip[]
-  invoices          Invoice[]
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members         OrganizationMembership[]
+  bookings        Booking[]
+  trips           Trip[]
+  invoices        Invoice[]
   settlementBatches SettlementBatch[]
-  travelDocuments   TravelDocument[]
+  travelDocuments TravelDocument[]
 
   @@index([organizationId])
 }
 
 model OrganizationMembership {
-  id             String   @id @default(cuid()) @db.VarChar(191)
-  organizationId String   @db.VarChar(191)
-  userId         String   @db.VarChar(191)
-  roleId         String?  @db.VarChar(191)
-  branchId       String?  @db.VarChar(191) // Optional branch-level scoping (IAM-003)
-  status         String   @default("ACTIVE") @db.VarChar(50) // ACTIVE, INVITED, SUSPENDED
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id              String       @id @default(cuid())
+  organizationId  String
+  userId          String
+  roleId          String?
+  branchId        String?      // Optional branch-level scoping (IAM-003)
+  status          String       @default("ACTIVE") // ACTIVE, INVITED, SUSPENDED
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  branch       OrganizationBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
-  role         Role?               @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch          OrganizationBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  role            Role?        @relation(fields: [roleId], references: [id], onDelete: SetNull)
 
   @@unique([organizationId, userId])
   @@index([userId])
@@ -117,40 +116,40 @@ model OrganizationMembership {
 
 // Traveler Profiles & Travel Documents (IAM-002)
 model TravelerProfile {
-  id          String   @id @default(cuid()) @db.VarChar(191)
-  userId      String   @db.VarChar(191)
-  firstName   String   @db.VarChar(100)
-  lastName    String   @db.VarChar(100)
-  nationalId  String?  @db.VarChar(50)
-  dateOfBirth String?  @db.VarChar(50) // YYYY-MM-DD
-  gender      String?  @db.VarChar(20) // MALE, FEMALE, OTHER
-  nationality String   @default("IR") @db.VarChar(10)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String           @id @default(cuid())
+  userId          String
+  firstName       String
+  lastName        String
+  nationalId      String?
+  dateOfBirth     String?          // YYYY-MM-DD
+  gender          String?          // MALE, FEMALE, OTHER
+  nationality     String           @default("IR")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  documents TravelDocument[]
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents       TravelDocument[]
 
   @@index([userId])
 }
 
 model TravelDocument {
-  id                String   @id @default(cuid()) @db.VarChar(191)
-  travelerProfileId String   @db.VarChar(191)
-  organizationId    String?  @db.VarChar(191) // B2B Multi-tenancy (IAM-103)
-  branchId          String?  @db.VarChar(191) // B2B Branch Scoping (IAM-103)
-  type              String   @db.VarChar(50) // PASSPORT, NATIONAL_ID, VISA, DRIVER_LICENSE
-  documentNumber    String   @db.VarChar(100)
-  issuingCountry    String   @default("IR") @db.VarChar(10)
-  issuedAt          String?  @db.VarChar(50) // YYYY-MM-DD
-  expiresAt         String?  @db.VarChar(50) // YYYY-MM-DD
-  holderName        String?  @db.VarChar(255)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                String              @id @default(cuid())
+  travelerProfileId String
+  organizationId    String?             // B2B Multi-tenancy (IAM-103)
+  branchId          String?             // B2B Branch Scoping (IAM-103)
+  type              String              // PASSPORT, NATIONAL_ID, VISA, DRIVER_LICENSE
+  documentNumber    String
+  issuingCountry    String              @default("IR")
+  issuedAt          String?             // YYYY-MM-DD
+  expiresAt         String?             // YYYY-MM-DD
+  holderName        String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 
-  travelerProfile TravelerProfile     @relation(fields: [travelerProfileId], references: [id], onDelete: Cascade)
-  organization    Organization?       @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  branch          OrganizationBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  travelerProfile   TravelerProfile     @relation(fields: [travelerProfileId], references: [id], onDelete: Cascade)
+  organization      Organization?       @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  branch            OrganizationBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
 
   @@index([travelerProfileId])
   @@index([organizationId])
@@ -159,22 +158,22 @@ model TravelDocument {
 }
 
 model Role {
-  id          String  @id @default(cuid()) @db.VarChar(191)
-  name        String  @unique @db.VarChar(100) // e.g. SUPER_ADMIN, FINANCE_OPS
-  permissions String? @default("[]") @db.Text // Deprecated: relational RolePermission is canonical (IAM-106)
-  description String? @db.Text
-
+  id                      String                   @id @default(cuid())
+  name                    String                   @unique // e.g. SUPER_ADMIN, FINANCE_OPS
+  permissions             String?                  @default("[]") // Deprecated: relational RolePermission is canonical (IAM-106)
+  description             String?
+  
   userRoles               UserRole[]
   rolePermissions         RolePermission[]
   organizationMemberships OrganizationMembership[]
 }
 
 model Permission {
-  id          String  @id @default(cuid()) @db.VarChar(191)
-  code        String  @unique @db.VarChar(100) // e.g. "booking.read", "booking.refund.approve"
-  name        String  @db.VarChar(191)
-  module      String  @db.VarChar(50) // "BOOKING", "FINANCE", "INVENTORY", "SUPPLIER", "OPS"
-  description String? @db.Text
+  id              String           @id @default(cuid())
+  code            String           @unique // e.g. "booking.read", "booking.refund.approve"
+  name            String
+  module          String           // "BOOKING", "FINANCE", "INVENTORY", "SUPPLIER", "OPS"
+  description     String?
 
   rolePermissions RolePermission[]
 
@@ -182,21 +181,21 @@ model Permission {
 }
 
 model RolePermission {
-  roleId       String @db.VarChar(191)
-  permissionId String @db.VarChar(191)
+  roleId          String
+  permissionId    String
 
-  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role            Role             @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission      Permission       @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
 }
 
 model UserRole {
-  userId String @db.VarChar(191)
-  roleId String @db.VarChar(191)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  userId String
+  roleId String
+  
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([userId, roleId])
 }
@@ -205,155 +204,155 @@ model UserRole {
 
 // Chart of Accounts & Journals (FIN-001, FIN-002)
 model ChartOfAccounts {
-  id        String   @id @default(cuid()) @db.VarChar(191)
-  code      String   @unique @db.VarChar(50) // e.g. "1010", "2010", "4010"
-  name      String   @db.VarChar(191) // e.g. "Cash & Bank", "Customer Escrow", "Service Revenue"
-  category  String   @db.VarChar(50) // ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
-  currency  String   @default("IRR") @db.VarChar(10)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String    @id @default(cuid())
+  code        String    @unique // e.g. "1010", "2010", "4010"
+  name        String    // e.g. "Cash & Bank", "Customer Escrow", "Service Revenue"
+  category    String    // ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
+  currency    String    @default("IRR")
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  journals JournalEntry[]
-  lines    JournalLine[]
+  journals    JournalEntry[]
+  lines       JournalLine[]
 
   @@index([category])
 }
 
 model JournalEntry {
-  id               String   @id @default(cuid()) @db.VarChar(191)
-  entryNumber      String   @unique @db.VarChar(100) // e.g. JE-2026-0001
-  chartOfAccountId String   @db.VarChar(191)
-  date             DateTime @default(now())
-  description      String   @db.Text
-  referenceType    String?  @db.VarChar(50) // BOOKING, REFUND, SETTLEMENT, ADJUSTMENT
-  referenceId      String?  @db.VarChar(191)
-  createdAt        DateTime @default(now())
+  id              String         @id @default(cuid())
+  entryNumber     String         @unique // e.g. JE-2026-0001
+  chartOfAccountId String
+  date            DateTime       @default(now())
+  description     String
+  referenceType   String?        // BOOKING, REFUND, SETTLEMENT, ADJUSTMENT
+  referenceId     String?
+  createdAt       DateTime       @default(now())
 
-  account ChartOfAccounts @relation(fields: [chartOfAccountId], references: [id])
-  lines   JournalLine[]
+  account         ChartOfAccounts @relation(fields: [chartOfAccountId], references: [id])
+  lines           JournalLine[]
 
   @@index([date])
   @@index([referenceType, referenceId])
 }
 
 model JournalLine {
-  id               String  @id @default(cuid()) @db.VarChar(191)
-  journalEntryId   String  @db.VarChar(191)
-  chartOfAccountId String  @db.VarChar(191)
-  direction        String  @db.VarChar(20) // DEBIT, CREDIT
-  debit            Decimal @default(0) @db.Decimal(20, 4)
-  credit           Decimal @default(0) @db.Decimal(20, 4)
-  amount           Decimal @db.Decimal(20, 4)
-  currency         String  @default("IRR") @db.VarChar(10)
-  memo             String? @db.Text
+  id              String       @id @default(cuid())
+  journalEntryId  String
+  chartOfAccountId String
+  direction       String       // DEBIT, CREDIT
+  debit           Decimal      @default(0)
+  credit          Decimal      @default(0)
+  amount          Decimal
+  currency        String       @default("IRR")
+  memo            String?
 
-  journalEntry JournalEntry    @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
-  account      ChartOfAccounts @relation(fields: [chartOfAccountId], references: [id])
+  journalEntry    JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  account         ChartOfAccounts @relation(fields: [chartOfAccountId], references: [id])
 
   @@index([journalEntryId])
   @@index([chartOfAccountId])
 }
 
 model Account {
-  id        String @id @default(cuid()) @db.VarChar(191)
-  ownerType String @db.VarChar(50) // USER, PLATFORM_ESCROW, PLATFORM_FEE, PLATFORM_REVENUE, GATEWAY_SETTLEMENT, SUPPLIER_PAYABLE, TAX_PAYABLE
-  ownerId   String? @db.VarChar(191) // userId, supplierId, or '#platform' sentinel for platform-owned accounts
-  currency  String @default("IRR") @db.VarChar(10)
+  id          String        @id @default(cuid())
+  ownerType   String        // USER, PLATFORM_ESCROW, PLATFORM_FEE, PLATFORM_REVENUE, GATEWAY_SETTLEMENT, SUPPLIER_PAYABLE, TAX_PAYABLE
+  ownerId     String?       // userId, supplierId, or '#platform' sentinel for platform-owned accounts
+  currency    String        @default("IRR")
 
-  entries LedgerEntry[]
+  entries     LedgerEntry[]
 
   // Platform accounts share the '#platform' sentinel for clean uniqueness scoping.
   @@unique([ownerType, ownerId, currency])
 }
 
 model LedgerEntry {
-  id            String   @id @default(cuid()) @db.VarChar(191)
-  groupId       String   @db.VarChar(191) // Idempotency / Transaction grouping (Non-unique so double entry pairs share groupId)
-  accountId     String   @db.VarChar(191)
-  direction     String   @db.VarChar(20) // DEBIT, CREDIT
-  amount        Decimal  @db.Decimal(20, 4)
-  currency      String   @db.VarChar(10)
-  fxRate        Decimal  @default(1.0) @db.Decimal(20, 4)
-  baseAmount    Decimal? @db.Decimal(20, 4)
-  referenceType String?  @db.VarChar(50) // BOOKING, REFUND, TOPUP, SETTLEMENT, TAX, FEE, FX_SPREAD
-  referenceId   String?  @db.VarChar(191)
+  id            String   @id @default(cuid())
+  groupId       String   // Idempotency / Transaction grouping (Non-unique so double entry pairs share groupId)
+  accountId     String
+  direction     String   // DEBIT, CREDIT
+  amount        Decimal  
+  currency      String
+  fxRate        Decimal  @default(1.0)
+  baseAmount    Decimal?
+  referenceType String?  // BOOKING, REFUND, TOPUP, SETTLEMENT, TAX, FEE, FX_SPREAD
+  referenceId   String?  
   createdAt     DateTime @default(now())
-
-  account Account @relation(fields: [accountId], references: [id])
+  
+  account       Account  @relation(fields: [accountId], references: [id])
 
   @@index([accountId])
   @@index([groupId])
 }
 
 model PaymentIntent {
-  id             String   @id @default(cuid()) @db.VarChar(191)
-  bookingId      String   @db.VarChar(191)
-  amount         Decimal  @db.Decimal(20, 4)
-  currency       String   @default("IRR") @db.VarChar(10)
-  status         String   @default("INITIATED") @db.VarChar(50) // INITIATED, AUTHORIZED, CAPTURED, FAILED, VOIDED, PARTIALLY_REFUNDED, REFUNDED
-  idempotencyKey String   @unique @db.VarChar(191)
+  id             String           @id @default(cuid())
+  bookingId      String
+  amount         Decimal
+  currency       String           @default("IRR")
+  status         String           @default("INITIATED") // INITIATED, AUTHORIZED, CAPTURED, FAILED, VOIDED, PARTIALLY_REFUNDED, REFUNDED
+  idempotencyKey String           @unique
   expiresAt      DateTime
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
-  attempts PaymentAttempt[]
-  payments Payment[]
+  attempts       PaymentAttempt[]
+  payments       Payment[]
 
   @@index([bookingId])
   @@index([status])
 }
 
 model PaymentAttempt {
-  id              String   @id @default(cuid()) @db.VarChar(191)
-  paymentIntentId String   @db.VarChar(191)
-  gatewayName     String   @db.VarChar(100) // e.g. "SHETAB_SAMAN", "STRIPE", "WECHAT_PAY"
-  method          String   @db.VarChar(50) // card, wallet, qr
-  amount          Decimal  @db.Decimal(20, 4)
-  currency        String   @default("IRR") @db.VarChar(10)
-  status          String   @default("INITIATED") @db.VarChar(50) // INITIATED, PENDING_CUSTOMER, SUCCESS, FAILED
-  gatewayRef      String?  @db.VarChar(191)
-  rawPayload      String?  @db.Text // JSON
-  errorMessage    String?  @db.Text
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id              String               @id @default(cuid())
+  paymentIntentId String
+  gatewayName     String               // e.g. "SHETAB_SAMAN", "STRIPE", "WECHAT_PAY"
+  method          String               // card, wallet, qr
+  amount          Decimal
+  currency        String               @default("IRR")
+  status          String               @default("INITIATED") // INITIATED, PENDING_CUSTOMER, SUCCESS, FAILED
+  gatewayRef      String?
+  rawPayload      String?              // JSON
+  errorMessage    String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
 
-  paymentIntent PaymentIntent        @relation(fields: [paymentIntentId], references: [id], onDelete: Cascade)
-  transactions  GatewayTransaction[]
+  paymentIntent   PaymentIntent        @relation(fields: [paymentIntentId], references: [id], onDelete: Cascade)
+  transactions    GatewayTransaction[]
 
   @@index([paymentIntentId])
   @@index([gatewayRef])
 }
 
 model GatewayTransaction {
-  id              String   @id @default(cuid()) @db.VarChar(191)
-  attemptId       String   @db.VarChar(191)
-  gatewayName     String   @db.VarChar(100)
-  gatewayRef      String   @db.VarChar(191)
-  transactionType String   @db.VarChar(50) // SALE, CAPTURE, VOID, REFUND, VERIFY
-  amount          Decimal  @db.Decimal(20, 4)
-  currency        String   @default("IRR") @db.VarChar(10)
-  status          String   @db.VarChar(50) // SUCCESS, FAILED, PENDING
-  responseCode    String?  @db.VarChar(50)
-  rawResponse     String?  @db.Text // JSON
-  createdAt       DateTime @default(now())
+  id              String         @id @default(cuid())
+  attemptId       String
+  gatewayName     String
+  gatewayRef      String
+  transactionType String         // SALE, CAPTURE, VOID, REFUND, VERIFY
+  amount          Decimal
+  currency        String         @default("IRR")
+  status          String         // SUCCESS, FAILED, PENDING
+  responseCode    String?
+  rawResponse     String?        // JSON
+  createdAt       DateTime       @default(now())
 
-  attempt PaymentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  attempt         PaymentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
 
   @@index([attemptId])
   @@index([gatewayRef])
 }
 
 model WebhookEvent {
-  id              String    @id @default(cuid()) @db.VarChar(191)
-  gatewayName     String    @db.VarChar(100)
-  eventId         String    @db.VarChar(191)
-  eventType       String    @db.VarChar(100)
-  signature       String?   @db.VarChar(255)
-  payload         String    @db.Text // JSON
-  status          String    @default("RECEIVED") @db.VarChar(50) // RECEIVED, VERIFIED, PROCESSED, REJECTED, DUPLICATE
+  id              String    @id @default(cuid())
+  gatewayName     String
+  eventId         String
+  eventType       String
+  signature       String?
+  payload         String    // JSON
+  status          String    @default("RECEIVED") // RECEIVED, VERIFIED, PROCESSED, REJECTED, DUPLICATE
   processedAt     DateTime?
-  rejectionReason String?   @db.Text
+  rejectionReason String?
   createdAt       DateTime  @default(now())
 
   @@unique([gatewayName, eventId])
@@ -361,20 +360,20 @@ model WebhookEvent {
 }
 
 model Payment {
-  id              String   @id @default(cuid()) @db.VarChar(191)
-  bookingId       String?  @db.VarChar(191)
-  paymentIntentId String?  @db.VarChar(191) // Canonical trace chain: Payment → PaymentIntent → Attempts (PAY-004)
-  idempotencyKey  String   @unique @db.VarChar(191)
-  method          String   @db.VarChar(50) // wallet_irr, gateway_shetab, wallet_usdt, wechat_pay, telegram_pay, etc
-  gatewayRef      String?  @db.VarChar(191)
-  amount          Decimal  @db.Decimal(20, 4)
-  currency        String   @default("IRR") @db.VarChar(10)
-  status          String   @default("PENDING") @db.VarChar(50) // PENDING, SUCCESS, FAILED, REFUNDED
-  rawPayload      String?  @db.Text // JSON
+  id              String         @id @default(cuid())
+  bookingId       String?
+  paymentIntentId String?        // Canonical trace chain: Payment → PaymentIntent → Attempts (PAY-004)
+  idempotencyKey  String         @unique
+  method          String   // wallet_irr, gateway_shetab, wallet_usdt, wechat_pay, telegram_pay, etc
+  gatewayRef      String?
+  amount          Decimal
+  currency        String   @default("IRR")
+  status          String   @default("PENDING") // PENDING, SUCCESS, FAILED, REFUNDED
+  rawPayload      String?  // JSON
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  paymentIntent PaymentIntent? @relation(fields: [paymentIntentId], references: [id], onDelete: SetNull)
+  paymentIntent   PaymentIntent? @relation(fields: [paymentIntentId], references: [id], onDelete: SetNull)
 
   @@index([bookingId])
   @@index([paymentIntentId])
@@ -476,22 +475,22 @@ model CryptoPaymentReceipt {
 // ==================== 3. Core: Trip & Booking State Machine ====================
 
 model Trip {
-  id             String   @id @default(cuid()) @db.VarChar(191)
-  reference      String   @unique @db.VarChar(100) // e.g., TRP-10021
-  userId         String   @db.VarChar(191)
-  organizationId String?  @db.VarChar(191) // B2B Multi-tenancy (IAM-103)
-  branchId       String?  @db.VarChar(191) // B2B Branch Scoping (IAM-103)
-  title          String   @default("My Journey") @db.VarChar(255)
-  status         String   @default("PLANNING") @db.VarChar(50) // PLANNING, BOOKED, IN_PROGRESS, COMPLETED, CANCELLED
-  startDate      String?  @db.VarChar(50) // YYYY-MM-DD
-  endDate        String?  @db.VarChar(50) // YYYY-MM-DD
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id              String              @id @default(cuid())
+  reference       String              @unique // e.g., TRP-10021
+  userId          String
+  organizationId  String?             // B2B Multi-tenancy (IAM-103)
+  branchId        String?             // B2B Branch Scoping (IAM-103)
+  title           String              @default("My Journey")
+  status          String              @default("PLANNING") // PLANNING, BOOKED, IN_PROGRESS, COMPLETED, CANCELLED
+  startDate       String?             // YYYY-MM-DD
+  endDate         String?             // YYYY-MM-DD
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
-  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organization?       @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  branch       OrganizationBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
-  bookings     Booking[]
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization    Organization?       @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  branch          OrganizationBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  bookings        Booking[]
 
   @@index([userId])
   @@index([organizationId])
@@ -537,6 +536,7 @@ model Booking {
   referral        BookingReferral?
   cardReceipts    CardTransferReceipt[]
   cryptoReceipts  CryptoPaymentReceipt[]
+  
   @@index([customerId])
   @@index([organizationId])
   @@index([branchId])
@@ -547,63 +547,63 @@ model Booking {
 }
 
 model BookingStatusHistory {
-  id            String   @id @default(cuid()) @db.VarChar(191)
-  bookingId     String   @db.VarChar(191)
-  fromStatus    String   @db.VarChar(50)
-  toStatus      String   @db.VarChar(50)
-  actor         String   @default("SYSTEM") @db.VarChar(191) // User ID or SYSTEM
-  reason        String?  @db.Text
-  correlationId String?  @db.VarChar(191)
+  id            String   @id @default(cuid())
+  bookingId     String
+  fromStatus    String
+  toStatus      String
+  actor         String   @default("SYSTEM") // User ID or SYSTEM
+  reason        String?
+  correlationId String?
   createdAt     DateTime @default(now())
 
-  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@index([bookingId])
   @@index([createdAt])
 }
 
 model PriceSnapshot {
-  id             String   @id @default(cuid()) @db.VarChar(191)
-  bookingId      String   @db.VarChar(191)
-  baseAmount     Decimal  @db.Decimal(20, 4)
-  markupAmount   Decimal  @default(0) @db.Decimal(20, 4)
-  serviceFee     Decimal  @default(0) @db.Decimal(20, 4)
-  taxAmount      Decimal  @default(0) @db.Decimal(20, 4)
-  discountAmount Decimal  @default(0) @db.Decimal(20, 4)
-  sellPrice      Decimal  @db.Decimal(20, 4)
-  currency       String   @default("IRR") @db.VarChar(10)
-  fxRate         Decimal  @default(1.0) @db.Decimal(20, 4)
-  baseCurrency   String?  @default("IRR") @db.VarChar(10)
-  breakdownJson  String?  @db.Text // Detailed line items and rules applied
+  id             String   @id @default(cuid())
+  bookingId      String
+  baseAmount     Decimal
+  markupAmount   Decimal  @default(0)
+  serviceFee     Decimal  @default(0)
+  taxAmount      Decimal  @default(0)
+  discountAmount Decimal  @default(0)
+  sellPrice      Decimal
+  currency       String   @default("IRR")
+  fxRate         Decimal  @default(1.0)
+  baseCurrency   String?  @default("IRR")
+  breakdownJson  String?  // Detailed line items and rules applied
   createdAt      DateTime @default(now())
 
-  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking        Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@index([bookingId])
 }
 
 // Refund Domain & Reconciliation (REF-001, REF-002)
 model Refund {
-  id              String    @id @default(cuid()) @db.VarChar(191)
-  refundNumber    String    @unique @db.VarChar(100) // e.g. RFD-2026-0001
-  bookingId       String    @db.VarChar(191)
-  amount          Decimal   @db.Decimal(20, 4)
-  penaltyAmount   Decimal   @default(0) @db.Decimal(20, 4)
-  netRefundAmount Decimal   @db.Decimal(20, 4)
-  currency        String    @default("IRR") @db.VarChar(10)
-  status          String    @default("REQUESTED") @db.VarChar(50) // REQUESTED, ELIGIBILITY_CHECKED, APPROVED, SETTLED, COMPLETED, REJECTED
-  reason          String?   @db.Text
-  idempotencyKey  String    @unique @db.VarChar(191)
-  approvedBy      String?   @db.VarChar(191)
+  id              String         @id @default(cuid())
+  refundNumber    String         @unique // e.g. RFD-2026-0001
+  bookingId       String
+  amount          Decimal
+  penaltyAmount   Decimal        @default(0)
+  netRefundAmount Decimal
+  currency        String         @default("IRR")
+  status          String         @default("REQUESTED") // REQUESTED, ELIGIBILITY_CHECKED, APPROVED, SETTLED, COMPLETED, REJECTED
+  reason          String?
+  idempotencyKey  String         @unique
+  approvedBy      String?
   settledAt       DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
-  booking        Booking               @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  items          RefundItem[]
-  policySnapshot RefundPolicySnapshot?
-  approvals      RefundApproval[]
-  attempts       RefundAttempt[]
+  booking         Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  items           RefundItem[]
+  policySnapshot  RefundPolicySnapshot?
+  approvals       RefundApproval[]
+  attempts        RefundAttempt[]
 
   @@index([bookingId])
   @@index([status])
@@ -611,64 +611,64 @@ model Refund {
 
 // Immutable policy inputs captured when the refund was requested (REF-004)
 model RefundPolicySnapshot {
-  id                     String   @id @default(cuid()) @db.VarChar(191)
-  refundId               String   @unique @db.VarChar(191)
-  bookingId              String   @db.VarChar(191)
-  bookingStatusAtRequest String   @db.VarChar(50)
-  penaltyPercentage      Decimal  @db.Decimal(20, 4)
-  policyVersion          String   @default("v1") @db.VarChar(50)
-  rulesJson              String   @default("{}") @db.Text // Immutable rule inputs (gross, penalty, net, reason)
+  id                     String   @id @default(cuid())
+  refundId               String   @unique
+  bookingId              String
+  bookingStatusAtRequest String
+  penaltyPercentage      Decimal
+  policyVersion          String   @default("v1")
+  rulesJson              String   @default("{}") // Immutable rule inputs (gross, penalty, net, reason)
   capturedAt             DateTime @default(now())
 
-  refund Refund @relation(fields: [refundId], references: [id], onDelete: Cascade)
+  refund                 Refund   @relation(fields: [refundId], references: [id], onDelete: Cascade)
 
   @@index([bookingId])
 }
 
 // Human/automated approval trail (REF-005)
 model RefundApproval {
-  id         String   @id @default(cuid()) @db.VarChar(191)
-  refundId   String   @db.VarChar(191)
-  approverId String   @db.VarChar(191) // User id or SYSTEM
-  decision   String   @db.VarChar(50) // APPROVED, REJECTED
-  note       String?  @db.Text
-  decidedAt  DateTime @default(now())
+  id          String   @id @default(cuid())
+  refundId    String
+  approverId  String   // User id or SYSTEM
+  decision    String   // APPROVED, REJECTED
+  note        String?
+  decidedAt   DateTime @default(now())
 
-  refund Refund @relation(fields: [refundId], references: [id], onDelete: Cascade)
+  refund      Refund   @relation(fields: [refundId], references: [id], onDelete: Cascade)
 
   @@index([refundId])
 }
 
 // Execution attempts of the actual money movement (REF-006)
 model RefundAttempt {
-  id            String   @id @default(cuid()) @db.VarChar(191)
-  refundId      String   @db.VarChar(191)
+  id            String   @id @default(cuid())
+  refundId      String
   attemptNumber Int      @default(1)
-  channel       String   @db.VarChar(50) // WALLET, GATEWAY, MANUAL
-  amount        Decimal  @db.Decimal(20, 4)
-  currency      String   @default("IRR") @db.VarChar(10)
-  status        String   @default("PENDING") @db.VarChar(50) // PENDING, SUCCESS, FAILED
-  gatewayRef    String?  @db.VarChar(191)
-  errorMessage  String?  @db.Text
+  channel       String   // WALLET, GATEWAY, MANUAL
+  amount        Decimal
+  currency      String   @default("IRR")
+  status        String   @default("PENDING") // PENDING, SUCCESS, FAILED
+  gatewayRef    String?
+  errorMessage  String?
   attemptedAt   DateTime @default(now())
 
-  refund Refund @relation(fields: [refundId], references: [id], onDelete: Cascade)
+  refund        Refund   @relation(fields: [refundId], references: [id], onDelete: Cascade)
 
   @@unique([refundId, attemptNumber])
   @@index([refundId])
 }
 
 model RefundItem {
-  id            String  @id @default(cuid()) @db.VarChar(191)
-  refundId      String  @db.VarChar(191)
-  bookingItemId String  @db.VarChar(191)
-  amount        Decimal @db.Decimal(20, 4)
-  penalty       Decimal @default(0) @db.Decimal(20, 4)
-  netAmount     Decimal @db.Decimal(20, 4)
-  currency      String  @default("IRR") @db.VarChar(10)
+  id              String         @id @default(cuid())
+  refundId        String
+  bookingItemId   String
+  amount          Decimal
+  penalty         Decimal        @default(0)
+  netAmount       Decimal
+  currency        String         @default("IRR")
 
-  refund      Refund      @relation(fields: [refundId], references: [id], onDelete: Cascade)
-  bookingItem BookingItem @relation(fields: [bookingItemId], references: [id], onDelete: Cascade)
+  refund          Refund         @relation(fields: [refundId], references: [id], onDelete: Cascade)
+  bookingItem     BookingItem    @relation(fields: [bookingItemId], references: [id], onDelete: Cascade)
 
   @@index([refundId])
   @@index([bookingItemId])
@@ -676,25 +676,25 @@ model RefundItem {
 
 // Invoicing & Commercial Billing (FIN-006)
 model Invoice {
-  id             String    @id @default(cuid()) @db.VarChar(191)
-  invoiceNumber  String    @unique @db.VarChar(100) // e.g. INV-2026-0001
-  bookingId      String    @db.VarChar(191)
-  customerId     String    @db.VarChar(191)
-  organizationId String?   @db.VarChar(191) // B2B Multi-tenancy (IAM-103)
-  branchId       String?   @db.VarChar(191) // B2B Branch Scoping (IAM-103)
-  totalAmount    Decimal   @db.Decimal(20, 4)
-  taxAmount      Decimal   @default(0) @db.Decimal(20, 4)
-  netAmount      Decimal   @db.Decimal(20, 4)
-  currency       String    @default("IRR") @db.VarChar(10)
-  status         String    @default("ISSUED") @db.VarChar(50) // ISSUED, PAID, VOIDED, REFUNDED
-  issuedAt       DateTime  @default(now())
-  dueAt          DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id              String              @id @default(cuid())
+  invoiceNumber   String              @unique // e.g. INV-2026-0001
+  bookingId       String
+  customerId      String
+  organizationId  String?             // B2B Multi-tenancy (IAM-103)
+  branchId        String?             // B2B Branch Scoping (IAM-103)
+  totalAmount     Decimal
+  taxAmount       Decimal             @default(0)
+  netAmount       Decimal
+  currency        String              @default("IRR")
+  status          String              @default("ISSUED") // ISSUED, PAID, VOIDED, REFUNDED
+  issuedAt        DateTime            @default(now())
+  dueAt           DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
-  organization Organization?       @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  branch       OrganizationBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
-  lines        InvoiceLine[]
+  organization    Organization?       @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  branch          OrganizationBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  lines           InvoiceLine[]
 
   @@index([bookingId])
   @@index([customerId])
@@ -704,34 +704,34 @@ model Invoice {
 }
 
 model InvoiceLine {
-  id          String  @id @default(cuid()) @db.VarChar(191)
-  invoiceId   String  @db.VarChar(191)
-  description String  @db.Text
-  quantity    Int     @default(1)
-  unitPrice   Decimal @db.Decimal(20, 4)
-  totalPrice  Decimal @db.Decimal(20, 4)
-  taxAmount   Decimal @default(0) @db.Decimal(20, 4)
+  id              String         @id @default(cuid())
+  invoiceId       String
+  description     String
+  quantity        Int            @default(1)
+  unitPrice       Decimal
+  totalPrice      Decimal
+  taxAmount       Decimal        @default(0)
 
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoice         Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([invoiceId])
 }
 
 // Commission Engine & Multi-Tier Partner Rules (COMM-001)
 model CommissionRule {
-  id             String    @id @default(cuid()) @db.VarChar(191)
-  name           String    @db.VarChar(191)
-  targetType     String    @db.VarChar(50) // "AGENCY", "AGENT", "AFFILIATE", "PARTNER"
-  targetId       String?   @db.VarChar(191) // Specific organizationId or null for global
-  productType    String    @db.VarChar(50) // "FLIGHT", "HOTEL", "TOUR", "ALL"
-  ratePercentage Decimal   @default(0.0) @db.Decimal(20, 4) // e.g. 0.05 for 5%
-  fixedFee       Decimal   @default(0.0) @db.Decimal(20, 4)
-  currency       String    @default("IRR") @db.VarChar(10)
-  validFrom      DateTime  @default(now())
-  validTo        DateTime?
-  isActive       Boolean   @default(true)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id              String         @id @default(cuid())
+  name            String
+  targetType      String         // "AGENCY", "AGENT", "AFFILIATE", "PARTNER"
+  targetId        String?        // Specific organizationId or null for global
+  productType     String         // "FLIGHT", "HOTEL", "TOUR", "ALL"
+  ratePercentage  Decimal        @default(0.0) // e.g. 0.05 for 5%
+  fixedFee        Decimal        @default(0.0)
+  currency        String         @default("IRR")
+  validFrom       DateTime       @default(now())
+  validTo         DateTime?
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   @@index([targetType, targetId])
   @@index([productType])
@@ -739,23 +739,23 @@ model CommissionRule {
 
 // Supplier Settlement Batches (SET-001)
 model SettlementBatch {
-  id              String   @id @default(cuid()) @db.VarChar(191)
-  batchNumber     String   @unique @db.VarChar(100) // e.g. STLB-2026-W36
-  supplierId      String   @db.VarChar(191)
-  organizationId  String?  @db.VarChar(191) // B2B Multi-tenancy (IAM-103)
-  branchId        String?  @db.VarChar(191) // B2B Branch Scoping (IAM-103)
+  id              String              @id @default(cuid())
+  batchNumber     String              @unique // e.g. STLB-2026-W36
+  supplierId      String
+  organizationId  String?             // B2B Multi-tenancy (IAM-103)
+  branchId        String?             // B2B Branch Scoping (IAM-103)
   periodStart     DateTime
   periodEnd       DateTime
-  totalPayable    Decimal  @db.Decimal(20, 4)
-  totalDeductions Decimal  @default(0) @db.Decimal(20, 4)
-  netSettlement   Decimal  @db.Decimal(20, 4)
-  currency        String   @default("IRR") @db.VarChar(10)
-  status          String   @default("OPEN") @db.VarChar(50) // OPEN, SUBMITTED, RECONCILED, COMPLETED
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  totalPayable    Decimal
+  totalDeductions Decimal             @default(0)
+  netSettlement   Decimal
+  currency        String              @default("IRR")
+  status          String              @default("OPEN") // OPEN, SUBMITTED, RECONCILED, COMPLETED
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
-  organization Organization?       @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  branch       OrganizationBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  organization    Organization?       @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  branch          OrganizationBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
 
   @@index([supplierId])
   @@index([organizationId])
@@ -764,20 +764,20 @@ model SettlementBatch {
 }
 
 model BookingItem {
-  id              String   @id @default(cuid()) @db.VarChar(191)
-  bookingId       String   @db.VarChar(191)
-  inventoryItemId String?  @db.VarChar(191)
-  type            String   @db.VarChar(50) // FLIGHT, HOTEL, VISA, TOUR, TRANSFER, etc
-  netCost         Decimal  @db.Decimal(20, 4) // cost from supplier
-  markup          Decimal  @db.Decimal(20, 4) // platform profit
-  taxAmount       Decimal  @default(0) @db.Decimal(20, 4)
-  feeAmount       Decimal  @default(0) @db.Decimal(20, 4)
-  sellPrice       Decimal  @db.Decimal(20, 4) // final price for customer
-  details         String   @default("{}") @db.Text // JSON details
-
-  booking       Booking        @relation(fields: [bookingId], references: [id])
-  inventoryItem InventoryItem? @relation(fields: [inventoryItemId], references: [id])
-  refundItems   RefundItem[]
+  id              String   @id @default(cuid())
+  bookingId       String
+  inventoryItemId String?
+  type            String   // FLIGHT, HOTEL, VISA, TOUR, TRANSFER, etc
+  netCost         Decimal  // cost from supplier
+  markup          Decimal  // platform profit
+  taxAmount       Decimal  @default(0)
+  feeAmount       Decimal  @default(0)
+  sellPrice       Decimal  // final price for customer
+  details         String   @default("{}") // JSON details
+  
+  booking         Booking  @relation(fields: [bookingId], references: [id])
+  inventoryItem   InventoryItem? @relation(fields: [inventoryItemId], references: [id])
+  refundItems     RefundItem[]
 
   @@index([bookingId])
   @@index([inventoryItemId])
@@ -786,125 +786,123 @@ model BookingItem {
 // ==================== 4. Suppliers & Inventory Engine ====================
 
 model Supplier {
-  id        String   @id @default(cuid()) @db.VarChar(191)
-  name      String   @db.VarChar(191)
-  type      String   @db.VarChar(50) // HOTEL | AIRLINE | TOUR_OPERATOR | INSURANCE
-  mode      String   @default("ALLOTMENT") @db.VarChar(50) // REALTIME_API, ALLOTMENT, ON_REQUEST
-  contact   String?  @db.VarChar(255)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-
-  inventoryItems InventoryItem[]
-  contracts      SupplierContract[]
-  connections    SupplierConnection[]
-  healthRecords  SupplierHealth[]
-  statements     SupplierStatement[]
+  id              String               @id @default(cuid())
+  name            String
+  type            String               // HOTEL | AIRLINE | TOUR_OPERATOR | INSURANCE
+  mode            String               @default("ALLOTMENT") // REALTIME_API, ALLOTMENT, ON_REQUEST
+  contact         String?
+  isActive        Boolean              @default(true)
+  createdAt       DateTime             @default(now())
+  
+  inventoryItems  InventoryItem[]
+  contracts       SupplierContract[]
+  connections     SupplierConnection[]
+  healthRecords   SupplierHealth[]
+  statements      SupplierStatement[]
 
   @@index([type])
 }
 
 // Supplier Connection & Credential Reference (SUP-001)
 model SupplierConnection {
-  id          String   @id @default(cuid()) @db.VarChar(191)
-  supplierId  String   @db.VarChar(191)
-  productType String   @db.VarChar(50) // "FLIGHT", "HOTEL", "TRANSFER"
-  baseUrl     String   @db.VarChar(255)
-  environment String   @default("PRODUCTION") @db.VarChar(50) // PRODUCTION, SANDBOX, DEMO
-  timeoutMs   Int      @default(5000)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String               @id @default(cuid())
+  supplierId      String
+  productType     String               // "FLIGHT", "HOTEL", "TRANSFER"
+  baseUrl         String
+  environment     String               @default("PRODUCTION") // PRODUCTION, SANDBOX, DEMO
+  timeoutMs       Int                  @default(5000)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
 
-  supplier    Supplier             @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-  credentials SupplierCredential[]
+  supplier        Supplier             @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  credentials     SupplierCredential[]
 
   @@index([supplierId])
 }
 
 model SupplierCredential {
-  id                   String    @id @default(cuid()) @db.VarChar(191)
-  supplierConnectionId String    @db.VarChar(191)
-  credentialRef        String    @db.VarChar(255) // Secret vault key reference (never plaintext)
+  id                   String             @id @default(cuid())
+  supplierConnectionId String
+  credentialRef        String             // Secret vault key reference (never plaintext)
   expiresAt            DateTime?
-  rotationState        String    @default("ACTIVE") @db.VarChar(50) // ACTIVE, ROTATING, DEPRECATED
-  createdAt            DateTime  @default(now())
+  rotationState        String             @default("ACTIVE") // ACTIVE, ROTATING, DEPRECATED
+  createdAt            DateTime           @default(now())
 
-  connection SupplierConnection @relation(fields: [supplierConnectionId], references: [id], onDelete: Cascade)
+  connection           SupplierConnection @relation(fields: [supplierConnectionId], references: [id], onDelete: Cascade)
 
   @@index([supplierConnectionId])
 }
 
 model SupplierHealth {
-  id          String   @id @default(cuid()) @db.VarChar(191)
-  supplierId  String   @db.VarChar(191)
+  id          String   @id @default(cuid())
+  supplierId  String
   successRate Float    @default(100.0) // Percentage 0 - 100
   timeoutRate Float    @default(0.0)
-  latencyP50  Int      @default(350) // Milliseconds
+  latencyP50  Int      @default(350)   // Milliseconds
   latencyP95  Int      @default(900)
   errorRate   Float    @default(0.0)
   windowStart DateTime @default(now())
   windowEnd   DateTime @default(now())
 
-  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  supplier    Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 
   @@index([supplierId])
 }
 
 model SupplierStatement {
-  id              String   @id @default(cuid()) @db.VarChar(191)
-  supplierId      String   @db.VarChar(191)
-  statementNumber String   @unique @db.VarChar(100) // e.g. STMT-MAHAN-2026-09
+  id              String   @id @default(cuid())
+  supplierId      String
+  statementNumber String   @unique // e.g. STMT-MAHAN-2026-09
   periodStart     DateTime
   periodEnd       DateTime
-  totalAmount     Decimal  @db.Decimal(20, 4)
-  currency        String   @default("IRR") @db.VarChar(10)
-  status          String   @default("PENDING") @db.VarChar(50) // PENDING, RECONCILED, DISCREPANCY, SETTLED
-  rawJson         String?  @db.Text // Statement lines snapshot
+  totalAmount     Decimal
+  currency        String   @default("IRR")
+  status          String   @default("PENDING") // PENDING, RECONCILED, DISCREPANCY, SETTLED
+  rawJson         String?  // Statement lines snapshot
   createdAt       DateTime @default(now())
 
-  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  supplier        Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 
   @@index([supplierId])
 }
 
 model SupplierContract {
-  id          String   @id @default(cuid()) @db.VarChar(191)
-  supplierId  String   @db.VarChar(191)
-  pricingType String   @default("NET_RATE") @db.VarChar(50) // NET_RATE, COMMISSION
-  commission  Decimal  @default(0.0) @db.Decimal(20, 4)
-  creditLimit Decimal  @default(0) @db.Decimal(20, 4)
-  currency    String   @default("IRR") @db.VarChar(10)
-  termsJson   String   @default("{}") @db.Text
-  createdAt   DateTime @default(now())
+  id           String   @id @default(cuid())
+  supplierId   String
+  pricingType  String   @default("NET_RATE") // NET_RATE, COMMISSION
+  commission   Decimal  @default(0.0)
+  creditLimit  Decimal  @default(0)
+  currency     String   @default("IRR")
+  termsJson    String   @default("{}")
+  createdAt    DateTime @default(now())
 
-  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-
-  @@index([supplierId])
+  supplier     Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 }
 
 model InventoryItem {
-  id         String   @id @default(cuid()) @db.VarChar(191)
-  supplierId String   @db.VarChar(191)
-  type       String   @db.VarChar(50) // HOTEL_ROOM, FLIGHT_SEAT, TOUR_SLOT
-  code       String?  @db.VarChar(100) // e.g. H1_ROOM_DELUXE
-  name       String   @db.VarChar(255)
-  basePrice  Decimal  @db.Decimal(20, 4)
-  currency   String   @default("IRR") @db.VarChar(10)
-
-  supplier     Supplier        @relation(fields: [supplierId], references: [id])
-  allotments   Allotment[]
-  holds        InventoryHold[]
+  id          String   @id @default(cuid())
+  supplierId  String
+  type        String   // HOTEL_ROOM, FLIGHT_SEAT, TOUR_SLOT
+  code        String?  // e.g. H1_ROOM_DELUXE
+  name        String
+  basePrice   Decimal  
+  currency    String   @default("IRR")
+  
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+  allotments  Allotment[]
+  holds       InventoryHold[]
   bookingItems BookingItem[]
 
   @@index([supplierId])
 }
 
 model Allotment {
-  id              String  @id @default(cuid()) @db.VarChar(191)
-  inventoryItemId String  @db.VarChar(191)
-  date            String  @db.VarChar(50) // YYYY-MM-DD
-  total           Int     @default(1)
-  booked          Int     @default(0)
-  stopSell        Boolean @default(false)
+  id            String   @id @default(cuid())
+  inventoryItemId String
+  date          String   // YYYY-MM-DD
+  total         Int      @default(1)
+  booked        Int      @default(0)
+  stopSell      Boolean  @default(false)
 
   inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
 
@@ -913,17 +911,17 @@ model Allotment {
 }
 
 model InventoryHold {
-  id              String   @id @default(cuid()) @db.VarChar(191)
-  inventoryItemId String   @db.VarChar(191)
-  allotmentDate   String   @db.VarChar(50) // YYYY-MM-DD
-  token           String   @unique @db.VarChar(191)
+  id              String   @id @default(cuid())
+  inventoryItemId String
+  allotmentDate   String   // YYYY-MM-DD
+  token           String   @unique
   quantity        Int      @default(1)
-  bookingId       String?  @db.VarChar(191)
+  bookingId       String?
   expiresAt       DateTime
-  status          String   @default("ACTIVE") @db.VarChar(50) // ACTIVE, CAPTURED, RELEASED, EXPIRED
+  status          String   @default("ACTIVE") // ACTIVE, CAPTURED, RELEASED, EXPIRED
   createdAt       DateTime @default(now())
 
-  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
 
   @@index([token])
   @@index([expiresAt])
@@ -933,22 +931,22 @@ model InventoryHold {
 // ==================== 5. Reliability & Workflow ====================
 
 model AuditLog {
-  id             String   @id @default(cuid()) @db.VarChar(191)
-  userId         String?  @db.VarChar(191)
-  organizationId String?  @db.VarChar(191)
-  action         String   @db.VarChar(100)
-  resource       String   @db.VarChar(100)
-  resourceId     String   @db.VarChar(191)
-  oldData        String?  @db.Text // JSON
-  newData        String?  @db.Text // JSON
-  reason         String?  @db.Text // Mandatory for sensitive actions (AUD-001)
-  requestId      String?  @db.VarChar(191)
-  correlationId  String?  @db.VarChar(191)
-  ipAddress      String?  @db.VarChar(50)
-  userAgent      String?  @db.Text
-  createdAt      DateTime @default(now())
-
-  user User? @relation(fields: [userId], references: [id])
+  id             String    @id @default(cuid())
+  userId         String?
+  organizationId String?
+  action         String
+  resource       String
+  resourceId     String
+  oldData        String?   // JSON
+  newData        String?   // JSON
+  reason         String?   // Mandatory for sensitive actions (AUD-001)
+  requestId      String?
+  correlationId  String?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime  @default(now())
+  
+  user           User?     @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([resource, resourceId])
@@ -957,19 +955,19 @@ model AuditLog {
 }
 
 model OutboxEvent {
-  id            String    @id @default(cuid()) @db.VarChar(191)
-  eventType     String    @db.VarChar(100) // e.g., "BOOKING_PAID", "BOOKING_CONFIRMED", "REFUND_REQUESTED", "AUTH_OTP_REQUESTED", "VOUCHER_ISSUED", "NOTIFICATION_SENT"
-  aggregateType String?   @db.VarChar(100) // e.g., "BOOKING", "PAYMENT", "INVENTORY", "REFUND"
-  aggregateId   String?   @db.VarChar(191)
-  correlationId String?   @db.VarChar(191)
-  causationId   String?   @db.VarChar(191)
-  payload       String    @db.Text // JSON
-  status        String    @default("PENDING") @db.VarChar(50) // PENDING, CLAIMED, PROCESSING, PROCESSED, FAILED, DEAD_LETTER
+  id            String    @id @default(cuid())
+  eventType     String    // e.g., "BOOKING_PAID", "BOOKING_CONFIRMED", "REFUND_REQUESTED", "AUTH_OTP_REQUESTED", "VOUCHER_ISSUED", "NOTIFICATION_SENT"
+  aggregateType String?   // e.g., "BOOKING", "PAYMENT", "INVENTORY", "REFUND"
+  aggregateId   String?
+  correlationId String?
+  causationId   String?
+  payload       String    // JSON
+  status        String    @default("PENDING") // PENDING, CLAIMED, PROCESSING, PROCESSED, FAILED, DEAD_LETTER
   availableAt   DateTime  @default(now())
   lockedAt      DateTime?
-  workerId      String?   @db.VarChar(191)
+  workerId      String?
   retryCount    Int       @default(0)
-  lastError     String?   @db.Text
+  lastError     String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   processedAt   DateTime?
@@ -981,38 +979,38 @@ model OutboxEvent {
 
 // Durable Saga Execution Engine (ASYNC-003)
 model SagaExecution {
-  id            String    @id @default(cuid()) @db.VarChar(191)
-  sagaType      String    @db.VarChar(100) // e.g., "CONFIRM_BOOKING_SAGA", "CANCEL_REFUND_SAGA"
-  aggregateType String    @db.VarChar(100) // "BOOKING"
-  aggregateId   String    @db.VarChar(191)
-  correlationId String?   @db.VarChar(191)
-  status        String    @default("PENDING") @db.VarChar(50) // PENDING, RUNNING, SUCCEEDED, FAILED, COMPENSATING, COMPENSATED
-  currentStep   String?   @db.VarChar(100)
-  contextJson   String    @default("{}") @db.Text // JSON
+  id            String    @id @default(cuid())
+  sagaType      String    // e.g., "CONFIRM_BOOKING_SAGA", "CANCEL_REFUND_SAGA"
+  aggregateType String    // "BOOKING"
+  aggregateId   String
+  correlationId String?
+  status        String    @default("PENDING") // PENDING, RUNNING, SUCCEEDED, FAILED, COMPENSATING, COMPENSATED
+  currentStep   String?
+  contextJson   String    @default("{}") // JSON
   startedAt     DateTime  @default(now())
   finishedAt    DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  steps SagaStep[]
+  steps         SagaStep[]
 
   @@index([aggregateId])
   @@index([status])
 }
 
 model SagaStep {
-  id             String    @id @default(cuid()) @db.VarChar(191)
-  sagaId         String    @db.VarChar(191)
-  stepType       String    @db.VarChar(100) // e.g., "LOCK_INVENTORY", "CAPTURE_PAYMENT", "CALL_SUPPLIER", "POST_LEDGER"
-  status         String    @default("PENDING") @db.VarChar(50) // PENDING, RUNNING, SUCCEEDED, FAILED, COMPENSATED
-  attempts       Int       @default(0)
-  inputSnapshot  String?   @db.Text // JSON
-  resultSnapshot String?   @db.Text // JSON
-  error          String?   @db.Text
+  id             String         @id @default(cuid())
+  sagaId         String
+  stepType       String         // e.g., "LOCK_INVENTORY", "CAPTURE_PAYMENT", "CALL_SUPPLIER", "POST_LEDGER"
+  status         String         @default("PENDING") // PENDING, RUNNING, SUCCEEDED, FAILED, COMPENSATED
+  attempts       Int            @default(0)
+  inputSnapshot  String?        // JSON
+  resultSnapshot String?        // JSON
+  error          String?
   startedAt      DateTime?
   finishedAt     DateTime?
 
-  saga SagaExecution @relation(fields: [sagaId], references: [id], onDelete: Cascade)
+  saga           SagaExecution  @relation(fields: [sagaId], references: [id], onDelete: Cascade)
 
   @@index([sagaId])
   @@index([status])
@@ -1021,10 +1019,10 @@ model SagaStep {
 // Server-issued one-time passcodes for passwordless login.
 // The code itself is never stored in plaintext.
 model OtpVerification {
-  id         String    @id @default(cuid()) @db.VarChar(191)
-  identifier String    @db.VarChar(191)
-  channel    String    @db.VarChar(50) // phone, email, telegram, whatsapp, wechat
-  codeHash   String    @db.VarChar(255)
+  id         String    @id @default(cuid())
+  identifier String
+  channel    String    // phone, email, telegram, whatsapp, wechat
+  codeHash   String
   attempts   Int       @default(0)
   consumedAt DateTime?
   expiresAt  DateTime
@@ -1036,18 +1034,18 @@ model OtpVerification {
 
 // Exception Center & Discrepancy Registry (RECON-003, Section 24)
 model OperationalException {
-  id          String    @id @default(cuid()) @db.VarChar(191)
-  type        String    @db.VarChar(100) // PRICE_MISMATCH, PAYMENT_MISMATCH, SUPPLIER_TIMEOUT, TICKET_NOT_ISSUED, REFUND_TIMEOUT, FX_VARIANCE, DUPLICATE_BOOKING
-  severity    String    @default("MEDIUM") @db.VarChar(50) // LOW, MEDIUM, HIGH, CRITICAL
-  entityType  String    @db.VarChar(100) // "BOOKING", "PAYMENT", "SUPPLIER", "INVENTORY"
-  entityId    String    @db.VarChar(191)
-  title       String    @db.VarChar(255)
-  description String?   @db.Text
-  status      String    @default("OPEN") @db.VarChar(50) // OPEN, ACKNOWLEDGED, IN_PROGRESS, RESOLVED, CLOSED
-  ownerId     String?   @db.VarChar(191)
+  id          String    @id @default(cuid())
+  type        String    // PRICE_MISMATCH, PAYMENT_MISMATCH, SUPPLIER_TIMEOUT, TICKET_NOT_ISSUED, REFUND_TIMEOUT, FX_VARIANCE, DUPLICATE_BOOKING
+  severity    String    @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  entityType  String    // "BOOKING", "PAYMENT", "SUPPLIER", "INVENTORY"
+  entityId    String
+  title       String
+  description String?
+  status      String    @default("OPEN") // OPEN, ACKNOWLEDGED, IN_PROGRESS, RESOLVED, CLOSED
+  ownerId     String?
   slaDueAt    DateTime?
   detectedAt  DateTime  @default(now())
-  resolution  String?   @db.Text
+  resolution  String?
   closedAt    DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -1058,28 +1056,28 @@ model OperationalException {
 
 // Versioned Tax Engine (MONEY-003, Section 4)
 model TaxJurisdiction {
-  id          String    @id @default(cuid()) @db.VarChar(191)
-  code        String    @unique @db.VarChar(50) // e.g. "IR", "CN", "AE", "TR"
-  name        String    @db.VarChar(191)
-  countryCode String    @db.VarChar(10)
+  id          String    @id @default(cuid())
+  code        String    @unique // e.g. "IR", "CN", "AE", "TR"
+  name        String
+  countryCode String
   rules       TaxRule[]
 
   @@index([countryCode])
 }
 
 model TaxRule {
-  id             String    @id @default(cuid()) @db.VarChar(191)
-  jurisdictionId String    @db.VarChar(191)
-  category       String    @db.VarChar(50) // "GENERAL", "FLIGHT", "HOTEL", "TOUR", "TRANSFER", "EXEMPT"
-  ratePercentage Decimal   @db.Decimal(20, 4) // e.g. 0.09 for 9%
-  effectiveFrom  DateTime  @default(now())
-  effectiveTo    DateTime?
-  isActive       Boolean   @default(true)
-  description    String?   @db.Text
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id              String          @id @default(cuid())
+  jurisdictionId  String
+  category        String          // "GENERAL", "FLIGHT", "HOTEL", "TOUR", "TRANSFER", "EXEMPT"
+  ratePercentage  Decimal         // e.g. 0.09 for 9%
+  effectiveFrom   DateTime        @default(now())
+  effectiveTo     DateTime?
+  isActive        Boolean         @default(true)
+  description     String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
-  jurisdiction TaxJurisdiction @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
+  jurisdiction    TaxJurisdiction @relation(fields: [jurisdictionId], references: [id], onDelete: Cascade)
 
   @@index([jurisdictionId, category])
   @@index([effectiveFrom, effectiveTo])
@@ -1087,30 +1085,30 @@ model TaxRule {
 
 // ==================== Auto-Buy / Smart Purchase Rules ====================
 model AutoBuyRule {
-  id               String    @id @default(cuid()) @db.VarChar(191)
-  userId           String    @db.VarChar(191)
-  title            String    @db.VarChar(255)
-  serviceType      String    @db.VarChar(50) // TOURS, FLIGHTS, HOTELS
-  targetId         String?   @db.VarChar(191) // tour ID, hotel ID, flight number
-  origin           String?   @db.VarChar(100)
-  destination      String?   @db.VarChar(100)
-  targetDate       String    @db.VarChar(50) // YYYY-MM-DD
-  maxPrice         Decimal   @db.Decimal(20, 4)
-  currency         String    @default("IRR") @db.VarChar(10)
+  id               String    @id @default(cuid())
+  userId           String
+  title            String
+  serviceType      String    // TOURS, FLIGHTS, HOTELS
+  targetId         String?   // tour ID, hotel ID, flight number
+  origin           String?
+  destination      String?
+  targetDate       String    // YYYY-MM-DD
+  maxPrice         Decimal   @db.Decimal(18, 4)
+  currency         String    @default("IRR")
   passengerCount   Int       @default(1)
   passengerDetails String    @db.Text // JSON string of passengers
-  executionMode    String    @default("ON_CONDITIONS_MET") @db.VarChar(50) // ON_PRICE_DROP, ON_SCHEDULED_TIME, ON_INVENTORY_AVAILABLE, ON_CONDITIONS_MET
-  status           String    @default("ACTIVE") @db.VarChar(50) // ACTIVE, TRIGGERED, FULFILLED, FAILED_FUNDS, CANCELLED, EXPIRED
+  executionMode    String    @default("ON_CONDITIONS_MET") // ON_PRICE_DROP, ON_SCHEDULED_TIME, ON_INVENTORY_AVAILABLE, ON_CONDITIONS_MET
+  status           String    @default("ACTIVE") // ACTIVE, TRIGGERED, FULFILLED, FAILED_FUNDS, CANCELLED, EXPIRED
   scheduledAt      DateTime?
   lastCheckedAt    DateTime?
-  bookingId        String?   @db.VarChar(191)
-  failureReason    String?   @db.Text
+  bookingId        String?
+  failureReason    String?
   expiresAt        DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking          Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([status])
@@ -1121,42 +1119,42 @@ model AutoBuyRule {
 // ==================== Content Management: Tours, Experiences, Travelogues & Guides ====================
 
 model Tour {
-  id              String   @id @default(cuid()) @db.VarChar(191)
-  title           String   @db.VarChar(255)
-  titleEn         String   @db.VarChar(255)
-  city            String   @db.VarChar(100)
-  cityEn          String?  @db.VarChar(100)
-  country         String   @default("ایران") @db.VarChar(100)
-  countryEn       String?  @default("Iran") @db.VarChar(100)
-  durationDays    Int      @default(3)
-  durationNights  Int      @default(2)
-  price           Decimal  @db.Decimal(20, 4)
-  childPrice      Decimal? @db.Decimal(20, 4)
-  rating          Float    @default(5.0)
-  reviewsCount    Int      @default(0)
-  category        String   @default("cultural") @db.VarChar(50) // cultural, nature, medical, adventure
-  heroImage       String?  @db.Text
-  gallery         Json?
-  summary         String?  @db.Text
-  summaryEn       String?  @db.Text
-  description     String?  @db.Text
-  descriptionEn   String?  @db.Text
-  highlights      Json?
-  includes        Json?
-  excludes        Json?
-  hotelName       String?  @db.VarChar(255)
-  hotelStars      Int?     @default(5)
-  transportType   String?  @db.VarChar(100)
-  transportTypeEn String?  @db.VarChar(100)
-  groupSize       String?  @db.VarChar(100)
-  groupSizeEn     String?  @db.VarChar(100)
-  guideLanguages  Json?
-  isPublished     Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                 String              @id @default(cuid())
+  title              String
+  titleEn            String
+  city               String
+  cityEn             String?
+  country            String              @default("ایران")
+  countryEn          String?             @default("Iran")
+  durationDays       Int                 @default(3)
+  durationNights     Int                 @default(2)
+  price              Decimal             @db.Decimal(18, 4)
+  childPrice         Decimal?            @db.Decimal(18, 4)
+  rating             Float               @default(5.0)
+  reviewsCount       Int                 @default(0)
+  category           String              @default("cultural") // cultural, nature, medical, adventure
+  heroImage          String?
+  gallery            String[]            @default([])
+  summary            String?             @db.Text
+  summaryEn          String?             @db.Text
+  description        String?             @db.Text
+  descriptionEn      String?             @db.Text
+  highlights         String[]            @default([])
+  includes           String[]            @default([])
+  excludes           String[]            @default([])
+  hotelName          String?
+  hotelStars         Int?                @default(5)
+  transportType      String?
+  transportTypeEn    String?
+  groupSize          String?
+  groupSizeEn        String?
+  guideLanguages     String[]            @default(["فارسی"])
+  isPublished        Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
-  departureDates TourDepartureDate[]
-  itineraryDays  TourItineraryDay[]
+  departureDates     TourDepartureDate[]
+  itineraryDays      TourItineraryDay[]
 
   @@index([category])
   @@index([city])
@@ -1164,55 +1162,55 @@ model Tour {
 }
 
 model TourDepartureDate {
-  id             String   @id @default(cuid()) @db.VarChar(191)
-  tourId         String   @db.VarChar(191)
-  startDate      String   @db.VarChar(50) // YYYY-MM-DD
-  endDate        String   @db.VarChar(50) // YYYY-MM-DD
-  price          Decimal  @db.Decimal(20, 4)
-  childPrice     Decimal? @db.Decimal(20, 4)
+  id             String   @id @default(cuid())
+  tourId         String
+  startDate      String   // YYYY-MM-DD
+  endDate        String   // YYYY-MM-DD
+  price          Decimal  @db.Decimal(18, 4)
+  childPrice     Decimal? @db.Decimal(18, 4)
   availableSeats Int      @default(10)
   guaranteed     Boolean  @default(true)
 
-  tour Tour @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  tour           Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
 
   @@index([tourId])
 }
 
 model TourItineraryDay {
-  id            String  @id @default(cuid()) @db.VarChar(191)
-  tourId        String  @db.VarChar(191)
+  id            String   @id @default(cuid())
+  tourId        String
   day           Int
-  title         String  @db.VarChar(255)
-  titleEn       String? @db.VarChar(255)
-  description   String  @db.Text
-  activities    Json?
-  breakfast     Boolean @default(false)
-  lunch         Boolean @default(false)
-  dinner        Boolean @default(false)
-  accommodation String? @db.VarChar(255)
+  title         String
+  titleEn       String?
+  description   String   @db.Text
+  activities    String[] @default([])
+  breakfast     Boolean  @default(false)
+  lunch         Boolean  @default(false)
+  dinner        Boolean  @default(false)
+  accommodation String?
 
-  tour Tour @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  tour          Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
 
   @@index([tourId])
 }
 
 model SignatureExperience {
-  id        String   @id @default(cuid()) @db.VarChar(191)
-  countryId String   @db.VarChar(50) // iran, turkey, uae, georgia, russia, oman, china
-  category  String   @db.VarChar(50) // yacht, festival, culture, nature, wellness, adventure, theater, exhibition, nightlife
-  title     String   @db.VarChar(255)
-  titleEn   String   @db.VarChar(255)
-  desc      String   @db.Text
-  descEn    String   @db.Text
-  where     String   @db.VarChar(255)
-  whereEn   String   @db.VarChar(255)
-  when      String   @db.VarChar(255)
-  whenEn    String   @db.VarChar(255)
-  fromPrice Decimal  @db.Decimal(20, 4)
-  image     String?  @db.Text
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  countryId   String   // iran, turkey, uae, georgia, russia, oman, china
+  category    String   // yacht, festival, culture, nature, wellness, adventure, theater, exhibition, nightlife
+  title       String
+  titleEn     String
+  desc        String   @db.Text
+  descEn      String   @db.Text
+  where       String
+  whereEn     String
+  when        String
+  whenEn      String
+  fromPrice   Decimal  @db.Decimal(18, 4)
+  image       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([countryId])
   @@index([category])
@@ -1220,15 +1218,15 @@ model SignatureExperience {
 }
 
 model Travelogue {
-  id          String   @id @default(cuid()) @db.VarChar(191)
-  countryId   String   @default("iran") @db.VarChar(50)
-  titleFa     String   @db.VarChar(255)
-  titleEn     String   @db.VarChar(255)
-  destFa      String   @db.VarChar(255)
-  destEn      String   @db.VarChar(255)
-  userName    String   @db.VarChar(191)
-  userAvatar  String?  @db.Text
-  image       String   @db.Text
+  id          String   @id @default(cuid())
+  countryId   String   @default("iran")
+  titleFa     String
+  titleEn     String
+  destFa      String
+  destEn      String
+  userName    String
+  userAvatar  String?
+  image       String
   contentFa   String   @db.Text
   contentEn   String   @db.Text
   likesCount  Int      @default(0)
@@ -1241,17 +1239,17 @@ model Travelogue {
 }
 
 model GuideArticle {
-  id          String   @id @default(cuid()) @db.VarChar(191)
-  categoryFa  String   @db.VarChar(100)
-  categoryEn  String   @db.VarChar(100)
-  titleFa     String   @db.VarChar(255)
-  titleEn     String   @db.VarChar(255)
-  readTime    String   @default("۵ دقیقه") @db.VarChar(50)
+  id          String   @id @default(cuid())
+  categoryFa  String
+  categoryEn  String
+  titleFa     String
+  titleEn     String
+  readTime    String   @default("۵ دقیقه")
   excerptFa   String   @db.Text
   excerptEn   String   @db.Text
   bodyFa      String   @db.Text
   bodyEn      String   @db.Text
-  image       String?  @db.Text
+  image       String?
   isPublished Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -1262,38 +1260,38 @@ model GuideArticle {
 // ==================== Referral & Group Leader System ====================
 
 model ReferralCode {
-  id               String   @id @default(cuid()) @db.VarChar(191)
-  code             String   @unique @db.VarChar(100) // Uppercase, trimmed unique code (e.g. KOOH123)
-  leaderId         String   @db.VarChar(191)
-  isActive         Boolean  @default(true)
-  customTierConfig String?  @db.Text // Custom JSON overrides for reward tiers if any
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id               String            @id @default(cuid())
+  code             String            @unique // Uppercase, trimmed unique code (e.g. KOOH123)
+  leaderId         String
+  isActive         Boolean           @default(true)
+  customTierConfig String?           // Custom JSON overrides for reward tiers if any
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
-  leader      User               @relation(fields: [leaderId], references: [id], onDelete: Cascade)
-  referrals   BookingReferral[]
-  settlements LeaderSettlement[]
+  leader           User              @relation(fields: [leaderId], references: [id], onDelete: Cascade)
+  referrals        BookingReferral[]
+  settlements      LeaderSettlement[]
 
   @@index([code])
   @@index([leaderId])
 }
 
 model BookingReferral {
-  id                 String   @id @default(cuid()) @db.VarChar(191)
-  bookingId          String   @unique @db.VarChar(191) // Exactly one referral record per booking
-  referralCodeId     String?  @db.VarChar(191) // Nullable if code was invalid / unmatched
-  rawCode            String   @db.VarChar(100) // Raw entered code (trimmed and uppercase)
-  status             String   @default("VALID") @db.VarChar(50) // VALID, UNMATCHED, SELF_REFERRAL, INACTIVE
-  paxCount           Int      @default(1) // Confirmed traveler count for this booking
-  discountAmount     Decimal  @default(0) @db.Decimal(20, 4) // 5% discount amount in currency
-  discountPercent    Decimal  @default(0.05) @db.Decimal(20, 4) // Configured discount percentage applied
-  applied            Boolean  @default(true) // Whether the discount was applied or superseded by coupon
-  source             String   @default("WEB") @db.VarChar(50) // WEB, ADMIN, PHONE
-  registeredByUserId String?  @db.VarChar(191)
-  registeredAt       DateTime @default(now())
+  id                 String        @id @default(cuid())
+  bookingId          String        @unique // Exactly one referral record per booking
+  referralCodeId     String?       // Nullable if code was invalid / unmatched
+  rawCode            String        // Raw entered code (trimmed and uppercase)
+  status             String        @default("VALID") // VALID, UNMATCHED, SELF_REFERRAL, INACTIVE
+  paxCount           Int           @default(1) // Confirmed traveler count for this booking
+  discountAmount     Decimal       @default(0) // 5% discount amount in currency
+  discountPercent    Decimal       @default(0.05) // Configured discount percentage applied
+  applied            Boolean       @default(true) // Whether the discount was applied or superseded by coupon
+  source             String        @default("WEB") // WEB, ADMIN, PHONE
+  registeredByUserId String?
+  registeredAt       DateTime      @default(now())
 
-  booking      Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  referralCode ReferralCode? @relation(fields: [referralCodeId], references: [id], onDelete: SetNull)
+  booking            Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  referralCode       ReferralCode? @relation(fields: [referralCodeId], references: [id], onDelete: SetNull)
 
   @@index([referralCodeId])
   @@index([status])
@@ -1301,28 +1299,36 @@ model BookingReferral {
 }
 
 model LeaderSettlement {
-  id             String    @id @default(cuid()) @db.VarChar(191)
-  referralCodeId String    @db.VarChar(191)
-  qualifiedPax   Int // Number of confirmed passengers counted
-  rewardPercent  Decimal   @db.Decimal(20, 4) // Reward percentage earned (e.g. 0.25, 0.50, 1.00)
-  rewardAmount   Decimal   @db.Decimal(20, 4) // Calculated reward amount (IRR)
-  currency       String    @default("IRR") @db.VarChar(10)
-  status         String    @default("PENDING") @db.VarChar(50) // PENDING, APPROVED, SETTLED, REJECTED
+  id             String        @id @default(cuid())
+  referralCodeId String
+  qualifiedPax   Int           // Number of confirmed passengers counted
+  rewardPercent  Decimal       // Reward percentage earned (e.g. 0.25, 0.50, 1.00)
+  rewardAmount   Decimal       // Calculated reward amount (IRR)
+  currency       String        @default("IRR")
+  status         String        @default("PENDING") // PENDING, APPROVED, SETTLED, REJECTED
   settledAt      DateTime?
-  settledBy      String?   @db.VarChar(191)
-  notes          String?   @db.Text
-  createdAt      DateTime  @default(now())
+  settledBy      String?
+  notes          String?
+  createdAt      DateTime      @default(now())
 
-  referralCode ReferralCode @relation(fields: [referralCodeId], references: [id], onDelete: Cascade)
+  referralCode   ReferralCode  @relation(fields: [referralCodeId], references: [id], onDelete: Cascade)
 
   @@index([referralCodeId])
   @@index([status])
 }
 
+model SiteContent {
+  key       String   @id
+  payload   String   @db.Text
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // Distributed Worker Lease (ASYNC-102, ASYNC-103)
 model WorkerLease {
-  resourceName String   @id @db.VarChar(191)
-  holderId     String   @db.VarChar(191)
+  resourceName String   @id
+  holderId     String
   acquiredAt   DateTime @default(now())
   expiresAt    DateTime
   heartbeatAt  DateTime @default(now())
@@ -1330,3 +1336,5 @@ model WorkerLease {
 
   @@index([expiresAt])
 }
+
+

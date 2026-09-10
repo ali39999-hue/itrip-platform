@@ -7,8 +7,61 @@ import { useLocale } from 'next-intl';
 import { ArrowLeft, ArrowRight, Landmark, BedDouble, UserRound, Gem } from 'lucide-react';
 import { shimmerDataUrl } from '@/lib/image-utils';
 import { lt } from '@/lib/lt';
+import type { PromoBannerOverride } from '@/domains/content/SiteContentService';
 
-export function PromotionalBanners() {
+// fa/en snapshot of the shipped banners, used by the CMS editor as the
+// prefill when an admin starts customizing (ar/zh/ru then follow lt()'s
+// fallback chain instead of the inline five-locale defaults below).
+export const DEFAULT_PROMO_BANNERS: PromoBannerOverride[] = [
+  {
+    id: 'b1',
+    tag: { fa: 'تخفیف ویژه پرواز', en: 'Flight Deal' },
+    title: { fa: 'پروازهای رفت‌وبرگشت استانبول و دبی', en: 'Roundtrip Flights: Istanbul & Dubai' },
+    subtitle: {
+      fa: 'با برترین ایرلاین‌ها و امکان رزرو بلیت سیستمی با استرداد بدون جریمه',
+      en: 'Top airlines with systemic booking and fee-free refund guarantee',
+    },
+    cta: { fa: 'مشاهده پروازها', en: 'View Flights' },
+    href: '/flights/search?from=Tehran&to=Istanbul',
+    img: 'https://images.unsplash.com/photo-1500835556837-99ac94a94552?auto=format&fit=crop&q=75&w=800',
+    gradient: 'from-[#033b3a] via-[#045956] to-[#00a9a5]',
+    badgeBg: 'bg-mint text-brand-dark',
+    icon: 'Plane',
+  },
+  {
+    id: 'b2',
+    tag: { fa: 'اقامت لوکس', en: 'Luxury Stay' },
+    title: { fa: 'هتل‌های ۵ ستاره مشهد و کیش با صبحانه رایگان', en: '5-Star Hotels in Mashhad & Kish' },
+    subtitle: {
+      fa: 'اقامت خاطره‌انگیز با ترانسفر فرودگاهی اختصاصی و تضمین کمترین نرخ',
+      en: 'Memorable stay with free airport transfers and lowest rate guarantee',
+    },
+    cta: { fa: 'رزرو آنلاین هتل', en: 'Book Hotel' },
+    href: '/hotels/search?city=Mashhad',
+    img: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&q=75&w=800',
+    gradient: 'from-[#7c3a00] via-[#b45309] to-[#f0a62a]',
+    badgeBg: 'bg-gold-soft text-price',
+    icon: 'Hotel',
+  },
+  {
+    id: 'b3',
+    tag: { fa: 'صدور فوری', en: 'Instant Cover' },
+    title: { fa: 'بیمه مسافرتی سامان مورد تایید شنگن', en: 'Schengen-Approved Saman Travel Insurance' },
+    subtitle: {
+      fa: 'پوشش جامع حوادث پزشکی تا ۵۰ هزار یورو با صدور آنی کد بیمه‌نامه',
+      en: 'Up to €50k medical coverage with instant official policy verification',
+    },
+    cta: { fa: 'صدور آنی بیمه', en: 'Get Insurance' },
+    href: '/insurance',
+    img: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=75&w=800',
+    gradient: 'from-[#1e3a8a] via-[#1d4ed8] to-[#0284c7]',
+    badgeBg: 'bg-blue-100 text-blue-900',
+    icon: 'ShieldCheck',
+  },
+];
+
+export function PromotionalBanners({ override }: { override?: PromoBannerOverride[] }) {
+  void override;
   const locale = useLocale();
   const isRtl = locale === 'fa' || locale === 'ar';
 

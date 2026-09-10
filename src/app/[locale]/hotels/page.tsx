@@ -27,7 +27,7 @@ export default function HotelsLandingPage() {
       city: { fa: 'اصفهان و شیراز', en: 'Isfahan & Shiraz', ar: 'أصفهان وشيراز', zh: '伊斯法罕与设拉子', ru: 'Исфахан и Шираз' },
       desc: { fa: 'خانه‌های قاجاری و صفوی بازسازی‌شده با حوض، شمعدانی و معماری اصیل', en: 'Restored Qajar & Safavid houses with courtyards and authentic architecture', ar: 'منازل قاجارية وصفوية مُرمَّمة بأفنية وشمعات ومعمارة أصيلة', zh: '修复的卡扎尔与萨法维老宅，庭院与原真建筑', ru: 'Отреставрированные дома эпох Каджаров и Сефевидов с двориками и аутентичной архитектурой' },
       price: 2600000,
-      img: 'https://images.unsplash.com/photo-1584646098378-0874589d76b1?w=600&q=80',
+      img: '/images/isfahan/sheikh-lotfollah.jpg',
       stars: 4,
       query: 'boutique',
     },

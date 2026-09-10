@@ -7,22 +7,25 @@ import { lt, LText } from './lt';
 export const CURRENCY_TO_TOMAN: Record<string, number> = {
   IRR: 1,
   USDT: 55000,
-  TRY: 2900,
+  USD: 55000,
+  CNY: 7600,
   AED: 16500,
+  TRY: 2900,
   GEL: 37000,
   RUB: 1200,
   OMR: 260000,
-  CNY: 14000,
 };
 
 export const CURRENCY_LABEL: Record<string, LText> = {
   IRR: { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'Toman' },
+  USDT: { fa: 'تتر', en: 'USDT', ar: 'تيثر', zh: '泰达币', ru: 'USDT' },
+  USD: { fa: 'دلار', en: 'USD', ar: 'دولار', zh: '美元', ru: 'USD' },
+  CNY: { fa: 'یوان', en: 'Yuan', ar: 'يوان', zh: '元', ru: 'юань' },
   TRY: { fa: 'لیر', en: 'Lira', ar: 'ليرة', zh: '里拉', ru: 'лир' },
   AED: { fa: 'درهم', en: 'Dirham', ar: 'درهم', zh: '迪拉姆', ru: 'дирхам' },
   GEL: { fa: 'لاری', en: 'Lari', ar: 'لاري', zh: '拉里', ru: 'лари' },
   RUB: { fa: 'روبل', en: 'Ruble', ar: 'روبل', zh: '卢布', ru: 'рубль' },
   OMR: { fa: 'ریال عمان', en: 'Omani Rial', ar: 'ريال عماني', zh: '阿曼里亚尔', ru: 'оманский риал' },
-  CNY: { fa: 'یوان', en: 'Yuan', ar: 'يوان', zh: '元', ru: 'юань' },
 };
 
 /** @deprecated use CURRENCY_LABEL with lt() */
@@ -33,7 +36,7 @@ export const CURRENCY_FA: Record<string, string> = Object.fromEntries(
 export function toLocalCurrency(amountToman: number, currency: string): number {
   const rate = CURRENCY_TO_TOMAN[currency] ?? 1;
   const v = amountToman / rate;
-  return currency === 'IRR' ? Math.round(v) : Math.round(v * 10) / 10;
+  return currency === 'IRR' ? Math.round(v) : Math.round(v * 100) / 100;
 }
 
 export function formatMoney(amountToman: number, currency: string, locale = 'fa'): string {

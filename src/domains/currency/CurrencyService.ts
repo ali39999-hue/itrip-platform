@@ -11,9 +11,11 @@ export interface WalletBalances {
   IRR: number;
   USDT: number;
   AED: number;
+  USD?: number;
+  CNY?: number;
 }
 
-export type SupportedCurrency = keyof WalletBalances;
+export type SupportedCurrency = 'IRR' | 'USDT' | 'AED' | 'USD' | 'CNY';
 
 export interface CurrencyRateProvider {
   getRateDecimal(from: SupportedCurrency, to: SupportedCurrency): Prisma.Decimal;
@@ -22,10 +24,22 @@ export interface CurrencyRateProvider {
 export const DEFAULT_EXCHANGE_RATES_DECIMAL: Record<string, string> = {
   'IRR_USDT': '0.00000181818', // 1 / 550,000
   'USDT_IRR': '550000',
+  'IRR_USD': '0.00000181818',  // 1 / 550,000
+  'USD_IRR': '550000',
   'IRR_AED': '0.0000060606',   // 1 / 165,000
   'AED_IRR': '165000',
   'USDT_AED': '3.33',
   'AED_USDT': '0.3003',
+  'USD_AED': '3.6725',
+  'AED_USD': '0.2723',
+  'IRR_CNY': '0.00001315789',  // 1 / 76,000 (1 CNY ~ 76,000 IRR)
+  'CNY_IRR': '76000',
+  'USD_CNY': '7.23',
+  'CNY_USD': '0.1383',
+  'USDT_CNY': '7.23',
+  'CNY_USDT': '0.1383',
+  'USD_USDT': '1.0',
+  'USDT_USD': '1.0',
 };
 
 export class StaticRateProvider implements CurrencyRateProvider {
@@ -34,10 +48,16 @@ export class StaticRateProvider implements CurrencyRateProvider {
   getRateDecimal(from: SupportedCurrency, to: SupportedCurrency): Prisma.Decimal {
     if (from === to) return new Prisma.Decimal('1.0');
     const rateStr = this.rates[`${from}_${to}`];
-    if (!rateStr) {
-      throw new Error(`No exchange rate configured for ${from} -> ${to}`);
+    if (rateStr) return new Prisma.Decimal(rateStr);
+
+    // Dynamic cross-rate via IRR
+    const fromToIrr = from === 'IRR' ? '1.0' : this.rates[`${from}_IRR`];
+    const irrToTarget = to === 'IRR' ? '1.0' : this.rates[`IRR_${to}`];
+    if (fromToIrr && irrToTarget) {
+      return new Prisma.Decimal(fromToIrr).mul(new Prisma.Decimal(irrToTarget));
     }
-    return new Prisma.Decimal(rateStr);
+
+    throw new Error(`No exchange rate configured for ${from} -> ${to}`);
   }
 }
 
@@ -66,6 +86,7 @@ export class CentralBankRateProvider implements CurrencyRateProvider {
 
   private async prefetchRates() {
     try {
+      if (typeof window !== 'undefined') return;
       if (process.env.DEMO_MODE === 'true' && !process.env.FX_API_KEY) return;
       const res = await fetch(`${this.providerEndpoint}USD`);
       if (!res.ok) return;
@@ -188,6 +209,10 @@ export class CurrencyService {
         return `${formatted} ریال`;
       case 'USDT':
         return `${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} USDT`;
+      case 'USD':
+        return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+      case 'CNY':
+        return `¥${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
       case 'AED':
         return `${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} درهم`;
       default:

@@ -17,7 +17,7 @@ interface TourImageProps {
   className?: string;
 }
 
-const DEFAULT_FALLBACK = 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&q=80&w=800';
+const DEFAULT_FALLBACK = '/images/isfahan/sheikh-lotfollah.jpg';
 
 export function TourImage({
   src,

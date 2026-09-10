@@ -8,11 +8,9 @@ import { ArrowLeft, Clock } from 'lucide-react';
 import { num } from '@/lib/format';
 import { lt } from '@/lib/lt';
 import { shimmerDataUrl } from '@/lib/image-utils';
+import type { PopularRouteOverride } from '@/domains/content/SiteContentService';
 
-export function PopularFlightsSection() {
-  const locale = useLocale();
-
-  const routes = [
+export const DEFAULT_POPULAR_ROUTES: PopularRouteOverride[] = [
     {
       fromFa: 'تهران',
       fromEn: 'Tehran',
@@ -86,6 +84,10 @@ export function PopularFlightsSection() {
       img: 'https://images.unsplash.com/photo-1565008447742-97f6f38c985c?auto=format&fit=crop&q=75&w=600',
     },
   ];
+
+export function PopularFlightsSection({ override }: { override?: PopularRouteOverride[] }) {
+  const locale = useLocale();
+  const routes = override ?? DEFAULT_POPULAR_ROUTES;
 
   return (
     <section aria-label="Popular Flight Routes" className="w-full max-w-[1280px] mx-auto px-4 md:px-8">

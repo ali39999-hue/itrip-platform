@@ -5,13 +5,25 @@ import { OutboxConsumer, calculateBackoffWithJitter, wrapOutboxPayload, parseOut
 import { QueueMetricsService } from './QueueMetricsService';
 
 describe('Dedicated Workers, Outbox & Crash Recovery Suite (ASYNC-101 to ASYNC-109)', () => {
+  const cleanLeases = async () => {
+    try {
+      await prisma.workerLease.deleteMany({
+        where: { resourceName: { in: ['test_resource_lease', 'test_crashed_worker_resource'] } },
+      });
+    } catch {
+      // ignore if table doesn't exist
+    }
+  };
+
   beforeEach(async () => {
     WorkerLeaseService.resetStore();
     await WorkerLeaseService.ensureTable();
+    await cleanLeases();
   });
 
   afterEach(async () => {
     WorkerLeaseService.resetStore();
+    await cleanLeases();
   });
 
   it('ASYNC-103: WorkerLeaseService acquires lease, renews via heartbeat, and releases', async () => {

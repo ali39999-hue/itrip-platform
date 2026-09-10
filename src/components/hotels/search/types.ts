@@ -1,4 +1,5 @@
-import type { Hotel } from '@/lib/types';
+import type { Hotel, HotelPropertyType } from '@/lib/types';
+import type { HotelFacets } from '@/services/hotels-service';
 
 export type SortKey = 'rec' | 'cheap' | 'score' | 'stars';
 
@@ -12,7 +13,11 @@ export interface HotelFilterState {
   query: string;
   sort: SortKey;
   maxPrice: number;
+  minPrice?: number;
   stars: Set<number>;
+  propertyTypes: Set<HotelPropertyType>;
+  amenities: Set<string>;
+  hotelName: string;
   minScore: number;
   freeCancel: boolean;
   shown: number;
@@ -32,6 +37,8 @@ export interface HotelSearchHeaderProps {
   onAdultsChange?: (val: number) => void;
   childrenCount?: number;
   onChildrenCountChange?: (val: number) => void;
+  rooms?: number;
+  onRoomsChange?: (val: number) => void;
 }
 
 export interface HotelSearchToolbarProps {
@@ -46,13 +53,22 @@ export interface HotelSearchToolbarProps {
 export interface HotelFilterControlsProps {
   maxPrice: number;
   onMaxPriceChange: (val: number) => void;
+  minPrice?: number;
+  onMinPriceChange?: (val: number) => void;
   priceBuckets: number[];
   stars: Set<number>;
   onToggleStar: (star: number) => void;
+  propertyTypes?: Set<HotelPropertyType>;
+  onTogglePropertyType?: (pt: HotelPropertyType) => void;
+  amenities?: Set<string>;
+  onToggleAmenity?: (am: string) => void;
+  hotelName?: string;
+  onHotelNameChange?: (name: string) => void;
   minScore: number;
   onMinScoreChange: (score: number) => void;
   freeCancel: boolean;
   onToggleFreeCancel: () => void;
+  facets?: HotelFacets;
   onResetAll?: () => void;
 }
 
@@ -75,6 +91,8 @@ export interface HotelFilterChipsProps {
 export interface HotelPriceHistogramProps {
   maxPrice: number;
   onMaxPriceChange: (val: number) => void;
+  minPrice?: number;
+  onMinPriceChange?: (val: number) => void;
   priceBuckets: number[];
 }
 

@@ -10,10 +10,19 @@ export async function GET(request: NextRequest) {
 
     const query = searchParams.get('q') || searchParams.get('query') || undefined;
     const city = searchParams.get('city') || undefined;
+    const hotelName = searchParams.get('hotelName') || undefined;
     const country = (searchParams.get('country') as HotelSearchParams['country']) || undefined;
 
     const starsParam = searchParams.get('stars');
     const stars = starsParam ? starsParam.split(',').map(Number).filter((n) => !isNaN(n)) : undefined;
+
+    const propertyTypesParam = searchParams.get('propertyTypes');
+    const propertyTypes = propertyTypesParam
+      ? (propertyTypesParam.split(',') as HotelSearchParams['propertyTypes'])
+      : undefined;
+
+    const amenitiesParam = searchParams.get('amenities');
+    const amenities = amenitiesParam ? amenitiesParam.split(',').filter(Boolean) : undefined;
 
     const minPrice = searchParams.get('minPrice') ? Number(searchParams.get('minPrice')) : undefined;
     const maxPrice = searchParams.get('maxPrice') ? Number(searchParams.get('maxPrice')) : undefined;
@@ -27,8 +36,11 @@ export async function GET(request: NextRequest) {
     const result = searchHotels({
       query,
       city,
+      hotelName,
       country,
       stars,
+      propertyTypes,
+      amenities,
       minPrice,
       maxPrice,
       minScore,

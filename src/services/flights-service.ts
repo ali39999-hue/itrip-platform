@@ -139,8 +139,11 @@ function loadFlightsData(): { flights: Flight[]; airports: FlightMasterFile['air
         price: price, // in IRR (compatible with format.ts num(price, locale) and toman conversions)
         seatsLeft: f.capacity || 9,
         baggage: `${f.baggage || 20}kg`,
-        cabinClass: 'economy',
+        cabinClass: subRoute?.flight_class?.toLowerCase().includes('business') ? 'business' : 'economy',
         stops: (f.routes?.length || 1) > 1 ? (f.routes!.length - 1) : 0,
+        ticketType: (subRoute?.flight_type?.toLowerCase().includes('charter') || index % 3 === 0) ? 'charter' : 'systemic',
+        aircraft: subRoute?.airplane || 'Airbus A320',
+        refundable: !subRoute?.flight_type?.toLowerCase().includes('charter'),
       });
     }
   }
@@ -169,6 +172,9 @@ export interface FlightSearchParams {
   stops?: number[];
   minPrice?: number;
   maxPrice?: number;
+  ticketType?: 'charter' | 'systemic' | 'all';
+  cabinClass?: 'economy' | 'business' | 'all';
+  timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'night' | 'all';
   sort?: 'price' | 'fast' | 'time' | 'suggested';
   page?: number;
   limit?: number;
@@ -182,6 +188,9 @@ export interface FlightSearchResponse {
   priceBounds: { min: number; max: number };
   airlineFacets: Array<{ name: string; minPrice: number }>;
   stopCounts: [number, number, number];
+  ticketTypeCounts: { systemic: number; charter: number };
+  cabinClassCounts: { economy: number; business: number };
+  timeCounts: { morning: number; afternoon: number; evening: number; night: number };
 }
 
 export function searchFlights(params: FlightSearchParams): FlightSearchResponse {
@@ -233,6 +242,9 @@ export function searchFlights(params: FlightSearchParams): FlightSearchResponse 
   let maxP = -Infinity;
   const airlineMinMap = new Map<string, number>();
   const stopCounts: [number, number, number] = [0, 0, 0];
+  const ticketTypeCounts = { systemic: 0, charter: 0 };
+  const cabinClassCounts = { economy: 0, business: 0 };
+  const timeCounts = { morning: 0, afternoon: 0, evening: 0, night: 0 };
 
   for (const f of basePool) {
     if (f.price < minP) minP = f.price;
@@ -243,6 +255,28 @@ export function searchFlights(params: FlightSearchParams): FlightSearchResponse 
 
     const sIdx = Math.min(f.stops, 2);
     stopCounts[sIdx]++;
+
+    if (f.ticketType === 'charter') {
+      ticketTypeCounts.charter++;
+    } else {
+      ticketTypeCounts.systemic++;
+    }
+
+    if (f.cabinClass === 'business') {
+      cabinClassCounts.business++;
+    } else {
+      cabinClassCounts.economy++;
+    }
+
+    const hour = parseInt(f.departureTime.slice(0, 2), 10);
+    if (!isNaN(hour)) {
+      if (hour >= 6 && hour < 12) timeCounts.morning++;
+      else if (hour >= 12 && hour < 18) timeCounts.afternoon++;
+      else if (hour >= 18 && hour < 24) timeCounts.evening++;
+      else timeCounts.night++;
+    } else {
+      timeCounts.morning++;
+    }
   }
 
   if (minP === Infinity) {
@@ -255,7 +289,7 @@ export function searchFlights(params: FlightSearchParams): FlightSearchResponse 
     minPrice,
   }));
 
-  // 2. Facet filters (stops, airlines, price range)
+  // 2. Facet filters (stops, airlines, price range, ticketType, cabinClass, timeOfDay)
   const filtered = basePool.filter((f) => {
     if (params.stops && params.stops.length > 0) {
       if (!params.stops.includes(Math.min(f.stops, 2))) return false;
@@ -265,6 +299,21 @@ export function searchFlights(params: FlightSearchParams): FlightSearchResponse 
     }
     if (params.minPrice !== undefined && f.price < params.minPrice) return false;
     if (params.maxPrice !== undefined && f.price > params.maxPrice) return false;
+    if (params.ticketType && params.ticketType !== 'all') {
+      if (f.ticketType !== params.ticketType) return false;
+    }
+    if (params.cabinClass && params.cabinClass !== 'all') {
+      if (f.cabinClass !== params.cabinClass) return false;
+    }
+    if (params.timeOfDay && params.timeOfDay !== 'all') {
+      const hour = parseInt(f.departureTime.slice(0, 2), 10);
+      if (!isNaN(hour)) {
+        if (params.timeOfDay === 'morning' && !(hour >= 6 && hour < 12)) return false;
+        if (params.timeOfDay === 'afternoon' && !(hour >= 12 && hour < 18)) return false;
+        if (params.timeOfDay === 'evening' && !(hour >= 18 && hour < 24)) return false;
+        if (params.timeOfDay === 'night' && !(hour >= 0 && hour < 6)) return false;
+      }
+    }
     return true;
   });
 
@@ -302,5 +351,8 @@ export function searchFlights(params: FlightSearchParams): FlightSearchResponse 
     priceBounds: { min: minP, max: maxP },
     airlineFacets,
     stopCounts,
+    ticketTypeCounts,
+    cabinClassCounts,
+    timeCounts,
   };
 }

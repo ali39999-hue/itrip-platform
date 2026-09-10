@@ -10,6 +10,8 @@ export default async function AdminFinancePage() {
   const inflow = result.inflow || 0;
   const outflow = result.outflow || 0;
   const transactions = result.recentTransactions || [];
+  const rates = result.rates || { USDT: '41800', AED: '1140', EUR: '45500' };
+  const isCustomRates = result.isCustomRates || false;
 
   return (
     <FinanceClientPage 
@@ -18,6 +20,8 @@ export default async function AdminFinancePage() {
        inflow={inflow} 
        outflow={outflow} 
        transactions={transactions} 
+       initialRates={rates}
+       isCustomRates={isCustomRates}
     />
   );
 }

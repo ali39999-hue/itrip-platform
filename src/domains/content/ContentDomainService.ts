@@ -2,15 +2,35 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
 export class ContentDomainService {
+  private static serializeTour<T extends Record<string, unknown>>(t: T): T {
+    if (!t) return t;
+    const priceVal = t.price;
+    const childVal = t.childPrice;
+    const depDates = t.departureDates;
+    return {
+      ...t,
+      price: priceVal != null ? Number(priceVal) : 0,
+      childPrice: childVal != null ? Number(childVal) : null,
+      departureDates: Array.isArray(depDates)
+        ? depDates.map((d: Record<string, unknown>) => ({
+            ...d,
+            price: d.price != null ? Number(d.price) : 0,
+            childPrice: d.childPrice != null ? Number(d.childPrice) : null,
+          }))
+        : [],
+    };
+  }
+
   // 1. Tours
   static async getTours() {
-    return prisma.tour.findMany({
+    const tours = await prisma.tour.findMany({
       include: {
         departureDates: { orderBy: { startDate: 'asc' } },
         itineraryDays: { orderBy: { day: 'asc' } },
       },
       orderBy: { createdAt: 'desc' },
     });
+    return tours.map((t) => ContentDomainService.serializeTour(t));
   }
 
   static async createTour(data: {
@@ -62,7 +82,7 @@ export class ContentDomainService {
     if (!data.title?.trim()) throw new Error('Title is required');
     if (!data.city?.trim()) throw new Error('City is required');
 
-    return prisma.tour.create({
+    const created = await prisma.tour.create({
       data: {
         title: data.title.trim(),
         titleEn: data.titleEn?.trim() || data.title.trim(),
@@ -114,6 +134,7 @@ export class ContentDomainService {
         },
       },
     });
+    return ContentDomainService.serializeTour(created);
   }
 
   static async deleteTour(id: string) {
@@ -121,19 +142,71 @@ export class ContentDomainService {
   }
 
   static async toggleTourPublish(id: string, isPublished: boolean) {
-    return prisma.tour.update({
+    const updated = await prisma.tour.update({
       where: { id },
       data: { isPublished },
     });
+    return ContentDomainService.serializeTour(updated);
+  }
+
+  /** Partial edit of an existing tour; only provided fields change. */
+  static async updateTour(id: string, data: {
+    title?: string;
+    titleEn?: string;
+    city?: string;
+    country?: string;
+    durationDays?: number;
+    price?: number;
+    childPrice?: number;
+    category?: string;
+    heroImage?: string;
+    summary?: string;
+    hotelName?: string;
+    transportType?: string;
+    isPublished?: boolean;
+  }) {
+    if (data.title !== undefined && !data.title.trim()) throw new Error('Title cannot be empty');
+    if (data.city !== undefined && !data.city.trim()) throw new Error('City cannot be empty');
+    if (data.durationDays !== undefined && data.durationDays < 1) throw new Error('Duration must be at least 1 day');
+
+    const updated = await prisma.tour.update({
+      where: { id },
+      data: {
+        ...(data.title !== undefined && { title: data.title.trim() }),
+        ...(data.titleEn !== undefined && { titleEn: data.titleEn.trim() || data.title!.trim() }),
+        ...(data.city !== undefined && { city: data.city.trim() }),
+        ...(data.country !== undefined && { country: data.country.trim() }),
+        ...(data.durationDays !== undefined && {
+          durationDays: data.durationDays,
+          durationNights: Math.max(1, data.durationDays - 1),
+        }),
+        ...(data.price !== undefined && { price: new Prisma.Decimal(data.price) }),
+        ...(data.childPrice !== undefined && { childPrice: data.childPrice ? new Prisma.Decimal(data.childPrice) : null }),
+        ...(data.category !== undefined && { category: data.category }),
+        ...(data.heroImage !== undefined && { heroImage: data.heroImage || null }),
+        ...(data.summary !== undefined && { summary: data.summary }),
+        ...(data.hotelName !== undefined && { hotelName: data.hotelName || null }),
+        ...(data.transportType !== undefined && { transportType: data.transportType || null }),
+        ...(data.isPublished !== undefined && { isPublished: data.isPublished }),
+      },
+    });
+    return ContentDomainService.serializeTour(updated);
   }
 
   // 2. Experiences
-  static async getExperiences(countryId?: string) {
-    const where = countryId ? { countryId } : {};
-    return prisma.signatureExperience.findMany({
+  static async getExperiences(countryId?: string, publicOnly = false) {
+    const where: Prisma.SignatureExperienceWhereInput = {
+      ...(countryId ? { countryId } : {}),
+      ...(publicOnly ? { isActive: true } : {}),
+    };
+    const records = await prisma.signatureExperience.findMany({
       where,
       orderBy: { createdAt: 'desc' },
     });
+    return records.map((r) => ({
+      ...r,
+      fromPrice: Number(r.fromPrice),
+    }));
   }
 
   static async createExperience(data: {
@@ -153,7 +226,7 @@ export class ContentDomainService {
     if (!data.title?.trim()) throw new Error('Title is required');
     if (!data.countryId) throw new Error('Country is required');
 
-    return prisma.signatureExperience.create({
+    const created = await prisma.signatureExperience.create({
       data: {
         countryId: data.countryId,
         category: data.category || 'culture',
@@ -170,10 +243,50 @@ export class ContentDomainService {
         isActive: true,
       },
     });
+    return {
+      ...created,
+      fromPrice: Number(created.fromPrice),
+    };
   }
 
   static async deleteExperience(id: string) {
     return prisma.signatureExperience.delete({ where: { id } });
+  }
+
+  static async updateExperience(id: string, data: {
+    countryId?: string;
+    category?: string;
+    title?: string;
+    titleEn?: string;
+    desc?: string;
+    where?: string;
+    when?: string;
+    fromPrice?: number;
+    image?: string;
+    isActive?: boolean;
+  }) {
+    if (data.title !== undefined && !data.title.trim()) throw new Error('Title cannot be empty');
+    if (data.countryId !== undefined && !data.countryId) throw new Error('Country is required');
+
+    const updated = await prisma.signatureExperience.update({
+      where: { id },
+      data: {
+        ...(data.countryId !== undefined && { countryId: data.countryId }),
+        ...(data.category !== undefined && { category: data.category }),
+        ...(data.title !== undefined && { title: data.title.trim() }),
+        ...(data.titleEn !== undefined && { titleEn: data.titleEn.trim() || data.title!.trim() }),
+        ...(data.desc !== undefined && { desc: data.desc.trim() }),
+        ...(data.where !== undefined && { where: data.where.trim() }),
+        ...(data.when !== undefined && { when: data.when.trim() }),
+        ...(data.fromPrice !== undefined && { fromPrice: new Prisma.Decimal(data.fromPrice) }),
+        ...(data.image !== undefined && { image: data.image || null }),
+        ...(data.isActive !== undefined && { isActive: data.isActive }),
+      },
+    });
+    return {
+      ...updated,
+      fromPrice: Number(updated.fromPrice),
+    };
   }
 
   // 3. Travelogues
@@ -217,6 +330,32 @@ export class ContentDomainService {
     return prisma.travelogue.delete({ where: { id } });
   }
 
+  static async updateTravelogue(id: string, data: {
+    titleFa?: string;
+    destFa?: string;
+    userName?: string;
+    image?: string;
+    contentFa?: string;
+    isPublished?: boolean;
+  }) {
+    if (data.titleFa !== undefined && !data.titleFa.trim()) throw new Error('Title cannot be empty');
+    if (data.userName !== undefined && !data.userName.trim()) throw new Error('User name cannot be empty');
+
+    return prisma.travelogue.update({
+      where: { id },
+      data: {
+        ...(data.titleFa !== undefined && { titleFa: data.titleFa.trim() }),
+        ...(data.destFa !== undefined && { destFa: data.destFa.trim() }),
+        ...(data.userName !== undefined && { userName: data.userName.trim() }),
+        // Travelogue.image is non-nullable in Prisma — an empty value means
+        // "keep the existing image" (mirrors the create-path default fallback).
+        ...(data.image !== undefined && data.image.trim() && { image: data.image.trim() }),
+        ...(data.contentFa !== undefined && { contentFa: data.contentFa.trim() }),
+        ...(data.isPublished !== undefined && { isPublished: data.isPublished }),
+      },
+    });
+  }
+
   // 4. Guides
   static async getGuides() {
     return prisma.guideArticle.findMany({
@@ -258,5 +397,31 @@ export class ContentDomainService {
 
   static async deleteGuide(id: string) {
     return prisma.guideArticle.delete({ where: { id } });
+  }
+
+  static async updateGuide(id: string, data: {
+    categoryFa?: string;
+    titleFa?: string;
+    readTime?: string;
+    excerptFa?: string;
+    bodyFa?: string;
+    image?: string;
+    isPublished?: boolean;
+  }) {
+    if (data.titleFa !== undefined && !data.titleFa.trim()) throw new Error('Title cannot be empty');
+    if (data.excerptFa !== undefined && !data.excerptFa.trim()) throw new Error('Excerpt cannot be empty');
+
+    return prisma.guideArticle.update({
+      where: { id },
+      data: {
+        ...(data.categoryFa !== undefined && { categoryFa: data.categoryFa.trim() }),
+        ...(data.titleFa !== undefined && { titleFa: data.titleFa.trim() }),
+        ...(data.readTime !== undefined && { readTime: data.readTime.trim() }),
+        ...(data.excerptFa !== undefined && { excerptFa: data.excerptFa.trim() }),
+        ...(data.bodyFa !== undefined && { bodyFa: data.bodyFa }),
+        ...(data.image !== undefined && { image: data.image || null }),
+        ...(data.isPublished !== undefined && { isPublished: data.isPublished }),
+      },
+    });
   }
 }

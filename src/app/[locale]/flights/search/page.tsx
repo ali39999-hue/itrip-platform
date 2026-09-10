@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState, useCallback, useRef } from 'react';
+import { Suspense, useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
@@ -9,6 +9,7 @@ import { lt } from '@/lib/lt';
 import { resolveCityQuery, localizedAirportLabel } from '@/lib/cities';
 import type { Flight } from '@/lib/types';
 import { useBookingStore } from '@/stores/booking-store';
+import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { daysFromNow } from '@/lib/utils';
 import { dualDate } from '@/lib/jalali';
 import { num } from '@/lib/format';
@@ -21,13 +22,29 @@ import {
   FlightPriceAlertModal,
   useFlightComparison,
 } from '@/components/flights';
+import { AirlineLogo } from '@/components/flights/AirlineLogo';
 import { CrossSellBundle } from '@/components/shared/CrossSellBundle';
 import { trackFunnel } from '@/lib/analytics';
 import {
-  PlaneTakeoff, PlaneLanding, CalendarDays, PenLine, SlidersHorizontal, X, Check, Loader2, Search, BellRing,
+  PlaneTakeoff,
+  PlaneLanding,
+  CalendarDays,
+  PenLine,
+  SlidersHorizontal,
+  X,
+  Check,
+  Loader2,
+  Search,
+  BellRing,
+  SunMedium,
+  Sun,
+  Moon,
+  Sparkles,
+  RotateCcw,
+  ChevronDown,
 } from 'lucide-react';
 
-const STEP = 1_000_000;
+const STEP = 50_000; // 50k Toman step
 
 function FlightSearchInner() {
   const router = useRouter();
@@ -35,14 +52,16 @@ function FlightSearchInner() {
   const t = useTranslations('Flights');
   const params = useSearchParams();
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
+  const { currencyLabel } = useDisplayCurrency();
   const ariaT = useTranslations('Common.aria');
 
   const from = params.get('from') ?? '';
   const to = params.get('to') ?? '';
 
-  // Honor the requested departure date; fall back to +7 days.
+  // Honor requested departure date; fall back to +7 days
   const departParam = params.get('depart');
-  const travelDate = departParam && /^\d{4}-\d{2}-\d{2}$/.test(departParam) ? departParam : daysFromNow(7);
+  const initialTravelDate = departParam && /^\d{4}-\d{2}-\d{2}$/.test(departParam) ? departParam : daysFromNow(7);
+  const [travelDate, setTravelDate] = useState<string>(initialTravelDate);
 
   const fromCity = resolveCityQuery(from);
   const toCity = resolveCityQuery(to);
@@ -57,34 +76,80 @@ function FlightSearchInner() {
 
   type SortId = (typeof sorts)[number]['id'];
 
+  // Filters State — stored in Toman (IRR / 10)
   const [stops, setStops] = useState<number[]>([]);
   const [airlines, setAirlines] = useState<string[]>([]);
-  const [priceBounds, setPriceBounds] = useState<{ min: number; max: number }>({ min: 20_000_000, max: 150_000_000 });
-  const [price, setPrice] = useState<[number, number]>([20_000_000, 150_000_000]);
+  const [ticketType, setTicketType] = useState<'all' | 'systemic' | 'charter'>('all');
+  const [cabinClass, setCabinClass] = useState<'all' | 'economy' | 'business'>('all');
+  const [timeOfDay, setTimeOfDay] = useState<'all' | 'morning' | 'afternoon' | 'evening' | 'night'>('all');
+  const [airlineSearch, setAirlineSearch] = useState('');
+
+  // Default bounds in Toman (2M to 15M Toman)
+  const [priceBounds, setPriceBounds] = useState<{ min: number; max: number }>({
+    min: 2_000_000,
+    max: 15_000_000,
+  });
+  const [price, setPrice] = useState<[number, number]>([2_000_000, 15_000_000]);
+  const [debouncedPrice, setDebouncedPrice] = useState<[number, number]>([2_000_000, 15_000_000]);
+
   const [sort, setSort] = useState<SortId>('price');
   const [sheet, setSheet] = useState(false);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [editFrom, setEditFrom] = useState(from);
   const [editTo, setEditTo] = useState(to);
-  const [editDate, setEditDate] = useState(travelDate);
+  const [editDate, setEditDate] = useState(initialTravelDate);
+
+  // Quick filter pill state
+  const [quickFilter, setQuickFilter] = useState<'all' | 'direct' | 'morning' | 'evening' | 'systemic' | 'business'>('all');
+
+  // Collapsible Accordion Sections (Alibaba & FlyToday standard)
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    price: true,
+    stops: true,
+    time: true,
+    airlines: true,
+    ticketType: true,
+    cabinClass: true,
+  });
+
+  const toggleSection = (key: string) => {
+    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Debounce price slider changes (250ms) to avoid spamming the API
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedPrice(price);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [price]);
 
   // Flight Comparison & Value-Add Modals
   const { cmp, toggleCmp, clearCmp } = useFlightComparison();
   const [compareModalOpen, setCompareModalOpen] = useState(false);
   const [priceAlertModalOpen, setPriceAlertModalOpen] = useState(false);
   const [refundModalFlight, setRefundModalFlight] = useState<Flight | null>(null);
-  const [quickFilter, setQuickFilter] = useState<'all' | 'direct' | 'morning' | 'systemic'>('all');
 
   function handleDateChange(newDate: string) {
+    setTravelDate(newDate);
+    setEditDate(newDate);
     const q = new URLSearchParams(params.toString());
     q.set('depart', newDate);
-    router.push(`/flights/search?${q.toString()}`);
+    window.history.replaceState(null, '', `?${q.toString()}`);
   }
 
   // Live state
   const [flights, setFlights] = useState<Flight[]>([]);
   const [airlineOptions, setAirlineOptions] = useState<Array<{ name: string; minPrice: number }>>([]);
   const [stopCounts, setStopCounts] = useState<[number, number, number]>([0, 0, 0]);
+  const [ticketTypeCounts, setTicketTypeCounts] = useState<{ systemic: number; charter: number }>({ systemic: 0, charter: 0 });
+  const [cabinClassCounts, setCabinClassCounts] = useState<{ economy: number; business: number }>({ economy: 0, business: 0 });
+  const [timeCounts, setTimeCounts] = useState<{ morning: number; afternoon: number; evening: number; night: number }>({
+    morning: 0,
+    afternoon: 0,
+    evening: 0,
+    night: 0,
+  });
   const [totalCount, setTotalCount] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -95,10 +160,24 @@ function FlightSearchInner() {
 
   const airlinesKey = airlines.join(',');
   const stopsKey = stops.join(',');
-  const minPriceVal = price[0];
-  const maxPriceVal = price[1];
-  const minBound = priceBounds.min;
-  const maxBound = priceBounds.max;
+  const minPriceToman = debouncedPrice[0];
+  const maxPriceToman = debouncedPrice[1];
+  const minBoundToman = priceBounds.min;
+  const maxBoundToman = priceBounds.max;
+
+  // 12-bar price histogram derived from actual flights
+  const flightPriceBuckets = useMemo(() => {
+    const buckets = new Array(12).fill(0);
+    if (!flights || flights.length === 0) return buckets;
+    const span = Math.max(priceBounds.max - priceBounds.min, 1);
+    flights.forEach((f) => {
+      const pToman = f.price > 15_000_000 ? Math.round(f.price / 10) : f.price;
+      const idx = Math.min(11, Math.max(0, Math.floor(((pToman - priceBounds.min) / span) * 12)));
+      buckets[idx]++;
+    });
+    const maxB = Math.max(...buckets, 1);
+    return buckets.map((b) => Math.max(16, Math.round((b / maxB) * 100)));
+  }, [flights, priceBounds]);
 
   // Fetch live flights data
   const fetchFlights = useCallback(async () => {
@@ -118,8 +197,14 @@ function FlightSearchInner() {
       if (sort) q.set('sort', sort);
       if (airlines.length) q.set('airlines', airlines.join(','));
       if (stops.length) q.set('stops', stops.join(','));
-      if (minPriceVal > minBound) q.set('minPrice', String(minPriceVal));
-      if (maxPriceVal < maxBound) q.set('maxPrice', String(maxPriceVal));
+      if (ticketType !== 'all') q.set('ticketType', ticketType);
+      if (cabinClass !== 'all') q.set('cabinClass', cabinClass);
+      if (timeOfDay !== 'all') q.set('timeOfDay', timeOfDay);
+
+      // Convert Toman to Rials for backend API
+      if (minPriceToman > minBoundToman) q.set('minPrice', String(minPriceToman * 10));
+      if (maxPriceToman < maxBoundToman) q.set('maxPrice', String(maxPriceToman * 10));
+
       q.set('page', String(currentPage));
       q.set('limit', '10');
 
@@ -136,19 +221,30 @@ function FlightSearchInner() {
         setFlights(json.data.flights || []);
         setTotalCount(json.data.total || 0);
         setTotalPages(json.data.totalPages || 1);
+
         if (json.data.airlineFacets) {
           setAirlineOptions(json.data.airlineFacets);
         }
         if (json.data.stopCounts) {
           setStopCounts(json.data.stopCounts);
         }
+        if (json.data.ticketTypeCounts) {
+          setTicketTypeCounts(json.data.ticketTypeCounts);
+        }
+        if (json.data.cabinClassCounts) {
+          setCabinClassCounts(json.data.cabinClassCounts);
+        }
+        if (json.data.timeCounts) {
+          setTimeCounts(json.data.timeCounts);
+        }
         if (json.data.priceBounds) {
-          const newBounds = json.data.priceBounds;
+          // Convert returned Rial bounds to Toman
+          const apiMinToman = Math.floor((json.data.priceBounds.min || 20_000_000) / 10);
+          const apiMaxToman = Math.ceil((json.data.priceBounds.max || 150_000_000) / 10);
+
           setPriceBounds((prev) => {
-            if (prev.min === newBounds.min && prev.max === newBounds.max) {
-              return prev;
-            }
-            return newBounds;
+            if (prev.min === apiMinToman && prev.max === apiMaxToman) return prev;
+            return { min: apiMinToman, max: apiMaxToman };
           });
         }
       }
@@ -161,7 +257,22 @@ function FlightSearchInner() {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [from, to, travelDate, sort, airlinesKey, stopsKey, minPriceVal, maxPriceVal, minBound, maxBound, currentPage]);
+  }, [
+    from,
+    to,
+    travelDate,
+    sort,
+    airlinesKey,
+    stopsKey,
+    ticketType,
+    cabinClass,
+    timeOfDay,
+    minPriceToman,
+    maxPriceToman,
+    minBoundToman,
+    maxBoundToman,
+    currentPage,
+  ]);
 
   useEffect(() => {
     fetchFlights();
@@ -172,14 +283,25 @@ function FlightSearchInner() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [sort, airlinesKey, stopsKey, minPriceVal, maxPriceVal]);
+  }, [sort, airlinesKey, stopsKey, ticketType, cabinClass, timeOfDay, minPriceToman, maxPriceToman]);
 
-  const activeFilters = stops.length + airlines.length + (price[0] > priceBounds.min || price[1] < priceBounds.max ? 1 : 0);
+  const activeFilters =
+    stops.length +
+    airlines.length +
+    (ticketType !== 'all' ? 1 : 0) +
+    (cabinClass !== 'all' ? 1 : 0) +
+    (timeOfDay !== 'all' ? 1 : 0) +
+    (price[0] > priceBounds.min || price[1] < priceBounds.max ? 1 : 0);
 
   function clearAll() {
     setStops([]);
     setAirlines([]);
+    setTicketType('all');
+    setCabinClass('all');
+    setTimeOfDay('all');
+    setQuickFilter('all');
     setPrice([priceBounds.min, priceBounds.max]);
+    setAirlineSearch('');
   }
 
   function toggle<T>(arr: T[], v: T, set: (x: T[]) => void) {
@@ -195,7 +317,6 @@ function FlightSearchInner() {
     });
     setBookingContext({
       type: 'flights',
-      // The server prices the draft from the live flight catalog by id.
       id: f.id,
       title: `${localizedAirportLabel(f.origin, locale)} ✈ ${localizedAirportLabel(f.destination, locale)} (${f.flightNo})`,
       subtitle: `${locale === 'fa' ? f.airline : (f.airlineEn || f.airline)} • ${f.departureTime}`,
@@ -206,122 +327,532 @@ function FlightSearchInner() {
   }
 
   const rangeSpan = Math.max(priceBounds.max - priceBounds.min, 1);
-  const minPct = ((price[0] - priceBounds.min) / rangeSpan) * 100;
-  const maxPct = ((price[1] - priceBounds.min) / rangeSpan) * 100;
-  
+  const minPct = Math.max(0, Math.min(100, ((price[0] - priceBounds.min) / rangeSpan) * 100));
+  const maxPct = Math.max(0, Math.min(100, ((price[1] - priceBounds.min) / rangeSpan) * 100));
 
   const stopLabels = [t('directOnly'), t('oneStop'), t('twoOrMoreStops')];
 
-  const pageItems: Array<number | 'ellipsis' | 'ellipsis-end'> = totalPages <= 5
-    ? Array.from({ length: totalPages }, (_, index) => index + 1)
-    : currentPage <= 3
+  const timeSlots = [
+    {
+      id: 'morning' as const,
+      title: lt(locale, { fa: 'صبح', en: 'Morning', ar: 'صباحاً', zh: '早班', ru: 'Утро' }),
+      time: '۰۶:۰۰ - ۱۲:۰۰',
+      icon: SunMedium,
+    },
+    {
+      id: 'afternoon' as const,
+      title: lt(locale, { fa: 'عصر', en: 'Afternoon', ar: 'ظهراً', zh: '午后', ru: 'День' }),
+      time: '۱۲:۰۰ - ۱۸:۰۰',
+      icon: Sun,
+    },
+    {
+      id: 'evening' as const,
+      title: lt(locale, { fa: 'شب', en: 'Evening', ar: 'مساءً', zh: '晚间', ru: 'Вечер' }),
+      time: '۱۸:۰۰ - ۲۴:۰۰',
+      icon: Moon,
+    },
+    {
+      id: 'night' as const,
+      title: lt(locale, { fa: 'بامداد', en: 'Night', ar: 'فجراً', zh: '凌晨', ru: 'Ночь' }),
+      time: '۰۰:۰۰ - ۰۶:۰۰',
+      icon: Sparkles,
+    },
+  ];
+
+  const ticketTypes = [
+    {
+      id: 'systemic' as const,
+      label: lt(locale, { fa: 'سیستمی (قابل استرداد)', en: 'Systemic (Refundable)', ar: 'منتظمة (قابلة للاسترداد)', zh: '正班机票（可退改）', ru: 'Регулярный' }),
+    },
+    {
+      id: 'charter' as const,
+      label: lt(locale, { fa: 'چارتری (نرخ ویژه)', en: 'Charter (Special rate)', ar: 'شارتر (سعر خاص)', zh: '特惠包机', ru: 'Чартер' }),
+    },
+  ];
+
+  const cabinClasses = [
+    {
+      id: 'economy' as const,
+      label: lt(locale, { fa: 'اکونومی (اقتصادی)', en: 'Economy', ar: 'اقتصادي', zh: '经济舱', ru: 'Эконом' }),
+    },
+    {
+      id: 'business' as const,
+      label: lt(locale, { fa: 'بیزنس (VIP تجاری)', en: 'Business Class', ar: 'درجة رجال الأعمال', zh: '商务舱', ru: 'Бизнес' }),
+    },
+  ];
+
+  const pricePresets = [
+    { label: lt(locale, { fa: 'همه', en: 'All', ar: 'الكل', zh: '全部', ru: 'Все' }), range: [priceBounds.min, priceBounds.max] },
+    { label: lt(locale, { fa: 'زیر ۳ م', en: '< 3M', ar: '< 3م', zh: '< 300万', ru: '< 3M' }), range: [priceBounds.min, Math.min(priceBounds.max, 3_000_000)] },
+    { label: lt(locale, { fa: '۳ تا ۶ م', en: '3M - 6M', ar: '3-6م', zh: '300-600万', ru: '3-6M' }), range: [Math.max(priceBounds.min, 3_000_000), Math.min(priceBounds.max, 6_000_000)] },
+    { label: lt(locale, { fa: '۶ م به بالا', en: '> 6M', ar: '> 6م', zh: '> 600万', ru: '> 6M' }), range: [Math.max(priceBounds.min, 6_000_000), priceBounds.max] },
+  ];
+
+  const pageItems: Array<number | 'ellipsis' | 'ellipsis-end'> =
+    totalPages <= 5
+      ? Array.from({ length: totalPages }, (_, index) => index + 1)
+      : currentPage <= 3
       ? [1, 2, 3, 'ellipsis', totalPages]
       : currentPage >= totalPages - 2
-        ? [1, 'ellipsis', totalPages - 2, totalPages - 1, totalPages]
-        : [1, 'ellipsis', currentPage - 1, currentPage, currentPage + 1, 'ellipsis-end', totalPages];
+      ? [1, 'ellipsis', totalPages - 2, totalPages - 1, totalPages]
+      : [1, 'ellipsis', currentPage - 1, currentPage, currentPage + 1, 'ellipsis-end', totalPages];
 
+  // Reusable Sidebar Filters Body (Desktop & Mobile Drawer)
   const filtersBody = (
-    <>
-      {/* Price range */}
-      <div className="mb-7">
-        <h3 className="font-black text-[13px] text-ink mb-4">{t('priceRange')}</h3>
-        <div className="relative h-6 mb-5" dir="ltr">
-          <span className="absolute top-1/2 -translate-y-1/2 inset-x-0 h-2 rounded-full bg-line" />
-          <span
-            className="absolute top-1/2 -translate-y-1/2 h-2 rounded-full bg-brand"
-            style={{ left: `${minPct}%`, right: `${100 - maxPct}%` }}
-          />
-          <input
-            type="range"
-            min={priceBounds.min}
-            max={priceBounds.max}
-            step={STEP}
-            value={price[0]}
-            onChange={(e) => setPrice([Math.min(Number(e.target.value), price[1] - STEP), price[1]])}
-              aria-label={t('minPrice')}
-            className="absolute inset-0 w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-surface [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-brand [&::-webkit-slider-thumb]:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-full"
-          />
-          <input
-            type="range"
-            min={priceBounds.min}
-            max={priceBounds.max}
-            step={STEP}
-            value={price[1]}
-            onChange={(e) => setPrice([price[0], Math.max(Number(e.target.value), price[0] + STEP)])}
-              aria-label={t('maxPrice')}
-            className="absolute inset-0 w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-surface [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-brand [&::-webkit-slider-thumb]:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-full"
-          />
-        </div>
-        <div className="flex justify-between text-[11.5px] text-sub font-bold num">
-          <span>{num(price[0], locale)}</span>
-          <span>{num(price[1], locale)}</span>
-        </div>
-      </div>
+    <div className="space-y-3.5">
+      {/* 1. Price Range Slider with Live Histogram (Alibaba Accordion) */}
+      <div className="rounded-xl border border-line/70 bg-soft/30 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => toggleSection('price')}
+          className="w-full flex items-center justify-between p-3 text-start hover:bg-soft/60 transition cursor-pointer"
+        >
+          <span className="text-[12px] font-black text-ink">{t('priceRange')}</span>
+          <ChevronDown size={14} className={`text-sub transition-transform duration-200 ${openSections.price ? 'rotate-180' : ''}`} />
+        </button>
 
-      <hr className="border-line mb-6" />
+        {openSections.price && (
+          <div className="p-3 pt-0">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] text-sub font-bold">{lt(locale, { fa: 'نمودار میانگین قیمت', en: 'Price Histogram', ar: 'مخطط الأسعار', zh: '价格直方图', ru: 'Гистограмма цен' })}</span>
+              {(price[0] > priceBounds.min || price[1] < priceBounds.max) && (
+                <button
+                  type="button"
+                  onClick={() => setPrice([priceBounds.min, priceBounds.max])}
+                  className="text-[11px] text-brand-dark font-bold hover:underline cursor-pointer"
+                >
+                  {lt(locale, { fa: 'ریست', en: 'Reset', ar: 'إعادة ضبط', zh: '重置', ru: 'Сброс' })}
+                </button>
+              )}
+            </div>
 
-      {/* Stops */}
-      <div className="mb-7">
-        <h3 className="font-black text-[13px] text-ink mb-4">{t('stopsCount')}</h3>
-        <div className="flex flex-col gap-3">
-          {stopLabels.map((label, i) => {
-            const count = stopCounts[i] || 0;
-            const checked = stops.includes(i);
-            return (
-              <label key={label} className={`flex items-center gap-3 group ${count === 0 ? 'opacity-40 pointer-events-none' : 'cursor-pointer'}`}>
-                <span className={`w-5 h-5 rounded-md grid place-items-center border transition-colors group-has-[:focus-visible]:ring-2 group-has-[:focus-visible]:ring-brand ${checked ? 'bg-brand border-brand' : 'border-line group-hover:border-brand'}`}>
-                  {checked && <Check size={13} className="text-surface" strokeWidth={3} />}
+            {/* 12-bar Price Histogram Bars */}
+            <div className="flex items-end gap-1 h-7 mb-2 px-1" dir="ltr">
+              {flightPriceBuckets.map((h: number, i: number) => {
+                const span = Math.max(priceBounds.max - priceBounds.min, 1);
+                const bucketVal = priceBounds.min + (i / 12) * span;
+                const inRange = bucketVal >= price[0] && bucketVal <= price[1];
+                return (
+                  <i
+                    key={i}
+                    style={{ height: `${h}%` }}
+                    className={`flex-1 rounded-t-sm transition-all duration-200 ${
+                      inRange ? 'bg-brand shadow-2xs' : 'bg-line/70 opacity-40'
+                    }`}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Dual Range Track */}
+            <div className="relative h-6 mb-2" dir="ltr">
+              <span className="absolute top-1/2 -translate-y-1/2 inset-x-0 h-1.5 rounded-full bg-line" />
+              <span
+                className="absolute top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-brand"
+                style={{ left: `${minPct}%`, right: `${100 - maxPct}%` }}
+              />
+              <input
+                type="range"
+                min={priceBounds.min}
+                max={priceBounds.max}
+                step={STEP}
+                value={price[0]}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setPrice([Math.min(val, price[1] - STEP), price[1]]);
+                }}
+                aria-label={t('minPrice')}
+                className="absolute inset-0 w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-surface [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-brand [&::-webkit-slider-thumb]:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-full cursor-pointer"
+              />
+              <input
+                type="range"
+                min={priceBounds.min}
+                max={priceBounds.max}
+                step={STEP}
+                value={price[1]}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setPrice([price[0], Math.max(val, price[0] + STEP)]);
+                }}
+                aria-label={t('maxPrice')}
+                className="absolute inset-0 w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-surface [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-brand [&::-webkit-slider-thumb]:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-full cursor-pointer"
+              />
+            </div>
+
+            {/* Labels below slider */}
+            <div className="flex justify-between items-center text-xs font-bold text-sub mb-2.5">
+              <div>
+                <span className="text-[10px] text-sub block leading-none mb-0.5">
+                  {lt(locale, { fa: 'از:', en: 'From:', ar: 'من:', zh: '起：', ru: 'От:' })}
                 </span>
-                <input type="checkbox" className="sr-only focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" checked={checked} onChange={() => toggle(stops, i, setStops)} />
-                <span className="text-[13px] font-bold text-ink">{label}</span>
-                <span className="me-auto text-[11px] text-sub num">{num(count, locale)}</span>
-              </label>
-            );
-          })}
-        </div>
-      </div>
-
-      <hr className="border-line mb-6" />
-
-      {/* Airlines */}
-      <div>
-        <h3 className="font-black text-[13px] text-ink mb-4">{t('airlines')}</h3>
-        <div className="flex flex-col gap-3">
-          {airlineOptions.map(({ name, minPrice }) => {
-            const checked = airlines.includes(name);
-            return (
-              <label key={name} className="flex items-center gap-3 cursor-pointer group">
-                <span className={`w-5 h-5 rounded-md grid place-items-center border transition-colors group-has-[:focus-visible]:ring-2 group-has-[:focus-visible]:ring-brand ${checked ? 'bg-brand border-brand' : 'border-line group-hover:border-brand'}`}>
-                  {checked && <Check size={13} className="text-surface" strokeWidth={3} />}
+                <span className="text-brand-dark font-black font-mono num">{num(price[0], locale)}</span>
+                <span className="text-[9.5px] text-sub ms-1">{currencyLabel}</span>
+              </div>
+              <div className="text-end">
+                <span className="text-[10px] text-sub block leading-none mb-0.5">
+                  {lt(locale, { fa: 'تا:', en: 'To:', ar: 'إلى:', zh: '止：', ru: 'До:' })}
                 </span>
-                <input type="checkbox" className="sr-only focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand" checked={checked} onChange={() => toggle(airlines, name, setAirlines)} />
-                <span className="text-[13px] font-bold text-ink truncate">{name}</span>
-                <span className="me-auto text-[11px] text-sub num">{num(minPrice, locale)}</span>
-              </label>
-            );
-          })}
-        </div>
+                <span className="text-brand-dark font-black font-mono num">{num(price[1], locale)}</span>
+                <span className="text-[9.5px] text-sub ms-1">{currencyLabel}</span>
+              </div>
+            </div>
+
+            {/* Quick price presets */}
+            <div className="grid grid-cols-2 gap-1.5 pt-1">
+              {pricePresets.map((preset, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setPrice(preset.range as [number, number])}
+                  className={`py-1 px-2 rounded-lg text-[11px] font-bold border transition truncate cursor-pointer ${
+                    price[0] === preset.range[0] && price[1] === preset.range[1]
+                      ? 'bg-mint text-brand-dark border-brand font-black'
+                      : 'bg-surface border-line hover:border-brand/40 text-sub hover:text-ink'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-    </>
+
+      {/* 2. Number of Stops (Alibaba Accordion) */}
+      <div className="rounded-xl border border-line/70 bg-soft/30 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => toggleSection('stops')}
+          className="w-full flex items-center justify-between p-3 text-start hover:bg-soft/60 transition cursor-pointer"
+        >
+          <div className="flex items-center gap-1.5">
+            <span className="text-[12px] font-black text-ink">{t('stopsCount')}</span>
+            {stops.length > 0 && (
+              <span className="w-4 h-4 rounded-full bg-brand text-surface text-[9px] grid place-items-center font-bold">
+                {num(stops.length, locale)}
+              </span>
+            )}
+          </div>
+          <ChevronDown size={14} className={`text-sub transition-transform duration-200 ${openSections.stops ? 'rotate-180' : ''}`} />
+        </button>
+
+        {openSections.stops && (
+          <div className="p-3 pt-0 space-y-1.5">
+            {stopLabels.map((label, i) => {
+              const count = stopCounts[i] || 0;
+              const checked = stops.includes(i);
+              return (
+                <label
+                  key={label}
+                  className={`flex items-center justify-between p-2 rounded-xl border transition ${
+                    checked ? 'bg-mint/40 border-brand/40 text-brand-dark shadow-2xs' : 'border-line/60 bg-surface hover:bg-soft/70 text-ink'
+                  } ${count === 0 ? 'opacity-40 pointer-events-none' : 'cursor-pointer'}`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span
+                      className={`w-4 h-4 rounded-md grid place-items-center border transition ${
+                        checked ? 'bg-brand border-brand text-surface' : 'border-line bg-surface'
+                      }`}
+                    >
+                      {checked && <Check size={11} className="text-surface" strokeWidth={3} />}
+                    </span>
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={checked}
+                      onChange={() => toggle(stops, i, setStops)}
+                    />
+                    <span className="text-xs font-black truncate">{label}</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full bg-soft text-[10.5px] font-mono font-bold text-sub">
+                    {num(count, locale)}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* 3. Time of Day (Departure Time Window - Alibaba style) */}
+      <div className="rounded-xl border border-line/70 bg-soft/30 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => toggleSection('time')}
+          className="w-full flex items-center justify-between p-3 text-start hover:bg-soft/60 transition cursor-pointer"
+        >
+          <div className="flex items-center gap-1.5">
+            <span className="text-[12px] font-black text-ink">
+              {lt(locale, { fa: 'ساعت پرواز', en: 'Departure Time', ar: 'وقت الإقلاع', zh: '起飞时间', ru: 'Время вылета' })}
+            </span>
+            {timeOfDay !== 'all' && (
+              <span className="w-4 h-4 rounded-full bg-brand text-surface text-[9px] grid place-items-center font-bold">
+                ۱
+              </span>
+            )}
+          </div>
+          <ChevronDown size={14} className={`text-sub transition-transform duration-200 ${openSections.time ? 'rotate-180' : ''}`} />
+        </button>
+
+        {openSections.time && (
+          <div className="p-3 pt-0">
+            <div className="grid grid-cols-2 gap-2">
+              {timeSlots.map((slot) => {
+                const Icon = slot.icon;
+                const count = timeCounts[slot.id] || 0;
+                const checked = timeOfDay === slot.id;
+                return (
+                  <button
+                    key={slot.id}
+                    type="button"
+                    onClick={() => setTimeOfDay(checked ? 'all' : slot.id)}
+                    className={`p-2 rounded-xl border text-start transition flex flex-col justify-between min-h-[60px] cursor-pointer ${
+                      checked
+                        ? 'bg-mint/40 border-brand text-brand-dark shadow-2xs'
+                        : 'bg-surface border-line hover:border-brand/40 text-ink'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <Icon size={15} className={checked ? 'text-brand' : 'text-sub'} />
+                      {count > 0 && (
+                        <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-md bg-soft text-sub">
+                          {num(count, locale)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-1">
+                      <span className="text-[11.5px] font-black block leading-tight">{slot.title}</span>
+                      <span className="text-[9.5px] text-sub font-mono">{slot.time}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 4. Airlines List with Logo, Name & Starting Price */}
+      <div className="rounded-xl border border-line/70 bg-soft/30 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => toggleSection('airlines')}
+          className="w-full flex items-center justify-between p-3 text-start hover:bg-soft/60 transition cursor-pointer"
+        >
+          <div className="flex items-center gap-1.5">
+            <span className="text-[12px] font-black text-ink">{t('airlines')}</span>
+            {airlines.length > 0 && (
+              <span className="w-4 h-4 rounded-full bg-brand text-surface text-[9px] grid place-items-center font-bold">
+                {num(airlines.length, locale)}
+              </span>
+            )}
+          </div>
+          <ChevronDown size={14} className={`text-sub transition-transform duration-200 ${openSections.airlines ? 'rotate-180' : ''}`} />
+        </button>
+
+        {openSections.airlines && (
+          <div className="p-3 pt-0">
+            {/* Airline Search Box */}
+            <div className="relative mb-2">
+              <Search size={13} className="absolute top-1/2 -translate-y-1/2 start-2.5 text-sub pointer-events-none" />
+              <input
+                type="text"
+                value={airlineSearch}
+                onChange={(e) => setAirlineSearch(e.target.value)}
+                placeholder={lt(locale, {
+                  fa: 'جستجوی نام ایرلاین...',
+                  en: 'Search airline...',
+                  ar: 'ابحث عن طيران...',
+                  zh: '搜索航司...',
+                  ru: 'Поиск авиакомпании...',
+                })}
+                className="w-full h-8 ps-8 pe-3 rounded-lg bg-surface text-xs font-bold border border-line placeholder:text-sub focus:outline-none focus:ring-1 focus:ring-brand"
+              />
+            </div>
+
+            <div className="space-y-1.5 max-h-56 overflow-y-auto overscroll-contain pe-1">
+              {airlineOptions
+                .filter((a) => !airlineSearch || a.name.toLowerCase().includes(airlineSearch.toLowerCase()))
+                .map(({ name, minPrice }) => {
+                  const checked = airlines.includes(name);
+                  const minToman = Math.round(minPrice / 10);
+                  return (
+                    <label
+                      key={name}
+                      className={`flex items-center justify-between p-2 rounded-xl border transition group ${
+                        checked
+                          ? 'bg-mint/40 border-brand/40 text-brand-dark'
+                          : 'border-transparent bg-surface hover:bg-soft text-ink'
+                      } cursor-pointer`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className={`w-4 h-4 rounded-md grid place-items-center border transition shrink-0 ${
+                            checked ? 'bg-brand border-brand text-surface' : 'border-line group-hover:border-brand'
+                          }`}
+                        >
+                          {checked && <Check size={11} className="text-surface" strokeWidth={3} />}
+                        </span>
+                        <input
+                          type="checkbox"
+                          className="sr-only"
+                          checked={checked}
+                          onChange={() => toggle(airlines, name, setAirlines)}
+                        />
+                        <AirlineLogo airline={name} size={22} className="shrink-0" />
+                        <span className="text-[12px] font-bold text-ink truncate">{name}</span>
+                      </div>
+                      <span className="text-[10.5px] text-sub font-mono font-bold whitespace-nowrap ms-2">
+                        {num(minToman, locale)}
+                      </span>
+                    </label>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 5. Ticket Type (Systemic vs Charter) */}
+      <div className="rounded-xl border border-line/70 bg-soft/30 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => toggleSection('ticketType')}
+          className="w-full flex items-center justify-between p-3 text-start hover:bg-soft/60 transition cursor-pointer"
+        >
+          <span className="text-[12px] font-black text-ink">
+            {lt(locale, { fa: 'نوع بلیت', en: 'Ticket Type', ar: 'نوع التذكرة', zh: '机票类型', ru: 'Тиپ билета' })}
+          </span>
+          <ChevronDown size={14} className={`text-sub transition-transform duration-200 ${openSections.ticketType ? 'rotate-180' : ''}`} />
+        </button>
+
+        {openSections.ticketType && (
+          <div className="p-3 pt-0 space-y-1.5">
+            {ticketTypes.map((type) => {
+              const count = ticketTypeCounts[type.id] || 0;
+              const checked = ticketType === type.id;
+              return (
+                <label
+                  key={type.id}
+                  className={`flex items-center justify-between p-2 rounded-xl border transition ${
+                    checked ? 'bg-mint/40 border-brand/40 text-brand-dark' : 'border-line/60 bg-surface hover:bg-soft text-ink'
+                  } cursor-pointer`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className={`w-4 h-4 rounded-full grid place-items-center border transition ${
+                        checked ? 'border-brand bg-brand text-surface' : 'border-line'
+                      }`}
+                    >
+                      {checked && <span className="w-1.5 h-1.5 rounded-full bg-surface" />}
+                    </span>
+                    <input
+                      type="radio"
+                      name="ticketType"
+                      className="sr-only"
+                      checked={checked}
+                      onChange={() => setTicketType(checked ? 'all' : type.id)}
+                    />
+                    <span className="text-xs font-bold truncate">{type.label}</span>
+                  </div>
+                  {count > 0 && (
+                    <span className="px-2 py-0.5 rounded-full bg-soft text-[10.5px] font-mono font-bold text-sub">
+                      {num(count, locale)}
+                    </span>
+                  )}
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* 6. Cabin Class (Economy vs Business) */}
+      <div className="rounded-xl border border-line/70 bg-soft/30 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => toggleSection('cabinClass')}
+          className="w-full flex items-center justify-between p-3 text-start hover:bg-soft/60 transition cursor-pointer"
+        >
+          <span className="text-[12px] font-black text-ink">
+            {lt(locale, { fa: 'کلاس پروازی', en: 'Cabin Class', ar: 'درجة السفر', zh: '舱位等级', ru: 'Класс' })}
+          </span>
+          <ChevronDown size={14} className={`text-sub transition-transform duration-200 ${openSections.cabinClass ? 'rotate-180' : ''}`} />
+        </button>
+
+        {openSections.cabinClass && (
+          <div className="p-3 pt-0 space-y-1.5">
+            {cabinClasses.map((cls) => {
+              const count = cabinClassCounts[cls.id] || 0;
+              const checked = cabinClass === cls.id;
+              return (
+                <label
+                  key={cls.id}
+                  className={`flex items-center justify-between p-2 rounded-xl border transition cursor-pointer ${
+                    checked ? 'bg-mint/40 border-brand/40 text-brand-dark' : 'border-line/60 bg-surface hover:bg-soft text-ink'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className={`w-4 h-4 rounded-full grid place-items-center border transition ${
+                        checked ? 'border-brand bg-brand text-surface' : 'border-line'
+                      }`}
+                    >
+                      {checked && <span className="w-1.5 h-1.5 rounded-full bg-surface" />}
+                    </span>
+                    <input
+                      type="radio"
+                      name="cabinClass"
+                      className="sr-only"
+                      checked={checked}
+                      onChange={() => setCabinClass(checked ? 'all' : cls.id)}
+                    />
+                    <span className="text-xs font-bold truncate">{cls.label}</span>
+                  </div>
+                  {count > 0 && (
+                    <span className="px-2 py-0.5 rounded-full bg-soft text-[10.5px] font-mono font-bold text-sub">
+                      {num(count, locale)}
+                    </span>
+                  )}
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
   );
 
   return (
     <div className="min-h-screen bg-paper pb-32 sm:pb-24 lg:pb-20">
       <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-6 flex flex-col lg:flex-row gap-6 items-start">
-        {/* Sidebar desktop */}
+        {/* ================= DESKTOP SIDEBAR ================= */}
         <aside className="w-72 max-h-[calc(100vh-6rem)] shrink-0 hidden lg:block overflow-y-auto overscroll-contain bg-surface rounded-2xl border border-line p-5 shadow-sm sticky top-24">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="font-black text-sm text-ink">{t('filters')}</h2>
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal size={15} className="text-brand-dark" />
+              <h2 className="font-black text-sm text-ink">{t('filters')}</h2>
+              {activeFilters > 0 && (
+                <span className="w-5 h-5 grid place-items-center rounded-full bg-brand text-surface text-[10.5px] font-bold num">
+                  {num(activeFilters, locale)}
+                </span>
+              )}
+            </div>
             {activeFilters > 0 && (
-              <button onClick={clearAll} className="text-[11.5px] font-black text-brand-dark hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">
-                {t('clearFilters')}
+              <button
+                type="button"
+                onClick={clearAll}
+                className="text-[11.5px] font-black text-brand-dark hover:underline flex items-center gap-1 focus-visible:outline-none"
+              >
+                <RotateCcw size={11} />
+                <span>{t('clearFilters')}</span>
               </button>
             )}
           </div>
           {filtersBody}
         </aside>
 
-        {/* Content */}
+        {/* ================= MAIN CONTENT ================= */}
         <div className="flex-grow flex flex-col gap-4 min-w-0 w-full">
           {/* Search summary - Sticky on mobile under header */}
           <div className="sticky top-16 z-30 md:static bg-surface/95 backdrop-blur-xl rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 shadow-xs border border-line/80">
@@ -354,7 +885,7 @@ function FlightSearchInner() {
           <FlightPriceCalendar
             selectedDate={travelDate}
             onSelectDate={handleDateChange}
-            basePrice={flights[0]?.price || 28500000}
+            basePrice={flights[0]?.price ? Math.round(flights[0].price / 10) : 2_500_000}
             locale={locale}
           />
 
@@ -363,31 +894,119 @@ function FlightSearchInner() {
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none text-xs font-black">
               <button
                 type="button"
-                onClick={() => setQuickFilter('all')}
-                className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition ${quickFilter === 'all' ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+                onClick={() => {
+                  setStops([]);
+                  setTimeOfDay('all');
+                  setTicketType('all');
+                  setQuickFilter('all');
+                }}
+                className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition ${
+                  quickFilter === 'all' && stops.length === 0 && timeOfDay === 'all' && ticketType === 'all'
+                    ? 'bg-brand text-surface shadow-xs'
+                    : 'bg-soft text-sub hover:text-ink'
+                }`}
               >
                 {lt(locale, { fa: 'همه پروازها', en: 'All Flights', ar: 'كل الرحلات', zh: '全部航班', ru: 'Все рейсы' })}
               </button>
               <button
                 type="button"
-                onClick={() => setQuickFilter('direct')}
-                className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition ${quickFilter === 'direct' ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+                onClick={() => {
+                  if (stops.includes(0) && stops.length === 1) {
+                    setStops([]);
+                    setQuickFilter('all');
+                  } else {
+                    setStops([0]);
+                    setQuickFilter('direct');
+                  }
+                }}
+                className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition flex items-center gap-1 ${
+                  stops.includes(0) && stops.length === 1
+                    ? 'bg-brand text-surface shadow-xs'
+                    : 'bg-soft text-sub hover:text-ink'
+                }`}
               >
-                {lt(locale, { fa: 'فقط بدون توقف', en: 'Non-stop Only', ar: 'بدون توقف', zh: '仅直飞', ru: 'Только прямые' })}
+                {stops.includes(0) && stops.length === 1 && <Check size={12} strokeWidth={3} />}
+                <span>{lt(locale, { fa: 'فقط بدون توقف', en: 'Non-stop Only', ar: 'بدون توقف', zh: '仅直飞', ru: 'Только прямые' })}</span>
               </button>
               <button
                 type="button"
-                onClick={() => setQuickFilter('morning')}
-                className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition ${quickFilter === 'morning' ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+                onClick={() => {
+                  if (timeOfDay === 'morning') {
+                    setTimeOfDay('all');
+                    setQuickFilter('all');
+                  } else {
+                    setTimeOfDay('morning');
+                    setQuickFilter('morning');
+                  }
+                }}
+                className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition flex items-center gap-1 ${
+                  timeOfDay === 'morning'
+                    ? 'bg-brand text-surface shadow-xs'
+                    : 'bg-soft text-sub hover:text-ink'
+                }`}
               >
-                {lt(locale, { fa: 'پروازهای صبح (۶-۱۲)', en: 'Morning (6-12)', ar: 'صباحاً (6-12)', zh: '早班机（6-12点）', ru: 'Утренние (6-12)' })}
+                {timeOfDay === 'morning' && <Check size={12} strokeWidth={3} />}
+                <span>{lt(locale, { fa: 'پروازهای صبح (۶-۱۲)', en: 'Morning (6-12)', ar: 'صباحاً (6-12)', zh: '早班机（6-12点）', ru: 'Утренние (6-12)' })}</span>
               </button>
               <button
                 type="button"
-                onClick={() => setQuickFilter('systemic')}
-                className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition ${quickFilter === 'systemic' ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+                onClick={() => {
+                  if (timeOfDay === 'evening') {
+                    setTimeOfDay('all');
+                    setQuickFilter('all');
+                  } else {
+                    setTimeOfDay('evening');
+                    setQuickFilter('evening');
+                  }
+                }}
+                className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition flex items-center gap-1 ${
+                  timeOfDay === 'evening'
+                    ? 'bg-brand text-surface shadow-xs'
+                    : 'bg-soft text-sub hover:text-ink'
+                }`}
               >
-                {lt(locale, { fa: 'فقط سیستمی', en: 'Systemic Only', ar: 'منتظمة فقط', zh: '仅正班', ru: 'Только регулярные' })}
+                {timeOfDay === 'evening' && <Check size={12} strokeWidth={3} />}
+                <span>{lt(locale, { fa: 'پروازهای شب (۱۸-۲۴)', en: 'Evening (18-24)', ar: 'مساءً (18-24)', zh: '晚班机（18-24点）', ru: 'Вечерние (18-24)' })}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (ticketType === 'systemic') {
+                    setTicketType('all');
+                    setQuickFilter('all');
+                  } else {
+                    setTicketType('systemic');
+                    setQuickFilter('systemic');
+                  }
+                }}
+                className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition flex items-center gap-1 ${
+                  ticketType === 'systemic'
+                    ? 'bg-brand text-surface shadow-xs'
+                    : 'bg-soft text-sub hover:text-ink'
+                }`}
+              >
+                {ticketType === 'systemic' && <Check size={12} strokeWidth={3} />}
+                <span>{lt(locale, { fa: 'فقط سیستمی', en: 'Systemic Only', ar: 'منتظمة فقط', zh: '仅正班', ru: 'Только регулярные' })}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (cabinClass === 'business') {
+                    setCabinClass('all');
+                    setQuickFilter('all');
+                  } else {
+                    setCabinClass('business');
+                    setQuickFilter('business');
+                  }
+                }}
+                className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition flex items-center gap-1 ${
+                  cabinClass === 'business'
+                    ? 'bg-brand text-surface shadow-xs'
+                    : 'bg-soft text-sub hover:text-ink'
+                }`}
+              >
+                {cabinClass === 'business' && <Check size={12} strokeWidth={3} />}
+                <span>{lt(locale, { fa: 'بیزنس کلاس', en: 'Business Class', ar: 'درجة رجال الأعمال', zh: '商务舱', ru: 'Бизнес' })}</span>
               </button>
             </div>
 
@@ -493,27 +1112,17 @@ function FlightSearchInner() {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-              {flights
-                .filter((f) => {
-                  if (quickFilter === 'direct' && f.stops > 0) return false;
-                  if (quickFilter === 'morning') {
-                    const depHour = parseInt(f.departureTime.slice(0, 2), 10);
-                    if (depHour < 6 || depHour >= 12) return false;
-                  }
-                  if (quickFilter === 'systemic' && f.ticketType === 'charter') return false;
-                  return true;
-                })
-                .map((f, idx) => (
-                  <BentoFlightCard
-                    key={f.id}
-                    flight={f}
-                    onSelect={() => selectFlight(f)}
-                    isCheapest={idx === 0}
-                    isCompared={cmp.has(f.id)}
-                    onToggleCompare={() => toggleCmp(f.id)}
-                    onShowRefundRules={(flight) => setRefundModalFlight(flight)}
-                  />
-                ))}
+              {flights.map((f, idx) => (
+                <BentoFlightCard
+                  key={f.id}
+                  flight={f}
+                  onSelect={() => selectFlight(f)}
+                  isCheapest={idx === 0}
+                  isCompared={cmp.has(f.id)}
+                  onToggleCompare={() => toggleCmp(f.id)}
+                  onShowRefundRules={(flight) => setRefundModalFlight(flight)}
+                />
+              ))}
             </div>
           )}
 
@@ -595,7 +1204,7 @@ function FlightSearchInner() {
           <button
             type="button"
             onClick={() => setSheet(true)}
-            className="flex items-center gap-1.5 text-xs font-black py-1 px-2 rounded-full hover:bg-surface/20 transition active:scale-95"
+            className="flex items-center gap-1.5 text-xs font-black py-1 px-2 rounded-full hover:bg-surface/20 transition active:scale-95 cursor-pointer"
           >
             <SlidersHorizontal size={14} />
             <span>{t('filters')}</span>
@@ -609,14 +1218,13 @@ function FlightSearchInner() {
           <button
             type="button"
             onClick={() => {
-              // Cycle sort on tap in mobile pill
               const nextIdx = (sorts.findIndex((s) => s.id === sort) + 1) % sorts.length;
               setSort(sorts[nextIdx].id);
             }}
-            className="flex items-center gap-1.5 text-xs font-black py-1 px-2 rounded-full hover:bg-surface/20 transition active:scale-95"
+            className="flex items-center gap-1.5 text-xs font-black py-1 px-2 rounded-full hover:bg-surface/20 transition active:scale-95 cursor-pointer"
           >
             <span className="text-[11px] opacity-75">{t('sortBy')}:</span>
-            <span className="text-brand-bright text-mint-bright dark:text-brand font-bold">
+            <span className="text-mint-bright dark:text-brand font-bold">
               {sorts.find((s) => s.id === sort)?.label}
             </span>
           </button>
@@ -634,7 +1242,15 @@ function FlightSearchInner() {
           <div className="fixed inset-0 z-[90] bg-ink/45 fade-soft" onClick={() => setSheet(false)} aria-hidden="true" />
           <div className="fixed bottom-0 inset-x-0 z-[100] bg-surface rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl">
             <div className="flex justify-between items-center p-5 border-b border-line">
-              <h2 className="font-black text-sm text-ink">{t('filters')}</h2>
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal size={16} className="text-brand-dark" />
+                <h2 className="font-black text-sm text-ink">{t('filters')}</h2>
+                {activeFilters > 0 && (
+                  <span className="w-5 h-5 grid place-items-center rounded-full bg-brand text-surface text-[10px] num">
+                    {num(activeFilters, locale)}
+                  </span>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => setSheet(false)}
@@ -645,11 +1261,20 @@ function FlightSearchInner() {
               </button>
             </div>
             <div className="overflow-y-auto p-5">{filtersBody}</div>
-            <div className="p-4 border-t border-line bg-surface">
+            <div className="p-4 border-t border-line bg-surface flex items-center gap-3">
+              {activeFilters > 0 && (
+                <button
+                  type="button"
+                  onClick={clearAll}
+                  className="h-11 px-4 rounded-xl border border-line text-sub font-black text-xs hover:bg-soft transition"
+                >
+                  {t('clearFilters')}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setSheet(false)}
-                className="w-full min-h-11 rounded-xl bg-brand hover:bg-brand-dark text-surface text-sm font-black transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                className="flex-1 min-h-11 rounded-xl bg-brand hover:bg-brand-dark text-surface text-sm font-black transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
                 {t('apply')}
               </button>
@@ -657,6 +1282,7 @@ function FlightSearchInner() {
           </div>
         </div>
       )}
+
       {/* In-Place Flight Search Edit Sheet */}
       {editSheetOpen && (
         <div
@@ -746,7 +1372,7 @@ function FlightSearchInner() {
                   if (editDate) q.set('depart', editDate);
                   router.push(`/flights/search?${q.toString()}`);
                 }}
-                className="w-full h-12 rounded-2xl bg-action hover:bg-action-hover text-ink font-black text-sm flex items-center justify-center gap-2 shadow-md transition active:scale-95"
+                className="w-full h-12 rounded-2xl bg-action hover:bg-action-hover text-ink font-black text-sm flex items-center justify-center gap-2 shadow-md transition active:scale-95 cursor-pointer"
               >
                 <Search size={16} aria-hidden="true" />
                 <span>
@@ -764,7 +1390,7 @@ function FlightSearchInner() {
         </div>
       )}
 
-      {/* Floating Flight Compare Bar */}
+      {/* Flight Comparison Floating Bar */}
       <FlightCompareBar
         cmp={cmp}
         flights={flights}
@@ -773,16 +1399,16 @@ function FlightSearchInner() {
         onCompareAction={() => setCompareModalOpen(true)}
       />
 
-      {/* Side-by-Side Flight Comparison Modal */}
+      {/* Flight Comparison Modal */}
       <FlightCompareModal
         isOpen={compareModalOpen}
         onClose={() => setCompareModalOpen(false)}
         comparedFlights={flights.filter((f) => cmp.has(f.id))}
-        onRemove={toggleCmp}
-        onSelectFlight={(flight) => selectFlight(flight)}
+        onRemove={(id) => toggleCmp(id)}
+        onSelectFlight={selectFlight}
       />
 
-      {/* Flight Refund Policy Rules Modal (Alibaba / FlyToday Benchmark) */}
+      {/* Refund Rules Modal */}
       <FlightRefundRulesModal
         isOpen={Boolean(refundModalFlight)}
         onClose={() => setRefundModalFlight(null)}
@@ -790,13 +1416,13 @@ function FlightSearchInner() {
         locale={locale}
       />
 
-      {/* Flight Price Drop Alert Modal (Trip.com / FlyToday Benchmark) */}
+      {/* Price Alert Modal */}
       <FlightPriceAlertModal
         isOpen={priceAlertModalOpen}
         onClose={() => setPriceAlertModalOpen(false)}
-        originCity={from || 'تهران'}
-        destCity={to || 'مشهد'}
-        currentLowestPrice={flights[0]?.price || 28500000}
+        originCity={from || lt(locale, { fa: 'مبدأ دلخواه', en: 'Any Origin', ar: 'أي مدينة', zh: '任意城市', ru: 'Любой' })}
+        destCity={to || lt(locale, { fa: 'مقصد دلخواه', en: 'Any Destination', ar: 'أي وجهة', zh: '任意目的地', ru: 'Любой' })}
+        currentLowestPrice={flights[0]?.price ? Math.round(flights[0].price / 10) : 2_500_000}
         locale={locale}
       />
     </div>
@@ -805,7 +1431,13 @@ function FlightSearchInner() {
 
 export default function FlightSearchPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-paper p-10 text-center"><Loader2 className="animate-spin mx-auto text-brand" size={32} /></div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-paper flex items-center justify-center">
+          <Loader2 className="animate-spin text-brand" size={36} />
+        </div>
+      }
+    >
       <FlightSearchInner />
     </Suspense>
   );

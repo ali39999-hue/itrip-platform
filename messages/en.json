@@ -829,7 +829,8 @@
     "email": "Email Inquiries",
     "liveChat": "Live Chat Support",
     "contactForm": "Send a Message / Ticket",
-    "sendMessage": "Send Message"
+    "sendMessage": "Send Message",
+    "submit": "Send Message"
   },
   "Snapp": {
     "title": "Snapp Ride Recharge",

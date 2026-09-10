@@ -7,6 +7,7 @@ import { Prisma } from '@prisma/client';
 import { Money } from '@/lib/finance';
 import { GeneralLedgerService } from '@/domains/ledger/GeneralLedgerService';
 import { InvoiceDomainService } from '@/domains/finance/InvoiceDomainService';
+import { requirePermission } from '@/domains/identity/permission-service';
 
 export interface DestinationBankCardDto {
   id: string;
@@ -262,15 +263,7 @@ export async function reviewCardTransferReceipt(
   adminNote?: string
 ) {
   try {
-    const session = await safeAuth();
-    if (!session || !session.user) {
-      return { success: false, error: 'احراز هویت الزامی است' };
-    }
-
-    const isStaff = session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN';
-    if (!isStaff) {
-      return { success: false, error: 'تنها مدیران سیستم مجاز به بررسی و تایید فیش هستند' };
-    }
+    const admin = await requirePermission(['finance:post', 'payment:capture', 'finance:view']);
 
     const receipt = await prisma.cardTransferReceipt.findUnique({
       where: { id: receiptId },
@@ -299,7 +292,7 @@ export async function reviewCardTransferReceipt(
           where: { id: receipt.id },
           data: {
             status: 'APPROVED',
-            reviewerId: session.user.id,
+            reviewerId: admin.id,
             reviewedAt: now,
             adminNote: adminNote || 'تأیید شد',
           },
@@ -326,7 +319,7 @@ export async function reviewCardTransferReceipt(
               receiptId: receipt.id,
               bankCardId: receipt.bankCardId,
               trackingCode: receipt.trackingCode,
-              approvedBy: session.user.id,
+              approvedBy: admin.id,
             }),
           },
         });
@@ -420,8 +413,8 @@ export async function reviewCardTransferReceipt(
             bookingId: booking.id,
             fromStatus: booking.status,
             toStatus: 'CONFIRMED',
-            actor: session.user.id || 'ADMIN',
-            reason: `رسید کارت به کارت توسط مدیر مالی (${session.user.name || session.user.id}) تأیید شد. ${adminNote ? 'یادداشت: ' + adminNote : ''}`,
+            actor: admin.id || 'ADMIN',
+            reason: `رسید کارت به کارت توسط مدیر مالی تأیید شد. ${adminNote ? 'یادداشت: ' + adminNote : ''}`,
           },
         });
       });
@@ -438,7 +431,7 @@ export async function reviewCardTransferReceipt(
           where: { id: receipt.id },
           data: {
             status: 'REJECTED',
-            reviewerId: session.user.id,
+            reviewerId: admin.id,
             reviewedAt: now,
             adminNote: adminNote || 'رسید معتبر نیست',
           },
@@ -449,7 +442,7 @@ export async function reviewCardTransferReceipt(
             bookingId: booking.id,
             fromStatus: booking.status,
             toStatus: booking.status,
-            actor: session.user.id || 'ADMIN',
+            actor: admin.id || 'ADMIN',
             reason: `رسید کارت به کارت توسط مدیر مالی رد شد: ${adminNote || 'رسید نامعتبر'}`,
           },
         });
@@ -468,10 +461,17 @@ export async function reviewCardTransferReceipt(
 }
 
 /**
- * Get count of pending receipts for the Admin Header Badge
+ * Get count of pending receipts for the Admin Header Badge.
+ * Server actions are remotely callable, so this endpoint is gated behind the
+ * ERP role check even though it only returns a number.
  */
 export async function getPendingReceiptsCount(): Promise<number> {
   try {
+    const session = await safeAuth();
+    if (!session?.user?.id) return 0;
+    const { hasErpRole } = await import('@/domains/identity/permission-service');
+    if (!(await hasErpRole(session.user.id))) return 0;
+
     const count = await prisma.cardTransferReceipt.count({
       where: { status: 'PENDING_REVIEW' },
     });
@@ -492,15 +492,7 @@ export async function listCardTransferReceipts(filters?: {
   limit?: number;
 }) {
   try {
-    const session = await safeAuth();
-    if (!session || !session.user) {
-      return { success: false, error: 'احراز هویت الزامی است', data: [], total: 0 };
-    }
-
-    const isStaff = session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN';
-    if (!isStaff) {
-      return { success: false, error: 'دسترسی غیرمجاز', data: [], total: 0 };
-    }
+    await requirePermission('finance:view');
 
     const page = filters?.page || 1;
     const limit = filters?.limit || 20;
@@ -514,10 +506,10 @@ export async function listCardTransferReceipts(filters?: {
 
     if (filters?.search) {
       whereClause.OR = [
-        { trackingCode: { contains: filters.search, mode: 'insensitive' } },
-        { booking: { reference: { contains: filters.search, mode: 'insensitive' } } },
-        { booking: { customer: { name: { contains: filters.search, mode: 'insensitive' } } } },
-        { booking: { customer: { phone: { contains: filters.search, mode: 'insensitive' } } } },
+        { trackingCode: { contains: filters.search } },
+        { booking: { reference: { contains: filters.search } } },
+        { booking: { customer: { name: { contains: filters.search } } } },
+        { booking: { customer: { phone: { contains: filters.search } } } },
       ];
     }
 

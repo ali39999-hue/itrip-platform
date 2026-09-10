@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { PaymentDomainService } from '@/domains/payments/PaymentDomainService';
-import { Money } from '@/lib/finance';
 import { getAppBaseUrl } from '@/lib/runtime-url';
 
 export const dynamic = 'force-dynamic';
@@ -40,7 +38,7 @@ async function handleCallback(req: NextRequest) {
 
   const baseUrl = getAppBaseUrl();
 
-  // Find payment record matching gatewayRef
+  // Find payment record matching gatewayRef (for a contextual redirect only).
   let payment = null;
   if (txId) {
     payment = await prisma.payment.findFirst({
@@ -56,25 +54,13 @@ async function handleCallback(req: NextRequest) {
 
   const isSuccessful = status === 'success' || status === 'completed' || status === '1' || status === 'ok' || status === 'paid';
 
+  // Official eCardo release checklist: the callback is UX-only and is NEVER the
+  // source of final payment confirmation. Capture authority is exclusively the
+  // HMAC-signed IPN delivered to ipn_url and processed by /api/payments/webhook
+  // (PaymentDomainService.processWebhook with signature + idempotency checks).
+  // This handler therefore only resolves the payment and redirects the user.
   if (payment) {
     const resolvedBookingId = payment.bookingId || bookingId;
-    if (isSuccessful && payment.status !== 'SUCCESS' && payment.status !== 'CAPTURED') {
-      try {
-        await PaymentDomainService.processWebhook({
-          gatewayName: 'ECARDO_GATEWAY',
-          eventId: `ecardo_cb_${txId}_${Date.now()}`,
-          eventType: 'payment.captured',
-          bookingId: resolvedBookingId,
-          gatewayRef: txId || payment.gatewayRef || '',
-          settledAmount: new Money(payment.amount, payment.currency),
-          settledCurrency: payment.currency,
-          rawPayload: { txId, status, method: req.method },
-        });
-      } catch (err) {
-        console.error('Ecardo callback webhook processing warning:', err);
-      }
-    }
-
     return NextResponse.redirect(
       `${baseUrl}/payment-status?ref=${encodeURIComponent(txId)}&bookingId=${encodeURIComponent(resolvedBookingId)}&status=${isSuccessful ? 'success' : 'failed'}`
     );

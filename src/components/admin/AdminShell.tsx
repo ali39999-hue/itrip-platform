@@ -10,7 +10,7 @@ import {
   LayoutDashboard, BriefcaseBusiness, Wallet,
   PlaneTakeoff, ExternalLink, ShieldCheck, UserCheck, Activity,
   Building2, Boxes, PanelLeftClose, PanelLeftOpen, FolderKanban, Users, Menu, X,
-  ChevronLeft, Keyboard, ReceiptText,
+  ChevronLeft, Keyboard, ReceiptText, HandCoins,
 } from 'lucide-react';
 import { lt, LText } from '@/lib/lt';
 import { cn } from '@/lib/utils';
@@ -29,12 +29,13 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     id: 'operations',
-    title: { fa: 'عملیات', en: 'Operations', ar: 'العمليات', zh: '运营', ru: 'Операции' },
+    title: { fa: 'عملیات و هویت', en: 'Operations & Staff', ar: 'العمليات والموظفون', zh: '运营与人员', ru: 'Операции и сотрудники' },
     items: [
       { href: '/admin/travel-files', label: { fa: 'پرونده‌های سفر', en: 'Travel Files', ar: 'ملفات السفر', zh: '行程档案', ru: 'Файлы поездок' }, icon: BriefcaseBusiness },
       { href: '/admin/exceptions', label: { fa: 'مرکز خطا و استثنائات', en: 'Exception Center', ar: 'مركز الاستثناءات', zh: '异常中心', ru: 'Центр исключений' }, icon: ShieldCheck },
       { href: '/admin/ops', label: { fa: 'عملیات و پشتیبانی', en: 'Ops & Support', ar: 'العمليات والدعم', zh: '运营与支持', ru: 'Операции и поддержка' }, icon: Activity },
       { href: '/admin/bookings', label: { fa: 'رزروها', en: 'Bookings', ar: 'الحجوزات', zh: '预订', ru: 'Бронирования' }, icon: PlaneTakeoff },
+      { href: '/admin/users', label: { fa: 'کاربران و همکاران', en: 'Staff & Users', ar: 'المستخدمون والموظفون', zh: '员工与用户', ru: 'Сотрудники и пользователи' }, icon: UserCheck },
     ],
   },
   {
@@ -50,6 +51,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/admin/finance', label: { fa: 'مالی و تراکنش‌ها', en: 'Finance & Transactions', ar: 'المالية والمعاملات', zh: '财务与交易', ru: 'Финансы и транзакции' }, icon: Wallet },
       { href: '/admin/finance/receipts', label: { fa: 'بررسی رسیدها (پیمنتینو)', en: 'Receipts Review (Paymentino)', ar: 'مراجعة الإيصالات (بيمينتينو)', zh: '回执审核 (Paymentino)', ru: 'Проверка квитанций (Paymentino)' }, icon: ReceiptText },
+      { href: '/admin/finance/settlements', label: { fa: 'تسویه‌حساب تامین‌کنندگان', en: 'Supplier Settlements', ar: 'تسويات الموردين', zh: '供应商结算', ru: 'Расчёты с поставщиками' }, icon: HandCoins },
     ],
   },
   {
@@ -246,7 +248,7 @@ export function AdminShell({
   );
 
   return (
-    <div className="min-h-screen bg-soft/30 relative">
+    <div data-admin-root="true" className="min-h-screen bg-soft/30 relative">
       {/* Grid pattern lives on its own layer: the .bg-grid-fade mask must never
           wrap content, or the radial mask fades real page content toward the
           document bottom on long pages. */}

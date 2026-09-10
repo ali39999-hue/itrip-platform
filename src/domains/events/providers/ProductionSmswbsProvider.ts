@@ -50,9 +50,13 @@ export class ProductionSmswbsProvider {
   private sender: string;
 
   constructor() {
-    this.uname = process.env.SMSWBS_USERNAME || '09123764868';
-    this.pass = process.env.SMSWBS_PASSWORD || 'Hvd1367Hvd1367';
-    this.sender = process.env.SMSWBS_SENDER || '+989999178755';
+    this.uname = process.env.SMSWBS_USERNAME || '';
+    this.pass = process.env.SMSWBS_PASSWORD || '';
+    this.sender = process.env.SMSWBS_SENDER || '';
+  }
+
+  private credentialsConfigured(): boolean {
+    return Boolean(this.uname && this.pass && this.sender);
   }
 
   /**
@@ -61,9 +65,9 @@ export class ProductionSmswbsProvider {
    * URL: http://smswbs.ir/class/sms/restful/OTP/send_OTP.php
    * Body:
    * {
-   *   "uname": "09123764868",
-   *   "pass": "Hvd1367Hvd1367",
-   *   "from": "+989999178755",
+   *   "uname": "<SMSWBS_USERNAME>",
+   *   "pass": "<SMSWBS_PASSWORD>",
+   *   "from": "<SMSWBS_SENDER>",
    *   "to": "+98...",
    *   "msg": "متن پیامک(اختیاری)",
    *   "extra": { "len": 4, "time": 2, "lang": "fa", "sign": "متن امضای پیامک(اختیاری)" }
@@ -75,6 +79,14 @@ export class ProductionSmswbsProvider {
       return {
         success: false,
         error: 'شماره موبایل وارد شده نامعتبر است یا مربوط به پیش‌شماره ایران (+98) نمی‌باشد.',
+      };
+    }
+
+    if (!this.credentialsConfigured()) {
+      logger.error('SMSWBS credentials (SMSWBS_USERNAME / SMSWBS_PASSWORD / SMSWBS_SENDER) are unconfigured');
+      return {
+        success: false,
+        error: 'سرویس پیامک پیکربندی نشده است (SMSWBS credentials missing).',
       };
     }
 
@@ -155,8 +167,8 @@ export class ProductionSmswbsProvider {
    * URL: http://smswbs.ir/class/sms/restful/OTP/check_OTP.php
    * Body:
    * {
-   *   "uname": "09123764868",
-   *   "pass": "Hvd1367Hvd1367",
+   *   "uname": "<SMSWBS_USERNAME>",
+   *   "pass": "<SMSWBS_PASSWORD>",
    *   "code": "کد دریافتی کاربر",
    *   "to": "+98..."
    * }
@@ -167,6 +179,14 @@ export class ProductionSmswbsProvider {
       return {
         valid: false,
         error: 'شماره موبایل نامعتبر است',
+      };
+    }
+
+    if (!this.credentialsConfigured()) {
+      logger.error('SMSWBS credentials (SMSWBS_USERNAME / SMSWBS_PASSWORD / SMSWBS_SENDER) are unconfigured');
+      return {
+        valid: false,
+        error: 'سرویس پیامک پیکربندی نشده است (SMSWBS credentials missing).',
       };
     }
 

@@ -55,7 +55,7 @@ const MOCK_TRAVELOGUES = [
     userName: 'Reza Tehrani',
     readTime: '۸ دقیقه مطالعه',
     readTimeEn: '8 min read',
-    image: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=600&auto=format&fit=crop&q=80'
+    image: '/images/isfahan/sheikh-lotfollah.jpg'
   }
 ];
 

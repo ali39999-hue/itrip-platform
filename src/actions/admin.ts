@@ -11,6 +11,7 @@ import { SettlementDomainService } from '@/domains/finance/SettlementDomainServi
 import { businessMetrics } from '@/lib/observability/business-metrics';
 import { TravelFileService } from '@/domains/erp/TravelFileService';
 import { ExceptionCenterService } from '@/domains/erp/ExceptionCenterService';
+import { SiteContentService, FxRatesOverride } from '@/domains/content/SiteContentService';
 
 export async function runLedgerReconciliation(): Promise<ReconciliationReport> {
   await requirePermission(['finance:reports:view', 'finance:settlement:match']);
@@ -98,6 +99,8 @@ export async function getAdminFinanceStats() {
       },
     }));
 
+    const storedRates = await SiteContentService.get<FxRatesOverride>('finance.fx_rates');
+
     return {
       success: true,
       balances,
@@ -106,10 +109,24 @@ export async function getAdminFinanceStats() {
       inflowByCurrency,
       outflowByCurrency,
       recentTransactions: recentPlain,
+      rates: storedRates || { USDT: '41800', AED: '1140', EUR: '45500' },
+      isCustomRates: Boolean(storedRates),
     };
   } catch (err: unknown) {
     console.error('getAdminFinanceStats server error:', err);
     return { success: false, error: 'Failed to fetch financial stats' };
+  }
+}
+
+export async function saveAdminFxRates(rates: { USDT: string; AED: string; EUR: string }) {
+  try {
+    const admin = await requirePermission('finance:post');
+    await SiteContentService.upsert('finance.fx_rates', rates, admin.id);
+    revalidatePath('/admin/finance');
+    return { success: true };
+  } catch (err: unknown) {
+    console.error('saveAdminFxRates error:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'خطا در ذخیره نرخ ارز' };
   }
 }
 
@@ -315,39 +332,45 @@ export async function createAdminInventoryItem(data: {
   const initialDays = data.initialAllotmentDays || 7;
   const capacity = data.dailyCapacity || 10;
 
-  const item = await prisma.inventoryItem.create({
-    data: {
-      supplierId: data.supplierId,
-      type: data.type,
-      name: data.name,
-      code: data.code,
-      basePrice: data.basePrice,
-      currency,
-    },
+  // Item + initial allotments are one atomic unit: a partial failure must not
+  // leave an inventory item without the capacity grid the ops UI depends on.
+  const itemId = await prisma.$transaction(async (tx) => {
+    const item = await tx.inventoryItem.create({
+      data: {
+        supplierId: data.supplierId,
+        type: data.type,
+        name: data.name,
+        code: data.code,
+        basePrice: data.basePrice,
+        currency,
+      },
+    });
+
+    // Automatically create allotments for the next N days
+    const allotmentsData = [];
+    const today = new Date();
+    for (let i = 0; i < initialDays; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() + i);
+      const dateStr = d.toISOString().split('T')[0];
+      allotmentsData.push({
+        inventoryItemId: item.id,
+        date: dateStr,
+        total: capacity,
+        booked: 0,
+        stopSell: false,
+      });
+    }
+
+    if (allotmentsData.length > 0) {
+      await InventoryEngine.createAllotments(allotmentsData, tx);
+    }
+
+    return item.id;
   });
 
-  // Automatically create allotments for the next N days
-  const allotmentsData = [];
-  const today = new Date();
-  for (let i = 0; i < initialDays; i++) {
-    const d = new Date(today);
-    d.setDate(d.getDate() + i);
-    const dateStr = d.toISOString().split('T')[0];
-    allotmentsData.push({
-      inventoryItemId: item.id,
-      date: dateStr,
-      total: capacity,
-      booked: 0,
-      stopSell: false,
-    });
-  }
-
-  if (allotmentsData.length > 0) {
-    await InventoryEngine.createAllotments(allotmentsData);
-  }
-
   revalidatePath('/admin/inventory');
-  return { success: true, itemId: item.id };
+  return { success: true, itemId };
 }
 
 export async function updateAllotment(id: string, data: { total?: number; stopSell?: boolean }) {
@@ -401,17 +424,24 @@ export async function getAdminSettlementBatches(supplierId?: string) {
     const user = await requirePermission('finance:reports:view');
     const tenantCtx = await getTenantAuthContext(user.id);
     const repo = TenantRepository.forContext(tenantCtx);
-    const batches = await repo.findSettlementBatches({
-      where: supplierId ? { supplierId } : undefined,
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-    });
+    const [batches, suppliers] = await Promise.all([
+      repo.findSettlementBatches({
+        where: supplierId ? { supplierId } : undefined,
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      }),
+      prisma.supplier.findMany({ select: { id: true, name: true, type: true } }),
+    ]);
+    const supplierMap = new Map(suppliers.map((s) => [s.id, s]));
+
     return {
       success: true,
       batches: batches.map((b) => ({
         id: b.id,
         batchNumber: b.batchNumber,
         supplierId: b.supplierId,
+        supplierName: supplierMap.get(b.supplierId)?.name || b.supplierId,
+        supplierType: supplierMap.get(b.supplierId)?.type || 'SUPPLIER',
         totalPayable: Number(b.totalPayable),
         netSettlement: Number(b.netSettlement),
         currency: b.currency,
@@ -585,6 +615,40 @@ export async function getAdminOpsData() {
   } catch (err) {
     console.warn('[getAdminOpsData] Database query fallback:', err);
     return { pendingEvents: [], stuckBookings: [] };
+  }
+}
+
+/**
+ * Requeue a failed/stuck outbox event so the worker picks it up again (OPS-RETRY).
+ * Uses an idempotent claim: only events left in a retryable state flip to PENDING.
+ */
+export async function retryOutboxEvent(eventId: string) {
+  try {
+    await requirePermission('ops:override:cancel');
+
+    const updated = await prisma.outboxEvent.updateMany({
+      where: {
+        id: eventId,
+        status: { in: ['FAILED', 'DEAD_LETTER', 'PROCESSING', 'CLAIMED'] },
+      },
+      data: {
+        status: 'PENDING',
+        retryCount: 0,
+        availableAt: new Date(),
+        lockedAt: null,
+        workerId: null,
+      },
+    });
+
+    if (updated.count === 0) {
+      return { success: false, error: 'رویداد قابل تلاش مجدد نیست (احتمالا همین الان پردازش شده).' };
+    }
+
+    revalidatePath('/admin/ops');
+    return { success: true };
+  } catch (err) {
+    console.error('[retryOutboxEvent] error:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'خطا در تلاش مجدد رویداد' };
   }
 }
 
@@ -779,28 +843,45 @@ export async function settleLeaderRewardAction(referralCodeId: string, notes?: s
       return { success: false, error: 'این سرگروه هنوز به حد نصاب پاداش نرسیده است' };
     }
 
-    const settlement = await prisma.leaderSettlement.create({
-      data: {
+    // Idempotency: a settled voucher already covering this many confirmed
+    // passengers means there is nothing new to settle — reject a duplicate.
+    const alreadySettled = await prisma.leaderSettlement.findFirst({
+      where: {
         referralCodeId,
-        qualifiedPax: stats.confirmedPax,
-        rewardPercent: new Prisma.Decimal(stats.rewardPercent.toString()),
-        rewardAmount: new Prisma.Decimal(stats.estimatedRewardAmount.toString()),
         status: 'SETTLED',
-        settledAt: new Date(),
-        settledBy: admin.id,
-        notes: notes || 'تسویه پاداش سرگروه طبق نصاب مسافران تأییدشده',
+        qualifiedPax: { gte: stats.confirmedPax },
       },
     });
+    if (alreadySettled) {
+      return { success: false, error: `پاداش تا ${stats.confirmedPax} مسافر تأییدشده قبلاً تسویه شده است.` };
+    }
 
-    await prisma.auditLog.create({
-      data: {
-        userId: admin.id,
-        action: 'LEADER_REWARD_SETTLED',
-        resource: 'LeaderSettlement',
-        resourceId: settlement.id,
-        newData: JSON.stringify(settlement),
-        reason: `Leader reward settled for ${stats.code}: ${stats.estimatedRewardAmount.toLocaleString()} IRR`,
-      },
+    const settlement = await prisma.$transaction(async (tx) => {
+      const created = await tx.leaderSettlement.create({
+        data: {
+          referralCodeId,
+          qualifiedPax: stats.confirmedPax,
+          rewardPercent: new Prisma.Decimal(stats.rewardPercent.toString()),
+          rewardAmount: new Prisma.Decimal(stats.estimatedRewardAmount.toString()),
+          status: 'SETTLED',
+          settledAt: new Date(),
+          settledBy: admin.id,
+          notes: notes || 'تسویه پاداش سرگروه طبق نصاب مسافران تأییدشده',
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: admin.id,
+          action: 'LEADER_REWARD_SETTLED',
+          resource: 'LeaderSettlement',
+          resourceId: created.id,
+          newData: JSON.stringify(created),
+          reason: `Leader reward settled for ${stats.code}: ${stats.estimatedRewardAmount.toLocaleString()} IRR`,
+        },
+      });
+
+      return created;
     });
 
     revalidatePath('/admin/referrals');

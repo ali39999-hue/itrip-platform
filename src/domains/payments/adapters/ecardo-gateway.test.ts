@@ -87,21 +87,25 @@ describe('EcardoGatewayAdapter Suite', () => {
     fetchSpy.mockRestore();
   });
 
-  it('validates webhook cryptographic HMAC signature', async () => {
+  it('validates webhook signature per documented algorithm on a flat payload variant', async () => {
     const adapter = new EcardoGatewayAdapter({
       publicKey: testPublicKey,
       secretKey: testSecretKey,
     });
 
+    // Flat variant (no nested `data`): transaction_id + total_amount at top level
     const payload = {
       transaction_id: 'FZTEST01',
       bookingId: 'bkg_99',
-      amount: 100,
+      total_amount: 100,
       currency: 'USD',
       timestamp: Date.now(),
     };
     const rawBody = JSON.stringify(payload);
-    const validSignature = crypto.createHmac('sha256', testSecretKey).update(rawBody).digest('hex');
+    const validSignature = crypto
+      .createHmac('sha256', testSecretKey)
+      .update(`${payload.transaction_id}${payload.total_amount}`)
+      .digest('hex');
 
     const result = await adapter.verifyWebhook(rawBody, validSignature);
     expect(result.valid).toBe(true);
@@ -111,5 +115,163 @@ describe('EcardoGatewayAdapter Suite', () => {
     const invalidResult = await adapter.verifyWebhook(rawBody, 'tampered_signature_123');
     expect(invalidResult.valid).toBe(false);
     expect(invalidResult.error).toContain('Invalid Ecardo webhook');
+  });
+
+  it('validates the official documented IPN signature: HMAC(transaction_id + total_amount, secret)', async () => {
+    const adapter = new EcardoGatewayAdapter({
+      publicKey: testPublicKey,
+      secretKey: testSecretKey,
+    });
+
+    // Exact shape from the official doc: { status, signature, data: { transaction_id, total_amount, ... } }
+    const ipnData = {
+      transaction_id: 'ABC123456789',
+      total_amount: '100.00',
+      currency: 'USD',
+    };
+    const documentedSignature = crypto
+      .createHmac('sha256', testSecretKey)
+      .update(`${ipnData.transaction_id}${ipnData.total_amount}`)
+      .digest('hex');
+
+    const ipnBody = JSON.stringify({
+      status: 'success',
+      signature: documentedSignature,
+      data: ipnData,
+    });
+
+    const result = await adapter.verifyWebhook(ipnBody, documentedSignature);
+    expect(result.valid).toBe(true);
+    expect(result.gatewayRef).toBe('ABC123456789');
+    expect(result.settledAmount.toNumber()).toBe(100);
+    expect(result.settledCurrency).toBe('USD');
+    expect(result.eventType).toBe('payment.captured');
+
+    // A signature computed over the raw body must NOT satisfy the documented algorithm
+    const wrongAlgoSig = crypto.createHmac('sha256', testSecretKey).update(ipnBody).digest('hex');
+    const tampered = await adapter.verifyWebhook(ipnBody, wrongAlgoSig);
+    expect(tampered.valid).toBe(false);
+
+    // Failed IPN status must map to payment.failed so downstream never captures
+    const failedBody = JSON.stringify({
+      status: 'failed',
+      signature: documentedSignature,
+      data: ipnData,
+    });
+    const failedResult = await adapter.verifyWebhook(failedBody, documentedSignature);
+    expect(failedResult.valid).toBe(true);
+    expect(failedResult.eventType).toBe('payment.failed');
+  });
+
+  it('fails closed when the webhook secret is configured but the signature is missing', async () => {
+    const adapter = new EcardoGatewayAdapter({
+      publicKey: testPublicKey,
+      secretKey: testSecretKey,
+    });
+
+    const result = await adapter.verifyWebhook(JSON.stringify({ transaction_id: 'X1', amount: 10 }), '');
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain('signature missing');
+  });
+
+  it('accepts payment_url as the access-token response field (official doc caveat)', async () => {
+    const adapter = new EcardoGatewayAdapter({
+      publicKey: testPublicKey,
+      secretKey: testSecretKey,
+      baseUrl: 'https://ecardo.ir',
+    });
+
+    const fetchSpy = vi.spyOn(global, 'fetch').mockImplementation(async (url) => {
+      const u = String(url);
+      if (u.includes('access-token')) {
+        // Installed-build variant: token delivered as payment_url
+        return new Response(
+          JSON.stringify({ status: 'success', payment_url: 'tok_via_payment_url' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      if (u.includes('make-payment')) {
+        return new Response(
+          JSON.stringify({ status: 'success', payment_url: 'https://ecardo.ir/pay/TRXTOKENVAR' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      return new Response('Not Found', { status: 404 });
+    });
+
+    const res = await adapter.createPayment({
+      intentId: 'int_tok',
+      bookingId: 'bkg_tok',
+      amount: new Money(20, 'USD'),
+      callbackUrl: 'https://firuzo.com/api/payments/ecardo/callback',
+    });
+
+    expect(res.success).toBe(true);
+    expect(res.redirectUrl).toBe('https://ecardo.ir/pay/TRXTOKENVAR');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('sends ipn_url (authoritative server-to-server channel) with make-payment', async () => {
+    const adapter = new EcardoGatewayAdapter({
+      publicKey: testPublicKey,
+      secretKey: testSecretKey,
+      baseUrl: 'https://ecardo.ir',
+    });
+
+    let capturedBody: Record<string, unknown> = {};
+    const fetchSpy = vi.spyOn(global, 'fetch').mockImplementation(async (url, opts) => {
+      const u = String(url);
+      if (u.includes('access-token')) {
+        return new Response(
+          JSON.stringify({ status: 'success', token: 'mock_token_ipn' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      if (u.includes('make-payment')) {
+        capturedBody = JSON.parse(String((opts as RequestInit).body));
+        return new Response(
+          JSON.stringify({ status: 'success', payment_url: 'https://ecardo.ir/pay/TRXIPNTEST' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      return new Response('Not Found', { status: 404 });
+    });
+
+    await adapter.createPayment({
+      intentId: 'int_ipn',
+      bookingId: 'bkg_ipn',
+      amount: new Money(75, 'USD'),
+      callbackUrl: 'https://firuzo.com/api/payments/ecardo/callback',
+    });
+
+    expect(typeof capturedBody.ipn_url).toBe('string');
+    expect(String(capturedBody.ipn_url)).toContain('/api/payments/webhook');
+    expect(String(capturedBody.ipn_url)).toContain('gateway=ecardo');
+    expect(String(capturedBody.ipn_url).length).toBeLessThanOrEqual(255);
+
+    fetchSpy.mockRestore();
+  });
+
+  it('converts IRR base amount to USD, USDT, and CNY accurately with Decimal precision and preserves FX snapshot', async () => {
+    const { defaultCurrencyService } = await import('@/domains/currency/CurrencyService');
+    const baseAmountIrr = new Money(55_000_000, 'IRR'); // 5,500,000 Toman
+
+    // 1. Convert to USD
+    const usdConv = defaultCurrencyService.convertMoney(baseAmountIrr, 'USD');
+    expect(usdConv.converted.currency).toBe('USD');
+    expect(usdConv.converted.toNumber()).toBe(100);
+    expect(usdConv.snapshot.fxRate.toString()).toBe('0.00000181818');
+    expect(usdConv.snapshot.baseCurrency).toBe('USD');
+
+    // 2. Convert to USDT
+    const usdtConv = defaultCurrencyService.convertMoney(baseAmountIrr, 'USDT');
+    expect(usdtConv.converted.currency).toBe('USDT');
+    expect(usdtConv.converted.toNumber()).toBe(100);
+
+    // 3. Convert to CNY
+    const cnyConv = defaultCurrencyService.convertMoney(baseAmountIrr, 'CNY');
+    expect(cnyConv.converted.currency).toBe('CNY');
+    expect(cnyConv.converted.toNumber()).toBe(723.68);
   });
 });

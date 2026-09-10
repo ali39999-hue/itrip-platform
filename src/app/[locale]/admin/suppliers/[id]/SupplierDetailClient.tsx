@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { Building2, Link as LinkIcon, ShieldCheck, Activity, Plus, Save } from 'lucide-react';
+import { Building2, Link as LinkIcon, ShieldCheck, Activity, Plus, Save, RefreshCw, Loader2 } from 'lucide-react';
 import { lt } from '@/lib/lt';
-import { ErpPageHeader, ErpTabs, ErpSectionCard, erpFieldCls, erpLabelCls, erpPrimaryBtnCls, ErpBadge } from '@/components/admin/erp-ui';
-import { addSupplierConnection } from '@/actions/admin-suppliers';
+import { ErpPageHeader, ErpTabs, ErpSectionCard, ErpAlert, erpFieldCls, erpLabelCls, erpPrimaryBtnCls, ErpBadge } from '@/components/admin/erp-ui';
+import { addSupplierConnection, rotateSupplierCredential } from '@/actions/admin-suppliers';
 
 export type CredentialItem = {
   id: string;
@@ -57,12 +58,17 @@ type SupplierProps = {
 
 export default function SupplierDetailClient({ supplier }: SupplierProps) {
   const locale = useLocale();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('connections');
-  
+
   // Connection Form State
   const [showAddConn, setShowAddConn] = useState(false);
   const [connForm, setConnForm] = useState({ productType: 'FLIGHT', baseUrl: '', environment: 'PRODUCTION', timeoutMs: 5000 });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; msg: string } | null>(null);
+
+  // Credential rotation state (connectionId currently rotating)
+  const [rotatingConnId, setRotatingConnId] = useState<string | null>(null);
 
   const tabs = [
     { id: 'connections', label: lt(locale, { fa: 'اتصالات و کلیدها', en: 'Connections & Credentials' }), icon: <LinkIcon size={16} /> },
@@ -73,17 +79,35 @@ export default function SupplierDetailClient({ supplier }: SupplierProps) {
   async function handleAddConnection(e: React.FormEvent) {
     e.preventDefault();
     setIsSubmitting(true);
+    setFeedback(null);
     try {
       await addSupplierConnection({
         supplierId: supplier.id,
         ...connForm,
       });
+      setFeedback({ tone: 'success', msg: lt(locale, { fa: 'اتصال جدید با موفقیت ثبت شد.', en: 'Connection saved successfully.' }) });
       setShowAddConn(false);
-      // Data refreshes via revalidatePath
+      setConnForm({ productType: 'FLIGHT', baseUrl: '', environment: 'PRODUCTION', timeoutMs: 5000 });
+      router.refresh(); // pick up the revalidated server data
     } catch (err) {
-      console.error(err);
+      setFeedback({ tone: 'error', msg: err instanceof Error ? err.message : lt(locale, { fa: 'خطا در ثبت اتصال', en: 'Failed to save connection.' }) });
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleRotate(connectionId: string) {
+    if (rotatingConnId) return;
+    setRotatingConnId(connectionId);
+    setFeedback(null);
+    try {
+      await rotateSupplierCredential({ connectionId, supplierId: supplier.id });
+      setFeedback({ tone: 'success', msg: lt(locale, { fa: 'کلید جدید صادر و کلید قبلی طی ۲۴ ساعت آینده باطل می‌شود.', en: 'New credential issued; the previous key is deprecated within 24h.' }) });
+      router.refresh();
+    } catch (err) {
+      setFeedback({ tone: 'error', msg: err instanceof Error ? err.message : lt(locale, { fa: 'خطا در چرخش کلید', en: 'Credential rotation failed.' }) });
+    } finally {
+      setRotatingConnId(null);
     }
   }
 
@@ -104,6 +128,9 @@ export default function SupplierDetailClient({ supplier }: SupplierProps) {
 
       {activeTab === 'connections' && (
         <div className="space-y-6">
+          {feedback && (
+            <ErpAlert tone={feedback.tone} onDismiss={() => setFeedback(null)}>{feedback.msg}</ErpAlert>
+          )}
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-black text-ink">{lt(locale, { fa: 'اتصالات سیستم (SUP-002)', en: 'System Connections (SUP-002)' })}</h3>
             <button onClick={() => setShowAddConn(!showAddConn)} className={erpPrimaryBtnCls}>
@@ -164,7 +191,19 @@ export default function SupplierDetailClient({ supplier }: SupplierProps) {
                   </h4>
                   <p className="text-xs font-mono text-sub mt-1">{conn.baseUrl}</p>
                 </div>
-                <span className="text-xs font-bold text-sub">Timeout: {conn.timeoutMs}ms</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-bold text-sub">Timeout: {conn.timeoutMs}ms</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRotate(conn.id)}
+                    disabled={rotatingConnId === conn.id}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-brand/10 px-3 py-1.5 text-xs font-black text-brand-dark transition hover:bg-brand/20 disabled:opacity-60 cursor-pointer"
+                    title={lt(locale, { fa: 'صدور کلید جدید و ابطال کلید فعلی', en: 'Issue a new key and deprecate the current one' })}
+                  >
+                    {rotatingConnId === conn.id ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+                    {lt(locale, { fa: 'چرخش کلید', en: 'Rotate key' })}
+                  </button>
+                </div>
               </div>
               
               <div className="bg-soft/50 rounded-xl p-4 border border-line/60">

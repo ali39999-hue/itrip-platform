@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { Link } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCountryStore } from '@/stores/country-store';
@@ -13,6 +13,20 @@ import { CATEGORY_PHOTO_MAP, shimmerDataUrl } from '@/lib/image-utils';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
+interface ExperienceItem {
+  category: string;
+  title: string;
+  titleEn: string;
+  desc: string;
+  descEn: string;
+  where: string;
+  whereEn: string;
+  when: string;
+  whenEn: string;
+  fromPrice: number;
+  image?: string;
+}
+
 export function SpecialOffersSection() {
   const locale = useLocale();
   const t = useTranslations('Home');
@@ -22,18 +36,55 @@ export function SpecialOffersSection() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const offers = (() => {
-    const ex = c.signatureExperiences;
-    const picked: typeof ex = [];
+  // Dynamic signature experiences from CMS / Database
+  const [dbExperiences, setDbExperiences] = useState<ExperienceItem[]>([]);
+
+  useEffect(() => {
+    fetch(`/api/experiences?country=${encodeURIComponent(country)}`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          setDbExperiences(
+            json.data.map((exp: ExperienceItem) => ({
+              category: exp.category,
+              title: exp.title,
+              titleEn: exp.titleEn,
+              desc: exp.desc,
+              descEn: exp.descEn,
+              where: exp.where,
+              whereEn: exp.whereEn,
+              when: exp.when,
+              whenEn: exp.whenEn,
+              fromPrice: Number(exp.fromPrice),
+              image: exp.image || undefined,
+            }))
+          );
+        } else {
+          setDbExperiences([]);
+        }
+      })
+      .catch(() => {
+        setDbExperiences([]);
+      });
+  }, [country]);
+
+  const offers = useMemo(() => {
+    // Merge DB experiences ahead of static seeds
+    const merged: ExperienceItem[] = [...dbExperiences, ...c.signatureExperiences];
+    const picked: ExperienceItem[] = [];
     const push = (cat?: string) => {
-      const found = ex.find((e) => (!cat || e.category === cat) && !picked.includes(e));
+      const found = merged.find((e) => (!cat || e.category === cat) && !picked.some((p) => p.title === e.title));
       if (found) picked.push(found);
     };
     push('yacht');
     push('festival');
     push();
+    for (const item of merged) {
+      if (picked.length >= 3) break;
+      if (!picked.some((p) => p.title === item.title)) picked.push(item);
+    }
     return picked.slice(0, 3);
-  })();
+  }, [dbExperiences, c.signatureExperiences]);
 
   return (
     <section className="w-full py-12 md:py-16 px-4 md:px-10 bg-soft/30">
@@ -63,12 +114,12 @@ export function SpecialOffersSection() {
 
         <div ref={scrollRef} className="flex overflow-x-auto snap-x snap-mandatory pb-5 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 hide-scrollbar">
           {offers.map((offer) => {
-            const Icon = CATEGORY_ICONS[offer.category];
-            const catLabel = experienceCategoryLabel(offer.category, locale);
+            const Icon = (CATEGORY_ICONS as Record<string, (typeof CATEGORY_ICONS)[keyof typeof CATEGORY_ICONS]>)[offer.category];
+            const catLabel = experienceCategoryLabel(offer.category as Parameters<typeof experienceCategoryLabel>[0], locale);
             const title = locale === 'fa' ? offer.title : offer.titleEn;
             const desc = locale === 'fa' ? offer.desc : offer.descEn;
             const when = locale === 'fa' ? offer.when : offer.whenEn;
-            const photoUrl = CATEGORY_PHOTO_MAP[offer.category] || CATEGORY_PHOTO_MAP.culture;
+            const photoUrl = offer.image || CATEGORY_PHOTO_MAP[offer.category] || CATEGORY_PHOTO_MAP.culture;
             return (
               <Link
                 key={offer.titleEn}

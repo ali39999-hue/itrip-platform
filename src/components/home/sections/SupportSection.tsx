@@ -4,9 +4,53 @@ import { Link } from '@/i18n/routing';
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
 import { Headset, PhoneCall, AlertCircle } from 'lucide-react';
+import type { SupportOverride } from '@/domains/content/SiteContentService';
 
-export function SupportSection() {
+export function SupportSection({ override }: { override?: SupportOverride } = {}) {
   const locale = useLocale();
+
+  const defaultTitle = {
+    fa: 'در تمام طول سفر کنار شما هستیم (۲۴ ساعته)',
+    en: 'We are with you throughout the trip (24/7)',
+    ar: 'نحن معك طوال الرحلة (على مدار الساعة)',
+    zh: '整个旅程我们都在您身边 (全天候)',
+    ru: 'Мы с вами на протяжении всей поездки (24/7)',
+  };
+
+  const title = lt(locale, {
+    ...defaultTitle,
+    ...(override?.title?.fa ? { fa: override.title.fa } : {}),
+    ...(override?.title?.en ? { en: override.title.en } : {}),
+  });
+
+  const defaultSubtitle = {
+    fa: 'تیم پشتیبانی اختصاصی فیروز به ۵ زبان زنده دنیا (فارسی، انگلیسی، عربی، چینی و روسی) در تمام مراحل رزرو، فرودگاه و اقامت پاسخگوی شماست.',
+    en: "Firuzo's dedicated support team speaks 5 languages (Persian, English, Arabic, Chinese, and Russian) and is available throughout booking, airport, and stay.",
+    ar: 'فريق دعم فيروزو المخصص يتحدث 5 لغات (الفارسية والإنجليزية والعربية والصينية والروسية) ومتاح طوال مراحل الحجز والمطار والإقامة.',
+    zh: 'Firuzo 专属支持团队提供 5 种语言服务（波斯语、英语、阿拉伯语、中文和俄语），在预订、机场和住宿全程为您提供帮助。',
+    ru: 'Выделенная команда поддержки Firuzo говорит на 5 языках (персидском, английском, арабском, китайском и русском) и готова помочь на всех этапах бронирования, в аэропорту и во время проживания.',
+  };
+
+  const subtitle = lt(locale, {
+    ...defaultSubtitle,
+    ...(override?.subtitle?.fa ? { fa: override.subtitle.fa } : {}),
+    ...(override?.subtitle?.en ? { en: override.subtitle.en } : {}),
+  });
+
+  const telHref = override?.phone ? `tel:${override.phone}` : 'tel:+982191000000';
+  const defaultPhoneDisplay = {
+    fa: '۰۲۱-۹۱۰۰۰۰۰۰',
+    en: '+98 21 91000000',
+    ar: '021-91000000',
+    zh: '+98 21 91000000',
+    ru: '+98 21 91000000',
+  };
+
+  const phoneDisplay = lt(locale, {
+    ...defaultPhoneDisplay,
+    ...(override?.phoneDisplay?.fa ? { fa: override.phoneDisplay.fa } : {}),
+    ...(override?.phoneDisplay?.en ? { en: override.phoneDisplay.en } : {}),
+  });
 
   return (
     <section className="w-full py-12 md:py-16 px-4 md:px-10">
@@ -17,16 +61,10 @@ export function SupportSection() {
             <span>{lt(locale, { fa: 'پشتیبانی اضطراری و راهنمای لحظه‌ای', en: 'Emergency Support & Live Guide', ar: 'دعم الطوارئ ودليل مباشر', zh: '紧急支持与实时指南', ru: 'Экстренная поддержка и живой гид' })}</span>
           </div>
           <h2 className="text-2xl md:text-3xl font-black text-ink">
-            {lt(locale, { fa: 'در تمام طول سفر کنار شما هستیم (۲۴ ساعته)', en: 'We are with you throughout the trip (24/7)', ar: 'نحن معك طوال الرحلة (على مدار الساعة)', zh: '整个旅程我们都在您身边 (全天候)', ru: 'Мы с вами на протяжении всей поездки (24/7)' })}
+            {title}
           </h2>
           <p className="text-xs sm:text-sm text-sub leading-relaxed">
-            {lt(locale, {
-              fa: 'تیم پشتیبانی اختصاصی فیروز به ۵ زبان زنده دنیا (فارسی، انگلیسی، عربی، چینی و روسی) در تمام مراحل رزرو، فرودگاه و اقامت پاسخگوی شماست.',
-              en: "Firuzo's dedicated support team speaks 5 languages (Persian, English, Arabic, Chinese, and Russian) and is available throughout booking, airport, and stay.",
-              ar: 'فريق دعم فيروزو المخصص يتحدث 5 لغات (الفارسية والإنجليزية والعربية والصينية والروسية) ومتاح طوال مراحل الحجز والمطار والإقامة.',
-              zh: 'Firuzo 专属支持团队提供 5 种语言服务（波斯语、英语、阿拉伯语、中文和俄语），在预订、机场和住宿全程为您提供帮助。',
-              ru: 'Выделенная команда поддержки Firuzo говорит на 5 языках (персидском, английском, арабском, китайском и русском) и готова помочь на всех этапах бронирования, в аэропорту и во время проживания.'
-            })}
+            {subtitle}
           </p>
         </div>
 
@@ -39,12 +77,12 @@ export function SupportSection() {
             <span>{lt(locale, { fa: 'گفتگوی آنلاین با پشتیبان', en: 'Live Chat', ar: 'الدردشة المباشرة', zh: '在线客服', ru: 'Онлайн чат' })}</span>
           </Link>
           <a
-            href="tel:+982191000000"
-            aria-label={lt(locale, { fa: 'تماس تلفنی پشتیبانی: ۰۲۱-۹۱۰۰۰۰۰۰', en: 'Call support at +98 21 91000000', ar: 'الاتصال بالدعم: 021-91000000', zh: '拨打客服电话: +98 21 91000000', ru: 'Позвонить в поддержку: +98 21 91000000' })}
+            href={telHref}
+            aria-label={`Call support at ${phoneDisplay}`}
             className="w-full sm:w-auto h-12 px-6 rounded-2xl bg-soft border border-line text-ink text-xs sm:text-sm font-bold hover:bg-line/40 transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             <PhoneCall size={18} className="text-brand" aria-hidden="true" />
-            <span dir="ltr" className="font-mono">{lt(locale, { fa: '۰۲۱-۹۱۰۰۰۰۰۰', en: '+98 21 91000000', ar: '021-91000000', zh: '+98 21 91000000', ru: '+98 21 91000000' })}</span>
+            <span dir="ltr" className="font-mono">{phoneDisplay}</span>
           </a>
         </div>
       </div>

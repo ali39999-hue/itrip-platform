@@ -1,18 +1,28 @@
 import { HeroSection } from '@/components/home/HeroSection';
-import { 
+import {
   QuickServicesBar,
   PromotionalBanners,
   PopularFlightsSection,
-  SpecialOffersSection, 
+  SpecialOffersSection,
   DestinationsSection,
   AiPlannerHookSection,
   AppDownloadSection,
   WhyFiruzoSection,
   FaqSection,
   TrustMarquee,
-  SupportSection 
+  SupportSection
 } from '@/components/home/sections';
 import { lt } from '@/lib/lt';
+import { getLocale } from 'next-intl/server';
+import {
+  SiteContentService,
+  type HeroOverride,
+  type PromoBannerOverride,
+  type PopularRouteOverride,
+  type FaqItemOverride,
+  type AnnouncementOverride,
+  type SupportOverride,
+} from '@/domains/content/SiteContentService';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -47,21 +57,52 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   };
 }
 
-export default function HomePage() {
+// CMS overrides are optional: every block falls back to its shipped defaults
+// when the admin has not customized (or has reset) the corresponding key.
+export default async function HomePage() {
+  const locale = await getLocale();
+  const [hero, promos, routes, faq, announcement, support] = await Promise.all([
+    SiteContentService.get<HeroOverride>('home.hero'),
+    SiteContentService.get<PromoBannerOverride[]>('home.promos'),
+    SiteContentService.get<PopularRouteOverride[]>('home.routes'),
+    SiteContentService.get<FaqItemOverride[]>('home.faq'),
+    SiteContentService.get<AnnouncementOverride>('site.announcement'),
+    SiteContentService.get<SupportOverride>('home.support'),
+  ]);
+
+  const activeAnnouncement = announcement?.active ? announcement : null;
+
   return (
     <div className="flex flex-col min-h-screen bg-soft/20">
+      {/* 0. Global announcement banner (ERP → Quick Actions) */}
+      {activeAnnouncement && (
+        <div
+          role="status"
+          className={`mx-4 md:mx-8 mt-3 rounded-2xl border px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 ${
+            activeAnnouncement.tone === 'critical'
+              ? 'border-destructive/30 bg-destructive/10'
+              : activeAnnouncement.tone === 'info'
+                ? 'border-brand/30 bg-brand/10'
+                : 'border-gold/40 bg-gold-soft/50'
+          }`}
+        >
+          <span className="text-xs font-black text-ink">{lt(locale, activeAnnouncement.title)}</span>
+          <span className="text-xs font-bold text-sub leading-relaxed">{lt(locale, activeAnnouncement.message)}</span>
+        </div>
+      )}
+
       {/* 1. Hero & Unified Flight/Hotel/Tour Search Engine */}
-      <HeroSection />
+      <HeroSection override={hero ?? undefined} />
 
       {/* 2. Sleek Quick Access Service Bar (FlyToday / Alibaba pattern) */}
       <QuickServicesBar />
 
       <div className="flex flex-col gap-12 md:gap-20 pt-10 pb-20">
         {/* 3. High-Impact Promotional Banners */}
-        <PromotionalBanners />
+        <PromotionalBanners override={promos ?? undefined} />
 
         {/* 4. Trending & Best-Selling Flight Routes with Real Prices */}
-        <PopularFlightsSection />
+        <PopularFlightsSection override={routes ?? undefined} />
 
         {/* 5. Personalized Signature Experiences & Offers */}
         <SpecialOffersSection />
@@ -79,7 +120,7 @@ export default function HomePage() {
         <WhyFiruzoSection />
 
         {/* 10. Frequently Asked Questions Accordion */}
-        <FaqSection />
+        <FaqSection override={faq ?? undefined} />
       </div>
 
       <div className="bg-surface border-t border-line/60">
@@ -87,7 +128,7 @@ export default function HomePage() {
         <div className="opacity-90">
           <TrustMarquee />
         </div>
-        <SupportSection />
+        <SupportSection override={support ?? undefined} />
       </div>
     </div>
   );
