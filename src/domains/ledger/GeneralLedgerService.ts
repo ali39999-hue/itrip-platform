@@ -407,8 +407,8 @@ export class GeneralLedgerService {
 
       // Row-lock the customer account row FOR UPDATE (WAL-001)
       await client.$queryRaw`
-        SELECT "id" FROM "Account"
-        WHERE "id" = ${customerAcc.id}
+        SELECT id FROM Account
+        WHERE id = ${customerAcc.id}
         FOR UPDATE
       `;
 

@@ -156,14 +156,17 @@ export async function verifyOtpAndLogin(identifier: string, otp: string, channel
   }
 
   const role = isStaff ? ('admin' as const) : ('customer' as const);
+  const phoneVal = user?.phone || (channel === 'phone' ? identifier : '');
+  const displayName = phoneVal || user?.name || user?.firstNameFa || 'کاربر';
+
   return {
     success: true,
     user: {
       id: userId,
-      phone: user?.phone || (channel === 'phone' ? identifier : ''),
+      phone: phoneVal,
       email: user?.email || (channel === 'email' ? identifier : undefined),
-      firstNameFa: user?.firstNameFa || user?.name || 'کاربر',
-      lastNameFa: user?.lastNameFa || 'فیروزه',
+      firstNameFa: displayName,
+      lastNameFa: user?.lastNameFa || '',
       kycApproved: false,
       role,
       channel,

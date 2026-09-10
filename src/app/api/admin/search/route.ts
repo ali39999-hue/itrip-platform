@@ -60,8 +60,8 @@ export async function GET(req: NextRequest) {
             !isSuperAdmin && orgId ? { organizationId: orgId } : {},
             {
               OR: [
-                { reference: { contains: query, mode: 'insensitive' } },
-                { externalPnr: { contains: query, mode: 'insensitive' } },
+                { reference: { contains: query } },
+                { externalPnr: { contains: query } },
               ],
             },
           ],
@@ -85,8 +85,8 @@ export async function GET(req: NextRequest) {
             !isSuperAdmin && orgId ? { organizationId: orgId } : {},
             {
               OR: [
-                { reference: { contains: query, mode: 'insensitive' } },
-                { title: { contains: query, mode: 'insensitive' } },
+                { reference: { contains: query } },
+                { title: { contains: query } },
               ],
             },
           ],
@@ -108,9 +108,9 @@ export async function GET(req: NextRequest) {
             userTenantClause,
             {
               OR: [
-                { name: { contains: query, mode: 'insensitive' } },
-                { email: { contains: query, mode: 'insensitive' } },
-                { phone: { contains: query, mode: 'insensitive' } },
+                { name: { contains: query } },
+                { email: { contains: query } },
+                { phone: { contains: query } },
               ],
             },
           ],
@@ -131,7 +131,7 @@ export async function GET(req: NextRequest) {
           AND: [
             refundTenantClause,
             {
-              refundNumber: { contains: query, mode: 'insensitive' },
+              refundNumber: { contains: query },
             },
           ],
         },
@@ -152,7 +152,7 @@ export async function GET(req: NextRequest) {
           AND: [
             !isSuperAdmin && orgId ? { organizationId: orgId } : {},
             {
-              invoiceNumber: { contains: query, mode: 'insensitive' },
+              invoiceNumber: { contains: query },
             },
           ],
         },

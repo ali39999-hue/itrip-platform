@@ -30,29 +30,10 @@ export class WorkerLeaseService {
   }
 
   /**
-   * Ensures the WorkerLease table exists in PostgreSQL
+   * Ensures the WorkerLease table exists
    */
   static async ensureTable(): Promise<void> {
-    if (this.tableEnsured || this.forceInMemory) return;
-    try {
-      await prisma.$executeRawUnsafe(`
-        CREATE TABLE IF NOT EXISTS "WorkerLease" (
-          "resourceName" TEXT PRIMARY KEY,
-          "holderId" TEXT NOT NULL,
-          "acquiredAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          "expiresAt" TIMESTAMP(3) NOT NULL,
-          "heartbeatAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          "version" INTEGER NOT NULL DEFAULT 1
-        );
-      `);
-      await prisma.$executeRawUnsafe(`
-        CREATE INDEX IF NOT EXISTS "WorkerLease_expiresAt_idx" ON "WorkerLease"("expiresAt");
-      `);
-      this.tableEnsured = true;
-    } catch {
-      // If DDL is restricted or running against SQLite/mock, fallback to in-memory
-      this.forceInMemory = true;
-    }
+    this.tableEnsured = true;
   }
 
   /**
@@ -64,7 +45,6 @@ export class WorkerLeaseService {
     holderId: string,
     ttlMs: number = 30000
   ): Promise<boolean> {
-    await this.ensureTable();
     const now = new Date();
     const expiresAt = new Date(now.getTime() + ttlMs);
 
@@ -85,20 +65,48 @@ export class WorkerLeaseService {
     }
 
     try {
-      const acquired: Array<{ holderId: string }> = await prisma.$queryRaw`
-        INSERT INTO "WorkerLease" ("resourceName", "holderId", "acquiredAt", "expiresAt", "heartbeatAt", "version")
-        VALUES (${resourceName}, ${holderId}, NOW(), ${expiresAt}, NOW(), 1)
-        ON CONFLICT ("resourceName") DO UPDATE
-        SET "holderId" = ${holderId},
-            "acquiredAt" = CASE WHEN "WorkerLease"."holderId" = ${holderId} THEN "WorkerLease"."acquiredAt" ELSE NOW() END,
-            "expiresAt" = ${expiresAt},
-            "heartbeatAt" = NOW(),
-            "version" = "WorkerLease"."version" + 1
-        WHERE "WorkerLease"."expiresAt" < NOW()
-           OR "WorkerLease"."holderId" = ${holderId}
-        RETURNING "holderId";
-      `;
-      return acquired.length > 0;
+      const existing = await prisma.workerLease.findUnique({
+        where: { resourceName },
+      });
+
+      if (!existing || existing.expiresAt <= now) {
+        // Can acquire
+        await prisma.workerLease.upsert({
+          where: { resourceName },
+          create: {
+            resourceName,
+            holderId,
+            acquiredAt: now,
+            expiresAt,
+            heartbeatAt: now,
+            version: 1,
+          },
+          update: {
+            holderId,
+            acquiredAt: now,
+            expiresAt,
+            heartbeatAt: now,
+            version: { increment: 1 },
+          },
+        });
+        return true;
+      }
+
+      if (existing.holderId === holderId) {
+        // Same holder extending
+        await prisma.workerLease.update({
+          where: { resourceName },
+          data: {
+            expiresAt,
+            heartbeatAt: now,
+            version: { increment: 1 },
+          },
+        });
+        return true;
+      }
+
+      // Held by different worker and not expired
+      return false;
     } catch (err) {
       console.warn(`[WorkerLeaseService] Database query failed for ${resourceName}, falling back to memory:`, err);
       this.forceInMemory = true;
@@ -129,17 +137,22 @@ export class WorkerLeaseService {
     }
 
     try {
-      const renewed: Array<{ holderId: string }> = await prisma.$queryRaw`
-        UPDATE "WorkerLease"
-        SET "expiresAt" = ${expiresAt},
-            "heartbeatAt" = NOW(),
-            "version" = "version" + 1
-        WHERE "resourceName" = ${resourceName}
-          AND "holderId" = ${holderId}
-          AND "expiresAt" > NOW()
-        RETURNING "holderId";
-      `;
-      return renewed.length > 0;
+      const existing = await prisma.workerLease.findUnique({
+        where: { resourceName },
+      });
+
+      if (existing && existing.holderId === holderId && existing.expiresAt > now) {
+        await prisma.workerLease.update({
+          where: { resourceName },
+          data: {
+            expiresAt,
+            heartbeatAt: now,
+            version: { increment: 1 },
+          },
+        });
+        return true;
+      }
+      return false;
     } catch {
       return false;
     }
@@ -159,12 +172,17 @@ export class WorkerLeaseService {
     }
 
     try {
-      const deleted = await prisma.$executeRaw`
-        DELETE FROM "WorkerLease"
-        WHERE "resourceName" = ${resourceName}
-          AND "holderId" = ${holderId};
-      `;
-      return deleted > 0;
+      const existing = await prisma.workerLease.findUnique({
+        where: { resourceName },
+      });
+
+      if (existing && existing.holderId === holderId) {
+        await prisma.workerLease.delete({
+          where: { resourceName },
+        });
+        return true;
+      }
+      return false;
     } catch {
       return false;
     }
@@ -187,12 +205,10 @@ export class WorkerLeaseService {
     }
 
     try {
-      await this.ensureTable();
-      const count = await prisma.$executeRaw`
-        DELETE FROM "WorkerLease"
-        WHERE "expiresAt" < NOW();
-      `;
-      return count;
+      const res = await prisma.workerLease.deleteMany({
+        where: { expiresAt: { lt: now } },
+      });
+      return res.count;
     } catch {
       return 0;
     }

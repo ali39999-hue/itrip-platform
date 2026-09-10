@@ -32,12 +32,12 @@ export class InventoryEngine {
     const token = `hld_${Date.now().toString(36)}_${crypto.randomBytes(4).toString('hex')}`;
 
     const execute = async (client: Prisma.TransactionClient): Promise<HoldResult> => {
-      // 1. In PostgreSQL, lock the allotment row FOR UPDATE to prevent race conditions (P0)
+      // 1. Lock the allotment row FOR UPDATE to prevent race conditions
       const rows: Array<{ id: string; total: number; booked: number; stopSell: boolean }> =
         await client.$queryRaw`
-          SELECT "id", "total", "booked", "stopSell"
-          FROM "Allotment"
-          WHERE "inventoryItemId" = ${params.inventoryItemId} AND "date" = ${params.date}
+          SELECT id, total, booked, stopSell
+          FROM Allotment
+          WHERE inventoryItemId = ${params.inventoryItemId} AND date = ${params.date}
           FOR UPDATE
         `;
 
@@ -140,9 +140,9 @@ export class InventoryEngine {
         status: string;
         expiresAt: Date;
       }> = await client.$queryRaw`
-        SELECT "id", "inventoryItemId", "allotmentDate", "token", "quantity", "status", "expiresAt"
-        FROM "InventoryHold"
-        WHERE "token" = ${token}
+        SELECT id, inventoryItemId, allotmentDate, token, quantity, status, expiresAt
+        FROM InventoryHold
+        WHERE token = ${token}
         FOR UPDATE
       `;
 
@@ -166,17 +166,15 @@ export class InventoryEngine {
       }
 
       // Atomic conditional update on allotment: booked + quantity <= total (Section 6)
-      const updatedAllotments: Array<{ id: string; booked: number; total: number }> =
-        await client.$queryRaw`
-          UPDATE "Allotment"
-          SET "booked" = "booked" + ${hold.quantity}
-          WHERE "inventoryItemId" = ${hold.inventoryItemId}
-            AND "date" = ${hold.allotmentDate}
-            AND ("booked" + ${hold.quantity}) <= "total"
-          RETURNING "id", "booked", "total"
-        `;
+      const updateCount: number = await client.$executeRaw`
+        UPDATE Allotment
+        SET booked = booked + ${hold.quantity}
+        WHERE inventoryItemId = ${hold.inventoryItemId}
+          AND date = ${hold.allotmentDate}
+          AND (booked + ${hold.quantity}) <= total
+      `;
 
-      if (!updatedAllotments || updatedAllotments.length === 0) {
+      if (updateCount === 0) {
         return { success: false, error: 'Insufficient capacity to capture hold (Oversell prevented)' };
       }
 
@@ -209,9 +207,9 @@ export class InventoryEngine {
         id: string;
         status: InventoryHoldStatus;
       }> = await client.$queryRaw`
-        SELECT "id", "status"
-        FROM "InventoryHold"
-        WHERE "token" = ${token}
+        SELECT id, status
+        FROM InventoryHold
+        WHERE token = ${token}
         FOR UPDATE
       `;
 
@@ -318,9 +316,9 @@ export class InventoryEngine {
 
     const rows: Array<{ id: string; total: number; booked: number; stopSell: boolean }> =
       await client.$queryRaw`
-        SELECT "id", "total", "booked", "stopSell"
-        FROM "Allotment"
-        WHERE "id" = ${id}
+        SELECT id, total, booked, stopSell
+        FROM Allotment
+        WHERE id = ${id}
         FOR UPDATE
       `;
 
@@ -363,9 +361,9 @@ export class InventoryEngine {
         quantity: number;
         status: string;
       }> = await client.$queryRaw`
-        SELECT "id", "inventoryItemId", "allotmentDate", "quantity", "status"
-        FROM "InventoryHold"
-        WHERE "token" = ${token}
+        SELECT id, inventoryItemId, allotmentDate, quantity, status
+        FROM InventoryHold
+        WHERE token = ${token}
         FOR UPDATE
       `;
 
@@ -380,15 +378,14 @@ export class InventoryEngine {
         InventoryHoldStateMachine.assertTransition('CAPTURED', 'RELEASED');
         // Guarded decrement: only fires while booked >= quantity, so repeated
         // compensation can never push booked negative (double-release safety).
-        const restored: Array<{ id: string }> = await client.$queryRaw`
-          UPDATE "Allotment"
-          SET "booked" = "booked" - ${hold.quantity}
-          WHERE "inventoryItemId" = ${hold.inventoryItemId}
-            AND "date" = ${hold.allotmentDate}
-            AND "booked" >= ${hold.quantity}
-          RETURNING "id"
+        const restoredCount: number = await client.$executeRaw`
+          UPDATE Allotment
+          SET booked = booked - ${hold.quantity}
+          WHERE inventoryItemId = ${hold.inventoryItemId}
+            AND date = ${hold.allotmentDate}
+            AND booked >= ${hold.quantity}
         `;
-        if (!restored || restored.length === 0) {
+        if (restoredCount === 0) {
           return { success: false, capacityRestored: false, error: 'Allotment booked counter below hold quantity — capacity not restored' };
         }
         await client.inventoryHold.update({

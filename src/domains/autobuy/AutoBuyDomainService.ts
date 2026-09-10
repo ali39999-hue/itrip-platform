@@ -631,14 +631,13 @@ export class AutoBuyDomainService {
     }
 
     // AUTO-107: Atomic claim to guarantee idempotency and prevent duplicate purchase
-    const claimed: Array<{ id: string }> = await prisma.$queryRaw`
-      UPDATE "AutoBuyRule"
-      SET "status" = 'TRIGGERED', "lastCheckedAt" = NOW()
-      WHERE "id" = ${ruleId} AND "status" = 'ACTIVE'
-      RETURNING "id"
+    const claimCount: number = await prisma.$executeRaw`
+      UPDATE AutoBuyRule
+      SET status = 'TRIGGERED', lastCheckedAt = NOW()
+      WHERE id = ${ruleId} AND status = 'ACTIVE'
     `;
 
-    if (!claimed || claimed.length === 0) {
+    if (claimCount === 0) {
       return { ruleId, matched: true, executed: false, success: false, reason: 'Rule already claimed by another concurrent worker' };
     }
 

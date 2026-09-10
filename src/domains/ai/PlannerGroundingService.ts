@@ -66,7 +66,7 @@ export class PlannerGroundingService {
       where: {
         type: 'FLIGHT_SEAT',
         ...(params.destination
-          ? { name: { contains: params.destination, mode: 'insensitive' } }
+          ? { name: { contains: params.destination } }
           : {}),
       },
       include: {
@@ -140,7 +140,7 @@ export class PlannerGroundingService {
       where: {
         type: 'HOTEL_ROOM',
         ...(params.hotelName
-          ? { name: { contains: params.hotelName, mode: 'insensitive' } }
+          ? { name: { contains: params.hotelName } }
           : {}),
       },
       include: {

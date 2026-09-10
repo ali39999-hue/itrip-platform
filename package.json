@@ -16,6 +16,7 @@
     "test:unit": "node scripts/run-unit-tests.mjs",
     "test:e2e": "playwright test",
     "postinstall": "prisma generate",
+    "db:prepare:mysql": "python scripts/make-mysql-schema.py",
     "prisma:seed": "tsx prisma/seed.ts",
     "db:push:dev-only": "prisma db push",
     "db:migrate": "prisma migrate dev",

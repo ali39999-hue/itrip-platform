@@ -108,33 +108,40 @@ export class OutboxConsumer {
         console.warn(`[Outbox] Recovered ${recovered.count} stale PROCESSING events`);
       }
 
-      // 2. Concurrency-Safe Claim using SELECT ... FOR UPDATE SKIP LOCKED (ASYNC-104)
-      const claimedEvents: Array<{
-        id: string;
-        eventType: string;
-        aggregateType: string | null;
-        aggregateId: string | null;
-        correlationId: string | null;
-        payload: string;
-        retryCount: number;
-      }> = await prisma.$queryRaw`
-        UPDATE "OutboxEvent"
-        SET "status" = 'PROCESSING',
-            "lockedAt" = NOW(),
-            "workerId" = ${workerId}
-        WHERE "id" IN (
-          SELECT "id"
-          FROM "OutboxEvent"
-          WHERE "status" = 'PENDING'
-            AND "availableAt" <= NOW()
-          ORDER BY "availableAt" ASC
-          LIMIT 20
-          FOR UPDATE SKIP LOCKED
-        )
-        RETURNING "id", "eventType", "aggregateType", "aggregateId", "correlationId", "payload", "retryCount"
-      `;
+      // 2. Concurrency-Safe Claim
+      const now = new Date();
+      const pendingEvents = await prisma.outboxEvent.findMany({
+        where: {
+          status: 'PENDING',
+          availableAt: { lte: now },
+        },
+        orderBy: { availableAt: 'asc' },
+        take: 20,
+      });
 
-      if (!claimedEvents || claimedEvents.length === 0) {
+      if (pendingEvents.length === 0) {
+        return 0;
+      }
+
+      const claimedEvents = [];
+      for (const ev of pendingEvents) {
+        const updateRes = await prisma.outboxEvent.updateMany({
+          where: {
+            id: ev.id,
+            status: 'PENDING',
+          },
+          data: {
+            status: 'PROCESSING',
+            lockedAt: now,
+            workerId,
+          },
+        });
+        if (updateRes.count > 0) {
+          claimedEvents.push(ev);
+        }
+      }
+
+      if (claimedEvents.length === 0) {
         return 0;
       }
 

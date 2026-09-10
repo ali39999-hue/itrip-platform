@@ -127,7 +127,34 @@ export async function issueOtp(
   const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
   const codeHash = hashOtp(code);
 
-  // Store only in fast in-memory cache — no database write needed for OTP
+  // 1. Store in PostgreSQL database
+  try {
+    await prisma.otpVerification.create({
+      data: {
+        identifier,
+        channel,
+        codeHash,
+        expiresAt,
+      },
+    });
+
+    await prisma.outboxEvent.create({
+      data: {
+        eventType: 'AUTH_OTP_REQUESTED',
+        payload: JSON.stringify({
+          identifier,
+          channel,
+          codeHash,
+          codeEnc: encryptSensitive(code),
+          expiresAt: expiresAt.toISOString(),
+        }),
+      },
+    });
+  } catch (dbErr) {
+    console.warn('[issueOtp] Database unreachable for OTP persistence (fallback to in-memory):', dbErr);
+  }
+
+  // 2. Also keep in fast in-memory cache
   inMemoryOtpStore.set(identifier, {
     codeHash,
     expiresAt,
@@ -178,9 +205,10 @@ export async function issueOtp(
   };
 }
 
-/** Verifies and consumes a stored OTP via SMSWBS API check_OTP with in-memory fallback. */
+/** Verifies and consumes a stored OTP via SMSWBS API, Database, and in-memory cache. */
 async function verifyStoredOtp(identifier: string, code: string): Promise<boolean> {
   const cleanCode = normalizeIdentifier(code).trim();
+  const codeHash = hashOtp(cleanCode);
   const isIranMobile = Boolean(normalizeToIranE164(identifier));
 
   // 1. Direct validation via SMSWBS check_OTP API for Iranian mobile numbers
@@ -190,16 +218,41 @@ async function verifyStoredOtp(identifier: string, code: string): Promise<boolea
       const checkRes = await smswbs.checkOtp(identifier, cleanCode);
       if (checkRes.valid) {
         inMemoryOtpStore.delete(identifier);
+        try {
+          await prisma.otpVerification.updateMany({
+            where: { identifier, consumedAt: null },
+            data: { consumedAt: new Date() },
+          });
+        } catch { /* database update best effort */ }
         return true;
       }
       authLogger.warn('SMSWBS check_OTP rejected code', { identifier, error: checkRes.error });
     } catch (smswbsErr) {
-      console.warn('[verifyStoredOtp] SMSWBS check_OTP call failed, checking in-memory fallback:', smswbsErr);
+      console.warn('[verifyStoredOtp] SMSWBS check_OTP call failed, checking database/in-memory fallback:', smswbsErr);
     }
   }
 
-  // 2. In-memory fallback check
-  const codeHash = hashOtp(cleanCode);
+  // 2. Check Database record
+  try {
+    const record = await prisma.otpVerification.findFirst({
+      where: { identifier, consumedAt: null, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (record) {
+      if (record.attempts < OTP_MAX_ATTEMPTS && record.codeHash === codeHash) {
+        await prisma.otpVerification.update({ where: { id: record.id }, data: { consumedAt: new Date() } });
+        inMemoryOtpStore.delete(identifier);
+        return true;
+      } else {
+        await prisma.otpVerification.update({ where: { id: record.id }, data: { attempts: { increment: 1 } } });
+      }
+    }
+  } catch (dbErr) {
+    console.warn('[verifyStoredOtp] Database unreachable for OTP verification, checking in-memory fallback:', dbErr);
+  }
+
+  // 3. In-memory fallback check
   const memRecord = inMemoryOtpStore.get(identifier);
 
   if (!memRecord) return false;
@@ -351,6 +404,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           // Passwordless sign-up: first login creates a CUSTOMER account.
           try {
             if (!user) {
+              const displayName = rawIdentifier.startsWith('09') || rawIdentifier.startsWith('+98') || rawIdentifier.startsWith('9')
+                ? rawIdentifier
+                : 'کاربر فیروزو';
+
               user = await prisma.user.create({
                 data: {
                   id: crypto.randomUUID(),
@@ -360,9 +417,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                   whatsappPhone: rawChannel === 'whatsapp' ? rawIdentifier : undefined,
                   wechatId: rawChannel === 'wechat' ? rawIdentifier : undefined,
                   baleId: rawChannel === 'bale' ? rawIdentifier : undefined,
-                  name: 'کاربر فیروزو',
-                  firstNameFa: 'کاربر',
-                  lastNameFa: 'فیروزو',
+                  name: displayName,
+                  firstNameFa: displayName,
+                  lastNameFa: '',
                   role: 'CUSTOMER',
                   isActive: true,
                 },
@@ -375,11 +432,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             return {
               id: `user_${rawIdentifier.replace(/\D/g, '') || Date.now()}`,
               email: identifier.includes('@') ? identifier : `${rawIdentifier}@firuzo.com`,
-              name: 'کاربر فیروزو',
+              name: rawIdentifier,
               role: 'CUSTOMER',
             };
           }
-          return { id: user.id, email: user.email || `${user.id}@firuzo.com`, name: user.name || user.firstNameFa || 'User', role: user.role };
+          return { id: user.id, email: user.email || `${user.id}@firuzo.com`, name: user.name || user.phone || user.firstNameFa || rawIdentifier, role: user.role };
         }
 
         // Multi-channel identity lookup

@@ -74,7 +74,7 @@ export default async function TravelFilesPage() {
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-y border-line/60 py-2.5 text-xs font-bold text-sub">
                   <span className="inline-flex min-w-0 items-center gap-1.5">
                     <User size={13} className="shrink-0 text-brand-dark" aria-hidden="true" />
-                    <span className="truncate">{trip.user?.name || trip.user?.email || 'Customer'}</span>
+                    <span className="truncate">{trip.user?.phone || trip.user?.name || trip.user?.email || 'Customer'}</span>
                   </span>
                   <span className="inline-flex items-center gap-1.5">
                     <Calendar size={13} className="shrink-0 text-brand-dark" aria-hidden="true" />

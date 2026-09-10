@@ -34,7 +34,7 @@ export async function generateMetadata({
         summary: dbTour.summary || undefined,
         summaryEn: dbTour.summaryEn,
         heroImage: dbTour.heroImage || undefined,
-        gallery: dbTour.gallery,
+        gallery: Array.isArray(dbTour.gallery) ? (dbTour.gallery as string[]) : undefined,
       };
     }
   }
