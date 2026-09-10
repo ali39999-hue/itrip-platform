@@ -53,8 +53,8 @@ export function SupportSection({ override }: { override?: SupportOverride } = {}
   });
 
   return (
-    <section className="w-full py-12 md:py-16 px-4 md:px-10">
-      <div className="max-w-[1280px] mx-auto bg-surface border border-line rounded-3xl p-6 md:p-10 shadow-elev-2 flex flex-col lg:flex-row items-center justify-between gap-8">
+    <section className="w-full py-6 md:py-10 px-3 sm:px-4 md:px-6 2xl:px-8">
+      <div className="max-w-[1440px] mx-auto bg-surface border border-line rounded-3xl p-6 md:p-8 shadow-elev-2 flex flex-col lg:flex-row items-center justify-between gap-6">
         <div className="space-y-3 max-w-xl text-center lg:text-start">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 text-rose-700 text-xs font-bold">
             <AlertCircle size={14} />

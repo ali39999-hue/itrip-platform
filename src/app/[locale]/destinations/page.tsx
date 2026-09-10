@@ -78,7 +78,7 @@ export default function DestinationsPage() {
   }, [dbExperiences, c.signatureExperiences]);
 
   return (
-    <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-8 pb-16 space-y-10">
+    <div className="max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 2xl:px-8 py-6 md:py-8 pb-16 space-y-8">
       {/* Hero + Country Switcher */}
       <div className="bg-gradient-to-br from-deep via-[#074746] to-[#04292a] rounded-3xl p-8 sm:p-10 text-surface relative overflow-hidden shadow-elev-3 border border-surface/10">
         <span className="absolute -start-16 -top-24 w-56 h-56 rounded-full border-[30px] border-surface/5 pointer-events-none" />

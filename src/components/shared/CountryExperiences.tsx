@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { useCountryStore } from '@/stores/country-store';
@@ -14,6 +15,8 @@ import {
   Sailboat, PartyPopper, Landmark, Trees, Sparkles, MoonStar, MountainSnow,
   Drama, Palette, ArrowLeft, MapPin, Languages, type LucideIcon,
 } from 'lucide-react';
+
+import { ExperienceDetailModal } from './ExperienceDetailModal';
 
 export const CATEGORY_ICONS: Record<ExperienceCategory, LucideIcon> = {
   yacht: Sailboat,
@@ -162,7 +165,26 @@ export function CountryExperiencesSection({
   const locale = useLocale();
   const t = useTranslations('Experiences');
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [filter, setFilter] = useState<'all' | ExperienceCategory>('all');
+  const [selectedExp, setSelectedExp] = useState<SignatureExperience | null>(null);
+
+  useEffect(() => {
+    const cityOrTitle = searchParams?.get('city');
+    if (cityOrTitle && experiences.length > 0 && !selectedExp) {
+      const needle = decodeURIComponent(cityOrTitle).toLowerCase();
+      const matched = experiences.find(
+        (e) =>
+          e.title.toLowerCase().includes(needle) ||
+          (e.titleEn && e.titleEn.toLowerCase().includes(needle)) ||
+          e.where.toLowerCase().includes(needle) ||
+          (e.whereEn && e.whereEn.toLowerCase().includes(needle))
+      );
+      if (matched) {
+        setSelectedExp(matched);
+      }
+    }
+  }, [searchParams, experiences, selectedExp]);
 
   const cats = useMemo(() => {
     const set = new Set<ExperienceCategory>(experiences.map((e) => e.category));
@@ -175,8 +197,8 @@ export function CountryExperiencesSection({
   }, [experiences, filter, limit]);
 
   return (
-    <section className={variant === 'section' ? 'py-12 md:py-16' : ''}>
-      <div className="max-w-[1280px] mx-auto px-4 md:px-10">
+    <section className={variant === 'section' ? 'py-8 md:py-12' : ''}>
+      <div className="max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 2xl:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
           <div>
             <p className="mb-2 text-brand-dark font-black text-[11px]">
@@ -234,12 +256,18 @@ export function CountryExperiencesSection({
                 catLabel={catOf(e.category)}
                 fromLabel={t('from')}
                 tomanLabel={t('toman')}
-                onBook={() => bookExperience(router, e, locale, c.id)}
+                onBook={() => setSelectedExp(e)}
               />
             </div>
           ))}
         </div>
       </div>
+
+      <ExperienceDetailModal
+        experience={selectedExp}
+        isOpen={Boolean(selectedExp)}
+        onClose={() => setSelectedExp(null)}
+      />
     </section>
   );
 }

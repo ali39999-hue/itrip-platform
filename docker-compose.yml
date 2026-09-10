@@ -1,30 +1,32 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:16-alpine
     container_name: firuzo-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-test_dummy_db_password_2026}
-      POSTGRES_DB: itrip
+      POSTGRES_DB: ${POSTGRES_DB:-itrip}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d itrip"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-itrip}"]
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    networks:
+      - firuzo-network
 
   redis:
     image: redis:7-alpine
     container_name: firuzo-redis
     restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -32,11 +34,15 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+      start_period: 5s
+    networks:
+      - firuzo-network
 
   app:
     build:
       context: .
       dockerfile: Dockerfile
+      target: runner
     container_name: firuzo-app
     restart: unless-stopped
     depends_on:
@@ -45,16 +51,19 @@ services:
       redis:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-test_dummy_db_password_2026}@db:5432/itrip?schema=public
-      - REDIS_URL=redis://redis:6379
       - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${DB_PASSWORD:-test_dummy_db_password_2026}@${DB_HOST:-db}:5432/${POSTGRES_DB:-itrip}?schema=public
+      - REDIS_URL=redis://${REDIS_HOST:-redis}:6379
       - AUTH_SECRET=${AUTH_SECRET}
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
       - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
-      - DEMO_MODE=false
-      - NEXT_PUBLIC_DEMO_MODE=false
+      - AUTH_TRUST_HOST=true
+      - DEMO_MODE=${DEMO_MODE:-false}
+      - NEXT_PUBLIC_DEMO_MODE=${NEXT_PUBLIC_DEMO_MODE:-false}
       - GATEWAY_MODE=${GATEWAY_MODE:-internal_wallet}
       - BALE_BOT_TOKEN=${BALE_BOT_TOKEN}
+      - NEXT_PUBLIC_BALE_BOT_USERNAME=${NEXT_PUBLIC_BALE_BOT_USERNAME}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
@@ -63,13 +72,33 @@ services:
       - WECHAT_APP_SECRET=${WECHAT_APP_SECRET}
       - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN}
       - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - SMSWBS_USERNAME=${SMSWBS_USERNAME}
+      - SMSWBS_PASSWORD=${SMSWBS_PASSWORD}
+      - SMSWBS_SENDER=${SMSWBS_SENDER}
+      - SMS_PROVIDER=${SMS_PROVIDER:-smswbs}
+      - SMS_SENDER_LINE=${SMS_SENDER_LINE}
+      - SMS_OTP_LINE=${SMS_OTP_LINE}
+      - SMS_PATTERN_CODE=${SMS_PATTERN_CODE}
+      - ECARDO_BASE_URL=${ECARDO_BASE_URL:-https://ecardo.ir}
+      - ECARDO_PUBLIC_KEY=${ECARDO_PUBLIC_KEY}
+      - ECARDO_SECRET_KEY=${ECARDO_SECRET_KEY}
     ports:
-      - "3000:3000"
+      - "${APP_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health/live || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    networks:
+      - firuzo-network
 
   worker:
     build:
       context: .
       dockerfile: Dockerfile
+      target: runner
     container_name: firuzo-worker
     restart: unless-stopped
     command: ["npm", "run", "worker"]
@@ -81,17 +110,41 @@ services:
       app:
         condition: service_started
     environment:
-      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-test_dummy_db_password_2026}@db:5432/itrip?schema=public
-      - REDIS_URL=redis://redis:6379
       - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${DB_PASSWORD:-test_dummy_db_password_2026}@${DB_HOST:-db}:5432/${POSTGRES_DB:-itrip}?schema=public
+      - REDIS_URL=redis://${REDIS_HOST:-redis}:6379
       - AUTH_SECRET=${AUTH_SECRET}
-      - DEMO_MODE=false
+      - DEMO_MODE=${DEMO_MODE:-false}
       - GATEWAY_MODE=${GATEWAY_MODE:-internal_wallet}
       - BALE_BOT_TOKEN=${BALE_BOT_TOKEN}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN}
       - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID}
+      - SKIP_DB_MIGRATION=true
+    networks:
+      - firuzo-network
+
+  adminer:
+    image: adminer:latest
+    container_name: firuzo-adminer
+    restart: unless-stopped
+    ports:
+      - "${ADMINER_PORT:-8080}:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    profiles:
+      - tools
+      - dev
+    networks:
+      - firuzo-network
 
 volumes:
   postgres_data:
+    name: firuzo_postgres_data
   redis_data:
+    name: firuzo_redis_data
+
+networks:
+  firuzo-network:
+    name: firuzo-network
+    driver: bridge

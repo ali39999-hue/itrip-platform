@@ -1,6 +1,7 @@
 import { safeAuth } from '@/auth';
 import { getUserTripsData } from '@/actions/trips';
 import Link from 'next/link';
+import { GuestTripLookup } from '@/components/trips/GuestTripLookup';
 import { 
   Plane, 
   Hotel, 
@@ -76,6 +77,10 @@ export default async function MyTripsPage({
               >
                 {lt(locale, { fa: 'جستجوی هتل', en: 'Search Hotels', ar: 'بحث عن الفنادق', zh: '搜索酒店', ru: 'Поиск отелей' })}
               </Link>
+            </div>
+
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-700/60">
+              <GuestTripLookup />
             </div>
           </div>
         </div>

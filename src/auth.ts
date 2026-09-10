@@ -114,6 +114,9 @@ export async function issueOtp(
         code = res.code; // Use the exact 4-digit code generated and dispatched by SMSWBS
         realSent = true;
         providerUsed = 'smswbs-otp';
+      } else if (res.success && res.alreadySent) {
+        realSent = true;
+        providerUsed = 'smswbs-otp-active';
       } else if (!res.success && res.error) {
         dispatchError = res.error;
         console.warn('[issueOtp] SMSWBS OTP returned error:', res.error);
@@ -122,6 +125,25 @@ export async function issueOtp(
       const err = smswbsErr instanceof Error ? smswbsErr.message : String(smswbsErr);
       dispatchError = err;
       console.warn('[issueOtp] SMSWBS OTP dispatch failed:', err);
+    }
+
+    // Fallback if SMSWBS was not successful (upstream 502, timeout, or outage)
+    if (!realSent) {
+      try {
+        const notificationProvider = getNotificationProvider();
+        const otpMessage = `کد تایید ورود به فیروزو: ${code}\nاعتبار: ۵ دقیقه`;
+        const dispatch = await notificationProvider.sendSms(identifier, otpMessage);
+        if (dispatch?.success && dispatch.provider !== 'console-simulator') {
+          realSent = true;
+          providerUsed = dispatch.provider;
+          dispatchError = undefined;
+        } else if (process.env.NODE_ENV !== 'production') {
+          providerUsed = 'console-simulator';
+          dispatchError = undefined;
+        }
+      } catch (fallbackErr) {
+        console.warn('[issueOtp] SMS fallback notice:', fallbackErr);
+      }
     }
   }
 

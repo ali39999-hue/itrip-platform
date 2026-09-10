@@ -334,8 +334,8 @@ export class ReferralDomainService {
       select: { totalAmount: true },
     });
 
-    const leaderBaseCost = leaderConfirmedBooking ? Number(leaderConfirmedBooking.totalAmount) : 0;
-    const estimatedRewardAmount = Math.round(leaderBaseCost * rewardPercent);
+    const leaderBaseCost = leaderConfirmedBooking ? Money.from(leaderConfirmedBooking.totalAmount) : Money.zero('IRR');
+    const estimatedRewardAmount = leaderBaseCost.mul(rewardPercent).roundForCurrency().rounded.toNumber();
 
     const latestSettlement = referral.settlements[0];
     const settlementStatus: LeaderDashboardRow['settlementStatus'] = latestSettlement

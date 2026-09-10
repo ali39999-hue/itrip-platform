@@ -32,7 +32,7 @@ export default function BookPage() {
   ];
 
   return (
-    <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-10 space-y-10">
+    <div className="max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 2xl:px-8 py-6 md:py-8 space-y-8">
       <div>
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-mint text-brand-dark text-xs font-black mb-2">
           <Sparkles size={14} />

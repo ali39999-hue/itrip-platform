@@ -167,7 +167,7 @@ export default function WalletPage() {
   }
 
   return (
-    <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-10 pb-24">
+    <div className="max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 2xl:px-8 py-6 md:py-8 pb-24">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
@@ -185,6 +185,47 @@ export default function WalletPage() {
         </div>
       ) : (
         <>
+          {/* Mobile Balance Allocation Summary (Available / Pending / Locked) */}
+          <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-surface border border-line/80 shadow-xs mb-6 text-center">
+            <div className="p-1">
+              <span className="text-[10.5px] font-bold text-sub block leading-none mb-1">
+                {lt(locale, { fa: 'در دسترس', en: 'Available', ar: 'المتاح', zh: '可用余额', ru: 'Доступно' })}
+              </span>
+              <span className="text-sm sm:text-base font-black text-emerald-700 font-mono">
+                {wallet.IRR.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
+              </span>
+            </div>
+            <div className="p-1 border-x border-line/60">
+              <span className="text-[10.5px] font-bold text-sub block leading-none mb-1">
+                {lt(locale, { fa: 'در انتظار تسویه', en: 'Pending', ar: 'معلق', zh: '待结算', ru: 'В обработке' })}
+              </span>
+              <span className="text-sm sm:text-base font-black text-sub font-mono">۰</span>
+            </div>
+            <div className="p-1">
+              <span className="text-[10.5px] font-bold text-sub block leading-none mb-1">
+                {lt(locale, { fa: 'مسدود / قفل', en: 'Locked', ar: 'محجوز', zh: '冻结', ru: 'Заблокировано' })}
+              </span>
+              <span className="text-sm sm:text-base font-black text-sub font-mono">۰</span>
+            </div>
+          </div>
+
+          {/* Real Live FX vs Reference Indicator */}
+          <div className="flex items-center justify-between gap-2 px-4 py-2 rounded-xl bg-soft/80 border border-line/80 text-[11px] font-bold text-sub mb-6">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-brand" />
+              {lt(locale, {
+                fa: 'نرخ تسعیر مرجع سیستمی بر پایه دفتر کل فیروزو',
+                en: 'System Reference FX Rates Backed by Firuzo Ledger',
+                ar: 'أسعار الصرف المرجعية في النظام المالي',
+                zh: 'Firuzo 总账系统参考汇率',
+                ru: 'Системный курс обмена на основе Главной книги Firuzo',
+              })}
+            </span>
+            <span className="text-[10px] bg-surface px-2 py-0.5 rounded font-black text-brand-dark border border-line">
+              {lt(locale, { fa: 'نرخ مصوب مرجع', en: 'Reference Standard', ar: 'السعر المرجعي', zh: '基准参考', ru: 'Базовый курс' })}
+            </span>
+          </div>
+
           {/* Balance Cards with Mobile Snap Carousel */}
           <div className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:grid-cols-4 gap-4 md:gap-4 mb-8 pb-2 md:pb-0 scrollbar-none">
             <div className="shrink-0 w-[84vw] sm:w-[260px] md:w-auto snap-start bg-gradient-to-br from-brand to-brand-dark rounded-3xl p-5 text-surface shadow-elev-2 relative overflow-hidden flex flex-col justify-between">

@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { MapPin, Calendar, Users, Search, Minus, Plus, Building2, ChevronDown } from 'lucide-react';
+import { MapPin, Users, Search, Minus, Plus, Building2, ChevronDown, X } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES } from '@/lib/countries';
 import { num } from '@/lib/format';
 import { lt } from '@/lib/lt';
-import { dualDate } from '@/lib/jalali';
+import { JalaliDatePicker } from '@/components/ui/DatePicker';
 import type { HotelSearchHeaderProps } from './types';
 
 const POPULAR_DESTINATIONS = [
@@ -30,25 +30,6 @@ function getNights(inDate?: string, outDate?: string): number {
   return diff > 0 ? diff : 1;
 }
 
-function formatDisplayDate(dateStr: string, loc: string): { primary: string; secondary: string } {
-  if (!dateStr) return { primary: 'انتخاب تاریخ', secondary: '' };
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return { primary: dateStr, secondary: '' };
-
-    if (loc === 'fa' || loc === 'ar') {
-      const weekday = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { weekday: 'short' }).format(d);
-      const j = dualDate(dateStr).j || dateStr;
-      return { primary: j, secondary: weekday };
-    }
-    const weekday = new Intl.DateTimeFormat(loc, { weekday: 'short' }).format(d);
-    const formatted = new Intl.DateTimeFormat(loc, { month: 'short', day: 'numeric' }).format(d);
-    return { primary: formatted, secondary: weekday };
-  } catch {
-    return { primary: dateStr, secondary: '' };
-  }
-}
-
 export function HotelSearchHeader({
   query,
   onQueryChange,
@@ -67,8 +48,7 @@ export function HotelSearchHeader({
 }: HotelSearchHeaderProps) {
   const locale = useLocale();
   const { country } = useCountryStore();
-  // Mirror the API country resolution in useHotelFilters: an explicit China
-  // query searches the China catalogue even when the store country is Iran.
+
   const isChinaQuery = /پکن|beijing|china|چین/i.test(query || '');
   const effectiveCountry = isChinaQuery ? 'china' : country;
   const c = COUNTRIES[effectiveCountry] || COUNTRIES['iran'] || COUNTRIES['turkey'];
@@ -81,8 +61,6 @@ export function HotelSearchHeader({
   const pickerWrapperRef = useRef<HTMLDivElement>(null);
 
   const nights = getNights(checkin, checkout);
-  const checkinInfo = formatDisplayDate(checkin, locale);
-  const checkoutInfo = formatDisplayDate(checkout, locale);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -98,14 +76,24 @@ export function HotelSearchHeader({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  function handleSelectDest(destName: string) {
+  function handleSelectDest(destName: string, immediateSubmit = false) {
     onQueryChange(destName);
     setDestSuggestionsOpen(false);
+    if (immediateSubmit) {
+      onSearchSubmit(destName);
+    }
+  }
+
+  function handleSubmitForm(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    setDestSuggestionsOpen(false);
+    setPickerOpen(false);
+    onSearchSubmit();
   }
 
   return (
     <>
-      {/* ================= 1. MOBILE COMPACT AIRBNB-STYLE SEARCH PILL (< MD) ================= */}
+      {/* ================= 1. MOBILE COMPACT SEARCH PILL (< MD) ================= */}
       <div className="md:hidden border-b border-line bg-surface/90 backdrop-blur-md p-3 shadow-xs">
         <button
           type="button"
@@ -121,7 +109,7 @@ export function HotelSearchHeader({
                 {query || lt(locale, { fa: 'همه مقاصد و هتل‌ها', en: 'All Destinations & Hotels', ar: 'جميع الوجهات والفنادق', zh: '所有目的地与酒店', ru: 'Все отели' })}
               </span>
               <span className="text-[10.5px] font-bold text-sub block truncate mt-0.5">
-                {checkinInfo.primary} ➔ {checkoutInfo.primary} ({num(nights, locale)} {lt(locale, { fa: 'شب', en: 'nights', ar: 'ليالٍ', zh: '晚', ru: 'ноч.' })}) • {num(adults, locale)} {lt(locale, { fa: 'بزرگسال', en: 'Adults', ar: 'بالغين', zh: '成人', ru: 'взрослых' })}
+                {checkin} ➔ {checkout} ({num(nights, locale)} {lt(locale, { fa: 'شب', en: 'nights', ar: 'ليالٍ', zh: '晚', ru: 'ноч.' })}) • {num(adults, locale)} {lt(locale, { fa: 'بزرگسال', en: 'Adults', ar: 'بالغين', zh: '成人', ru: 'вزрослых' })}
               </span>
             </div>
           </div>
@@ -132,15 +120,15 @@ export function HotelSearchHeader({
       </div>
 
       {/* ================= 2. DESKTOP SEARCH BAR (MD+) ================= */}
-      <div className="hidden md:block border-b border-line glass-bar shadow-[0_8px_22px_rgba(5,63,62,.05)]">
-        <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-3.5 space-y-2.5">
-          <div className="flex items-center gap-2 flex-wrap lg:flex-nowrap">
+      <div className="hidden md:block border-b border-line bg-surface/95 backdrop-blur-md shadow-xs">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-4 space-y-3">
+          <form onSubmit={handleSubmitForm} className="flex items-center gap-2.5 flex-wrap lg:flex-nowrap w-full">
             {/* Destination Input & Suggestions */}
-            <div ref={destWrapperRef} className="relative flex-[1_1_280px] lg:flex-[2_1_0%] min-w-[240px]">
+            <div ref={destWrapperRef} className="relative flex-[1_1_270px] lg:flex-[2_1_0%] min-w-[230px]">
               <div className="flex items-center gap-2.5 min-h-[54px] px-3.5 border border-line rounded-xl bg-surface focus-within:border-brand focus-within:ring-[3px] focus-within:ring-brand/10 transition-all">
-                <MapPin size={19} className="text-brand shrink-0" />
+                <MapPin size={18} className="text-brand shrink-0" />
                 <div className="min-w-0 w-full">
-                  <label htmlFor="hotel-dest-input" className="block text-[10px] font-black text-sub cursor-pointer">
+                  <label htmlFor="hotel-dest-input" className="block text-[10px] font-black text-sub cursor-pointer leading-tight mb-0.5">
                     {lt(locale, { fa: 'مقصد یا نام هتل', en: 'Destination or Hotel Name', ar: 'الوجهة أو اسم الفندق', zh: '目的地或酒店名称', ru: 'Направление или отель' })}
                   </label>
                   <input
@@ -151,10 +139,30 @@ export function HotelSearchHeader({
                       if (!destSuggestionsOpen) setDestSuggestionsOpen(true);
                     }}
                     onFocus={() => setDestSuggestionsOpen(true)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        setDestSuggestionsOpen(false);
+                        onSearchSubmit();
+                      }
+                    }}
                     placeholder={lt(locale, { fa: 'کجا اقامت دارید؟ (مثال: مشهد، تهران...)', en: 'Where are you staying? (e.g. Mashhad...)', ar: 'أين تريد الإقامة؟ (مثال: مشهد...)', zh: '去哪里？（例如：德黑兰、马什哈德...）', ru: 'Куда вы едете? (напр. Мешхед...)' })}
-                    className="w-full border-0 outline-0 text-[13px] font-extrabold text-ink p-0 bg-transparent placeholder:text-sub/50"
+                    className="w-full border-0 outline-0 text-[13px] font-black text-ink p-0 bg-transparent placeholder:text-sub/50"
                   />
                 </div>
+                {query ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onQueryChange('');
+                      setDestSuggestionsOpen(false);
+                    }}
+                    className="p-1 rounded-md text-sub hover:text-ink transition cursor-pointer"
+                    aria-label="Clear destination"
+                  >
+                    <X size={14} />
+                  </button>
+                ) : null}
               </div>
 
               {/* Suggestions Dropdown */}
@@ -162,14 +170,17 @@ export function HotelSearchHeader({
                 <div className="absolute top-[calc(100%+6px)] start-0 z-[120] w-full min-w-[300px] p-3 rounded-2xl bg-surface border border-line shadow-elev-3 animate-in fade-in-50 zoom-in-95 duration-150">
                   <div className="text-[11px] font-black text-sub px-2 pb-2 border-b border-line/60 flex items-center justify-between">
                     <span>{lt(locale, { fa: 'مقاصد پرطرفدار', en: 'Popular Destinations', ar: 'الوجهات الشائعة', zh: '热门目的地', ru: 'Популярные направления' })}</span>
-                    <span className="text-[10px] font-bold text-brand">{lt(locale, { fa: 'انتخاب سریع', en: 'Quick select', ar: 'اختيار سريع', zh: '快捷选择', ru: 'Быстрый выбор' })}</span>
+                    <span className="text-[10px] font-bold text-brand">{lt(locale, { fa: 'انتخاب سریع', en: 'Quick select', ar: 'اختيار سريع', zh: '快捷选择', ru: 'Быستрый выбор' })}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-1.5 pt-2">
                     {POPULAR_DESTINATIONS.map((dest) => (
                       <button
                         key={dest.nameFa}
                         type="button"
-                        onClick={() => handleSelectDest(locale === 'fa' ? dest.nameFa : dest.nameEn)}
+                        onClick={() => {
+                          const chosen = locale === 'fa' ? dest.nameFa : dest.nameEn;
+                          handleSelectDest(chosen, true);
+                        }}
                         className={`flex items-center justify-between p-2 rounded-xl text-start transition cursor-pointer hover:bg-soft ${
                           query === (locale === 'fa' ? dest.nameFa : dest.nameEn) ? 'bg-brand/10 text-brand font-black' : 'text-ink font-bold'
                         }`}
@@ -188,63 +199,41 @@ export function HotelSearchHeader({
               )}
             </div>
 
-            {/* Check-in Date */}
-            <div className="relative flex-[1_1_180px] min-h-[54px] px-3.5 border border-line rounded-xl bg-surface hover:border-brand/50 transition-all">
-              <div className="flex items-center gap-2.5 h-full">
-                <Calendar size={18} className="text-brand shrink-0" />
-                <div className="min-w-0 w-full">
-                  <span className="block text-[10px] font-black text-sub">
-                    {lt(locale, { fa: 'تاریخ ورود', en: 'Check-in', ar: 'تسجيل الوصول', zh: '入住日期', ru: 'Дата заезда' })}
-                  </span>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-[12.5px] font-black text-ink">{checkinInfo.primary}</span>
-                    {checkinInfo.secondary && (
-                      <span className="text-[10.5px] font-bold text-sub">({checkinInfo.secondary})</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <input
-                type="date"
+            {/* Interactive Check-in Date Picker */}
+            <div className="flex-[1_1_175px] min-w-[155px]">
+              <JalaliDatePicker
                 value={checkin}
-                onChange={(e) => onCheckinChange?.(e.target.value)}
-                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                title={lt(locale, { fa: 'تغییر تاریخ ورود', en: 'Change check-in date', ar: 'تغيير تاريخ الوصول', zh: '修改入住日期', ru: 'Изменить дату заезда' })}
+                onChange={(d) => {
+                  if (d) onCheckinChange?.(d);
+                }}
+                label={lt(locale, { fa: 'تاریخ ورود', en: 'Check-in', ar: 'تسجيل الوصول', zh: '入住日期', ru: 'Дата заезда' })}
+                id="hotel-checkin-picker"
+                className="!min-h-[54px] !rounded-xl !py-1.5 !px-3"
               />
             </div>
 
-            {/* Check-out Date & Nights badge */}
-            <div className="relative flex-[1_1_180px] min-h-[54px] px-3.5 border border-line rounded-xl bg-surface hover:border-brand/50 transition-all">
-              <div className="flex items-center gap-2.5 h-full">
-                <Calendar size={18} className="text-brand shrink-0" />
-                <div className="min-w-0 w-full">
-                  <div className="flex items-center justify-between">
-                    <span className="block text-[10px] font-black text-sub">
-                      {lt(locale, { fa: 'تاریخ خروج', en: 'Check-out', ar: 'تسجيل المغادرة', zh: '退房日期', ru: 'Дата выезда' })}
-                    </span>
-                    <span className="text-[9.5px] font-black px-1.5 py-0.5 rounded-md bg-mint-bright/20 text-brand-dark">
-                      {num(nights, locale)} {lt(locale, { fa: 'شب', en: 'nights', ar: 'ليالٍ', zh: '晚', ru: 'ноч.' })}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-[12.5px] font-black text-ink">{checkoutInfo.primary}</span>
-                    {checkoutInfo.secondary && (
-                      <span className="text-[10.5px] font-bold text-sub">({checkoutInfo.secondary})</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <input
-                type="date"
+            {/* Interactive Check-out Date Picker */}
+            <div className="flex-[1_1_175px] min-w-[155px]">
+              <JalaliDatePicker
                 value={checkout}
-                onChange={(e) => onCheckoutChange?.(e.target.value)}
-                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                title={lt(locale, { fa: 'تغییر تاریخ خروج', en: 'Change check-out date', ar: 'تغيير تاريخ المغادرة', zh: '修改退房日期', ru: 'Изменить дату выезда' })}
+                onChange={(d) => {
+                  if (d) onCheckoutChange?.(d);
+                }}
+                label={lt(locale, {
+                  fa: `تاریخ خروج (${num(nights, locale)} شب)`,
+                  en: `Check-out (${num(nights, locale)} n)`,
+                  ar: `المغادرة (${num(nights, locale)} ليالٍ)`,
+                  zh: `退房 (${num(nights, locale)}晚)`,
+                  ru: `Выезд (${num(nights, locale)} н)`,
+                })}
+                id="hotel-checkout-picker"
+                minDate={checkin ? new Date(checkin) : undefined}
+                className="!min-h-[54px] !rounded-xl !py-1.5 !px-3"
               />
             </div>
 
             {/* Guests & Rooms Selector */}
-            <div ref={pickerWrapperRef} className="relative flex-[1_1_200px] min-h-[54px] px-3.5 border border-line rounded-xl bg-surface hover:border-brand/50 transition-all">
+            <div ref={pickerWrapperRef} className="relative flex-[1_1_190px] min-h-[54px] px-3.5 border border-line rounded-xl bg-surface hover:border-brand/50 transition-all flex items-center">
               <button
                 type="button"
                 onClick={() => setPickerOpen(!pickerOpen)}
@@ -253,7 +242,7 @@ export function HotelSearchHeader({
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Users size={18} className="text-brand shrink-0" />
                   <div className="min-w-0">
-                    <span className="block text-[10px] font-black text-sub">
+                    <span className="block text-[10px] font-black text-sub leading-tight mb-0.5">
                       {lt(locale, { fa: 'مسافران و اتاق‌ها', en: 'Guests & Rooms', ar: 'الضيوف والغرف', zh: '人数与房间', ru: 'Гости и номера' })}
                     </span>
                     <span className="text-[12.5px] font-black text-ink block truncate">
@@ -263,7 +252,7 @@ export function HotelSearchHeader({
                     </span>
                   </div>
                 </div>
-                <ChevronDown size={14} className={`text-sub transition-transform ${pickerOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={14} className={`text-sub transition-transform duration-200 ${pickerOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {/* Guest & Room Popover */}
@@ -365,16 +354,15 @@ export function HotelSearchHeader({
               )}
             </div>
 
-            {/* Search Submit CTA Button */}
+            {/* Elegant Primary Search Button */}
             <button
-              type="button"
-              onClick={onSearchSubmit}
-              className="flex-1 lg:flex-none min-h-[54px] px-6 inline-flex items-center justify-center gap-2 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-[13.5px] transition shadow-xs hover:shadow-elev-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0 cursor-pointer active:scale-[0.98]"
+              type="submit"
+              className="flex-1 lg:flex-none min-h-[54px] px-7 inline-flex items-center justify-center gap-2 rounded-xl bg-brand hover:bg-brand-dark text-surface font-black text-[13.5px] transition-all shadow-xs hover:shadow-elev-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shrink-0 cursor-pointer active:scale-[0.98]"
             >
               <Search size={18} strokeWidth={2.5} />
               <span>{lt(locale, { fa: 'جستجوی هتل‌ها', en: 'Search Hotels', ar: 'بحث عن الفنادق', zh: '搜索酒店', ru: 'Найти отели' })}</span>
             </button>
-          </div>
+          </form>
 
           {/* Quick Destination Shortcut Pills */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
@@ -388,12 +376,12 @@ export function HotelSearchHeader({
                   key={dest.nameFa}
                   type="button"
                   onClick={() => {
-                    handleSelectDest(locale === 'fa' ? dest.nameFa : dest.nameEn);
-                    onSearchSubmit();
+                    const chosen = locale === 'fa' ? dest.nameFa : dest.nameEn;
+                    handleSelectDest(chosen, true);
                   }}
                   className={`px-3 py-1 rounded-lg whitespace-nowrap shrink-0 transition text-[11.5px] font-bold cursor-pointer ${
                     active
-                      ? 'bg-brand text-surface shadow-2xs'
+                      ? 'bg-brand text-surface shadow-2xs font-black'
                       : 'bg-soft text-ink hover:bg-line/70'
                   }`}
                 >
@@ -405,28 +393,28 @@ export function HotelSearchHeader({
         </div>
       </div>
 
-      {/* Country context strip */}
-      <div className="border-b border-line bg-gradient-to-b from-deep to-[#04302f] text-[#cfe8e5]">
-        <div className="max-w-[1400px] mx-auto px-4 md:px-8 flex items-center gap-2.5 flex-wrap py-2 text-[11px] font-bold">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-surface/15 bg-surface/5">
-            {lt(locale, { fa: 'کشور مقصد:', en: 'Destination country:', ar: 'بلد الوجهة:', zh: '目的地国家：', ru: 'Страна назначения:' })}{' '}
+      {/* Modern, Clean Lightweight Country Context Strip */}
+      <div className="border-b border-line/60 bg-soft/60 text-sub">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 flex items-center gap-2 flex-wrap py-2 text-[11px] font-bold">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-line/70 bg-surface shadow-2xs text-ink">
+            {lt(locale, { fa: 'کشور مقصد:', en: 'Destination:', ar: 'الوجهة:', zh: '目的地：', ru: 'Направление:' })}{' '}
             {query.trim() ? (
-              <b className="text-mint-bright">{c.flag} {locale === 'fa' ? c.nameFa : c.nameEn}</b>
+              <b className="text-brand-dark">{c.flag} {locale === 'fa' ? c.nameFa : c.nameEn}</b>
             ) : (
-              <b className="text-mint-bright">{lt(locale, { fa: 'همه مقاصد', en: 'All destinations', ar: 'جميع الوجهات', zh: '所有目的地', ru: 'Все направления' })}</b>
+              <b className="text-brand-dark">{lt(locale, { fa: 'همه مقاصد', en: 'All destinations', ar: 'جميع الوجهات', zh: '所有目的地', ru: 'Все направления' })}</b>
             )}
           </span>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-surface/15 bg-surface/5">
-            {lt(locale, { fa: 'ارز تسویه:', en: 'Settlement currency:', ar: 'عملة التسوية:', zh: '结算货币：', ru: 'Валюта расчётов:' })} <b className="text-mint-bright" dir="ltr">{c.currency}</b>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-line/70 bg-surface shadow-2xs text-ink">
+            {lt(locale, { fa: 'ارز تسویه:', en: 'Currency:', ar: 'العملة:', zh: '币种：', ru: 'Валюта:' })} <b className="text-brand-dark" dir="ltr">{c.currency}</b>
           </span>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-surface/15 bg-surface/5">
-            {lt(locale, { fa: 'درگاه پرداخت:', en: 'Payment gateway:', ar: 'بوابة الدفع:', zh: '支付网关：', ru: 'Платёжный шлюз:' })} <b className="text-mint-bright">{locale === 'fa' ? c.gateway : c.gatewayEn}</b>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-line/70 bg-surface shadow-2xs text-ink">
+            {lt(locale, { fa: 'درگاه پرداخت:', en: 'Gateway:', ar: 'بوابة الدفع:', zh: '支付网关：', ru: 'Шлюз:' })} <b className="text-brand-dark">{locale === 'fa' ? c.gateway : c.gatewayEn}</b>
           </span>
           <Link
             href="/support"
-            className="me-auto hidden md:inline-flex items-center gap-1 text-mint-bright font-extrabold hover:underline"
+            className="me-auto hidden md:inline-flex items-center gap-1 text-brand-dark font-black hover:underline"
           >
-            {lt(locale, { fa: 'شرایط پرداخت و کنسلی این کشور ←', en: 'Payment & cancellation terms for this country →', ar: 'شروط الدفع والإلغاء لهذا البلد ←', zh: '该国家/地区的支付与取消条款 →', ru: 'Условия оплаты и отмены для этой страны →' })}
+            {lt(locale, { fa: 'شرایط پرداخت و قوانین استرداد ←', en: 'Payment terms & refund policy →', ar: 'شروط الدفع والإلغاء ←', zh: '支付与取消条款 →', ru: 'Условия оплаты и отмены →' })}
           </Link>
         </div>
       </div>
@@ -468,142 +456,67 @@ export function HotelSearchHeader({
               <button
                 type="button"
                 onClick={() => setMobileEditOpen(false)}
-                className="text-xs font-bold text-sub px-2.5 py-1 rounded-lg bg-soft"
+                className="w-7 h-7 rounded-lg bg-soft grid place-items-center text-sub hover:text-ink cursor-pointer"
+                aria-label="Close"
               >
-                {lt(locale, { fa: 'بستن', en: 'Close', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}
+                <X size={15} />
               </button>
             </div>
 
-            <div className="space-y-3">
+            {/* Mobile Destination */}
+            <div className="space-y-1">
+              <label htmlFor="hotel-dest-input-mobile" className="block text-xs font-bold text-sub">
+                {lt(locale, { fa: 'مقصد یا نام هتل', en: 'Destination / Hotel', ar: 'الوجهة / الفندق', zh: '目的地或酒店', ru: 'Направление / Отель' })}
+              </label>
+              <div className="flex items-center gap-2.5 p-3 rounded-xl border border-line bg-soft focus-within:border-brand">
+                <MapPin size={17} className="text-brand shrink-0" />
+                <input
+                  id="hotel-dest-input-mobile"
+                  value={query}
+                  onChange={(e) => onQueryChange(e.target.value)}
+                  placeholder={lt(locale, { fa: 'کجا اقامت دارید؟', en: 'Where to stay?', ar: 'أين تريد الإقامة؟', zh: '去哪里？', ru: 'Куда?' })}
+                  className="w-full bg-transparent border-0 outline-0 text-xs font-black text-ink"
+                />
+              </div>
+            </div>
+
+            {/* Mobile Dates */}
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'نام شهر یا هتل مقصد', en: 'Destination City or Hotel', ar: 'اسم المدينة أو الفندق', zh: '目的地城市或酒店', ru: 'Город или отель назначения' })}</label>
-                <div className="flex items-center gap-2 p-3 bg-soft rounded-xl border border-line">
-                  <MapPin size={16} className="text-brand" />
-                  <input
-                    type="text"
-                    value={query}
-                    onChange={(e) => onQueryChange(e.target.value)}
-                    placeholder={lt(locale, { fa: 'مثال: مشهد، تهران، استانبول...', en: 'e.g. Mashhad, Tehran, Istanbul...', ar: 'مثال: مشهد، طهران، إسطنبول...', zh: '例：马什哈德、德黑兰、伊斯坦布尔...', ru: 'Напр. Мешхед, Тегеран, Стамбул...' })}
-                    className="w-full bg-transparent border-0 outline-none text-xs font-bold text-ink"
-                  />
-                </div>
+                <JalaliDatePicker
+                  value={checkin}
+                  onChange={(d) => {
+                    if (d) onCheckinChange?.(d);
+                  }}
+                  label={lt(locale, { fa: 'تاریخ ورود', en: 'Check-in', ar: 'تسجيل الوصول', zh: '入住日期', ru: 'Дата заезда' })}
+                  id="hotel-checkin-mobile"
+                />
               </div>
-
-              {/* Quick destination chips in mobile */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                {POPULAR_DESTINATIONS.map((dest) => (
-                  <button
-                    key={dest.nameFa}
-                    type="button"
-                    onClick={() => onQueryChange(locale === 'fa' ? dest.nameFa : dest.nameEn)}
-                    className="px-2.5 py-1 rounded-lg bg-soft border border-line/60 text-[11px] font-bold text-ink whitespace-nowrap shrink-0"
-                  >
-                    {locale === 'fa' ? dest.nameFa : dest.nameEn}
-                  </button>
-                ))}
+              <div>
+                <JalaliDatePicker
+                  value={checkout}
+                  onChange={(d) => {
+                    if (d) onCheckoutChange?.(d);
+                  }}
+                  label={lt(locale, { fa: 'تاریخ خروج', en: 'Check-out', ar: 'المغادرة', zh: '退房', ru: 'Выезд' })}
+                  id="hotel-checkout-mobile"
+                  minDate={checkin ? new Date(checkin) : undefined}
+                />
               </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'تاریخ ورود', en: 'Check-in', ar: 'تسجيل الوصول', zh: '入住', ru: 'Заезд' })}</label>
-                  <input
-                    type="date"
-                    value={checkin}
-                    onChange={(e) => onCheckinChange?.(e.target.value)}
-                    className="w-full p-2.5 bg-soft rounded-xl border border-line text-xs font-bold text-ink"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'تاریخ خروج', en: 'Check-out', ar: 'تسجيل المغادرة', zh: '退房', ru: 'Выезд' })}</label>
-                  <input
-                    type="date"
-                    value={checkout}
-                    onChange={(e) => onCheckoutChange?.(e.target.value)}
-                    className="w-full p-2.5 bg-soft rounded-xl border border-line text-xs font-bold text-ink"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-soft rounded-xl border border-line">
-                <span className="text-xs font-bold text-ink">{lt(locale, { fa: 'تعداد بزرگسالان', en: 'Adults', ar: 'البالغين', zh: '成人', ru: 'Взрослые' })}</span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => onAdultsChange?.(Math.max(1, adults - 1))}
-                    disabled={adults <= 1}
-                    className="w-7 h-7 rounded-lg bg-surface border border-line grid place-items-center disabled:opacity-40"
-                  >
-                    <Minus size={12} />
-                  </button>
-                  <span className="w-5 text-center text-xs font-bold font-mono">{num(adults, locale)}</span>
-                  <button
-                    type="button"
-                    onClick={() => onAdultsChange?.(Math.min(9, adults + 1))}
-                    disabled={adults >= 9}
-                    className="w-7 h-7 rounded-lg bg-surface border border-line grid place-items-center disabled:opacity-40"
-                  >
-                    <Plus size={12} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-soft rounded-xl border border-line">
-                <span className="text-xs font-bold text-ink">{lt(locale, { fa: 'تعداد کودکان', en: 'Children', ar: 'الأطفال', zh: '儿童', ru: 'Дети' })}</span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => onChildrenCountChange?.(Math.max(0, childrenCount - 1))}
-                    disabled={childrenCount <= 0}
-                    className="w-7 h-7 rounded-lg bg-surface border border-line grid place-items-center disabled:opacity-40"
-                  >
-                    <Minus size={12} />
-                  </button>
-                  <span className="w-5 text-center text-xs font-bold font-mono">{num(childrenCount, locale)}</span>
-                  <button
-                    type="button"
-                    onClick={() => onChildrenCountChange?.(Math.min(6, childrenCount + 1))}
-                    disabled={childrenCount >= 6}
-                    className="w-7 h-7 rounded-lg bg-surface border border-line grid place-items-center disabled:opacity-40"
-                  >
-                    <Plus size={12} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-soft rounded-xl border border-line">
-                <span className="text-xs font-bold text-ink">{lt(locale, { fa: 'تعداد اتاق', en: 'Rooms', ar: 'الغرف', zh: '房间数', ru: 'Номера' })}</span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => onRoomsChange?.(Math.max(1, rooms - 1))}
-                    disabled={rooms <= 1}
-                    className="w-7 h-7 rounded-lg bg-surface border border-line grid place-items-center disabled:opacity-40"
-                  >
-                    <Minus size={12} />
-                  </button>
-                  <span className="w-5 text-center text-xs font-bold font-mono">{num(rooms, locale)}</span>
-                  <button
-                    type="button"
-                    onClick={() => onRoomsChange?.(Math.min(5, rooms + 1))}
-                    disabled={rooms >= 5}
-                    className="w-7 h-7 rounded-lg bg-surface border border-line grid place-items-center disabled:opacity-40"
-                  >
-                    <Plus size={12} />
-                  </button>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileEditOpen(false);
-                  onSearchSubmit();
-                }}
-                className="w-full py-3 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs transition shadow-sm"
-              >
-                {lt(locale, { fa: 'اعمال و جستجو', en: 'Apply & Search', ar: 'تطبيق وبحث', zh: '应用并搜索', ru: 'Применить и найти' })}
-              </button>
             </div>
+
+            {/* Mobile Search Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setMobileEditOpen(false);
+                onSearchSubmit();
+              }}
+              className="w-full py-3.5 rounded-xl bg-brand text-surface text-sm font-black flex items-center justify-center gap-2 shadow-xs cursor-pointer active:scale-98"
+            >
+              <Search size={16} />
+              <span>{lt(locale, { fa: 'جستجوی مجدد هتل‌ها', en: 'Update Search', ar: 'تحديث البحث', zh: '更新搜索', ru: 'Обновить' })}</span>
+            </button>
           </div>
         </div>
       )}

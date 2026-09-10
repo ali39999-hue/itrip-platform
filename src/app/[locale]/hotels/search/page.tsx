@@ -4,7 +4,8 @@ import { Suspense, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/i18n/routing';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { SlidersHorizontal } from 'lucide-react';
 import type { Hotel } from '@/lib/types';
 import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
@@ -174,13 +175,18 @@ function HotelsSearchInner() {
         <HotelSearchHeader
           query={query}
           onQueryChange={setQuery}
-          onSearchSubmit={() => {
+          onSearchSubmit={(cityOverride?: string) => {
+            const targetCity = (typeof cityOverride === 'string' ? cityOverride : query).trim();
+            if (typeof cityOverride === 'string') {
+              setQuery(cityOverride);
+            }
             const params = new URLSearchParams();
-            if (query.trim()) params.set('city', query.trim());
+            if (targetCity) params.set('city', targetCity);
             if (checkin) params.set('checkin', checkin);
             if (checkout) params.set('checkout', checkout);
             if (adults) params.set('adults', String(adults));
             if (childrenCount) params.set('children', String(childrenCount));
+            if (rooms) params.set('rooms', String(rooms));
             router.push(`/hotels/search?${params.toString()}`);
           }}
           resultsCount={totalCount}
@@ -478,8 +484,9 @@ function HotelsSearchInner() {
             <button
               type="button"
               onClick={() => setMobileFilterOpen(true)}
-              className="flex items-center gap-1.5 text-xs font-black py-1 px-2 rounded-full hover:bg-surface/20 transition active:scale-95"
+              className="flex items-center gap-1.5 text-xs font-black py-1 px-2 rounded-full hover:bg-surface/20 transition active:scale-95 cursor-pointer"
             >
+              <SlidersHorizontal size={14} />
               <span>{lt(locale, { fa: 'فیلترها', en: 'Filters', ar: 'تصفية', zh: '筛选', ru: 'Фильтры' })}</span>
               {activeFiltersCount > 0 && (
                 <span className="w-4 h-4 rounded-full bg-brand text-surface text-[10px] grid place-items-center font-bold">

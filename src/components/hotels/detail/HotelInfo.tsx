@@ -80,7 +80,7 @@ export function HotelOverview({ hotel }: { hotel: Hotel }) {
         </p>
         <p className="mb-0">
           {lt(locale, {
-            fa: 'پذیرش ۲۴ ساعته با پشتیبانی شبانه‌روزی، ترانسفر فرودگاهی با نرخ ثابت و امکان افزودن خدمات تکمیلی فیروز (ترانسفر، eSIM و بیمه) در مرحله پرداخت.',
+            fa: 'پذیرش ۲۴ ساعته با پشتیبانی شبانه‌روزی، ترانسفر فرودگاهی با نرخ ثابت و امکان افزودن خدمات تکمیلی فیروزو (ترانسفر، eSIM و بیمه) در مرحله پرداخت.',
             en: '24-hour reception, fixed-rate airport transfer, and optional travel ancillaries (transfer, eSIM, and comprehensive insurance) available at checkout.',
             ar: 'استقبال على مدار 24 ساعة، ونقل من المطار بسعر ثابت، مع إمكانية إضافة خدمات السفر التكميلية (نقل، شريحة eSIM، وتأمين) عند الدفع.',
             zh: '24 小时前台服务，一口价机场接送，并可在结账时随心选购 eSIM 与旅行保险等出行保障。',

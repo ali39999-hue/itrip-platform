@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Download, X } from 'lucide-react';
 
 type InstallPromptEvent = Event & {
@@ -27,7 +28,9 @@ export function PwaBoot() {
     return () => window.removeEventListener('beforeinstallprompt', onPrompt);
   }, []);
 
-  if (!deferred || hidden) return null;
+  const pathname = usePathname() || '';
+
+  if (!deferred || hidden || pathname.includes('/search')) return null;
 
   return (
     <div className="fixed bottom-20 lg:bottom-6 start-4 lg:start-6 z-[115] flex items-center gap-3 p-2.5 pe-3.5 rounded-2xl bg-surface/95 backdrop-blur border border-line shadow-elev-3 animate-in slide-in-from-bottom-2 duration-300">

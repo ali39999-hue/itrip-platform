@@ -28,6 +28,7 @@ import {
   Check,
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
+import { GuestTripLookup } from '@/components/trips/GuestTripLookup';
 
 interface BookingRecordItem {
   id: string;
@@ -205,7 +206,7 @@ export default function MyTripsPage() {
   if (!isHydrated) return null;
 
   return (
-    <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-8">
+    <div className="max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 2xl:px-8 py-6 md:py-8">
       <div className="flex flex-col lg:flex-row gap-8">
         <AccountSidebar activeSection="trips" />
 
@@ -347,6 +348,10 @@ export default function MyTripsPage() {
                     ru: 'Поиск рейсов и отелей',
                   })}
                 </Button>
+              </div>
+
+              <div className="pt-6 border-t border-line/60 mt-6 w-full">
+                <GuestTripLookup />
               </div>
             </div>
           ) : filtered.length === 0 ? (

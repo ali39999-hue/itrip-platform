@@ -43,7 +43,7 @@ export function SearchWidget({ initialTab = 'flights' }: SearchWidgetProps) {
   } = useSearchFormState(initialTab);
 
   return (
-    <div className="w-full max-w-5xl mx-auto relative z-[60]">
+    <div className="w-full max-w-[1240px] mx-auto relative z-[60]">
       {error && (
         <div
           role="alert"

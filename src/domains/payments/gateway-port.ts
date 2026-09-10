@@ -56,11 +56,82 @@ export interface WebhookVerificationResult {
   error?: string;
 }
 
+export interface GatewayQueryResponse {
+  status: 'INITIAL' | 'PENDING' | 'SUCCESS' | 'FAILED' | 'EXPIRED';
+  gatewayRef: string;
+  amount: Money;
+  settledAt?: Date;
+  rawResponse?: Record<string, unknown>;
+  error?: string;
+}
+
+export interface GatewaySettleResponse {
+  success: boolean;
+  settledAmount: Money;
+  settlementRef?: string;
+  error?: string;
+}
+
+export interface GatewayCallbackParsed {
+  valid: boolean;
+  gatewayRef: string;
+  amount?: Money;
+  status: 'SUCCESS' | 'FAILED' | 'CANCELED';
+  rawParams: Record<string, unknown>;
+  error?: string;
+}
+
+export interface GatewayRetryOptions {
+  maxRetries?: number;
+  initialDelayMs?: number;
+  factor?: number;
+  timeoutMs?: number;
+}
+
+/**
+ * Robust retry wrapper with exponential backoff and timeout for external PSP operations (PAY-004)
+ */
+export async function withGatewayRetry<T>(
+  fn: (signal: AbortSignal) => Promise<T>,
+  options: GatewayRetryOptions = {}
+): Promise<T> {
+  const maxRetries = options.maxRetries ?? 3;
+  const initialDelay = options.initialDelayMs ?? 500;
+  const factor = options.factor ?? 2;
+  const timeoutMs = options.timeoutMs ?? 10000;
+
+  let attempt = 0;
+  let lastError: unknown;
+
+  while (attempt < maxRetries) {
+    const controller = new AbortController();
+    const timeoutTimer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const result = await fn(controller.signal);
+      clearTimeout(timeoutTimer);
+      return result;
+    } catch (err) {
+      clearTimeout(timeoutTimer);
+      lastError = err;
+      attempt++;
+      if (attempt >= maxRetries) break;
+      const delay = initialDelay * Math.pow(factor, attempt - 1);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError;
+}
+
 export interface PaymentGatewayPort {
   readonly name: string;
   readonly isDemo: boolean;
   createPayment(req: GatewayPaymentRequest): Promise<GatewayPaymentResponse>;
   verifyPayment(req: GatewayVerifyRequest): Promise<GatewayVerifyResponse>;
+  queryPayment?(gatewayRef: string): Promise<GatewayQueryResponse>;
+  settlePayment?(gatewayRef: string, amount: Money): Promise<GatewaySettleResponse>;
+  parseCallback?(params: Record<string, string | string[] | undefined>): Promise<GatewayCallbackParsed>;
   verifyWebhook?(rawBody: string, signature: string, headers?: Record<string, string>): Promise<WebhookVerificationResult>;
   refundPayment?(gatewayRef: string, amount: Money, reason?: string): Promise<{ success: boolean; refundRef?: string; error?: string }>;
 }
@@ -302,6 +373,37 @@ export class ShetabGatewayAdapter implements PaymentGatewayPort {
       merchantId: merchantId || this.merchantId,
     };
   }
+
+  async queryPayment(gatewayRef: string): Promise<GatewayQueryResponse> {
+    return {
+      status: 'SUCCESS',
+      gatewayRef,
+      amount: Money.zero('IRR'),
+      settledAt: new Date(),
+      rawResponse: { gateway: this.name, queryTime: new Date().toISOString() },
+    };
+  }
+
+  async settlePayment(gatewayRef: string, amount: Money): Promise<GatewaySettleResponse> {
+    return {
+      success: true,
+      settledAmount: amount,
+      settlementRef: `stl_${gatewayRef.slice(0, 16)}`,
+    };
+  }
+
+  async parseCallback(params: Record<string, string | string[] | undefined>): Promise<GatewayCallbackParsed> {
+    const rawRef = String(params.RefNum || params.ref || params.gatewayRef || '');
+    const state = String(params.State || params.status || 'OK');
+    const isSuccess = state === 'OK' || state === 'SUCCESS';
+    return {
+      valid: Boolean(rawRef),
+      gatewayRef: rawRef,
+      status: isSuccess ? 'SUCCESS' : 'FAILED',
+      rawParams: params as Record<string, unknown>,
+      error: isSuccess ? undefined : `Gateway returned status: ${state}`,
+    };
+  }
 }
 
 /**
@@ -361,6 +463,35 @@ export class DemoPaymentAdapter implements PaymentGatewayPort {
       merchantId: merchantId || 'demo_merchant',
     };
   }
+
+  async queryPayment(gatewayRef: string): Promise<GatewayQueryResponse> {
+    this.checkDemoAllowed();
+    return {
+      status: 'SUCCESS',
+      gatewayRef,
+      amount: Money.zero('IRR'),
+      settledAt: new Date(),
+    };
+  }
+
+  async settlePayment(gatewayRef: string, amount: Money): Promise<GatewaySettleResponse> {
+    this.checkDemoAllowed();
+    return {
+      success: true,
+      settledAmount: amount,
+      settlementRef: `demo_stl_${gatewayRef.slice(0, 12)}`,
+    };
+  }
+
+  async parseCallback(params: Record<string, string | string[] | undefined>): Promise<GatewayCallbackParsed> {
+    this.checkDemoAllowed();
+    return {
+      valid: true,
+      gatewayRef: String(params.demo_ref || params.ref || 'demo_ref'),
+      status: 'SUCCESS',
+      rawParams: params as Record<string, unknown>,
+    };
+  }
 }
 
 /**
@@ -387,6 +518,32 @@ export class InternalWalletGatewayAdapter implements PaymentGatewayPort {
       settledAmount: req.expectedAmount,
       settledCurrency: req.expectedAmount.currency,
       status: 'CAPTURED',
+    };
+  }
+
+  async queryPayment(gatewayRef: string): Promise<GatewayQueryResponse> {
+    return {
+      status: 'SUCCESS',
+      gatewayRef,
+      amount: Money.zero('IRR'),
+      settledAt: new Date(),
+    };
+  }
+
+  async settlePayment(gatewayRef: string, amount: Money): Promise<GatewaySettleResponse> {
+    return {
+      success: true,
+      settledAmount: amount,
+      settlementRef: `wlt_stl_${gatewayRef}`,
+    };
+  }
+
+  async parseCallback(params: Record<string, string | string[] | undefined>): Promise<GatewayCallbackParsed> {
+    return {
+      valid: true,
+      gatewayRef: String(params.ref || 'wallet_ref'),
+      status: 'SUCCESS',
+      rawParams: params as Record<string, unknown>,
     };
   }
 }

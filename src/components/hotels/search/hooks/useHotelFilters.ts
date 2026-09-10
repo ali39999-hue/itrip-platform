@@ -38,6 +38,13 @@ export function useHotelFilters({
   const { country } = useCountryStore();
 
   const [query, setQuery] = useState(initialCity);
+
+  useEffect(() => {
+    if (initialCity !== undefined) {
+      setQuery(initialCity);
+      setCurrentPage(1);
+    }
+  }, [initialCity]);
   const [hotelName, setHotelName] = useState(initialHotelName);
   const [sort, setSortState] = useState<SortKey>(initialSort);
   const [loading, setLoading] = useState(true);

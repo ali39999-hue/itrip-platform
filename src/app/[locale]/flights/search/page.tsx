@@ -20,6 +20,7 @@ import {
   FlightPriceCalendar,
   FlightRefundRulesModal,
   FlightPriceAlertModal,
+  FlightSearchHeader,
   useFlightComparison,
 } from '@/components/flights';
 import { AirlineLogo } from '@/components/flights/AirlineLogo';
@@ -98,6 +99,25 @@ function FlightSearchInner() {
   const [editFrom, setEditFrom] = useState(from);
   const [editTo, setEditTo] = useState(to);
   const [editDate, setEditDate] = useState(initialTravelDate);
+
+  const [fromInput, setFromInput] = useState(from);
+  const [toInput, setToInput] = useState(to);
+
+  useEffect(() => {
+    setFromInput(from);
+    setToInput(to);
+  }, [from, to]);
+
+  const handleTopSearch = (override?: { from?: string; to?: string; depart?: string }) => {
+    const finalFrom = (override?.from ?? fromInput).trim();
+    const finalTo = (override?.to ?? toInput).trim();
+    const finalDepart = (override?.depart ?? travelDate).trim();
+    const q = new URLSearchParams();
+    if (finalFrom) q.set('from', finalFrom);
+    if (finalTo) q.set('to', finalTo);
+    if (finalDepart) q.set('depart', finalDepart);
+    router.push(`/flights/search?${q.toString()}`);
+  };
 
   // Quick filter pill state
   const [quickFilter, setQuickFilter] = useState<'all' | 'direct' | 'morning' | 'evening' | 'systemic' | 'business'>('all');
@@ -826,7 +846,22 @@ function FlightSearchInner() {
 
   return (
     <div className="min-h-screen bg-paper pb-32 sm:pb-24 lg:pb-20">
-      <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-6 flex flex-col lg:flex-row gap-6 items-start">
+      {/* ================= DESKTOP FLIGHT SEARCH HEADER ================= */}
+      <FlightSearchHeader
+        from={fromInput}
+        onFromChange={setFromInput}
+        to={toInput}
+        onToChange={setToInput}
+        travelDate={travelDate}
+        onTravelDateChange={(d) => {
+          setTravelDate(d);
+          handleDateChange(d);
+        }}
+        onSearchSubmit={handleTopSearch}
+        resultsCount={totalCount}
+      />
+
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 pt-6 flex flex-col lg:flex-row gap-6 items-start">
         {/* ================= DESKTOP SIDEBAR ================= */}
         <aside className="w-72 max-h-[calc(100vh-6rem)] shrink-0 hidden lg:block overflow-y-auto overscroll-contain bg-surface rounded-2xl border border-line p-5 shadow-sm sticky top-24">
           <div className="flex justify-between items-center mb-6">
@@ -855,8 +890,8 @@ function FlightSearchInner() {
 
         {/* ================= MAIN CONTENT ================= */}
         <div className="flex-grow flex flex-col gap-4 min-w-0 w-full">
-          {/* Search summary - Sticky on mobile under header */}
-          <div className="sticky top-16 z-30 md:static bg-surface/95 backdrop-blur-xl rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 shadow-xs border border-line/80">
+          {/* Search summary - Mobile only */}
+          <div className="md:hidden sticky top-16 z-30 bg-surface/95 backdrop-blur-xl rounded-2xl p-3 flex items-center justify-between gap-3 shadow-xs border border-line/80">
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
               <div className="flex items-center gap-1.5 min-w-0">
                 <span className="text-sm sm:text-lg font-black text-ink truncate">{from || t('allOrigins')}</span>
@@ -1053,7 +1088,15 @@ function FlightSearchInner() {
 
           <div className="flex items-center justify-between">
             <p className="text-[12px] text-sub font-bold">
-              {num(totalCount, locale)} {t('flights')}
+              {loading && flights.length === 0
+                ? lt(locale, {
+                    fa: 'در حال جستجو و استعلام پروازها...',
+                    en: 'Searching available flights...',
+                    ar: 'جاري البحث عن الرحلات المتاحة...',
+                    zh: '正在查询可用航班...',
+                    ru: 'Поиск доступных рейсов...',
+                  })
+                : `${num(totalCount, locale)} ${t('flights')}`}
             </p>
             {error && <span className="text-xs text-destructive font-bold">{error}</span>}
             {loading && (

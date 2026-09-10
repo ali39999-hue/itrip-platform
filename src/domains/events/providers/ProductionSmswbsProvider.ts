@@ -6,6 +6,7 @@ export interface SmswbsOtpResult {
   success: boolean;
   code?: string;
   messageId?: string;
+  alreadySent?: boolean;
   error?: string;
   rawResponse?: Record<string, unknown>;
 }
@@ -52,11 +53,14 @@ export class ProductionSmswbsProvider {
   constructor() {
     this.uname = process.env.SMSWBS_USERNAME || '';
     this.pass = process.env.SMSWBS_PASSWORD || '';
-    this.sender = process.env.SMSWBS_SENDER || '';
+    this.sender =
+      process.env.SMSWBS_SENDER ||
+      process.env.SMS_SENDER_LINE ||
+      '+989999178755';
   }
 
   private credentialsConfigured(): boolean {
-    return Boolean(this.uname && this.pass && this.sender);
+    return Boolean(this.uname && this.pass);
   }
 
   /**
@@ -82,7 +86,7 @@ export class ProductionSmswbsProvider {
       };
     }
 
-    if (!this.credentialsConfigured()) {
+    if (!this.credentialsConfigured() || !this.sender) {
       logger.error('SMSWBS credentials (SMSWBS_USERNAME / SMSWBS_PASSWORD / SMSWBS_SENDER) are unconfigured');
       return {
         success: false,
@@ -111,7 +115,7 @@ export class ProductionSmswbsProvider {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(15000),
       });
 
       if (!res.ok) {
@@ -137,6 +141,18 @@ export class ProductionSmswbsProvider {
           success: true,
           code: String(data.code),
           messageId: String(data.msgId || data.result || `smswbs-${Date.now()}`),
+          rawResponse: data as Record<string, unknown>,
+        };
+      }
+
+      // Handle duplicate/recent request code returned by provider (errCode -1401: کد قبلا ارسال شده!)
+      if (data.errCode === -1401) {
+        logger.info('SMSWBS OTP previously sent and still active', { to, errCode: data.errCode });
+        return {
+          success: true,
+          alreadySent: true,
+          messageId: `smswbs-recent-${Date.now()}`,
+          error: 'کد تأیید قبلاً ارسال گردیده و تا پایان مهلت ۲ دقیقه معتبر است. لطفاً همان کد را وارد نمایید.',
           rawResponse: data as Record<string, unknown>,
         };
       }
@@ -183,7 +199,7 @@ export class ProductionSmswbsProvider {
     }
 
     if (!this.credentialsConfigured()) {
-      logger.error('SMSWBS credentials (SMSWBS_USERNAME / SMSWBS_PASSWORD / SMSWBS_SENDER) are unconfigured');
+      logger.error('SMSWBS credentials (SMSWBS_USERNAME / SMSWBS_PASSWORD) are unconfigured');
       return {
         valid: false,
         error: 'سرویس پیامک پیکربندی نشده است (SMSWBS credentials missing).',
@@ -204,7 +220,7 @@ export class ProductionSmswbsProvider {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(15000),
       });
 
       if (!res.ok) {

@@ -28,13 +28,14 @@ export function ContactDock() {
   const [seconds, setSeconds] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Checkout, payment and product detail pages have sticky bottom reservation CTAs;
-  // on those, the dock raises above them instead of disappearing (support must
-  // stay reachable mid-purchase).
+  // Checkout, payment and product detail pages have sticky bottom reservation CTAs on mobile (< lg);
+  // on mobile, the dock raises slightly above them. On desktop (lg+), it always anchors cleanly to bottom-6 end-6.
+  // Search pages (/hotels/search, /flights/search, etc.) are never excluded.
   const isExcluded =
-    pathname.includes('/checkout') ||
-    pathname.includes('/payment-status') ||
-    /^\/([a-z]{2}\/)?(hotels|tours)\/[^/]+/.test(pathname);
+    !pathname.includes('/search') &&
+    (pathname.includes('/checkout') ||
+      pathname.includes('/payment-status') ||
+      /^\/([a-z]{2}\/)?(hotels|tours)\/(?!search)[^/]+$/.test(pathname));
 
   useEffect(() => {
     if (phase !== 'live') return;
@@ -94,9 +95,13 @@ export function ContactDock() {
 
   return (
     <>
-      {/* داک شناور واحد — گوشه انتهایی؛ روی موبایل بالای BottomNav و در صفحات دارای
-          نوار رزرو چسبان، بالاتر از آن قرار می‌گیرد */}
-      <div ref={menuRef} className="fixed z-[120] bottom-[78px] lg:bottom-6 end-4 lg:end-6" style={isExcluded ? { bottom: 150 } : undefined}>
+      {/* داک شناور واحد — گوشه انتهایی؛ روی دسکتاپ همیشه در گوشه پایینی (bottom-6 end-6) و روی موبایل بالای نوارها */}
+      <div
+        ref={menuRef}
+        className={`fixed z-[120] ${
+          isExcluded ? 'bottom-[120px] lg:bottom-6' : 'bottom-[78px] lg:bottom-6'
+        } end-4 lg:end-6`}
+      >
         {/* منوی دو گزینه‌ای تماس */}
         {menuOpen && (
           <div

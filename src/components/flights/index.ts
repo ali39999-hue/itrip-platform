@@ -6,4 +6,5 @@ export * from './FlightCompareModal';
 export * from './FlightPriceCalendar';
 export * from './FlightRefundRulesModal';
 export * from './FlightPriceAlertModal';
+export * from './FlightSearchHeader';
 export * from './hooks/useFlightComparison';

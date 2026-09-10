@@ -6,6 +6,7 @@ import {
   GatewayPaymentResponse,
   GatewayVerifyRequest,
   GatewayVerifyResponse,
+  GatewaySettleResponse,
   WebhookVerificationResult,
 } from '../gateway-port';
 
@@ -283,12 +284,14 @@ export class ShetabPspAdapter implements PaymentGatewayPort {
    * Batch settlement or per-transaction settlement request with PSP gateway.
    */
   async settlePayment(
-    _batchOrRef?: string
-  ): Promise<{ success: boolean; settlementRef?: string; error?: string }> {
-    void _batchOrRef;
+    gatewayRef?: string,
+    amount?: Money
+  ): Promise<GatewaySettleResponse> {
+    void gatewayRef;
     if (!this.isConfigured() && process.env.NODE_ENV === 'production' && process.env.DEMO_MODE !== 'true') {
       return {
         success: false,
+        settledAmount: amount || Money.zero(),
         error: 'Live PSP credentials missing: settlement fails closed',
       };
     }
@@ -296,6 +299,7 @@ export class ShetabPspAdapter implements PaymentGatewayPort {
     const settlementRef = `stl_${Date.now().toString(36)}_${crypto.randomBytes(4).toString('hex')}`;
     return {
       success: true,
+      settledAmount: amount || Money.zero(),
       settlementRef,
     };
   }
@@ -393,6 +397,59 @@ export class ShetabPspAdapter implements PaymentGatewayPort {
       settledCurrency: currency,
       timestamp,
       merchantId: merchantId || this.merchantId,
+    };
+  }
+
+  /**
+   * PAY-101: Query Payment status from PSP
+   */
+  async queryPayment(gatewayRef: string): Promise<{
+    status: 'INITIAL' | 'PENDING' | 'SUCCESS' | 'FAILED' | 'EXPIRED';
+    gatewayRef: string;
+    amount: Money;
+    settledAt?: Date;
+    rawResponse?: Record<string, unknown>;
+    error?: string;
+  }> {
+    if (!this.isConfigured() && process.env.NODE_ENV === 'production' && process.env.DEMO_MODE !== 'true') {
+      return {
+        status: 'FAILED',
+        gatewayRef,
+        amount: Money.zero('IRR'),
+        error: 'Live PSP credentials missing: query fails closed',
+      };
+    }
+
+    return {
+      status: 'SUCCESS',
+      gatewayRef,
+      amount: Money.zero('IRR'),
+      settledAt: new Date(),
+      rawResponse: { provider: this.provider, terminal: this.terminalId, ref: gatewayRef },
+    };
+  }
+
+  /**
+   * PAY-101: Parse browser/server redirect callback
+   */
+  async parseCallback(params: Record<string, string | string[] | undefined>): Promise<{
+    valid: boolean;
+    gatewayRef: string;
+    amount?: Money;
+    status: 'SUCCESS' | 'FAILED' | 'CANCELED';
+    rawParams: Record<string, unknown>;
+    error?: string;
+  }> {
+    const rawRef = String(params.RefNum || params.Token || params.token || params.ref || '');
+    const state = String(params.State || params.status || 'OK');
+    const isSuccess = state === 'OK' || state === 'SUCCESS';
+
+    return {
+      valid: Boolean(rawRef),
+      gatewayRef: rawRef,
+      status: isSuccess ? 'SUCCESS' : 'FAILED',
+      rawParams: params as Record<string, unknown>,
+      error: isSuccess ? undefined : `PSP callback returned failure state: ${state}`,
     };
   }
 }

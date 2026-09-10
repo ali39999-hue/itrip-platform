@@ -27,7 +27,7 @@ export interface HotelFilterState {
 export interface HotelSearchHeaderProps {
   query: string;
   onQueryChange: (val: string) => void;
-  onSearchSubmit: () => void;
+  onSearchSubmit: (cityOverride?: string) => void;
   resultsCount: number;
   checkin?: string;
   onCheckinChange?: (val: string) => void;

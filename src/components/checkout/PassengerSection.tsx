@@ -86,6 +86,9 @@ export function PassengerSection({
             {...register('firstName')}
             placeholder={lt(locale, { fa: 'مثلاً: ALI', en: 'e.g. ALI', ar: 'مثلاً: ALI', zh: '例如: ALI', ru: 'например: ALI' })}
             dir="ltr"
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck="false"
             className="text-start uppercase font-bold"
           />
           {errors.firstName && (
@@ -104,6 +107,9 @@ export function PassengerSection({
             {...register('lastName')}
             placeholder={lt(locale, { fa: 'مثلاً: MOHAMMADI', en: 'e.g. MOHAMMADI', ar: 'مثلاً: MOHAMMADI', zh: '例如: MOHAMMADI', ru: 'например: MOHAMMADI' })}
             dir="ltr"
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck="false"
             className="text-start uppercase font-bold"
           />
           {errors.lastName && (
@@ -122,6 +128,9 @@ export function PassengerSection({
             {...register('passportNo')}
             placeholder={lt(locale, { fa: 'مثلاً: A12345678', en: 'e.g. A12345678', ar: 'مثلاً: A12345678', zh: '例如: A12345678', ru: 'например: A12345678' })}
             dir="ltr"
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck="false"
             className="text-start uppercase font-mono font-bold"
           />
           {errors.passportNo && (
@@ -140,6 +149,8 @@ export function PassengerSection({
             {...register('nationalId')}
             placeholder={lt(locale, { fa: 'مثلاً: ۰۰۱۲۳۴۵۶۷۸', en: 'e.g. 0012345678', ar: 'مثلاً: 0012345678', zh: '例如: 0012345678', ru: 'например: 0012345678' })}
             dir="ltr"
+            inputMode="numeric"
+            pattern="[0-9]*"
             className="text-start font-mono font-bold"
           />
           {errors.nationalId && (

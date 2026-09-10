@@ -137,6 +137,40 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: '/:locale/planner',
+        destination: '/:locale/plan',
+        permanent: true,
+      },
+      {
+        source: '/planner',
+        destination: '/fa/plan',
+        permanent: true,
+      },
+      {
+        source: '/:locale/auth/login',
+        destination: '/:locale/auth',
+        permanent: true,
+      },
+      {
+        source: '/:locale/auth/signin',
+        destination: '/:locale/auth',
+        permanent: true,
+      },
+      {
+        source: '/:locale/terms',
+        destination: '/:locale/guide',
+        permanent: false,
+      },
+      {
+        source: '/:locale/privacy',
+        destination: '/:locale/guide',
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default withNextIntl(nextConfig);

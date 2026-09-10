@@ -139,7 +139,7 @@ export function RoutePlannerPreview() {
           <div className="bg-soft/50 rounded-2xl p-5 border border-line/60 space-y-3">
             <h4 className="text-xs font-black text-ink mb-3 flex items-center gap-2">
               <Star size={14} className="text-action fill-action" />
-              <span>{lt(locale, { fa: 'اماکن شاخص در مقصد (دارای تخفیف فیروز پاس)', en: 'Destination Perks with Firuzo Pass', ar: 'معالم بارزة بخصومات فيروزو', zh: '凭卡享优惠的热门景点', ru: 'Места со скидкой по Firuzo Pass' })}</span>
+              <span>{lt(locale, { fa: 'اماکن شاخص در مقصد (دارای تخفیف فیروزو پاس)', en: 'Destination Perks with Firuzo Pass', ar: 'معالم بارزة بخصومات فيروزو', zh: '凭卡享优惠的热门景点', ru: 'Места со скидкой по Firuzo Pass' })}</span>
             </h4>
 
             <div className="p-3 rounded-xl bg-surface border border-line/70 flex items-center gap-3">
@@ -148,7 +148,7 @@ export function RoutePlannerPreview() {
               </div>
               <div className="text-xs">
                 <strong className="font-black text-ink block">کاخ گلستان (میراث جهانی یونسکو)</strong>
-                <span className="text-sub font-bold text-[11px]">۲۵۰ متر فاصله از ایستگاه • ۲۰٪ تخفیف بلیط با فیروز پاس</span>
+                <span className="text-sub font-bold text-[11px]">۲۵۰ متر فاصله از ایستگاه • ۲۰٪ تخفیف بلیط با فیروزو پاس</span>
               </div>
             </div>
 

@@ -486,9 +486,87 @@ export function ERPDataGrid<T extends object>({
         )}
       </div>
 
-      {/* Table */}
+      {/* Table for Desktop & Tablet / Dedicated Cards for Mobile */}
       <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-elev-1">
-        <div className="overflow-x-auto">
+        {/* Mobile View: Dedicated Card List (< md) */}
+        <div className="md:hidden divide-y divide-line/60">
+          {paginatedData.length === 0 ? (
+            <div className="flex flex-col items-center px-4 py-10 text-center">
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-soft text-sub/50">
+                <Inbox size={22} aria-hidden="true" />
+              </span>
+              <p className="mt-3 text-[13px] font-black text-ink">{resolvedEmptyMessage}</p>
+              {hasActiveFilters ? (
+                <button
+                  type="button"
+                  onClick={resetToDefaultView}
+                  className="mt-3 min-h-10 rounded-xl border border-line px-4 py-2 text-xs font-black text-sub transition hover:border-brand/40 hover:text-ink"
+                >
+                  Clear search & filters
+                </button>
+              ) : null}
+            </div>
+          ) : (
+            paginatedData.map((row, idx) => {
+              const rowId = idAccessor(row);
+              return (
+                <div
+                  key={rowId}
+                  onClick={() => onRowClick && onRowClick(row)}
+                  className={`p-4 space-y-3 transition active:bg-soft/60 ${
+                    onRowClick ? 'cursor-pointer hover:bg-soft/40' : ''
+                  }`}
+                >
+                  {/* Top: Header Column 0 & Column 1 */}
+                  <div className="flex items-start justify-between gap-2 pb-2 border-b border-line/50">
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-bold text-sub uppercase block leading-none mb-1">
+                        {columns[0]?.header}
+                      </span>
+                      <div className="text-sm font-black text-ink truncate">
+                        {columns[0]?.render
+                          ? columns[0].render(row, idx)
+                          : columns[0]?.accessor
+                            ? (columns[0].accessor(row) as React.ReactNode)
+                            : ((row as Record<string, unknown>)[columns[0]?.key] as React.ReactNode)}
+                      </div>
+                    </div>
+                    {columns[1] && (
+                      <div className="shrink-0 text-end">
+                        {columns[1]?.render
+                          ? columns[1].render(row, idx)
+                          : columns[1]?.accessor
+                            ? (columns[1].accessor(row) as React.ReactNode)
+                            : ((row as Record<string, unknown>)[columns[1]?.key] as React.ReactNode)}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Body: Key Attributes Grid */}
+                  <div className="grid grid-cols-2 gap-2.5 text-xs">
+                    {columns.slice(2).map((col) => (
+                      <div key={col.key} className="min-w-0">
+                        <span className="text-[10.5px] font-bold text-sub block truncate">
+                          {col.header}
+                        </span>
+                        <div className="font-black text-ink truncate mt-0.5">
+                          {col.render
+                            ? col.render(row, idx)
+                            : col.accessor
+                              ? (col.accessor(row) as React.ReactNode)
+                              : ((row as Record<string, unknown>)[col.key] as React.ReactNode) || '—'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Desktop View: Multi-column Table (>= md) */}
+        <div className="hidden md:block overflow-x-auto">
           <table
             ref={tableRef}
             tabIndex={0}

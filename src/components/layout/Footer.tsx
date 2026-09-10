@@ -66,10 +66,10 @@ export function Footer() {
   }
 
   return (
-    <footer className="mt-20">
+    <footer className="mt-10 md:mt-14">
       {/* Value Proposition Bar */}
-      <div className="bg-soft/70 border-t border-line/60 py-8">
-        <div className="max-w-[1280px] mx-auto px-4 md:px-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="bg-soft/70 border-t border-line/60 py-6 sm:py-8">
+        <div className="max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 2xl:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-surface/80 border border-line/50">
             <div className="w-11 h-11 rounded-xl bg-brand/10 text-brand-dark flex items-center justify-center shrink-0">
               <Clock size={22} />
@@ -114,7 +114,7 @@ export function Footer() {
 
       {/* Main Footer Links */}
       <div className="bg-surface border-t border-line">
-        <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-12 pb-10">
+        <div className="max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 2xl:px-8 pt-8 sm:pt-10 pb-8">
           <div className="grid grid-cols-1 md:grid-cols-6 gap-10 text-start">
             <div className="col-span-1 md:col-span-2">
               <div className="mb-4">

@@ -93,7 +93,7 @@ export function QuickServicesBar() {
   ];
 
   return (
-    <section aria-label="Quick Travel Services" className="w-full max-w-[1280px] mx-auto px-4 md:px-8 mt-4 sm:mt-6 relative z-30">
+    <section aria-label="Quick Travel Services" className="w-full max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 2xl:px-8 mt-3 sm:mt-5 relative z-30">
       <div className="bg-surface rounded-3xl p-4 sm:p-6 border border-line/80 shadow-elev-2">
         <div className="grid grid-cols-5 sm:grid-cols-5 md:grid-cols-10 gap-2 sm:gap-4">
           {services.map((item) => {

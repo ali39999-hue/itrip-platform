@@ -49,31 +49,54 @@ export default function SupportPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-soft pb-24">
-      {/* Hero Section */}
-      <section className="relative w-full h-[320px] md:h-[400px] flex items-center justify-center overflow-hidden mb-10">
-        <Image
-          src="https://images.unsplash.com/photo-1534536281715-e28d76689b4d?auto=format&fit=crop&q=75&w=1800"
-          alt={t('title')}
-          fill
-          sizes="100vw"
-          placeholder="blur"
-          blurDataURL={shimmerDataUrl(1800, 400)}
-          className="object-cover opacity-80"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-soft via-brand-dark/70 to-transparent" />
-        
-        <div className="relative z-10 w-full max-w-2xl px-4 flex flex-col items-center text-center">
-          <div className="w-14 h-14 rounded-2xl bg-surface/20 backdrop-blur-md grid place-items-center text-surface mb-3 border border-surface/20">
-            <Headphones size={28} />
+      {/* Mobile Action-First Header & Compact Hero */}
+      <section className="relative w-full py-8 md:py-16 flex items-center justify-center overflow-hidden mb-6 md:mb-10 bg-gradient-to-b from-deep to-brand-dark text-surface">
+        <div className="relative z-10 w-full max-w-4xl px-4 flex flex-col items-center text-center">
+          <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-surface/20 backdrop-blur-md grid place-items-center text-surface mb-2 border border-surface/20">
+            <Headphones size={26} />
           </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-surface mb-2 tracking-tight drop-shadow-md">{t('title')}</h1>
-          <p className="text-sm sm:text-base md:text-lg font-bold text-surface/90 max-w-xl">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-surface mb-1.5 tracking-tight drop-shadow-md">
+            {t('title')}
+          </h1>
+          <p className="text-xs sm:text-base font-bold text-surface/90 max-w-xl mb-5">
             {t('subtitle')}
           </p>
+
+          {/* Quick Action Grid for Mobile (Call, Chat, Booking, Refund, Payment) */}
+          <div className="w-full max-w-xl grid grid-cols-3 gap-2 text-ink">
+            <a
+              href="tel:+982191000000"
+              className="min-h-[58px] p-2 rounded-2xl bg-surface hover:bg-mint border border-line flex flex-col items-center justify-center transition active:scale-95 shadow-sm"
+            >
+              <Phone size={18} className="text-action mb-1" />
+              <span className="text-[11px] font-black">{lt(locale, { fa: 'تماس تلفنی', en: 'Call 24/7', ar: 'اتصال هاتفي', zh: '电话客服', ru: 'Позвонить' })}</span>
+            </a>
+            <a
+              href={process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ? `https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}` : 'https://t.me/firuzo_support'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="min-h-[58px] p-2 rounded-2xl bg-surface hover:bg-mint border border-line flex flex-col items-center justify-center transition active:scale-95 shadow-sm"
+            >
+              <MessageSquare size={18} className="text-brand mb-1" />
+              <span className="text-[11px] font-black">{lt(locale, { fa: 'چت و تلگرام', en: 'Online Chat', ar: 'دردشة حية', zh: '在线客服', ru: 'Чат' })}</span>
+            </a>
+            <button
+              type="button"
+              onClick={() => {
+                setCategory('refunds');
+                const el = document.getElementById('ticket-form');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="min-h-[58px] p-2 rounded-2xl bg-surface hover:bg-mint border border-line flex flex-col items-center justify-center transition active:scale-95 shadow-sm"
+            >
+              <Zap size={18} className="text-rose-500 mb-1" />
+              <span className="text-[11px] font-black">{lt(locale, { fa: 'درخواست استرداد', en: 'Refunds', ar: 'طلب استرداد', zh: '申请退款', ru: 'Возврат' })}</span>
+            </button>
+          </div>
         </div>
       </section>
 
-      <main className="w-full max-w-[1280px] mx-auto px-4 md:px-10 space-y-12">
+      <main className="w-full max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 2xl:px-8 space-y-8 md:space-y-10">
         
         {/* 24/7 SOS Emergency Concierge Bar for Active Travelers */}
         <section className="bg-gradient-to-r from-[#064e4d] to-[#043332] text-surface rounded-3xl p-6 sm:p-8 shadow-elev-3 border border-mint/20 relative overflow-hidden">

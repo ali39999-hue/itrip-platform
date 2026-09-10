@@ -1,0 +1,51 @@
+# Infrastructure-only Compose (PostgreSQL 16 + Redis 7 + Adminer)
+# Perfect for local development on host (npm run dev) connecting to isolated Docker services.
+# Eliminates the need to install and configure PostgreSQL or Redis on Windows/macOS.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: firuzo-infra-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-test_dummy_db_password_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-itrip}
+    volumes:
+      - postgres_infra_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-itrip}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: firuzo-infra-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_infra_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  adminer:
+    image: adminer:latest
+    container_name: firuzo-infra-adminer
+    restart: unless-stopped
+    ports:
+      - "${ADMINER_PORT:-8080}:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+
+volumes:
+  postgres_infra_data:
+    name: firuzo_postgres_infra_data
+  redis_infra_data:
+    name: firuzo_redis_infra_data

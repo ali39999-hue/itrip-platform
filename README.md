@@ -1,10 +1,10 @@
-# iTrip / Firuzo Platform v1.5.0
+# iTrip / Firuzo Platform v1.5.7
 
 > **Next-Generation International & Local Travel Booking Engine with AI Trip Planner & Multi-Currency Settlement**  
 > Built with Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, next-intl (5 Languages), Zustand, and Playwright E2E.
 
 [![Playwright Tests](https://img.shields.io/badge/Playwright-15%20E2E%20Specs%20%C3%97%202%20Browsers-brightgreen)](https://playwright.dev/)
-[![Vitest](https://img.shields.io/badge/Vitest-315%20Unit%20Tests%20Passed-brightgreen)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Vitest-352%20Unit%20Tests%20Passed-brightgreen)](https://vitest.dev/)
 [![Next.js](https://img.shields.io/badge/Next.js-16.3-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2-blue)](https://react.dev/)
 [![PWA Ready](https://img.shields.io/badge/PWA-Offline%20Ready-teal)](public/manifest.json)
@@ -163,6 +163,23 @@ npm run dev
 ```
 
 Open [http://localhost:3000/fa](http://localhost:3000/fa) in your browser.
+
+---
+
+## 🐳 Docker Deployment & Modular Workflows
+
+Firuzo supports 4 adaptable deployment modes tailored to team workflows and hosting environments:
+
+| Mode | Command | Description |
+| :--- | :--- | :--- |
+| **Connected / Infra Only** | `npm run docker:infra` | Runs isolated PostgreSQL 16 + Redis 7 + Adminer in Docker; run `npm run dev` on host |
+| **Full Containerized Dev** | `npm run docker:dev` | Runs full stack in Docker with source code mount & hot-reloading |
+| **Production Stack** | `npm run docker:prod:build` | High-security multi-stage runner, non-root nextjs user, worker, and auto-migrations |
+| **Interactive Helper** | `./docker-manage.bat` (Win) / `./docker-manage.sh` (Linux/Mac) | One-click terminal menu for all operations |
+
+For the complete technical architecture and configuration manual, see:  
+📖 **[Docker Architecture & Deployment Guide](docs/DOCKER_ARCHITECTURE_GUIDE.md)**
+
 
 ---
 

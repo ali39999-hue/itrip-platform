@@ -1,0 +1,93 @@
+# Development Docker Compose Stack for Firuzo Platform
+# Enables live source-code mounting, hot reload, and full local observability.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: firuzo-dev-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-test_dummy_db_password_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-itrip}
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-itrip}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - firuzo-dev-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: firuzo-dev-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - firuzo-dev-net
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: firuzo-dev-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${DB_PASSWORD:-test_dummy_db_password_2026}@db:5432/${POSTGRES_DB:-itrip}?schema=public
+      - REDIS_URL=redis://redis:6379
+      - AUTH_SECRET=${AUTH_SECRET:-kw5uW6Ry8QMeXKfj8xDzbiRVVKvGo_7sRGEGhsI9mMIg0z5mJm8Ix8HxGpbHbhCO}
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXT_PUBLIC_SITE_URL=http://localhost:3000
+      - AUTH_TRUST_HOST=true
+      - DEMO_MODE=${DEMO_MODE:-false}
+      - NEXT_PUBLIC_DEMO_MODE=${NEXT_PUBLIC_DEMO_MODE:-false}
+      - WATCHPACK_POLLING=true
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    networks:
+      - firuzo-dev-net
+
+  adminer:
+    image: adminer:latest
+    container_name: firuzo-dev-adminer
+    restart: unless-stopped
+    ports:
+      - "${ADMINER_PORT:-8080}:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    networks:
+      - firuzo-dev-net
+
+volumes:
+  postgres_dev_data:
+    name: firuzo_postgres_dev_data
+  redis_dev_data:
+    name: firuzo_redis_dev_data
+
+networks:
+  firuzo-dev-net:
+    name: firuzo-dev-net
+    driver: bridge

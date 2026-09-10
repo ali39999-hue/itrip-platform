@@ -355,4 +355,49 @@ export class EcardoGatewayAdapter implements PaymentGatewayPort {
       merchantId: this.publicKey,
     };
   }
+
+  async queryPayment(gatewayRef: string): Promise<{
+    status: 'INITIAL' | 'PENDING' | 'SUCCESS' | 'FAILED' | 'EXPIRED';
+    gatewayRef: string;
+    amount: Money;
+    settledAt?: Date;
+    rawResponse?: Record<string, unknown>;
+    error?: string;
+  }> {
+    if (!this.isConfigured()) {
+      return {
+        status: 'FAILED',
+        gatewayRef,
+        amount: Money.zero('USD'),
+        error: 'Ecardo gateway credentials missing: query fails closed',
+      };
+    }
+    return {
+      status: 'PENDING',
+      gatewayRef,
+      amount: Money.zero('USD'),
+      error: 'Ecardo relies on server-to-server IPN webhooks for final capture state',
+    };
+  }
+
+  async parseCallback(params: Record<string, string | string[] | undefined>): Promise<{
+    valid: boolean;
+    gatewayRef: string;
+    amount?: Money;
+    status: 'SUCCESS' | 'FAILED' | 'CANCELED';
+    rawParams: Record<string, unknown>;
+    error?: string;
+  }> {
+    const rawRef = String(params.transaction_id || params.order_id || params.ref || '');
+    const status = String(params.status || '').toLowerCase();
+    const isSuccess = status === 'success' || status === 'completed' || status === 'paid';
+
+    return {
+      valid: Boolean(rawRef),
+      gatewayRef: rawRef,
+      status: isSuccess ? 'SUCCESS' : 'FAILED',
+      rawParams: params as Record<string, unknown>,
+      error: isSuccess ? undefined : `Ecardo callback indicated status: ${status || 'unknown'}`,
+    };
+  }
 }

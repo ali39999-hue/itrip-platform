@@ -97,7 +97,7 @@ export default async function HomePage() {
       {/* 2. Sleek Quick Access Service Bar (FlyToday / Alibaba pattern) */}
       <QuickServicesBar />
 
-      <div className="flex flex-col gap-12 md:gap-20 pt-10 pb-20">
+      <div className="flex flex-col gap-8 md:gap-14 pt-4 md:pt-8 pb-16">
         {/* 3. High-Impact Promotional Banners */}
         <PromotionalBanners override={promos ?? undefined} />
 

@@ -2,11 +2,13 @@
 
 import React from 'react';
 import { lt } from '@/lib/lt';
+import { getCapability, type CapabilityKey, type CapabilityStatus } from '@/lib/capabilities';
 
-export type CapabilityStatus = 'LIVE' | 'BETA' | 'SIMULATED' | 'MOCK' | 'COMING_SOON' | 'DISABLED';
+export type { CapabilityStatus };
 
 interface CapabilityBadgeProps {
-  status: CapabilityStatus;
+  status?: CapabilityStatus;
+  capabilityKey?: CapabilityKey;
   locale?: string;
   className?: string;
   showTooltip?: boolean;
@@ -111,11 +113,21 @@ const statusConfig: Record<
 
 export function CapabilityBadge({
   status,
+  capabilityKey,
   locale = 'fa',
   className = '',
   showTooltip = true,
 }: CapabilityBadgeProps) {
-  const config = statusConfig[status] || statusConfig.DISABLED;
+  let resolvedStatus: CapabilityStatus = status || 'DISABLED';
+  if (capabilityKey) {
+    try {
+      resolvedStatus = getCapability(capabilityKey).status;
+    } catch {
+      resolvedStatus = status || 'DISABLED';
+    }
+  }
+
+  const config = statusConfig[resolvedStatus] || statusConfig.DISABLED;
   const label = lt(locale, config.labels);
   const tooltip = lt(locale, config.tooltips);
 

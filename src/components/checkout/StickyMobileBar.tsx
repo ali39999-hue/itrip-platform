@@ -51,8 +51,8 @@ export function StickyMobileBar({
       initial={{ y: 48, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 380, damping: 34 }}
-      className="fixed inset-x-0 z-40 px-4 lg:hidden"
-      style={{ bottom: 'calc(70px + env(safe-area-inset-bottom, 0px))' }}
+      className="fixed inset-x-0 z-50 px-4 pb-2 lg:hidden"
+      style={{ bottom: 'max(env(safe-area-inset-bottom, 0px), 8px)' }}
     >
       <div className="glass-card flex items-center gap-3 rounded-2xl p-3">
         <div className="min-w-0 flex-1 ps-1">

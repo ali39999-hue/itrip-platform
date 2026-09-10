@@ -1,18 +1,18 @@
 {
-  "generatedAt": "2026-09-09T12:09:05.213Z",
+  "generatedAt": "2026-09-10T14:47:05.186Z",
   "baseUrl": "http://localhost:3000",
   "pages": {
     "home": {
       "url": "http://localhost:3000/fa",
       "violationCount": 0,
       "byRule": [],
-      "passes": 29
+      "passes": 30
     },
     "flights-landing": {
       "url": "http://localhost:3000/fa/flights",
       "violationCount": 0,
       "byRule": [],
-      "passes": 29
+      "passes": 30
     },
     "hotels-landing": {
       "url": "http://localhost:3000/fa/hotels",

@@ -42,8 +42,8 @@ export function DestinationsSection() {
   });
 
   return (
-    <section className="w-full py-12 md:py-16 px-4 md:px-10">
-      <div className="max-w-[1280px] mx-auto flex flex-col gap-8">
+    <section className="w-full py-6 md:py-10 px-3 sm:px-4 md:px-6 2xl:px-8">
+      <div className="max-w-[1440px] mx-auto flex flex-col gap-6">
         <div>
           <p className="mb-2 text-brand-dark font-black text-xs">{t('destKicker')}</p>
           <h2 className="text-2xl md:text-[32px] font-black text-ink m-0">

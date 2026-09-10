@@ -60,7 +60,7 @@ export function WhyFiruzoSection() {
   ];
 
   return (
-    <section aria-label="Why Firuzo" className="w-full max-w-[1280px] mx-auto px-4 md:px-8">
+    <section aria-label="Why Firuzo" className="w-full max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 2xl:px-8">
       <div className="text-center mb-8">
         <span className="text-xs font-black text-brand-dark tracking-wider uppercase block mb-1">
           {lt(locale, { fa: 'چرا فیروزو؟', en: 'Why Firuzo?', ar: 'لماذا فيروزو؟', zh: '为什么选择 Firuzo？', ru: 'Почему Firuzo?' })}

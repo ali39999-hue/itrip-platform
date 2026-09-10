@@ -131,7 +131,7 @@ export function PromotionalBanners({ override }: { override?: PromoBannerOverrid
   const href = `/tours/search?city=${encodeURIComponent(locale === 'fa' ? 'اصفهان' : 'Isfahan')}`;
 
   return (
-    <section aria-label="Firuzo Exclusive Tour" className="w-full max-w-[1280px] mx-auto px-4 md:px-8">
+    <section aria-label="Firuzo Exclusive Tour" className="w-full max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 2xl:px-8">
       {/* H1 — بالا سمت راست */}
       <h1 className="text-[22px] md:text-[28px] font-black tracking-tight text-ink text-start mb-5 md:mb-6">
         {heading}

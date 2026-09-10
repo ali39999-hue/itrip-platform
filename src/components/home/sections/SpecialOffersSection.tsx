@@ -12,6 +12,8 @@ import Image from 'next/image';
 import { CATEGORY_PHOTO_MAP, shimmerDataUrl } from '@/lib/image-utils';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 import { lt } from '@/lib/lt';
+import { ExperienceDetailModal } from '@/components/shared/ExperienceDetailModal';
+import type { SignatureExperience } from '@/lib/countries';
 
 interface ExperienceItem {
   category: string;
@@ -35,6 +37,7 @@ export function SpecialOffersSection() {
   const c = COUNTRIES[country];
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [selectedOffer, setSelectedOffer] = useState<SignatureExperience | null>(null);
 
   // Dynamic signature experiences from CMS / Database
   const [dbExperiences, setDbExperiences] = useState<ExperienceItem[]>([]);
@@ -87,8 +90,8 @@ export function SpecialOffersSection() {
   }, [dbExperiences, c.signatureExperiences]);
 
   return (
-    <section className="w-full py-12 md:py-16 px-4 md:px-10 bg-soft/30">
-      <div className="max-w-[1280px] mx-auto flex flex-col gap-8">
+    <section className="w-full py-8 md:py-12 px-3 sm:px-4 md:px-6 2xl:px-8 bg-soft/30">
+      <div className="max-w-[1440px] mx-auto flex flex-col gap-6">
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="mb-2 text-brand-dark font-black text-xs">{c.flag} {t('offersKicker')}</p>
@@ -121,10 +124,11 @@ export function SpecialOffersSection() {
             const when = locale === 'fa' ? offer.when : offer.whenEn;
             const photoUrl = offer.image || CATEGORY_PHOTO_MAP[offer.category] || CATEGORY_PHOTO_MAP.culture;
             return (
-              <Link
+              <button
                 key={offer.titleEn}
-                href={`/tours?category=signature&city=${encodeURIComponent(locale === 'fa' ? offer.title : offer.titleEn)}`}
-                className="shrink-0 w-[min(84vw,340px)] sm:w-[320px] md:w-auto snap-start bg-surface rounded-[22px] shadow-elev-1 overflow-hidden hover:shadow-elev-2 hover:-translate-y-1 transition-all duration-300 group cursor-pointer border border-line/70 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand flex flex-col"
+                type="button"
+                onClick={() => setSelectedOffer(offer as unknown as SignatureExperience)}
+                className="shrink-0 w-[min(84vw,340px)] sm:w-[320px] md:w-auto snap-start bg-surface rounded-[22px] shadow-elev-1 overflow-hidden hover:shadow-elev-2 hover:-translate-y-1 transition-all duration-300 group cursor-pointer border border-line/70 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand flex flex-col active:scale-[0.99]"
               >
                 <div className="aspect-[16/10] min-h-[170px] relative w-full overflow-hidden bg-brand-dark/20">
                   <Image
@@ -163,11 +167,17 @@ export function SpecialOffersSection() {
                     </span>
                   </div>
                 </div>
-              </Link>
+              </button>
             );
           })}
         </div>
       </div>
+
+      <ExperienceDetailModal
+        experience={selectedOffer}
+        isOpen={Boolean(selectedOffer)}
+        onClose={() => setSelectedOffer(null)}
+      />
     </section>
   );
 }

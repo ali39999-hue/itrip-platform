@@ -465,8 +465,10 @@ export default function AuthPage() {
                     </label>
                     <input
                       id="identifier"
-                      type={channel === 'email' ? 'email' : 'text'}
+                      type={channel === 'email' ? 'email' : channel === 'phone' ? 'tel' : 'text'}
                       dir="ltr"
+                      inputMode={channel === 'phone' ? 'tel' : channel === 'email' ? 'email' : 'text'}
+                      autoComplete={channel === 'phone' ? 'tel' : channel === 'email' ? 'email' : 'username'}
                       value={identifier}
                       onChange={(e) => setIdentifier(toAsciiDigits(e.target.value))}
                       placeholder={
