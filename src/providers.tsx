@@ -17,7 +17,7 @@ import { initAnalytics } from '@/lib/analytics';
 export function SessionBootstrap() {
   useEffect(() => {
     const { user } = useAuthStore.getState();
-    if (user) return;
+    if (user && user.phone) return;
     getSessionUser()
       .then((res) => {
         if (res.success && res.user) {
