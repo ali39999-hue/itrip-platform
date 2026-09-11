@@ -153,26 +153,29 @@
   /* Brand — فیروزه‌ای Firuzo */
   --color-brand: #00a9a5;
   --color-brand-2: #049290;
-  --color-brand-dark: #046e6b;
-  --color-deep: #053f3e;
-  --color-mint: #e4f6f5;
+  /* توکن‌های حالت‌پذیر با indirection — تا dark mode واقعاً flip کند
+     (الگوی shadcn: مقدار در :root/.dark، ارجاع اینجا) */
+  --color-brand-dark: var(--brand-dark);
+  --color-deep: var(--deep);
+  --color-mint: var(--mint);
   --color-mint-bright: #7fd6d2;
-  --color-ink: #14201f;
-  --color-sub: #4b5958;
-  --color-paper: #fafcfc;
-  --color-surface: #ffffff;
-  --color-soft: #f4f8f8;
-  --color-line: #dce5e4;
+  --color-ink: var(--ink);
+  --color-sub: var(--sub);
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-soft: var(--soft);
+  --color-line: var(--line);
   /* Action — زعفرانی: فقط «رزرو» و «پرداخت»، در هر صفحه یکی */
   --color-action: #f0a62a;
   --color-action-hover: #dc9018;
   --color-action-active: #c67f10;
   --color-gold-light: #f5b945;
-  --color-price: #9c6209;
+  --color-price: var(--price);
   --color-gold: #f0a62a;
-  --color-gold-soft: #fef6e7;
-  --color-rose-warm: #d8442f;
-  --color-success: #1e8e5a;
+  --color-gold-soft: var(--gold-soft);
+  --color-rose-warm: var(--rose-warm);
+  --color-success: var(--success);
   /* Functional verticals (Voyage حفظ شد؛ hotel = زعفرانی هم‌خانواده action) */
   --color-flight: #2980b9;
   --color-hotel: #f0a62a;
@@ -218,6 +221,23 @@
 :root {
   --background: #fafcfc;
   --foreground: #14201f;
+
+  /* FIRUZO light values (دارک در بلاک .dark پایین) */
+  --brand-dark: #046e6b;
+  --deep: #053f3e;
+  --mint: #e4f6f5;
+  --ink: #14201f;
+  --sub: #4b5958;
+  --paper: #fafcfc;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --soft: #f4f8f8;
+  --line: #dce5e4;
+  --price: #9c6209;
+  --gold-soft: #fef6e7;
+  --rose-warm: #d8442f;
+  --success: #1e8e5a;
+
   --card: #ffffff;
   --card-foreground: #14201f;
   --popover: #ffffff;
@@ -282,6 +302,51 @@
   --sidebar-accent-foreground: #7fd6d2;
   --sidebar-border: #0c4e4c;
   --sidebar-ring: #7fd6d2;
+
+  /* FIRUZO dark system — سطح و متن‌های نِیوترال با همان شخصیت فیروزه‌ای */
+  --brand-dark: #7fd6d2;
+  --deep: #022423;
+  --mint: #05302f;
+  --ink: #eaf4f3;
+  --sub: #9fb5b4;
+  --paper: #031f20;
+  --surface: #053f3e;
+  --surface-elevated: #0a4a48;
+  --soft: #073634;
+  --line: #0c4e4c;
+  --price: #f5b945;
+  --gold-soft: #272010;
+  --rose-warm: #f0766a;
+  --success: #4ade80;
+}
+
+/* محافظتِ جفت‌های «متن روی رنگ» در دارک: لیبل دکمه‌ها خوانا بمانند
+   (specificity ‏(0,2,0) بر text-surface ‏(0,1,0) می‌چربد). */
+.dark .bg-action { color: #14201f; }
+.dark .bg-brand { color: #04292a; }
+.dark .bg-brand-dark { color: #f7ffff; }
+.dark .bg-deep { color: #eaf4f3; }
+.dark [class*="from-deep"], .dark [class*="via-brand-dark"] { color: #f7ffff; }
+
+/* دارک: شیم ظاهری ویجت خارجی مرکز تماس (fzw2 — استایل اصلی اسکریپت خارجی است و literal) */
+.dark .fzw2-panel { background: var(--color-surface); color: var(--color-ink); }
+.dark .fzw2-chip { background: var(--color-soft); color: var(--color-ink); }
+.dark .fzw2-inp { background: var(--color-soft); color: var(--color-ink); }
+
+/* متنِ روی عکس/بنر تیره در دارک روشن می‌ماند — چه overlay ثابت باشد (img-overlay)
+   چه کانتینر bg-deep یا گرادیان از-deep؛ چون پس‌زمینهٔ واقعیِ این متن‌ها عکس است. */
+.dark .img-overlay [class*="text-surface"],
+.dark .img-overlay.text-surface[class],
+.dark .bg-deep [class*="text-surface"],
+.dark [class*="from-deep"] [class*="text-surface"],
+.dark [class*="via-brand-dark"] [class*="text-surface"] { color: #f7ffff; }
+
+/* AA (WCAG 2.2 §1.4.3): لیبل سفید روی فیروزه‌ای روشن #00a9a5 فقط ۲.۹:۱ است؛
+   دکمه‌ها و چیپ‌های تعاملی به brand-dark ‏(#046e6b → ۶.۱:۱) می‌روند.
+   عناصر تزئینی (badge، آیکون‌باکس) روشن می‌مانند. در دارک، brand-dark خودش به
+   mint-bright می‌چرخد و لیبل تیرهٔ قاعدهٔ بالا رویش می‌نشیند. */
+a.bg-brand, button.bg-brand, [role="button"].bg-brand, label.bg-brand {
+  background-color: var(--color-brand-dark);
 }
 
 @layer base {

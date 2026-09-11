@@ -641,6 +641,9 @@ export class GeneralLedgerService {
 
   /**
    * Template 5: FX Conversion
+   * Row-locks the user's source account and re-checks the balance under the lock
+   * (same guard as postWalletPayment / WAL-001) so concurrent exchanges cannot
+   * pass an outside-transaction balance check and overdraw the wallet (BUG-002).
    */
   static async postFXConversion(params: FXSpreadPostingParams, tx?: Prisma.TransactionClient) {
     const runner = async (client: Prisma.TransactionClient) => {
@@ -651,6 +654,17 @@ export class GeneralLedgerService {
 
       const fromAmount = toDecimal(params.fromAmount);
       const toAmount = toDecimal(params.toAmount);
+
+      // Row-lock the source account FOR UPDATE, then re-check balance under the lock
+      await client.$queryRaw`
+        SELECT id FROM "Account"
+        WHERE id = ${userFromAcc.id}
+        FOR UPDATE
+      `;
+      const currentBalance = await this.getAccountBalance(userFromAcc.id, params.fromCurrency, client);
+      if (currentBalance.amount.lessThan(fromAmount)) {
+        throw new Error('Insufficient wallet balance');
+      }
 
       // Leg 1: Source Currency
       await this.postBalancedEntry({
@@ -675,6 +689,24 @@ export class GeneralLedgerService {
           { account: userToAcc, direction: 'CREDIT', amount: toAmount },
         ],
       }, client);
+
+      // Leg 3: FX spread realized as platform revenue (funded by the FX pool);
+      // the user still receives the full converted amount (BUG-012).
+      const spreadAmount = toDecimal(params.spreadAmount);
+      if (spreadAmount.greaterThan(0)) {
+        const revenueAcc = await this.getOrCreateAccount('PLATFORM_REVENUE', null, params.toCurrency, client);
+        await this.postBalancedEntry({
+          groupId: `${params.groupId}_fx_spread`,
+          referenceType: 'FX_CONVERSION',
+          referenceId: params.referenceId ? `${params.referenceId}_spread` : undefined,
+          currency: params.toCurrency,
+          memo: 'FX exchange spread revenue',
+          legs: [
+            { account: fxPoolToAcc, direction: 'DEBIT', amount: spreadAmount },
+            { account: revenueAcc, direction: 'CREDIT', amount: spreadAmount },
+          ],
+        }, client);
+      }
     };
 
     if (tx) return runner(tx);

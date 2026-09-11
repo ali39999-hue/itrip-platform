@@ -31,4 +31,20 @@ describe('sanitizeProps', () => {
   it('drops nullish values', () => {
     expect(sanitizeProps({ a: undefined, b: null, c: 1 })).toEqual({ c: 1 });
   });
+
+  it('safely scrubs error properties for captureError', () => {
+    const errorProps = sanitizeProps({
+      errorMessage: 'API gateway timeout 504 on endpoint',
+      details: 'Timeout contacting provider for phone 09121112233',
+      contactPhone: '09120000000',
+      locale: 'fa',
+      route: '/checkout',
+    });
+    expect(errorProps).toEqual({
+      errorMessage: 'API gateway timeout 504 on endpoint',
+      details: 'Timeout contacting provider for phone [REDACTED]',
+      locale: 'fa',
+      route: '/checkout',
+    });
+  });
 });

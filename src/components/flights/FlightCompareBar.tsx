@@ -32,7 +32,7 @@ export function FlightCompareBar({
   return (
     <aside
       aria-label={lt(locale, { fa: 'نوار مقایسه پروازها', en: 'Flight comparison bar', ar: 'شريط مقارنة الرحلات', zh: '航班对比栏', ru: 'Панель сравнения рейсов' })}
-      className="fixed bottom-[72px] lg:bottom-6 start-3 end-3 sm:start-auto sm:end-8 sm:w-[490px] bg-surface/95 backdrop-blur-md border border-brand/35 rounded-2xl p-3.5 sm:p-4 shadow-elev-3 z-50 animate-in slide-in-from-bottom-4 duration-300"
+      className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] lg:bottom-6 start-3 end-3 sm:start-auto sm:end-8 sm:w-[490px] bg-surface/95 backdrop-blur-md border border-brand/35 rounded-2xl p-3.5 sm:p-4 shadow-elev-3 z-50 animate-in slide-in-from-bottom-4 duration-300"
     >
       <div className="flex items-center justify-between gap-3 mb-2.5">
         <div className="flex items-center gap-2">
@@ -57,7 +57,7 @@ export function FlightCompareBar({
       </div>
 
       {/* Selected Flight Chips */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-3 scrollbar-none">
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-3 scrollbar-none snap-x touch-pan-x">
         {Array.from(cmp).map((id) => {
           const fl = flights.find((x) => x.id === id);
           return (

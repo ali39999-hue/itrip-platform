@@ -13,6 +13,7 @@
  */
 
 import { safeFetch } from "@/lib/security/ssrf-protection";
+import { inspectPromptForInjection, sanitizeAiOutput } from "@/lib/security/ai-security-guard";
 
 export type AiProviderId = "gemini" | "deepseek" | "openai" | "claude";
 
@@ -199,6 +200,12 @@ export class AiRouterService {
       throw new Error("All AI providers are currently in cooldown or unconfigured.");
     }
 
+    // AI-101 / OWASP LLM01: Inspect prompt for injection and jailbreak payloads
+    const promptInspection = inspectPromptForInjection(req.prompt);
+    if (promptInspection.isMalicious) {
+      throw new Error(`Security Error: AI request rejected due to prompt injection attempt (${promptInspection.detectedPattern})`);
+    }
+
     const errors: string[] = [];
 
     for (const provider of available) {
@@ -212,8 +219,9 @@ export class AiRouterService {
         try {
           const result = await handler(req, provider, controller.signal);
           clearTimeout(timer);
+          const sanitized = sanitizeAiOutput(result.content);
           return {
-            content: result.content,
+            content: sanitized.sanitizedContent,
             provider: provider.id,
             model: result.model,
             latencyMs: Date.now() - startTime,

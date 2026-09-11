@@ -6,6 +6,7 @@
  */
 
 import crypto from 'crypto';
+import { timingSafeEqualStrings } from '@/lib/security/timing-safe';
 import { NotificationResult } from '../NotificationProvider';
 
 export interface TelegramAuthPayload {
@@ -72,8 +73,7 @@ export class ProductionTelegramProvider {
       .digest('hex');
 
     // Secure timing-safe string comparison
-    if (hmac.length !== data.hash.length) return false;
-    return crypto.timingSafeEqual(Buffer.from(hmac, 'hex'), Buffer.from(data.hash, 'hex'));
+    return timingSafeEqualStrings(hmac, data.hash.toLowerCase());
   }
 
   /**

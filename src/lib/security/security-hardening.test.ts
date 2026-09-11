@@ -182,4 +182,24 @@ describe('Wave 15: Security Hardening Suite (SEC-101 to SEC-108)', () => {
       expect(String(redacted.cardNumber)).toContain('****');
     });
   });
+
+  describe('SEC-109: OWASP ASVS 5.0 Anti-Caching & Platform Security Headers', () => {
+    it('verifies next.config.ts configures anti-caching for sensitive API routes', async () => {
+      const fs = await import('fs');
+      const path = await import('path');
+      const configContent = fs.readFileSync(path.resolve(__dirname, '../../../next.config.ts'), 'utf8');
+
+      // ASVS 5.0 V8.3: Anti-caching headers for API routes
+      expect(configContent).toContain("source: '/api/:path*'");
+      expect(configContent).toContain("key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, proxy-revalidate'");
+      expect(configContent).toContain("key: 'Pragma', value: 'no-cache'");
+      expect(configContent).toContain("key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive'");
+
+      // ASVS 5.0 V8.2: Browser security headers
+      expect(configContent).toContain("key: 'Strict-Transport-Security'");
+      expect(configContent).toContain("key: 'Content-Security-Policy'");
+      expect(configContent).toContain("key: 'X-Frame-Options', value: 'DENY'");
+      expect(configContent).toContain("key: 'X-Content-Type-Options', value: 'nosniff'");
+    });
+  });
 });

@@ -218,7 +218,7 @@ export default function HotelDetailPage() {
         aria-label="Hotel sections navigation"
         className="sticky top-16 z-[60] mt-4 border-y border-line/80 bg-paper/95 backdrop-blur-xl"
       >
-        <div className="max-w-[1280px] mx-auto px-4 md:px-10 flex items-center gap-1 overflow-x-auto scrollbar-none">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-10 flex items-center gap-1 overflow-x-auto scrollbar-none snap-x touch-pan-x">
           {subnavItems.map(([id, label]) => (
             <button
               key={id}
@@ -292,7 +292,7 @@ export default function HotelDetailPage() {
           <button
             type="button"
             onClick={() => document.getElementById('rooms')?.scrollIntoView({ behavior: 'smooth' })}
-            className="h-11 px-5 rounded-xl bg-brand hover:bg-brand-dark text-surface font-black text-xs sm:text-sm flex items-center justify-center transition active:scale-95 shadow-sm"
+            className="h-11 px-5 rounded-xl bg-brand-dark hover:bg-deep text-white font-black text-xs sm:text-sm flex items-center justify-center transition active:scale-95 shadow-sm"
           >
             {lt(locale, { fa: 'انتخاب اتاق', en: 'Select Room', ar: 'اختر الغرفة', zh: '选择房型', ru: 'Выбрать номер' })}
           </button>

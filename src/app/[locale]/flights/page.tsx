@@ -60,7 +60,7 @@ export default function FlightsLandingPage() {
           </Link>
         </div>
 
-        <div className="flex sm:grid overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 pb-3 sm:pb-0 scrollbar-none">
+        <div className="flex sm:grid overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 pb-3 sm:pb-0 scrollbar-none touch-pan-x">
           {popularRoutes.map((route, idx) => (
             <Link
               key={idx}

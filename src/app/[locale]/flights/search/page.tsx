@@ -933,7 +933,7 @@ function FlightSearchInner() {
 
           {/* Quick Filter Chips & Price Drop Alert Trigger */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-2.5 sm:p-3 rounded-2xl bg-surface border border-line shadow-2xs">
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none text-xs font-black">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none text-xs font-black snap-x touch-pan-x">
               <button
                 type="button"
                 onClick={() => {
@@ -1063,7 +1063,7 @@ function FlightSearchInner() {
           </div>
 
           {/* Sorting & mobile trigger */}
-          <div className="flex overflow-x-auto pb-1 gap-2 scrollbar-none items-center">
+          <div className="flex overflow-x-auto pb-1 gap-2 scrollbar-none items-center snap-x touch-pan-x">
             {sorts.map((s) => (
               <button
                 key={s.id}
@@ -1249,12 +1249,12 @@ function FlightSearchInner() {
       </div>
 
       {/* ================= STICKY MOBILE FILTER & SORT PILL (FLYTODAY STYLE) ================= */}
-      <div className="lg:hidden fixed bottom-[70px] inset-x-0 z-40 flex justify-center pointer-events-none px-4">
-        <div className="pointer-events-auto bg-ink/90 dark:bg-surface/95 backdrop-blur-md text-surface dark:text-ink px-4 py-2 rounded-full shadow-elev-3 flex items-center gap-3 border border-surface/20 dark:border-line">
+      <div className="lg:hidden fixed bottom-[calc(70px+env(safe-area-inset-bottom))] inset-x-0 z-40 flex justify-center pointer-events-none px-4">
+        <div className="pointer-events-auto bg-ink/90 dark:bg-surface/95 backdrop-blur-md text-surface dark:text-ink px-4 py-1 rounded-full shadow-elev-3 flex items-center gap-3 border border-surface/20 dark:border-line">
           <button
             type="button"
             onClick={() => setSheet(true)}
-            className="flex items-center gap-1.5 text-xs font-black py-1 px-2 rounded-full hover:bg-surface/20 transition active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 text-xs font-black min-h-[44px] px-2 rounded-full hover:bg-surface/20 transition active:scale-95 cursor-pointer"
           >
             <SlidersHorizontal size={14} />
             <span>{t('filters')}</span>
@@ -1271,7 +1271,7 @@ function FlightSearchInner() {
               const nextIdx = (sorts.findIndex((s) => s.id === sort) + 1) % sorts.length;
               setSort(sorts[nextIdx].id);
             }}
-            className="flex items-center gap-1.5 text-xs font-black py-1 px-2 rounded-full hover:bg-surface/20 transition active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 text-xs font-black min-h-[44px] px-2 rounded-full hover:bg-surface/20 transition active:scale-95 cursor-pointer"
           >
             <span className="text-[11px] opacity-75">{t('sortBy')}:</span>
             <span className="text-mint-bright dark:text-brand font-bold">
@@ -1291,7 +1291,8 @@ function FlightSearchInner() {
         >
           <div className="fixed inset-0 z-[90] bg-ink/45 fade-soft" onClick={() => setSheet(false)} aria-hidden="true" />
           <div className="fixed bottom-0 inset-x-0 z-[100] bg-surface rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl">
-            <div className="flex justify-between items-center p-5 border-b border-line">
+            <div className="w-10 h-1 rounded-full bg-line mx-auto mt-3 shrink-0" aria-hidden="true" />
+            <div className="flex justify-between items-center p-5 pb-3 border-b border-line">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal size={16} className="text-brand-dark" />
                 <h2 className="font-black text-sm text-ink">{t('filters')}</h2>
@@ -1305,13 +1306,15 @@ function FlightSearchInner() {
                 type="button"
                 onClick={() => setSheet(false)}
                 aria-label={ariaT('close')}
-                className="w-8 h-8 rounded-full bg-soft text-sub flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                className="min-w-[44px] min-h-[44px] -me-2 rounded-full text-sub hover:text-ink hover:bg-line/40 flex items-center justify-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
-                <X size={17} />
+                <div className="w-8 h-8 rounded-full bg-soft grid place-items-center">
+                  <X size={17} />
+                </div>
               </button>
             </div>
             <div className="overflow-y-auto p-5">{filtersBody}</div>
-            <div className="p-4 border-t border-line bg-surface flex items-center gap-3">
+            <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-line bg-surface flex items-center gap-3">
               {activeFilters > 0 && (
                 <button
                   type="button"
@@ -1341,7 +1344,7 @@ function FlightSearchInner() {
           aria-label={lt(locale, { fa: 'تغییر پارامترهای جستجوی پرواز', en: 'Edit flight search parameters', ar: 'تعديل معايير البحث عن الرحلات', zh: '修改航班搜索参数', ru: 'Изменить параметры поиска рейсов' })}
           className="fixed inset-0 z-[160] flex items-end justify-center bg-deep/60 backdrop-blur-xs animate-in fade-in duration-200"
         >
-          <div className="w-full max-w-lg bg-surface rounded-t-3xl p-5 border-t border-line shadow-2xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom-5 duration-200 space-y-4">
+          <div className="w-full max-w-lg bg-surface rounded-t-3xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] border-t border-line shadow-2xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom-5 duration-200 space-y-4">
             <div className="w-10 h-1 rounded-full bg-line mx-auto mb-1" />
 
             <div className="flex items-center justify-between pb-3 border-b border-line">
@@ -1358,7 +1361,7 @@ function FlightSearchInner() {
                 type="button"
                 onClick={() => setEditSheetOpen(false)}
                 aria-label={ariaT('close')}
-                className="text-xs font-bold text-sub px-2.5 py-1 rounded-lg bg-soft hover:bg-line/60 transition active:scale-95"
+                className="min-h-[44px] px-3 py-1 text-xs font-bold text-sub rounded-lg bg-soft hover:bg-line/60 transition active:scale-95"
               >
                 {ariaT('close')}
               </button>

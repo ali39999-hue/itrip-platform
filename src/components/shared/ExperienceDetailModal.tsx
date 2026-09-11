@@ -232,7 +232,7 @@ export function ExperienceDetailModal({
                   type="button"
                   onClick={() => setTravelers((v) => Math.max(1, v - 1))}
                   disabled={travelers <= 1}
-                  className="w-10 h-10 rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition"
+                  className="min-w-[44px] min-h-[44px] rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
                   aria-label="کاهش مسافر"
                 >
                   <Minus size={16} />
@@ -244,7 +244,7 @@ export function ExperienceDetailModal({
                   type="button"
                   onClick={() => setTravelers((v) => Math.min(10, v + 1))}
                   disabled={travelers >= 10}
-                  className="w-10 h-10 rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition"
+                  className="min-w-[44px] min-h-[44px] rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
                   aria-label="افزایش مسافر"
                 >
                   <Plus size={16} />
@@ -265,7 +265,7 @@ export function ExperienceDetailModal({
                       key={d}
                       type="button"
                       onClick={() => setSelectedDate(dateStr)}
-                      className={`min-h-[42px] px-3.5 py-1.5 rounded-xl border text-xs font-black transition shrink-0 flex flex-col items-center justify-center ${
+                      className={`min-h-[44px] px-3.5 py-1.5 rounded-xl border text-xs font-black transition shrink-0 flex flex-col items-center justify-center cursor-pointer ${
                         isSel
                           ? 'bg-brand text-white border-brand shadow-xs'
                           : 'bg-soft border-line text-sub hover:text-ink hover:bg-line/50'

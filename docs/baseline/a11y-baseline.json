@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-09-11T10:07:56.232Z",
+  "generatedAt": "2026-09-11T17:33:28.399Z",
   "baseUrl": "http://localhost:3000",
   "pages": {
     "home": {
       "url": "http://localhost:3000/fa",
       "violationCount": 0,
       "byRule": [],
-      "passes": 26
+      "passes": 31
     },
     "flights-landing": {
       "url": "http://localhost:3000/fa/flights",

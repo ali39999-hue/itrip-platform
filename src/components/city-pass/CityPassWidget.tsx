@@ -2,12 +2,9 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from '@/i18n/routing';
 import { MapPin, CreditCard, RefreshCw } from 'lucide-react';
 import { num } from '@/lib/format';
 import { lt } from '@/lib/lt';
-
-import { useBookingStore } from '@/stores/booking-store';
 
 const CITIES = {
   tehran: { nameKey: 'tehran', pass: 12, stored: 6, deliv: 3, lines: [['Line 1', '#E4002B'], ['Line 2', '#003DA5'], ['Line 3', '#00AEEF'], ['Line 4', '#FFD100'], ['BRT', '#5C6B6A']] },
@@ -18,51 +15,23 @@ const CITIES = {
 
 export function CityPassWidget({ locale }: { locale: string }) {
   const t = useTranslations('CityPassWidget');
-  const router = useRouter();
   const [city, setCity] = useState<keyof typeof CITIES>('tehran');
   const [type, setType] = useState<'pass' | 'stored'>('pass');
   const [delivery, setDelivery] = useState('');
-  const [isAttempted, setIsAttempted] = useState(false);
 
   const c = CITIES[city];
   const base = type === 'pass' ? c.pass : c.stored;
   const total = base + c.deliv;
 
-  const isDeliveryValid = delivery.trim().length >= 3;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsAttempted(true);
-    if (isDeliveryValid) {
-      const tomanAmt = Math.round(total * 65000);
-      useBookingStore.getState().addDirectBooking({
-        type: 'city-pass',
-        title: `${t('title')} (${t(c.nameKey)} - ${type === 'pass' ? t('unlimitedTouristPass') : t('storedValueCard')})`,
-        subtitle: `تحویل به: ${delivery} • مبلغ: €${total.toFixed(2)} (معادل ${tomanAmt.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} تومان)`,
-        amount: tomanAmt,
-        currency: 'IRR',
-        status: 'confirmed',
-        travelDate: new Date().toISOString().slice(0, 10),
-        passengers: [{
-          firstNameFa: 'دارنده',
-          lastNameFa: 'کارت',
-          firstNameEn: 'Card',
-          lastNameEn: 'Holder',
-          passportNo: 'DELIVERY-' + city.toUpperCase(),
-          birthDate: '1990-01-01',
-          gender: 'male',
-        }],
-        addOns: ['تحویل اکسپرس درب هتل', `کارت شهروندی ${t(c.nameKey)}`],
-        paymentMethod: 'wallet_irr',
-      });
-      router.push('/payment-status');
-    }
-  };
+  // Honest no-op (BUG-007): this service has no server order flow yet.
+  // Fabricating a client-side "confirmed" booking is removed; the CTA is
+  // disabled below until the real checkout is wired.
+  const isComingSoon = true;
 
   return (
-    <form 
+    <form
       className="bg-surface border border-line rounded-[24px] shadow-elev-3 mt-8 overflow-hidden max-w-[940px]"
-      onSubmit={handleSubmit}
+      onSubmit={(e) => e.preventDefault()}
     >
       <div className="px-5 py-4 border-b border-line bg-soft flex items-center gap-3">
         <CreditCard size={22} className="text-brand" />
@@ -139,7 +108,7 @@ export function CityPassWidget({ locale }: { locale: string }) {
           {/* Delivery Field */}
           <div className="flex flex-col gap-2">
             <label className="text-[14px] font-bold">{t('deliveryAddress')}</label>
-            <div className={`flex items-center gap-2 px-4 py-3 bg-soft border ${isAttempted && !isDeliveryValid ? 'border-rose-warm shadow-[0_0_0_3px_rgba(216,68,47,0.1)]' : 'border-line'} rounded-xl focus-within:border-brand focus-within:shadow-[0_0_0_3px_rgba(0,169,165,0.1)] focus-within:bg-surface transition-all`}>
+            <div className="flex items-center gap-2 px-4 py-3 bg-soft border border-line rounded-xl focus-within:border-brand focus-within:shadow-[0_0_0_3px_rgba(0,169,165,0.1)] focus-within:bg-surface transition-all">
               <MapPin size={20} className="text-sub flex-shrink-0" />
               <input
                 type="text"
@@ -149,9 +118,6 @@ export function CityPassWidget({ locale }: { locale: string }) {
                 onChange={(e) => setDelivery(e.target.value)}
               />
             </div>
-            {isAttempted && !isDeliveryValid && (
-              <span className="text-[13px] text-rose-warm font-bold">{t('deliveryError')}</span>
-            )}
           </div>
         </div>
 
@@ -175,13 +141,26 @@ export function CityPassWidget({ locale }: { locale: string }) {
             <span className="font-en text-[24px] font-bold text-price">{num(total, locale, { minimumFractionDigits: 2 })}</span>
           </div>
 
-          <button 
-            type="submit" 
-            className="mt-auto w-full py-4 rounded-full bg-action hover:bg-action-hover text-ink text-[18px] font-black shadow-sm transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          <button
+            type="submit"
+            disabled={isComingSoon}
+            aria-disabled={isComingSoon}
+            className="mt-auto w-full py-4 rounded-full bg-action hover:bg-action-hover text-ink text-[18px] font-black shadow-sm transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <CreditCard size={20} />
             {t('payConfirm')}
           </button>
+          {isComingSoon && (
+            <p role="status" className="text-center text-[12px] font-bold text-amber-700 dark:text-amber-400 mt-2 leading-[1.7]">
+              {lt(locale, {
+                fa: 'این سرویس در حال اتصال به درگاه پرداخت است و به‌زودی فعال می‌شود.',
+                en: 'This service is being connected to the payment gateway and will launch soon.',
+                ar: 'هذه الخدمة قيد الربط ببوابة الدفع وستُفعّل قريباً.',
+                zh: '该服务正在接入支付网关，即将上线。',
+                ru: 'Эта услуга подключается к платёжному шлюзу и скоро станет доступна.',
+              })}
+            </p>
+          )}
           <p className="text-center text-[11px] text-sub mt-3 leading-[1.7]">
             {t('footerNotice')}
           </p>

@@ -49,7 +49,7 @@ export function FlightCompareModal({
       aria-labelledby="flight-compare-modal-title"
       className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-deep/70 backdrop-blur-sm animate-in fade-in duration-200"
     >
-      <div className="w-full max-w-5xl max-h-[92vh] bg-surface rounded-t-3xl sm:rounded-3xl border-t sm:border border-line shadow-elev-3 flex flex-col overflow-hidden">
+      <div className="w-full max-w-5xl max-h-[92vh] bg-surface rounded-t-3xl sm:rounded-3xl border-t sm:border border-line shadow-elev-3 flex flex-col overflow-hidden pb-[env(safe-area-inset-bottom)] sm:pb-0">
         <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto mt-2.5 mb-1" />
         {/* Modal Header */}
         <div className="px-5 sm:px-6 py-4 border-b border-line flex items-center justify-between bg-surface/90">

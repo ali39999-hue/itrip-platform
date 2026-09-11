@@ -72,7 +72,7 @@ export function DatePickerSheet({
         </div>
 
         {/* Quick Presets Horizontal Scroll */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none snap-x touch-pan-x">
           {presets.map((p, idx) => {
             const isSelected = selectedDate === p.date;
             return (

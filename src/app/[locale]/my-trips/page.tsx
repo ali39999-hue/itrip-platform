@@ -268,7 +268,7 @@ export default function MyTripsPage() {
               </div>
 
             {/* Service Type Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none text-xs font-black">
+            <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none text-xs font-black snap-x touch-pan-x">
               {['ALL', 'FLIGHT', 'HOTEL', 'TOUR', 'TRANSFER'].map((st) => (
                 <button
                   key={st}
@@ -294,7 +294,7 @@ export default function MyTripsPage() {
             </div>
           </div>
 
-          <div className="flex items-center border-b border-line mb-2 overflow-x-auto whitespace-nowrap hide-scrollbar">
+          <div className="flex items-center border-b border-line mb-2 overflow-x-auto whitespace-nowrap hide-scrollbar snap-x touch-pan-x">
             <button
               onClick={() => setTab('upcoming')}
               className={`px-6 py-3 font-black text-sm transition-colors border-b-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${

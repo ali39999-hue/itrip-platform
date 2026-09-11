@@ -9,6 +9,7 @@ import { BookingDomainService } from '@/domains/booking/BookingDomainService';
 import { ReferralDomainService } from '@/domains/referral/ReferralDomainService';
 import { getTenantAuthContext, assertTenantAccess } from '@/domains/identity/permission-service';
 import { decryptSensitive } from '@/lib/security/crypto-vault';
+import { acquireIdempotencyLock, completeIdempotency } from '@/lib/security/idempotency';
 import { toPlain } from '@/lib/serialize';
 
 export async function createBookingDraft(data: unknown): Promise<
@@ -25,6 +26,24 @@ export async function createBookingDraft(data: unknown): Promise<
 
     // 1. Validate data structure purely based on IDs/quantities
     const parsed = bookingSchema.parse(data);
+
+    // 1b. Idempotency guard (BUG-003): replaying the same key returns the
+    // original draft instead of creating a duplicate HELD booking.
+    const idemScope = `user:${userId}`;
+    if (parsed.idempotencyKey) {
+      const lock = acquireIdempotencyLock<{
+        bookingId: string; reference: string; totalAmount: number; discountAmount?: number; currency: string; status: string; referralStatus?: string;
+      }>(parsed.idempotencyKey, idemScope, parsed);
+      if (!lock.acquired) {
+        if (lock.status === 'COMPLETED') {
+          return { success: true, ...lock.cachedResponse.body };
+        }
+        if (lock.status === 'IN_PROGRESS') {
+          return { success: false, error: 'درخواست قبلی در حال پردازش است؛ چند لحظه بعد دوباره تلاش کنید.' };
+        }
+        return { success: false, error: lock.error || 'درخواست تکراری نامعتبر است.' };
+      }
+    }
 
     // 2. Delegate directly to canonical BookingApplicationService (BOOK-101, BOOK-102)
     const result = await BookingApplicationService.createDraft({
@@ -45,8 +64,7 @@ export async function createBookingDraft(data: unknown): Promise<
       source: parsed.source || 'WEB',
     });
 
-    return {
-      success: true,
+    const successPayload = {
       bookingId: result.bookingId,
       reference: result.reference,
       totalAmount: result.totalAmount,
@@ -55,6 +73,12 @@ export async function createBookingDraft(data: unknown): Promise<
       status: result.status,
       referralStatus: result.referralStatus,
     };
+
+    if (parsed.idempotencyKey) {
+      completeIdempotency(parsed.idempotencyKey, idemScope, 200, successPayload);
+    }
+
+    return { success: true, ...successPayload };
   } catch (err: unknown) {
     console.error('createBookingDraft server error:', err);
     const message = err instanceof Error ? err.message : 'Failed to create booking draft';
@@ -364,8 +388,15 @@ export async function getBookingById(id: string) {
     // Owner/tenant-authorized read: passenger PII in the details snapshot is
     // decrypted server-side so the raw ciphertext never reaches the client.
     // Decimals are strictly converted to plain numbers for RSC boundary compliance.
+    const invoice = await prisma.invoice.findFirst({
+      where: { bookingId: id },
+      select: { id: true, invoiceNumber: true, status: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
     const sanitizedBooking = {
       ...booking,
+      invoice: invoice ? { id: invoice.id, invoiceNumber: invoice.invoiceNumber, status: invoice.status } : null,
       totalAmount: Number(booking.totalAmount),
       items: booking.items.map((item) => {
         let details = item.details;
@@ -540,15 +571,20 @@ export async function exchangeWalletCurrency(from: 'IRR' | 'USDT' | 'AED', to: '
     const toMoney = new Money(converted, to);
     const spreadMoney = toMoney.mul(new Prisma.Decimal('0.005')).round(2);
 
+    // The ledger's FIN-102 dedupe keys on (referenceType, referenceId) globally,
+    // so referenceId must be unique per exchange — a constant made every
+    // exchange after the first one a silent no-op. The groupId doubles as that
+    // unique reference (replays of the same exchange still dedupe).
+    const exchangeGroupId = `fx_${session.user.id}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
     await GeneralLedgerService.postFXConversion({
-      groupId: `fx_${session.user.id}_${Date.now()}_${Math.floor(Math.random() * 1e6)}`,
+      groupId: exchangeGroupId,
       userId: session.user.id,
       fromCurrency: from,
       toCurrency: to,
       fromAmount: fromMoney,
       toAmount: toMoney,
       spreadAmount: spreadMoney,
-      referenceId: 'WALLET_EXCHANGE',
+      referenceId: exchangeGroupId,
     });
     revalidatePath('/wallet');
     return { success: true };
@@ -712,14 +748,18 @@ export async function calculateMultiItemPricingAction(
     title: string;
     count: number;
     nights?: number;
-    unitPrice: number;
+    unitPrice: number; // display-only hint — server re-resolves every line (BUG-001)
     travelDate: string;
   }>,
   currency = 'IRR'
 ) {
   try {
     const { UnifiedCartService } = await import('@/domains/booking/UnifiedCartService');
-    const pricing = UnifiedCartService.calculateCartPricing(items, currency);
+    const resolved = await UnifiedCartService.resolveServerCartPricing(items, currency);
+    if (!resolved.ok) {
+      return { success: false, error: resolved.error };
+    }
+    const pricing = UnifiedCartService.calculateCartPricing(resolved.pricedItems, currency);
     return { success: true, pricing };
   } catch (err: unknown) {
     console.error('calculateMultiItemPricingAction error:', err);

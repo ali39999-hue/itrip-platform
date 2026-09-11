@@ -277,7 +277,7 @@ export function FlightPriceCalendar({
             type="button"
             onClick={() => setDayOffset((prev) => prev - 1)}
             aria-label={lt(locale, { fa: 'روز قبل', en: 'Previous Day', ar: 'اليوم السابق', zh: '前一天', ru: 'Предыдущий день' })}
-            className="w-7 h-16 sm:h-20 rounded-xl bg-soft hover:bg-line/70 text-sub hover:text-ink grid place-items-center shrink-0 transition cursor-pointer active:scale-95"
+            className="w-11 h-16 sm:h-20 rounded-xl bg-soft hover:bg-line/70 text-sub hover:text-ink grid place-items-center shrink-0 transition cursor-pointer active:scale-95"
           >
             {locale === 'fa' || locale === 'ar' ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
           </button>
@@ -351,7 +351,7 @@ export function FlightPriceCalendar({
             type="button"
             onClick={() => setDayOffset((prev) => prev + 1)}
             aria-label={lt(locale, { fa: 'روز بعد', en: 'Next Day', ar: 'اليوم التالي', zh: '后一天', ru: 'Следующий день' })}
-            className="w-7 h-16 sm:h-20 rounded-xl bg-soft hover:bg-line/70 text-sub hover:text-ink grid place-items-center shrink-0 transition cursor-pointer active:scale-95"
+            className="w-11 h-16 sm:h-20 rounded-xl bg-soft hover:bg-line/70 text-sub hover:text-ink grid place-items-center shrink-0 transition cursor-pointer active:scale-95"
           >
             {locale === 'fa' || locale === 'ar' ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
           </button>

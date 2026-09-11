@@ -144,9 +144,11 @@ export function ToursPromoModal() {
               try { sessionStorage.setItem('firuzo_tours_promo_session_seen', 'true'); } catch { /* noop */ }
             }}
             aria-label={lt(locale, { fa: 'بستن', en: 'Dismiss', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}
-            className="-ms-2 -mt-5 w-5 h-5 rounded-full bg-ink/70 hover:bg-ink text-surface grid place-items-center shrink-0 shadow transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="-ms-4 -mt-5 min-w-[44px] min-h-[44px] grid place-items-center shrink-0 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
           >
-            <X size={11} />
+            <div className="w-5 h-5 rounded-full bg-ink/80 hover:bg-ink text-surface grid place-items-center shadow">
+              <X size={11} />
+            </div>
           </button>
         </div>
       )}
@@ -162,7 +164,7 @@ export function ToursPromoModal() {
           aria-modal="true"
           aria-label={lt(locale, { fa: 'پاپ‌آپ معرفی تورهای فیروزو', en: 'Firuzo Curated Tours Promo', ar: 'جولات فيروزو', zh: 'Firuzo 旅游推介', ru: 'Туры Firuzo' })}
         >
-          <div className="relative w-full max-w-2xl bg-surface rounded-t-3xl sm:rounded-3xl overflow-hidden border-t sm:border border-line shadow-2xl flex flex-col max-h-[90vh] my-0 sm:my-6 animate-in slide-in-from-bottom sm:slide-in-from-none sm:zoom-in-95 duration-250">
+          <div className="relative w-full max-w-2xl bg-surface rounded-t-3xl sm:rounded-3xl overflow-hidden border-t sm:border border-line shadow-2xl flex flex-col max-h-[90vh] my-0 sm:my-6 pb-[env(safe-area-inset-bottom)] sm:pb-0 animate-in slide-in-from-bottom sm:slide-in-from-none sm:zoom-in-95 duration-250">
             <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto mt-2.5 mb-1" />
             {/* Header / Top banner with glowing badge */}
             <div className="relative p-5 sm:p-6 bg-gradient-to-r from-deep via-brand-dark to-deep text-surface overflow-hidden">

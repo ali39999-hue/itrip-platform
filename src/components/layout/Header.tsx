@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from '@/i18n/routing';
-import { Menu, X, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Menu, X, ChevronRight, Search } from 'lucide-react';
 import { Logo } from './Logo';
 import { CountrySwitcher } from './header/CountrySwitcher';
 import { LocaleSwitcher } from './header/LocaleSwitcher';
 import { DesktopNav, NAV_CATEGORIES } from './header/DesktopNav';
 import { UserAccountMenu } from './header/UserAccountMenu';
+import { ThemeToggle } from './ThemeToggle';
 import { CommandPalette } from './CommandPalette';
 import { useTranslations, useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
@@ -116,11 +117,7 @@ export function Header() {
                         </div>
                         <span>{t(item.key)}</span>
                       </div>
-                      {isRtl ? (
-                        <ChevronLeft size={15} className="text-sub/60 shrink-0" />
-                      ) : (
-                        <ChevronRight size={15} className="text-sub/60 shrink-0" />
-                      )}
+                      <ChevronRight size={15} className="text-sub/60 shrink-0 rtl:rotate-180" aria-hidden="true" />
                     </Link>
                   );
                 })}
@@ -165,6 +162,9 @@ export function Header() {
 
         {/* Search, User Account & Mobile Toggle */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Dark / Light Mode Toggle */}
+          <ThemeToggle />
+
           {/* Quick Command Search Button (Ctrl+K / Cmd+K) */}
           <button
             type="button"

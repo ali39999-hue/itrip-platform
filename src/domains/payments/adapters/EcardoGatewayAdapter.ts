@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { Money } from '@/lib/finance';
+import { timingSafeEqualStrings } from '@/lib/security/timing-safe';
 import {
   PaymentGatewayPort,
   GatewayPaymentRequest,
@@ -308,12 +309,6 @@ export class EcardoGatewayAdapter implements PaymentGatewayPort {
       return rejection('Ecardo webhook signature missing: verification fails closed', 'payment.failed');
     }
 
-    const timingSafeHexEqual = (received: string, computed: string): boolean => {
-      const a = Buffer.from(received);
-      const b = Buffer.from(computed);
-      return a.length === b.length && crypto.timingSafeEqual(a, b);
-    };
-
     // 1. Official documented algorithm: HMAC-SHA256(transaction_id + total_amount, secret_key)
     const txId = String(data.transaction_id || payload.transaction_id || '');
     const totalAmt = data.total_amount !== undefined
@@ -327,7 +322,7 @@ export class EcardoGatewayAdapter implements PaymentGatewayPort {
       .update(`${txId}${totalAmt}`)
       .digest('hex');
 
-    if (!timingSafeHexEqual(signature, documentedSig)) {
+    if (!timingSafeEqualStrings(signature, documentedSig)) {
       return rejection('Invalid Ecardo webhook cryptographic signature', 'payment.failed');
     }
 

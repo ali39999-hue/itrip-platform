@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { InventoryEngine } from '@/domains/inventory/InventoryEngine';
+import { BookingApplicationService } from './BookingApplicationService';
 
 export interface UnifiedCartItem {
   type: 'FLIGHT' | 'HOTEL' | 'TOUR' | 'TRANSFER' | 'VISA' | 'ESIM' | 'INSURANCE' | string;
@@ -7,6 +8,8 @@ export interface UnifiedCartItem {
   title: string;
   count: number; // Passenger or unit count
   nights?: number; // For hotel
+  /** Display-only hint from the client. Money math always re-resolves the unit
+   *  price server-side (catalog → InventoryItem.basePrice) — see resolveServerCartPricing. */
   unitPrice: number;
   travelDate: string; // YYYY-MM-DD
   inventoryItemId?: string; // Canonical DB inventory item id (optional)
@@ -41,6 +44,53 @@ export interface UnifiedDraftResult {
 }
 
 export class UnifiedCartService {
+  /**
+   * Resolves every cart line's unit price from server-authoritative sources:
+   * catalog (via BookingApplicationService.resolveServerBasePrice) with a
+   * fail-closed fallback to InventoryItem.basePrice when inventoryItemId is given.
+   * The client-supplied unitPrice is never used for money math (price-authority guard).
+   */
+  static async resolveServerCartPricing(
+    items: UnifiedCartItem[],
+    currency: string
+  ): Promise<
+    | { ok: true; pricedItems: Array<UnifiedCartItem & { unitPrice: number }> }
+    | { ok: false; error: string }
+  > {
+    const pricedItems: Array<UnifiedCartItem & { unitPrice: number }> = [];
+
+    for (const item of items) {
+      let unitPrice = BookingApplicationService.resolveServerBasePrice(item.type, item.itemId);
+
+      if (unitPrice === null && item.inventoryItemId) {
+        const inv = await prisma.inventoryItem.findUnique({
+          where: { id: item.inventoryItemId },
+          select: { basePrice: true, currency: true },
+        });
+        if (inv) {
+          if (inv.currency !== currency) {
+            return {
+              ok: false,
+              error: `عدم تطابق ارز برای "${item.title}" (موجودی ${inv.currency}، سبد ${currency})`,
+            };
+          }
+          unitPrice = Number(inv.basePrice);
+        }
+      }
+
+      if (unitPrice === null || !Number.isFinite(unitPrice) || unitPrice < 0) {
+        return {
+          ok: false,
+          error: `قیمت "${item.title}" در سرور قابل احراز نیست؛ سفارش رد شد (fail-closed).`,
+        };
+      }
+
+      pricedItems.push({ ...item, unitPrice });
+    }
+
+    return { ok: true, pricedItems };
+  }
+
   /**
    * Computes multi-product cart bundle pricing & cross-selling discounts.
    * Miracuves / Expedia style: 5% package discount applied when both Flight & Hotel are booked together.
@@ -144,10 +194,19 @@ export class UnifiedCartService {
     }
 
     const currency = params.currency || 'IRR';
-    const pricing = this.calculateCartPricing(params.items, currency);
+
+    // Price-authority guard (BUG-001): every line is priced server-side before
+    // any hold is acquired — unpriceable carts fail closed without side effects.
+    const priced = await this.resolveServerCartPricing(params.items, currency);
+    if (!priced.ok) {
+      return { success: false, error: priced.error };
+    }
+    const pricedItems = priced.pricedItems;
+
+    const pricing = this.calculateCartPricing(pricedItems, currency);
 
     // Step 1: All-or-nothing hold acquisition
-    const holdRes = await this.acquireAllOrNothingHolds(params.items);
+    const holdRes = await this.acquireAllOrNothingHolds(pricedItems);
     if (!holdRes.success) {
       return { success: false, error: holdRes.error };
     }
@@ -167,14 +226,14 @@ export class UnifiedCartService {
             ticketStatus: 'NOT_ISSUED',
             totalAmount: pricing.netAmount,
             currency,
-            travelDate: params.items[0]?.travelDate || null,
+            travelDate: pricedItems[0]?.travelDate || null,
             holdToken: holdRes.holdTokens[0] || null, // Primary token
             expiresAt,
           },
         });
 
-        // Create individual BookingItems
-        for (const item of params.items) {
+        // Create individual BookingItems (sell price is the server-resolved price)
+        for (const item of pricedItems) {
           const nights = item.type.toUpperCase() === 'HOTEL' ? (item.nights || 1) : 1;
           const sellPrice = item.unitPrice * item.count * nights;
           const netCost = Math.round(sellPrice * 0.9); // 10% platform gross margin

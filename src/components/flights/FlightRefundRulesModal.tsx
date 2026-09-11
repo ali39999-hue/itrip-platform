@@ -154,7 +154,7 @@ export function FlightRefundRulesModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-line bg-paper flex justify-end">
+        <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-line bg-paper flex justify-end">
           <button
             type="button"
             onClick={onClose}

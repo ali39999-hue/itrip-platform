@@ -129,6 +129,8 @@ export function DestinationComparator({
         {/* Destination Selectors */}
         <div className="flex items-center gap-2">
           <select
+            id="dest-select-1"
+            aria-label="انتخاب مقصد اول برای مقایسه"
             value={dest1Id}
             onChange={(e) => setDest1Id(e.target.value)}
             className="h-9 px-3 rounded-xl bg-soft border border-line text-xs font-bold text-ink"
@@ -143,6 +145,8 @@ export function DestinationComparator({
           <span className="text-xs font-black text-sub">VS</span>
 
           <select
+            id="dest-select-2"
+            aria-label="انتخاب مقصد دوم برای مقایسه"
             value={dest2Id}
             onChange={(e) => setDest2Id(e.target.value)}
             className="h-9 px-3 rounded-xl bg-soft border border-line text-xs font-bold text-ink"
@@ -229,7 +233,7 @@ export function DestinationComparator({
               <button
                 type="button"
                 onClick={() => router.push(`/plan?dest=${dest.id}`)}
-                className="w-full h-10 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-xs transition flex items-center justify-center gap-1.5 shadow-xs"
+                className="w-full h-10 rounded-xl bg-brand-dark hover:bg-deep text-white font-black text-xs transition flex items-center justify-center gap-1.5 shadow-xs"
               >
                 <Sparkles size={14} />
                 <span>برنامه‌ریزی هوشمند سفر به {dest.nameFa}</span>

@@ -72,6 +72,7 @@ export function HotelFilterSheet({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-deep/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="w-full max-w-lg max-h-[88vh] bg-surface rounded-t-3xl sm:rounded-3xl border border-line shadow-elev-3 flex flex-col overflow-hidden">
+        <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto mt-3 mb-1 shrink-0" aria-hidden="true" />
         <div className="px-5 py-4 border-b border-line flex items-center justify-between">
           <h3 className="text-base font-bold text-ink">
             {lt(locale, { fa: 'فیلترهای پیشرفته اقامتگاه', en: 'Advanced Hotel Filters', ar: 'فلاتر متقدمة', zh: '高级住宿筛选', ru: 'Расширенные фильтры' })}
@@ -79,9 +80,12 @@ export function HotelFilterSheet({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-soft text-sub hover:text-ink grid place-items-center"
+            aria-label={lt(locale, { fa: 'بستن', en: 'Close', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}
+            className="min-w-[44px] min-h-[44px] -me-2 rounded-full text-sub hover:text-ink hover:bg-line/40 grid place-items-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
-            <X size={18} />
+            <div className="w-8 h-8 rounded-full bg-soft grid place-items-center">
+              <X size={18} />
+            </div>
           </button>
         </div>
 
@@ -240,7 +244,7 @@ export function HotelFilterSheet({
           </div>
         </div>
 
-        <div className="p-4 border-t border-line flex items-center gap-3 bg-soft/50">
+        <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-line flex items-center gap-3 bg-soft/50">
           <button
             type="button"
             onClick={onResetAll}

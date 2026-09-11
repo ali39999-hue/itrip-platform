@@ -124,10 +124,10 @@ export function Footer() {
                 {t('about')}
               </p>
               <div className="flex items-center gap-2">
-                <a href="https://t.me" target="_blank" rel="noopener noreferrer" aria-label="Telegram" className="w-9 h-9 grid place-items-center rounded-full border border-line text-sub hover:text-brand-dark hover:border-brand/40 hover:bg-mint transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none">
+                <a href="https://t.me" target="_blank" rel="noopener noreferrer" aria-label="Telegram" className="w-11 h-11 grid place-items-center rounded-full border border-line text-sub hover:text-brand-dark hover:border-brand/40 hover:bg-mint transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none">
                   <Send size={16} />
                 </a>
-                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-9 h-9 grid place-items-center rounded-full border border-line text-sub hover:text-brand-dark hover:border-brand/40 hover:bg-mint transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none">
+                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-11 h-11 grid place-items-center rounded-full border border-line text-sub hover:text-brand-dark hover:border-brand/40 hover:bg-mint transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none">
                   <Camera size={16} />
                 </a>
               </div>
@@ -169,7 +169,7 @@ export function Footer() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full px-3 py-2 text-[12px] font-bold rounded-xl bg-soft border border-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand text-ink"
+                    className="w-full px-3 min-h-[44px] py-2 text-[12px] font-bold rounded-xl bg-soft border border-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand text-ink"
                   />
                 </div>
                 <button

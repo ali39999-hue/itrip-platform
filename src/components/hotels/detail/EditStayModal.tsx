@@ -176,7 +176,7 @@ export function EditStayModal({ isOpen, onClose, booking }: EditStayModalProps) 
                     aria-label="کاهش بزرگسال"
                     onClick={() => setTempAdults(Math.max(1, tempAdults - 1))}
                     disabled={tempAdults <= 1}
-                    className="w-9 h-9 rounded-xl bg-surface border border-line grid place-items-center text-ink disabled:opacity-40 hover:border-brand transition cursor-pointer"
+                    className="min-w-[44px] min-h-[44px] rounded-xl bg-surface border border-line grid place-items-center text-ink disabled:opacity-40 hover:border-brand transition cursor-pointer"
                   >
                     <Minus size={15} />
                   </button>
@@ -186,7 +186,7 @@ export function EditStayModal({ isOpen, onClose, booking }: EditStayModalProps) 
                     aria-label="افزایش بزرگسال"
                     onClick={() => setTempAdults(Math.min(9, tempAdults + 1))}
                     disabled={tempAdults >= 9}
-                    className="w-9 h-9 rounded-xl bg-surface border border-line grid place-items-center text-ink disabled:opacity-40 hover:border-brand transition cursor-pointer"
+                    className="min-w-[44px] min-h-[44px] rounded-xl bg-surface border border-line grid place-items-center text-ink disabled:opacity-40 hover:border-brand transition cursor-pointer"
                   >
                     <Plus size={15} />
                   </button>
@@ -209,7 +209,7 @@ export function EditStayModal({ isOpen, onClose, booking }: EditStayModalProps) 
                     aria-label="کاهش کودک"
                     onClick={() => setTempChildren(Math.max(0, tempChildren - 1))}
                     disabled={tempChildren <= 0}
-                    className="w-9 h-9 rounded-xl bg-surface border border-line grid place-items-center text-ink disabled:opacity-40 hover:border-brand transition cursor-pointer"
+                    className="min-w-[44px] min-h-[44px] rounded-xl bg-surface border border-line grid place-items-center text-ink disabled:opacity-40 hover:border-brand transition cursor-pointer"
                   >
                     <Minus size={15} />
                   </button>
@@ -219,7 +219,7 @@ export function EditStayModal({ isOpen, onClose, booking }: EditStayModalProps) 
                     aria-label="افزایش کودک"
                     onClick={() => setTempChildren(Math.min(6, tempChildren + 1))}
                     disabled={tempChildren >= 6}
-                    className="w-9 h-9 rounded-xl bg-surface border border-line grid place-items-center text-ink disabled:opacity-40 hover:border-brand transition cursor-pointer"
+                    className="min-w-[44px] min-h-[44px] rounded-xl bg-surface border border-line grid place-items-center text-ink disabled:opacity-40 hover:border-brand transition cursor-pointer"
                   >
                     <Plus size={15} />
                   </button>
@@ -230,7 +230,7 @@ export function EditStayModal({ isOpen, onClose, booking }: EditStayModalProps) 
         </div>
 
         {/* Footer */}
-        <div className="p-4 sm:p-5 border-t border-line bg-soft/30 flex items-center justify-end gap-3">
+        <div className="p-4 sm:p-5 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-line bg-soft/30 flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={onClose}

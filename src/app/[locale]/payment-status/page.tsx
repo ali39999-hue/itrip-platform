@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, Clock, Wallet, RefreshCcw, Ticket, Headset, Copy, Check, type LucideIcon } from 'lucide-react';
-import { useBookingStore } from '@/stores/booking-store';
 import { num } from '@/lib/format';
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
@@ -34,8 +33,6 @@ function PaymentStatusContent() {
   const searchParams = useSearchParams();
   const locale = useLocale();
   const hydrated = useHydration();
-  const bookings = useBookingStore((s) => s.bookings);
-  const latestBooking = bookings[0];
 
   // State comes from the gateway callback (?status=...); default is the
   // pending-verification view — never a fabricated "success".
@@ -97,20 +94,19 @@ function PaymentStatusContent() {
   const s = statesConfig[state];
   const IconComponent = s.icon;
 
-  // Read from query params (e.g. gateway callback / direct redirection)
-  // or fall back to the most recent booking in the local store.
+  // Read from query params (gateway callback / direct redirection). The old
+  // client-store booking fallback is gone (BUG-007): tracking data is only
+  // ever what the gateway return URL carried.
   const queryRef = searchParams.get('ref') || searchParams.get('trackingCode') || searchParams.get('bookingId') || '';
   const queryAmountStr = searchParams.get('amount');
   const queryAmount = queryAmountStr ? Number(queryAmountStr) : null;
   const queryTitle = searchParams.get('title') || '';
   const [copied, setCopied] = useState(false);
 
-  const trackingCode = queryRef || latestBooking?.reference || '';
-  const displayAmount = queryAmount !== null && !Number.isNaN(queryAmount)
-    ? queryAmount
-    : (latestBooking?.amount ?? null);
-  const displayCurrency = latestBooking?.currency || 'IRR';
-  const displayTitle = queryTitle || latestBooking?.title || lt(locale, { fa: 'سفارش خدمات مسافرتی فیروز', en: 'Firuzo Travel Services Booking', ar: 'طلب خدمات سفر فيروز', zh: 'Firuzo 旅行服务订单', ru: 'Заказ туристических услуг Firuzo' });
+  const trackingCode = queryRef;
+  const displayAmount = queryAmount !== null && !Number.isNaN(queryAmount) ? queryAmount : null;
+  const displayCurrency = searchParams.get('currency') || 'IRR';
+  const displayTitle = queryTitle || lt(locale, { fa: 'سفارش خدمات مسافرتی فیروز', en: 'Firuzo Travel Services Booking', ar: 'طلب خدمات سفر فيروز', zh: 'Firuzo 旅行服务订单', ru: 'Заказ туристических услуг Firuzo' });
 
   const copyPnr = () => {
     if (!trackingCode) return;

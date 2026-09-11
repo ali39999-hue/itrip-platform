@@ -160,7 +160,7 @@ function ToursContent() {
       {/* Search Bar + Categories Bar & Sort Controls */}
       <div className="flex flex-col gap-4 border-b border-line pb-4">
         {/* Country Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs snap-x touch-pan-x">
           <span className="text-[11px] font-black text-sub shrink-0 me-1">
             {lt(locale, { fa: 'مقصد:', en: 'Country:', ar: 'البلد:', zh: '国家：', ru: 'Страна:' })}
           </span>
@@ -219,7 +219,7 @@ function ToursContent() {
         </div>
 
         {/* Category Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto w-full pb-1 scrollbar-none">
+        <div className="flex items-center gap-2 overflow-x-auto w-full pb-1 scrollbar-none snap-x touch-pan-x">
           {CATEGORIES.map((c) => (
             <button
               key={c.id}

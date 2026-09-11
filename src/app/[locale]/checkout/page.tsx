@@ -22,6 +22,8 @@ import { PassengerSection } from '@/components/checkout/PassengerSection';
 import { AddonsSection, ESIM_PRICE, INSURANCE_PRICE } from '@/components/checkout/AddonsSection';
 import { ReferralInputSection } from '@/components/checkout/ReferralInputSection';
 import { PriceBreakdownTable } from '@/components/checkout/PriceBreakdownTable';
+import { SoftLockTimer } from '@/components/checkout/SoftLockTimer';
+import { CancellationPolicyCard } from '@/components/checkout/CancellationPolicyCard';
 import { PaymentGatewaySelector, type PaymentMethodType, type EcardoInstrument } from '@/components/checkout/PaymentGatewaySelector';
 import { CardTransferPaymentView } from '@/components/checkout/CardTransferPaymentView';
 import { CryptoPaymentView } from '@/components/checkout/CryptoPaymentView';
@@ -31,6 +33,8 @@ import { StickyMobileBar } from '@/components/checkout/StickyMobileBar';
 import { formatMoney } from '@/lib/money';
 import { trackFunnel } from '@/lib/analytics';
 import { PassportValidityGuard } from '@/domains/identity/PassportValidityGuard';
+import { getMyTravelerProfilesAction, saveTravelerProfileAction, saveTravelDocumentAction } from '@/actions/travelers';
+import { EnrichedTravelerProfile } from '@/domains/identity/TravelerProfileService';
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -71,12 +75,30 @@ export default function CheckoutPage() {
     currency: string;
   } | null>(null);
   const [priceChangeAccepted, setPriceChangeAccepted] = useState(false);
+  const [savedProfiles, setSavedProfiles] = useState<EnrichedTravelerProfile[]>([]);
+  const [saveToAccount, setSaveToAccount] = useState(false);
+
+  const totalTravelers = Math.max(1, (bookingContext?.adults ?? 1) + (bookingContext?.children ?? 0));
+  const [currentPassengerIdx, setCurrentPassengerIdx] = useState(0);
+  const [passengersList, setPassengersList] = useState<Passenger[]>(() =>
+    Array.from({ length: 9 }, () => ({
+      firstName: '',
+      lastName: '',
+      nationalId: '',
+      passportNo: '',
+      passportExpiryDate: '',
+      birthDate: '',
+      gender: 'MALE' as const,
+    }))
+  );
 
   const {
     register,
     handleSubmit,
     control,
     setValue,
+    getValues,
+    reset,
     formState: { errors },
   } = useForm<Passenger>({
     resolver: zodResolver(passengerSchema),
@@ -90,6 +112,71 @@ export default function CheckoutPage() {
       gender: 'MALE',
     },
   });
+
+  const handleSelectPassengerTab = (newIdx: number) => {
+    if (newIdx === currentPassengerIdx) return;
+    const currentValues = getValues();
+    setPassengersList((prev) => {
+      const updated = [...prev];
+      updated[currentPassengerIdx] = { ...currentValues };
+      return updated;
+    });
+    const target = passengersList[newIdx] || {
+      firstName: '',
+      lastName: '',
+      nationalId: '',
+      passportNo: '',
+      passportExpiryDate: '',
+      birthDate: '',
+      gender: 'MALE',
+    };
+    reset(target);
+    setCurrentPassengerIdx(newIdx);
+  };
+
+  const passengersStatus = Array.from({ length: totalTravelers }).map((_, i) => {
+    const p = i === currentPassengerIdx ? getValues() : passengersList[i];
+    const isComplete = Boolean(p?.firstName && p?.lastName && p?.passportNo && p?.birthDate);
+    const fullName = `${p?.firstName || ''} ${p?.lastName || ''}`.trim();
+    return {
+      isComplete,
+      name: fullName || undefined,
+    };
+  });
+
+  useEffect(() => {
+    if (authUser?.id) {
+      getMyTravelerProfilesAction().then((res) => {
+        if (res.success && res.data) {
+          setSavedProfiles(res.data);
+        }
+      }).catch(() => {});
+    }
+  }, [authUser?.id]);
+
+  const handleSelectSavedProfile = (profile: EnrichedTravelerProfile) => {
+    setValue('firstName', profile.firstName, { shouldValidate: true });
+    setValue('lastName', profile.lastName, { shouldValidate: true });
+    if (profile.nationalId) setValue('nationalId', profile.nationalId, { shouldValidate: true });
+    if (profile.primaryPassport?.documentNumber) setValue('passportNo', profile.primaryPassport.documentNumber, { shouldValidate: true });
+    if (profile.primaryPassport?.expiresAt) setValue('passportExpiryDate', profile.primaryPassport.expiresAt, { shouldValidate: true });
+    if (profile.dateOfBirth) setValue('birthDate', profile.dateOfBirth, { shouldValidate: true });
+    if (profile.gender === 'MALE' || profile.gender === 'FEMALE') setValue('gender', profile.gender, { shouldValidate: true });
+
+    setPassengersList((prev) => {
+      const updated = [...prev];
+      updated[currentPassengerIdx] = {
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        nationalId: profile.nationalId || '',
+        passportNo: profile.primaryPassport?.documentNumber || '',
+        passportExpiryDate: profile.primaryPassport?.expiresAt || '',
+        birthDate: profile.dateOfBirth || '',
+        gender: (profile.gender as 'MALE' | 'FEMALE') || 'MALE',
+      };
+      return updated;
+    });
+  };
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -255,6 +342,26 @@ export default function CheckoutPage() {
       type: bookingContext?.type ?? 'unknown',
       travelers: Math.max(1, (bookingContext?.adults ?? 1) + (bookingContext?.children ?? 0)),
     });
+
+    if (saveToAccount && authUser?.id) {
+      saveTravelerProfileAction({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        nationalId: data.nationalId || null,
+        dateOfBirth: data.birthDate || null,
+        gender: (data.gender as 'MALE' | 'FEMALE') || null,
+        nationality: 'IR',
+      }).then((res) => {
+        if (res.success && res.profile && data.passportNo) {
+          saveTravelDocumentAction(res.profile.id, {
+            type: 'PASSPORT',
+            documentNumber: data.passportNo,
+            expiresAt: data.passportExpiryDate || null,
+          });
+        }
+      }).catch(() => {});
+    }
+
     const contactPhone = authUser?.phone || (authUser?.email ? '09120000001' : '');
     if (!contactPhone) {
       setError(
@@ -271,11 +378,27 @@ export default function CheckoutPage() {
     }
     const btype = normalizeBookingType(bookingContext?.type) || 'HOTEL';
 
-    const totalTravelers = Math.max(1, (bookingContext?.adults ?? 1) + (bookingContext?.children ?? 0));
-    const allFormData = Array.from({ length: totalTravelers }, (_, i) => ({
-      ...data,
-      firstName: i === 0 ? data.firstName : `${data.firstName} (${i + 1})`,
-    }));
+    // Multi-passenger assembly & validation: assemble actual distinct passenger inputs
+    const finalPassengers = [...passengersList];
+    finalPassengers[currentPassengerIdx] = data;
+
+    for (let i = 0; i < totalTravelers; i++) {
+      const p = finalPassengers[i];
+      const parsed = passengerSchema.safeParse(p);
+      if (!parsed.success) {
+        setCurrentPassengerIdx(i);
+        reset(p);
+        setError(
+          locale === 'fa'
+            ? `لطفاً مشخصات مسافر ${i + 1} را به طور کامل تکمیل نمایید.`
+            : `Please complete passenger ${i + 1} details.`
+        );
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+    }
+
+    const allFormData = finalPassengers.slice(0, totalTravelers);
 
     const allBps: import('@/lib/types').BookingPassenger[] = allFormData.map((p) => ({
       firstNameFa: p.firstName,
@@ -310,6 +433,9 @@ export default function CheckoutPage() {
         contactEmail: authUser?.email || 'guest@firuzo.com',
         contactPhone,
         referralCode: referralCode.trim() || undefined,
+        // One key per checkout session: a retry of draft creation returns the
+        // original draft instead of creating a duplicate (BUG-003).
+        idempotencyKey,
         source: 'WEB',
       });
 
@@ -474,6 +600,14 @@ export default function CheckoutPage() {
                 scanning={scanning}
                 onScanPassport={scanPassport}
                 passportScanned={passportScanned}
+                savedProfiles={savedProfiles}
+                onSelectSavedProfile={handleSelectSavedProfile}
+                saveToAccount={saveToAccount}
+                onToggleSaveToAccount={setSaveToAccount}
+                totalPassengers={totalTravelers}
+                currentPassengerIndex={currentPassengerIdx}
+                onSelectPassengerTab={handleSelectPassengerTab}
+                passengersStatus={passengersStatus}
               />
 
               <AddonsSection
@@ -548,6 +682,9 @@ export default function CheckoutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in fade-in duration-300">
             {/* Gateway / Transfer Column */}
             <div className="lg:col-span-7 space-y-6">
+              {/* Soft-Lock Price & Inventory Hold Timer */}
+              <SoftLockTimer locale={locale} initialSeconds={900} />
+
               {method === 'card_transfer' && draftBookingId ? (
                 <CardTransferPaymentView
                   bookingId={draftBookingId}
@@ -578,6 +715,9 @@ export default function CheckoutPage() {
                     selectedInstrument={selectedInstrument}
                     setSelectedInstrument={setSelectedInstrument}
                   />
+
+                  {/* Transparent Cancellation Penalty Policy */}
+                  <CancellationPolicyCard locale={locale} />
 
                   {/* Contextual Trust Banner */}
                   <div className="p-4 rounded-2xl bg-mint/40 border border-brand/20 flex items-center gap-3 text-xs text-brand-dark font-bold">

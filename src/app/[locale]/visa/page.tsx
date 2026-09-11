@@ -121,7 +121,7 @@ export default function VisaPage() {
             {lt(locale, { fa: 'محبوب‌ترین مقاصد اخذ ویزا', en: 'Popular Visa Destinations', ar: 'أشهر وجهات التأشيرة', zh: '热门签证目的地', ru: 'Популярные визовые направления' })}
           </h2>
           {/* Country Selection Chips */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full scrollbar-none text-xs">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full scrollbar-none text-xs snap-x touch-pan-x">
             {COUNTRY_ORDER.map((id) => (
               <button
                 key={`visa-country-${id}`}

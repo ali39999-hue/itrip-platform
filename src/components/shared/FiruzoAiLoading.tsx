@@ -279,7 +279,7 @@ export function FiruzoAiLoading({
           </svg>
 
           {/* Saffron Centerpiece Accent */}
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-action shadow-xs animate-ping" />
+          <div className="absolute top-2 start-1/2 -translate-x-1/2 rtl:translate-x-1/2 w-2 h-2 rounded-full bg-action shadow-xs animate-ping" />
         </div>
 
         {/* Dynamic Reasoning Step Text */}

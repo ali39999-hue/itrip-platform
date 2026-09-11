@@ -227,7 +227,7 @@ export default function WalletPage() {
           </div>
 
           {/* Balance Cards with Mobile Snap Carousel */}
-          <div className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:grid-cols-4 gap-4 md:gap-4 mb-8 pb-2 md:pb-0 scrollbar-none">
+          <div className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:grid-cols-4 gap-4 md:gap-4 mb-8 pb-2 md:pb-0 scrollbar-none touch-pan-x">
             <div className="shrink-0 w-[84vw] sm:w-[260px] md:w-auto snap-start bg-gradient-to-br from-brand to-brand-dark rounded-3xl p-5 text-surface shadow-elev-2 relative overflow-hidden flex flex-col justify-between">
               <span className="text-xs font-black opacity-80 block mb-1">
                 {lt(locale, { fa: 'IRR (تومان ایران)', en: 'IRR (Iran Toman)', ar: 'IRR (تومان)', zh: 'IRR (伊朗托曼)', ru: 'IRR (Томан)' })}

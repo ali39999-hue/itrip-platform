@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { Money } from '@/lib/finance';
+import { timingSafeEqualStrings } from '@/lib/security/timing-safe';
 import {
   PaymentGatewayPort,
   GatewayPaymentRequest,
@@ -223,10 +224,8 @@ export class ShetabPspAdapter implements PaymentGatewayPort {
 
     const expectedData = `${req.gatewayRef}:${req.expectedAmount.toString()}:${req.merchantId || this.merchantId}:${req.timestamp || ''}`;
     const computedHmac = crypto.createHmac('sha256', this.secretKey).update(expectedData).digest('hex');
-    const sigBuf = Buffer.from(req.signature);
-    const computedBuf = Buffer.from(computedHmac);
 
-    if (sigBuf.length !== computedBuf.length || !crypto.timingSafeEqual(sigBuf, computedBuf)) {
+    if (!timingSafeEqualStrings(req.signature, computedHmac)) {
       return {
         verified: false,
         transactionId: `tampered_${req.gatewayRef}`,
@@ -353,9 +352,7 @@ export class ShetabPspAdapter implements PaymentGatewayPort {
 
     // HMAC verification over exact rawBody
     const computed = crypto.createHmac('sha256', this.secretKey).update(rawBody).digest('hex');
-    const sigBuf = Buffer.from(signature);
-    const computedBuf = Buffer.from(computed);
-    if (sigBuf.length !== computedBuf.length || !crypto.timingSafeEqual(computedBuf, sigBuf)) {
+    if (!timingSafeEqualStrings(computed, signature)) {
       return invalid('Invalid webhook cryptographic signature');
     }
 

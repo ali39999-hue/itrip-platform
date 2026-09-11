@@ -289,7 +289,7 @@ export function FlightSearchHeader({
           </form>
 
           {/* Quick Route Shortcut Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs snap-x touch-pan-x">
             <span className="text-[11px] font-black text-sub shrink-0 me-1">
               {lt(locale, { fa: 'مسیرهای پرتردد:', en: 'Popular routes:', ar: 'مسارات شائعة:', zh: '热门路线：', ru: 'Популярные:' })}
             </span>

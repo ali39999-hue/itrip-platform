@@ -1,15 +1,20 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { captureError } from '@/lib/analytics';
 
 export default function ErrorBoundary({ error, reset }: { error: Error; reset: () => void }) {
   const t = useTranslations('Common');
 
-  if (process.env.NODE_ENV !== 'production') {
-    console.error('Handled ErrorBoundary exception:', error);
-  }
+  useEffect(() => {
+    captureError(error, { source: 'locale_error_boundary' });
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Handled ErrorBoundary exception:', error);
+    }
+  }, [error]);
 
   return (
     <div className="min-h-[75vh] flex items-center justify-center p-4">

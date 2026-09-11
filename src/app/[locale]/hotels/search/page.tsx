@@ -212,7 +212,7 @@ function HotelsSearchInner() {
         />
 
         {/* Quick Hotel Filter Pills (Trip.com / Alibaba Benchmark) */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs font-black my-2">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs font-black my-2 snap-x touch-pan-x">
           <button
             type="button"
             onClick={resetAll}
@@ -479,12 +479,12 @@ function HotelsSearchInner() {
         />
 
         {/* Sticky Mobile Filter & Sort Pill (FlyToday Style) */}
-        <div className="lg:hidden fixed bottom-[70px] inset-x-0 z-40 flex justify-center pointer-events-none px-4">
-          <div className="pointer-events-auto bg-ink/90 dark:bg-surface/95 backdrop-blur-md text-surface dark:text-ink px-4 py-2 rounded-full shadow-elev-3 flex items-center gap-3 border border-surface/20 dark:border-line">
+        <div className="lg:hidden fixed bottom-[calc(70px+env(safe-area-inset-bottom))] inset-x-0 z-40 flex justify-center pointer-events-none px-4">
+          <div className="pointer-events-auto bg-ink/90 dark:bg-surface/95 backdrop-blur-md text-surface dark:text-ink px-4 py-1 rounded-full shadow-elev-3 flex items-center gap-3 border border-surface/20 dark:border-line">
             <button
               type="button"
               onClick={() => setMobileFilterOpen(true)}
-              className="flex items-center gap-1.5 text-xs font-black py-1 px-2 rounded-full hover:bg-surface/20 transition active:scale-95 cursor-pointer"
+              className="flex items-center gap-1.5 text-xs font-black min-h-[44px] px-2 rounded-full hover:bg-surface/20 transition active:scale-95 cursor-pointer"
             >
               <SlidersHorizontal size={14} />
               <span>{lt(locale, { fa: 'فیلترها', en: 'Filters', ar: 'تصفية', zh: '筛选', ru: 'Фильтры' })}</span>
@@ -498,7 +498,7 @@ function HotelsSearchInner() {
             <button
               type="button"
               onClick={() => setShowMap((prev) => !prev)}
-              className="flex items-center gap-1.5 text-xs font-black py-1 px-2 rounded-full hover:bg-surface/20 transition active:scale-95 text-mint-bright"
+              className="flex items-center gap-1.5 text-xs font-black min-h-[44px] px-2 rounded-full hover:bg-surface/20 transition active:scale-95 text-mint-bright"
             >
               <span>
                 {showMap

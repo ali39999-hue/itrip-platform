@@ -10,7 +10,7 @@ import {
   LayoutDashboard, BriefcaseBusiness, Wallet,
   PlaneTakeoff, ExternalLink, ShieldCheck, UserCheck, Activity,
   Building2, Boxes, PanelLeftClose, PanelLeftOpen, FolderKanban, Users, Menu, X,
-  ChevronLeft, Keyboard, ReceiptText, HandCoins,
+  ChevronLeft, Keyboard, ReceiptText, HandCoins, Building,
 } from 'lucide-react';
 import { lt, LText } from '@/lib/lt';
 import { cn } from '@/lib/utils';
@@ -36,6 +36,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/admin/ops', label: { fa: 'عملیات و پشتیبانی', en: 'Ops & Support', ar: 'العمليات والدعم', zh: '运营与支持', ru: 'Операции и поддержка' }, icon: Activity },
       { href: '/admin/bookings', label: { fa: 'رزروها', en: 'Bookings', ar: 'الحجوزات', zh: '预订', ru: 'Бронирования' }, icon: PlaneTakeoff },
       { href: '/admin/users', label: { fa: 'کاربران و همکاران', en: 'Staff & Users', ar: 'المستخدمون والموظفون', zh: '员工与用户', ru: 'Сотрудники и пользователи' }, icon: UserCheck },
+      { href: '/admin/organizations', label: { fa: 'سازمان‌ها و آژانس‌ها (B2B)', en: 'Organizations & B2B', ar: 'الشركات والوكالات', zh: '机构与B2B', ru: 'Организации и B2B' }, icon: Building },
     ],
   },
   {

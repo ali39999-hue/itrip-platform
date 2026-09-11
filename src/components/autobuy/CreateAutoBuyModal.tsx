@@ -123,7 +123,7 @@ export function CreateAutoBuyModal({
 
   return (
     <div className="fixed inset-0 z-[250] bg-ink/65 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-5 animate-in fade-in duration-200 overflow-y-auto">
-      <div className="w-full max-w-xl bg-surface rounded-t-3xl sm:rounded-3xl p-5 sm:p-7 border-t sm:border border-line shadow-2xl space-y-5 my-0 sm:my-8 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom sm:slide-in-from-none sm:zoom-in-95 duration-200">
+      <div className="w-full max-w-xl bg-surface rounded-t-3xl sm:rounded-3xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:pb-7 border-t sm:border border-line shadow-2xl space-y-5 my-0 sm:my-8 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom sm:slide-in-from-none sm:zoom-in-95 duration-200">
         <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto -mt-2 mb-2" />
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-line">

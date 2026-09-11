@@ -210,7 +210,7 @@ export default function ServicesPage() {
 
         {/* Categorized Filter Tabs */}
         <section className="mb-8">
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none snap-x touch-pan-x">
             {[
               { id: 'all', label: lt(locale, { fa: 'همه خدمات سفر', en: 'All Services', ar: 'جميع الخدمات', zh: '全部服务', ru: 'Все услуги' }) },
               { id: 'transit', label: lt(locale, { fa: 'ترابری و ترنسفر شهری', en: 'Transit & Mobility', ar: 'المواصلات والنقل', zh: '交通与出行', ru: 'Транспорт и трансферы' }) },

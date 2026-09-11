@@ -15,7 +15,9 @@ import {
   CheckCircle2,
   MessageSquare,
   Send,
+  ExternalLink,
 } from 'lucide-react';
+import { Link } from '@/i18n/routing';
 import {
   TravelFileDetailView,
   TimelineDomain,
@@ -260,6 +262,17 @@ export function TravelFileWorkspaceClient({
                   <span>{lt(locale, { fa: 'ایمیل:', en: 'Email:', ar: 'البريد:', zh: '邮箱:', ru: 'Email:' })}</span>
                   <span className="font-bold text-ink truncate max-w-[150px]">{data.customer.email || 'N/A'}</span>
                 </div>
+                {data.customer.id && (
+                  <div className="pt-2 flex justify-end">
+                    <Link
+                      href={`/admin/users/${data.customer.id}`}
+                      className="inline-flex items-center gap-1 text-[11px] font-black text-brand-dark hover:underline"
+                    >
+                      <span>{lt(locale, { fa: 'مشاهده پروفایل ۳۶۰° مشتری', en: 'View Customer 360°' })}</span>
+                      <ExternalLink size={12} />
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -581,16 +594,23 @@ export function TravelFileWorkspaceClient({
             ) : (
               <div className="space-y-3">
                 {data.invoices.map((inv) => (
-                  <div key={inv.id} className="p-3.5 rounded-2xl bg-soft/50 border border-line/70 text-xs space-y-1">
+                  <div key={inv.id} className="p-3.5 rounded-2xl bg-soft/50 border border-line/70 text-xs space-y-1.5">
                     <div className="flex items-center justify-between">
                       <span className="font-black text-ink">{inv.invoiceNumber}</span>
                       <span className="font-black text-brand-dark">
                         {Number(inv.totalAmount).toLocaleString()} {inv.currency}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-sub text-[11px]">
-                      <span>Status: {inv.status}</span>
-                      <span>Issued: {new Date(inv.issuedAt).toLocaleDateString(locale)}</span>
+                    <div className="flex items-center justify-between text-sub text-[11px] pt-1 border-t border-line/40">
+                      <span>Status: {inv.status} | {new Date(inv.issuedAt).toLocaleDateString(locale)}</span>
+                      <Link
+                        href={`/invoices/${inv.id}`}
+                        target="_blank"
+                        className="inline-flex items-center gap-1 text-[11px] font-black text-brand-dark hover:underline"
+                      >
+                        <span>صورتحساب رسمی</span>
+                        <ExternalLink size={12} />
+                      </Link>
                     </div>
                   </div>
                 ))}

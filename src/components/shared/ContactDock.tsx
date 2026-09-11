@@ -99,7 +99,9 @@ export function ContactDock() {
       <div
         ref={menuRef}
         className={`fixed z-[120] ${
-          isExcluded ? 'bottom-[120px] lg:bottom-6' : 'bottom-[78px] lg:bottom-6'
+          isExcluded
+            ? 'bottom-[calc(120px+env(safe-area-inset-bottom))] lg:bottom-6'
+            : 'bottom-[calc(78px+env(safe-area-inset-bottom))] lg:bottom-6'
         } end-4 lg:end-6`}
       >
         {/* منوی دو گزینه‌ای تماس */}

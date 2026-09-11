@@ -44,7 +44,7 @@ export function FlightPriceAlertModal({
       aria-labelledby="price-alert-title"
       className="fixed inset-0 z-[170] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-deep/70 backdrop-blur-xs animate-in fade-in duration-200"
     >
-      <div className="w-full max-w-md bg-surface rounded-t-3xl sm:rounded-3xl border-t sm:border border-line shadow-elev-3 overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom sm:slide-in-from-none sm:zoom-in-95 duration-200">
+      <div className="w-full max-w-md bg-surface rounded-t-3xl sm:rounded-3xl border-t sm:border border-line shadow-elev-3 overflow-hidden flex flex-col max-h-[90vh] pb-[env(safe-area-inset-bottom)] sm:pb-0 animate-in slide-in-from-bottom sm:slide-in-from-none sm:zoom-in-95 duration-200">
         <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto mt-2.5 mb-1" />
         {/* Header */}
         <div className="p-5 border-b border-line flex items-center justify-between bg-mint/30">

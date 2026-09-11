@@ -193,7 +193,7 @@ export function TravelerPicker({
               role="dialog"
               aria-modal="true"
               aria-label={t('guestsAndRooms')}
-              className="w-full bg-surface rounded-t-3xl p-5 border-t border-line shadow-elev-3 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom-5 duration-200 space-y-4"
+              className="w-full bg-surface rounded-t-3xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] border-t border-line shadow-elev-3 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom-5 duration-200 space-y-4"
             >
               {/* Drag Handle Indicator */}
               <div className="w-10 h-1 rounded-full bg-line mx-auto mb-1" />

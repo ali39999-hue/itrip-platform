@@ -13,10 +13,12 @@ import {
   Star,
   UserRound,
   Bot,
+  Users,
+  Building,
 } from 'lucide-react';
 
 interface AccountSidebarProps {
-  activeSection?: 'dashboard' | 'trips' | 'wallet' | 'profile' | 'autobuy';
+  activeSection?: 'dashboard' | 'trips' | 'wallet' | 'profile' | 'autobuy' | 'travelers' | 'organization';
 }
 
 export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps) {
@@ -82,6 +84,18 @@ export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps)
         </Link>
 
         <Link
+          href="/account/travelers"
+          className={`flex items-center gap-3 px-4 py-3 font-bold text-[13.5px] rounded-2xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+            activeSection === 'travelers'
+              ? 'bg-brand text-surface font-black shadow-xs'
+              : 'text-sub hover:bg-soft hover:text-ink'
+          }`}
+        >
+          <Users size={17} />
+          {lt(locale, { fa: 'مسافران و همراهان', en: 'Travelers & Companions', ar: 'المسافرون والمرافقون', zh: '旅客与同伴', ru: 'Пассажиры и спутники' })}
+        </Link>
+
+        <Link
           href="/my-trips"
           className={`flex items-center gap-3 px-4 py-3 font-bold text-[13.5px] rounded-2xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
             activeSection === 'trips'
@@ -115,6 +129,18 @@ export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps)
         >
           <Bot size={17} />
           <span>{lt(locale, { fa: 'خرید خودکار (ربات سفر)', en: 'Auto-Buy (Smart Bot)', ar: 'الشراء التلقائي (بوت السفر)', zh: '自动购票（智能助手）', ru: 'Автопокупка (бот)' })}</span>
+        </Link>
+
+        <Link
+          href="/account/organization"
+          className={`flex items-center gap-3 px-4 py-3 font-bold text-[13.5px] rounded-2xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+            activeSection === 'organization'
+              ? 'bg-brand text-surface font-black shadow-xs'
+              : 'text-sub hover:bg-soft hover:text-ink'
+          }`}
+        >
+          <Building size={17} />
+          <span>{lt(locale, { fa: 'سازمان و سفرهای شرکتی (B2B)', en: 'Corporate & B2B Hub', ar: 'السفر المؤسسي (B2B)', zh: '企业出行与B2B', ru: 'Корпоративный профиль' })}</span>
         </Link>
 
         {['admin', 'SUPER_ADMIN', 'OPS', 'FINANCE'].includes(user?.role || '') && (

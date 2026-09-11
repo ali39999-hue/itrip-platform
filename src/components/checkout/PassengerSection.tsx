@@ -4,9 +4,10 @@ import { Controller, type Control, type FieldErrors, type UseFormRegister } from
 import { type Passenger } from '@/lib/validations';
 import { Input } from '@/components/ui/input';
 import { JalaliDatePicker } from '@/components/ui/DatePicker';
-import { ScanLine, Loader2, CheckCircle2 } from 'lucide-react';
+import { ScanLine, Loader2, CheckCircle2, BookmarkPlus } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
+import { EnrichedTravelerProfile } from '@/domains/identity/TravelerProfileService';
 
 interface PassengerSectionProps {
   register: UseFormRegister<Passenger>;
@@ -15,6 +16,14 @@ interface PassengerSectionProps {
   scanning: boolean;
   onScanPassport: () => void;
   passportScanned: boolean;
+  savedProfiles?: EnrichedTravelerProfile[];
+  onSelectSavedProfile?: (profile: EnrichedTravelerProfile) => void;
+  saveToAccount?: boolean;
+  onToggleSaveToAccount?: (val: boolean) => void;
+  totalPassengers?: number;
+  currentPassengerIndex?: number;
+  onSelectPassengerTab?: (index: number) => void;
+  passengersStatus?: Array<{ isComplete: boolean; name?: string }>;
 }
 
 export function PassengerSection({
@@ -24,22 +33,69 @@ export function PassengerSection({
   scanning,
   onScanPassport,
   passportScanned,
+  savedProfiles = [],
+  onSelectSavedProfile,
+  saveToAccount = false,
+  onToggleSaveToAccount,
+  totalPassengers = 1,
+  currentPassengerIndex = 0,
+  onSelectPassengerTab,
+  passengersStatus = [],
 }: PassengerSectionProps) {
   const locale = useLocale();
 
+  const titleText =
+    totalPassengers > 1
+      ? lt(locale, {
+          fa: `مشخصات مسافر ${currentPassengerIndex + 1} ${currentPassengerIndex === 0 ? '(سرپرست)' : '(همراه)'}`,
+          en: `Passenger ${currentPassengerIndex + 1} Details ${currentPassengerIndex === 0 ? '(Primary)' : '(Companion)'}`,
+        })
+      : lt(locale, {
+          fa: 'مشخصات مسافر اصلی',
+          en: 'Primary Passenger Details',
+        });
+
   return (
     <div className="p-6 rounded-2xl bg-surface border border-line shadow-elev-1 space-y-6">
+      {/* Multi-Passenger Tab Strip */}
+      {totalPassengers > 1 && (
+        <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-soft border border-line overflow-x-auto no-scrollbar snap-x touch-pan-x">
+          {Array.from({ length: totalPassengers }).map((_, idx) => {
+            const isCurrent = currentPassengerIndex === idx;
+            const status = passengersStatus?.[idx];
+            const defaultLabel =
+              idx === 0
+                ? lt(locale, { fa: 'مسافر ۱ (سرپرست)', en: 'Passenger 1 (Primary)' })
+                : lt(locale, { fa: `مسافر ${idx + 1} (همراه)`, en: `Passenger ${idx + 1}` });
+            const pName = status?.name?.trim() || defaultLabel;
+
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => onSelectPassengerTab && onSelectPassengerTab(idx)}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer ${
+                  isCurrent
+                    ? 'bg-brand text-surface shadow-xs'
+                    : 'bg-surface text-ink hover:bg-mint/40'
+                }`}
+              >
+                <span>{pName}</span>
+                {status?.isComplete && (
+                  <CheckCircle2
+                    size={13}
+                    className={isCurrent ? 'text-mint-bright' : 'text-success'}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-line/60">
         <div>
-          <h2 className="text-[16px] font-black text-ink">
-            {lt(locale, {
-              fa: 'مشخصات مسافر اصلی',
-              en: 'Primary Passenger Details',
-              ar: 'بيانات المسافر الرئيسي',
-              zh: '主要乘机人/住客信息',
-              ru: 'Данные основного пассажира'
-            })}
-          </h2>
+          <h2 className="text-[16px] font-black text-ink">{titleText}</h2>
           <p className="text-[12.5px] font-bold text-sub">
             {lt(locale, {
               fa: 'اطلاعات باید دقیقاً مطابق پاسپورت یا کارت ملی باشد',
@@ -51,29 +107,58 @@ export function PassengerSection({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={onScanPassport}
-          disabled={scanning}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-action hover:bg-action-hover text-ink text-[13px] font-black shadow-elev-1 transition disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
-        >
-          {scanning ? (
-            <>
-              <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-              <span>{lt(locale, { fa: 'در حال اسکن پاسپورت...', en: 'Scanning passport...', ar: 'جاري مسح الجواز...', zh: '正在扫描护照...', ru: 'Сканирование паспорта...' })}</span>
-            </>
-          ) : passportScanned ? (
-            <>
-              <CheckCircle2 size={16} className="text-success" aria-hidden="true" />
-              <span>{lt(locale, { fa: 'پاسپورت اسکن شد', en: 'Passport Scanned', ar: 'تم مسح الجواز', zh: '护照扫描完成', ru: 'Паспорт отсканирован' })}</span>
-            </>
-          ) : (
-            <>
-              <ScanLine size={16} aria-hidden="true" />
-              <span>{lt(locale, { fa: 'اسکن هوشمند پاسپورت (OCR)', en: 'Smart Passport Scan (OCR)', ar: 'المسح الذكي للجواز (OCR)', zh: '智能护照扫描 (OCR)', ru: 'Умное сканирование паспорта (OCR)' })}</span>
-            </>
+        <div className="flex flex-wrap items-center gap-2">
+          {savedProfiles && savedProfiles.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              <select
+                onChange={(e) => {
+                  const p = savedProfiles.find((item) => item.id === e.target.value);
+                  if (p && onSelectSavedProfile) {
+                    onSelectSavedProfile(p);
+                  }
+                }}
+                defaultValue=""
+                className="h-10 px-3 rounded-xl bg-mint/50 border border-brand/30 text-brand-dark text-[12.5px] font-black focus:outline-none focus:ring-2 focus:ring-brand cursor-pointer"
+              >
+                <option value="" disabled>
+                  {lt(locale, {
+                    fa: `انتخاب از مسافران ذخیره شده (${savedProfiles.length})`,
+                    en: `Select from Saved Travelers (${savedProfiles.length})`,
+                  })}
+                </option>
+                {savedProfiles.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.firstName} {p.lastName} {p.primaryPassport ? `(${p.primaryPassport.documentNumber})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
-        </button>
+
+          <button
+            type="button"
+            onClick={onScanPassport}
+            disabled={scanning}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-action hover:bg-action-hover text-ink text-[13px] font-black shadow-elev-1 transition disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+          >
+            {scanning ? (
+              <>
+                <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                <span>{lt(locale, { fa: 'در حال اسکن پاسپورت...', en: 'Scanning passport...', ar: 'جاري مسح الجواز...', zh: '正在扫描护照...', ru: 'Сканирование паспорта...' })}</span>
+              </>
+            ) : passportScanned ? (
+              <>
+                <CheckCircle2 size={16} className="text-success" aria-hidden="true" />
+                <span>{lt(locale, { fa: 'پاسپورت اسکن شد', en: 'Passport Scanned', ar: 'تم مسح الجواز', zh: '护照扫描完成', ru: 'Паспорт отсканирован' })}</span>
+              </>
+            ) : (
+              <>
+                <ScanLine size={16} aria-hidden="true" />
+                <span>{lt(locale, { fa: 'اسکن هوشمند پاسپورت (OCR)', en: 'Smart Passport Scan (OCR)', ar: 'المسح الذكي للجواز (OCR)', zh: '智能护照扫描 (OCR)', ru: 'Умное сканирование паспорта (OCR)' })}</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -230,6 +315,25 @@ export function PassengerSection({
             </span>
           )}
         </div>
+      </div>
+
+      {/* Save Traveler to Account Checkbox */}
+      <div className="pt-3 border-t border-line/50 flex items-center justify-between">
+        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={saveToAccount}
+            onChange={(e) => onToggleSaveToAccount && onToggleSaveToAccount(e.target.checked)}
+            className="w-4 h-4 rounded text-brand focus:ring-brand border-line cursor-pointer"
+          />
+          <span className="text-[12.5px] font-bold text-ink flex items-center gap-1.5">
+            <BookmarkPlus size={15} className="text-brand shrink-0" />
+            {lt(locale, {
+              fa: 'ذخیره این مسافر در حساب کاربری برای خریدهای بعدی',
+              en: 'Save this traveler to my account for future bookings',
+            })}
+          </span>
+        </label>
       </div>
     </div>
   );

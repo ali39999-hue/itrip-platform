@@ -3,6 +3,8 @@
  * Adapted from travel_planner (MCP + LangChain) and OTAIP patterns.
  */
 
+import { authorizeAiToolExecution } from '@/lib/security/ai-security-guard';
+
 export interface McpToolDefinition {
   name: string;
   description: string;
@@ -75,6 +77,12 @@ export class TravelMcpToolsService {
     toolName: string,
     args: Record<string, unknown>
   ): Promise<{ success: boolean; result?: unknown; error?: string }> {
+    const authResult = authorizeAiToolExecution(toolName, args);
+    if (!authResult.allowed) {
+      return { success: false, error: authResult.error };
+    }
+    const safeArgs = authResult.sanitizedArgs;
+
     const tool = TRAVEL_MCP_TOOLS.find((t) => t.name === toolName);
     if (!tool) {
       return { success: false, error: `MCP tool "${toolName}" is not recognized` };
@@ -82,16 +90,16 @@ export class TravelMcpToolsService {
 
     // Mock/Service dispatch handler
     if (toolName === 'estimate_trip_budget') {
-      const days = Number(args.durationDays || 4);
-      const pax = Number(args.paxCount || 1);
-      const tier = String(args.tier || 'balanced');
+      const days = Number(safeArgs.durationDays || 4);
+      const pax = Number(safeArgs.paxCount || 1);
+      const tier = String(safeArgs.tier || 'balanced');
       const baseDaily = tier === 'luxury' ? 40_000_000 : tier === 'balanced' ? 12_000_000 : 4_500_000;
       const total = baseDaily * days * pax;
 
       return {
         success: true,
         result: {
-          destination: args.destination,
+          destination: safeArgs.destination,
           days,
           pax,
           tier,
@@ -112,7 +120,7 @@ export class TravelMcpToolsService {
       result: {
         tool: toolName,
         status: 'READY',
-        params: args,
+        params: safeArgs,
       },
     };
   }

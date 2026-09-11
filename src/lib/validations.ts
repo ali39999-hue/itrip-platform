@@ -148,6 +148,9 @@ export const bookingSchema = z.object({
     .min(7, "Phone number is too short")
     .max(20, "Phone number is too long"),
   referralCode: z.string().trim().max(30).optional(),
+  // Client-generated key (e.g. one per checkout session). Replay with the same
+  // key returns the original draft instead of creating a duplicate (BUG-003).
+  idempotencyKey: z.string().trim().min(8).max(64).optional(),
   source: z.string().optional(),
 });
 export type BookingRequest = z.infer<typeof bookingSchema>;

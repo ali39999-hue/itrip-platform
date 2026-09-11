@@ -130,7 +130,7 @@ export function FareBrandedMatrix({
             >
               {/* Badge */}
               {brand.badge && (
-                <span className="absolute -top-3 start-4 px-2.5 py-0.5 rounded-full bg-brand text-surface text-[10px] font-black shadow-xs">
+                <span className="absolute -top-3 start-4 px-2.5 py-0.5 rounded-full bg-brand-dark text-white text-[10px] font-black shadow-xs">
                   {isEnLocale(locale) ? brand.badge.en : brand.badge.fa}
                 </span>
               )}

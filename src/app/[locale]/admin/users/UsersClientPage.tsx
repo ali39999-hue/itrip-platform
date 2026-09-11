@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { Link } from '@/i18n/routing';
 import {
   Users, UserCheck, UserPlus, Shield, RefreshCw,
   Search, CheckCircle2, XCircle,
-  Loader2, Phone, Mail, UserCog
+  Loader2, Phone, Mail, UserCog, Eye
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import {
@@ -315,7 +316,12 @@ export function UsersClientPage({
                             {u.name?.slice(0, 1) || 'U'}
                           </div>
                           <div>
-                            <span className="font-black text-ink block">{u.name}</span>
+                            <Link
+                              href={`/admin/users/${u.id}`}
+                              className="font-black text-ink hover:text-brand-dark hover:underline block"
+                            >
+                              {u.name}
+                            </Link>
                             <span className="font-mono text-[10px] text-sub block">{u.id.slice(0, 12)}…</span>
                           </div>
                         </div>
@@ -368,6 +374,14 @@ export function UsersClientPage({
                       </td>
                       <td className="p-3 text-end">
                         <div className="inline-flex items-center gap-1.5">
+                          <Link
+                            href={`/admin/users/${u.id}`}
+                            className="inline-flex items-center gap-1 rounded-xl bg-mint hover:bg-mint/80 text-brand-dark px-2.5 py-1 text-xs font-black transition cursor-pointer"
+                            title={lt(locale, { fa: 'مشاهده پروفایل ۳۶۰ درجه مشتری', en: 'View Customer 360' })}
+                          >
+                            <Eye size={13} />
+                            <span>{lt(locale, { fa: 'پروفایل ۳۶۰°', en: '360°' })}</span>
+                          </Link>
                           <button
                             type="button"
                             onClick={() => {

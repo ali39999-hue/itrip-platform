@@ -383,7 +383,7 @@ export function HotelSearchHeader({
           </form>
 
           {/* Quick Destination Shortcut Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs snap-x touch-pan-x">
             <span className="text-[11px] font-black text-sub shrink-0 me-1">
               {lt(locale, { fa: 'شهرهای پرطرفدار:', en: 'Popular cities:', ar: 'مدن شائعة:', zh: '热门城市：', ru: 'Популярные:' })}
             </span>
@@ -466,7 +466,7 @@ export function HotelSearchHeader({
       {/* ================= MOBILE FULL EDIT BOTTOM SHEET ================= */}
       {mobileEditOpen && (
         <div className="md:hidden fixed inset-0 z-[160] flex items-end justify-center bg-deep/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="w-full bg-surface rounded-t-3xl p-5 border-t border-line shadow-2xl max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-5 duration-200 space-y-4">
+          <div className="w-full bg-surface rounded-t-3xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] border-t border-line shadow-2xl max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-5 duration-200 space-y-4">
             <div className="w-10 h-1 rounded-full bg-line mx-auto mb-1" />
 
             <div className="flex items-center justify-between pb-3 border-b border-line">

@@ -19,7 +19,6 @@ import { wrapOutboxPayload } from '@/domains/events/OutboxConsumer';
 import { businessMetrics } from '@/lib/observability/business-metrics';
 import { Money } from '@/lib/finance';
 import { createLogger } from '@/lib/observability/logger';
-import crypto from 'crypto';
 
 const sagaLogger = createLogger('booking-saga-coordinator');
 
@@ -204,13 +203,13 @@ export class BookingSagaCoordinator {
             externalBookingId: suppRes.externalBookingId || `ext_${Date.now()}`,
           };
         }
-        // Default simulated supplier confirmation
-        const genPnr = `FZ-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
-        pnr = genPnr;
+        // No supplier integration wired (BUG-006): never fabricate a PNR or
+        // ticket number. Ticketing stays pending and an OperationalException
+        // routes the booking to ops follow-up.
         return {
-          pnr: genPnr,
-          ticketNumbers: [`065-${Date.now().toString().slice(-8)}`],
-          externalBookingId: `ext_sim_${Date.now()}`,
+          pnr: null as string | null,
+          ticketNumbers: [] as string[],
+          externalBookingId: 'pending_supplier_confirmation',
         };
       }
     );
@@ -316,10 +315,26 @@ export class BookingSagaCoordinator {
         status: 'CONFIRMED',
         paymentStatus: 'CAPTURED',
         fulfillmentStatus: 'CONFIRMED',
-        ticketStatus: 'ISSUED',
-        externalPnr: pnr,
+        // Ticket identity is only claimed when a real supplier confirmed it
+        // (BUG-006): otherwise the booking stays queued for issuing and an
+        // OperationalException routes it to ops follow-up.
+        ticketStatus: pnr ? 'ISSUED' : 'ISSUING',
+        externalPnr: pnr || null,
       },
     });
+
+    if (!pnr) {
+      await prisma.operationalException.create({
+        data: {
+          type: 'TICKET_NOT_ISSUED',
+          severity: 'HIGH',
+          entityType: 'BOOKING',
+          entityId: booking.id,
+          title: `صدور بلیت برای رزرو ${booking.reference} در انتظار تایید تامین‌کننده`,
+          description: 'پرداخت و رزرو تایید شد، اما هیچ یکپارچه‌سازی تامین‌کننده‌ای PNR صادر نکرده است. صدور بلیت نیازمند پیگیری عملیات است.',
+        },
+      }).catch(() => null);
+    }
 
     await prisma.bookingStatusHistory.create({
       data: {

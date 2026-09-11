@@ -90,7 +90,7 @@ export function SheetContent({
             animate={side === 'bottom' ? { y: 0 } : undefined}
             exit={side === 'bottom' ? { y: '100%' } : undefined}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className={`fixed z-[151] bg-surface border-line p-6 shadow-elev-3 overflow-y-auto ${sideClasses[side]} ${className}`}
+            className={`fixed z-[151] bg-surface border-line p-6 shadow-elev-3 overflow-y-auto ${sideClasses[side]} ${side === 'bottom' ? 'pb-[env(safe-area-inset-bottom)]' : ''} ${className}`}
             onClick={(e) => e.stopPropagation()}
           >
             {side === 'bottom' && (

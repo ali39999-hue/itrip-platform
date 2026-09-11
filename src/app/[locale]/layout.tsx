@@ -236,6 +236,12 @@ export default async function RootLayout({
       }
     >
       <head>
+        {/* اعمال تم قبل از اولین رنگ‌آمیزی — بدون فلش. انتخاب کاربر مقدم بر تنظیم سیستم است. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('firuzo-theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;if(d)document.documentElement.classList.add('dark');}catch(e){}})();`,
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

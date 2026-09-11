@@ -166,8 +166,8 @@ export function CityAutocomplete({
             <button
               type="button"
               onClick={handleClear}
-              className="absolute end-0 p-0.5 text-sub hover:text-ink transition cursor-pointer"
-              title={lt(locale, { fa: 'پاک کردن', en: 'Clear', ar: 'مسح', zh: '清除', ru: 'Очистить' })}
+              aria-label={lt(locale, { fa: 'پاک کردن', en: 'Clear', ar: 'مسح', zh: '清除', ru: 'Очистить' })}
+              className="absolute end-0 -me-2 grid place-items-center min-w-[44px] min-h-[44px] text-sub hover:text-ink transition cursor-pointer"
             >
               <X size={13} />
             </button>

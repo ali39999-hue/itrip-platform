@@ -285,3 +285,23 @@ export async function toggleAdminUserActive(userId: string, isActive: boolean) {
     return { success: false, error: err instanceof Error ? err.message : 'خطا در تغییر وضعیت کاربر' };
   }
 }
+
+export async function addCustomerNoteAction(
+  targetUserId: string,
+  note: string
+): Promise<{
+  success: boolean;
+  note?: { id: string; note: string; authorName: string; createdAt: Date };
+  error?: string;
+}> {
+  try {
+    const admin = await requirePermission(['booking:view:all', 'ops:override:cancel']);
+    const { Customer360Service } = await import('@/domains/identity/Customer360Service');
+    const createdNote = await Customer360Service.addCustomerNote(targetUserId, admin.id, note);
+    revalidatePath(`/admin/users/${targetUserId}`);
+    return { success: true, note: createdNote };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'خطا در ثبت یادداشت';
+    return { success: false, error: msg };
+  }
+}

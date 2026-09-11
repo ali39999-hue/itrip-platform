@@ -1,5 +1,6 @@
 import { Money } from '@/lib/finance';
 import crypto from 'crypto';
+import { timingSafeEqualStrings } from '@/lib/security/timing-safe';
 import { EcardoGatewayAdapter } from './adapters/EcardoGatewayAdapter';
 import { CardToCardPaymentAdapter } from './adapters/CardToCardPaymentAdapter';
 
@@ -243,9 +244,7 @@ export class ShetabGatewayAdapter implements PaymentGatewayPort {
     {
       const expectedData = `${req.gatewayRef}:${req.expectedAmount.toString()}:${req.merchantId || this.merchantId}:${req.timestamp || ''}`;
       const computedHmac = crypto.createHmac('sha256', this.secretKey).update(expectedData).digest('hex');
-      const sigBuf = Buffer.from(req.signature);
-      const computedBuf = Buffer.from(computedHmac);
-      if (sigBuf.length !== computedBuf.length || !crypto.timingSafeEqual(sigBuf, computedBuf)) {
+      if (!timingSafeEqualStrings(req.signature, computedHmac)) {
         return {
           verified: false,
           transactionId: `tampered_${req.gatewayRef}`,

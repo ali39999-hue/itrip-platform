@@ -111,7 +111,7 @@ export default function TransfersPage() {
         <div className="relative z-10 w-full max-w-4xl px-4 md:px-0 mt-8">
           <div className="glass-panel shadow-sm rounded-xl p-5 md:p-6 flex flex-col gap-6">
             
-            <div className="flex gap-6 border-b border-line/50 pb-2 overflow-x-auto scrollbar-none">
+            <div className="flex gap-6 border-b border-line/50 pb-2 overflow-x-auto scrollbar-none snap-x touch-pan-x">
               <span className="text-brand-dark font-black text-[14px] border-b-2 border-brand pb-3 flex items-center gap-2 whitespace-nowrap">
                 <CarFront size={18} /> {t('title')}
               </span>
@@ -124,7 +124,7 @@ export default function TransfersPage() {
             </div>
 
             {/* Country Selector Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs snap-x touch-pan-x">
               <span className="text-[11px] font-black text-sub shrink-0 me-1">
                 {lt(locale, { fa: 'کشور مقصد:', en: 'Country:', ar: 'البلد:', zh: '目的地国家：', ru: 'Страна:' })}
               </span>
@@ -223,7 +223,7 @@ export default function TransfersPage() {
             </h2>
 
             {/* Mobile Category Filter Chips (Fixes hidden mobile filters bug) */}
-            <div className="flex md:hidden items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs font-black">
+            <div className="flex md:hidden items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs font-black snap-x touch-pan-x">
               {CATS.map((c) => (
                 <button
                   key={c.id}

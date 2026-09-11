@@ -12,6 +12,13 @@ const STATE_CHANGING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const EXEMPT_PATH_PREFIXES = [
   '/api/payments/webhook', // Verified by HMAC-SHA256 signature
   '/api/auth',             // NextAuth handles its own anti-CSRF tokens
+  // Gateway browser-return callbacks (BUG-005): UX-only handlers that resolve a
+  // payment and redirect to /payment-status. They mutate nothing — capture
+  // authority stays with the HMAC-verified webhook above — but the POST variant
+  // of a PSP browser flow is by definition cross-site and cannot carry our CSRF
+  // tokens.
+  '/api/payments/callback',
+  '/api/payments/ecardo/callback',
 ];
 
 export interface CsrfValidationOptions {

@@ -1,17 +1,30 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import {
   Clock,
   UserCheck,
   Check,
   X,
   ShieldCheck,
+  RefreshCw,
+  Wallet,
+  CheckCircle2,
+  ExternalLink,
+  Loader2,
 } from 'lucide-react';
+import { Link } from '@/i18n/routing';
 import { ERPDataGrid, ColumnDef } from '@/components/admin/ERPDataGrid';
 import { ErpAlert, ErpHint, ErpPageHeader, ErpTabs } from '@/components/admin/erp-ui';
 import { ExceptionStats } from '@/domains/erp/ExceptionCenterService';
 import { assignException, resolveException } from '@/actions/admin';
+import {
+  retryTicketingRemediationAction,
+  immediateRefundRemediationAction,
+  syncPaymentStatusRemediationAction,
+  pollSupplierPnrRemediationAction,
+  getStaffOperatorsAction,
+} from '@/actions/admin-exceptions';
 import { lt } from '@/lib/lt';
 
 export interface ExceptionItem {
@@ -45,8 +58,20 @@ export function ExceptionCenterClient({
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [resolutionText, setResolutionText] = useState('');
   const [assigningId, setAssigningId] = useState<string | null>(null);
-  const [ownerInput, setOwnerInput] = useState('');
+  const [selectedOwnerId, setSelectedOwnerId] = useState('');
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [remediatingId, setRemediatingId] = useState<string | null>(null);
+  const [operators, setOperators] = useState<Array<{ id: string; name: string | null; role: string }>>([]);
+
+  useEffect(() => {
+    getStaffOperatorsAction()
+      .then((res) => {
+        if (res.success && res.operators) {
+          setOperators(res.operators);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const filteredByQueue = exceptions.filter((exc) => {
     if (selectedQueue === 'ALL') return true;
@@ -68,17 +93,47 @@ export function ExceptionCenterClient({
   };
 
   const handleAssign = (id: string) => {
-    if (!ownerInput.trim()) return;
+    if (!selectedOwnerId.trim()) return;
     startTransition(async () => {
       try {
-        await assignException(id, ownerInput.trim());
-        setFeedback(lt(locale, { fa: `مورد به ${ownerInput.trim()} ارجاع شد.`, en: `Exception assigned to ${ownerInput.trim()}.`, ar: `تم تعيين الاستثناء إلى ${ownerInput.trim()}.`, zh: `异常已指派给 ${ownerInput.trim()}。`, ru: `Исключение назначено: ${ownerInput.trim()}.` }));
+        await assignException(id, selectedOwnerId.trim());
+        const opName = operators.find((o) => o.id === selectedOwnerId)?.name || selectedOwnerId;
+        setFeedback(lt(locale, { fa: `مورد به ${opName} ارجاع شد.`, en: `Exception assigned to ${opName}.`, ar: `تم تعيين الاستثناء إلى ${opName}.`, zh: `异常已指派给 ${opName}。`, ru: `Исключение назначено: ${opName}.` }));
         setAssigningId(null);
-        setOwnerInput('');
+        setSelectedOwnerId('');
       } catch (err: unknown) {
         setFeedback(`${lt(locale, { fa: 'خطا در ارجاع:', en: 'Failed to assign:', ar: 'فشل التعيين:', zh: '指派失败：', ru: 'Не удалось назначить:' })} ${err instanceof Error ? err.message : String(err)}`);
       }
     });
+  };
+
+  const handleRemediate = async (
+    id: string,
+    actionType: 'retry' | 'refund' | 'sync' | 'poll'
+  ) => {
+    setRemediatingId(id);
+    try {
+      let res;
+      if (actionType === 'retry') {
+        res = await retryTicketingRemediationAction(id);
+      } else if (actionType === 'refund') {
+        const rReason = prompt('دلیل استرداد آنی به کیف پول را وارد کنید (اختیاری):') || undefined;
+        res = await immediateRefundRemediationAction(id, rReason);
+      } else if (actionType === 'sync') {
+        res = await syncPaymentStatusRemediationAction(id);
+      } else if (actionType === 'poll') {
+        res = await pollSupplierPnrRemediationAction(id);
+      }
+
+      if (res?.success) {
+        setFeedback(`✓ ${res.message}`);
+        setTimeout(() => window.location.reload(), 1200);
+      } else {
+        setFeedback(`خطا: ${res?.message || 'عملیات ناموفق بود'}`);
+      }
+    } finally {
+      setRemediatingId(null);
+    }
   };
 
   const columns: ColumnDef<ExceptionItem>[] = [
@@ -156,8 +211,20 @@ export function ExceptionCenterClient({
       render: (row) => (
         <div className="space-y-0.5 max-w-sm">
           <div className="font-bold text-ink">{row.title}</div>
-          <div className="text-[11px] text-sub font-mono">
-            {row.entityType}: {row.entityId}
+          <div className="text-[11px] text-sub font-mono flex items-center gap-1.5">
+            <span>{row.entityType}:</span>
+            {row.entityType === 'BOOKING' || row.entityType === 'TRIP' ? (
+              <Link
+                href={`/admin/travel-files/${row.entityId}`}
+                target="_blank"
+                className="text-brand-dark hover:underline flex items-center gap-0.5 font-bold"
+              >
+                <span>{row.entityId.slice(0, 14)}…</span>
+                <ExternalLink size={11} />
+              </Link>
+            ) : (
+              <span>{row.entityId}</span>
+            )}
           </div>
           {row.description && <p className="text-[11px] text-sub truncate">{row.description}</p>}
         </div>
@@ -171,20 +238,24 @@ export function ExceptionCenterClient({
         <div className="flex items-center gap-1.5">
           {assigningId === row.id ? (
             <div className="flex items-center gap-1">
-              <input
-                type="text"
-                value={ownerInput}
-                onChange={(e) => setOwnerInput(e.target.value)}
-                placeholder={lt(locale, { fa: 'شناسه مسئول', en: 'Owner ID', ar: 'معرف المسؤول', zh: '负责人ID', ru: 'ID ответственного' })}
-                aria-label={lt(locale, { fa: 'شناسه مسئول', en: 'Owner ID', ar: 'معرف المسؤول', zh: '负责人ID', ru: 'ID ответственного' })}
-                className="w-24 min-h-9 px-2 rounded-lg border border-line text-[11px]"
-              />
+              <select
+                value={selectedOwnerId}
+                onChange={(e) => setSelectedOwnerId(e.target.value)}
+                className="h-8 px-2 rounded-lg border border-line text-[11px] bg-surface text-ink"
+              >
+                <option value="">انتخاب کارشناس...</option>
+                {operators.map((op) => (
+                  <option key={op.id} value={op.id}>
+                    {op.name || op.id.slice(0, 8)} ({op.role})
+                  </option>
+                ))}
+              </select>
               <button
                 type="button"
                 onClick={() => handleAssign(row.id)}
-                disabled={isPending}
+                disabled={isPending || !selectedOwnerId}
                 aria-label={lt(locale, { fa: 'تأیید ارجاع', en: 'Confirm assignment', ar: 'تأكيد التعيين', zh: '确认指派', ru: 'Подтвердить назначение' })}
-                className="min-w-9 min-h-9 grid place-items-center rounded-lg text-emerald-600 hover:bg-emerald-50"
+                className="min-w-8 min-h-8 grid place-items-center rounded-lg text-emerald-600 hover:bg-emerald-50 disabled:opacity-50"
               >
                 <Check size={14} aria-hidden="true" />
               </button>
@@ -192,22 +263,26 @@ export function ExceptionCenterClient({
                 type="button"
                 onClick={() => setAssigningId(null)}
                 aria-label={lt(locale, { fa: 'انصراف', en: 'Cancel', ar: 'إلغاء', zh: '取消', ru: 'Отмена' })}
-                className="min-w-9 min-h-9 grid place-items-center rounded-lg text-sub hover:text-ink hover:bg-soft"
+                className="min-w-8 min-h-8 grid place-items-center rounded-lg text-sub hover:text-ink hover:bg-soft"
               >
                 <X size={14} aria-hidden="true" />
               </button>
             </div>
           ) : (
             <div className="flex items-center gap-1">
-              <span className="font-medium text-[11px]">{row.ownerId || lt(locale, { fa: 'بدون مسئول', en: 'Unassigned', ar: 'غير معين', zh: '未指派', ru: 'Не назначен' })}</span>
+              <span className="font-medium text-[11px]">
+                {operators.find((o) => o.id === row.ownerId)?.name ||
+                  row.ownerId ||
+                  lt(locale, { fa: 'بدون مسئول', en: 'Unassigned', ar: 'غير معين', zh: '未指派', ru: 'Не назначен' })}
+              </span>
               <button
                 type="button"
                 onClick={() => {
                   setAssigningId(row.id);
-                  setOwnerInput(row.ownerId || '');
+                  setSelectedOwnerId(row.ownerId || '');
                 }}
                 aria-label={lt(locale, { fa: 'ارجاع به اپراتور', en: 'Assign operator', ar: 'تعيين موظف', zh: '指派运营人员', ru: 'Назначить оператора' })}
-                className="min-w-9 min-h-9 grid place-items-center rounded-lg text-sub hover:text-ink hover:bg-soft"
+                className="min-w-7 min-h-7 grid place-items-center rounded-lg text-sub hover:text-ink hover:bg-soft"
               >
                 <UserCheck size={13} aria-hidden="true" />
               </button>
@@ -222,7 +297,7 @@ export function ExceptionCenterClient({
       sortable: true,
       filterable: true,
       filterOptions: [
-        { label: `${lt(locale, { fa: 'باز', en: 'Open', ar: 'مفتوح', zh: '待处理', ru: 'Открыт' })} (OPEN)`, value: 'OPEN' },
+        { label: `${lt(locale, { fa: 'باز', en: 'Open', ar: 'مفتوح', zh: '待处理', ru: 'Открыت' })} (OPEN)`, value: 'OPEN' },
         { label: `${lt(locale, { fa: 'در حال بررسی', en: 'In progress', ar: 'قيد المعالجة', zh: '处理中', ru: 'В работе' })} (IN_PROGRESS)`, value: 'IN_PROGRESS' },
         { label: `${lt(locale, { fa: 'حل‌شده', en: 'Resolved', ar: 'محلول', zh: '已解决', ru: 'Решено' })} (RESOLVED)`, value: 'RESOLVED' },
       ],
@@ -234,7 +309,7 @@ export function ExceptionCenterClient({
     },
     {
       key: 'actions',
-      header: lt(locale, { fa: 'اقدام', en: 'Actions', ar: 'الإجراءات', zh: '操作', ru: 'Действия' }),
+      header: lt(locale, { fa: 'اقدام عملیاتی و جبرانی', en: 'Remediation Actions', ar: 'الإجراءات', zh: '补救操作', ru: 'Действия' }),
       sortable: false,
       render: (row) => {
         if (row.status === 'RESOLVED' || row.status === 'CLOSED') {
@@ -273,16 +348,76 @@ export function ExceptionCenterClient({
         }
 
         return (
-          <button
-            type="button"
-            onClick={() => {
-              setResolvingId(row.id);
-              setResolutionText('');
-            }}
-            className="min-h-9 px-2.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-[11px] font-bold transition"
-          >
-            {lt(locale, { fa: 'حل کردن', en: 'Resolve', ar: 'حل', zh: '解决', ru: 'Решить' })}
-          </button>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {row.type === 'TICKET_NOT_ISSUED' && (
+              <button
+                type="button"
+                onClick={() => handleRemediate(row.id, 'retry')}
+                disabled={Boolean(remediatingId) || isPending}
+                className="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 text-[10.5px] font-black flex items-center gap-1 transition"
+                title="تلاش مجدد برای صدور بلیت"
+              >
+                {remediatingId === row.id ? (
+                  <Loader2 size={12} className="animate-spin" />
+                ) : (
+                  <RefreshCw size={12} />
+                )}
+                <span>صدور مجدد</span>
+              </button>
+            )}
+
+            {(row.type === 'TICKET_NOT_ISSUED' ||
+              row.type === 'SUPPLIER_TIMEOUT' ||
+              row.type === 'REFUND_TIMEOUT') && (
+              <button
+                type="button"
+                onClick={() => handleRemediate(row.id, 'refund')}
+                disabled={Boolean(remediatingId) || isPending}
+                className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-[10.5px] font-black flex items-center gap-1 transition"
+                title="استرداد آنی به کیف پول مسافر"
+              >
+                <Wallet size={12} />
+                <span>استرداد کیف پول</span>
+              </button>
+            )}
+
+            {row.type === 'PAYMENT_MISMATCH' && (
+              <button
+                type="button"
+                onClick={() => handleRemediate(row.id, 'sync')}
+                disabled={Boolean(remediatingId) || isPending}
+                className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-[10.5px] font-black flex items-center gap-1 transition"
+                title="تطبیق پرداخت با دفترکل"
+              >
+                <CheckCircle2 size={12} />
+                <span>تطبیق پرداخت</span>
+              </button>
+            )}
+
+            {row.type === 'SUPPLIER_TIMEOUT' && (
+              <button
+                type="button"
+                onClick={() => handleRemediate(row.id, 'poll')}
+                disabled={Boolean(remediatingId) || isPending}
+                className="px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-800 text-[10.5px] font-black flex items-center gap-1 transition"
+                title="استعلام آخرین وضعیت PNR از تامین‌کننده"
+              >
+                <RefreshCw size={12} />
+                <span>استعلام PNR</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setResolvingId(row.id);
+                setResolutionText('');
+              }}
+              className="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10.5px] font-black transition"
+            >
+              حل دستی
+            </button>
+          </div>
         );
       },
     },
@@ -300,58 +435,60 @@ export function ExceptionCenterClient({
   return (
     <div className="space-y-4">
       <ErpPageHeader
-        eyebrow={lt(locale, { fa: 'عملیات · پایش SLA', en: 'Operations · SLA watch', ar: 'العمليات · مراقبة SLA', zh: '运营 · SLA监控', ru: 'Операции · SLA' })}
-        title={lt(locale, { fa: 'مرکز خطا و استثنائات', en: 'Exception Center', ar: 'مركز الاستثناءات', zh: '异常中心', ru: 'Центр исключений' })}
+        eyebrow={lt(locale, { fa: 'عملیات · پایش SLA و رفع خودکار', en: 'Operations · SLA & Auto-Remediation', ar: 'العمليات · مراقبة SLA', zh: '运营 · SLA监控与修复', ru: 'Операции · SLA и исправление' })}
+        title={lt(locale, { fa: 'مرکز خطا و استثنائات عملیاتی', en: 'Operational Exception Center', ar: 'مركز الاستثناءات', zh: '异常中心', ru: 'Центр исключений' })}
         description={
           <span className="inline-flex flex-wrap items-center gap-1.5">
-            <span>{lt(locale, { fa: 'صف‌بندی مغایرت‌ها، ارجاع به اپراتور و حل با اعمال SLA', en: 'Queue discrepancies, assign operators and resolve under SLA', ar: 'إدارة الاستثناءات وتعيين المشغلين', zh: '异常排队、指派与SLA解决', ru: 'Очереди расхождений и решение по SLA' })}</span>
-            <ErpHint label={lt(locale, { fa: 'مهلت SLA چیست؟', en: 'What is the SLA deadline?', ar: 'ما هي مهلة SLA؟', zh: '什么是SLA期限？', ru: 'Что такое дедлайн SLA?' })}>
+            <span>{lt(locale, { fa: 'صف‌بندی مغایرت‌ها، ارجاع به اپراتور، صدور مجدد و استرداد آنی به کیف پول تحت کنترل SLA', en: 'Queue discrepancies, assign operators, retry issuance and refund under SLA', ar: 'إدارة الاستثناءات والإصلاح الفوري', zh: '异常排队、指派与即时补救', ru: 'Очереди расхождений и немедленное исправление' })}</span>
+            <ErpHint label={lt(locale, { fa: 'مهلت SLA چیست؟', en: 'What is the SLA deadline?', ar: 'ما هي مهلة SLA؟', zh: '什么是SLA期限？', ru: 'Что такое деدلاین SLA?' })}>
               {lt(locale, {
-                fa: 'مهلت توافق‌شده برای حل هر خطا. وقتی شمارش معکوس تمام شود یعنی قول‌مان به مسافر عقب افتاده — اول قرمزها را ببندید!',
-                en: 'The agreed time limit for fixing each issue. When the countdown runs out, our promise to the traveler is overdue — close the red ones first!',
-                ar: 'المهلة المتفق عليها لحل كل مشكلة. عند انتهاء العد التنازلي تأخرنا عن وعدنا — ابدأ بالحمراء!',
-                zh: '解决每个问题的约定时间内。倒计时结束意味着我们对旅客失约 — 先处理红色项！',
-                ru: 'Согласованный срок решения каждой проблемы. Обратный отсчёт истёк — обещание нарушено: сначала красные!',
+                fa: 'حداکثر زمان مجاز برای حل بحران مسافر (بحرانی: ۱۵ دقیقه، بالا: ۶۰ دقیقه، متوسط: ۲۴۰ دقیقه).',
+                en: 'Maximum allowed resolution time (Critical: 15m, High: 60m, Medium: 240m).',
+                ar: 'أقصى وقت مسموح به لحل مشكلة الراكب.',
+                zh: '解决旅客问题的最长时限（严重：15分钟，高：60分钟，中：240分钟）。',
+                ru: 'Максимальное время на решение проблемы пассажира.',
               })}
             </ErpHint>
           </span>
         }
-        icon={<ShieldCheck size={20} aria-hidden="true" />}
+        icon={<ShieldCheck size={20} />}
       />
 
       {feedback && (
-        <ErpAlert tone="info" onDismiss={() => setFeedback(null)} dismissLabel={lt(locale, { fa: 'بستن', en: 'Dismiss', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}>
-          {feedback}
-        </ErpAlert>
+        <div className="p-3 rounded-xl bg-teal-50 border border-teal-200 text-teal-900 text-xs font-bold flex items-center justify-between">
+          <span>{feedback}</span>
+          <button onClick={() => setFeedback(null)} className="p-1 hover:bg-teal-100 rounded">
+            <X size={14} />
+          </button>
+        </div>
       )}
-
-      <ErpTabs
-        ariaLabel={lt(locale, { fa: 'صف‌های استثنا', en: 'Exception queues', ar: 'قوائم الاستثناءات', zh: '异常队列', ru: 'Очереди исключений' })}
-        value={selectedQueue}
-        onChange={setSelectedQueue}
-        options={queueTabs.map((q) => ({ id: q.id, label: q.label, count: q.count }))}
-      />
 
       {stats.breachedSlaCount > 0 && (
         <ErpAlert tone="error">
           {lt(locale, {
-            fa: `${stats.breachedSlaCount} مورد از مهلت SLA عبور کرده‌اند و نیاز به اقدام فوری اپراتور دارند.`,
-            en: `${stats.breachedSlaCount} exceptions have breached their SLA deadline and require immediate operator intervention.`,
-            ar: `تجاوز ${stats.breachedSlaCount} استثناءً موعد SLA ويتطلب تدخلاً فوريًا.`,
-            zh: `${stats.breachedSlaCount} 项异常已超过SLA期限，需要立即处理。`,
-            ru: `${stats.breachedSlaCount} исключений нарушили SLA — требуется немедленное вмешательство.`,
+            fa: `هشدار نقض SLA: ${stats.breachedSlaCount} مورد از مهلت مقرر گذشته است!`,
+            en: `SLA Breach Alert: ${stats.breachedSlaCount} exception(s) exceeded target SLA!`,
+            ar: `تحذير تجاوز SLA: ${stats.breachedSlaCount} حالة تجاوزت الوقت!`,
+            zh: `SLA违约警告：${stats.breachedSlaCount} 个异常已超时！`,
+            ru: `Нарушение SLA: ${stats.breachedSlaCount} случаев превысили срок!`,
           })}
         </ErpAlert>
       )}
 
-      {/* Reusable ERPDataGrid for Exceptions (ERP-105) */}
+      {/* Queue tabs */}
+      <ErpTabs
+        options={queueTabs}
+        value={selectedQueue}
+        onChange={setSelectedQueue}
+      />
+
+      {/* Main exceptions table */}
       <ERPDataGrid<ExceptionItem>
         data={filteredByQueue}
         columns={columns}
-        idAccessor={(row) => row.id}
-        title={queueTabs.find((q) => q.id === selectedQueue)?.label ?? selectedQueue.replace(/_/g, ' ')}
-        description={lt(locale, { fa: 'فیلتر، مرتب‌سازی و مدیریت مغایرت‌ها با اعمال SLA', en: 'Filter, sort and resolve discrepancies under SLA', ar: 'تصفية وترتيب الاستثناءات', zh: '筛选、排序并解决异常', ru: 'Фильтр и решение расхождений' })}
-        savedViewStorageKey="exception_center_views"
+        searchPlaceholder={lt(locale, { fa: 'جستجو در شناسه، عنوان یا مسئول…', en: 'Search ID, title, owner…', ar: 'بحث في المعرف أو العنوان…', zh: '搜索ID、标题或负责人…', ru: 'Поиск…' })}
+        emptyStateMessage={lt(locale, { fa: 'هیچ مورد خطایی در این صف یافت نشد.', en: 'No exceptions in this queue.', ar: 'لا توجد استثناءات.', zh: '此队列中无异常。', ru: 'В этой очереди нет исключений.' })}
+        defaultPageSize={20}
       />
     </div>
   );

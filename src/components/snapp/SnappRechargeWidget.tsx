@@ -1,12 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from '@/i18n/routing';
 import { Phone, RefreshCw, Check, CreditCard, Clock, Wallet } from 'lucide-react';
 import { num } from '@/lib/format';
 import { lt } from '@/lib/lt';
-
-import { useBookingStore } from '@/stores/booking-store';
 
 const RATE = 650000;
 const FEE_PERCENT = 0.05;
@@ -14,7 +11,6 @@ const MIN = 2000000;
 const MAX = 50000000;
 
 export function SnappRechargeWidget({ locale, initialAmount }: { locale: string; initialAmount?: number }) {
-  const router = useRouter();
   const [phone, setPhone] = useState('');
   const [amountIrr, setAmountIrr] = useState(() => initialAmount || 10000000);
   const [lockTime, setLockTime] = useState(60);
@@ -34,32 +30,14 @@ export function SnappRechargeWidget({ locale, initialAmount }: { locale: string;
   const isPhoneValid = phone.length === 11 && /^09\d{9}$/.test(phone);
   const isAmountValid = amountIrr >= MIN && amountIrr <= MAX;
 
+  // Honest no-op (BUG-007): no server order flow exists for Snapp top-up yet.
+  // Fabricating a client-side "confirmed" booking is removed; the CTA is
+  // disabled until the real checkout is wired.
+  const isComingSoon = true;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setAttempted(true);
-    if (isPhoneValid && isAmountValid) {
-      useBookingStore.getState().addDirectBooking({
-        type: 'snapp',
-        title: `${lt(locale, { fa: 'شارژ کیف پول اسنپ', en: 'Snapp Wallet Top-up', ar: 'شحن محفظة اسناب', zh: 'Snapp 钱包充值', ru: 'Пополнение кошелька Snapp' })} (${phone})`,
-        subtitle: `${lt(locale, { fa: 'مبلغ', en: 'Amount', ar: 'المبلغ', zh: '金额', ru: 'Сумма' })} ${amountIrr.toLocaleString()} IRR • €${total.toFixed(2)}`,
-        amount: amountIrr,
-        currency: 'IRR',
-        status: 'confirmed',
-        travelDate: new Date().toISOString().slice(0, 10),
-        passengers: [{
-          firstNameFa: 'کاربر',
-          lastNameFa: 'اسنپ',
-          firstNameEn: 'Snapp',
-          lastNameEn: 'User',
-          passportNo: phone,
-          birthDate: '1990-01-01',
-          gender: 'male',
-        }],
-        addOns: [lt(locale, { fa: 'شارژ آنی در کمتر از ۵ دقیقه', en: 'Instant top-up under 5 mins', ar: 'شحن فوري في أقل من 5 دقائق', zh: '5分钟内即时到账', ru: 'Мгновенное пополнение до 5 мин' })],
-        paymentMethod: 'wallet_irr',
-      });
-      router.push('/payment-status');
-    }
   };
 
   return (
@@ -215,9 +193,11 @@ export function SnappRechargeWidget({ locale, initialAmount }: { locale: string;
             <span className="font-en text-[24px] font-bold text-price">€ {num(total, locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
 
-          <button 
-            type="submit" 
-            className="mt-auto w-full py-4 rounded-full bg-action hover:bg-action-hover text-ink text-[18px] font-black shadow-elev-1 transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          <button
+            type="submit"
+            disabled={isComingSoon}
+            aria-disabled={isComingSoon}
+            className="mt-auto w-full py-4 rounded-full bg-action hover:bg-action-hover text-ink text-[18px] font-black shadow-elev-1 transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <Wallet size={20} aria-hidden="true" />
             {lt(locale, {
@@ -228,6 +208,17 @@ export function SnappRechargeWidget({ locale, initialAmount }: { locale: string;
               ru: 'Оплата с кошелька Firuzo'
             })}
           </button>
+          {isComingSoon && (
+            <p role="status" className="text-center text-[12px] font-bold text-amber-700 dark:text-amber-400 mt-2 leading-[1.7]">
+              {lt(locale, {
+                fa: 'این سرویس در حال اتصال به درگاه پرداخت است و به‌زودی فعال می‌شود.',
+                en: 'This service is being connected to the payment gateway and will launch soon.',
+                ar: 'هذه الخدمة قيد الربط ببوابة الدفع وستُفعّل قريباً.',
+                zh: '该服务正在接入支付网关，即将上线。',
+                ru: 'Эта услуга подключается к платёжному шлюзу и скоро станет доступна.',
+              })}
+            </p>
+          )}
           <p className="text-center text-[11px] text-sub mt-3 leading-[1.7]">
             {lt(locale, {
               fa: 'کسر مستقیم از موجودی کیف‌پول فیروزو (درگاه‌های بین‌المللی Visa/Master به‌زودی فعال خواهند شد).',
@@ -254,7 +245,9 @@ export function SnappRechargeWidget({ locale, initialAmount }: { locale: string;
 
         <button
           type="submit"
-          className="h-11 px-5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95 shadow-md shadow-action/20"
+          disabled={isComingSoon}
+          aria-disabled={isComingSoon}
+          className="h-11 px-5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95 shadow-md shadow-action/20 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <CreditCard size={15} />
           <span>پرداخت و شارژ</span>

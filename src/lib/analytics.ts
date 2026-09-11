@@ -36,12 +36,19 @@ const ALLOWED_EVENTS = new Set([
   'planner_started',
   'planner_completed',
   'addon_toggled',
+  'client_error',
+  'booking_error',
+  'soft_lock_expired',
+  'hold_created',
+  'rate_limit_exceeded',
 ]);
 
 export type AnalyticsEvent = Parameters<typeof trackEvent>[0];
 
 const PII_KEY_PATTERN =
   /(email|phone|mobile|passport|national|nid|birth|gender|first.?name|last.?name|address|card|iban|otp|password)/i;
+
+const INLINE_PII_PATTERN = /([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+|(?:\+?98|0)?9\d{9}\b)/g;
 
 const MAX_STRING_LENGTH = 120;
 const MAX_PROPS = 20;
@@ -52,14 +59,15 @@ function isBrowser(): boolean {
   return typeof window !== 'undefined' && typeof navigator !== 'undefined';
 }
 
-/** Remove PII-ish keys and clamp payload size. Pure — safe to unit test. */
+/** Remove PII-ish keys, scrub inline sensitive data and clamp payload size. Pure — safe to unit test. */
 export function sanitizeProps(props: Props = {}): Props {
   const clean: Props = {};
   for (const [key, value] of Object.entries(props).slice(0, MAX_PROPS)) {
     if (PII_KEY_PATTERN.test(key)) continue;
     if (typeof value === 'string') {
       if (PII_KEY_PATTERN.test(value) && value.length > 0 && /[@]/.test(value)) continue;
-      clean[key] = value.slice(0, MAX_STRING_LENGTH);
+      const scrubbed = value.replace(INLINE_PII_PATTERN, '[REDACTED]');
+      clean[key] = scrubbed.slice(0, MAX_STRING_LENGTH);
     } else if (typeof value === 'number' || typeof value === 'boolean') {
       clean[key] = value;
     } else if (value == null) {
@@ -136,4 +144,26 @@ export function trackFunnel(
   context: { route?: string; locale?: string; [key: string]: unknown } = {},
 ): void {
   trackEvent(event, context);
+}
+
+/**
+ * Capture an unhandled exception or client error into PostHog.
+ * Scrubs error message and stack trace if any PII appears, never throws.
+ */
+export function captureError(
+  err: unknown,
+  context: Props = {},
+): void {
+  try {
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error && err.stack ? err.stack.slice(0, 300) : undefined;
+    const clean = sanitizeProps({
+      ...context,
+      errorMessage: message.slice(0, 150),
+      ...(stack ? { errorStack: stack } : {}),
+    });
+    trackEvent('client_error', clean);
+  } catch {
+    // Intentionally silent.
+  }
 }

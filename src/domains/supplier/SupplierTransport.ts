@@ -97,6 +97,19 @@ export class SupplierTransport {
 
     // SUP-108: Verify Circuit Breaker state before making external network call
     if (cb.getState() === 'OPEN') {
+      try {
+        const { ExceptionCenterService } = await import('@/domains/erp/ExceptionCenterService');
+        ExceptionCenterService.createException({
+          type: 'SUPPLIER_TIMEOUT',
+          severity: 'CRITICAL',
+          entityType: 'SUPPLIER',
+          entityId: options.supplierCode,
+          title: `مدار شکن تامین‌کننده ${options.supplierCode} قطع شد (CIRCUIT_BREAKER_OPEN)`,
+          description: `تامین‌کننده ${options.supplierCode} به دلیل خطاهای متوالی مکرر در وضعیت قطعی موقت قرار گرفت.`,
+        }).catch(() => {});
+      } catch {
+        // Non-blocking
+      }
       throw new Error(`CIRCUIT_BREAKER_OPEN: Supplier ${options.supplierCode} is temporarily unavailable`);
     }
 
@@ -198,6 +211,22 @@ export class SupplierTransport {
 
     // All retries failed
     cb.recordFailure();
+
+    // Auto-ingest persistent supplier timeout into Exception Center for operational watchdog triage
+    try {
+      const { ExceptionCenterService } = await import('@/domains/erp/ExceptionCenterService');
+      ExceptionCenterService.createException({
+        type: 'SUPPLIER_TIMEOUT',
+        severity: 'HIGH',
+        entityType: 'SUPPLIER',
+        entityId: options.supplierCode,
+        title: `خطای پایدار در ارتباط با تامین‌کننده ${options.supplierCode}`,
+        description: `تلاش مجدد پس از ${maxRetries + 1} مرحله ناموفق بود (${supplierRequestId}): ${lastError?.message}`,
+      }).catch(() => {});
+    } catch {
+      // Non-blocking
+    }
+
     throw new Error(
       `SUPPLIER_TRANSPORT_ERROR: [${options.supplierCode}] failed after ${maxRetries + 1} attempts (${supplierRequestId}): ${lastError?.message}`
     );

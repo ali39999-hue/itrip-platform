@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, use } from 'react';
-import { useRouter } from '@/i18n/routing';
+import { useRouter, Link } from '@/i18n/routing';
 import { useAuthStore } from '@/stores/auth-store';
 import { useHydration } from '@/hooks/useHydration';
 import { useLocale } from 'next-intl';
@@ -22,6 +22,7 @@ import {
   AlertTriangle,
   X,
   Sparkles,
+  ReceiptText,
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { TripCountdown } from '@/components/trips/TripCountdown';
@@ -51,6 +52,7 @@ interface BookingRecord {
   currency: string;
   createdAt: Date;
   items: BookingItemData[];
+  invoice?: { id: string; invoiceNumber: string; status: string } | null;
 }
 
 export default function TripDetailsPage({
@@ -380,7 +382,7 @@ export default function TripDetailsPage({
               <button
                 type="button"
                 onClick={() => setCancelModal(true)}
-                className="h-11 px-4 rounded-xl border border-rose-300 text-rose-600 bg-rose-50/60 hover:bg-rose-100/80 font-black text-xs transition flex items-center gap-1.5"
+                className="h-11 px-4 rounded-xl border border-rose-300 text-rose-600 bg-rose-50/60 hover:bg-rose-100/80 font-black text-xs transition flex items-center gap-1.5 cursor-pointer"
               >
                 <RotateCcw size={14} />
                 <span>
@@ -393,6 +395,24 @@ export default function TripDetailsPage({
                   })}
                 </span>
               </button>
+            )}
+            {booking?.invoice && (
+              <Link
+                href={`/invoices/${booking.invoice.id}`}
+                target="_blank"
+                className="h-11 px-4 rounded-xl border border-line bg-surface hover:bg-mint/40 text-brand-dark font-black text-xs transition flex items-center gap-2 shadow-xs shrink-0"
+              >
+                <ReceiptText size={15} />
+                <span>
+                  {lt(locale, {
+                    fa: 'فاکتور رسمی',
+                    en: 'Official Tax Invoice',
+                    ar: 'الفاتورة الرسمية',
+                    zh: '正规税务发票',
+                    ru: 'Официальный счет',
+                  })}
+                </span>
+              </Link>
             )}
             <Button
               onClick={() => window.print()}
@@ -439,7 +459,17 @@ export default function TripDetailsPage({
               <span className="text-xs font-black text-ink">
                 {lt(locale, { fa: 'پرداخت موفق', en: 'Payment Confirmed', ar: 'تم الدفع', zh: '支付成功', ru: 'Оплата подтверждена' })}
               </span>
-              <span className="text-[10px] text-sub">تایید شد</span>
+              {booking?.invoice ? (
+                <Link
+                  href={`/invoices/${booking.invoice.id}`}
+                  target="_blank"
+                  className="text-[10px] text-brand-dark hover:underline font-bold"
+                >
+                  {lt(locale, { fa: 'مشاهده فاکتور رسمی', en: 'View Invoice' })}
+                </Link>
+              ) : (
+                <span className="text-[10px] text-sub">تایید شد</span>
+              )}
             </div>
 
             {/* Step 3: Supplier Issuance */}

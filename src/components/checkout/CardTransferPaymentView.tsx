@@ -358,7 +358,7 @@ export function CardTransferPaymentView({
             </p>
           )}
           {latestReceipt.receiptImages && latestReceipt.receiptImages.length > 0 && (
-            <div className="flex gap-2 pt-2 overflow-x-auto">
+            <div className="flex gap-2 pt-2 overflow-x-auto touch-pan-x">
               {latestReceipt.receiptImages.map((img, idx) => (
                 <a
                   key={idx}
@@ -463,7 +463,7 @@ export function CardTransferPaymentView({
                 )}
 
                 {copiedField?.includes(card.id) && (
-                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[10px] font-bold bg-ink text-white px-2 py-0.5 rounded-full shadow-md animate-fade-in">
+                  <span className="absolute -top-2 start-1/2 -translate-x-1/2 rtl:translate-x-1/2 text-[10px] font-bold bg-ink text-white px-2 py-0.5 rounded-full shadow-md animate-fade-in">
                     کپی شد!
                   </span>
                 )}

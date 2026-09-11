@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
+import { captureError } from '@/lib/analytics';
 
 export default function GlobalError({
   error,
@@ -11,6 +12,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
+    captureError(error, { source: 'global_error_boundary', digest: error?.digest });
     console.error('Global error caught:', error);
   }, [error]);
 

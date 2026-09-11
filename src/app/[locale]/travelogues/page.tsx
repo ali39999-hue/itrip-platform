@@ -116,7 +116,7 @@ export default function TraveloguesPage() {
       </div>
 
       {/* Destination Filter Chips */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs font-black">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs font-black snap-x touch-pan-x">
         {[
           { id: 'all', label: lt(locale, { fa: 'همه مقاصد', en: 'All Destinations', ar: 'جميع الوجهات', zh: '全部目的地', ru: 'Все направления' }) },
           { id: 'turkey', label: lt(locale, { fa: 'ترکیه', en: 'Turkey', ar: 'تركيا', zh: '土耳其', ru: 'Турция' }) },
