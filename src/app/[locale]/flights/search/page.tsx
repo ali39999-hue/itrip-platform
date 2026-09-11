@@ -9,6 +9,7 @@ import { lt } from '@/lib/lt';
 import { resolveCityQuery, localizedAirportLabel } from '@/lib/cities';
 import type { Flight } from '@/lib/types';
 import { useBookingStore } from '@/stores/booking-store';
+import { useCountryStore } from '@/stores/country-store';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { daysFromNow } from '@/lib/utils';
 import { dualDate } from '@/lib/jalali';
@@ -58,6 +59,9 @@ function FlightSearchInner() {
 
   const from = params.get('from') ?? '';
   const to = params.get('to') ?? '';
+  const { country } = useCountryStore();
+  const countryParam = params.get('country');
+  const effectiveCountry = countryParam || country;
 
   // Honor requested departure date; fall back to +7 days
   const departParam = params.get('depart');
@@ -213,6 +217,7 @@ function FlightSearchInner() {
       const q = new URLSearchParams();
       if (from) q.set('from', from);
       if (to) q.set('to', to);
+      if (effectiveCountry) q.set('country', effectiveCountry);
       if (travelDate) q.set('depart', travelDate);
       if (sort) q.set('sort', sort);
       if (airlines.length) q.set('airlines', airlines.join(','));
@@ -292,6 +297,7 @@ function FlightSearchInner() {
     minBoundToman,
     maxBoundToman,
     currentPage,
+    effectiveCountry,
   ]);
 
   useEffect(() => {

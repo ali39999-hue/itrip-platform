@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from '@/i18n/routing';
-import { Phone, RefreshCw, Check, CreditCard, Clock } from 'lucide-react';
+import { Phone, RefreshCw, Check, CreditCard, Clock, Wallet } from 'lucide-react';
 import { num } from '@/lib/format';
 import { lt } from '@/lib/lt';
 
@@ -219,22 +219,22 @@ export function SnappRechargeWidget({ locale, initialAmount }: { locale: string;
             type="submit" 
             className="mt-auto w-full py-4 rounded-full bg-action hover:bg-action-hover text-ink text-[18px] font-black shadow-elev-1 transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
-            <CreditCard size={20} aria-hidden="true" />
+            <Wallet size={20} aria-hidden="true" />
             {lt(locale, {
-              fa: 'پرداخت امن با Visa / Master',
-              en: 'Secure Payment with Visa / Master',
-              ar: 'دفع آمن عبر Visa / Master',
-              zh: '通过 Visa / Master 安全支付',
-              ru: 'Безопасная оплата через Visa / Master'
+              fa: 'پرداخت و ثبت سفارش از کیف‌پول فیروزو',
+              en: 'Pay via Firuzo Wallet Balance',
+              ar: 'الدفع من محفظة فيروزو',
+              zh: '使用 Firuzo 钱包余额支付',
+              ru: 'Оплата с кошелька Firuzo'
             })}
           </button>
           <p className="text-center text-[11px] text-sub mt-3 leading-[1.7]">
             {lt(locale, {
-              fa: 'پرداخت از طریق درگاه بین‌المللی Stripe انجام می‌شود.',
-              en: 'Payment is securely processed via Stripe International Gateway.',
-              ar: 'تتم معالجة الدفع بأمان عبر بوابة Stripe الدولية.',
-              zh: '支付将通过国际 Stripe 安全网关处理。',
-              ru: 'Оплата безопасно обрабатывается через международный шлюз Stripe.'
+              fa: 'کسر مستقیم از موجودی کیف‌پول فیروزو (درگاه‌های بین‌المللی Visa/Master به‌زودی فعال خواهند شد).',
+              en: 'Debited directly from your Firuzo Wallet (Visa/Mastercard international gateways coming soon).',
+              ar: 'خصم مباشر من رصيد محفظة فيروزو (بوابات Visa/Master الدولية قريباً).',
+              zh: '直接从 Firuzo 钱包余额扣除（国际 Visa/Master 网关即将推出）。',
+              ru: 'Прямое списание с баланса кошелька Firuzo (международные шлюзы Visa/Master скоро появятся).'
             })}
           </p>
         </div>

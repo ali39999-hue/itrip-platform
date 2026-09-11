@@ -61,7 +61,7 @@ export function usePlanner({
   const t = useTranslations('Plan');
   const { country } = useCountryStore();
   const destId = ans.dest ?? country;
-  const c = COUNTRIES[destId as CountryId];
+  const c = COUNTRIES[destId as CountryId] || COUNTRIES.iran;
   const who = ans.who ?? 'duo';
   const days = ans.days ?? 4;
   const { adults, children } = WHO_MAP[who];

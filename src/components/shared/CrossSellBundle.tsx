@@ -49,7 +49,7 @@ export function CrossSellBundle({ currentService, destination }: CrossSellBundle
     }
   }
 
-  const c = COUNTRIES[targetCountryId];
+  const c = COUNTRIES[targetCountryId] || COUNTRIES.iran;
   const cName = locale === 'fa' ? c.nameFa : c.nameEn;
   const destName = destination || cName;
   

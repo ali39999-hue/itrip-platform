@@ -26,9 +26,12 @@ import {
   X,
   Copy,
   Check,
+  FileDown,
+  Sparkles,
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { GuestTripLookup } from '@/components/trips/GuestTripLookup';
+import { ImportTicketModal } from '@/components/trips/ImportTicketModal';
 
 interface BookingRecordItem {
   id: string;
@@ -112,27 +115,26 @@ export default function MyTripsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('ALL');
   const [copiedRef, setCopiedRef] = useState<string | null>(null);
+  const [importModalOpen, setImportModalOpen] = useState(false);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const res = await getMyBookings();
+      if (res.success && res.bookings) {
+        setDbBookings(res.bookings as unknown as BookingRecordSummary[]);
+      } else if (res.error === 'Unauthorized') {
+        setUnauthorized(true);
+      }
+    } catch (e) {
+      console.error('Failed to load trips:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let active = true;
-    async function loadData() {
-      try {
-        const res = await getMyBookings();
-        if (active && res.success && res.bookings) {
-          setDbBookings(res.bookings as unknown as BookingRecordSummary[]);
-        } else if (active && res.error === 'Unauthorized') {
-          setUnauthorized(true);
-        }
-      } catch (e) {
-        console.error('Failed to load trips:', e);
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
     loadData();
-    return () => {
-      active = false;
-    };
   }, []);
 
   // Terminal/cancellation states never count as upcoming.
@@ -229,27 +231,41 @@ export default function MyTripsPage() {
             </div>
           </div>
 
-          {/* Search and Filter Toolbar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-surface p-3 rounded-2xl border border-line shadow-xs">
-            <div className="relative w-full sm:max-w-xs">
-              <Search size={15} className="absolute top-1/2 -translate-y-1/2 start-3 text-sub pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={lt(locale, { fa: 'جستجوی شماره رهگیری یا نام سفر...', en: 'Search PNR or trip title...', ar: 'ابحث عن رقم الحجز...', zh: '搜索预订号或行程名称...', ru: 'Поиск по номеру или названию...' })}
-                className="w-full h-10 ps-9 pe-4 rounded-xl bg-soft border border-line text-xs font-bold text-ink placeholder:text-sub focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-              />
-              {searchQuery && (
+            {/* Search and Filter Toolbar */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-surface p-3 rounded-2xl border border-line shadow-xs">
+              <div className="flex items-center gap-2 w-full sm:w-auto flex-1 max-w-md">
+                <div className="relative flex-1">
+                  <Search size={15} className="absolute top-1/2 -translate-y-1/2 start-3 text-sub pointer-events-none" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={lt(locale, { fa: 'جستجوی شماره رهگیری یا نام سفر...', en: 'Search PNR or trip title...', ar: 'ابحث عن رقم الحجز...', zh: '搜索预订号或行程名称...', ru: 'Поиск по номеру یا названию...' })}
+                    className="w-full h-10 ps-9 pe-4 rounded-xl bg-soft border border-line text-xs font-bold text-ink placeholder:text-sub focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="absolute top-1/2 -translate-y-1/2 end-2.5 text-sub hover:text-ink"
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute top-1/2 -translate-y-1/2 end-2.5 text-sub hover:text-ink"
+                  onClick={() => setImportModalOpen(true)}
+                  className="h-10 px-3.5 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-xs transition flex items-center gap-1.5 shrink-0 shadow-xs cursor-pointer active:scale-95"
+                  title="وارد کردن مشخصات بلیت از متن پیامک یا ایمیل"
                 >
-                  <X size={13} />
+                  <FileDown size={14} />
+                  <span className="hidden sm:inline">
+                    {lt(locale, { fa: 'افزودن بلیت خارجی', en: 'Import Ticket', ar: 'استيراد تذكرة', zh: '导入客票', ru: 'Импорт билета' })}
+                  </span>
                 </button>
-              )}
-            </div>
+              </div>
 
             {/* Service Type Pills */}
             <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none text-xs font-black">
@@ -379,6 +395,23 @@ export default function MyTripsPage() {
                   ru: 'Открыть туристические услуги',
                 })}
               </Button>
+
+              {/* Demo Boarding Pass Showcase (Roamarr / TREK pattern) */}
+              <div className="mt-8 p-5 rounded-3xl bg-mint/30 border border-brand/20 text-start w-full max-w-lg">
+                <div className="flex items-center gap-2 text-brand-dark font-black text-xs mb-1">
+                  <Sparkles size={15} />
+                  <span>نمونه بلیت و واچر دیجیتال صادرشده فیروزو</span>
+                </div>
+                <p className="text-[11px] text-sub font-bold mb-3 leading-relaxed">
+                  برای مشاهده امکانات جدید (کارت پرواز دندانه‌دار Roamarr، تایمر معکوس، بارکد اسکن گیت فرودگاه، سیستم دنگی همسفران و SOS اضطراری)، واچر آزمایشی را باز کنید:
+                </p>
+                <Button
+                  onClick={() => router.push('/my-trips/demo-trip')}
+                  className="bg-brand text-surface hover:bg-brand-2 h-9 px-4 font-black text-xs rounded-xl shadow-xs"
+                >
+                  مشاهده واچر و کارت پرواز هوشمند (Demo Boarding Pass)
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6">
@@ -521,6 +554,14 @@ export default function MyTripsPage() {
           )}
         </div>
       </div>
+
+      {/* External Booking Ingestion Modal (DaPlanStan pattern) */}
+      <ImportTicketModal
+        isOpen={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onSuccess={loadData}
+        locale={locale}
+      />
     </div>
   );
 }

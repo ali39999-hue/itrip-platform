@@ -415,14 +415,19 @@ export default function WalletPage() {
 
             {/* Currency Exchange */}
             <div className="bg-surface border border-line rounded-2xl p-6 md:p-8 shadow-sm">
-              <h2 className="font-black text-xl text-ink mb-2">{t('exchange')}</h2>
-              <p className="text-xs font-bold text-sub mb-6">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <h2 className="font-black text-xl text-ink">{t('exchange')}</h2>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                  {lt(locale, { fa: 'نرخ مرجع پلتفرم (شبیه‌سازی‌شده)', en: 'Platform Reference Rate (Simulated)', ar: 'سعر مرجعي للمنصة', zh: '平台参考汇率（模拟）', ru: 'Справочный курс' })}
+                </span>
+              </div>
+              <p className="text-xs font-bold text-sub mb-5 leading-relaxed">
                 {lt(locale, {
-                  fa: 'تبدیل آنی ارزها با نرخ لحظه‌ای بدون کارمزد اضافی',
-                  en: 'Instant multi-currency exchange at live market rates',
-                  ar: 'تحويل فوري للعملات بأسعار السوق الحية دون رسوم إضافية',
-                  zh: '按实时汇率即时多币种兑换，无额外手续费',
-                  ru: 'Мгновенный обмен валют по рыночному курсу без лишних комиссий',
+                  fa: 'تبدیل آنی موجودی بر پایه جدول نرخ‌های مرجع داخلی فیروزو با اسپرد شفاف (نرخ زنده وب‌سرویس بانک مرکزی به‌زودی متصل خواهد شد).',
+                  en: 'Instant conversion based on Firuzo reference rates with transparent spread (Live Central Bank API feed coming soon).',
+                  ar: 'تحويل فوري بناءً على جدول الأسعار المرجعية الداخلية فيروزو مع هامش شفاف.',
+                  zh: '基于 Firuzo 内部参考汇率进行即时多币种兑换（实时央行汇率即将接入）。',
+                  ru: 'Мгновенный обмен по внутреннему справочному курсу Firuzo с прозрачным спредом.',
                 })}
               </p>
 

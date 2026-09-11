@@ -33,12 +33,27 @@ export const CITIES: CityOption[] = [
   { id: 'ker', fa: 'کرمان', en: 'Kerman', nameFa: 'کرمان', nameEn: 'Kerman', airport: 'KER', airportCode: 'KER', airportNameFa: 'فرودگاه بین‌المللی کرمان', airportNameEn: 'Kerman Airport', country: 'IR', countryCode: 'IR', countryId: 'iran', flag: '🇮🇷', popular: true },
   { id: 'ras', fa: 'رشت', en: 'Rasht', nameFa: 'رشت', nameEn: 'Rasht', airport: 'RAS', airportCode: 'RAS', airportNameFa: 'فرودگاه سردار جنگل', airportNameEn: 'Rasht Airport', country: 'IR', countryCode: 'IR', countryId: 'iran', flag: '🇮🇷', popular: true },
   { id: 'sry', fa: 'ساری', en: 'Sari', nameFa: 'ساری', nameEn: 'Sari', airport: 'SRY', airportCode: 'SRY', airportNameFa: 'فرودگاه بین‌المللی دشت ناز', airportNameEn: 'Sari Dasht Naz Airport', country: 'IR', countryCode: 'IR', countryId: 'iran', flag: '🇮🇷', popular: true },
+  // Turkey
   { id: 'ist', fa: 'استانبول', en: 'Istanbul', nameFa: 'استانبول', nameEn: 'Istanbul', airport: 'IST', airportCode: 'IST', airportNameFa: 'فرودگاه استانبول / صبیحه', airportNameEn: 'Istanbul (IST / SAW) Airports', country: 'TR', countryCode: 'TR', countryId: 'turkey', flag: '🇹🇷', popular: true },
+  { id: 'ayt', fa: 'آنتالیا', en: 'Antalya', nameFa: 'آنتالیا', nameEn: 'Antalya', airport: 'AYT', airportCode: 'AYT', airportNameFa: 'فرودگاه بین‌المللی آنتالیا', airportNameEn: 'Antalya Airport', country: 'TR', countryCode: 'TR', countryId: 'turkey', flag: '🇹🇷', popular: true },
+  { id: 'adb', fa: 'ازمیر', en: 'Izmir', nameFa: 'ازمیر', nameEn: 'Izmir', airport: 'ADB', airportCode: 'ADB', airportNameFa: 'فرودگاه عدنان مندرس ازمیر', airportNameEn: 'Adnan Menderes Airport', country: 'TR', countryCode: 'TR', countryId: 'turkey', flag: '🇹🇷' },
+  { id: 'nav', fa: 'کاپادوکیه', en: 'Cappadocia', nameFa: 'کاپادوکیه', nameEn: 'Cappadocia', airport: 'NAV', airportCode: 'NAV', airportNameFa: 'فرودگاه نوشهیر کاپادوکیه', airportNameEn: 'Nevsehir Kapadokya Airport', country: 'TR', countryCode: 'TR', countryId: 'turkey', flag: '🇹🇷' },
+  // UAE
   { id: 'dxb', fa: 'دبی', en: 'Dubai', nameFa: 'دبی', nameEn: 'Dubai', airport: 'DXB', airportCode: 'DXB', airportNameFa: 'فرودگاه بین‌المللی دبی', airportNameEn: 'Dubai International Airport', country: 'AE', countryCode: 'AE', countryId: 'uae', flag: '🇦🇪', popular: true },
+  { id: 'auh', fa: 'ابوظبی', en: 'Abu Dhabi', nameFa: 'ابوظبی', nameEn: 'Abu Dhabi', airport: 'AUH', airportCode: 'AUH', airportNameFa: 'فرودگاه بین‌المللی زاید ابوظبی', airportNameEn: 'Zayed International Airport', country: 'AE', countryCode: 'AE', countryId: 'uae', flag: '🇦🇪' },
+  { id: 'shj', fa: 'شارجه', en: 'Sharjah', nameFa: 'شارجه', nameEn: 'Sharjah', airport: 'SHJ', airportCode: 'SHJ', airportNameFa: 'فرودگاه بین‌المللی شارجه', airportNameEn: 'Sharjah Airport', country: 'AE', countryCode: 'AE', countryId: 'uae', flag: '🇦🇪' },
+  // Georgia
   { id: 'tbs', fa: 'تفلیس', en: 'Tbilisi', nameFa: 'تفلیس', nameEn: 'Tbilisi', airport: 'TBS', airportCode: 'TBS', airportNameFa: 'فرودگاه بین‌المللی شوتا روستاولی', airportNameEn: 'Shota Rustaveli Airport', country: 'GE', countryCode: 'GE', countryId: 'georgia', flag: '🇬🇪', popular: true },
+  { id: 'bus', fa: 'باتومی', en: 'Batumi', nameFa: 'باتومی', nameEn: 'Batumi', airport: 'BUS', airportCode: 'BUS', airportNameFa: 'فرودگاه بین‌المللی الکساندر کارتولی باتومی', airportNameEn: 'Batumi International Airport', country: 'GE', countryCode: 'GE', countryId: 'georgia', flag: '🇬🇪', popular: true },
+  // Russia
   { id: 'mow', fa: 'مسکو', en: 'Moscow', nameFa: 'مسکو', nameEn: 'Moscow', airport: 'SVO', airportCode: 'SVO', airportNameFa: 'فرودگاه شرمتیوو / ونوکووا', airportNameEn: 'Sheremetyevo & Vnukovo', country: 'RU', countryCode: 'RU', countryId: 'russia', flag: '🇷🇺', popular: true },
+  { id: 'led', fa: 'سن پترزبورگ', en: 'Saint Petersburg', nameFa: 'سن پترزبورگ', nameEn: 'Saint Petersburg', airport: 'LED', airportCode: 'LED', airportNameFa: 'فرودگاه پولکوو سن پترزبورگ', airportNameEn: 'Pulkovo Airport', country: 'RU', countryCode: 'RU', countryId: 'russia', flag: '🇷🇺' },
+  // Oman
   { id: 'mct', fa: 'مسقط', en: 'Muscat', nameFa: 'مسقط', nameEn: 'Muscat', airport: 'MCT', airportCode: 'MCT', airportNameFa: 'فرودگاه بین‌المللی مسقط', airportNameEn: 'Muscat International Airport', country: 'OM', countryCode: 'OM', countryId: 'oman', flag: '🇴🇲', popular: true },
+  { id: 'sll', fa: 'صلاله', en: 'Salalah', nameFa: 'صلاله', nameEn: 'Salalah', airport: 'SLL', airportCode: 'SLL', airportNameFa: 'فرودگاه بین‌المللی صلاله', airportNameEn: 'Salalah Airport', country: 'OM', countryCode: 'OM', countryId: 'oman', flag: '🇴🇲' },
+  // China
   { id: 'bjs', fa: 'پکن', en: 'Beijing', nameFa: 'پکن', nameEn: 'Beijing', airport: 'PEK', airportCode: 'PEK', airportNameFa: 'فرودگاه پکن کپیتال / داکسینگ', airportNameEn: 'Beijing Capital & Daxing Airports', country: 'CN', countryCode: 'CN', countryId: 'china', flag: '🇨🇳', popular: true },
+  { id: 'sha', fa: 'شانگهای', en: 'Shanghai', nameFa: 'شانگهای', nameEn: 'Shanghai', airport: 'PVG', airportCode: 'PVG', airportNameFa: 'فرودگاه بین‌المللی پودونگ شانگهای', airportNameEn: 'Pudong International Airport', country: 'CN', countryCode: 'CN', countryId: 'china', flag: '🇨🇳' },
 ];
 
 export const FLIGHTS: Flight[] = [
@@ -50,6 +65,9 @@ export const FLIGHTS: Flight[] = [
   { id: 'f6', airline: 'ماهان', airlineEn: 'Mahan Air', flightNo: 'W5-511', departureTime: '03:30', arrivalTime: '06:10', origin: 'تهران (THR)', destination: 'تفلیس (TBS)', originCity: 'تهران', destinationCity: 'تفلیس', duration: '2h 40m', price: 84500000, seatsLeft: 4, baggage: '25kg + 7kg', cabinClass: 'business', stops: 0, ticketType: 'systemic', aircraft: 'Airbus A310' },
   { id: 'f7', airline: 'آئروفلوت', airlineEn: 'Aeroflot', flightNo: 'SU-513', departureTime: '07:05', arrivalTime: '10:20', origin: 'تهران (THR)', destination: 'مسکو (SVO)', originCity: 'تهران', destinationCity: 'مسکو', duration: '3h 45m', price: 112000000, seatsLeft: 8, baggage: '23kg + 10kg', cabinClass: 'economy', stops: 0, ticketType: 'systemic', aircraft: 'Airbus A320' },
   { id: 'f8', airline: 'عمان ایر', airlineEn: 'Oman Air', flightNo: 'WY-154', departureTime: '05:20', arrivalTime: '08:40', origin: 'تهران (THR)', destination: 'مسقط (MCT)', originCity: 'تهران', destinationCity: 'مسقط', duration: '2h 50m', price: 96000000, seatsLeft: 6, baggage: '30kg + 7kg', cabinClass: 'economy', stops: 0, ticketType: 'systemic', aircraft: 'Boeing 737 MAX 8' },
+  { id: 'f9', airline: 'ماهان', airlineEn: 'Mahan Air', flightNo: 'W5-081', departureTime: '21:15', arrivalTime: '08:30', origin: 'تهران (THR)', destination: 'پکن (PEK)', originCity: 'تهران', destinationCity: 'پکن', duration: '7h 15m', price: 148000000, seatsLeft: 5, baggage: '30kg + 8kg', cabinClass: 'economy', stops: 0, ticketType: 'systemic', aircraft: 'Airbus A340' },
+  { id: 'f10', airline: 'ترکیش', airlineEn: 'Turkish Airlines', flightNo: 'TK-890', departureTime: '06:10', arrivalTime: '10:45', origin: 'تهران (THR)', destination: 'آنتالیا (AYT)', originCity: 'تهران', destinationCity: 'آنتالیا', duration: '4h 35m', price: 92000000, seatsLeft: 7, baggage: '30kg + 8kg', cabinClass: 'economy', stops: 0, ticketType: 'systemic', aircraft: 'Airbus A321neo' },
+  { id: 'f11', airline: 'وارش', airlineEn: 'Varesh', flightNo: 'VR-671', departureTime: '11:00', arrivalTime: '13:40', origin: 'تهران (THR)', destination: 'باتومی (BUS)', originCity: 'تهران', destinationCity: 'باتومی', duration: '2h 40m', price: 78000000, seatsLeft: 8, baggage: '20kg + 7kg', cabinClass: 'economy', stops: 0, ticketType: 'charter', aircraft: 'Boeing 737-500' },
 ];
 
 export const HOTELS: Hotel[] = [
@@ -278,7 +296,9 @@ export const VISA_SERVICES = [
   { id: 'v-tr', countryFa: 'ترکیه', countryEn: 'Turkey', processingDays: 5, price: 48000000, type: 'توریستی', typeEn: 'Tourist', approvalRate: 96 },
   { id: 'v-ae', countryFa: 'امارات', countryEn: 'UAE', processingDays: 3, price: 65000000, type: 'توریستی', typeEn: 'Tourist', approvalRate: 98 },
   { id: 'v-ge', countryFa: 'گرجستان', countryEn: 'Georgia', processingDays: 7, price: 35000000, type: 'توریستی', typeEn: 'Tourist', approvalRate: 94 },
+  { id: 'v-om', countryFa: 'عمان', countryEn: 'Oman', processingDays: 4, price: 42000000, type: 'توریستی', typeEn: 'Tourist', approvalRate: 97 },
   { id: 'v-ru', countryFa: 'روسیه', countryEn: 'Russia', processingDays: 10, price: 72000000, type: 'توریستی', typeEn: 'Tourist', approvalRate: 91 },
+  { id: 'v-cn', countryFa: 'چین', countryEn: 'China', processingDays: 12, price: 89000000, type: 'توریستی', typeEn: 'Tourist', approvalRate: 92 },
 ];
 
 export const ESIM_PACKAGES = [
@@ -288,6 +308,7 @@ export const ESIM_PACKAGES = [
   { id: 'e4', country: 'گرجستان', countryEn: 'Georgia', countryFa: 'گرجستان', dataGb: 8, validityDays: 14, price: 2200000 },
   { id: 'e5', country: 'روسیه', countryEn: 'Russia', countryFa: 'روسیه', dataGb: 10, validityDays: 15, price: 3900000 },
   { id: 'e6', country: 'عمان', countryEn: 'Oman', countryFa: 'عمان', dataGb: 8, validityDays: 14, price: 2600000 },
+  { id: 'e7', country: 'چین', countryEn: 'China', countryFa: 'چین', dataGb: 12, validityDays: 20, price: 4200000 },
 ];
 
 export const INSURANCE_PLANS: InsurancePlan[] = [

@@ -7,6 +7,8 @@ import { useRouter, Link } from '@/i18n/routing';
 import { TOURS } from '@/lib/data';
 import type { Tour } from '@/lib/types';
 import { useBookingStore } from '@/stores/booking-store';
+import { useCountryStore } from '@/stores/country-store';
+import { COUNTRIES, COUNTRY_ORDER, countryName } from '@/lib/countries';
 import { daysFromNow } from '@/lib/utils';
 import { CountryExperiencesSection } from '@/components/shared/CountryExperiences';
 import { MapPin, Star, ArrowLeft, ArrowRight, CalendarDays, SlidersHorizontal, Tent, Search, X, Check, Eye } from 'lucide-react';
@@ -29,6 +31,10 @@ function ToursContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
+  const { country, setCountry } = useCountryStore();
+  const c = COUNTRIES[country] || COUNTRIES.iran;
+  const countryParam = searchParams.get('country');
+
   const [sort, setSort] = useState<SortKey>('rec');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTourPreview, setSelectedTourPreview] = useState<Tour | null>(null);
@@ -89,11 +95,31 @@ function ToursContent() {
       );
     }
 
+    // Filter or prioritize by active country if user selected a destination country and no specific search is active
+    const activeCountryId = (countryParam || country) as keyof typeof COUNTRIES;
+    if (activeCountryId && !activeSearch) {
+      const activeCountryObj = COUNTRIES[activeCountryId];
+      if (activeCountryObj) {
+        const countryTours = list.filter((tour) => {
+          const cFa = activeCountryObj.nameFa.toLowerCase();
+          const cEn = activeCountryObj.nameEn.toLowerCase();
+          const matchesCountry = tour.country?.toLowerCase().includes(cFa) || tour.countryEn?.toLowerCase().includes(cEn);
+          const matchesCity = activeCountryObj.cities?.some(
+            (ct) => tour.city.toLowerCase().includes(ct.fa.toLowerCase()) || (tour.cityEn && tour.cityEn.toLowerCase().includes(ct.en.toLowerCase()))
+          );
+          return matchesCountry || matchesCity;
+        });
+        if (countryTours.length > 0) {
+          list = countryTours;
+        }
+      }
+    }
+
     if (sort === 'cheap') list = [...list].sort((a, b) => a.price - b.price);
     if (sort === 'expensive') list = [...list].sort((a, b) => b.price - a.price);
     if (sort === 'rec') list = [...list].sort((a, b) => b.rating - a.rating);
     return list;
-  }, [allTours, category, cityParam, searchQuery, sort]);
+  }, [allTours, category, cityParam, countryParam, country, searchQuery, sort]);
 
   function book(tour: Tour) {
     setBookingContext({
@@ -123,7 +149,7 @@ function ToursContent() {
             <Tent size={13} className="text-mint-bright" /> {lt(locale, { fa: 'تجربه‌های دست‌چین و برنامه‌ریزی‌شده', en: 'Curated Travel Experiences', ar: 'تجارب سفر منتقاهاً بعناية', zh: '精选旅行体验', ru: 'Тщательно отобранные впечатления' })}
           </span>
           <h1 className="text-surface mb-2 sm:mb-3 text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
-            {t('title')}
+            {t('title')} · {c?.flag} {countryName(country, locale)}
           </h1>
           <p className="text-surface/90 text-xs sm:text-base md:text-lg leading-relaxed max-w-xl mx-auto">
             {t('subtitle')}
@@ -133,6 +159,28 @@ function ToursContent() {
 
       {/* Search Bar + Categories Bar & Sort Controls */}
       <div className="flex flex-col gap-4 border-b border-line pb-4">
+        {/* Country Filter Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+          <span className="text-[11px] font-black text-sub shrink-0 me-1">
+            {lt(locale, { fa: 'مقصد:', en: 'Country:', ar: 'البلد:', zh: '国家：', ru: 'Страна:' })}
+          </span>
+          {COUNTRY_ORDER.map((id) => (
+            <button
+              key={`tour-country-${id}`}
+              type="button"
+              onClick={() => setCountry(id)}
+              className={`px-3 py-1.5 rounded-xl whitespace-nowrap text-xs font-black transition cursor-pointer ${
+                country === id
+                  ? 'bg-brand text-surface shadow-xs'
+                  : 'bg-soft text-sub hover:text-ink hover:bg-line/60'
+              }`}
+            >
+              <span className="me-1">{COUNTRIES[id].flag}</span>
+              <span>{countryName(id, locale)}</span>
+            </button>
+          ))}
+        </div>
+
         {/* Search and Sort Row */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="relative w-full sm:max-w-md">

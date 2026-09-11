@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { PlaneTakeoff, PlaneLanding, ArrowLeftRight, Search, X } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
+import { useCountryStore } from '@/stores/country-store';
+import { COUNTRIES } from '@/lib/countries';
 import { CITIES } from '@/lib/data';
 import { num } from '@/lib/format';
 import { lt } from '@/lib/lt';
@@ -41,6 +43,22 @@ export function FlightSearchHeader({
   resultsCount,
 }: FlightSearchHeaderProps) {
   const locale = useLocale();
+  const { country } = useCountryStore();
+  const c = COUNTRIES[country] || COUNTRIES.iran;
+
+  const popularRoutes = useMemo(() => {
+    if (country && country !== 'iran') {
+      const topCities = c.cities || [];
+      const countryRoutes = topCities.map((ct) => ({
+        fromFa: 'تهران',
+        toFa: ct.fa,
+        fromEn: 'Tehran',
+        toEn: ct.en,
+      }));
+      return [...countryRoutes, ...POPULAR_ROUTES].slice(0, 8);
+    }
+    return POPULAR_ROUTES;
+  }, [country, c]);
 
   const [fromSuggestionsOpen, setFromSuggestionsOpen] = useState(false);
   const [toSuggestionsOpen, setToSuggestionsOpen] = useState(false);
@@ -275,13 +293,13 @@ export function FlightSearchHeader({
             <span className="text-[11px] font-black text-sub shrink-0 me-1">
               {lt(locale, { fa: 'مسیرهای پرتردد:', en: 'Popular routes:', ar: 'مسارات شائعة:', zh: '热门路线：', ru: 'Популярные:' })}
             </span>
-            {POPULAR_ROUTES.map((route) => {
+            {popularRoutes.map((route, rIdx) => {
               const active =
                 from === (locale === 'fa' ? route.fromFa : route.fromEn) &&
                 to === (locale === 'fa' ? route.toFa : route.toEn);
               return (
                 <button
-                  key={`${route.fromFa}-${route.toFa}`}
+                  key={`flight-route-${rIdx}-${route.fromFa}-${route.toFa}`}
                   type="button"
                   onClick={() =>
                     handleSelectRoute(

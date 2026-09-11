@@ -1,8 +1,8 @@
 # Production Claims & Trust Registry (TRUTH-003 / TRUTH-004)
 
-**Last Audit Date:** 2026-09-10  
+**Last Audit Date:** 2026-09-11  
 **Auditor:** Firuzo Production Hardening Team  
-**Runtime Baseline:** Commit `4b3174e` / v1.5.7  
+**Runtime Baseline:** Commit `b800f5e` / v1.5.9  
 **Capability Registry Module:** `src/lib/capabilities/index.ts` (API: `/api/capabilities`)  
 
 This registry tracks every public trust, marketing, and capability claim presented across the Firuzo platform UI, marketing sections, metadata, and communications.

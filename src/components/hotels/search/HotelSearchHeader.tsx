@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { MapPin, Users, Search, Minus, Plus, Building2, ChevronDown, X } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
@@ -52,6 +52,18 @@ export function HotelSearchHeader({
   const isChinaQuery = /پکن|beijing|china|چین/i.test(query || '');
   const effectiveCountry = isChinaQuery ? 'china' : country;
   const c = COUNTRIES[effectiveCountry] || COUNTRIES['iran'] || COUNTRIES['turkey'];
+
+  const popularDests = useMemo(() => {
+    if (c?.cities && c.cities.length > 0) {
+      return c.cities.map((city) => ({
+        nameFa: city.fa,
+        nameEn: city.en,
+        tagFa: c.nameFa,
+        tagEn: c.nameEn,
+      }));
+    }
+    return POPULAR_DESTINATIONS;
+  }, [c]);
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [destSuggestionsOpen, setDestSuggestionsOpen] = useState(false);
@@ -173,9 +185,9 @@ export function HotelSearchHeader({
                     <span className="text-[10px] font-bold text-brand">{lt(locale, { fa: 'انتخاب سریع', en: 'Quick select', ar: 'اختيار سريع', zh: '快捷选择', ru: 'Быستрый выбор' })}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-1.5 pt-2">
-                    {POPULAR_DESTINATIONS.map((dest) => (
+                    {popularDests.map((dest) => (
                       <button
-                        key={dest.nameFa}
+                        key={`dest-drop-${dest.nameFa}`}
                         type="button"
                         onClick={() => {
                           const chosen = locale === 'fa' ? dest.nameFa : dest.nameEn;
@@ -375,11 +387,11 @@ export function HotelSearchHeader({
             <span className="text-[11px] font-black text-sub shrink-0 me-1">
               {lt(locale, { fa: 'شهرهای پرطرفدار:', en: 'Popular cities:', ar: 'مدن شائعة:', zh: '热门城市：', ru: 'Популярные:' })}
             </span>
-            {POPULAR_DESTINATIONS.map((dest) => {
+            {popularDests.map((dest) => {
               const active = query === (locale === 'fa' ? dest.nameFa : dest.nameEn);
               return (
                 <button
-                  key={dest.nameFa}
+                  key={`dest-pill-${dest.nameFa}`}
                   type="button"
                   onClick={() => {
                     const chosen = locale === 'fa' ? dest.nameFa : dest.nameEn;

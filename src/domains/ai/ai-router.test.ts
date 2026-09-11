@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
-import { AiRouterService, AiProviderConfig } from "./AiRouterService";
+import { AiRouterService, AiProviderConfig, IAiHealthStore, AiProviderId } from "./AiRouterService";
 
-describe("AiRouterService", () => {
-  it("sorts providers by priority", () => {
+describe("AiRouterService (Production Hardened)", () => {
+  it("sorts providers by priority", async () => {
     const router = new AiRouterService();
-    const providers = router.getAvailableProviders();
+    const providers = await router.getAvailableProviders();
 
     expect(providers[0].id).toBe("gemini");
     expect(providers[1].id).toBe("deepseek");
@@ -12,7 +12,7 @@ describe("AiRouterService", () => {
     expect(providers[3].id).toBe("claude");
   });
 
-  it("completes successfully using primary provider", async () => {
+  it("completes successfully using primary provider and attaches Product Truth disclaimer", async () => {
     const router = new AiRouterService();
     const mockHandler = vi.fn().mockResolvedValue({
       content: "برنامه سفر ۳ روزه به اصفهان",
@@ -26,6 +26,10 @@ describe("AiRouterService", () => {
     expect(res.provider).toBe("gemini");
     expect(res.model).toBe("gemini-2.0-flash");
     expect(mockHandler).toHaveBeenCalledTimes(1);
+
+    // Section 30 Product truth assertion
+    expect(res.isAiEstimate).toBe(true);
+    expect(res.disclaimer.fa).toContain("توسط هوش مصنوعی تولید شده");
   });
 
   it("automatically fails over to secondary provider when primary returns HTTP 429", async () => {
@@ -49,11 +53,36 @@ describe("AiRouterService", () => {
     expect(res.provider).toBe("deepseek");
 
     // Gemini should now be in cooldown
-    expect(router.isProviderCoolingDown("gemini")).toBe(true);
+    expect(await router.isProviderCoolingDown("gemini")).toBe(true);
 
     // Next call should skip Gemini directly
-    const available = router.getAvailableProviders();
+    const available = await router.getAvailableProviders();
     expect(available[0].id).toBe("deepseek");
+  });
+
+  it("supports shared multi-instance health store (Section 29)", async () => {
+    const sharedCooldowns = new Set<string>();
+
+    const mockDistributedStore: IAiHealthStore = {
+      isCoolingDown: (id: AiProviderId) => sharedCooldowns.has(id),
+      triggerCooldown: (id: AiProviderId) => {
+        sharedCooldowns.add(id);
+      },
+      reset: () => {
+        sharedCooldowns.clear();
+      },
+    };
+
+    const instanceA = new AiRouterService(undefined, mockDistributedStore);
+    const instanceB = new AiRouterService(undefined, mockDistributedStore);
+
+    // Instance A marks Gemini down
+    await instanceA.triggerCooldown("gemini", 60000);
+
+    // Instance B sees Gemini as cooling down immediately via shared store
+    expect(await instanceB.isProviderCoolingDown("gemini")).toBe(true);
+    const bProviders = await instanceB.getAvailableProviders();
+    expect(bProviders[0].id).toBe("deepseek");
   });
 
   it("throws descriptive error when all providers fail", async () => {

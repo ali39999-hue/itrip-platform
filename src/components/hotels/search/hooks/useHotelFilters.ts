@@ -46,6 +46,16 @@ export function useHotelFilters({
       setCurrentPage(1);
     }
   }, [initialCity]);
+
+  // When country switcher changes in header, reset query so hotels of the new country appear immediately
+  const prevCountryRef = useRef(country);
+  useEffect(() => {
+    if (prevCountryRef.current !== country) {
+      prevCountryRef.current = country;
+      setQuery('');
+      setCurrentPage(1);
+    }
+  }, [country]);
   const [hotelName, setHotelName] = useState(initialHotelName);
   const [sort, setSortState] = useState<SortKey>(initialSort);
   const [loading, setLoading] = useState(true);
@@ -92,10 +102,10 @@ export function useHotelFilters({
       }
 
       // Respect current country selection unless searching for another country's city
-      if (country === 'china' || query.includes('پکن') || query.includes('beijing')) {
+      if (query.includes('پکن') || query.includes('beijing') || query.includes('china') || query.includes('چین')) {
         q.set('country', 'china');
-      } else if (country === 'iran') {
-        q.set('country', 'iran');
+      } else if (country) {
+        q.set('country', country);
       }
 
       if (stars.size > 0) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES, COUNTRY_ORDER, EXPERIENCE_CATEGORY_META, countryName, type CountryId, type ExperienceCategory } from '@/lib/countries';
@@ -67,15 +67,25 @@ interface PlannerWizardProps {
   setAns: React.Dispatch<React.SetStateAction<Answers>>;
   locale: string;
   setSeed: React.Dispatch<React.SetStateAction<number>>;
+  onNaturalPrompt?: (prompt: string) => void;
 }
 
-export function PlannerWizard({ step, setStep, ans, setAns, locale, setSeed }: PlannerWizardProps) {
+export function PlannerWizard({
+  step,
+  setStep,
+  ans,
+  setAns,
+  locale,
+  setSeed,
+  onNaturalPrompt,
+}: PlannerWizardProps) {
   const t = useTranslations('Plan');
   const { country, setCountry } = useCountryStore();
   const isEn = locale === 'en';
+  const [naturalInput, setNaturalInput] = useState('');
 
   const poolCount = useMemo(() => {
-    const c = COUNTRIES[ans.dest ?? country];
+    const c = COUNTRIES[ans.dest ?? country] || COUNTRIES.iran;
     const cap = BUDGET_CAP[ans.budget ?? 'balanced'];
     const interests = ans.interests ?? [];
     return c.signatureExperiences.filter((e) => {
@@ -147,6 +157,70 @@ export function PlannerWizard({ step, setStep, ans, setAns, locale, setSeed }: P
         {/* STEP 1: DESTINATION */}
         {q === 'dest' && (
           <>
+            {/* Natural Language Prompt Input (Section 13 Smart Planner 2.0) */}
+            <div className="mb-8 p-5 sm:p-6 rounded-2xl bg-mint/30 border border-brand/20 shadow-2xs space-y-3">
+              <div className="flex items-center gap-2 text-brand-dark text-xs font-black">
+                <Sparkles size={16} />
+                <span>
+                  {lt(locale, {
+                    fa: 'طراحی آنی سفر با هوش مصنوعی (پرامپت دلخواه)',
+                    en: 'Instant Trip Generation with AI (Free text prompt)',
+                    ar: 'تخطيط فوري بالذكاء الاصطناعي',
+                    zh: '通过 AI 自由提示词即刻生成行程',
+                    ru: 'Мгновенное планирование поездки с ИИ',
+                  })}
+                </span>
+              </div>
+              <p className="text-[12px] text-sub font-bold m-0">
+                {lt(locale, {
+                  fa: 'سفر ایده‌آل خود را با کلمات خودتان بنویسید؛ هوش مصنوعی مقصد، تعداد مسافران، بودجه و برنامه را خودکار تنظیم می‌کند:',
+                  en: 'Describe your ideal trip in your own words; AI configures destination, travelers, budget, and daily activities:',
+                  ar: 'اكتب تفاصيل رحلتك بكلماتك الخاصة:',
+                  zh: '用您自己的话描述理想旅行：',
+                  ru: 'Опишите вашу идеальную поездку своими словами:',
+                })}
+              </p>
+              <div className="flex flex-col sm:flex-row items-stretch gap-2">
+                <input
+                  type="text"
+                  value={naturalInput}
+                  onChange={(e) => setNaturalInput(e.target.value)}
+                  placeholder={lt(locale, {
+                    fa: 'مثلاً: یک سفر ۴ روزه دونفره به استانبول با بودجه متوسط و خرید',
+                    en: 'e.g. 4 days in Istanbul for two people, moderate budget and shopping',
+                    ar: 'مثال: رحلة ٤ أيام إلى إسطنبول لشخصين بميزانية متوسطة',
+                    zh: '例如：两人去伊斯坦布尔4天，中等预算和购物',
+                    ru: 'например: 4 дня в Стамбуле для двоих, средний бюджет',
+                  })}
+                  className="flex-1 min-h-[46px] px-3.5 rounded-xl bg-surface border border-line text-xs font-bold text-ink placeholder:text-sub focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && naturalInput.trim()) {
+                      onNaturalPrompt?.(naturalInput);
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (naturalInput.trim()) onNaturalPrompt?.(naturalInput);
+                  }}
+                  disabled={!naturalInput.trim()}
+                  className="min-h-[46px] px-5 rounded-xl bg-brand hover:bg-brand-2 text-surface text-xs font-black shadow-xs transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                >
+                  <Sparkles size={14} />
+                  <span>
+                    {lt(locale, {
+                      fa: 'تولید هوشمند سفر',
+                      en: 'Generate Itinerary',
+                      ar: 'إنشاء الخطة',
+                      zh: '生成行程',
+                      ru: 'Создать маршрут',
+                    })}
+                  </span>
+                </button>
+              </div>
+            </div>
+
             {qHead(t('qDest'), t('qDestSub'))}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {COUNTRY_ORDER.map((id: CountryId) => {

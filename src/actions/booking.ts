@@ -9,6 +9,7 @@ import { BookingDomainService } from '@/domains/booking/BookingDomainService';
 import { ReferralDomainService } from '@/domains/referral/ReferralDomainService';
 import { getTenantAuthContext, assertTenantAccess } from '@/domains/identity/permission-service';
 import { decryptSensitive } from '@/lib/security/crypto-vault';
+import { toPlain } from '@/lib/serialize';
 
 export async function createBookingDraft(data: unknown): Promise<
   | { success: true; bookingId: string; reference: string; totalAmount: number; discountAmount?: number; currency: string; status: string; referralStatus?: string; error?: undefined }
@@ -362,29 +363,42 @@ export async function getBookingById(id: string) {
 
     // Owner/tenant-authorized read: passenger PII in the details snapshot is
     // decrypted server-side so the raw ciphertext never reaches the client.
+    // Decimals are strictly converted to plain numbers for RSC boundary compliance.
     const sanitizedBooking = {
       ...booking,
+      totalAmount: Number(booking.totalAmount),
       items: booking.items.map((item) => {
-        if (!item.details) return item;
-        try {
-          const parsedDetails = JSON.parse(item.details);
-          if (Array.isArray(parsedDetails.passengers)) {
-            parsedDetails.passengers = parsedDetails.passengers.map(
-              (p: { nationalId?: string; passportNo?: string } & Record<string, unknown>) => ({
-                ...p,
-                nationalId: p.nationalId ? decryptSensitive(p.nationalId) : p.nationalId,
-                passportNo: p.passportNo ? decryptSensitive(p.passportNo) : p.passportNo,
-              })
-            );
+        let details = item.details;
+        if (item.details) {
+          try {
+            const parsedDetails = JSON.parse(item.details);
+            if (Array.isArray(parsedDetails.passengers)) {
+              parsedDetails.passengers = parsedDetails.passengers.map(
+                (p: { nationalId?: string; passportNo?: string } & Record<string, unknown>) => ({
+                  ...p,
+                  nationalId: p.nationalId ? decryptSensitive(p.nationalId) : p.nationalId,
+                  passportNo: p.passportNo ? decryptSensitive(p.passportNo) : p.passportNo,
+                })
+              );
+            }
+            details = JSON.stringify(parsedDetails);
+          } catch {
+            // Keep details as is
           }
-          return { ...item, details: JSON.stringify(parsedDetails) };
-        } catch {
-          return item;
         }
+        return {
+          ...item,
+          netCost: Number(item.netCost),
+          markup: Number(item.markup),
+          taxAmount: Number(item.taxAmount),
+          feeAmount: Number(item.feeAmount),
+          sellPrice: Number(item.sellPrice),
+          details,
+        };
       }),
     };
 
-    return { success: true, booking: sanitizedBooking };
+    return { success: true, booking: toPlain(sanitizedBooking) };
   } catch (err: unknown) {
     console.error('getBookingById server error:', err);
     return { success: false, error: 'Failed to fetch booking', booking: null };
@@ -645,3 +659,99 @@ export async function getWallet() {
     };
   }
 }
+
+/**
+ * Multi-Product Unified Cart Booking Action (Miracuves / Lulan Pattern).
+ * Atomically creates a consolidated booking for heterogeneous items (e.g. Flight + Hotel + Transfer).
+ */
+export async function createMultiItemBookingDraftAction(params: {
+  items: Array<{
+    type: string;
+    itemId: string;
+    title: string;
+    count: number;
+    nights?: number;
+    unitPrice: number;
+    travelDate: string;
+    inventoryItemId?: string;
+    details?: Record<string, unknown>;
+  }>;
+  currency?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  passengers?: Array<Record<string, unknown>>;
+}) {
+  try {
+    const session = await safeAuth();
+    if (!session || !session.user) {
+      return { success: false, error: 'Unauthorized' };
+    }
+    const { UnifiedCartService } = await import('@/domains/booking/UnifiedCartService');
+    const result = await UnifiedCartService.createMultiItemBooking({
+      actorId: session.user.id,
+      items: params.items,
+      currency: params.currency,
+      contactEmail: params.contactEmail,
+      contactPhone: params.contactPhone,
+      passengers: params.passengers,
+    });
+    return result;
+  } catch (err: unknown) {
+    console.error('createMultiItemBookingDraftAction error:', err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to create multi-item booking',
+    };
+  }
+}
+
+export async function calculateMultiItemPricingAction(
+  items: Array<{
+    type: string;
+    itemId: string;
+    title: string;
+    count: number;
+    nights?: number;
+    unitPrice: number;
+    travelDate: string;
+  }>,
+  currency = 'IRR'
+) {
+  try {
+    const { UnifiedCartService } = await import('@/domains/booking/UnifiedCartService');
+    const pricing = UnifiedCartService.calculateCartPricing(items, currency);
+    return { success: true, pricing };
+  } catch (err: unknown) {
+    console.error('calculateMultiItemPricingAction error:', err);
+    return { success: false, error: 'Failed to calculate cart pricing' };
+  }
+}
+
+/**
+ * Ingests an external booking confirmation SMS or text into user's My Trips (DaPlanStan pattern).
+ */
+export async function importExternalBookingAction(rawText: string) {
+  try {
+    const session = await safeAuth();
+    if (!session || !session.user) {
+      return { success: false, error: 'Unauthorized' };
+    }
+    const { TravelIngestionService } = await import('@/domains/booking/TravelIngestionService');
+    const result = await TravelIngestionService.importExternalBooking({
+      userId: session.user.id,
+      rawText,
+    });
+    if (result.success) {
+      revalidatePath('/my-trips');
+    }
+    return result;
+  } catch (err: unknown) {
+    console.error('importExternalBookingAction error:', err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to import external booking',
+    };
+  }
+}
+
+

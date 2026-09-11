@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { safeAuth } from '@/auth';
+import { toPlain } from '@/lib/serialize';
 
 export async function getUserTripsData() {
   const session = await safeAuth();
@@ -36,7 +37,7 @@ export async function getUserTripsData() {
     }),
   ]);
 
-  return { trips, independentBookings };
+  return toPlain({ trips, independentBookings });
 }
 
 export async function findBookingByReference(reference: string, phoneOrEmail?: string) {

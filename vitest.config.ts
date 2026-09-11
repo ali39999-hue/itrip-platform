@@ -4,6 +4,9 @@ import path from 'path';
 export default defineConfig({
   test: {
     environment: 'node',
+    environmentMatchGlobs: [
+      ['src/components/**/*.test.tsx', 'jsdom'],
+    ],
     globals: true,
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     testTimeout: 60000,

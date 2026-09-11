@@ -6,6 +6,8 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useRouter, Link } from '@/i18n/routing';
 import { TRANSFERS } from '@/lib/data';
 import { useBookingStore } from '@/stores/booking-store';
+import { useCountryStore } from '@/stores/country-store';
+import { COUNTRIES, COUNTRY_ORDER, countryName } from '@/lib/countries';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -34,6 +36,8 @@ export default function TransfersPage() {
   const locale = useLocale();
   const router = useRouter();
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
+  const { country, setCountry } = useCountryStore();
+  const c = COUNTRIES[country] || COUNTRIES.iran;
 
   const CATS: { id: CarCat; label: string }[] = [
     { id: 'eco', label: lt(locale, { fa: 'اقتصادی', en: 'Economy', ar: 'اقتصادي', zh: '经济型', ru: 'Эконом' }) },
@@ -50,17 +54,34 @@ export default function TransfersPage() {
   const [searched, setSearched] = useState(false);
   const [types, setTypes] = useState<CarCat[]>([]);
 
-  function toggleType(c: CarCat) {
-    setTypes((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
+  function toggleType(cType: CarCat) {
+    setTypes((prev) => (prev.includes(cType) ? prev.filter((x) => x !== cType) : [...prev, cType]));
   }
 
-  const results = useMemo(
-    () =>
-      (searched ? TRANSFERS.filter((t) => (!from || t.from === from) && (!to || t.to === to)) : TRANSFERS).filter(
-        (t) => types.length === 0 || types.includes(catOf(t))
-      ),
-    [searched, from, to, types]
-  );
+  const results = useMemo(() => {
+    let list = (searched ? TRANSFERS.filter((t) => (!from || t.from === from) && (!to || t.to === to)) : TRANSFERS).filter(
+      (t) => types.length === 0 || types.includes(catOf(t))
+    );
+
+    if (!searched && country) {
+      const cities = c.cities?.map((ci) => ci.fa.toLowerCase()) || [];
+      const citiesEn = c.cities?.map((ci) => ci.en.toLowerCase()) || [];
+
+      list = [...list].sort((a, b) => {
+        const aMatch =
+          cities.some((ci) => a.from.toLowerCase().includes(ci) || a.to.toLowerCase().includes(ci)) ||
+          citiesEn.some((ci) => a.fromEn?.toLowerCase().includes(ci) || a.toEn?.toLowerCase().includes(ci));
+        const bMatch =
+          cities.some((ci) => b.from.toLowerCase().includes(ci) || b.to.toLowerCase().includes(ci)) ||
+          citiesEn.some((ci) => b.fromEn?.toLowerCase().includes(ci) || b.toEn?.toLowerCase().includes(ci));
+        if (aMatch && !bMatch) return -1;
+        if (!aMatch && bMatch) return 1;
+        return 0;
+      });
+    }
+
+    return list;
+  }, [searched, from, to, types, country, c]);
 
   function reserve(transfer: (typeof TRANSFERS)[number]) {
     setBookingContext({
@@ -100,6 +121,28 @@ export default function TransfersPage() {
               <Link href="/trains" className="text-sub hover:text-brand-dark font-black text-[14px] pb-3 flex items-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
                 <BusFront size={18} /> {lt(locale, { fa: 'اتوبوس', en: 'Buses', ar: 'حافلات', zh: '巴士', ru: 'Автобусы' })}
               </Link>
+            </div>
+
+            {/* Country Selector Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+              <span className="text-[11px] font-black text-sub shrink-0 me-1">
+                {lt(locale, { fa: 'کشور مقصد:', en: 'Country:', ar: 'البلد:', zh: '目的地国家：', ru: 'Страна:' })}
+              </span>
+              {COUNTRY_ORDER.map((id) => (
+                <button
+                  key={`tr-country-${id}`}
+                  type="button"
+                  onClick={() => setCountry(id)}
+                  className={`px-3 py-1.5 rounded-xl whitespace-nowrap text-xs font-black transition cursor-pointer ${
+                    country === id
+                      ? 'bg-brand text-surface shadow-xs'
+                      : 'bg-soft text-sub hover:text-ink hover:bg-line/60'
+                  }`}
+                >
+                  <span className="me-1">{COUNTRIES[id].flag}</span>
+                  <span>{countryName(id, locale)}</span>
+                </button>
+              ))}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

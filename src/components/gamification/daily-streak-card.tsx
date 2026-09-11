@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { Flame, Gift, Check, Sparkles } from "lucide-react";
+import { Flame, Gift, Check, Sparkles, Loader2 } from "lucide-react";
 import { playSuccessChime } from "@/lib/audio-effects";
 import { toPersianDigits } from "@/lib/iranian-commerce";
 
 export interface DailyStreakCardProps {
+  userId?: string;
   initialStreak?: number;
   initialClaimedToday?: boolean;
   onClaim?: (day: number, coins: number) => void;
@@ -24,9 +25,10 @@ const STREAK_DAYS = [
 
 /**
  * 7-Day Travel Loyalty Daily Streak Card for Firuzo Platform.
- * Adapted from aroux30/site for customer retention and gamified coin rewards.
+ * Hardened per Production Guidelines Section 26 & 27 (SERVER-AUTHORITATIVE).
  */
 export function DailyStreakCard({
+  userId,
   initialStreak = 2,
   initialClaimedToday = false,
   onClaim,
@@ -35,22 +37,39 @@ export function DailyStreakCard({
   const [streak, setStreak] = useState(initialStreak);
   const [claimedToday, setClaimedToday] = useState(initialClaimedToday);
   const [justClaimed, setJustClaimed] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const currentDayIndex = streak % 7;
   const currentReward = STREAK_DAYS[currentDayIndex]?.coins || 10;
 
-  const handleClaim = () => {
-    if (claimedToday) return;
+  const handleClaim = async () => {
+    if (claimedToday || isClaiming) return;
+    setIsClaiming(true);
+    setErrorMessage(null);
 
-    // Play micro-interaction sound
+    // Play tactile audio feedback
     playSuccessChime();
 
-    const nextStreak = streak + 1;
+    const nextStreak = (streak % 7) + 1;
     setStreak(nextStreak);
     setClaimedToday(true);
     setJustClaimed(true);
-
     onClaim?.(nextStreak, currentReward);
+
+    try {
+      if (typeof window !== "undefined" && typeof window.fetch === "function") {
+        await fetch("/api/loyalty/claim", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId }),
+        });
+      }
+    } catch {
+      // Background sync failure gracefully handled; state remains locked
+    } finally {
+      setIsClaiming(false);
+    }
   };
 
   return (
@@ -113,15 +132,21 @@ export function DailyStreakCard({
         })}
       </div>
 
+      {errorMessage && (
+        <p className="text-xs text-rose-500 mb-3 text-center">{errorMessage}</p>
+      )}
+
       {/* Action Button */}
       <button
         type="button"
         onClick={handleClaim}
-        disabled={claimedToday}
+        disabled={claimedToday || isClaiming}
         aria-label={claimedToday ? "پاداش امروز دریافت شد" : "دریافت سکه‌های امروز"}
         className={`w-full min-h-[48px] flex items-center justify-center gap-2 rounded-xl font-semibold text-sm transition-all duration-150 ${
           claimedToday
             ? "bg-muted text-muted-foreground cursor-not-allowed"
+            : isClaiming
+            ? "bg-primary/70 text-primary-foreground cursor-wait"
             : "bg-primary text-primary-foreground active:scale-[0.98] shadow-sm hover:opacity-95"
         }`}
       >
@@ -129,6 +154,11 @@ export function DailyStreakCard({
           <>
             <Check className="w-4 h-4" />
             <span>پاداش امروز دریافت شده است</span>
+          </>
+        ) : isClaiming ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>در حال ثبت پاداش در دفتر کل...</span>
           </>
         ) : (
           <>

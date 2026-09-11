@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Automate Reality Matrix generation (BASE-102 / v1.5.7 Audit)
- * Regenerates docs/baseline/FEATURE_REALITY_MATRIX.md against commit 4b3174e.
+ * Automate Reality Matrix generation (BASE-102 / v1.5.9 Audit)
+ * Regenerates docs/baseline/FEATURE_REALITY_MATRIX.md against commit b800f5e.
  */
 
 import fs from 'node:fs';

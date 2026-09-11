@@ -11,6 +11,7 @@ import { Toaster } from 'sonner';
 export function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '';
   const isAdmin = /^\/([a-z]{2}\/)?admin(\/|$)/.test(pathname);
+  const isCheckout = /^\/([a-z]{2}\/)?(checkout|payment-status)(\/|$)/.test(pathname);
 
   if (isAdmin) {
     return (
@@ -28,7 +29,7 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       <Footer />
-      <BottomNav />
+      {!isCheckout && <BottomNav />}
       <ContactDock />
       <ToursPromoModal />
       <Toaster position="top-center" richColors closeButton />

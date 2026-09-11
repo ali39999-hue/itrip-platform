@@ -88,6 +88,10 @@ export const passengerSchema = z.object({
     .string()
     .min(5, "Passport number is too short")
     .max(20, "Passport number is too long"),
+  passportExpiryDate: z
+    .string()
+    .optional()
+    .or(z.literal("")),
   birthDate: z
     .string()
     .min(1, "Birth date is required")

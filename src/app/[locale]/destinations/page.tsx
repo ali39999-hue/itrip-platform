@@ -31,7 +31,7 @@ export default function DestinationsPage() {
   const locale = useLocale();
   const isEn = locale === 'en';
   const { country, setCountry } = useCountryStore();
-  const c = COUNTRIES[country];
+  const c = COUNTRIES[country] || COUNTRIES.iran;
 
   // Dynamic signature experiences from CMS / Database
   const [dbExperiences, setDbExperiences] = useState<ExperienceItem[]>([]);

@@ -492,7 +492,7 @@ export async function getSessionUser() {
         phone: user.phone || '',
         email: user.email || undefined,
         firstNameFa: user.firstNameFa || user.name || 'کاربر',
-        lastNameFa: user.lastNameFa || 'فیروزه',
+        lastNameFa: user.lastNameFa || 'فیروزو',
         kycApproved: false,
         role,
         telegramId: user.telegramId || undefined,

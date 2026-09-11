@@ -11,7 +11,7 @@ describe('Product Capability Registry (CAP-001)', () => {
   it('loads all defined capabilities with valid metadata and evidence paths', () => {
     const all = getAllCapabilities();
     const keys = Object.keys(all);
-    expect(keys.length).toBeGreaterThanOrEqual(18);
+    expect(keys.length).toBeGreaterThanOrEqual(23);
 
     for (const key of keys) {
       const cap = all[key as keyof typeof all];
@@ -22,6 +22,23 @@ describe('Product Capability Registry (CAP-001)', () => {
       expect(cap.evidencePath).toBeTruthy();
       expect(['LIVE', 'BETA', 'SIMULATED', 'MOCK', 'DISABLED', 'COMING_SOON']).toContain(cap.status);
     }
+  });
+
+  it('correctly tracks new v1.5.9 capabilities (cardToCard, aiRouter, loyaltyStreak)', () => {
+    const cardToCard = getCapability('payment.cardToCard');
+    expect(['BETA', 'DISABLED']).toContain(cardToCard.status);
+    expect(cardToCard.category).toBe('payment');
+
+    const aiRouter = getCapability('ai.router');
+    expect(aiRouter.status).toBe('LIVE');
+    expect(aiRouter.isReal).toBe(true);
+
+    const loyaltyStreak = getCapability('loyalty.streak');
+    expect(loyaltyStreak.status).toBe('LIVE');
+    expect(loyaltyStreak.isReal).toBe(true);
+
+    const manualRefund = getCapability('refund.manual');
+    expect(manualRefund.status).toBe('LIVE');
   });
 
   it('correctly reports wallet as LIVE and real', () => {

@@ -152,7 +152,7 @@ export function Header() {
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           <Logo size="sm" hideTextOnMobile />
 
-          <div className="hidden sm:flex items-center">
+          <div className="flex items-center">
             <CountrySwitcher />
           </div>
           <div className="flex items-center">

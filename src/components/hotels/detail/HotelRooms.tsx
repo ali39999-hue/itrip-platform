@@ -16,6 +16,11 @@ import { quote, TAX, keyOf, toman, type useHotelBooking } from '@/hooks/useHotel
 import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
 import type { Hotel, RoomType } from '@/lib/types';
+import {
+  HotelRatePlanService,
+  type RatePlanCode,
+  STANDARD_RATE_PLANS,
+} from '@/domains/pricing/HotelRatePlanService';
 
 interface HotelRoomsProps {
   booking: ReturnType<typeof useHotelBooking>;
@@ -40,6 +45,7 @@ export function HotelRooms({ booking, hotel, onApplyCombo, onOpenEdit }: HotelRo
     nights
   } = booking;
   const [openBd, setOpenBd] = useState<string | null>(null);
+  const [selectedPlans, setSelectedPlans] = useState<Record<string, RatePlanCode>>({});
   const rooms = getRoomsForLocale(locale);
   const plans = getPlansForLocale(locale);
 
@@ -104,8 +110,17 @@ export function HotelRooms({ booking, hotel, onApplyCombo, onOpenEdit }: HotelRo
             const qty = sel[k] || 0;
             const maxSel = (room.available ?? 5) - takenOf(rid) + qty;
             const priceToman = Math.round((room.pricePerNight || 0) / 10);
-            const totalToman = priceToman * nightCount;
             const fits = (room.capacity || 2) * Math.max(1, qty || 1) >= adults || qty === 0;
+            const activePlanCode: RatePlanCode =
+              selectedPlans[rid] || (room.breakfast ? 'BREAKFAST_INCLUDED' : 'ROOM_ONLY');
+            const rateCalc = HotelRatePlanService.calculateRate({
+              basePricePerNight: priceToman,
+              nights: nightCount,
+              rooms: 1,
+              ratePlanCode: activePlanCode,
+            });
+            const effectiveUnitPrice = rateCalc.unitPricePerNight;
+            const effectiveTotalToman = effectiveUnitPrice * nightCount;
             return (
               <div key={rid} className={`rounded-[14px] overflow-hidden bg-surface transition ${qty ? 'border-mint-bright ring-[3px] ring-brand/[0.07]' : ''} border border-line`}>
                 <div className="grid grid-cols-1 sm:grid-cols-[196px_1fr]">
@@ -118,9 +133,9 @@ export function HotelRooms({ booking, hotel, onApplyCombo, onOpenEdit }: HotelRo
                       <span className="spec inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-line bg-soft/50 text-sub text-[11px] font-bold">
                         <Users size={12} /> {t('capacity')} {num(room.capacity || 2, locale)} {lt(locale, { fa: 'نفر', en: 'guests', ar: 'ضيوف', zh: '人', ru: 'гостей' })}
                       </span>
-                      <span className={`spec inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[11px] font-bold ${room.breakfast ? 'border-success/30 text-success bg-success/10' : 'border-line bg-soft/50 text-sub'}`}>
-                        {room.breakfast ? <Coffee size={12} /> : <Ban size={12} />}
-                        {room.breakfast
+                      <span className={`spec inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[11px] font-bold ${rateCalc.plan.includesBreakfast ? 'border-success/30 text-success bg-success/10' : 'border-line bg-soft/50 text-sub'}`}>
+                        {rateCalc.plan.includesBreakfast ? <Coffee size={12} /> : <Ban size={12} />}
+                        {rateCalc.plan.includesBreakfast
                           ? lt(locale, { fa: 'صبحانه included', en: 'Breakfast included', ar: 'يشمل الإفطار', zh: '含早餐', ru: 'Завтрак включён' })
                           : lt(locale, { fa: 'بدون صبحانه', en: 'Room only', ar: 'بدون إفطار', zh: '无早餐', ru: 'Без завтрака' })}
                       </span>
@@ -130,6 +145,34 @@ export function HotelRooms({ booking, hotel, onApplyCombo, onOpenEdit }: HotelRo
                         </span>
                       )}
                     </div>
+
+                    {/* Rate Plan Selector Chips (Kamra PMS / QloApps pattern) */}
+                    <div className="mt-3 flex flex-wrap gap-1.5 pt-2 border-t border-line/60">
+                      {(['ROOM_ONLY', 'BREAKFAST_INCLUDED', 'FLEXIBLE_CANCEL', 'NON_REFUNDABLE'] as RatePlanCode[]).map((pCode) => {
+                        const planOpt = STANDARD_RATE_PLANS[pCode];
+                        const isSelected = activePlanCode === pCode;
+                        return (
+                          <button
+                            key={pCode}
+                            type="button"
+                            onClick={() => setSelectedPlans((prev) => ({ ...prev, [rid]: pCode }))}
+                            className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition flex items-center gap-1 border ${
+                              isSelected
+                                ? 'bg-brand text-surface border-brand shadow-2xs'
+                                : 'bg-soft/70 text-sub border-line hover:border-brand/40'
+                            }`}
+                          >
+                            <span>{locale === 'fa' ? planOpt.name.fa : planOpt.name.en}</span>
+                            {planOpt.priceMultiplier < 1 && (
+                              <span className="text-[9.5px] bg-rose-500 text-white px-1 rounded font-black">
+                                -8%
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
                     {!fits && qty > 0 && (
                       <div className="mt-2 text-[11.5px] font-bold text-destructive">
                         {lt(locale, { fa: 'ظرفیت این انتخاب برای تعداد مسافران کافی نیست', en: 'Capacity insufficient for your party', ar: 'السعة غير كافية', zh: '容量不足', ru: 'Недостаточно мест' })}
@@ -140,20 +183,27 @@ export function HotelRooms({ booking, hotel, onApplyCombo, onOpenEdit }: HotelRo
                 <div className="border-t border-line grid grid-cols-1 md:grid-cols-[1fr_170px_150px] gap-3 items-center px-4 py-3">
                   <div className="flex flex-col gap-1.5 min-w-0">
                     <b className="text-[13px] font-black">
-                      {room.breakfast
-                        ? lt(locale, { fa: 'نرخ استاندارد با صبحانه', en: 'Standard with breakfast', ar: 'سعر شامل الإفطار', zh: '含早标准价', ru: 'Стандарт с завтраком' })
-                        : lt(locale, { fa: 'نرخ استاندارد', en: 'Standard rate', ar: 'السعر القياسي', zh: '标准价', ru: 'Стандартный тариф' })}
+                      {locale === 'fa' ? rateCalc.plan.name.fa : rateCalc.plan.name.en}
                     </b>
                     <div className="flex flex-wrap gap-1.5">
                       <span className="inline-flex items-center gap-1 text-[11px] font-bold text-success">
                         <Check size={12} /> {lt(locale, { fa: 'تأیید آنی', en: 'Instant confirmation', ar: 'تأكيد فوري', zh: '即时确认', ru: 'Мгновенное подтверждение' })}
                       </span>
                       <span className="inline-flex items-center gap-1 text-[11px] font-bold text-sub"><Wallet size={12} /> {lt(locale, { fa: 'پرداخت ریالی', en: 'Pay in IRR', ar: 'الدفع بالريال', zh: '里亚尔支付', ru: 'Оплата в IRR' })}</span>
+                      {rateCalc.plan.isRefundable ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600">
+                          {lt(locale, { fa: 'کنسلی مجاز', en: 'Free cancellation', ar: 'إلغاء مجاني', zh: '免费取消', ru: 'Бесплатная отмена' })}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-500">
+                          {lt(locale, { fa: 'غیرقابل استرداد', en: 'Non-refundable', ar: 'غير قابل للإلغاء', zh: '不可退改', ru: 'Без возврата' })}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="md:text-end">
-                    <div className="text-lg font-black leading-snug text-price num">{num(priceToman, locale)} <small className="text-[11.5px] font-extrabold text-sub">{lt(locale, { fa: 'تومان / شب', en: 'Toman / night', ar: 'تومان / ليلة', zh: '图曼 / 晚', ru: 'томанов / ночь' })}</small></div>
-                    <div className="text-[11.5px] font-bold text-sub">{lt(locale, { fa: `جمع ${num(nightCount, locale)} شب:`, en: `Total ${num(nightCount, locale)} nights:`, ar: `المجموع:`, zh: `共:`, ru: `Итого:` })} <b>{num(totalToman, locale)} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</b></div>
+                    <div className="text-lg font-black leading-snug text-price num">{num(effectiveUnitPrice, locale)} <small className="text-[11.5px] font-extrabold text-sub">{lt(locale, { fa: 'تومان / شب', en: 'Toman / night', ar: 'تومان / ليلة', zh: '图曼 / 晚', ru: 'томанов / ночь' })}</small></div>
+                    <div className="text-[11.5px] font-bold text-sub">{lt(locale, { fa: `جمع ${num(nightCount, locale)} شب:`, en: `Total ${num(nightCount, locale)} nights:`, ar: `المجموع:`, zh: `共:`, ru: `Итого:` })} <b>{num(effectiveTotalToman, locale)} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</b></div>
                   </div>
                   <div className="flex items-center justify-start md:justify-end gap-2">
                     <Select

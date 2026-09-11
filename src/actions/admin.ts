@@ -12,6 +12,7 @@ import { businessMetrics } from '@/lib/observability/business-metrics';
 import { TravelFileService } from '@/domains/erp/TravelFileService';
 import { ExceptionCenterService } from '@/domains/erp/ExceptionCenterService';
 import { SiteContentService, FxRatesOverride } from '@/domains/content/SiteContentService';
+import { toPlain } from '@/lib/serialize';
 
 export async function runLedgerReconciliation(): Promise<ReconciliationReport> {
   await requirePermission(['finance:reports:view', 'finance:settlement:match']);
@@ -144,7 +145,7 @@ export async function getAdminBookings() {
         items: true,
       },
     });
-    return { success: true, bookings };
+    return { success: true, bookings: toPlain(bookings) };
   } catch (err: unknown) {
     console.error('getAdminBookings server error:', err);
     return { success: false, error: 'Failed to fetch admin bookings' };
@@ -652,6 +653,31 @@ export async function retryOutboxEvent(eventId: string) {
   }
 }
 
+/**
+ * Generates official passenger manifest and CSV for flight/tour operations (ToursAndTravelsManagement pattern).
+ */
+export async function getPassengerManifestAction(travelDate: string, serviceType?: string) {
+  try {
+    await requirePermission('booking:view:all');
+    const { PassengerManifestService } = await import('@/domains/booking/PassengerManifestService');
+    const list = await PassengerManifestService.getManifestForDate({
+      travelDate,
+      serviceType: serviceType === 'ALL' ? undefined : serviceType,
+    });
+    const csv = PassengerManifestService.generateCsv(list);
+    return { success: true, manifest: list, csv };
+  } catch (err) {
+    console.error('[getPassengerManifestAction] error:', err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'خطا در واکشی مانیفست مسافران',
+      manifest: [],
+      csv: '',
+    };
+  }
+}
+
+
 export async function getAdminTravelFiles() {
   try {
     const user = await requirePermission(['booking:view:all', 'ops:override:cancel']);
@@ -671,7 +697,7 @@ export async function getAdminTravelFiles() {
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
-    return { trips };
+    return toPlain({ trips });
   } catch (err) {
     console.warn('[getAdminTravelFiles] Database query fallback:', err);
     return { trips: [] };
@@ -712,7 +738,7 @@ export async function getAdminTravelFileById(id: string) {
       customerId: trip.userId,
     });
   }
-  return { trip };
+  return toPlain({ trip });
 }
 
 // ==================== Referral / Group Leader Admin Actions ====================

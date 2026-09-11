@@ -25,18 +25,25 @@ export type CapabilityCategory =
   | 'auth'
   | 'ai'
   | 'refund'
-  | 'wallet';
+  | 'wallet'
+  | 'loyalty';
 
 export type CapabilityKey =
   | 'payment.shetab'
   | 'payment.visa'
   | 'payment.mastercard'
   | 'payment.usdt'
+  | 'payment.cardToCard'
   | 'payment.wallet'
+  | 'supplier.flight'
   | 'supplier.flights'
+  | 'supplier.hotel'
   | 'supplier.hotels'
+  | 'supplier.tour'
   | 'supplier.tours'
+  | 'fx.live'
   | 'fx.liveRates'
+  | 'fx.simulated'
   | 'auth.sms'
   | 'auth.email'
   | 'auth.telegram'
@@ -44,8 +51,11 @@ export type CapabilityKey =
   | 'auth.wechat'
   | 'auth.google'
   | 'ai.planner'
+  | 'ai.router'
   | 'refund.online'
-  | 'wallet.multicurrency';
+  | 'refund.manual'
+  | 'wallet.multicurrency'
+  | 'loyalty.streak';
 
 export interface CapabilityDescriptor {
   key: CapabilityKey;
@@ -83,6 +93,14 @@ function resolveDynamicStatus(key: CapabilityKey): CapabilityStatus {
         ? 'DISABLED'
         : 'SIMULATED';
 
+    case 'payment.cardToCard':
+      if (process.env.MERCHANT_CARD_NUMBER && process.env.MERCHANT_SHEBA) {
+        return 'BETA';
+      }
+      return process.env.NODE_ENV === 'production' && process.env.DEMO_MODE !== 'true'
+        ? 'DISABLED'
+        : 'BETA';
+
     case 'payment.visa':
     case 'payment.mastercard':
       return 'COMING_SOON';
@@ -93,19 +111,26 @@ function resolveDynamicStatus(key: CapabilityKey): CapabilityStatus {
     case 'payment.wallet':
       return 'LIVE';
 
+    case 'supplier.flight':
     case 'supplier.flights':
       // Currently uses seeded catalog and mock adapter; direct Parto/Alibaba API integration roadmap active
       return 'MOCK';
 
+    case 'supplier.hotel':
     case 'supplier.hotels':
       // Seeded hotel inventory with rich facets
       return 'MOCK';
 
+    case 'supplier.tour':
     case 'supplier.tours':
       // Backed by database CMS and row-locked reservation
       return 'LIVE';
 
+    case 'fx.live':
+      return 'COMING_SOON';
+
     case 'fx.liveRates':
+    case 'fx.simulated':
       // Currently uses StaticRateProvider; live central bank feed pending
       return 'SIMULATED';
 
@@ -133,11 +158,20 @@ function resolveDynamicStatus(key: CapabilityKey): CapabilityStatus {
     case 'ai.planner':
       return 'LIVE';
 
+    case 'ai.router':
+      return 'LIVE';
+
     case 'refund.online':
       // Admin workflow + double-entry ledger reversal implemented; bank automated payout pending
       return 'BETA';
 
+    case 'refund.manual':
+      return 'LIVE';
+
     case 'wallet.multicurrency':
+      return 'LIVE';
+
+    case 'loyalty.streak':
       return 'LIVE';
 
     default:
@@ -156,6 +190,17 @@ export const CAPABILITY_DEFINITIONS: Record<CapabilityKey, Omit<CapabilityDescri
     },
     badgeLabel: { fa: 'شتاب', en: 'Shetab' },
     evidencePath: 'src/domains/payments/gateway-port.ts',
+  },
+  'payment.cardToCard': {
+    key: 'payment.cardToCard',
+    category: 'payment',
+    name: { fa: 'کارت به کارت آفلاین', en: 'Card-to-Card Transfer' },
+    description: {
+      fa: 'انتقال بانکی و ثبت شناسه پیگیری برای مبالغ بالا با تایید مالی',
+      en: 'Offline bank transfer for high-ticket purchases with manual finance clearance',
+    },
+    badgeLabel: { fa: 'تایید مالی', en: 'Finance Clearance' },
+    evidencePath: 'src/domains/payments/adapters/CardToCardPaymentAdapter.ts',
   },
   'payment.visa': {
     key: 'payment.visa',
@@ -201,6 +246,17 @@ export const CAPABILITY_DEFINITIONS: Record<CapabilityKey, Omit<CapabilityDescri
     badgeLabel: { fa: 'فعال', en: 'Active' },
     evidencePath: 'src/domains/payments/PaymentDomainService.ts',
   },
+  'supplier.flight': {
+    key: 'supplier.flight',
+    category: 'supplier',
+    name: { fa: 'تامین‌کننده پروازها', en: 'Flight Suppliers' },
+    description: {
+      fa: 'موتور توزیع پروازهای داخلی و خارجی',
+      en: 'Domestic and international flight distribution engine',
+    },
+    badgeLabel: { fa: 'کاتالوگ اختصاصی', en: 'Catalog' },
+    evidencePath: 'src/domains/supplier/flight-supplier-port.ts',
+  },
   'supplier.flights': {
     key: 'supplier.flights',
     category: 'supplier',
@@ -211,6 +267,17 @@ export const CAPABILITY_DEFINITIONS: Record<CapabilityKey, Omit<CapabilityDescri
     },
     badgeLabel: { fa: 'کاتالوگ اختصاصی', en: 'Catalog' },
     evidencePath: 'src/domains/supplier/flight-supplier-port.ts',
+  },
+  'supplier.hotel': {
+    key: 'supplier.hotel',
+    category: 'supplier',
+    name: { fa: 'تامین‌کننده هتل‌ها', en: 'Hotel Suppliers' },
+    description: {
+      fa: 'رزرواسیون اقامتگاه‌ها و هتل‌های برتر',
+      en: 'Hotel accommodation reservations and inventory aggregation',
+    },
+    badgeLabel: { fa: 'کاتالوگ اختصاصی', en: 'Catalog' },
+    evidencePath: 'src/domains/supplier/hotel-supplier-port.ts',
   },
   'supplier.hotels': {
     key: 'supplier.hotels',
@@ -223,6 +290,17 @@ export const CAPABILITY_DEFINITIONS: Record<CapabilityKey, Omit<CapabilityDescri
     badgeLabel: { fa: 'کاتالوگ اختصاصی', en: 'Catalog' },
     evidencePath: 'src/domains/supplier/hotel-supplier-port.ts',
   },
+  'supplier.tour': {
+    key: 'supplier.tour',
+    category: 'supplier',
+    name: { fa: 'تورها و تجربیات اختصاصی', en: 'Exclusive Tours & Experiences' },
+    description: {
+      fa: 'رزرو ظرفیت واقعی تورها با قفل همزمانی',
+      en: 'Direct booking of curated tours with row-locked inventory holds',
+    },
+    badgeLabel: { fa: 'مستقیم و زنده', en: 'Live Direct' },
+    evidencePath: 'src/domains/inventory/InventoryEngine.ts',
+  },
   'supplier.tours': {
     key: 'supplier.tours',
     category: 'supplier',
@@ -234,6 +312,17 @@ export const CAPABILITY_DEFINITIONS: Record<CapabilityKey, Omit<CapabilityDescri
     badgeLabel: { fa: 'مستقیم و زنده', en: 'Live Direct' },
     evidencePath: 'src/domains/inventory/InventoryEngine.ts',
   },
+  'fx.live': {
+    key: 'fx.live',
+    category: 'fx',
+    name: { fa: 'نرخ‌های زنده بانکی', en: 'Live Central Bank FX Feed' },
+    description: {
+      fa: 'دریافت برخط نرخ رسمی ارزها از وب‌سرویس بانک مرکزی',
+      en: 'Real-time exchange rate stream from central bank API',
+    },
+    badgeLabel: { fa: 'به‌زودی', en: 'Coming Soon' },
+    evidencePath: 'src/domains/ledger/currency-service.ts',
+  },
   'fx.liveRates': {
     key: 'fx.liveRates',
     category: 'fx',
@@ -241,6 +330,17 @@ export const CAPABILITY_DEFINITIONS: Record<CapabilityKey, Omit<CapabilityDescri
     description: {
       fa: 'تبدیل خودکار ارزهای ریال، درهم، دلار و یوان',
       en: 'Currency conversion across IRR, AED, USD and CNY',
+    },
+    badgeLabel: { fa: 'نرخ مرجع', en: 'Reference' },
+    evidencePath: 'src/domains/ledger/currency-service.ts',
+  },
+  'fx.simulated': {
+    key: 'fx.simulated',
+    category: 'fx',
+    name: { fa: 'نرخ‌های مرجع و شبیه‌سازی‌شده', en: 'Reference & Simulated FX Rates' },
+    description: {
+      fa: 'تبدیل ارزی بر پایه جدول نرخ‌های مرجع با کارمزد اسپرد',
+      en: 'Multi-currency conversion using reference rates and spread margins',
     },
     badgeLabel: { fa: 'نرخ مرجع', en: 'Reference' },
     evidencePath: 'src/domains/ledger/currency-service.ts',
@@ -322,6 +422,17 @@ export const CAPABILITY_DEFINITIONS: Record<CapabilityKey, Omit<CapabilityDescri
     badgeLabel: { fa: 'هوشمند', en: 'AI Powered' },
     evidencePath: 'src/app/api/planner/generate/route.ts',
   },
+  'ai.router': {
+    key: 'ai.router',
+    category: 'ai',
+    name: { fa: 'روتر چند ارائه‌دهنده هوش مصنوعی', en: 'Multi-Provider AI Router' },
+    description: {
+      fa: 'مدیریت و مسیریابی هوشمند بین Gemini، DeepSeek، OpenAI و Claude با Failover خودکار',
+      en: 'Intelligent multi-model routing with automatic 429 rate limit failover',
+    },
+    badgeLabel: { fa: 'فعال', en: 'Live' },
+    evidencePath: 'src/domains/ai/AiRouterService.ts',
+  },
   'refund.online': {
     key: 'refund.online',
     category: 'refund',
@@ -331,6 +442,17 @@ export const CAPABILITY_DEFINITIONS: Record<CapabilityKey, Omit<CapabilityDescri
       en: 'Penalty calculation per fare rules with automated ledger reversal',
     },
     badgeLabel: { fa: 'سیستمی', en: 'Systemic' },
+    evidencePath: 'src/domains/refund/RefundDomainService.ts',
+  },
+  'refund.manual': {
+    key: 'refund.manual',
+    category: 'refund',
+    name: { fa: 'استرداد دستی مالی', en: 'Manual Finance Refund' },
+    description: {
+      fa: 'بررسی کارشناس مالی و واریز بین بانکی به حساب مشتری',
+      en: 'Manual back-office finance review and interbank transfer payout',
+    },
+    badgeLabel: { fa: 'دستی', en: 'Manual' },
     evidencePath: 'src/domains/refund/RefundDomainService.ts',
   },
   'wallet.multicurrency': {
@@ -343,6 +465,17 @@ export const CAPABILITY_DEFINITIONS: Record<CapabilityKey, Omit<CapabilityDescri
     },
     badgeLabel: { fa: 'فعال', en: 'Active' },
     evidencePath: 'src/domains/ledger/GeneralLedgerService.ts',
+  },
+  'loyalty.streak': {
+    key: 'loyalty.streak',
+    category: 'loyalty',
+    name: { fa: 'زنجیره ورود روزانه و پاداش وفاداری', en: 'Daily Streak & Loyalty Rewards' },
+    description: {
+      fa: 'دریافت سکه‌های وفاداری روزانه با ثبت قطعی سمت سرور و قوانین ضدسوءاستفاده',
+      en: 'Server-authoritative 7-day loyalty streak with idempotent ledger rewards',
+    },
+    badgeLabel: { fa: 'فعال', en: 'Live' },
+    evidencePath: 'src/domains/loyalty/LoyaltyStreakService.ts',
   },
 };
 

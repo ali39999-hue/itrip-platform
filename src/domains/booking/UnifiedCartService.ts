@@ -1,0 +1,249 @@
+import { prisma } from '@/lib/prisma';
+import { InventoryEngine } from '@/domains/inventory/InventoryEngine';
+
+export interface UnifiedCartItem {
+  type: 'FLIGHT' | 'HOTEL' | 'TOUR' | 'TRANSFER' | 'VISA' | 'ESIM' | 'INSURANCE' | string;
+  itemId: string;
+  title: string;
+  count: number; // Passenger or unit count
+  nights?: number; // For hotel
+  unitPrice: number;
+  travelDate: string; // YYYY-MM-DD
+  inventoryItemId?: string; // Canonical DB inventory item id (optional)
+  details?: Record<string, unknown>;
+}
+
+export interface CartPricingSummary {
+  grossAmount: number;
+  bundleDiscountPercent: number;
+  bundleDiscountAmount: number;
+  netAmount: number;
+  currency: string;
+  hasFlightHotelCombo: boolean;
+  itemBreakdown: Array<{
+    title: string;
+    type: string;
+    count: number;
+    unitPrice: number;
+    subtotal: number;
+  }>;
+}
+
+export interface UnifiedDraftResult {
+  success: boolean;
+  bookingId?: string;
+  reference?: string;
+  totalAmount?: number;
+  currency?: string;
+  holdTokens?: string[];
+  pricing?: CartPricingSummary;
+  error?: string;
+}
+
+export class UnifiedCartService {
+  /**
+   * Computes multi-product cart bundle pricing & cross-selling discounts.
+   * Miracuves / Expedia style: 5% package discount applied when both Flight & Hotel are booked together.
+   */
+  static calculateCartPricing(
+    items: UnifiedCartItem[],
+    currency = 'IRR'
+  ): CartPricingSummary {
+    let gross = 0;
+    const hasFlight = items.some((i) => i.type.toUpperCase() === 'FLIGHT');
+    const hasHotel = items.some((i) => i.type.toUpperCase() === 'HOTEL');
+    const hasCombo = hasFlight && hasHotel;
+
+    const breakdown = items.map((item) => {
+      const multiplier = item.type.toUpperCase() === 'HOTEL' ? (item.nights || 1) : 1;
+      const subtotal = item.unitPrice * item.count * multiplier;
+      gross += subtotal;
+      return {
+        title: item.title,
+        type: item.type,
+        count: item.count,
+        unitPrice: item.unitPrice,
+        subtotal,
+      };
+    });
+
+    const discountPercent = hasCombo ? 0.05 : 0.0;
+    const discountAmount = Math.round(gross * discountPercent);
+    const net = gross - discountAmount;
+
+    return {
+      grossAmount: gross,
+      bundleDiscountPercent: discountPercent,
+      bundleDiscountAmount: discountAmount,
+      netAmount: net,
+      currency,
+      hasFlightHotelCombo: hasCombo,
+      itemBreakdown: breakdown,
+    };
+  }
+
+  /**
+   * All-or-Nothing Multi-Item Inventory Hold Coordinator (Lulan / Miracuves pattern).
+   * Atomically acquires holds on all inventory items. If any single item is sold out,
+   * it rolls back and releases all acquired tokens to prevent partial hold locking.
+   */
+  static async acquireAllOrNothingHolds(
+    items: UnifiedCartItem[]
+  ): Promise<{ success: boolean; holdTokens: string[]; error?: string }> {
+    const acquiredTokens: string[] = [];
+
+    for (const item of items) {
+      if (!item.inventoryItemId) continue;
+
+      const res = await InventoryEngine.createHold({
+        inventoryItemId: item.inventoryItemId,
+        date: item.travelDate,
+        quantity: item.count,
+        ttlMinutes: 15,
+      });
+
+      if (!res.success || !res.token) {
+        // Rollback all previously acquired holds in this batch
+        for (const token of acquiredTokens) {
+          try {
+            await InventoryEngine.releaseHold(token);
+          } catch (relErr) {
+            console.error(`Failed to rollback hold token ${token}:`, relErr);
+          }
+        }
+
+        return {
+          success: false,
+          holdTokens: [],
+          error: `موجودی "${item.title}" به اتمام رسیده است. (${res.error || 'Sold out'})`,
+        };
+      }
+
+      acquiredTokens.push(res.token);
+    }
+
+    return {
+      success: true,
+      holdTokens: acquiredTokens,
+    };
+  }
+
+  /**
+   * Creates a multi-product consolidated Booking record with multiple BookingItems.
+   */
+  static async createMultiItemBooking(params: {
+    actorId: string;
+    items: UnifiedCartItem[];
+    currency?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    passengers?: Array<Record<string, unknown>>;
+  }): Promise<UnifiedDraftResult> {
+    if (!params.items || params.items.length === 0) {
+      return { success: false, error: 'Cart is empty' };
+    }
+
+    const currency = params.currency || 'IRR';
+    const pricing = this.calculateCartPricing(params.items, currency);
+
+    // Step 1: All-or-nothing hold acquisition
+    const holdRes = await this.acquireAllOrNothingHolds(params.items);
+    if (!holdRes.success) {
+      return { success: false, error: holdRes.error };
+    }
+
+    const reference = `ITR-${Date.now().toString().slice(-6)}`;
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 min TTL
+
+    try {
+      const booking = await prisma.$transaction(async (tx) => {
+        const b = await tx.booking.create({
+          data: {
+            reference,
+            customerId: params.actorId,
+            status: 'HELD',
+            paymentStatus: 'INITIATED',
+            fulfillmentStatus: 'PENDING',
+            ticketStatus: 'NOT_ISSUED',
+            totalAmount: pricing.netAmount,
+            currency,
+            travelDate: params.items[0]?.travelDate || null,
+            holdToken: holdRes.holdTokens[0] || null, // Primary token
+            expiresAt,
+          },
+        });
+
+        // Create individual BookingItems
+        for (const item of params.items) {
+          const nights = item.type.toUpperCase() === 'HOTEL' ? (item.nights || 1) : 1;
+          const sellPrice = item.unitPrice * item.count * nights;
+          const netCost = Math.round(sellPrice * 0.9); // 10% platform gross margin
+          const markup = sellPrice - netCost;
+
+          const itemDetails = {
+            title: item.title,
+            type: item.type,
+            travelDate: item.travelDate,
+            count: item.count,
+            nights: item.nights,
+            passengers: params.passengers || [],
+            contactEmail: params.contactEmail,
+            contactPhone: params.contactPhone,
+            ...(item.details || {}),
+          };
+
+          await tx.bookingItem.create({
+            data: {
+              bookingId: b.id,
+              inventoryItemId: item.inventoryItemId || null,
+              type: item.type,
+              netCost,
+              markup,
+              taxAmount: 0,
+              feeAmount: 0,
+              sellPrice,
+              details: JSON.stringify(itemDetails),
+            },
+          });
+        }
+
+        // Attach Price Snapshot
+        await tx.priceSnapshot.create({
+          data: {
+            bookingId: b.id,
+            baseAmount: pricing.grossAmount,
+            discountAmount: pricing.bundleDiscountAmount,
+            markupAmount: Math.round(pricing.netAmount * 0.1),
+            serviceFee: 0,
+            taxAmount: 0,
+            sellPrice: pricing.netAmount,
+            currency,
+            breakdownJson: JSON.stringify(pricing),
+          },
+        });
+
+        return b;
+      });
+
+      return {
+        success: true,
+        bookingId: booking.id,
+        reference: booking.reference,
+        totalAmount: Number(booking.totalAmount),
+        currency: booking.currency,
+        holdTokens: holdRes.holdTokens,
+        pricing,
+      };
+    } catch (err: unknown) {
+      // Rollback holds on DB failure
+      for (const token of holdRes.holdTokens) {
+        await InventoryEngine.releaseHold(token).catch(() => {});
+      }
+      console.error('createMultiItemBooking transaction error:', err);
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to create multi-item booking',
+      };
+    }
+  }
+}

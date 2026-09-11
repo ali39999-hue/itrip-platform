@@ -222,7 +222,7 @@ export function TravelerPicker({
                       aria-label={t('adult') + ' -'}
                       onClick={() => setAdults(Math.max(1, adults - 1))}
                       disabled={adults <= 1}
-                      className="w-10 h-10 rounded-xl bg-surface border border-line text-ink grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition shadow-2xs"
+                      className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-surface border border-line text-ink grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition shadow-2xs"
                     >
                       <Minus size={16} />
                     </button>
@@ -234,7 +234,7 @@ export function TravelerPicker({
                       aria-label={t('adult') + ' +'}
                       onClick={() => setAdults(Math.min(9, adults + 1))}
                       disabled={adults >= 9}
-                      className="w-10 h-10 rounded-xl bg-brand text-surface grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition shadow-xs shadow-brand/30"
+                      className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-brand text-surface grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition shadow-xs shadow-brand/30"
                     >
                       <Plus size={16} />
                     </button>
@@ -253,7 +253,7 @@ export function TravelerPicker({
                       aria-label={t('child') + ' -'}
                       onClick={() => setChildrenCount(Math.max(0, childrenCount - 1))}
                       disabled={childrenCount <= 0}
-                      className="w-10 h-10 rounded-xl bg-surface border border-line text-ink grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition shadow-2xs"
+                      className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-surface border border-line text-ink grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition shadow-2xs"
                     >
                       <Minus size={16} />
                     </button>
@@ -265,7 +265,7 @@ export function TravelerPicker({
                       aria-label={t('child') + ' +'}
                       onClick={() => setChildrenCount(Math.min(6, childrenCount + 1))}
                       disabled={childrenCount >= 6}
-                      className="w-10 h-10 rounded-xl bg-brand text-surface grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition shadow-xs shadow-brand/30"
+                      className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-brand text-surface grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition shadow-xs shadow-brand/30"
                     >
                       <Plus size={16} />
                     </button>
@@ -280,27 +280,27 @@ export function TravelerPicker({
                       <span className="block text-xs text-sub">{t('roomHint')}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        aria-label={t('room') + ' -'}
-                        onClick={() => setRooms(Math.max(1, rooms - 1))}
-                        disabled={rooms <= 1}
-                        className="w-10 h-10 rounded-xl bg-surface border border-line text-ink grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition shadow-2xs"
-                      >
-                        <Minus size={16} />
-                      </button>
-                      <span className="w-6 text-center text-base font-black text-ink font-mono num">
-                        {num(rooms, locale)}
-                      </span>
-                      <button
-                        type="button"
-                        aria-label={t('room') + ' +'}
-                        onClick={() => setRooms(Math.min(5, rooms + 1))}
-                        disabled={rooms >= 5}
-                        className="w-10 h-10 rounded-xl bg-brand-dark text-surface hover:bg-brand grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition shadow-xs"
-                      >
-                        <Plus size={16} />
-                      </button>
+                    <button
+                      type="button"
+                      aria-label={t('room') + ' -'}
+                      onClick={() => setRooms(Math.max(1, rooms - 1))}
+                      disabled={rooms <= 1}
+                      className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-surface border border-line text-ink grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition shadow-2xs"
+                    >
+                      <Minus size={16} />
+                    </button>
+                    <span className="w-6 text-center text-base font-black text-ink font-mono num">
+                      {num(rooms, locale)}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={t('room') + ' +'}
+                      onClick={() => setRooms(Math.min(5, rooms + 1))}
+                      disabled={rooms >= 5}
+                      className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-brand-dark text-surface hover:bg-brand grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition shadow-xs"
+                    >
+                      <Plus size={16} />
+                    </button>
                     </div>
                   </div>
                 )}

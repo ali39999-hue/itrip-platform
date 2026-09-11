@@ -47,7 +47,10 @@ export default function InterpreterPage() {
   const group = useMemo(() => interpreterGroupPlan(groupSize), [groupSize]);
 
   const profiles = useMemo(() => {
-    const list = INTERPRETERS.filter((i) => i.countries.includes(country) || country === 'iran');
+    let list = INTERPRETERS.filter((i) => i.countries.includes(country));
+    if (list.length === 0) {
+      list = INTERPRETERS;
+    }
     return (specFilter === 'all' ? list : list.filter((i) => i.specialty === specFilter))
       .slice()
       .sort((a, b) => b.rating - a.rating);

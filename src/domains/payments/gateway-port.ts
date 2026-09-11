@@ -38,7 +38,7 @@ export interface GatewayVerifyResponse {
   transactionId: string;
   settledAmount: Money;
   settledCurrency: string;
-  status: 'CAPTURED' | 'FAILED';
+  status: 'CAPTURED' | 'FAILED' | 'PENDING_VERIFICATION';
   errorCode?: string;
   error?: string;
 }

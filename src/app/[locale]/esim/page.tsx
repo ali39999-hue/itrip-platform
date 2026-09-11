@@ -1,41 +1,52 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { ESIM_PACKAGES } from '@/lib/data';
 import { useBookingStore } from '@/stores/booking-store';
+import { useCountryStore } from '@/stores/country-store';
+import { COUNTRIES, COUNTRY_ORDER, countryName } from '@/lib/countries';
 import { daysFromNow } from '@/lib/utils';
 import { shimmerDataUrl } from '@/lib/image-utils';
 import { Search, ShoppingCart, QrCode, Wifi, Signal, Globe, CheckCircle2, Smartphone, HelpCircle, X, Zap } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { lt } from '@/lib/lt';
 
-const POPULAR_DESTINATIONS = [
-  { id: 'turkey', label: { fa: 'ترکیه', en: 'Turkey', ar: 'تركيا', zh: '土耳其', ru: 'Турция' }, keyFa: 'ترکیه', keyEn: 'Turkey' },
-  { id: 'uae', label: { fa: 'امارات', en: 'UAE', ar: 'الإمارات', zh: '阿联酋', ru: 'ОАЭ' }, keyFa: 'امارات', keyEn: 'UAE' },
-  { id: 'georgia', label: { fa: 'گرجستان', en: 'Georgia', ar: 'جورجيا', zh: '格鲁吉亚', ru: 'Грузия' }, keyFa: 'گرجستان', keyEn: 'Georgia' },
-  { id: 'russia', label: { fa: 'روسیه', en: 'Russia', ar: 'روسيا', zh: '俄罗斯', ru: 'Россия' }, keyFa: 'روسیه', keyEn: 'Russia' },
-  { id: 'oman', label: { fa: 'عمان', en: 'Oman', ar: 'عمان', zh: '阿曼', ru: 'Оман' }, keyFa: 'عمان', keyEn: 'Oman' },
-  { id: 'europe', label: { fa: 'اروپا', en: 'Europe', ar: 'أوروبا', zh: '欧洲', ru: 'Европа' }, keyFa: 'اروپا', keyEn: 'Europe' },
-];
-
 export default function EsimPage() {
   const t = useTranslations('Esim');
   const locale = useLocale();
   const router = useRouter();
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
+  const { country, setCountry } = useCountryStore();
+  const c = COUNTRIES[country] || COUNTRIES.iran;
+
   const [query, setQuery] = useState('');
   const [compatibilityModal, setCompatibilityModal] = useState(false);
 
-  const filteredPackages = ESIM_PACKAGES.filter((p) => {
+  const filteredPackages = useMemo(() => {
+    let list = ESIM_PACKAGES;
     const q = query.toLowerCase().trim();
-    if (!q) return true;
-    const cFa = (p.countryFa || p.country).toLowerCase();
-    const cEn = (p.countryEn || p.country).toLowerCase();
-    return cFa.includes(q) || cEn.includes(q);
-  });
+    if (q) {
+      list = list.filter((p) => {
+        const cFa = (p.countryFa || p.country).toLowerCase();
+        const cEn = (p.countryEn || p.country).toLowerCase();
+        return cFa.includes(q) || cEn.includes(q);
+      });
+    } else if (country && country !== 'iran') {
+      const cFa = c.nameFa.toLowerCase();
+      const cEn = c.nameEn.toLowerCase();
+      list = [...list].sort((a, b) => {
+        const aMatch = (a.countryFa || a.country).toLowerCase().includes(cFa) || (a.countryEn || a.country).toLowerCase().includes(cEn);
+        const bMatch = (b.countryFa || b.country).toLowerCase().includes(cFa) || (b.countryEn || b.country).toLowerCase().includes(cEn);
+        if (aMatch && !bMatch) return -1;
+        if (!aMatch && bMatch) return 1;
+        return 0;
+      });
+    }
+    return list;
+  }, [query, country, c]);
 
   function buy(pkg: (typeof ESIM_PACKAGES)[number]) {
     const countryTitle = locale === 'fa' ? (pkg.countryFa || pkg.country) : (pkg.countryEn || pkg.country);
@@ -86,26 +97,28 @@ export default function EsimPage() {
             />
           </div>
 
-          {/* Quick Filter Chips for Popular Destinations */}
+          {/* Quick Filter Chips for Destinations */}
           <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
-            <span className="text-xs text-surface/80 font-bold">{lt(locale, { fa: 'مقاصد محبوب:', en: 'Popular:', ar: 'شائع:', zh: '热门：', ru: 'Популярные:' })}</span>
-            {POPULAR_DESTINATIONS.map((dest) => {
-              const chipKey = locale === 'fa' ? dest.keyFa : dest.keyEn;
-              return (
-                <button
-                  key={dest.id}
-                  type="button"
-                  onClick={() => setQuery(chipKey)}
-                  className={`px-3 py-1 rounded-full text-xs font-bold transition ${
-                    query.toLowerCase() === chipKey.toLowerCase()
-                      ? 'bg-action text-ink font-black shadow-xs'
-                      : 'bg-surface/20 hover:bg-surface/30 text-surface'
-                  }`}
-                >
-                  {lt(locale, dest.label)}
-                </button>
-              );
-            })}
+            <span className="text-xs text-surface/80 font-bold">{lt(locale, { fa: 'مقاصد سفر:', en: 'Destinations:', ar: 'الوجهات:', zh: '目的地：', ru: 'Направления:' })}</span>
+            {COUNTRY_ORDER.map((id) => (
+              <button
+                key={`esim-c-${id}`}
+                type="button"
+                onClick={() => {
+                  setCountry(id);
+                  const name = countryName(id, locale);
+                  setQuery(name);
+                }}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer ${
+                  country === id
+                    ? 'bg-action text-ink font-black shadow-xs'
+                    : 'bg-surface/20 hover:bg-surface/30 text-surface'
+                }`}
+              >
+                <span className="me-1">{COUNTRIES[id].flag}</span>
+                <span>{countryName(id, locale)}</span>
+              </button>
+            ))}
             {query && (
               <button
                 type="button"

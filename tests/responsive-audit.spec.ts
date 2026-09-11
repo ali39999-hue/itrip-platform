@@ -1,20 +1,28 @@
 import { test, expect } from '@playwright/test';
 
 const viewports = [
+  { name: 'Ultra-Compact Mobile', width: 320, height: 640 },
+  { name: 'Android Standard', width: 360, height: 800 },
+  { name: 'iPhone Compact', width: 375, height: 812 },
+  { name: 'iPhone Standard', width: 390, height: 844 },
+  { name: 'Android Large', width: 412, height: 915 },
+  { name: 'iPhone Pro Max', width: 430, height: 932 },
+  { name: 'Tablet Portrait', width: 768, height: 1024 },
+  { name: 'Tablet Landscape', width: 1024, height: 768 },
   { name: 'Desktop Large', width: 1440, height: 900 },
-  { name: 'Laptop', width: 1024, height: 768 },
-  { name: 'Tablet', width: 768, height: 1024 },
-  { name: 'Mobile', width: 390, height: 844 },
-  { name: 'Small Mobile', width: 360, height: 740 },
 ];
 
 const routes = [
   { path: '/fa', name: 'Homepage' },
   { path: '/fa/flights', name: 'Flights' },
+  { path: '/fa/flights/search', name: 'FlightSearch' },
   { path: '/fa/hotels', name: 'Hotels' },
+  { path: '/fa/hotels/search', name: 'HotelSearch' },
+  { path: '/fa/checkout', name: 'Checkout' },
+  { path: '/fa/trips', name: 'Trips' },
   { path: '/fa/tours', name: 'Tours' },
   { path: '/fa/services', name: 'Services' },
-  { path: '/fa/auth/signin', name: 'SignIn' },
+  { path: '/fa/auth', name: 'Auth' },
   { path: '/fa/account', name: 'Account' },
   { path: '/fa/destinations', name: 'Destinations' },
   { path: '/fa/visa', name: 'Visa' },

@@ -165,6 +165,7 @@ export function getFlightPriceById(id: string): number | null {
 }
 
 export interface FlightSearchParams {
+  country?: string;
   from?: string;
   to?: string;
   departDate?: string;
@@ -216,8 +217,30 @@ export function searchFlights(params: FlightSearchParams): FlightSearchResponse 
     resolvedTo?.airportCode?.toLowerCase(),
   ].filter((s): s is string => Boolean(s));
 
+  // Country-aware pool scoping: if country parameter is passed and no destination specified
+  const reqCountry = params.country?.toLowerCase();
+  let scopedFlights = flights;
+  if (reqCountry && !params.to) {
+    if (reqCountry === 'iran') {
+      const domestic = flights.filter((f) => ['مشهد', 'کیش', 'شیراز', 'اصفهان', 'تبریز'].some((c) => f.destinationCity.includes(c)));
+      if (domestic.length > 0) scopedFlights = domestic;
+    } else {
+      const matchPattern =
+        reqCountry === 'turkey' ? /استانبول|istanbul|آنتالیا|antalya|ازمیر|izmir|ist|ayt/i :
+        reqCountry === 'uae' ? /دبی|dubai|ابوظبی|dxb|auh/i :
+        reqCountry === 'georgia' ? /تفلیس|tbilisi|باتومی|batumi|tbs|bus/i :
+        reqCountry === 'oman' ? /مسقط|muscat|صلاله|mct|sll/i :
+        reqCountry === 'russia' ? /مسکو|moscow|svo|led/i :
+        reqCountry === 'china' ? /پکن|beijing|pek|pvg/i : null;
+      if (matchPattern) {
+        const countryFlights = flights.filter((f) => matchPattern.test(`${f.destination} ${f.destinationCity}`));
+        if (countryFlights.length > 0) scopedFlights = countryFlights;
+      }
+    }
+  }
+
   // 1. Initial route pool filter
-  const routePool = flights.filter((f) => {
+  const routePool = scopedFlights.filter((f) => {
     if (fromNeedles.length > 0) {
       const matchOrigin = fromNeedles.some(
         (n) => f.originCity.toLowerCase().includes(n) || f.origin.toLowerCase().includes(n)
@@ -234,7 +257,7 @@ export function searchFlights(params: FlightSearchParams): FlightSearchResponse 
   });
 
   // Strict route filtering: if user queried a specific from/to, honor it without falling back to entire catalog
-  const isFilteredSearch = fromNeedles.length > 0 || toNeedles.length > 0;
+  const isFilteredSearch = fromNeedles.length > 0 || toNeedles.length > 0 || Boolean(reqCountry);
   const basePool = isFilteredSearch ? routePool : flights;
 
   // Calculate facets from route pool

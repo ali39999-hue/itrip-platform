@@ -1,8 +1,20 @@
 import path from 'path';
 import fs from 'fs';
 import type { Hotel, RoomType, HotelPropertyType } from '@/lib/types';
+import type { CountryId } from '@/lib/countries';
 import { formatDistance } from '@/lib/format';
 import { HOTELS } from '@/lib/data';
+
+export function detectCountryId(cityFa?: string, cityEn?: string): CountryId {
+  const s = `${cityFa || ''} ${cityEn || ''}`.toLowerCase();
+  if (/دبی|dubai|ابوظبی|abu dhabi|شارجه|sharjah|امارات|uae/i.test(s)) return 'uae';
+  if (/استانبول|istanbul|آنتالیا|antalya|کاپادوکیه|cappadocia|ازمیر|izmir|بدروم|bodrum|ترابزون|trabzon|ترکیه|turkey/i.test(s)) return 'turkey';
+  if (/تفلیس|tbilisi|باتومی|batumi|کازبگی|kazbegi|گرجستان|georgia/i.test(s)) return 'georgia';
+  if (/مسقط|muscat|صلاله|salalah|عمان|oman/i.test(s)) return 'oman';
+  if (/مسکو|moscow|سنت پترزبورگ|saint petersburg|سوچی|sochi|روسیه|russia/i.test(s)) return 'russia';
+  if (/پکن|beijing|شانگهای|shanghai|گوانگجو|guangzhou|شنژن|shenzhen|چنگدو|chengdu|چین|china|bjs/i.test(s)) return 'china';
+  return 'iran';
+}
 
 export function detectPropertyType(name: string, nameEn?: string): HotelPropertyType {
   const n = (name + ' ' + (nameEn || '')).toLowerCase();
@@ -37,10 +49,10 @@ export function detectPropertyType(name: string, nameEn?: string): HotelProperty
 
 function getCanonicalHotels(): DetailedHotelWithMeta[] {
   return HOTELS.map((h) => {
-    const isChina = ['bjs', 'shanghai', 'beijing'].some((k) => h.cityEn?.toLowerCase().includes(k));
+    const resolvedCountry = detectCountryId(h.city, h.cityEn);
     return {
       ...h,
-      countryId: (isChina ? 'china' : 'iran') as 'iran' | 'china',
+      countryId: resolvedCountry,
       galleryImages: h.galleryImages || [h.heroImage || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'],
       detailedRooms: h.roomTypes,
       description: h.description,
@@ -123,7 +135,7 @@ export interface RawChinaHotel {
 }
 
 export interface DetailedHotelWithMeta extends Hotel {
-  countryId: 'iran' | 'china';
+  countryId: CountryId;
   description?: string;
   address?: string;
   location?: { lat: number; lng: number };
@@ -401,15 +413,22 @@ export function searchHotels(params: HotelSearchParams): HotelSearchResponse {
   const chinaList = loadChinaHotels();
 
   let pool: DetailedHotelWithMeta[] = [];
-  if (params.country === 'china') {
-    pool = chinaList;
-  } else if (params.country === 'iran') {
+  const reqCountry = params.country?.toLowerCase() as CountryId | undefined;
+
+  if (reqCountry === 'china') {
+    pool = [...chinaList, ...canonicalList.filter((h) => h.countryId === 'china')];
+  } else if (reqCountry === 'iran') {
     pool = [...canonicalList.filter((h) => h.countryId === 'iran'), ...iranList];
+  } else if (reqCountry && ['turkey', 'uae', 'georgia', 'oman', 'russia'].includes(reqCountry)) {
+    pool = canonicalList.filter((h) => h.countryId === reqCountry);
   } else {
     // If city is specified, check where it belongs
     const qLower = (params.query || params.city || '').trim().toLowerCase();
-    if (qLower.includes('پکن') || qLower.includes('beijing') || qLower.includes('china') || qLower.includes('چین')) {
-      pool = chinaList;
+    const detected = detectCountryId(qLower, qLower);
+    if (detected === 'china') {
+      pool = [...chinaList, ...canonicalList.filter((h) => h.countryId === 'china')];
+    } else if (detected !== 'iran' && qLower) {
+      pool = canonicalList.filter((h) => h.countryId === detected);
     } else {
       pool = [...canonicalList, ...iranList, ...chinaList];
     }

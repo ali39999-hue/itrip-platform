@@ -13,10 +13,14 @@
  */
 
 const ALLOWED_EVENTS = new Set([
+  'home_view',
   'search_started',
   'search_submitted',
+  'search_completed',
   'flight_selected',
   'hotel_selected',
+  'offer_viewed',
+  'offer_selected',
   'filter_applied',
   'sort_changed',
   'compare_opened',
@@ -26,6 +30,11 @@ const ALLOWED_EVENTS = new Set([
   'payment_started',
   'payment_succeeded',
   'payment_failed',
+  'booking_confirmed',
+  'trip_opened',
+  'support_started',
+  'planner_started',
+  'planner_completed',
   'addon_toggled',
 ]);
 

@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
 import { Plane, ShieldCheck, RefreshCcw, Clock, ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
 import { SearchWidget } from '@/components/search/SearchWidget';
+import { FareBrandedMatrix } from '@/components/flights/FareBrandedMatrix';
 import { shimmerDataUrl } from '@/lib/image-utils';
 import { num } from '@/lib/format';
 
@@ -98,6 +99,11 @@ export default function FlightsLandingPage() {
             </Link>
           ))}
         </div>
+      </section>
+
+      {/* Interactive Fare Branded Matrix Comparison (FlyNext pattern) */}
+      <section className="max-w-[1280px] mx-auto px-4 md:px-10 py-6">
+        <FareBrandedMatrix basePrice={8500000} locale={locale} />
       </section>
 
       {/* AI Flight & Trip Planner Banner */}

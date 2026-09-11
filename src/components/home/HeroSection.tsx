@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCountryStore } from '@/stores/country-store';
@@ -24,6 +24,10 @@ export function HeroSection({ override }: { override?: HeroOverride } = {}) {
   const locale = useLocale();
   const t = useTranslations('Hero');
   const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [country]);
 
   const cmsTitle = override?.title?.[locale === 'fa' ? 'fa' : 'en']?.trim();
   const cmsSubtitle = override?.subtitle?.[locale === 'fa' ? 'fa' : 'en']?.trim();

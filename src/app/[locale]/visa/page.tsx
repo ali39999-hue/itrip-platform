@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { VISA_SERVICES } from '@/lib/data';
 import { useBookingStore } from '@/stores/booking-store';
+import { useCountryStore } from '@/stores/country-store';
+import { COUNTRIES, COUNTRY_ORDER, countryName } from '@/lib/countries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { shimmerDataUrl } from '@/lib/image-utils';
@@ -26,6 +28,8 @@ export default function VisaPage() {
   const locale = useLocale();
   const router = useRouter();
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
+  const { country, setCountry } = useCountryStore();
+  const c = COUNTRIES[country] || COUNTRIES.iran;
 
   const [selected, setSelected] = useState<(typeof VISA_SERVICES)[number] | null>(null);
   const [step, setStep] = useState(0);
@@ -35,6 +39,16 @@ export default function VisaPage() {
   const [hasValidPassport, setHasValidPassport] = useState(true);
   const [hasPhoto, setHasPhoto] = useState(true);
   const [error, setError] = useState('');
+
+  const sortedVisas = useMemo(() => {
+    return [...VISA_SERVICES].sort((a, b) => {
+      const matchA = a.countryEn.toLowerCase() === c.nameEn.toLowerCase() || a.countryFa === c.nameFa;
+      const matchB = b.countryEn.toLowerCase() === c.nameEn.toLowerCase() || b.countryFa === c.nameFa;
+      if (matchA && !matchB) return -1;
+      if (!matchA && matchB) return 1;
+      return 0;
+    });
+  }, [c]);
 
   function start(service: (typeof VISA_SERVICES)[number]) {
     setSelected(service);
@@ -102,45 +116,76 @@ export default function VisaPage() {
 
       {/* Staggered Visa Cards Grid */}
       <section id="visa-cards">
-        <h2 className="text-center font-black text-ink text-[24px] md:text-[28px] tracking-tight mb-8">
-          {lt(locale, { fa: 'محبوب‌ترین مقاصد ویزا', en: 'Popular Visa Destinations', ar: 'أشهر وجهات التأشيرة', zh: '热门签证目的地', ru: 'Популярные визовые направления' })}
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
-          {VISA_SERVICES.map((v) => (
-            <article
-              key={v.id}
-              className="relative rounded-3xl overflow-hidden bg-surface shadow-xs hover:shadow-elev-2 transition-all group border border-line flex flex-col justify-between"
-            >
-              <div>
-                <div className="relative h-44 overflow-hidden bg-soft">
-                  <Image
-                    src={VISA_IMGS[v.countryEn] || VISA_IMGS.Turkey}
-                    alt={`${lt(locale, { fa: 'ویزای', en: 'Visa for', ar: 'تأشيرة', zh: '签证', ru: 'Виза в' })} ${locale === 'fa' ? v.countryFa : v.countryEn}`}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 25vw"
-                    placeholder="blur"
-                    blurDataURL={shimmerDataUrl(800, 400)}
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-deep/90 via-deep/30 to-transparent" />
-                  
-                  <div className="absolute top-3 start-3">
-                    <span className="text-surface text-xl font-black drop-shadow-md">
-                      {locale === 'fa' ? v.countryFa : v.countryEn}
-                    </span>
-                  </div>
+        <div className="flex flex-col items-center gap-3 mb-8">
+          <h2 className="text-center font-black text-ink text-[24px] md:text-[28px] tracking-tight m-0">
+            {lt(locale, { fa: 'محبوب‌ترین مقاصد اخذ ویزا', en: 'Popular Visa Destinations', ar: 'أشهر وجهات التأشيرة', zh: '热门签证目的地', ru: 'Популярные визовые направления' })}
+          </h2>
+          {/* Country Selection Chips */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full scrollbar-none text-xs">
+            {COUNTRY_ORDER.map((id) => (
+              <button
+                key={`visa-country-${id}`}
+                type="button"
+                onClick={() => setCountry(id)}
+                className={`px-3 py-1.5 rounded-xl whitespace-nowrap text-xs font-black transition cursor-pointer ${
+                  country === id
+                    ? 'bg-brand text-surface shadow-xs'
+                    : 'bg-soft text-sub hover:text-ink hover:bg-line/60'
+                }`}
+              >
+                <span className="me-1">{COUNTRIES[id].flag}</span>
+                <span>{countryName(id, locale)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
-                  <div className="absolute bottom-3 start-3 flex items-center gap-1.5 text-[11px] font-bold text-mint-bright">
-                    <Clock size={12} aria-hidden="true" />
-                    <span>
-                      {lt(locale, {
-                        fa: `بررسی در ${v.processingDays} روز کاری`,
-                        en: `Processed in ${v.processingDays} days`,
-                        ar: `معالجة خلال ${v.processingDays} أيام عمل`,
-                        zh: `${v.processingDays} 个工作日`,
-                        ru: `Оформление: ${v.processingDays} дн.`,
-                      })}
-                    </span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+          {sortedVisas.map((v) => {
+            const isMatch = v.countryEn.toLowerCase() === c.nameEn.toLowerCase() || v.countryFa === c.nameFa;
+            return (
+              <article
+                key={v.id}
+                className={`relative rounded-3xl overflow-hidden bg-surface transition-all group border flex flex-col justify-between ${
+                  isMatch ? 'border-brand ring-2 ring-brand/20 shadow-elev-2' : 'border-line shadow-xs hover:shadow-elev-2'
+                }`}
+              >
+                <div>
+                  <div className="relative h-44 overflow-hidden bg-soft">
+                    <Image
+                      src={VISA_IMGS[v.countryEn] || VISA_IMGS.Turkey}
+                      alt={`${lt(locale, { fa: 'ویزای', en: 'Visa for', ar: 'تأشيرة', zh: '签证', ru: 'Виза в' })} ${locale === 'fa' ? v.countryFa : v.countryEn}`}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      placeholder="blur"
+                      blurDataURL={shimmerDataUrl(800, 400)}
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-deep/90 via-deep/30 to-transparent" />
+                    
+                    <div className="absolute top-3 start-3 flex items-center gap-2">
+                      <span className="text-surface text-xl font-black drop-shadow-md">
+                        {locale === 'fa' ? v.countryFa : v.countryEn}
+                      </span>
+                      {isMatch && (
+                        <span className="px-2 py-0.5 rounded-full bg-mint text-brand-dark text-[10px] font-black shadow-xs">
+                          {lt(locale, { fa: 'مقصد انتخابی شما', en: 'Selected Country', ar: 'البلد المختار', zh: '当前选择国家', ru: 'Выбранная страна' })}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="absolute bottom-3 start-3 flex items-center gap-1.5 text-[11px] font-bold text-mint-bright">
+                      <Clock size={12} aria-hidden="true" />
+                      <span>
+                        {lt(locale, {
+                          fa: `بررسی در ${v.processingDays} روز کاری`,
+                          en: `Processed in ${v.processingDays} days`,
+                          ar: `معالجة خلال ${v.processingDays} أيام عمل`,
+                          zh: `${v.processingDays} 个工作日`,
+                          ru: `Оформление: ${v.processingDays} дн.`,
+                        })}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -159,7 +204,6 @@ export default function VisaPage() {
                     </span>
                   </div>
                 </div>
-              </div>
 
               <div className="p-5 pt-0 mt-2">
                 <div className="flex justify-between items-baseline mb-3">
@@ -184,7 +228,8 @@ export default function VisaPage() {
                 </button>
               </div>
             </article>
-          ))}
+          );
+        })}
         </div>
       </section>
 

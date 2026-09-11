@@ -3,7 +3,7 @@ import { CardToCardPaymentAdapter } from "./CardToCardPaymentAdapter";
 import { getPaymentGateway } from "../gateway-port";
 import { Money } from "@/lib/finance";
 
-describe("CardToCardPaymentAdapter", () => {
+describe("CardToCardPaymentAdapter (Production Hardened)", () => {
   const adapter = new CardToCardPaymentAdapter({
     cardNumber: "6219861012345678",
     accountHolder: "شرکت خدمات مسافرت هوایی فیروزو",
@@ -34,7 +34,7 @@ describe("CardToCardPaymentAdapter", () => {
     expect(res.rawResponse?.gateway).toBe("CARD_TO_CARD");
   });
 
-  it("verifies payment when valid bank tracking code is provided", async () => {
+  it("customer submission transitions to PENDING_VERIFICATION (never auto-captured per Section 32)", async () => {
     const res = await adapter.verifyPayment({
       gatewayRef: "c2c_test123",
       expectedAmount: new Money(150_000_000, "IRR"),
@@ -44,9 +44,27 @@ describe("CardToCardPaymentAdapter", () => {
       },
     });
 
+    // Does NOT auto-confirm without Finance clearance
+    expect(res.verified).toBe(false);
+    expect(res.status).toBe("PENDING_VERIFICATION");
+    expect(res.errorCode).toBe("MANUAL_VERIFICATION_REQUIRED");
+  });
+
+  it("authoritatively captures payment upon Finance review (approveByFinance)", async () => {
+    const res = await adapter.approveByFinance(
+      {
+        gatewayRef: "c2c_test123",
+        expectedAmount: new Money(150_000_000, "IRR"),
+        rawPayload: {
+          trackingCode: "TRK-98765432",
+        },
+      },
+      "finance_officer_101"
+    );
+
     expect(res.verified).toBe(true);
     expect(res.status).toBe("CAPTURED");
-    expect(res.transactionId).toBe("tx_c2c_test123");
+    expect(res.transactionId).toBe("tx_c2c_c2c_test123");
   });
 
   it("fails verification if bank tracking code is missing or too short", async () => {
@@ -76,6 +94,27 @@ describe("CardToCardPaymentAdapter", () => {
     expect(res.verified).toBe(false);
     expect(res.status).toBe("FAILED");
     expect(res.errorCode).toBe("INVALID_CUSTOMER_CARD");
+  });
+
+  it("fails closed in production environment if merchant credentials are missing or dummy", () => {
+    const oldEnv = process.env.NODE_ENV;
+    const oldDemo = process.env.DEMO_MODE;
+    try {
+      process.env.NODE_ENV = "production";
+      delete process.env.DEMO_MODE;
+
+      // Attempt to initialize with dummy test card in prod
+      expect(() => {
+        new CardToCardPaymentAdapter({
+          cardNumber: "6219861012345678", // Dummy
+          sheba: "IR820560000000123456789012", // Dummy
+          accountHolder: "Dummy",
+        });
+      }).toThrow(/dummy|missing/i);
+    } finally {
+      process.env.NODE_ENV = oldEnv;
+      process.env.DEMO_MODE = oldDemo;
+    }
   });
 
   it("is resolved by the getPaymentGateway factory", () => {

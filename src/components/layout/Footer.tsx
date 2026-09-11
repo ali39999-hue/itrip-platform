@@ -201,8 +201,12 @@ export function Footer() {
               <span className="px-2.5 py-1 rounded-lg bg-soft border border-line text-[11px] font-mono text-ink">
                 {lt(locale, { fa: 'SHETAB / شاپرک', en: 'SHETAB / Shaparak', ar: 'SHETAB / شتاب', zh: 'SHETAB / Shaparak', ru: 'SHETAB / Shaparak' })}
               </span>
-              <span className="px-2.5 py-1 rounded-lg bg-soft border border-line text-[11px] font-mono text-ink">USDT (TRC-20)</span>
-              <span className="px-2.5 py-1 rounded-lg bg-soft border border-line text-[11px] font-mono text-ink">VISA / MASTERCARD</span>
+              <span className="px-2.5 py-1 rounded-lg bg-soft border border-line text-[11px] font-mono text-ink">
+                {lt(locale, { fa: 'USDT (به‌زودی)', en: 'USDT (Coming Soon)', ar: 'USDT (قريباً)', zh: 'USDT (即将推出)', ru: 'USDT (Скоро)' })}
+              </span>
+              <span className="px-2.5 py-1 rounded-lg bg-soft border border-line text-[11px] font-mono text-ink">
+                {lt(locale, { fa: 'VISA / MASTERCARD (به‌زودی)', en: 'VISA / MASTERCARD (Coming Soon)', ar: 'VISA / MASTERCARD (قريباً)', zh: 'VISA / MASTERCARD (即将推出)', ru: 'VISA / MASTERCARD (Скоро)' })}
+              </span>
             </div>
           </div>
         </div>

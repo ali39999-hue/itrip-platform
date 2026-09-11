@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
+    const country = searchParams.get('country') || undefined;
     const from = searchParams.get('from') || undefined;
     const to = searchParams.get('to') || undefined;
     const departDate = searchParams.get('depart') || undefined;
@@ -30,6 +31,7 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get('limit') ? Number(searchParams.get('limit')) : 25;
 
     const result = searchFlights({
+      country,
       from,
       to,
       departDate,

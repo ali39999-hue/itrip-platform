@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
+import { useAuthStore } from '@/stores/auth-store';
 import {
   Phone, Mail, MessageSquare, Send, CheckCircle2, Headphones,
   ChevronDown, Clock, Zap
@@ -12,6 +14,9 @@ import { lt } from '@/lib/lt';
 export default function SupportPage() {
   const t = useTranslations('Support');
   const locale = useLocale();
+  const searchParams = useSearchParams();
+  const authUser = useAuthStore((s) => s.user);
+
   const [submitted, setSubmitted] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -19,6 +24,20 @@ export default function SupportPage() {
   const [reference, setReference] = useState('');
   const [message, setMessage] = useState('');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  useEffect(() => {
+    const qRef = searchParams?.get('ref');
+    const qCat = searchParams?.get('category');
+    if (qRef) setReference(qRef.toUpperCase());
+    if (qCat) setCategory(qCat);
+    if (authUser) {
+      const uName = locale === 'fa'
+        ? `${authUser.firstNameFa || ''} ${authUser.lastNameFa || ''}`.trim()
+        : `${authUser.firstNameEn || authUser.firstNameFa || ''} ${authUser.lastNameEn || authUser.lastNameFa || ''}`.trim();
+      if (uName) setName(uName);
+      if (authUser.email) setEmail(authUser.email);
+    }
+  }, [searchParams, authUser, locale]);
 
   const FAQS = [
     {
@@ -216,6 +235,20 @@ export default function SupportPage() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
+                {reference && (
+                  <div className="p-3.5 rounded-2xl bg-mint/40 border border-brand/30 flex items-center gap-2.5 text-xs font-bold text-brand-dark mb-4 animate-in fade-in duration-200">
+                    <CheckCircle2 size={16} className="text-brand-dark shrink-0" />
+                    <span>
+                      {lt(locale, {
+                        fa: `سفارش مسافرتی #${reference} به این درخواست متصل شد (کارشناس به سوابق پرواز/هتل دسترسی دارد).`,
+                        en: `Travel booking #${reference} linked to this ticket (concierge has direct access to itinerary).`,
+                        ar: `تم ربط الحجز #${reference} بهذا الطلب.`,
+                        zh: `已关联旅行订单 #${reference}（客服可直接查阅行程）。`,
+                        ru: `Бронирование #${reference} привязано к заявке.`,
+                      })}
+                    </span>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="support-name" className="block text-xs font-bold text-sub mb-1">

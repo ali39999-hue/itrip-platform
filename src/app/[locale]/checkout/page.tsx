@@ -30,6 +30,7 @@ import { SuccessConfirmation } from '@/components/checkout/SuccessConfirmation';
 import { StickyMobileBar } from '@/components/checkout/StickyMobileBar';
 import { formatMoney } from '@/lib/money';
 import { trackFunnel } from '@/lib/analytics';
+import { PassportValidityGuard } from '@/domains/identity/PassportValidityGuard';
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -84,6 +85,7 @@ export default function CheckoutPage() {
       lastName: '',
       nationalId: '',
       passportNo: '',
+      passportExpiryDate: '',
       birthDate: '',
       gender: 'MALE',
     },
@@ -223,6 +225,7 @@ export default function CheckoutPage() {
       setValue('firstName', 'ALI');
       setValue('lastName', 'MOHAMMADI');
       setValue('passportNo', 'L2948175');
+      setValue('passportExpiryDate', '2028-10-15');
       setValue('birthDate', '1988-06-15');
       setValue('nationalId', '0012345678');
       setValue('gender', 'MALE');
@@ -233,6 +236,19 @@ export default function CheckoutPage() {
 
   const onSubmitPassenger = async (data: Passenger) => {
     setError('');
+
+    // Passport Validity Guard (Travel-CRM & International 6-Month Rule)
+    if (data.passportExpiryDate && bookingContext?.travelDate) {
+      const pCheck = PassportValidityGuard.verifyPassport({
+        passportExpiryDate: data.passportExpiryDate,
+        travelDate: bookingContext.travelDate,
+      });
+      if (!pCheck.isValidForTravel) {
+        setError(locale === 'fa' ? pCheck.message.fa : pCheck.message.en);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+    }
     trackFunnel('passenger_submitted', {
       route: '/checkout',
       locale,

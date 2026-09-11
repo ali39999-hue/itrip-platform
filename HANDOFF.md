@@ -5,9 +5,9 @@
 > `docs/baseline/FEATURE_REALITY_MATRIX.md`. Test counts below reflect their original run,
 > not the current suite (113 unit / 15 E2E spec files as of 2026-09-06).
 
-> **Target Release:** v1.5.7 — *canonical release identity is `package.json` (v1.5.7)*  
+> **Target Release:** v1.5.9 — *canonical release identity is `package.json` (v1.5.9)*  
 > **Repository:** `https://github.com/ali39999-hue/itrip-platform.git`  
-> **Testing Status:** All 50 Vitest Suites (331 Tests) & Playwright End-to-End Test Suites Passed (100% Green)
+> **Testing Status:** All 63 Vitest Suites (409 Tests) & Playwright End-to-End Test Suites Passed (100% Green)
 
 ---
 

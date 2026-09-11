@@ -215,7 +215,7 @@ export const DETAILED_TOURS: Tour[] = [
     ],
     summary: 'تجربه معنوی و آرامش‌بخش در پایتخت معنوی ایران با اقامت در هتل ۵ ستاره مجلل درویشی نزدیک به حرم مطهر و خدمات فول‌بُرد.',
     summaryEn: 'A serene and spiritual journey to Mashhad, staying at the luxurious 5-star Darvishi Royal Hotel steps away from the Holy Shrine with full-board gourmet meals.',
-    description: 'تور زیارتی مشهد مقدس فیروزه برای مسافرانی طراحی شده است که در کنار آرامش زیارت، خواهان آسودگی خاطر و امکانات هتل‌های مجلل هستند. با پرواز اختصاصی به مشهد سفر کنید، در هتل مجلل درویشی با منوی بوفه کامل صبحانه، ناهار و شام اقامت داشته باشید و از ترانسفر رفت و برگشت فرودگاهی رایگان بهره‌مند شوید.',
+    description: 'تور زیارتی مشهد مقدس فیروزو برای مسافرانی طراحی شده است که در کنار آرامش زیارت، خواهان آسودگی خاطر و امکانات هتل‌های مجلل هستند. با پرواز اختصاصی به مشهد سفر کنید، در هتل مجلل درویشی با منوی بوفه کامل صبحانه، ناهار و شام اقامت داشته باشید و از ترانسفر رفت و برگشت فرودگاهی رایگان بهره‌مند شوید.',
     descriptionEn: 'Designed for pilgrims seeking tranquility and elevated comfort. Enjoy return flights, 5-star full-board dining at Darvishi Royal Hotel, roundtrip VIP airport transfers, and guided tours of Khorasan historical gems including Ferdowsi Mausoleum in Tus.',
     highlights: [
       'اقامت در هتل ۵ ستاره درویشی (فاصله پیاده کمتر از ۵ دقیقه تا حرم)',

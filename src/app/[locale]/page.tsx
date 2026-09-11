@@ -14,6 +14,7 @@ import {
 } from '@/components/home/sections';
 import { lt } from '@/lib/lt';
 import { getLocale } from 'next-intl/server';
+import { DestinationComparator } from '@/components/destinations/DestinationComparator';
 import {
   SiteContentService,
   type HeroOverride,
@@ -116,6 +117,11 @@ export default async function HomePage() {
 
         {/* 6. Top Destination Cities & Stays */}
         <DestinationsSection />
+
+        {/* 6.5. Interactive Destination Comparison Matrix (VoyageAI pattern) */}
+        <section className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 w-full">
+          <DestinationComparator locale={locale} />
+        </section>
 
         {/* 7. Conversational AI Assistant & Custom Trip Builder */}
         <AiPlannerHookSection />

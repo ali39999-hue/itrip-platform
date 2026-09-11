@@ -161,6 +161,27 @@ export function PassengerSection({
         </div>
 
         <div>
+          <label className="block text-[12px] font-bold text-ink mb-1.5" htmlFor="passportExpiryDate">
+            {lt(locale, { fa: 'تاریخ انقضای گذرنامه', en: 'Passport Expiry Date', ar: 'تاريخ انتهاء الجواز', zh: '护照有效期至', ru: 'Срок действия паспорта' })}
+            <span className="ms-1.5 text-[10px] text-brand-dark bg-mint/50 px-2 py-0.5 rounded-full font-bold">
+              {lt(locale, { fa: 'حداقل ۶ ماه اعتبار الزامی', en: 'Min 6 months validity', ar: 'مطلوب صلاحية 6 أشهر', zh: '须至少6个月有效期', ru: 'Мин. 6 месяцев' })}
+            </span>
+          </label>
+          <Input
+            id="passportExpiryDate"
+            {...register('passportExpiryDate')}
+            placeholder="YYYY-MM-DD"
+            dir="ltr"
+            className="text-start font-mono font-bold"
+          />
+          {errors.passportExpiryDate && (
+            <span className="text-rose-warm text-[11px] font-bold mt-1 block">
+              {errors.passportExpiryDate.message}
+            </span>
+          )}
+        </div>
+
+        <div>
           <label className="block text-[12px] font-bold text-ink mb-1.5" htmlFor="birthDate">
             {lt(locale, { fa: 'تاریخ تولد', en: 'Date of Birth', ar: 'تاريخ الميلاد', zh: '出生日期', ru: 'Дата рождения' })} <span className="text-rose-warm">*</span>
           </label>

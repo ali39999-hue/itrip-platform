@@ -34,7 +34,7 @@ export function SpecialOffersSection() {
   const t = useTranslations('Home');
   const t2 = useTranslations('Plan');
   const { country } = useCountryStore();
-  const c = COUNTRIES[country];
+  const c = COUNTRIES[country] || COUNTRIES.iran;
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedOffer, setSelectedOffer] = useState<SignatureExperience | null>(null);
