@@ -56,7 +56,18 @@
 ### هم‌راستاسازی شکل Passenger (موج سوم)
 `BookingPassenger.gender` به‌دروغ `'male'|'female'` اعلام شده بود در حالی که canonical (zod `Gender` و مقدار Prisma) `MALE|FEMALE|OTHER` است — و checkout با ternary مقدار OTHER را هم به male تبدیل می‌کرد. الان type با canonical یکی است و مقدار بدون تبدیل عبور می‌کند. `KycProfile.step` به مراحل زنده باریک شد و اینترفیس مردهٔ `WalletTransaction` (صفر مصرف‌کننده) حذف شد.
 
-### گیت پوشش i18n برای مکانیزم lt() (موج سوم)
+### واکنش‌پذیری سراسری به تغییر کشور (موج ۷)
+الزام محصول: با هر تغییر کشور، همه‌چیز نسبت به همان کشور تغییر کند. آنچه هم‌اکنون واکنش‌پذیر شد:
+- **ماتریس قابلیت پرداخت بر اساس کشور** (`countryPaymentCapabilities` در countries.ts + تست unit): درگاه شاپرک/شتاب و کارت‌به‌کارت فقط برای ایران؛ instrument پیش‌فرض eCardo — ایران: کارت شتاب، چین: WeChat/Alipay، سایر: کارت بین‌المللی؛ ابزار کارت شتاب خارج از ایران مخفی می‌شود و انتخاب نامعتبر خودکار به پیش‌فرض کشور برمی‌گردد.
+- **نرخ‌های FX در selector** از `CURRENCY_TO_TOMAN` (منبع مشترک) خوانده می‌شوند، نه عدد هاردکد.
+- **ارز کیف پول بر اساس کشور، نه زبان** — checkout و selector: ایران→IRR، چین→CNY، سایر→USD (با fallback USDT).
+- **حذف لیبل‌های دروغگو:** HotelCard و BentoFlightCard مقدار را به ارز کشور تبدیل می‌کردند ولی لیبل «تومان» هاردکد کنارش می‌نشست (حذف شد — formatAmount لیبل درست دارد).
+- **قیمت Addonها (eSIM/بیمه) با ارز کشور** نمایش داده می‌شود نه IRR هاردکد.
+- **اسلایدر قیمت فیلتر پرواز:** کران‌ها حالا با ارز کشور نمایش داده می‌شوند (دامنه فیلتر در Toman می‌ماند).
+
+**نقشهٔ راه باقی‌ماندهٔ country-reactivity** (اولویت‌بندی‌شده): پنل رزرو هتل/اتاق‌ها هنوز Toman خام (`BookingPanel.tsx`, `HotelRooms.tsx`)؛ تبادل ارز کیف پول محدود به IRR/USDT/AED؛ مبالغ پرداخت‌شده در my-trips همیشه Toman؛ صفحات فرود/بیمه/قطار/static تومان‌محور؛ تلفن‌های +98 هاردکد (`config/brand.ts` و SupportSection/EmergencySos)؛ مبدأ همهٔ پروازهای seeded تهران (THR) و چیپ‌های شهر محبوب فیلتر کشور ندارند؛ live eCardo offers به `countryId:'iran'` قفل است؛ SSR hydration flash — فقط checkout با useHydration گارد دارد.
+
+
 مکانیزم inline `lt()` (۲٬۳۸۳ فراخوانی در ~۵۰۰ فایل) تا امروز هیچ gateای نداشت. `scripts/lt-coverage-scan.mjs` + baseline (`docs/baseline/lt-i18n-baseline.json`) + اسکریپت `gate:i18n-lt`: پوشش فعلی ۲۱۵۹/۲۳۸۳ کامل (۹۰.۶٪)؛ **۲۲۴ فراخوانی فاقد ar/zh/ru** (fallback RTL-safe: ar→fa→en طبق I18N-103، پس degrade است نه شکستگی). gate رگرسیون را مسدود می‌کند و پیشرفت ترجمه قابل ردیابی است.
 
 ### موارد بررسی‌شده که سالم بودند (بدون تغییر)

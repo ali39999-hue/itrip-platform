@@ -2,6 +2,7 @@
 
 import { Wifi, ShieldCheck } from 'lucide-react';
 import { formatMoney } from '@/lib/money';
+import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
 
@@ -24,6 +25,7 @@ export function AddonsSection({
   countryName,
 }: AddonsSectionProps) {
   const locale = useLocale();
+  const { currency } = useDisplayCurrency();
 
   return (
     <div className="p-6 rounded-2xl bg-surface border border-line shadow-elev-1 space-y-4">
@@ -91,7 +93,7 @@ export function AddonsSection({
               })}
             </p>
             <span className="text-[13px] font-black text-brand-dark font-mono">
-              +{formatMoney(ESIM_PRICE, 'IRR', locale)}
+              +{formatMoney(ESIM_PRICE, currency, locale)}
             </span>
           </div>
         </label>
@@ -133,7 +135,7 @@ export function AddonsSection({
               })}
             </p>
             <span className="text-[13px] font-black text-brand-dark font-mono">
-              +{formatMoney(INSURANCE_PRICE, 'IRR', locale)}
+              +{formatMoney(INSURANCE_PRICE, currency, locale)}
             </span>
           </div>
         </label>

@@ -54,7 +54,7 @@ function FlightSearchInner() {
   const t = useTranslations('Flights');
   const params = useSearchParams();
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
-  const { currencyLabel } = useDisplayCurrency();
+  const { formatAmount } = useDisplayCurrency();
   const ariaT = useTranslations('Common.aria');
 
   const from = params.get('from') ?? '';
@@ -512,15 +512,13 @@ function FlightSearchInner() {
                 <span className="text-[10px] text-sub block leading-none mb-0.5">
                   {lt(locale, { fa: 'از:', en: 'From:', ar: 'من:', zh: '起：', ru: 'От:' })}
                 </span>
-                <span className="text-brand-dark font-black font-mono num">{num(price[0], locale)}</span>
-                <span className="text-[9.5px] text-sub ms-1">{currencyLabel}</span>
+                <span className="text-brand-dark font-black font-mono num">{formatAmount(price[0])}</span>
               </div>
               <div className="text-end">
                 <span className="text-[10px] text-sub block leading-none mb-0.5">
                   {lt(locale, { fa: 'تا:', en: 'To:', ar: 'إلى:', zh: '止：', ru: 'До:' })}
                 </span>
-                <span className="text-brand-dark font-black font-mono num">{num(price[1], locale)}</span>
-                <span className="text-[9.5px] text-sub ms-1">{currencyLabel}</span>
+                <span className="text-brand-dark font-black font-mono num">{formatAmount(price[1])}</span>
               </div>
             </div>
 

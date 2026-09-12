@@ -464,3 +464,31 @@ export function countryName(id: CountryId, locale: string) {
       return names.en;
   }
 }
+
+export interface CountryPaymentCapabilities {
+  /** Iranian Shaparak/Shetab domestic direct gateway (Iranian debit cards only) */
+  shetab: boolean;
+  /** Iranian card-to-card / bank receipt transfer (Iranian bank cards only) */
+  cardTransfer: boolean;
+  /** Shetab debit card instrument inside the eCardo gateway */
+  shetabInstrument: boolean;
+  /** eCardo instrument pre-selected for this country's users */
+  defaultInstrument: 'visa_mastercard' | 'crypto_usdt' | 'wechat_alipay' | 'shetab_card';
+}
+
+/**
+ * Country-scoped payment capability matrix (country-reactive checkout):
+ * Iranian domestic rails (Shaparak/Shetab, card-to-card) only exist for Iran;
+ * every country gets the international eCardo gateway with a sensible default
+ * instrument (Shetab card at home, WeChat/Alipay for China, intl cards elsewhere).
+ */
+export function countryPaymentCapabilities(country: CountryId): CountryPaymentCapabilities {
+  const isIran = country === 'iran';
+  const isChina = country === 'china';
+  return {
+    shetab: isIran,
+    cardTransfer: isIran,
+    shetabInstrument: isIran,
+    defaultInstrument: isIran ? 'shetab_card' : isChina ? 'wechat_alipay' : 'visa_mastercard',
+  };
+}

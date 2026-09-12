@@ -228,7 +228,6 @@ export function BentoFlightCard({
                   <span className="text-xl font-black tracking-tight text-[#9C6209] dark:text-amber-400 leading-none tabular-nums font-mono">
                     {formatAmount(priceInToman)}
                   </span>
-                  <span className="text-[11px] font-black text-slate-500">تومان</span>
                 </div>
               </div>
               <button

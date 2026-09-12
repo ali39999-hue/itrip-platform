@@ -222,17 +222,15 @@ export default function CheckoutPage() {
     return () => clearInterval(t);
   }, [phase]);
 
-  // Real server wallet balance (authoritative for wallet payments, locale-adapted).
+  // Real server wallet balance (authoritative for wallet payments, country-adapted).
   useEffect(() => {
     let cancelled = false;
     getWallet()
       .then((res) => {
         if (!cancelled && res.success && res.balances) {
-          const bal = locale === 'zh'
-            ? (res.balances.CNY ?? 0)
-            : locale === 'en' || locale === 'ru'
-            ? (res.balances.USDT ?? res.balances.USD ?? 0)
-            : (res.balances.IRR ?? 0);
+          const preferred = country === 'iran' ? 'IRR' : country === 'china' ? 'CNY' : 'USD';
+          const bal = res.balances[preferred]
+            ?? (preferred !== 'IRR' ? (res.balances.USDT ?? res.balances.USD ?? 0) : 0);
           setServerWallet(bal);
         }
       })
@@ -240,7 +238,7 @@ export default function CheckoutPage() {
     return () => {
       cancelled = true;
     };
-  }, [locale]);
+  }, [country]);
 
   // Wait for the persisted store before deciding — avoids a false empty state.
   if (!hydrated) {
@@ -329,7 +327,14 @@ export default function CheckoutPage() {
 
   const baseAmount = bookingContext?.amount ?? 0;
   const itemTitle = bookingContext?.title ?? '';
-  const walletBalance = serverWallet ?? wallet.IRR ?? 0;
+  // Demo wallet mirror follows the country currency too (BUG-007 seeding is IRR-first).
+  const walletBalance = serverWallet
+    ?? (country === 'iran'
+      ? wallet.IRR
+      : country === 'china'
+      ? (wallet.CNY ?? wallet.USDT ?? wallet.IRR)
+      : (wallet.USD ?? wallet.USDT ?? wallet.IRR))
+    ?? 0;
 
   const subtotalBeforeFees = Math.max(
     0,
