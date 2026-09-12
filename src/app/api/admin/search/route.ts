@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getTenantScopedPrisma } from '@/lib/prisma';
 import { requirePermission, getTenantAuthContext } from '@/domains/identity/permission-service';
 import { hasPiiViewPermission, maskPhone, maskEmail } from '@/lib/security/pii-masking';
+import { apiError } from '@/lib/api-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -212,6 +213,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg }, { status: 403 });
+    return apiError(msg, 403);
   }
 }

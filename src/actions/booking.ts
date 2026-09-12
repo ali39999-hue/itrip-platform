@@ -9,6 +9,7 @@ import { BookingApplicationService } from '@/domains/booking/BookingApplicationS
 import { BookingDomainService } from '@/domains/booking/BookingDomainService';
 import { ReferralDomainService } from '@/domains/referral/ReferralDomainService';
 import { getTenantAuthContext, assertTenantAccess } from '@/domains/identity/permission-service';
+import { ERP_STAFF_ROLES } from '@/domains/identity/permissions';
 import { decryptSensitive } from '@/lib/security/crypto-vault';
 import { acquireIdempotencyLock, completeIdempotency } from '@/lib/security/idempotency';
 import { toPlain } from '@/lib/serialize';
@@ -155,6 +156,7 @@ export async function initiateEcardoPayment(
   options?: {
     targetCurrency?: string;
     paymentInstrument?: 'visa_mastercard' | 'crypto_usdt' | 'wechat_alipay' | 'shetab_card';
+    paymentMode?: 'real' | 'demo';
   } | string
 ) {
   try {
@@ -171,6 +173,13 @@ export async function initiateEcardoPayment(
       return { success: false, error: 'Booking is not payable in its current state' };
     }
 
+    // Tenant & ownership verification (IDOR protection)
+    const { resolveEffectivePaymentMode, isUserAdmin } = await import('@/domains/payments/admin-payment-mode');
+    const isAdmin = await isUserAdmin(session.user.id);
+    if (booking.customerId !== session.user.id && !isAdmin) {
+      return { success: false, error: 'Forbidden: You do not have permission to pay for this booking' };
+    }
+
     const { EcardoGatewayAdapter, mapToEcardoCurrency, normalizeEcardoCurrencyToPlatform } = await import('@/domains/payments/gateway-port');
     const { Money } = await import('@/lib/finance');
     const { CURRENCY_TO_TOMAN } = await import('@/lib/money');
@@ -179,6 +188,23 @@ export async function initiateEcardoPayment(
 
     const headerMap = await headers().catch(() => null);
     const origin = getRequestBaseUrl(headerMap || undefined);
+
+    // Resolve payment mode:
+    // If the caller requested an explicit mode (only honored if caller is admin).
+    // Otherwise check effective system/cookie mode.
+    let effectiveMode: 'real' | 'demo';
+    const requestedMode = typeof options === 'object' ? options?.paymentMode : undefined;
+    if (isAdmin && (requestedMode === 'real' || requestedMode === 'demo')) {
+      effectiveMode = requestedMode;
+    } else {
+      const { cookies } = await import('next/headers');
+      const cookieStore = await cookies().catch(() => null);
+      const cookieOverride = cookieStore?.get('firuzo_admin_payment_mode')?.value;
+      effectiveMode = await resolveEffectivePaymentMode({
+        userId: session.user.id,
+        cookieOverride,
+      });
+    }
 
     // Payment instrument pins the currency rail; otherwise the client-selected
     // country currency (from the country switcher) is used. Unsupported country
@@ -232,6 +258,7 @@ export async function initiateEcardoPayment(
       intentId: `intent_ecardo_${booking.id}`,
       bookingId: booking.id,
       amount: paymentMoney,
+      paymentMode: effectiveMode,
       callbackUrl: `${origin}/api/payments/ecardo/callback?bookingId=${booking.id}&order_id=${booking.id}`,
       customerInfo: {
         email: session.user.email || undefined,
@@ -359,13 +386,15 @@ export async function getMyBookings() {
       },
     });
 
+    const isStaff = Boolean(session.user.role && (ERP_STAFF_ROLES as readonly string[]).includes(session.user.role));
+
     const sanitizedBookings = bookings.map((b) => ({
       ...b,
       totalAmount: Number(b.totalAmount),
       items: b.items.map((it) => ({
         ...it,
-        netCost: Number(it.netCost),
-        markup: Number(it.markup),
+        netCost: isStaff ? Number(it.netCost) : undefined,
+        markup: isStaff ? Number(it.markup) : undefined,
         taxAmount: Number(it.taxAmount),
         feeAmount: Number(it.feeAmount),
         sellPrice: Number(it.sellPrice),
@@ -416,6 +445,11 @@ export async function getBookingById(id: string) {
       orderBy: { createdAt: 'desc' },
     });
 
+    const isStaff =
+      tenantCtx.isSuperAdmin ||
+      (ERP_STAFF_ROLES as readonly string[]).includes(tenantCtx.role) ||
+      Boolean(session.user.role && (ERP_STAFF_ROLES as readonly string[]).includes(session.user.role));
+
     const sanitizedBooking = {
       ...booking,
       invoice: invoice ? { id: invoice.id, invoiceNumber: invoice.invoiceNumber, status: invoice.status } : null,
@@ -441,8 +475,8 @@ export async function getBookingById(id: string) {
         }
         return {
           ...item,
-          netCost: Number(item.netCost),
-          markup: Number(item.markup),
+          netCost: isStaff ? Number(item.netCost) : undefined,
+          markup: isStaff ? Number(item.markup) : undefined,
           taxAmount: Number(item.taxAmount),
           feeAmount: Number(item.feeAmount),
           sellPrice: Number(item.sellPrice),
@@ -548,6 +582,9 @@ export async function requestWalletTopUp(
     const origin = getRequestBaseUrl(headerMap || undefined);
     const callbackUrl = `${origin}/api/payments/callback?bookingId=wallet_topup_${session.user.id}&order_id=wallet_topup_${session.user.id}`;
 
+    const { resolveEffectivePaymentMode } = await import('@/domains/payments/admin-payment-mode');
+    const paymentMode = await resolveEffectivePaymentMode({ userId: session.user.id }).catch(() => 'real' as const);
+
     const method = gateway === 'ecardo' ? 'gateway_ecardo' as const : 'gateway_shetab' as const;
     const gwRes = await PaymentDomainService.processPayment({
       bookingId: `wallet_topup_${session.user.id}`,
@@ -556,12 +593,13 @@ export async function requestWalletTopUp(
       amount: moneyAmount,
       currency,
       callbackUrl,
+      paymentMode,
       customerInfo: {
         email: session.user.email || undefined,
       },
     });
 
-    if (!gwRes.success || !gwRes.redirectUrl) {
+    if (!gwRes.redirectUrl && !gwRes.success) {
       return { success: false, error: gwRes.error || 'Failed to process top-up' };
     }
 

@@ -30,11 +30,9 @@ declare module 'next-auth' {
 let secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
 if (!secret) {
   if (process.env.NODE_ENV === 'production') {
-    secret = 'kw5uW6Ry8QMeXKfj8xDzbiRVVKvGo_7sRGEGhsI9mMIg0z5mJm8Ix8HxGpbHbhCO';
-    console.warn('[auth] AUTH_SECRET or NEXTAUTH_SECRET was missing in production, applied default platform secret.');
-  } else {
-    secret = 'dev-only-insecure-secret-never-use-in-production';
+    throw new Error('FATAL SECURITY ERROR: AUTH_SECRET or NEXTAUTH_SECRET must be configured in production.');
   }
+  secret = 'dev-only-insecure-secret-never-use-in-production';
 }
 const resolvedSecret = secret;
 

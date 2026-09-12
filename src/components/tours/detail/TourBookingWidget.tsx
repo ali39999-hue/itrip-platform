@@ -60,9 +60,11 @@ export function TourBookingWidget({
       type: 'tours',
       id: tour.id,
       title: tourTitle,
-      subtitle: `${tour.durationDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дн.' })} • ${tour.city} • ${passengerSummary}`,
+      subtitle: `${tour.durationDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дن.' })} • ${tour.city} • ${passengerSummary}`,
       amount: totalPrice,
       travelDate: activeDate?.startDate || new Date().toISOString().slice(0, 10),
+      adults,
+      children,
       meta: {
         adults: String(adults),
         children: String(children),

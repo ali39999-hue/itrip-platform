@@ -124,10 +124,13 @@ function ToursContent() {
   function book(tour: Tour) {
     setBookingContext({
       type: 'tours',
+      id: tour.id,
       title: locale === 'fa' ? tour.title : tour.titleEn,
-      subtitle: `${tour.durationDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дн.' })} • ${tour.city}`,
+      subtitle: `${tour.durationDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дن.' })} • ${tour.city}`,
       amount: tour.price,
       travelDate: daysFromNow(14),
+      adults: 1,
+      children: 0,
     });
     router.push('/checkout');
   }

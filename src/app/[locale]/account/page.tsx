@@ -24,6 +24,9 @@ import {
   Plane,
   Building,
   Briefcase,
+  LogOut,
+  Users,
+  Bot,
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
@@ -180,10 +183,8 @@ export default function AccountPage() {
 
   return (
     <div className="flex flex-col md:flex-row w-full max-w-[1280px] mx-auto px-4 md:px-10 py-6 md:py-8 gap-6 md:gap-8">
-      {/* Sidebar visible on Desktop only; on mobile it is condensed to avoid pushing content below fold */}
-      <div className="hidden md:block">
-        <AccountSidebar activeSection="profile" />
-      </div>
+      {/* Dynamic Account Navigation: Mobile chips bar + Desktop sticky sidebar */}
+      <AccountSidebar activeSection="profile" />
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col gap-5 md:gap-6 min-w-0">
@@ -582,6 +583,109 @@ export default function AccountPage() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Mobile-Only Services Grid & Logout Button */}
+        <div className="md:hidden space-y-4">
+          <div className="bg-surface rounded-2xl border border-line p-5 shadow-sm space-y-3">
+            <h3 className="text-sm font-black text-ink">
+              {lt(locale, { fa: 'امکانات و خدمات حساب کاربری', en: 'Account Features & Services', ar: 'خدمات الحساب', zh: '账户服务与功能', ru: 'Услуги аккаунта' })}
+            </h3>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => router.push('/my-trips')}
+                className="flex items-center gap-2.5 p-3 rounded-xl bg-soft hover:bg-mint/40 text-start transition active:scale-95 border border-line/60"
+              >
+                <div className="w-8 h-8 rounded-lg bg-mint text-brand-dark grid place-items-center shrink-0">
+                  <Briefcase size={16} />
+                </div>
+                <span className="text-xs font-black text-ink truncate">
+                  {lt(locale, { fa: 'سفرهای من', en: 'My Trips', ar: 'رحلاتي', zh: '我的行程', ru: 'Мои поездки' })}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push('/wallet')}
+                className="flex items-center gap-2.5 p-3 rounded-xl bg-soft hover:bg-mint/40 text-start transition active:scale-95 border border-line/60"
+              >
+                <div className="w-8 h-8 rounded-lg bg-mint text-brand-dark grid place-items-center shrink-0">
+                  <Wallet size={16} />
+                </div>
+                <span className="text-xs font-black text-ink truncate">
+                  {lt(locale, { fa: 'کیف پول', en: 'Wallet', ar: 'المحفظة', zh: '钱包', ru: 'Кошелёк' })}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push('/account/travelers')}
+                className="flex items-center gap-2.5 p-3 rounded-xl bg-soft hover:bg-mint/40 text-start transition active:scale-95 border border-line/60"
+              >
+                <div className="w-8 h-8 rounded-lg bg-mint text-brand-dark grid place-items-center shrink-0">
+                  <Users size={16} />
+                </div>
+                <span className="text-xs font-black text-ink truncate">
+                  {lt(locale, { fa: 'لیست مسافران', en: 'Travelers', ar: 'المسافرون', zh: '旅客名单', ru: 'Пассажиры' })}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push('/account/auto-buy')}
+                className="flex items-center gap-2.5 p-3 rounded-xl bg-soft hover:bg-mint/40 text-start transition active:scale-95 border border-line/60"
+              >
+                <div className="w-8 h-8 rounded-lg bg-mint text-brand-dark grid place-items-center shrink-0">
+                  <Bot size={16} />
+                </div>
+                <span className="text-xs font-black text-ink truncate">
+                  {lt(locale, { fa: 'خرید خودکار', en: 'Auto-Buy', ar: 'الشراء التلقائي', zh: '自动购买', ru: 'Авто-покупка' })}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push('/account/organization')}
+                className="flex items-center gap-2.5 p-3 rounded-xl bg-soft hover:bg-mint/40 text-start transition active:scale-95 border border-line/60"
+              >
+                <div className="w-8 h-8 rounded-lg bg-mint text-brand-dark grid place-items-center shrink-0">
+                  <Building size={16} />
+                </div>
+                <span className="text-xs font-black text-ink truncate">
+                  {lt(locale, { fa: 'پنل سازمانی', en: 'Corporate Hub', ar: 'الشركات', zh: '企业版', ru: 'Корпоративным' })}
+                </span>
+              </button>
+
+              {['admin', 'SUPER_ADMIN', 'OPS', 'FINANCE', 'OPERATOR'].includes(user?.role || '') && (
+                <button
+                  type="button"
+                  onClick={() => router.push('/admin')}
+                  className="flex items-center gap-2.5 p-3 rounded-xl bg-mint/60 hover:bg-mint text-start transition active:scale-95 border border-brand/30"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-brand text-surface grid place-items-center shrink-0">
+                    <ShieldCheck size={16} />
+                  </div>
+                  <span className="text-xs font-black text-brand-dark truncate">
+                    {lt(locale, { fa: 'سامانه ERP', en: 'ERP Admin', ar: 'لوحة الإدارة', zh: 'ERP 管理', ru: 'ERP Админ' })}
+                  </span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Primary Mobile Logout Button */}
+          <button
+            type="button"
+            onClick={() => {
+              useAuthStore.getState().logout();
+              router.push('/');
+            }}
+            className="w-full min-h-[50px] rounded-2xl bg-rose-warm/15 hover:bg-rose-warm/25 text-rose-warm flex items-center justify-center gap-2 text-sm font-black transition active:scale-[0.98] border border-rose-warm/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-warm"
+          >
+            <LogOut size={18} />
+            <span>{lt(locale, { fa: 'خروج از حساب کاربری', en: 'Sign Out of Account', ar: 'تسجيل الخروج من الحساب', zh: '退出当前账户', ru: 'Выйти из аккаунта' })}</span>
+          </button>
         </div>
       </main>
     </div>

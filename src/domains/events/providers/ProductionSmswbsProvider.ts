@@ -43,20 +43,27 @@ export function normalizeToIranE164(phone: string): string | null {
 }
 
 export class ProductionSmswbsProvider {
-  readonly sendEndpoint = 'http://smswbs.ir/class/sms/restful/OTP/send_OTP.php';
-  readonly checkEndpoint = 'http://smswbs.ir/class/sms/restful/OTP/check_OTP.php';
+  readonly sendEndpoint = process.env.SMSWBS_ENDPOINT || 'http://smswbs.ir/class/sms/restful/OTP/send_OTP.php';
+  readonly checkEndpoint = process.env.SMSWBS_CHECK_ENDPOINT || 'http://smswbs.ir/class/sms/restful/OTP/check_OTP.php';
 
   private uname: string;
   private pass: string;
   private sender: string;
 
   constructor() {
-    this.uname = process.env.SMSWBS_USERNAME || '09123764868';
-    this.pass = process.env.SMSWBS_PASSWORD || 'Hvd1367Hvd1367';
+    this.uname = process.env.SMSWBS_USERNAME || '';
+    this.pass = process.env.SMSWBS_PASSWORD || '';
     this.sender =
       process.env.SMSWBS_SENDER ||
       process.env.SMS_SENDER_LINE ||
-      '+989999178755';
+      '';
+
+    // In non-production testing, allow demo credentials if explicitly provided in environment
+    if (!this.uname && process.env.NODE_ENV !== 'production') {
+      this.uname = process.env.SMSWBS_DEV_USERNAME || '';
+      this.pass = process.env.SMSWBS_DEV_PASSWORD || '';
+      this.sender = process.env.SMSWBS_DEV_SENDER || '+989999178755';
+    }
   }
 
   private credentialsConfigured(): boolean {

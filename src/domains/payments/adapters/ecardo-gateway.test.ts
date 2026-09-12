@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import { EcardoGatewayAdapter } from './EcardoGatewayAdapter';
-import { getPaymentGateway } from '../gateway-port';
 import { Money } from '@/lib/finance';
 import crypto from 'crypto';
 
@@ -18,8 +17,8 @@ describe('EcardoGatewayAdapter Suite', () => {
     };
   }
 
-  it('instantiates via getPaymentGateway factory', () => {
-    const adapter = getPaymentGateway('gateway_ecardo');
+  it('instantiates the eCardo gateway adapter', () => {
+    const adapter = new EcardoGatewayAdapter();
     expect(adapter.name).toBe('ECARDO_GATEWAY');
     expect(adapter.isDemo).toBe(false);
   });

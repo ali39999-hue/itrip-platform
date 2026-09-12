@@ -22,7 +22,9 @@ interface User {
   firstNameEn?: string;
   lastNameEn?: string;
   kycApproved: boolean;
-  /** false = نام/نام خانوادگی/کد ملی هنوز تکمیل نشده — کاربر باید wizard تکمیل اطلاعات را ببیند */
+  nationalId?: string;
+  passportNo?: string;
+  /** false = نام/نام خانوادگی/کد ملی هنوز تکمیل نشده — احراز هویت در مرحله خرید تکمیل می‌شود */
   profileComplete?: boolean;
   role: 'customer' | 'admin';
   channel?: AuthChannel;
@@ -32,11 +34,9 @@ interface User {
   baleId?: string;
 }
 
-/** بلافاصله بعد از ورود: کاربرِ ناقص به جای approved وارد مرحله name_info می‌شود */
+/** ورود و ثبت‌نام کاربر بدون توقف در KYC انجام می‌شود؛ احراز هویت هویتی در مرحله خرید اعمال می‌گردد */
 function kycStepAfterLogin(user: { phone: string; profileComplete?: boolean }): KycProfile {
-  return user.profileComplete === false
-    ? { step: 'name_info', phone: user.phone }
-    : { step: 'approved', phone: user.phone };
+  return { step: 'approved', phone: user.phone };
 }
 
 interface AuthState {

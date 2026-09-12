@@ -189,11 +189,11 @@ export default function AdminInventoryPage() {
               }
               actions={
                 <>
-                  <span className="hidden text-right text-[11px] font-bold text-sub sm:block">
+                  <span className="hidden text-end text-[11px] font-bold text-sub sm:block">
                     {lt(locale, { fa: 'قفل فعال', en: 'Active holds', ar: 'الحجز النشط', zh: '活动锁定', ru: 'Холды' })}
                     <b className={cn('ms-1.5 font-black tabular-nums', item.activeHoldsCount > 0 ? 'text-price' : 'text-sub')}>{item.activeHoldsCount}</b>
                   </span>
-                  <span className="text-right text-[11px] font-bold text-sub">
+                  <span className="text-end text-[11px] font-bold text-sub">
                     {lt(locale, { fa: 'پایه', en: 'Base', ar: 'الأساسي', zh: '基础价', ru: 'База' })}
                     <b className="num ms-1.5 text-[13px] font-black text-ink tabular-nums" dir="ltr">{item.basePrice.toLocaleString()} {item.currency}</b>
                   </span>

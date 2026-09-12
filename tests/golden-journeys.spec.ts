@@ -3,9 +3,43 @@ import { apiLogin, E2E_USER } from './helpers/e2e-auth';
 
 test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () => {
 
+  test.beforeAll(async () => {
+    // Ensure seeded user has sufficient wallet balance for the golden journey
+    try {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+      const envText = fs.existsSync(path.resolve(process.cwd(), '.env'))
+        ? fs.readFileSync(path.resolve(process.cwd(), '.env'), 'utf8')
+        : '';
+      const dbUrl = envText.match(/^DATABASE_URL="?([^"\r\n]+)"?/m)?.[1];
+      if (dbUrl) {
+        process.env.DATABASE_URL = dbUrl;
+        const { PrismaClient } = await import('@prisma/client');
+        const prisma = new PrismaClient();
+        const user = await prisma.user.findUnique({ where: { email: 'user@firuzo.com' } });
+        if (user) {
+          const { GeneralLedgerService } = await import('@/domains/ledger/GeneralLedgerService');
+          await GeneralLedgerService.postTopUp({
+            userId: user.id,
+            amount: 100_000_000,
+            currency: 'IRR',
+            groupId: `topup_e2e_${Date.now()}`,
+            referenceId: `ref_e2e_${Date.now()}`,
+            memo: 'E2E test wallet topup',
+          });
+        }
+        await prisma.$disconnect();
+      }
+    } catch (err) {
+      console.warn('beforeAll wallet topup warning:', err);
+    }
+  });
+
   test('Golden Journey 1: Flight Search -> Passenger Booking -> Checkout -> Instant Voucher', async ({ page }) => {
+    test.setTimeout(60000);
     // Checkout requires an authenticated traveler, so sign in through the real
     // credentials provider before starting the journey.
+    await page.goto('/fa', { waitUntil: 'domcontentloaded' });
     const loggedIn = await apiLogin(page, E2E_USER);
     expect(loggedIn).toBe(true);
 

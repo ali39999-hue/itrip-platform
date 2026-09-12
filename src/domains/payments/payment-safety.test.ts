@@ -1,7 +1,8 @@
 import { describe, it, expect, afterAll } from 'vitest';
 import { randomBytes } from 'crypto';
 import { PaymentDomainService } from './PaymentDomainService';
-import { ShetabGatewayAdapter, DemoPaymentAdapter } from './gateway-port';
+import { DemoPaymentAdapter } from './gateway-port';
+import { ShetabPspAdapter } from './adapters/ShetabPspAdapter';
 import { prisma } from '@/lib/prisma';
 import { Money } from '@/lib/finance';
 
@@ -101,7 +102,7 @@ describe('Payment Hardening Suite (PAY-001 to PAY-008)', () => {
   it('PAY-005: Webhook with incorrect HMAC signature is rejected and fails closed', async () => {
     // Per-run throwaway key: exercises the same HMAC path without a static secret.
     const secretKey = randomBytes(32).toString('hex');
-    const adapter = new ShetabGatewayAdapter({
+    const adapter = new ShetabPspAdapter({
       merchantId: 'merch_001',
       secretKey,
       terminalId: 'term_001',

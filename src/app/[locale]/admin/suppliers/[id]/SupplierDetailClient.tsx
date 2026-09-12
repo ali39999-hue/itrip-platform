@@ -258,7 +258,7 @@ export default function SupplierDetailClient({ supplier }: SupplierProps) {
           </div>
 
           <div className="bg-surface rounded-2xl border border-line overflow-hidden">
-            <table className="w-full text-left text-sm">
+            <table className="w-full text-start text-sm">
               <thead className="bg-soft border-b border-line text-xs uppercase text-sub font-black">
                 <tr>
                   <th className="px-4 py-3">Window Start</th>

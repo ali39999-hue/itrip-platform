@@ -1,7 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { requirePermission } from '@/domains/identity/permission-service';
+import { requirePermission, getTenantAuthContext } from '@/domains/identity/permission-service';
 import { revalidatePath } from 'next/cache';
 import bcrypt from 'bcryptjs';
 import { Prisma } from '@prisma/client';
@@ -112,6 +112,13 @@ export async function createAdminStaffUser(data: {
   try {
     const admin = await requirePermission('user:manage');
 
+    if (data.role === 'SUPER_ADMIN') {
+      const tenantCtx = await getTenantAuthContext(admin.id);
+      if (!tenantCtx.isSuperAdmin) {
+        return { success: false, error: 'فقط مدیر ارشد (SUPER_ADMIN) مجاز به تعریف همکار با نقش مدیر ارشد است.' };
+      }
+    }
+
     if (!data.name?.trim()) {
       return { success: false, error: 'نام همکار الزامی است.' };
     }
@@ -197,6 +204,13 @@ export async function updateAdminUserRole(data: {
 }) {
   try {
     const admin = await requirePermission(['user:manage', 'role:manage']);
+
+    if (data.roleName === 'SUPER_ADMIN') {
+      const tenantCtx = await getTenantAuthContext(admin.id);
+      if (!tenantCtx.isSuperAdmin) {
+        return { success: false, error: 'فقط مدیر ارشد (SUPER_ADMIN) مجاز به ارتقای کاربر به نقش مدیر ارشد است.' };
+      }
+    }
 
     await prisma.$transaction(async (tx) => {
       // 1. Update compat role field

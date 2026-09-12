@@ -40,6 +40,7 @@ export function FiruzoChatWidget() {
   const [conversationId, setConversationId] = useState<string | undefined>(undefined);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // Same exclusion logic as ContactDock: product pages with sticky bottom CTAs
   const isExcluded =
@@ -61,6 +62,20 @@ export function FiruzoChatWidget() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // Click outside on desktop closes the floating card
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(e: MouseEvent) {
+      if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
+        if (window.innerWidth >= 768) {
+          setOpen(false);
+        }
+      }
+    }
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [open]);
 
   // Restore last conversation id
   useEffect(() => {
@@ -184,11 +199,11 @@ export function FiruzoChatWidget() {
       {!open && (
         <div
           className={cn(
-            'fixed z-[120] end-4 lg:end-6 max-lg:transition-all max-lg:duration-200',
+            'fixed z-[120] end-4 md:end-6 max-md:transition-all max-md:duration-200',
             isExcluded
-              ? 'bottom-[calc(184px+env(safe-area-inset-bottom))] lg:bottom-[84px]'
-              : 'bottom-[calc(142px+env(safe-area-inset-bottom))] lg:bottom-[84px]',
-            fabVisible ? 'max-lg:opacity-100 max-lg:visible' : 'max-lg:opacity-0 max-lg:invisible max-lg:translate-y-2',
+              ? 'bottom-[calc(184px+env(safe-area-inset-bottom))] md:bottom-[84px]'
+              : 'bottom-[calc(142px+env(safe-area-inset-bottom))] md:bottom-[84px]',
+            fabVisible ? 'max-md:opacity-100 max-md:visible' : 'max-md:opacity-0 max-md:invisible max-md:translate-y-2',
           )}
         >
           <button
@@ -202,10 +217,10 @@ export function FiruzoChatWidget() {
               ru: 'Чат с ИИ-помощником Firuzo',
             })}
             aria-expanded={open}
-            className="relative min-h-[48px] w-[48px] lg:w-auto lg:h-12 lg:px-4 rounded-full bg-brand hover:bg-brand-2 text-surface border border-brand-dark/30 backdrop-blur-md shadow-elev-2 hover:shadow-elev-3 transition-all inline-flex items-center justify-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark active:scale-[0.98]"
+            className="relative min-h-[48px] w-[48px] md:w-auto md:h-12 md:px-4 rounded-full bg-brand hover:bg-brand-2 text-surface border border-brand-dark/30 backdrop-blur-md shadow-elev-2 hover:shadow-elev-3 transition-all inline-flex items-center justify-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark active:scale-[0.98]"
           >
             <FiruzoMascotHead size={30} />
-            <span className="max-lg:hidden text-xs font-black text-surface">
+            <span className="max-md:hidden text-xs font-black text-surface">
               {lt(locale, { fa: 'دستیار هوشمند', en: 'AI Assistant', ar: 'المساعد الذكي', zh: '智能助手', ru: 'ИИ-помощник' })}
             </span>
             <span aria-hidden="true" className="absolute -top-0.5 -end-0.5 w-3 h-3 rounded-full bg-success border-2 border-surface" />
@@ -223,15 +238,16 @@ export function FiruzoChatWidget() {
           />
 
           <div
+            ref={cardRef}
             role="dialog"
             aria-modal="true"
             aria-label={lt(locale, { fa: 'گفتگو با دستیار هوشمند فیروزو', en: 'Firuzo AI assistant chat', ar: 'محادثة مساعد فيروزو الذكي', zh: 'Firuzo AI 助手对话', ru: 'Чат с ИИ-помощником Firuzo' })}
             className={cn(
               'fixed z-[250] flex flex-col bg-surface border border-line shadow-elev-3 overflow-hidden',
               // Mobile: bottom sheet with drag handle
-              'inset-x-0 bottom-0 rounded-t-3xl h-[86dvh] animate-in slide-in-from-bottom duration-200 md:hidden',
-              // Desktop: floating card
-              'md:inset-x-auto md:bottom-[84px] md:end-6 md:h-auto md:max-h-[620px] md:w-[400px] md:rounded-3xl md:animate-in md:fade-in md:slide-in-from-bottom-2 md:duration-150',
+              'inset-x-0 bottom-0 rounded-t-3xl h-[86dvh] animate-in slide-in-from-bottom duration-200',
+              // Desktop: floating card (explicit flex display & positioning)
+              'md:flex md:flex-col md:inset-x-auto md:bottom-[84px] md:end-6 md:h-[580px] md:max-h-[85vh] md:w-[400px] md:rounded-3xl md:animate-in md:fade-in md:slide-in-from-bottom-2 md:duration-150',
             )}
           >
             {/* Drag handle (mobile) */}

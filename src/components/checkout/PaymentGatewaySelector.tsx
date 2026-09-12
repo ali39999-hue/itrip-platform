@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Lock,
   Sparkles,
+  FlaskConical,
 } from 'lucide-react';
 import { formatMoney } from '@/lib/money';
 import { useLocale } from 'next-intl';
@@ -27,6 +28,9 @@ interface PaymentGatewaySelectorProps {
   totalPayable: number; // in Toman
   selectedInstrument?: EcardoInstrument;
   setSelectedInstrument?: (inst: EcardoInstrument) => void;
+  isAdmin?: boolean;
+  adminPaymentMode?: 'real' | 'demo';
+  onToggleAdminPaymentMode?: (mode: 'real' | 'demo') => void;
 }
 
 export function PaymentGatewaySelector({
@@ -36,6 +40,9 @@ export function PaymentGatewaySelector({
   totalPayable,
   selectedInstrument: externalInstrument,
   setSelectedInstrument: setExternalInstrument,
+  isAdmin = false,
+  adminPaymentMode = 'demo',
+  onToggleAdminPaymentMode,
 }: PaymentGatewaySelectorProps) {
   const locale = useLocale();
   const hasEnoughWallet = walletBalance >= totalPayable;
@@ -83,6 +90,86 @@ export function PaymentGatewaySelector({
           eCardo Fintech
         </span>
       </div>
+
+      {isAdmin && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-ink space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-xl bg-amber-500/20 grid place-items-center text-amber-600 font-bold shrink-0">
+                ⚡
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] font-black">
+                    {lt(locale, {
+                      fa: 'حالت درگاه پرداخت (مخصوص ادمین)',
+                      en: 'Payment Gateway Mode (Admin Only)',
+                      ar: 'وضع بوابة الدفع (خاص بالمسؤول)',
+                      zh: '支付网关模式（仅限管理员）',
+                      ru: 'Режим платежного шлюза (только для админа)',
+                    })}
+                  </span>
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/25 text-amber-800 dark:text-amber-300">
+                    ADMIN
+                  </span>
+                </div>
+                <p className="text-[11px] text-sub">
+                  {lt(locale, {
+                    fa: 'انتخاب نحوه پردازش تراکنش بین درگاه واقعی eCardo و شبیه‌ساز تست دمو:',
+                    en: 'Choose transaction routing between Real eCardo Gateway and Demo Simulator:',
+                    ar: 'اختر توجيه المعاملة بين بوابة eCardo الحقيقية ومحاكي الاختبار التجريبي:',
+                    zh: '在正式 eCardo 网关与测试沙箱模拟器之间选择处理方式：',
+                    ru: 'Выберите маршрутизацию транзакции между реальным шлюзом eCardo и демо-симулятором:',
+                  })}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center bg-surface border border-line rounded-xl p-1 shadow-xs">
+              <button
+                type="button"
+                onClick={() => onToggleAdminPaymentMode?.('demo')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-black transition-all ${
+                  adminPaymentMode === 'demo'
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'text-sub hover:text-ink'
+                }`}
+              >
+                <FlaskConical size={14} />
+                <span>
+                  {lt(locale, {
+                    fa: 'شبیه‌ساز (دمو)',
+                    en: 'Demo Simulator',
+                    ar: 'محاكي دمو',
+                    zh: '测试模拟',
+                    ru: 'Демо-симулятор',
+                  })}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onToggleAdminPaymentMode?.('real')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-black transition-all ${
+                  adminPaymentMode === 'real'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-sub hover:text-ink'
+                }`}
+              >
+                <ShieldCheck size={14} />
+                <span>
+                  {lt(locale, {
+                    fa: 'درگاه واقعی eCardo',
+                    en: 'Real eCardo Gateway',
+                    ar: 'بوابة إيكاردو الحقيقية',
+                    zh: '正式 eCardo 网关',
+                    ru: 'Боевой шлюз eCardo',
+                  })}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-3.5">
         {/* ========================================================================= */}

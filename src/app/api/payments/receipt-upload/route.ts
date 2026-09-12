@@ -24,14 +24,14 @@ export async function POST(req: NextRequest) {
   try {
     const session = await safeAuth();
     if (!session || !session.user) {
-      return NextResponse.json({ error: 'احراز هویت الزامی است' }, { status: 401 });
+      return NextResponse.json({ success: false, error:'احراز هویت الزامی است' }, { status: 401 });
     }
 
     const formData = await req.formData();
     const bookingId = formData.get('bookingId') as string;
 
     if (!bookingId) {
-      return NextResponse.json({ error: 'شناسه سفارش/رزرو الزامی است' }, { status: 400 });
+      return NextResponse.json({ success: false, error:'شناسه سفارش/رزرو الزامی است' }, { status: 400 });
     }
 
     // Verify booking exists and user has access
@@ -41,14 +41,14 @@ export async function POST(req: NextRequest) {
     });
 
     if (!booking) {
-      return NextResponse.json({ error: 'سفارش مورد نظر یافت نشد' }, { status: 404 });
+      return NextResponse.json({ success: false, error:'سفارش مورد نظر یافت نشد' }, { status: 404 });
     }
 
     const isCustomer = booking.customerId === session.user.id;
     const isStaff = session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN';
 
     if (!isCustomer && !isStaff) {
-      return NextResponse.json({ error: 'شما به این سفارش دسترسی ندارید' }, { status: 403 });
+      return NextResponse.json({ success: false, error:'شما به این سفارش دسترسی ندارید' }, { status: 403 });
     }
 
     // Prepare upload directory with strict path resolution
@@ -58,11 +58,11 @@ export async function POST(req: NextRequest) {
     // Handle receipt images (1 to 10)
     const receiptFiles = formData.getAll('receipts') as File[];
     if (!receiptFiles || receiptFiles.length === 0) {
-      return NextResponse.json({ error: 'حداقل یک تصویر رسید باید ارسال شود' }, { status: 400 });
+      return NextResponse.json({ success: false, error:'حداقل یک تصویر رسید باید ارسال شود' }, { status: 400 });
     }
 
     if (receiptFiles.length > 10) {
-      return NextResponse.json({ error: 'حداکثر ۱۰ تصویر رسید مجاز است' }, { status: 400 });
+      return NextResponse.json({ success: false, error:'حداکثر ۱۰ تصویر رسید مجاز است' }, { status: 400 });
     }
 
     const savedReceiptUrls: string[] = [];
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
 
       if (file.size > MAX_UPLOAD_SIZE_BYTES) {
         return NextResponse.json(
-          { error: `حجم فایل ${file.name} بیشتر از ۵ مگابایت است` },
+          { success: false, error:`حجم فایل ${file.name} بیشتر از ۵ مگابایت است` },
           { status: 400 }
         );
       }
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
 
       if (!detectedMime || !ALLOWED_IMAGE_MIMES.has(detectedMime)) {
         return NextResponse.json(
-          { error: `فرمت فایل ${file.name} مجاز نیست. فقط JPG، PNG و WebP پذیرفته می‌شود.` },
+          { success: false, error:`فرمت فایل ${file.name} مجاز نیست. فقط JPG، PNG و WebP پذیرفته می‌شود.` },
           { status: 400 }
         );
       }
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
       const filePath = path.resolve(uploadDir, safeFilename);
 
       if (!filePath.startsWith(uploadDir + path.sep)) {
-        return NextResponse.json({ error: 'مسیر فایل نامعتبر است' }, { status: 400 });
+        return NextResponse.json({ success: false, error:'مسیر فایل نامعتبر است' }, { status: 400 });
       }
 
       await fs.writeFile(filePath, buffer);
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
     if (nationalIdFile && nationalIdFile instanceof File && nationalIdFile.size > 0) {
       if (nationalIdFile.size > MAX_UPLOAD_SIZE_BYTES) {
         return NextResponse.json(
-          { error: 'حجم فایل کارت ملی بیشتر از ۵ مگابایت است' },
+          { success: false, error:'حجم فایل کارت ملی بیشتر از ۵ مگابایت است' },
           { status: 400 }
         );
       }
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
 
       if (!detectedNidMime || !ALLOWED_IMAGE_MIMES.has(detectedNidMime)) {
         return NextResponse.json(
-          { error: 'فرمت فایل کارت ملی نامعتبر است. فقط تصویر پذیرفته می‌شود.' },
+          { success: false, error:'فرمت فایل کارت ملی نامعتبر است. فقط تصویر پذیرفته می‌شود.' },
           { status: 400 }
         );
       }
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
       const nidPath = path.resolve(uploadDir, nidFilename);
 
       if (!nidPath.startsWith(uploadDir + path.sep)) {
-        return NextResponse.json({ error: 'مسیر فایل کارت ملی نامعتبر است' }, { status: 400 });
+        return NextResponse.json({ success: false, error:'مسیر فایل کارت ملی نامعتبر است' }, { status: 400 });
       }
 
       await fs.writeFile(nidPath, nidBuffer);
@@ -139,6 +139,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('Receipt upload error:', error);
-    return NextResponse.json({ error: 'خطا در ذخیره‌سازی فایل‌ها' }, { status: 500 });
+    return NextResponse.json({ success: false, error:'خطا در ذخیره‌سازی فایل‌ها' }, { status: 500 });
   }
 }

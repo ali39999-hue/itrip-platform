@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from '@/i18n/routing';
-import { Menu, X, ChevronRight, Search } from 'lucide-react';
+import { Menu, X, ChevronRight, Search, UserRound, LogOut, Briefcase, Wallet, Users, Sparkles } from 'lucide-react';
+import { useAuthStore } from '@/stores/auth-store';
 import { Logo } from './Logo';
 import { CountrySwitcher } from './header/CountrySwitcher';
 import { LocaleSwitcher } from './header/LocaleSwitcher';
@@ -18,6 +19,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const { user, logout } = useAuthStore();
   const t = useTranslations('Nav');
   const ct = useTranslations('Common');
   const locale = useLocale();
@@ -77,6 +79,83 @@ export function Header() {
             <X size={20} />
           </button>
         </div>
+
+        {/* User Profile & Account Actions in Mobile Drawer */}
+        {user ? (
+          <div className="p-3.5 border-b border-line bg-surface">
+            <div className="flex items-center justify-between gap-3 mb-2.5">
+              <Link
+                href="/account"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 min-w-0 flex-1 hover:opacity-90 transition"
+              >
+                <div className="w-10 h-10 rounded-full shadow-xs bg-gradient-to-br from-brand to-brand-dark text-surface flex items-center justify-center text-sm font-black shrink-0">
+                  {user.firstNameFa?.[0] || user.firstNameEn?.[0] || <UserRound size={18} />}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-xs font-black text-ink truncate">
+                    {((locale === 'fa' ? user.firstNameFa : (user.firstNameEn || user.firstNameFa)) || user.phone)}
+                  </h3>
+                  <span className="text-[10.5px] font-bold text-brand-dark flex items-center gap-1">
+                    <Sparkles size={11} />
+                    <span>{lt(locale, { fa: 'داشبورد کاربری', en: 'User Dashboard', ar: 'لوحة الحساب', zh: '用户控制台', ru: 'Личный кабинет' })}</span>
+                  </span>
+                </div>
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  logout();
+                  setMobileMenuOpen(false);
+                }}
+                className="min-h-[44px] px-3 rounded-xl bg-rose-warm/15 text-rose-warm hover:bg-rose-warm/25 flex items-center gap-1.5 text-xs font-black shrink-0 active:scale-95 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-warm"
+                title={lt(locale, { fa: 'خروج از حساب', en: 'Sign Out', ar: 'تسجيل الخروج', zh: '退出登录', ru: 'Выйти' })}
+              >
+                <LogOut size={14} />
+                <span>{lt(locale, { fa: 'خروج', en: 'Logout', ar: 'خروج', zh: '退出', ru: 'Выход' })}</span>
+              </button>
+            </div>
+
+            {/* Quick Account Navigation Grid */}
+            <div className="grid grid-cols-3 gap-1.5 pt-1">
+              <Link
+                href="/my-trips"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex flex-col items-center justify-center p-2 rounded-xl bg-soft hover:bg-mint/40 text-center transition min-h-[44px]"
+              >
+                <Briefcase size={15} className="text-brand-dark mb-0.5" />
+                <span className="text-[10.5px] font-black text-ink">{t('myTrips')}</span>
+              </Link>
+              <Link
+                href="/wallet"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex flex-col items-center justify-center p-2 rounded-xl bg-soft hover:bg-mint/40 text-center transition min-h-[44px]"
+              >
+                <Wallet size={15} className="text-brand-dark mb-0.5" />
+                <span className="text-[10.5px] font-black text-ink">{t('wallet')}</span>
+              </Link>
+              <Link
+                href="/account/travelers"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex flex-col items-center justify-center p-2 rounded-xl bg-soft hover:bg-mint/40 text-center transition min-h-[44px]"
+              >
+                <Users size={15} className="text-brand-dark mb-0.5" />
+                <span className="text-[10.5px] font-black text-ink">{lt(locale, { fa: 'مسافران', en: 'Travelers', ar: 'المسافرون', zh: '旅客', ru: 'Пассажиры' })}</span>
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="p-3.5 border-b border-line bg-surface">
+            <Link
+              href="/auth"
+              onClick={() => setMobileMenuOpen(false)}
+              className="w-full min-h-[44px] rounded-xl bg-brand text-surface hover:bg-brand-dark flex items-center justify-center gap-2 text-xs font-black shadow-xs active:scale-[0.98] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              <UserRound size={15} />
+              <span>{lt(locale, { fa: 'ورود یا ثبت‌نام در فیروزو', en: 'Sign In / Register', ar: 'تسجيل الدخول / التسجيل', zh: '登录 / 注册', ru: 'Вход / Регистрация' })}</span>
+            </Link>
+          </div>
+        )}
 
         {/* Quick Country & Locale Switcher in Drawer */}
         <div className="px-4 py-3 border-b border-line/60 bg-paper flex items-center justify-between gap-3">
@@ -143,7 +222,7 @@ export function Header() {
   ) : null;
 
   return (
-    <header className="sticky top-0 z-[80] bg-surface/90 backdrop-blur-md border-b border-line/80">
+    <header className="sticky top-0 z-[80] bg-surface/90 backdrop-blur-md border-b border-line/80 pt-[env(safe-area-inset-top,0px)]">
       <div className="w-full max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 2xl:px-8 h-16 flex items-center justify-between gap-2 md:gap-3 2xl:gap-4">
         {/* Brand Logo & Switchers */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">

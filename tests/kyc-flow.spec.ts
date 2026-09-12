@@ -3,12 +3,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 /**
- * KYC completion flow (2026-09): a user whose profile lacks name/nationalId
- * (fresh signup) is routed into the identity wizard after login instead of
- * straight to the account, sees a completion banner on /account, and the
- * wizard's final submit persists name + nationalId server-side (passport is
- * optional). The spec resets the seeded customer first, so it is idempotent
- * even though the wizard itself mutates the profile.
+ * KYC at purchase (2026-09): login never blocks on an identity wizard. A user
+ * whose profile lacks name/nationalId lands straight on /account, sees the
+ * "incomplete profile" banner there, and KYC is enforced in the checkout
+ * funnel (lead passenger nationalId/passport). The spec resets the seeded
+ * customer first, so it is idempotent.
  */
 
 // .env is not loaded into process.env for specs — read DATABASE_URL manually
@@ -37,7 +36,7 @@ test.describe('KYC completion flow', () => {
     await prisma?.$disconnect();
   });
 
-  test('incomplete signup is routed through the identity wizard and persisted', async ({ page }) => {
+  test('incomplete signup logs in freely without being blocked by wizard; KYC completes at purchase or account', async ({ page }) => {
     // 1) Password login with the seeded customer (no nationalId in DB)
     await page.goto('/fa/auth', { waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: /ورود با کلمه عبور/i }).click();
@@ -45,38 +44,30 @@ test.describe('KYC completion flow', () => {
     await page.locator('#staff-password').fill('User@Firuzo2026!');
     await page.getByRole('button', { name: /ورود به پنل مدیریت ERP/i }).click();
 
-    // 2) Incomplete user → wizard first step instead of redirect to account
-    const nameStep = page.getByRole('heading', { name: /نام و نام خانوادگی/i });
-    await expect(nameStep).toBeVisible({ timeout: 15000 });
+    // 2) KYC is at purchase, NOT registration: user is NOT trapped in wizard,
+    // lands smoothly on /fa/account
+    await page.waitForURL(/\/fa\/account/, { timeout: 20000 });
+    await expect(page).toHaveURL(/\/fa\/account/);
 
-    // 3) Completion banner is shown on /account while the profile is incomplete
-    await page.goto('/fa/account', { waitUntil: 'domcontentloaded' });
+    // 3) Incomplete profile banner is shown on /account advising user
     const banner = page.getByText(/اطلاعات هویتی شما کامل نیست/i);
     await expect(banner).toBeVisible({ timeout: 15000 });
 
-    // 4) Walk the wizard: names → nationalId → (optional, empty) passport
-    await page.goto('/fa/auth', { waitUntil: 'domcontentloaded' });
-    await expect(nameStep).toBeVisible({ timeout: 15000 });
-    const nameInputs = page.locator('input[type="text"]');
-    await nameInputs.nth(0).fill('علی');
-    await nameInputs.nth(1).fill('آزمونی');
-    await page.getByRole('button', { name: 'ادامه', exact: true }).click();
+    // 4) Complete profile in database (simulate completion at purchase/account)
+    await prisma!.user.update({
+      where: { email: 'user@firuzo.com' },
+      data: {
+        firstNameFa: 'علی',
+        lastNameFa: 'آزمونی',
+        nationalId: '0012345678',
+      },
+    });
 
-    const nationalInput = page.locator('input[placeholder="0012345678"]');
-    await expect(nationalInput).toBeVisible({ timeout: 10000 });
-    await nationalInput.fill('0012345678');
-    await page.getByRole('button', { name: 'ادامه', exact: true }).click();
-
-    const finishBtn = page.getByRole('button', { name: /تکمیل و ثبت نهایی/i });
-    await expect(finishBtn).toBeVisible({ timeout: 10000 });
-    await finishBtn.click();
-
-    // 5) Persisted server-side → redirect to account, banner cleared
-    await page.waitForURL(/\/fa\/account/, { timeout: 20000 });
+    // 5) Refresh account: profile is now complete, banner cleared
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.getByText(/اطلاعات هویتی شما کامل نیست/i)).toHaveCount(0);
 
-    // 6) Fresh reload: session user is now complete → /auth must NOT reopen
-    //    the wizard (approved step bounces straight back to the account)
+    // 6) Fresh reload: user remains signed in and navigates freely
     await page.goto('/fa/auth', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2500);
     expect(page.url()).toContain('/fa/account');

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getRequestBaseUrl } from '@/lib/runtime-url';
-import { GeneralLedgerService } from '@/domains/ledger/GeneralLedgerService';
-import { Money } from '@/lib/finance';
 
 /**
  * Universal Gateway Browser Return Handler (Dual-Confirmation Architecture).
@@ -138,114 +136,30 @@ export async function handlePaymentCallback(req: NextRequest) {
   const amountParam = payment?.amount ? `&amount=${payment.amount.toNumber()}` : '';
   const currencyParam = payment?.currency ? `&currency=${payment.currency}` : '';
 
-  // Dual-Confirmation Capture Execution:
-  // If gateway reported success and our internal payment record is still PENDING,
-  // capture it atomically right now to guarantee the customer never sees "stuck" state.
-  if (isSuccessful && payment && payment.status === 'PENDING') {
-    try {
-      if (resolvedBookingId.startsWith('wallet_topup_')) {
-        // A) Wallet Top-Up Capture
-        const userId = resolvedBookingId.slice('wallet_topup_'.length);
-        const incomingMoney = new Money(payment.amount.toString(), payment.currency);
-
-        await prisma.$transaction(async (tx) => {
-          await tx.payment.update({
-            where: { id: payment.id },
-            data: { status: 'SUCCESS' },
-          });
-
-          if (payment.paymentIntentId) {
-            await tx.paymentIntent.update({
-              where: { id: payment.paymentIntentId },
-              data: { status: 'SUCCESS' },
-            });
-          }
-
-          await GeneralLedgerService.postTopUp(
-            {
-              groupId: `cb_topup_grp_${payment.id}`,
-              userId,
-              amount: incomingMoney,
-              currency: payment.currency,
-              referenceId: payment.id,
-              memo: `Wallet top-up callback capture via eCardo (ref: ${resolvedRef})`,
-            },
-            tx
-          );
-        });
-      } else if (resolvedBookingId) {
-        // B) Booking Capture
-        const booking = await prisma.booking.findUnique({
-          where: { id: resolvedBookingId },
-        });
-
-        if (booking && !['EXPIRED', 'CANCELLED', 'REFUNDED'].includes(booking.status)) {
-          const incomingMoney = new Money(payment.amount.toString(), payment.currency);
-
-          await prisma.$transaction(async (tx) => {
-            await tx.payment.update({
-              where: { id: payment.id },
-              data: { status: 'SUCCESS' },
-            });
-
-            if (payment.paymentIntentId) {
-              await tx.paymentIntent.update({
-                where: { id: payment.paymentIntentId },
-                data: { status: 'SUCCESS' },
-              });
-            }
-
-            await tx.booking.update({
-              where: { id: booking.id },
-              data: {
-                paymentStatus: 'CAPTURED',
-                status: 'CONFIRMED',
-              },
-            });
-
-            await tx.bookingStatusHistory.create({
-              data: {
-                bookingId: booking.id,
-                fromStatus: booking.status,
-                toStatus: 'CONFIRMED',
-                actor: 'GATEWAY_CALLBACK',
-                reason: `Payment confirmed via eCardo browser callback (ref: ${resolvedRef})`,
-                correlationId: `corr_cb_${payment.id}`,
-              },
-            });
-
-            await GeneralLedgerService.postGatewayPayment(
-              {
-                groupId: `cb_grp_${payment.id}`,
-                amount: incomingMoney,
-                currency: payment.currency,
-                referenceId: booking.id,
-                memo: `Gateway callback capture for booking ${booking.reference || booking.id}`,
-              },
-              tx
-            );
-
-            try {
-              await GeneralLedgerService.wireBookingConfirmationToLedger(booking.id, tx);
-            } catch (e) {
-              console.warn('Callback revenue realization note:', e);
-            }
-          });
-        }
-      }
-    } catch (captureErr) {
-      console.error('Error executing dual-confirmation capture in callback:', captureErr);
-    }
-  } else if (isFailed && payment && payment.status === 'PENDING') {
+  // Security Invariant (P0 Fix):
+  // Browser return callbacks are untrusted client-side HTTP redirects and must NEVER
+  // execute monetary ledger captures, wallet top-ups, or booking confirmations.
+  // Authoritative state transitions must exclusively execute via cryptographically
+  // HMAC-verified server-to-server IPN webhooks (/api/payments/webhook).
+  if (isFailed && payment && payment.status === 'PENDING') {
     await prisma.payment.update({
       where: { id: payment.id },
       data: { status: 'FAILED' },
     }).catch(() => {});
   }
 
-  // Canonical status query: 'confirmed' or 'failed'
+  // Authoritative status resolution:
+  // 'confirmed' ONLY if payment.status is already SUCCESS in database (posted by HMAC webhook),
+  // 'failed' if gateway reported failure or internal status is FAILED,
+  // otherwise 'processing' so the client UI waits for webhook settlement.
   const isAlreadySuccess = payment?.status === 'SUCCESS';
-  const finalStatus = (isSuccessful || isAlreadySuccess) ? 'confirmed' : isFailed ? 'failed' : 'processing';
+  const finalStatus = isAlreadySuccess
+    ? 'confirmed'
+    : isFailed || payment?.status === 'FAILED'
+    ? 'failed'
+    : isSuccessful
+    ? 'processing'
+    : 'processing';
 
   const redirectTarget = `${baseUrl}/payment-status?ref=${encodeURIComponent(
     resolvedRef

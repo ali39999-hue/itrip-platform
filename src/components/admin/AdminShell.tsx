@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { LocaleSwitcher } from '@/components/layout/header/LocaleSwitcher';
 import { AdminGlobalSearch } from './AdminGlobalSearch';
+import { AdminPaymentModeToggle } from './AdminPaymentModeToggle';
 import {
   LayoutDashboard, BriefcaseBusiness, Wallet,
   PlaneTakeoff, ExternalLink, ShieldCheck, UserCheck, Activity,
@@ -435,6 +436,7 @@ export function AdminShell({
               )}
 
               <div className="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+                <AdminPaymentModeToggle />
                 <div ref={shortcutsRef} className="relative">
                   <button
                     type="button"

@@ -139,8 +139,41 @@ export class EcardoGatewayAdapter implements PaymentGatewayPort {
    * Description is constrained to maximum 20 characters.
    */
   async createPayment(req: GatewayPaymentRequest): Promise<GatewayPaymentResponse> {
+    // Map to an eCardo-supported currency (platform IRR/TOMAN → IRT; USD/USDT/CNY pass through).
+    const targetCurrency = mapToEcardoCurrency(req.amount.currency || 'IRR');
+
+    // Amount formatting
+    const numAmount = req.amount.toNumber();
+    const formattedAmount = (targetCurrency === 'IRR' || targetCurrency === 'IRT')
+      ? Math.round(numAmount)
+      : Number(numAmount.toFixed(2));
+
+    // Resolve explicit payment mode (e.g. from Admin switch) vs environment fallback
+    const isExplicitDemo = req.paymentMode === 'demo';
+    const isExplicitReal = req.paymentMode === 'real';
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    // 1. If explicitly requested demo mode in non-production, route to demo simulator
+    if (!isProduction && isExplicitDemo) {
+      const demoTxId = `FZ${Date.now().toString(36).slice(-6)}${crypto.randomBytes(2).toString('hex')}`.slice(0, 12).toUpperCase();
+      const demoParams = new URLSearchParams({
+        ref: demoTxId,
+        bookingId: req.bookingId || '',
+        amount: String(formattedAmount),
+        currency: targetCurrency,
+      });
+      return {
+        success: true,
+        gatewayRef: demoTxId,
+        redirectUrl: `/demo/ecardo-checkout?${demoParams.toString()}`,
+        status: 'PENDING_CUSTOMER',
+        rawResponse: { demo: true, bookingId: req.bookingId, amount: formattedAmount, currency: targetCurrency },
+      };
+    }
+
+    // 2. Validate configuration if real gateway is targeted
     if (!this.isConfigured()) {
-      if (process.env.DEMO_MODE === 'true') {
+      if (!isExplicitReal && !isProduction && process.env.DEMO_MODE === 'true') {
         const dummyRef = `FZ${Date.now().toString(36).slice(-8).toUpperCase()}`;
         return {
           success: true,
@@ -153,21 +186,12 @@ export class EcardoGatewayAdapter implements PaymentGatewayPort {
       throw new Error('Ecardo payment gateway not configured: ECARDO_PUBLIC_KEY is required');
     }
 
-    // Map to an eCardo-supported currency (platform IRR/TOMAN → IRT; USD/USDT/CNY pass through).
-    const targetCurrency = mapToEcardoCurrency(req.amount.currency || 'IRR');
-
-    // Amount formatting
-    const numAmount = req.amount.toNumber();
-    const formattedAmount = (targetCurrency === 'IRR' || targetCurrency === 'IRT')
-      ? Math.round(numAmount)
-      : Number(numAmount.toFixed(2));
-
-    // Simulated-gateway routing for tester walkthroughs. Scoped to the
-    // dedicated ECARDO_DEMO_GATEWAY flag (or global DEMO_MODE) and hard-blocked
-    // in production — the REAL eCardo path stays untouched when the flag is off.
+    // 3. Simulated-gateway routing for tester walkthroughs when env flag is on (hard-blocked in production and when explicit real)
     const demoRoutingEnabled =
-      process.env.NODE_ENV !== 'production' &&
+      !isProduction &&
+      !isExplicitReal &&
       (process.env.ECARDO_DEMO_GATEWAY === 'true' || process.env.DEMO_MODE === 'true');
+
     if (demoRoutingEnabled) {
       const demoTxId = `FZ${Date.now().toString(36).slice(-6)}${crypto.randomBytes(2).toString('hex')}`.slice(0, 12).toUpperCase();
       const demoParams = new URLSearchParams({

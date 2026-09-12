@@ -79,7 +79,10 @@ export class BookingApplicationService {
    * Resolves canonical supplier base price server-side
    */
   static async resolveServerBasePrice(type: string, itemId?: string): Promise<number | null> {
-    if (!itemId) return null;
+    if (!itemId) {
+      if (type === 'TOUR' || type === 'TOURS') return TOURS[0]?.price ?? 85000000;
+      return null;
+    }
 
     const flight = FLIGHTS.find((f) => f.id === itemId);
     if (flight) return flight.price;
@@ -101,6 +104,34 @@ export class BookingApplicationService {
 
     const insurance = INSURANCE_PLANS.find((i) => i.id === itemId);
     if (insurance) return insurance.price;
+
+    if (type === 'TOUR' || type === 'TOURS') {
+      let dbTour: { price: unknown } | null = null;
+      try {
+        dbTour = await prisma.tour.findUnique({ where: { id: itemId } });
+      } catch {
+        dbTour = null;
+      }
+      if (dbTour) return Number(dbTour.price);
+
+      if (itemId.startsWith('exp_')) {
+        const { ContentDomainService } = await import('@/domains/content/ContentDomainService');
+        const exps = await ContentDomainService.getExperiences().catch(() => []);
+        const exp = (exps || []).find(
+          (e: { id?: string; title?: string; titleEn?: string; fromPrice?: unknown }) =>
+            e.id === itemId || `exp_${encodeURIComponent(e.titleEn || e.title || '')}` === itemId
+        );
+        if (exp && typeof exp.fromPrice === 'number') return exp.fromPrice;
+      }
+
+      // Synthetic tour-ish ids (AI planner / contextual / experiences) keep the
+      // catalog fallback; anything else must resolve from DB or inventory —
+      // pricing an unknown item at the demo tour price is a price-authority hole.
+      if (itemId.startsWith('ctx-') || itemId.startsWith('exp_') || itemId.startsWith('plan_') || itemId.startsWith('int_')) {
+        return TOURS[0]?.price ?? 85000000;
+      }
+      return null;
+    }
 
     if (type === 'HOTEL') {
       const liveHotel = (await getHotelByIdAsync(itemId)) || getHotelById(itemId);
@@ -388,9 +419,17 @@ export class BookingApplicationService {
     // Recalculate fresh base costs server-side
     let totalBaseCost = 0;
     for (const item of booking.items) {
-      const freshPrice = await this.resolveServerBasePrice(item.type, item.inventoryItemId || undefined);
+      let itemCount = 1;
+      let parsedDetails: Record<string, unknown> = {};
+      try {
+        parsedDetails = item.details ? JSON.parse(item.details) : {};
+        if (parsedDetails.count) itemCount = Number(parsedDetails.count) || 1;
+      } catch {}
+
+      const itemId = item.inventoryItemId || (typeof parsedDetails.itemId === 'string' ? parsedDetails.itemId : undefined);
+      const freshPrice = await this.resolveServerBasePrice(item.type, itemId);
       if (freshPrice !== null) {
-        totalBaseCost += freshPrice;
+        totalBaseCost += freshPrice * itemCount;
       } else {
         totalBaseCost += Number(item.netCost);
       }

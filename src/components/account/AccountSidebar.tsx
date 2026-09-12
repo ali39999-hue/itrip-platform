@@ -113,73 +113,147 @@ export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps)
         });
 
   return (
-    <aside className="lg:w-72 flex flex-col gap-2 bg-surface shadow-xs rounded-3xl h-fit lg:sticky top-24 shrink-0 border border-line overflow-hidden">
-      <div className="p-6 border-b border-line flex flex-col items-center text-center bg-gradient-to-b from-mint/30 to-transparent">
-        {/* Dynamic Initials Avatar */}
-        <div className="w-18 h-18 rounded-full mb-3 shadow-sm border-2 border-brand/20 bg-gradient-to-br from-brand to-brand-dark text-surface flex items-center justify-center text-xl font-black">
-          {userFullName ? initials : <UserRound size={26} />}
-        </div>
-        <h2 className="text-[17px] font-black text-ink mb-1">{userName}</h2>
-
-        {/* Loyalty Tier Badge — driven by the server-authoritative coin balance */}
-        <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-gold-soft border border-action/20 text-price text-[11px] font-black">
-          <Star size={12} className="fill-action text-action" />
-          <span>{tierLabel}</span>
-        </div>
-
-        <p className="font-bold text-[11.5px] text-sub mt-2 num">
-          {(loyalty?.totalCoins ?? 0).toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}{' '}
-          {pointsLabel}
-        </p>
-      </div>
-
-      <nav className="flex flex-col gap-1.5 p-3" aria-label={lt(locale, { fa: 'منوی حساب کاربری', en: 'Account menu', ar: 'قائمة الحساب', zh: '账户菜单', ru: 'Меню аккаунта' })}>
-        {nav.links.map((link) => {
-          const Icon = ICONS[link.icon || 'LayoutGrid'] || LayoutGrid;
-          const label =
-            link.href === '/my-trips'
-              ? t('title')
-              : lt(locale, { fa: link.label.fa, en: link.label.en, ar: link.label.ar, zh: link.label.zh, ru: link.label.ru });
-          const active = isActive(link.href);
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`flex items-center gap-3 px-4 py-3 font-bold text-[13.5px] rounded-2xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                active
-                  ? 'bg-brand text-surface font-black shadow-xs'
-                  : 'text-sub hover:bg-soft hover:text-ink'
-              }`}
-            >
-              <Icon size={17} />
-              <span>{label}</span>
-            </Link>
-          );
-        })}
-
-        {['admin', 'SUPER_ADMIN', 'OPS', 'FINANCE', 'OPERATOR'].includes(user?.role || '') && (
-          <Link
-            href="/admin"
-            className="flex items-center gap-3 px-4 py-3 font-bold text-[13.5px] rounded-2xl text-brand-dark bg-mint border border-brand/20 hover:bg-mint/80 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+    <>
+      {/* Mobile Account Navigation Bar (md:hidden) — ensures full access to all sections and logout on mobile */}
+      <div className="md:hidden w-full space-y-2.5 mb-3">
+        {/* Mobile Profile Card with Quick Logout */}
+        <div className="flex items-center justify-between gap-3 p-3.5 bg-surface rounded-2xl border border-line shadow-2xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-10 h-10 rounded-full shadow-xs bg-gradient-to-br from-brand to-brand-dark text-surface flex items-center justify-center text-sm font-black shrink-0">
+              {userFullName ? initials : <UserRound size={18} />}
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-xs font-black text-ink truncate">{userName}</h3>
+              <div className="flex items-center gap-1.5 text-[10.5px] font-bold text-sub">
+                <Star size={10} className="fill-action text-action shrink-0" />
+                <span>{tierLabel}</span>
+                <span>·</span>
+                <span className="num">{(loyalty?.totalCoins ?? 0).toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')} {pointsLabel}</span>
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              logout();
+              router.push('/');
+            }}
+            className="min-h-[44px] px-3.5 rounded-xl bg-rose-warm/15 text-rose-warm hover:bg-rose-warm/25 flex items-center gap-1.5 text-xs font-black shrink-0 active:scale-95 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-warm"
+            aria-label={lt(locale, { fa: 'خروج از حساب', en: 'Sign Out', ar: 'تسجيل الخروج', zh: '退出登录', ru: 'Выйти' })}
           >
-            <ShieldCheck size={17} />
-            {lt(locale, { fa: 'سامانه مدیریت (ERP)', en: 'Admin ERP Panel', ar: 'لوحة الإدارة', zh: '管理后台', ru: 'Панель администратора' })}
-          </Link>
-        )}
-      </nav>
+            <LogOut size={15} />
+            <span>{lt(locale, { fa: 'خروج', en: 'Logout', ar: 'خروج', zh: '退出', ru: 'Выход' })}</span>
+          </button>
+        </div>
 
-      <div className="p-3 mt-auto border-t border-line/60">
-        <button
-          onClick={() => {
-            logout();
-            router.push('/');
-          }}
-          className="w-full flex items-center justify-center gap-2 text-rose-warm hover:bg-rose-warm/10 px-4 py-2.5 rounded-2xl transition-colors font-bold text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        {/* Horizontal Navigation Chips Bar (AGENTS.md 2.2) */}
+        <nav
+          className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth snap-x pb-1 touch-pan-x"
+          aria-label={lt(locale, { fa: 'بخش‌های حساب کاربری', en: 'Account sections', ar: 'أقسام الحساب', zh: '账户版块', ru: 'Разделы аккаунта' })}
         >
-          <LogOut size={16} />
-          {lt(locale, { fa: 'خروج از حساب', en: 'Sign Out', ar: 'تسجيل الخروج', zh: '退出登录', ru: 'Выйти' })}
-        </button>
+          {nav.links.map((link) => {
+            const Icon = ICONS[link.icon || 'LayoutGrid'] || LayoutGrid;
+            const label =
+              link.href === '/my-trips'
+                ? t('title')
+                : lt(locale, { fa: link.label.fa, en: link.label.en, ar: link.label.ar, zh: link.label.zh, ru: link.label.ru });
+            const active = isActive(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`flex items-center gap-1.5 min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-black whitespace-nowrap transition active:scale-95 snap-start shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                  active
+                    ? 'bg-brand text-surface shadow-xs'
+                    : 'bg-surface text-sub hover:text-ink border border-line'
+                }`}
+              >
+                <Icon size={15} />
+                <span>{label}</span>
+              </Link>
+            );
+          })}
+          {['admin', 'SUPER_ADMIN', 'OPS', 'FINANCE', 'OPERATOR'].includes(user?.role || '') && (
+            <Link
+              href="/admin"
+              className="flex items-center gap-1.5 min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-black whitespace-nowrap bg-mint text-brand-dark border border-brand/30 hover:bg-mint/80 transition active:scale-95 snap-start shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              <ShieldCheck size={15} />
+              <span>{lt(locale, { fa: 'مدیریت ERP', en: 'ERP Admin', ar: 'الإدارة', zh: '管理', ru: 'ERP' })}</span>
+            </Link>
+          )}
+        </nav>
       </div>
-    </aside>
+
+      {/* Desktop Sidebar (hidden md:flex) */}
+      <aside className="hidden md:flex md:w-64 lg:w-72 flex-col gap-2 bg-surface shadow-xs rounded-3xl h-fit lg:sticky top-24 shrink-0 border border-line overflow-hidden">
+        <div className="p-6 border-b border-line flex flex-col items-center text-center bg-gradient-to-b from-mint/30 to-transparent">
+          {/* Dynamic Initials Avatar */}
+          <div className="w-18 h-18 rounded-full mb-3 shadow-sm border-2 border-brand/20 bg-gradient-to-br from-brand to-brand-dark text-surface flex items-center justify-center text-xl font-black">
+            {userFullName ? initials : <UserRound size={26} />}
+          </div>
+          <h2 className="text-[17px] font-black text-ink mb-1">{userName}</h2>
+
+          {/* Loyalty Tier Badge — driven by the server-authoritative coin balance */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-gold-soft border border-action/20 text-price text-[11px] font-black">
+            <Star size={12} className="fill-action text-action" />
+            <span>{tierLabel}</span>
+          </div>
+
+          <p className="font-bold text-[11.5px] text-sub mt-2 num">
+            {(loyalty?.totalCoins ?? 0).toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}{' '}
+            {pointsLabel}
+          </p>
+        </div>
+
+        <nav className="flex flex-col gap-1.5 p-3" aria-label={lt(locale, { fa: 'منوی حساب کاربری', en: 'Account menu', ar: 'قائمة الحساب', zh: '账户菜单', ru: 'Меню аккаунта' })}>
+          {nav.links.map((link) => {
+            const Icon = ICONS[link.icon || 'LayoutGrid'] || LayoutGrid;
+            const label =
+              link.href === '/my-trips'
+                ? t('title')
+                : lt(locale, { fa: link.label.fa, en: link.label.en, ar: link.label.ar, zh: link.label.zh, ru: link.label.ru });
+            const active = isActive(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`flex items-center gap-3 px-4 py-3 font-bold text-[13.5px] rounded-2xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                  active
+                    ? 'bg-brand text-surface font-black shadow-xs'
+                    : 'text-sub hover:bg-soft hover:text-ink'
+                }`}
+              >
+                <Icon size={17} />
+                <span>{label}</span>
+              </Link>
+            );
+          })}
+
+          {['admin', 'SUPER_ADMIN', 'OPS', 'FINANCE', 'OPERATOR'].includes(user?.role || '') && (
+            <Link
+              href="/admin"
+              className="flex items-center gap-3 px-4 py-3 font-bold text-[13.5px] rounded-2xl text-brand-dark bg-mint border border-brand/20 hover:bg-mint/80 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              <ShieldCheck size={17} />
+              {lt(locale, { fa: 'سامانه مدیریت (ERP)', en: 'Admin ERP Panel', ar: 'لوحة الإدارة', zh: '管理后台', ru: 'Панель администратора' })}
+            </Link>
+          )}
+        </nav>
+
+        <div className="p-3 mt-auto border-t border-line/60">
+          <button
+            onClick={() => {
+              logout();
+              router.push('/');
+            }}
+            className="w-full flex items-center justify-center gap-2 text-rose-warm hover:bg-rose-warm/10 px-4 py-2.5 rounded-2xl transition-colors font-bold text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            <LogOut size={16} />
+            {lt(locale, { fa: 'خروج از حساب', en: 'Sign Out', ar: 'تسجيل الخروج', zh: '退出登录', ru: 'Выйти' })}
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

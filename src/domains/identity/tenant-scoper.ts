@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
 /**
  * Prisma Client Extension ($extends) for Automatic Multi-Tenant Scoping (IAM-002)
@@ -54,6 +55,27 @@ export function createTenantScoper(activeOrganizationId?: string, isPlatformAdmi
             }
             modifiedArgs.create = createData;
             return query(modifiedArgs as typeof args);
+          }
+
+          if (['findUnique', 'findUniqueOrThrow'].includes(operation)) {
+            const result = (await query(args)) as Record<string, unknown> | null;
+            if (result && 'organizationId' in result && result.organizationId && result.organizationId !== activeOrganizationId) {
+              if (operation === 'findUniqueOrThrow') {
+                throw new Error(`SECURITY_ERROR: Cross-tenant access denied for model ${model}`);
+              }
+              return null;
+            }
+            return result;
+          }
+
+          if (['update', 'delete'].includes(operation)) {
+            const where = (modifiedArgs.where as Record<string, unknown> || {});
+            const delegate = (prisma as unknown as Record<string, { findUnique: (a: unknown) => Promise<Record<string, unknown> | null> }>)[model];
+            const existing = delegate ? await delegate.findUnique({ where }) : null;
+            if (existing && 'organizationId' in existing && existing.organizationId && existing.organizationId !== activeOrganizationId) {
+              throw new Error(`SECURITY_ERROR: Cross-tenant mutation blocked for model ${model}`);
+            }
+            return query(args);
           }
 
           return query(args);

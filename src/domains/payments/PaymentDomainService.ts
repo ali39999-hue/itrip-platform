@@ -15,6 +15,7 @@ export interface InitiatePaymentParams {
   amount: Money; // MONEY-101: Money is the only core financial input
   currency?: string;
   callbackUrl?: string;
+  paymentMode?: 'real' | 'demo';
   rawPayload?: Record<string, unknown>;
   customerInfo?: {
     phone?: string;
@@ -197,6 +198,7 @@ export class PaymentDomainService {
       amount: new Money(decimalAmount, currency),
       callbackUrl: params.callbackUrl || `${getAppBaseUrl()}/api/payments/callback`,
       customerInfo: params.customerInfo,
+      paymentMode: params.paymentMode,
     };
 
     let gatewayRes;

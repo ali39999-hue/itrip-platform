@@ -45,13 +45,32 @@ export class DocumentManagementService {
   // In-memory encrypted document store for file buffers/scans linked to documentId
   private static encryptedPayloadStore = new Map<string, EncryptedDocumentPayload>();
 
+  // Fail closed in production (same gate as src/auth.ts): a public fallback
+  // key would make AES-256-GCM document ciphertext trivially decryptable.
   private static getMasterKey(): Buffer {
-    const secret = process.env.ENCRYPTION_KEY || process.env.AUTH_SECRET || 'dev-insecure-master-key-32-chars-ok';
+    const secret = process.env.ENCRYPTION_KEY || process.env.AUTH_SECRET;
+    if (!secret) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(
+          'FATAL SECURITY ERROR: ENCRYPTION_KEY or AUTH_SECRET must be configured in production — document vault refuses to use the development fallback key.'
+        );
+      }
+      return crypto.createHash('sha256').update('dev-insecure-master-key-32-chars-ok').digest();
+    }
     return crypto.createHash('sha256').update(secret).digest();
   }
 
   private static getSigningKey(): string {
-    return process.env.AUTH_SECRET || process.env.ENCRYPTION_KEY || 'dev-insecure-signing-secret';
+    const secret = process.env.AUTH_SECRET || process.env.ENCRYPTION_KEY;
+    if (!secret) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(
+          'FATAL SECURITY ERROR: AUTH_SECRET or ENCRYPTION_KEY must be configured in production — document vault refuses to sign with the development fallback secret.'
+        );
+      }
+      return 'dev-insecure-signing-secret';
+    }
+    return secret;
   }
 
   /**

@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { InventoryEngine } from '@/domains/inventory/InventoryEngine';
 import { BookingApplicationService } from './BookingApplicationService';
@@ -211,7 +212,7 @@ export class UnifiedCartService {
       return { success: false, error: holdRes.error };
     }
 
-    const reference = `ITR-${Date.now().toString().slice(-6)}`;
+    const reference = `ITR-${Date.now()}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 min TTL
 
     try {

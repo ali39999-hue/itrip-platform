@@ -2,19 +2,11 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { LoyaltyStreakService } from "@/domains/loyalty/LoyaltyStreakService";
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     const session = await auth();
-    let bodyUserId: string | undefined;
-    try {
-      const body = await request.json();
-      bodyUserId = body?.userId;
-    } catch {
-      // Empty body is acceptable if session exists
-    }
-
-    const userId = session?.user?.id || bodyUserId;
-    if (!userId || userId === "guest") {
+    const userId = session?.user?.id;
+    if (!userId) {
       return NextResponse.json(
         {
           success: false,

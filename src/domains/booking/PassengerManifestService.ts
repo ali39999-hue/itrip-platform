@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { decryptSensitive } from '@/lib/security/crypto-vault';
 
 export interface ManifestPassenger {
   index: number;
@@ -74,8 +75,8 @@ export class PassengerManifestService {
               index: idx++,
               bookingRef: b.reference,
               fullName: `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Passenger',
-              nationalId: p.nationalId || '-',
-              passportNo: p.passportNo || '-',
+              nationalId: p.nationalId ? decryptSensitive(p.nationalId) : '-',
+              passportNo: p.passportNo ? decryptSensitive(p.passportNo) : '-',
               birthDate: p.birthDate || '-',
               gender: p.gender || '-',
               nationality: p.nationality || 'IR',
