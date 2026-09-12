@@ -249,6 +249,7 @@ export default function WalletPage() {
           <FlaskConical size={18} className="shrink-0 mt-0.5" aria-hidden="true" />
           <p className="text-xs font-bold leading-relaxed">
             {lt(locale, {
+              ar: 'وضع العرض التجريبي مفعّل: بالضغط على «شحن» ستنتقل إلى شبيه بوابة إيكاردو؛ «الدفع الناجح» يشغّل المسار الكامل الحقيقي (تحقق توقيع IPN، الالتقاط وشحن المحفظة) دون أموال حقيقية.', zh: '演示模式已开启：点击“充值”将进入 eCardo 网关模拟页面；“支付成功”将在不使用真实资金的情况下运行完整真实流程（IPN 签名验证、入账与钱包充值）。', ru: 'Демо-режим включён: нажав «Пополнить», вы перейдёте на страницу имитации шлюза eCardo; «Оплата прошла успешно» запускает полный реальный конвейер (проверка подписи IPN, capture и зачисление в кошелёк) без реальных денег.',
               fa: 'حالت دمو فعال است: با زدن «شارژ» به صفحه شبیه‌سازی درگاه ایکاردو می‌روید؛ «پرداخت موفق» کل مسیر واقعی (تایید امضای IPN، capture و شارژ کیف پول) را بدون پول واقعی اجرا می‌کند.',
               en: 'Demo mode is ON: pressing "Deposit" opens the simulated eCardo screen; "Pay" runs the full real pipeline (signed IPN verification, capture, wallet credit) with no real money.',
             })}
@@ -530,7 +531,7 @@ export default function WalletPage() {
                       </span>
                       <span className="font-mono text-ink font-black">
                         {Number(depositAmount).toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}{' '}
-                        {depositCurrency === 'IRR' ? lt(locale, { fa: 'تومان', en: 'Toman' }) : depositCurrency}
+                        {depositCurrency === 'IRR' ? lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '托曼', ru: 'томан'}) : depositCurrency}
                       </span>
                     </div>
 
@@ -577,7 +578,7 @@ export default function WalletPage() {
                           const amt = Number(depositAmount);
                           const fee = depositGateway === 'shetab' ? 0 : amt * countryCtx.gatewayFeeRate;
                           const total = amt + fee;
-                          return `${total.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US', { maximumFractionDigits: 2 })} ${depositCurrency === 'IRR' ? lt(locale, { fa: 'تومان', en: 'Toman' }) : depositCurrency}`;
+                          return `${total.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US', { maximumFractionDigits: 2 })} ${depositCurrency === 'IRR' ? lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '托曼', ru: 'томان'}) : depositCurrency}`;
                         })()}
                       </span>
                     </div>

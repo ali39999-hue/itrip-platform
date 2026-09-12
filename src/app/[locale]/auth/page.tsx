@@ -661,13 +661,13 @@ export default function AuthPage() {
               </div>
             ) : devCode ? (
               <div className="p-3.5 mb-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-bold flex items-center justify-between gap-2.5">
-                <span>{lt(locale, { fa: `کد دسترسی موقت: ${devCode}`, en: `Verification Code: ${devCode}` })}</span>
+                <span>{lt(locale, { fa: `کد دسترسی موقت: ${devCode}`, en: `Verification Code: ${devCode}` , ar: `رمز الدخول المؤقت: ${devCode}`, zh: `临时验证码：${devCode}`, ru: `Временный код доступа: ${devCode}`})}</span>
                 <button
                   type="button"
                   onClick={() => setOtp(devCode)}
                   className="px-2.5 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-[11px] transition cursor-pointer"
                 >
-                  {lt(locale, { fa: 'درج خودکار', en: 'Auto-fill' })}
+                  {lt(locale, { fa: 'درج خودکار', en: 'Auto-fill', ar: 'إدراج تلقائي', zh: '自动填入', ru: 'Вставить автоматически'})}
                 </button>
               </div>
             ) : null}

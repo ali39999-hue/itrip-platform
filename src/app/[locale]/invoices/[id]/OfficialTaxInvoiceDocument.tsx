@@ -36,7 +36,7 @@ export function OfficialTaxInvoiceDocument({ invoiceData }: Props) {
             className="inline-flex items-center gap-2 text-xs font-black text-sub hover:text-ink transition cursor-pointer"
           >
             <ArrowRight size={16} className="rtl:rotate-180" />
-            <span>{lt(locale, { fa: 'بازگشت', en: 'Back' })}</span>
+            <span>{lt(locale, { fa: 'بازگشت', en: 'Back', ar: 'رجوع', zh: '返回', ru: 'Назад'})}</span>
           </button>
 
           <div className="flex items-center gap-3">
@@ -49,7 +49,7 @@ export function OfficialTaxInvoiceDocument({ invoiceData }: Props) {
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-dark text-surface text-xs font-black shadow-brand transition cursor-pointer active:scale-[0.98]"
             >
               <Printer size={15} />
-              <span>{lt(locale, { fa: 'چاپ فاکتور رسمی / ذخیره PDF', en: 'Print Invoice / PDF' })}</span>
+              <span>{lt(locale, { fa: 'چاپ فاکتور رسمی / ذخیره PDF', en: 'Print Invoice / PDF', ar: 'طباعة الفاتورة الرسمية / حفظ PDF', zh: '打印正式发票 / 保存 PDF', ru: 'Печать официального счёта / Сохранить PDF'})}</span>
             </button>
           </div>
         </div>

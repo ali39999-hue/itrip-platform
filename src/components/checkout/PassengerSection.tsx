@@ -47,10 +47,12 @@ export function PassengerSection({
   const titleText =
     totalPassengers > 1
       ? lt(locale, {
+        ar: `بيانات المسافر ${currentPassengerIndex + 1} ${currentPassengerIndex === 0 ? '(الرئيسي)' : '(مرافق)'}`, zh: `旅客 ${currentPassengerIndex + 1} 信息 ${currentPassengerIndex === 0 ? '（主旅客）' : '（同行者）'}`, ru: `Пассажир ${currentPassengerIndex + 1} ${currentPassengerIndex === 0 ? '(основной)' : '(сопровождающий)'}`,
           fa: `مشخصات مسافر ${currentPassengerIndex + 1} ${currentPassengerIndex === 0 ? '(سرپرست)' : '(همراه)'}`,
           en: `Passenger ${currentPassengerIndex + 1} Details ${currentPassengerIndex === 0 ? '(Primary)' : '(Companion)'}`,
         })
       : lt(locale, {
+        ar: 'بيانات المسافر الرئيسي', zh: '主要旅客信息', ru: 'Данные основного пассажира',
           fa: 'مشخصات مسافر اصلی',
           en: 'Primary Passenger Details',
         });
@@ -65,8 +67,8 @@ export function PassengerSection({
             const status = passengersStatus?.[idx];
             const defaultLabel =
               idx === 0
-                ? lt(locale, { fa: 'مسافر ۱ (سرپرست)', en: 'Passenger 1 (Primary)' })
-                : lt(locale, { fa: `مسافر ${idx + 1} (همراه)`, en: `Passenger ${idx + 1}` });
+                ? lt(locale, { fa: 'مسافر ۱ (سرپرست)', en: 'Passenger 1 (Primary)', ar: 'المسافر ١ (الرئيسي)', zh: '旅客 1（主旅客）', ru: 'Пассажир 1 (основной)'})
+                : lt(locale, { fa: `مسافر ${idx + 1} (همراه)`, en: `Passenger ${idx + 1}`, ar: `المسافر ${idx + 1} (مرافق)`, zh: `旅客 ${idx + 1}（同行者）`, ru: `Пассажир ${idx + 1} (сопровождающий)`});
             const pName = status?.name?.trim() || defaultLabel;
 
             return (
@@ -122,6 +124,7 @@ export function PassengerSection({
               >
                 <option value="" disabled>
                   {lt(locale, {
+                    ar: `اختيار من المسافرين المحفوظين (${savedProfiles.length})`, zh: `从已保存的旅客中选择（${savedProfiles.length}）`, ru: `Выбрать из сохранённых пассажиров (${savedProfiles.length})`,
                     fa: `انتخاب از مسافران ذخیره شده (${savedProfiles.length})`,
                     en: `Select from Saved Travelers (${savedProfiles.length})`,
                   })}
@@ -331,6 +334,7 @@ export function PassengerSection({
           <span className="text-[12.5px] font-bold text-ink flex items-center gap-1.5">
             <BookmarkPlus size={15} className="text-brand shrink-0" />
             {lt(locale, {
+              ar: 'حفظ هذا المسافر في حسابي للحجوزات القادمة', zh: '将此旅客保存到我的账户以便日后预订', ru: 'Сохранить этого пассажира в аккаунт для будущих бронирований',
               fa: 'ذخیره این مسافر در حساب کاربری برای خریدهای بعدی',
               en: 'Save this traveler to my account for future bookings',
             })}

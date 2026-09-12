@@ -29,6 +29,9 @@ function scanText(rel, text) {
       else if (text[j] === '}') { depth--; if (depth === 0) break; }
     }
     const body = text.slice(braceStart, j + 1);
+    // Spread-built objects (e.g. lt(locale, { ...(override?.title?.fa ? {fa…} : {}) }))
+    // source their strings from CMS data, not inline literals — exclude them.
+    if (/\.\.\.\s*\(/.test(body)) { idx = j; continue; }
     const lineNo = text.slice(0, idx).split('\n').length;
     const present = LOCALES.filter((l) => new RegExp(`\\b${l}\\s*:`, 'm').test(body));
     stats.calls++;
@@ -52,7 +55,20 @@ function walk(dir) {
 walk(srcDir);
 console.log(`files: ${stats.files} | lt() calls: ${stats.calls} | complete (5/5 locales): ${stats.complete}`);
 console.log(`incomplete calls: ${stats.missing.length}`);
-for (const m of stats.missing.slice(0, 40)) console.log('  ' + m);
+
+const byFile = new Map();
+for (const m of stats.missing) {
+  const f = m.split(':')[0];
+  byFile.set(f, (byFile.get(f) || 0) + 1);
+}
+console.log('--- by file (worst first) ---');
+for (const [f, n] of [...byFile.entries()].sort((a, b) => b[1] - a[1]).slice(0, 30)) {
+  console.log(`  ${String(n).padStart(4)}  ${f}`);
+}
+
+const verbose = process.argv.includes('--all');
+console.log(`--- details${verbose ? ' (all)' : ' (first 40; --all for everything)'} ---`);
+for (const m of stats.missing.slice(0, verbose ? stats.missing.length : 40)) console.log('  ' + m);
 
 const baselinePath = path.join(root, 'docs', 'baseline', 'lt-i18n-baseline.json');
 const mode = process.argv[2] || '';

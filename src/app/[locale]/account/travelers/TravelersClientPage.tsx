@@ -112,7 +112,7 @@ export function TravelersClientPage() {
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      alert(lt(locale, { fa: 'نام و نام خانوادگی الزامی است.', en: 'First and last name are required.' }));
+      alert(lt(locale, { fa: 'نام و نام خانوادگی الزامی است.', en: 'First and last name are required.', ar: 'الاسم واسم العائلة مطلوبان.', zh: '必须填写名字和姓氏。', ru: 'Имя и фамилия обязательны.'}));
       return;
     }
 
@@ -154,6 +154,7 @@ export function TravelersClientPage() {
 
   const handleDeleteProfile = async (id: string) => {
     const confirmMsg = lt(locale, {
+      ar: 'هل أنت متأكد من حذف هذا المسافر؟', zh: '确定要删除此旅客资料吗？', ru: 'Вы уверены, что хотите удалить этот профиль пассажира?',
       fa: 'آیا از حذف این مسافر اطمینان دارید؟',
       en: 'Are you sure you want to delete this traveler profile?',
     });
@@ -207,6 +208,7 @@ export function TravelersClientPage() {
 
   const handleDeleteDoc = async (profileId: string, docId: string) => {
     const confirmMsg = lt(locale, {
+      ar: 'هل أنت متأكد من حذف هذا المستند؟', zh: '确定要删除此证件吗？', ru: 'Вы уверены, что хотите удалить этот документ?',
       fa: 'آیا از حذف این مدرک اطمینان دارید؟',
       en: 'Are you sure you want to delete this document?',
     });
@@ -240,12 +242,14 @@ export function TravelersClientPage() {
                 </div>
                 <h1 className="text-2xl font-black text-ink">
                   {lt(locale, {
+                    ar: 'مسافروي ورفقاءي', zh: '我的旅客与同行者', ru: 'Мои пассажиры и спутники',
                     fa: 'مسافران و همراهان من',
                     en: 'My Travelers & Companions',
                   })}
                 </h1>
                 <p className="text-xs sm:text-sm text-sub mt-1">
                   {lt(locale, {
+                    ar: 'سجّل وأدر بيانات الهوية وجوازات أفراد العائلة والرفقاء لإتمام الحجز بسرعة ودون أخطاء.', zh: '登记并管理家人与同行者的身份和护照信息，实现快速无误的预订。', ru: 'Регистрируйте и управляйте удостоверениями и паспортами членов семьи и попутчиков для быстрого и точного бронирования.',
                     fa: 'ثبت و مدیریت مشخصات هویتی و گذرنامه‌های اعضای خانواده و همسفران جهت رزرو سریع و بدون خطا.',
                     en: 'Manage companion profiles and passports for quick and accurate flight/hotel checkout.',
                   })}
@@ -257,7 +261,7 @@ export function TravelersClientPage() {
                 className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-brand hover:bg-brand-dark text-surface font-black text-sm shadow-brand active:scale-[0.98] transition-all shrink-0 min-h-[44px]"
               >
                 <UserPlus size={18} />
-                <span>{lt(locale, { fa: 'افزودن مسافر جدید', en: 'Add New Traveler' })}</span>
+                <span>{lt(locale, { fa: 'افزودن مسافر جدید', en: 'Add New Traveler', ar: 'إضافة مسافر جديد', zh: '添加新旅客', ru: 'Добавить нового пассажира'})}</span>
               </button>
             </div>
 
@@ -274,7 +278,7 @@ export function TravelersClientPage() {
               <div className="py-20 flex flex-col items-center justify-center gap-3 text-sub">
                 <Loader2 size={32} className="animate-spin text-brand" />
                 <p className="text-sm font-bold">
-                  {lt(locale, { fa: 'در حال بارگذاری مسافران...', en: 'Loading travelers...' })}
+                  {lt(locale, { fa: 'در حال بارگذاری مسافران...', en: 'Loading travelers...', ar: 'جارٍ تحميل المسافرين...', zh: '正在加载旅客…', ru: 'Загрузка пассажиров…'})}
                 </p>
               </div>
             ) : profiles.length === 0 ? (
@@ -284,10 +288,11 @@ export function TravelersClientPage() {
                   <Users size={32} />
                 </div>
                 <h3 className="text-lg font-black text-ink mb-2">
-                  {lt(locale, { fa: 'هنوز مسافری ثبت نشده است', en: 'No Travelers Saved Yet' })}
+                  {lt(locale, { fa: 'هنوز مسافری ثبت نشده است', en: 'No Travelers Saved Yet', ar: 'لم يتم تسجيل أي مسافر بعد', zh: '尚未保存任何旅客', ru: 'Пассажиры ещё не добавлены'})}
                 </h3>
                 <p className="text-sm text-sub max-w-md mb-6 leading-relaxed">
                   {lt(locale, {
+                    ar: 'بحفظ بيانات الرفقاء، لن تحتاج إلى إدخال الرقم الوطني ورقم جواز السفر مرة أخرى عند شراء تذاكر الطيران وحجز الفنادق.', zh: '保存同行者资料后，购买机票和预订酒店时无需再次输入身份证号和护照号。', ru: 'Сохранив профили попутчиков, вы не будете повторно вводить национальный ID и номер паспорта при покупке авиабилетов и бронировании отелей.',
                     fa: 'با ذخیره مشخصات همراهان، در هنگام خرید بلیت هواپیما و رزرو هتل نیازی به ورود مجدد کد ملی و شماره گذرنامه نخواهید داشت.',
                     en: 'Save your companion traveler profiles to auto-fill passport and ID details during flight and hotel bookings.',
                   })}
@@ -297,7 +302,7 @@ export function TravelersClientPage() {
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-brand hover:bg-brand-dark text-surface font-black text-sm transition-all min-h-[44px]"
                 >
                   <UserPlus size={18} />
-                  <span>{lt(locale, { fa: 'ثبت اولین مسافر', en: 'Save First Traveler' })}</span>
+                  <span>{lt(locale, { fa: 'ثبت اولین مسافر', en: 'Save First Traveler', ar: 'تسجيل أول مسافر', zh: '登记第一位旅客', ru: 'Добавить первого пассажира'})}</span>
                 </button>
               </div>
             ) : (
@@ -334,14 +339,14 @@ export function TravelersClientPage() {
                         <div className="flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => openEditModal(profile)}
-                            title={lt(locale, { fa: 'ویرایش', en: 'Edit' })}
+                            title={lt(locale, { fa: 'ویرایش', en: 'Edit', ar: 'تعديل', zh: '编辑', ru: 'Изменить'})}
                             className="w-9 h-9 rounded-xl flex items-center justify-center text-sub hover:text-brand hover:bg-soft transition-colors"
                           >
                             <Edit2 size={16} />
                           </button>
                           <button
                             onClick={() => handleDeleteProfile(profile.id)}
-                            title={lt(locale, { fa: 'حذف', en: 'Delete' })}
+                            title={lt(locale, { fa: 'حذف', en: 'Delete', ar: 'حذف', zh: '删除', ru: 'Удалить'})}
                             className="w-9 h-9 rounded-xl flex items-center justify-center text-sub hover:text-rose-600 hover:bg-rose-50 transition-colors"
                           >
                             <Trash2 size={16} />
@@ -482,8 +487,8 @@ export function TravelersClientPage() {
 
             <h2 className="text-xl font-black text-ink mb-1">
               {editingProfile
-                ? lt(locale, { fa: 'ویرایش مشخصات مسافر', en: 'Edit Traveler Profile' })
-                : lt(locale, { fa: 'افزودن مسافر جدید', en: 'Add New Traveler' })}
+                ? lt(locale, { fa: 'ویرایش مشخصات مسافر', en: 'Edit Traveler Profile', ar: 'تعديل بيانات المسافر', zh: '编辑旅客信息', ru: 'Изменить данные пассажира'})
+                : lt(locale, { fa: 'افزودن مسافر جدید', en: 'Add New Traveler', ar: 'إضافة مسافر جديد', zh: '添加新旅客', ru: 'Добавить нового пассажира'})}
             </h2>
             <p className="text-xs text-sub mb-6">
               اطلاعات را دقیقاً مطابق با کارت ملی یا گذرنامه وارد نمایید.

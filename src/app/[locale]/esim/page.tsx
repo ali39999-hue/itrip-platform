@@ -293,14 +293,14 @@ export default function EsimPage() {
           ) : filteredPackages.length === 0 ? (
             <div className="bg-surface rounded-2xl p-10 text-center border border-line">
               <p className="text-sm font-black text-ink mb-1">
-                {lt(locale, { fa: 'بسته‌ای مطابق جستجوی شما یافت نشد', en: 'No matching packages found' })}
+                {lt(locale, { fa: 'بسته‌ای مطابق جستجوی شما یافت نشد', en: 'No matching packages found', ar: 'لم يتم العثور على باقة تطابق بحثك', zh: '未找到符合您搜索的套餐', ru: 'Пакеты, соответствующие вашему запросу, не найдены'})}
               </p>
               <button
                 type="button"
                 onClick={() => { setQuery(''); setSimTypeTab('all'); }}
                 className="text-xs font-black text-brand hover:underline mt-2 inline-block cursor-pointer"
               >
-                {lt(locale, { fa: 'مشاهده همه بسته‌ها', en: 'View all plans' })}
+                {lt(locale, { fa: 'مشاهده همه بسته‌ها', en: 'View all plans', ar: 'عرض جميع الباقات', zh: '查看所有套餐', ru: 'Показать все пакеты'})}
               </button>
             </div>
           ) : (
@@ -371,7 +371,7 @@ export default function EsimPage() {
                       className="w-full min-h-[44px] py-3 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-[13px] flex items-center justify-center gap-2 transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
                     >
                       <ShoppingCart size={16} />
-                      <span>{pkg.isEsim ? t('buyEsim') : lt(locale, { fa: 'سفارش سیم‌کارت فیزیکی', en: 'Order Physical SIM' })}</span>
+                      <span>{pkg.isEsim ? t('buyEsim') : lt(locale, { fa: 'سفارش سیم‌کارت فیزیکی', en: 'Order Physical SIM', ar: 'طلب شريحة فيزيائية', zh: '订购实体 SIM 卡', ru: 'Заказать физическую SIM-карту'})}</span>
                     </button>
                   </div>
                 </div>
@@ -411,7 +411,7 @@ export default function EsimPage() {
               <div>
                 <span className="text-xs font-black text-brand-dark block mb-2.5 flex items-center gap-1.5">
                   <Plane size={14} />
-                  {lt(locale, { fa: 'باجه‌های فرودگاهی تحویل سیم‌کارت:', en: 'Airport Pickup Desks:' })}
+                  {lt(locale, { fa: 'باجه‌های فرودگاهی تحویل سیم‌کارت:', en: 'Airport Pickup Desks:', ar: 'أكشاك تسليم الشرائح في المطار:', zh: '机场 SIM 卡领取柜台：', ru: 'Стойки выдачи SIM-карт в аэропорту:'})}
                 </span>
                 <div className="space-y-2">
                   {catalog.airports.map((ap) => (
@@ -426,7 +426,7 @@ export default function EsimPage() {
               <div>
                 <span className="text-xs font-black text-brand-dark block mb-2.5 flex items-center gap-1.5">
                   <Building size={14} />
-                  {lt(locale, { fa: 'باجه‌های هتل و لابی:', en: 'Hotel Lobby Desks:' })}
+                  {lt(locale, { fa: 'باجه‌های هتل و لابی:', en: 'Hotel Lobby Desks:', ar: 'أكشاك الفنادق واللوبي:', zh: '酒店与大堂柜台：', ru: 'Стойки в отелях и лобби:'})}
                 </span>
                 <div className="space-y-2">
                   {catalog.hotels.map((ht) => (
