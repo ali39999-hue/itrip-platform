@@ -49,8 +49,15 @@
 - قیف یتیم `flights/checkout` (۲۲۹ خط، TAX_RATE=0.09 hardcoded، fallback به mock FLIGHTS[0]) — **صفر مرجع ورودی** در src/tests؛ همراه `PassengerForm.tsx` (فقط همین‌جا مصرف می‌شد) و export آن از barrel حذف شد.
 - TanStack Query mounted بدون هیچ consumer: `providers.tsx` پاک شد و `lib/query-client.ts` + تستش حذف شدند. (پکیج `@tanstack/react-query` فعلاً در package.json مانده — در اولین npm install بعدی `npm uninstall` شود.)
 
-### تثبیت قرارداد API
+### تثبیت قرارداد API (کامل)
 `src/lib/api-response.ts` ساخته شد (`apiSuccess`/`apiError`) و سه route بدشکل (admin/search، loyalty/streak، payments/receipt-upload) به‌صورت **additive** مهاجرت یافتند (فیلد `success` اضافه می‌شود؛ هیچ فیلدی حذف نمی‌شود). قرارداد خارجی `payments/webhook` (eCardo IPN) عمداً دست‌نخورده ماند.
+**ابزار دائمی:** `scripts/api-shape-scan.mjs` — تأیید نهایی: **صفر انحراف در ۲۵/۲۵ route**.
+
+### هم‌راستاسازی شکل Passenger (موج سوم)
+`BookingPassenger.gender` به‌دروغ `'male'|'female'` اعلام شده بود در حالی که canonical (zod `Gender` و مقدار Prisma) `MALE|FEMALE|OTHER` است — و checkout با ternary مقدار OTHER را هم به male تبدیل می‌کرد. الان type با canonical یکی است و مقدار بدون تبدیل عبور می‌کند. `KycProfile.step` به مراحل زنده باریک شد و اینترفیس مردهٔ `WalletTransaction` (صفر مصرف‌کننده) حذف شد.
+
+### گیت پوشش i18n برای مکانیزم lt() (موج سوم)
+مکانیزم inline `lt()` (۲٬۳۸۳ فراخوانی در ~۵۰۰ فایل) تا امروز هیچ gateای نداشت. `scripts/lt-coverage-scan.mjs` + baseline (`docs/baseline/lt-i18n-baseline.json`) + اسکریپت `gate:i18n-lt`: پوشش فعلی ۲۱۵۹/۲۳۸۳ کامل (۹۰.۶٪)؛ **۲۲۴ فراخوانی فاقد ar/zh/ru** (fallback RTL-safe: ar→fa→en طبق I18N-103، پس degrade است نه شکستگی). gate رگرسیون را مسدود می‌کند و پیشرفت ترجمه قابل ردیابی است.
 
 ### موارد بررسی‌شده که سالم بودند (بدون تغییر)
 - devCode فقط وقتی `!realSent` و در dev/DEMO_MODE لو می‌رود.
@@ -75,12 +82,11 @@
 
 | اولویت | مورد |
 |---|---|
-| P1 | مهاجرت کامل ۲۵ route به `api-response.ts` (فقط ۳ تا انجام شد؛ webhook دست‌نخورده) |
-| P2 | دوگانهٔ token (brand/action در برابر primary/muted)؛ adoption کم `ui/*`؛ ~۴۵ modal دستی |
-| P2 | drift شکل Passenger (form vs BookingPassenger vs MALE/FEMALE) |
-| P2 | دو مکانیزم i18n (`lt()` در ~۱۷۰ فایل در برابر next-intl؛ gate:i18n فقط JSON را می‌پوشاند) |
-| P2 | حذف پکیج `@tanstack/react-query` از package.json در next install |
+| P2 | دوگانهٔ token (brand/action در برابر primary/muted)؛ adoption کم `ui/*`؛ ~۴۵ modal دستی — نیاز به تصمیم product |
+| P2 | بدهی ترجمهٔ lt(): ۲۲۴ رشته فاقد ar/zh/ru (گیت‌شده با `gate:i18n-lt`؛ پیشرفت قابل ردیابی) |
 | ساختاری | supplier زنده در مسیر سرویس‌دهی (به مستند `COMPETITIVE_GAP_ANALYSIS.fa.md` ارجاع شود) |
+
+حذف‌شده از ریسک‌ها: drift شکل Passenger (بسته شد) · پکیج مرده tanstack (uninstall شد) · i18n بدون gate (گیت‌شده شد) · قیف flights/checkout (حذف شد؛ crawler-audit با ۲۲۰ لینک و صفر لینک شکسته آن را تأیید کرد)
 
 ## ۵. منابع حقیقت (Sources of Truth)
 

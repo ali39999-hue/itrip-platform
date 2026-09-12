@@ -188,7 +188,9 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     // 1. Visit My Trips
     await page.goto('/fa/my-trips', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveTitle(/iTrip|Firuzo|فیروزو/i);
-    await expect(page.locator('h1, h2').first()).toBeVisible();
+    // DOM-order .first() can resolve to a desktop-only hidden heading (e.g. the
+    // demo user card) on mobile — assert on a visible heading instead.
+    await expect(page.locator('h1:visible, h2:visible').first()).toBeVisible();
 
     // 2. Visit Wallet
     await page.goto('/fa/wallet', { waitUntil: 'domcontentloaded' });
@@ -203,7 +205,7 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     // 1. Visit Admin Root
     await page.goto('/fa/admin', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveTitle(/iTrip|Firuzo|فیروزو/i);
-    await expect(page.locator('h1, h2').first()).toBeVisible();
+    await expect(page.locator('h1:visible, h2:visible').first()).toBeVisible();
 
     // 2. Set Admin role and visit Admin Bookings
     await page.evaluate(() => {
