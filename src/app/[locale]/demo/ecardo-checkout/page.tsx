@@ -34,7 +34,7 @@ function formatAmount(amount: number, currency: string, locale: string): string 
   });
   const unit =
     currency === 'IRR'
-      ? lt(locale, { fa: 'تومان', en: 'Toman' })
+      ? lt(locale, { fa: 'تومان', en: 'Toman' , ar: 'تومان', zh: '托曼', ru: 'томан'})
       : currency === 'USDT'
         ? 'USDT'
         : currency === 'CNY'
@@ -90,9 +90,9 @@ function DemoCheckoutContent() {
         window.location.href = res.redirectUrl;
         return;
       }
-      setError(res.error || lt(locale, { fa: 'شبیه‌سازی ناموفق بود', en: 'Simulation failed' }));
+      setError(res.error || lt(locale, { fa: 'شبیه‌سازی ناموفق بود', en: 'Simulation failed' , ar: 'فشلت المحاكاة', zh: '模拟失败', ru: 'Симуляция не удалась'}));
     } catch {
-      setError(lt(locale, { fa: 'خطای شبکه در شبیه‌سازی', en: 'Network error during simulation' }));
+      setError(lt(locale, { fa: 'خطای شبکه در شبیه‌سازی', en: 'Network error during simulation' , ar: 'خطأ شبكة أثناء المحاكاة', zh: '模拟期间网络错误', ru: 'Сетевая ошибка во время симуляции'}));
     } finally {
       setSubmitting(null);
     }
@@ -106,6 +106,7 @@ function DemoCheckoutContent() {
       {/* Demo-mode ribbon */}
       <div className="w-full bg-amber-400 text-slate-900 text-center text-[11px] sm:text-xs font-black py-1.5 px-3">
         {lt(locale, {
+          ar: 'وضع العرض التجريبي — هذه الصفحة ليست بوابة إيكاردو الحقيقية ولا يتم تبادل أي أموال حقيقية', zh: '演示模式 — 此页面并非真实的 eCardo 网关，不会转移任何真实资金', ru: 'ДЕМО-РЕЖИМ — это не настоящий шлюз eCardo; реальные деньги не переводятся',
           fa: 'حالت دمو — این صفحه درگاه واقعی ایکاردو نیست و هیچ پول واقعی جابه‌جا نمی‌شود',
           en: 'DEMO MODE — this is not the real eCardo gateway; no real money moves',
         })}
@@ -122,7 +123,7 @@ function DemoCheckoutContent() {
               <p className="font-black text-sm leading-tight">eCardo Checkout</p>
               <p className="text-[11px] text-white/60 font-bold flex items-center gap-1">
                 <Lock size={11} aria-hidden="true" />
-                {lt(locale, { fa: 'اتصال امن (شبیه‌سازی)', en: 'Secure session (simulated)' })}
+                {lt(locale, { fa: 'اتصال امن (شبیه‌سازی)', en: 'Secure session (simulated)' , ar: 'جلسة آمنة (محاكاة)', zh: '安全会话（模拟）', ru: 'Безопасная сессия (имитация)'})}
               </p>
             </div>
           </div>
@@ -152,6 +153,7 @@ function DemoCheckoutContent() {
               <p className="font-black text-sm">{preview.error}</p>
               <p className="text-xs text-white/60 font-bold leading-relaxed">
                 {lt(locale, {
+                  ar: 'ابدأ عملية شحن محفظة جديدة من صفحة المحفظة لإنشاء جلسة تجريبية.', zh: '请从钱包页面发起新的充值以创建演示会话。', ru: 'Начните новое пополнение кошелька со страницы кошелька, чтобы создать демо-сессию.',
                   fa: 'یک شارژ کیف پول جدید از صفحه کیف پول شروع کنید تا صفحه دمو ساخته شود.',
                   en: 'Start a new wallet top-up from the wallet page to create a demo session.',
                 })}
@@ -165,13 +167,13 @@ function DemoCheckoutContent() {
               <section className="bg-white/5 border border-white/10 rounded-2xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-xs font-bold text-white/60">
-                    {lt(locale, { fa: 'پذیرنده', en: 'Merchant' })}
+                    {lt(locale, { fa: 'پذیرنده', en: 'Merchant' , ar: 'التاجر', zh: '商户', ru: 'Мерчант'})}
                   </span>
                   <span className="text-sm font-black">Firuzo · فیروزو</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-white/60">
-                    {lt(locale, { fa: 'مبلغ قابل پرداخت', en: 'Amount due' })}
+                    {lt(locale, { fa: 'مبلغ قابل پرداخت', en: 'Amount due' , ar: 'المبلغ المستحق', zh: '应付金额', ru: 'Сумма к оплате'})}
                   </span>
                   <span className="flex items-center gap-2 text-xl sm:text-2xl font-black font-mono num" dir="ltr">
                     <CurrencyIcon size={20} className="text-emerald-300" aria-hidden="true" />
@@ -180,7 +182,7 @@ function DemoCheckoutContent() {
                 </div>
                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/10">
                   <span className="text-xs font-bold text-white/60">
-                    {lt(locale, { fa: 'شماره تراکنش', en: 'Transaction ID' })}
+                    {lt(locale, { fa: 'شماره تراکنش', en: 'Transaction ID' , ar: 'رقم المعاملة', zh: '交易号', ru: 'ID транзакции'})}
                   </span>
                   <span className="text-xs font-mono font-bold bg-white/10 rounded-lg px-2.5 py-1" dir="ltr">
                     {ref}
@@ -189,7 +191,7 @@ function DemoCheckoutContent() {
                 {preview.payment.bookingId && (
                   <div className="flex items-center justify-between mt-3">
                     <span className="text-xs font-bold text-white/60">
-                      {lt(locale, { fa: 'سفارش', en: 'Order' })}
+                      {lt(locale, { fa: 'سفارش', en: 'Order' , ar: 'الطلب', zh: '订单', ru: 'Заказ'})}
                     </span>
                     <span className="text-[11px] font-mono text-white/70 truncate max-w-[60%]" dir="ltr">
                       {preview.payment.bookingId.slice(0, 24)}
@@ -201,7 +203,7 @@ function DemoCheckoutContent() {
               {/* Instrument picker (visual) */}
               <section className="bg-white/5 border border-white/10 rounded-2xl p-5">
                 <p className="text-xs font-bold text-white/60 mb-3">
-                  {lt(locale, { fa: 'روش پرداخت (نمایشی)', en: 'Payment instrument (visual only)' })}
+                  {lt(locale, { fa: 'روش پرداخت (نمایشی)', en: 'Payment instrument (visual only)' , ar: 'وسيلة الدفع (للعرض فقط)', zh: '支付方式（仅展示）', ru: 'Платежный инструмент (только визуально)'})}
                 </p>
                 <div className="grid grid-cols-3 gap-2">
                   {[
@@ -238,6 +240,7 @@ function DemoCheckoutContent() {
 
               <p className="text-[11px] text-white/50 font-bold leading-relaxed px-1">
                 {lt(locale, {
+                  ar: 'بالضغط على «الدفع الناجح»، يتم إرسال IPN موقّع (HMAC حقيقي) إلى Webhook المنصة وتشغيل المسار الإنتاجي الكامل: التحقق من التوقيع، الالتقاط وشحن دفتر الأستاذ.', zh: '点击“支付成功”将向平台 webhook 发送真实 HMAC 签名的 IPN，并执行完整生产路径：签名验证、入账与总账记账。', ru: 'При нажатии «Оплата прошла успешно» на webhook платформы отправляется реально подписанный (HMAC) IPN и запускается полный производственный путь: проверка подписи, capture и проводка по ledger.',
                   fa: 'با زدن «پرداخت موفق»، یک IPN امضاشده (HMAC واقعی) به وب‌هوک پلتفرم ارسال می‌شود و کل مسیر تولیدی — تایید امضا، capture و شارژ لجر — اجرا می‌شود.',
                   en: 'Pressing "Pay" sends a genuinely signed (HMAC) IPN to the platform webhook, exercising the full production path: signature verification, capture and ledger credit.',
                 })}
@@ -262,7 +265,7 @@ function DemoCheckoutContent() {
               ) : (
                 <CheckCircle2 size={18} aria-hidden="true" />
               )}
-              {lt(locale, { fa: 'پرداخت موفق (دمو)', en: 'Pay successfully (demo)' })}
+              {lt(locale, { fa: 'پرداخت موفق (دمو)', en: 'Pay successfully (demo)' , ar: 'الدفع الناجح (تجريبي)', zh: '支付成功（演示）', ru: 'Оплата успешно (демо)'})}
             </button>
             <button
               type="button"
@@ -271,7 +274,7 @@ function DemoCheckoutContent() {
               className="min-h-[44px] w-full rounded-xl border border-white/20 text-white/80 hover:bg-white/5 font-black text-xs flex items-center justify-center gap-2 transition active:scale-[0.98]"
             >
               <XCircle size={15} aria-hidden="true" />
-              {lt(locale, { fa: 'شبیه‌سازی پرداخت ناموفق', en: 'Simulate failed payment' })}
+              {lt(locale, { fa: 'شبیه‌سازی پرداخت ناموفق', en: 'Simulate failed payment' , ar: 'محاكاة فشل الدفع', zh: '模拟支付失败', ru: 'Смоделировать отказ платежа'})}
             </button>
           </div>
         </div>
