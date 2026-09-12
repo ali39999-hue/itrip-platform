@@ -76,3 +76,6 @@ snapshots/
 audit-screenshots/
 scripts/*.png
 .superdesign
+  
+# Parto portal session (human-in-the-loop capture, never commit)  
+.parto-portal-state.json  

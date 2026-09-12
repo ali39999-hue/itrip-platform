@@ -3,7 +3,7 @@
 import { useTranslations, useLocale } from 'next-intl';
 import { formatMoney } from '@/lib/money';
 import { ESIM_PRICE, INSURANCE_PRICE } from './AddonsSection';
-import { Luggage, ShieldCheck, Tag } from 'lucide-react';
+import { Luggage, ShieldCheck, Tag, ReceiptText, CreditCard } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
 interface PriceBreakdownTableProps {
@@ -14,6 +14,11 @@ interface PriceBreakdownTableProps {
   itemTitle: string;
   discountAmount?: number;
   referralCode?: string;
+  taxRate?: number;
+  taxLabel?: string;
+  gatewayFeeRate?: number;
+  gatewayFeeLabel?: string;
+  paymentMethod?: string;
 }
 
 export function PriceBreakdownTable({
@@ -24,11 +29,37 @@ export function PriceBreakdownTable({
   itemTitle,
   discountAmount = 0,
   referralCode,
+  taxRate,
+  taxLabel,
+  gatewayFeeRate,
+  gatewayFeeLabel,
+  paymentMethod,
 }: PriceBreakdownTableProps) {
   const t = useTranslations('Checkout');
   const locale = useLocale();
   const addonsTotal = (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0);
-  const totalPayable = Math.max(0, baseAmount + addonsTotal - discountAmount);
+  const subtotalBeforeTax = Math.max(0, baseAmount + addonsTotal - discountAmount);
+
+  // Dynamic country-aware tax calculation
+  const effectiveTaxRate = taxRate !== undefined ? taxRate : 0.09;
+  const taxAmount = effectiveTaxRate > 0 ? Math.round(subtotalBeforeTax * effectiveTaxRate) : 0;
+
+  // Dynamic gateway transaction fee (0% for Shetab / internal wallet)
+  const isFreeGateway =
+    paymentMethod === 'gateway_shetab' ||
+    paymentMethod === 'wallet_irr' ||
+    paymentMethod === 'wallet';
+  const effectiveGatewayRate = isFreeGateway
+    ? 0
+    : gatewayFeeRate !== undefined
+      ? gatewayFeeRate
+      : 0.02;
+  const gatewayFeeAmount =
+    effectiveGatewayRate > 0
+      ? Math.round((subtotalBeforeTax + taxAmount) * effectiveGatewayRate)
+      : 0;
+
+  const totalPayable = subtotalBeforeTax + taxAmount + gatewayFeeAmount;
 
   return (
     <div className="p-6 rounded-2xl bg-surface border border-line shadow-elev-1 space-y-4">
@@ -75,7 +106,7 @@ export function PriceBreakdownTable({
                       en: `Referral Discount (${referralCode})`,
                       ar: `خصم كود الإحالة (${referralCode})`,
                       zh: `推荐码折扣 (${referralCode})`,
-                      ru: `Скидка по промокоду (${referralCode})`,
+                      ru: `Сکیдка по промокоду (${referralCode})`,
                     })
                   : lt(locale, { fa: 'تخفیف ویژه', en: 'Special Discount', ar: 'خصم خاص', zh: '特别折扣', ru: 'Специальная скидка' })}
               </span>
@@ -84,21 +115,57 @@ export function PriceBreakdownTable({
           </div>
         )}
 
-        {/* Tax note */}
-        <div className="flex justify-between items-center py-1 text-[12px] text-sub">
-          <span>{lt(locale, { fa: 'مالیات و عوارض قانونی', en: 'Taxes & Fees', ar: 'الضرائب والرسوم القانونية', zh: '税费', ru: 'Налоги и сборы' })}</span>
-          <span className="font-bold text-success">{lt(locale, { fa: 'محاسبه‌شده در قیمت', en: 'Included in price', ar: 'مشمول في السعر', zh: '已包含在价格中', ru: 'Включено в стоимость' })}</span>
+        {/* 3. Country-Specific Tax (VAT / Tourism tax) */}
+        <div className="flex justify-between items-center py-1">
+          <span className="text-sub font-bold flex items-center gap-1.5">
+            <ReceiptText size={14} className="text-brand-dark" aria-hidden="true" />
+            <span>
+              {taxLabel ||
+                lt(locale, {
+                  fa: 'مالیات و عوارض قانونی',
+                  en: 'Taxes & Fees',
+                  ar: 'الضرائب والرسوم',
+                  zh: '法定税费',
+                  ru: 'Налоги и сборы',
+                })}
+            </span>
+          </span>
+          <span className="font-bold text-ink font-mono">
+            {taxAmount > 0 ? `+${formatMoney(taxAmount, currency, locale)}` : lt(locale, { fa: 'معاف', en: 'Exempt', ar: 'معفى', zh: '免税', ru: 'Освобождено' })}
+          </span>
+        </div>
+
+        {/* 4. Payment Gateway Processing Fee */}
+        <div className="flex justify-between items-center py-1">
+          <span className="text-sub font-bold flex items-center gap-1.5">
+            <CreditCard size={14} className="text-brand-dark" aria-hidden="true" />
+            <span>
+              {gatewayFeeLabel ||
+                lt(locale, {
+                  fa: 'کارمزد درگاه پرداخت',
+                  en: 'Gateway Fee',
+                  ar: 'رسوم بوابة الدفع',
+                  zh: '网关手续费',
+                  ru: 'Комиссия шлюза',
+                })}
+            </span>
+          </span>
+          <span className={`font-bold font-mono ${gatewayFeeAmount === 0 ? 'text-success' : 'text-ink'}`}>
+            {gatewayFeeAmount === 0
+              ? lt(locale, { fa: 'رایگان', en: 'Free', ar: 'مجاناً', zh: '免费', ru: 'Бесплатно' })
+              : `+${formatMoney(gatewayFeeAmount, currency, locale)}`}
+          </span>
         </div>
       </div>
 
-      {/* 3. Total Payable (Dominant) */}
+      {/* 5. Total Payable (Dominant) */}
       <div className="pt-3 border-t border-line/80 flex items-baseline justify-between">
         <div>
           <strong className="block text-[14px] font-black text-ink">
             {lt(locale, { fa: 'مبلغ نهایی قابل پرداخت', en: 'Total Amount Payable', ar: 'المبلغ الإجمالي المستحق', zh: '应付总金额', ru: 'Итого к оплате' })}
           </strong>
           <span className="text-[11px] text-sub">
-            {lt(locale, { fa: 'بدون هزینه مخفی و کارمزد اضافه', en: 'No hidden fees or extra charges', ar: 'بدون رسوم خفية أو تكاليف إضافية', zh: '无隐藏费用或附加费', ru: 'Без скрытых комиссий и сборов' })}
+            {lt(locale, { fa: 'شامل مالیات و کارمزد درگاه', en: 'Includes country tax & gateway fee', ar: 'شامل الضريبة ورسوم البوابة', zh: '含税及网关费用', ru: 'Включая налог и комиссию' })}
           </span>
         </div>
         <span className="text-[20px] md:text-[22px] font-black text-price font-mono">

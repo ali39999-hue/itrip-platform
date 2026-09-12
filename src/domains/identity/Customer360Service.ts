@@ -8,6 +8,13 @@ import {
 } from '@/lib/security/pii-masking';
 import { TenantAuthContext } from './permission-service';
 
+/**
+ * Thrown when a caller is not authorized to view the target customer's
+ * 360 profile. Customer 360 is a high-sensitivity aggregation (IAM-C360):
+ * tenant isolation is enforced HERE, server-side, never by callers.
+ */
+export class Customer360AccessDeniedError extends Error {}
+
 export interface Customer360Data {
   user: {
     id: string;
@@ -104,6 +111,55 @@ export interface Customer360Data {
 
 export class Customer360Service {
   /**
+   * Server-side tenant isolation for every Customer 360 access path (§11):
+   * - self view: caller === target
+   * - platform ERP staff: SUPER_ADMIN ('*') or `booking:view:all` WITHOUT an
+   *   organization context (organization-scoped operators never get the
+   *   platform-wide pass)
+   * - organization operator: only customers who are members of the caller's
+   *   own organization
+   * - everything else is denied, regardless of what the caller sent.
+   * Boolean `true/false` caller contexts are trusted internal/test callers
+   * (PII flag only). Missing context is always denied.
+   */
+  static async assertCustomerAccess(
+    targetUserId: string,
+    callerCtx?: TenantAuthContext | boolean
+  ): Promise<void> {
+    if (callerCtx === true || callerCtx === false) return; // trusted internal caller
+
+    if (!callerCtx) {
+      throw new Customer360AccessDeniedError(
+        'Unauthorized: Customer 360 requires an authenticated operator context.'
+      );
+    }
+
+    if (callerCtx.userId === targetUserId) return; // self view
+    if (callerCtx.isSuperAdmin) return; // '*' minted only server-side for SUPER_ADMIN
+
+    if (!callerCtx.organizationId && callerCtx.permissions.has('booking:view:all')) {
+      return; // platform ERP staff (no org scope)
+    }
+
+    if (callerCtx.organizationId) {
+      const membership = await prisma.organizationMembership.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: callerCtx.organizationId,
+            userId: targetUserId,
+          },
+        },
+        select: { id: true },
+      });
+      if (membership) return; // same-organization customer
+    }
+
+    throw new Customer360AccessDeniedError(
+      'Forbidden: cross-tenant Customer 360 access is denied.'
+    );
+  }
+
+  /**
    * Synthesizes the complete 360-degree view of a customer across Identity,
    * Stored Travelers, Travel Files (Trips), Bookings, Multi-Currency Wallet Ledger,
    * and Operational Exceptions.
@@ -112,7 +168,26 @@ export class Customer360Service {
     targetUserId: string,
     callerCtx?: TenantAuthContext | boolean
   ): Promise<Customer360Data | null> {
+    await this.assertCustomerAccess(targetUserId, callerCtx);
+
     const allowPii = hasPiiViewPermission(callerCtx);
+
+    // Observability (§60): every real-operator access to a customer 360
+    // profile is auditable. Internal/test boolean contexts are not logged.
+    if (callerCtx && typeof callerCtx === 'object') {
+      await prisma.auditLog
+        .create({
+          data: {
+            userId: callerCtx.userId,
+            resource: 'User',
+            resourceId: targetUserId,
+            action: 'CUSTOMER_360_VIEWED',
+          },
+        })
+        .catch(() => {
+          // Audit is best-effort; never blocks the read path.
+        });
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: targetUserId },

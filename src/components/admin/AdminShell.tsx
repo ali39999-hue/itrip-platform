@@ -10,13 +10,13 @@ import {
   LayoutDashboard, BriefcaseBusiness, Wallet,
   PlaneTakeoff, ExternalLink, ShieldCheck, UserCheck, Activity,
   Building2, Boxes, PanelLeftClose, PanelLeftOpen, FolderKanban, Users, Menu, X,
-  ChevronLeft, Keyboard, ReceiptText, HandCoins, Building,
+  ChevronLeft, Keyboard, ReceiptText, HandCoins, Building, ListChecks,
 } from 'lucide-react';
 import { lt, LText } from '@/lib/lt';
 import { cn } from '@/lib/utils';
 import { getPendingReceiptsCount } from '@/actions/receipts';
 
-type NavItem = { href: string; label: LText; icon: typeof LayoutDashboard };
+type NavItem = { href: string; label: LText; icon: typeof LayoutDashboard; perm?: string };
 type NavGroup = { id: string; title: LText; items: NavItem[] };
 
 const NAV_GROUPS: NavGroup[] = [
@@ -25,43 +25,44 @@ const NAV_GROUPS: NavGroup[] = [
     title: { fa: 'نمای کلی', en: 'Overview', ar: 'نظرة عامة', zh: '总览', ru: 'Обзор' },
     items: [
       { href: '/admin', label: { fa: 'داشبورد', en: 'Dashboard', ar: 'لوحة القيادة', zh: '仪表盘', ru: 'Панель' }, icon: LayoutDashboard },
+      { href: '/admin/operator', label: { fa: 'میز کار اپراتور', en: 'Operator Workbench', ar: 'مكتب الموظف', zh: '运营工作台', ru: 'Пульт оператора' }, icon: ListChecks, perm: 'booking:view:all' },
     ],
   },
   {
     id: 'operations',
     title: { fa: 'عملیات و هویت', en: 'Operations & Staff', ar: 'العمليات والموظفون', zh: '运营与人员', ru: 'Операции и сотрудники' },
     items: [
-      { href: '/admin/travel-files', label: { fa: 'پرونده‌های سفر', en: 'Travel Files', ar: 'ملفات السفر', zh: '行程档案', ru: 'Файлы поездок' }, icon: BriefcaseBusiness },
-      { href: '/admin/exceptions', label: { fa: 'مرکز خطا و استثنائات', en: 'Exception Center', ar: 'مركز الاستثناءات', zh: '异常中心', ru: 'Центр исключений' }, icon: ShieldCheck },
-      { href: '/admin/ops', label: { fa: 'عملیات و پشتیبانی', en: 'Ops & Support', ar: 'العمليات والدعم', zh: '运营与支持', ru: 'Операции и поддержка' }, icon: Activity },
-      { href: '/admin/bookings', label: { fa: 'رزروها', en: 'Bookings', ar: 'الحجوزات', zh: '预订', ru: 'Бронирования' }, icon: PlaneTakeoff },
-      { href: '/admin/users', label: { fa: 'کاربران و همکاران', en: 'Staff & Users', ar: 'المستخدمون والموظفون', zh: '员工与用户', ru: 'Сотрудники и пользователи' }, icon: UserCheck },
-      { href: '/admin/organizations', label: { fa: 'سازمان‌ها و آژانس‌ها (B2B)', en: 'Organizations & B2B', ar: 'الشركات والوكالات', zh: '机构与B2B', ru: 'Организации и B2B' }, icon: Building },
+      { href: '/admin/travel-files', label: { fa: 'پرونده‌های سفر', en: 'Travel Files', ar: 'ملفات السفر', zh: '行程档案', ru: 'Файлы поездок' }, icon: BriefcaseBusiness, perm: 'booking:view:all' },
+      { href: '/admin/exceptions', label: { fa: 'مرکز خطا و استثنائات', en: 'Exception Center', ar: 'مركز الاستثناءات', zh: '异常中心', ru: 'Центр исключений' }, icon: ShieldCheck, perm: 'booking:view:all' },
+      { href: '/admin/ops', label: { fa: 'عملیات و پشتیبانی', en: 'Ops & Support', ar: 'العمليات والدعم', zh: '运营与支持', ru: 'Операции и поддержка' }, icon: Activity, perm: 'ops:override:cancel' },
+      { href: '/admin/bookings', label: { fa: 'رزروها', en: 'Bookings', ar: 'الحجوزات', zh: '预订', ru: 'Бронирования' }, icon: PlaneTakeoff, perm: 'booking:view:all' },
+      { href: '/admin/users', label: { fa: 'کاربران و همکاران', en: 'Staff & Users', ar: 'المستخدمون والموظفون', zh: '员工与用户', ru: 'Сотрудники и пользователи' }, icon: UserCheck, perm: 'user:manage' },
+      { href: '/admin/organizations', label: { fa: 'سازمان‌ها و آژانس‌ها (B2B)', en: 'Organizations & B2B', ar: 'الشركات والوكالات', zh: '机构与B2B', ru: 'Организации и B2B' }, icon: Building, perm: 'booking:view:all' },
     ],
   },
   {
     id: 'growth',
     title: { fa: 'رشد و فروش', en: 'Growth', ar: 'النمو', zh: '增长', ru: 'Рост' },
     items: [
-      { href: '/admin/referrals', label: { fa: 'کدهای معرف / سرگروه‌ها', en: 'Referrals & Leaders', ar: 'رموز الإحالة والقادة', zh: '推荐码与领队', ru: 'Рефералы и лидеры' }, icon: Users },
+      { href: '/admin/referrals', label: { fa: 'کدهای معرف / سرگروه‌ها', en: 'Referrals & Leaders', ar: 'رموز الإحالة والقادة', zh: '推荐码与领队', ru: 'Рефералы и лидеры' }, icon: Users, perm: 'booking:view:all' },
     ],
   },
   {
     id: 'finance',
     title: { fa: 'مالی', en: 'Finance', ar: 'المالية', zh: '财务', ru: 'Финансы' },
     items: [
-      { href: '/admin/finance', label: { fa: 'مالی و تراکنش‌ها', en: 'Finance & Transactions', ar: 'المالية والمعاملات', zh: '财务与交易', ru: 'Финансы и транзакции' }, icon: Wallet },
-      { href: '/admin/finance/receipts', label: { fa: 'بررسی رسیدها (پیمنتینو)', en: 'Receipts Review (Paymentino)', ar: 'مراجعة الإيصالات (بيمينتينو)', zh: '回执审核 (Paymentino)', ru: 'Проверка квитанций (Paymentino)' }, icon: ReceiptText },
-      { href: '/admin/finance/settlements', label: { fa: 'تسویه‌حساب تامین‌کنندگان', en: 'Supplier Settlements', ar: 'تسويات الموردين', zh: '供应商结算', ru: 'Расчёты с поставщиками' }, icon: HandCoins },
+      { href: '/admin/finance', label: { fa: 'مالی و تراکنش‌ها', en: 'Finance & Transactions', ar: 'المالية والمعاملات', zh: '财务与交易', ru: 'Финансы и транзакции' }, icon: Wallet, perm: 'finance:view' },
+      { href: '/admin/finance/receipts', label: { fa: 'بررسی رسیدها (پیمنتینو)', en: 'Receipts Review (Paymentino)', ar: 'مراجعة الإيصالات (بيمينتينو)', zh: '回执审核 (Paymentino)', ru: 'Проверка квитанций (Paymentino)' }, icon: ReceiptText, perm: 'finance:view' },
+      { href: '/admin/finance/settlements', label: { fa: 'تسویه‌حساب تامین‌کنندگان', en: 'Supplier Settlements', ar: 'تسويات الموردين', zh: '供应商结算', ru: 'Расчёты с поставщиками' }, icon: HandCoins, perm: 'finance:view' },
     ],
   },
   {
     id: 'catalog',
     title: { fa: 'کاتالوگ و تامین', en: 'Catalog & Supply', ar: 'الكتالوج والتوريد', zh: '目录与供应', ru: 'Каталог и поставки' },
     items: [
-      { href: '/admin/suppliers', label: { fa: 'تامین‌کنندگان', en: 'Suppliers', ar: 'الموردون', zh: '供应商', ru: 'Поставщики' }, icon: Building2 },
-      { href: '/admin/inventory', label: { fa: 'انبار و سهمیه‌ها', en: 'Inventory & Allotments', ar: 'المخزون والحصص', zh: '库存与配额', ru: 'Инвентарь и квоты' }, icon: Boxes },
-      { href: '/admin/content', label: { fa: 'مدیریت محتوا (CMS)', en: 'Content Management', ar: 'إدارة المحتوى', zh: '内容管理 (CMS)', ru: 'Управление контентом' }, icon: FolderKanban },
+      { href: '/admin/suppliers', label: { fa: 'تامین‌کنندگان', en: 'Suppliers', ar: 'الموردون', zh: '供应商', ru: 'Поставщики' }, icon: Building2, perm: 'supplier:view' },
+      { href: '/admin/inventory', label: { fa: 'انبار و سهمیه‌ها', en: 'Inventory & Allotments', ar: 'المخزون والحصص', zh: '库存与配额', ru: 'Инвентарь и квоты' }, icon: Boxes, perm: 'inventory:view' },
+      { href: '/admin/content', label: { fa: 'مدیریت محتوا (CMS)', en: 'Content Management', ar: 'إدارة المحتوى', zh: '内容管理 (CMS)', ru: 'Управление контентом' }, icon: FolderKanban, perm: 'catalog:hotels:edit' },
     ],
   },
 ];
@@ -79,18 +80,24 @@ const ROLE_LT: Record<string, LText> = {
 /**
  * Client chrome for the ERP. Access itself is authorized in the server layout;
  * this component only renders the shell for an already-authorized admin.
+ * Nav items are filtered by the caller's relational permissions so each role
+ * (SUPER_ADMIN / FINANCE / OPS / OPERATOR) only sees its own workspace.
  */
 export function AdminShell({
   children,
   userName,
   role,
+  permissions = [],
 }: {
   children: React.ReactNode;
   userName: string;
   role: string;
+  permissions?: string[];
 }) {
   const locale = useLocale();
   const pathname = usePathname() || '';
+  const isSuperAdmin = role === 'SUPER_ADMIN' || permissions.includes('*');
+  const can = (perm?: string) => !perm || isSuperAdmin || permissions.includes(perm);
   // Remember the operator's sidebar preference on this device.
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -105,6 +112,7 @@ export function AdminShell({
   const shortcutsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!can('finance:view')) return;
     let cancelled = false;
     getPendingReceiptsCount()
       .then((cnt) => {
@@ -114,7 +122,8 @@ export function AdminShell({
     return () => {
       cancelled = true;
     };
-  }, [pathname]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, role]);
 
   useEffect(() => {
     try {
@@ -182,7 +191,10 @@ export function AdminShell({
 
   const renderNav = (opts?: { onNavigate?: () => void; dark?: boolean }) => (
     <div className="flex flex-col gap-4">
-      {NAV_GROUPS.map((group) => (
+      {NAV_GROUPS.map((group) => {
+        const visibleItems = group.items.filter((n) => can(n.perm));
+        if (visibleItems.length === 0) return null;
+        return (
         <div key={group.id}>
           {!collapsed && (
             <p
@@ -195,7 +207,7 @@ export function AdminShell({
             </p>
           )}
           <div className="flex flex-col gap-0.5">
-            {group.items.map((n) => {
+            {visibleItems.map((n) => {
               const Icon = n.icon;
               const active = isActive(n.href);
               return (
@@ -240,11 +252,11 @@ export function AdminShell({
                     />
                   )}
                 </Link>
-              );
-            })}
+              );})}
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 
@@ -411,7 +423,7 @@ export function AdminShell({
                 <AdminGlobalSearch />
               </div>
 
-              {pendingCount > 0 && (
+              {pendingCount > 0 && can('finance:view') && (
                 <Link
                   href="/admin/finance/receipts"
                   className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-[11px] font-black hover:bg-amber-100 transition shadow-xs"

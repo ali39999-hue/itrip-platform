@@ -26,7 +26,11 @@ export type CapabilityCategory =
   | 'ai'
   | 'refund'
   | 'wallet'
-  | 'loyalty';
+  | 'loyalty'
+  | 'identity'
+  | 'corporate'
+  | 'tax'
+  | 'trip';
 
 export type CapabilityKey =
   | 'payment.shetab'
@@ -55,7 +59,12 @@ export type CapabilityKey =
   | 'refund.online'
   | 'refund.manual'
   | 'wallet.multicurrency'
-  | 'loyalty.streak';
+  | 'loyalty.streak'
+  | 'customer360'
+  | 'corporate'
+  | 'taxInvoice'
+  | 'travelHandbook'
+  | 'dutyOfCare';
 
 export interface CapabilityDescriptor {
   key: CapabilityKey;
@@ -173,6 +182,29 @@ function resolveDynamicStatus(key: CapabilityKey): CapabilityStatus {
 
     case 'loyalty.streak':
       return 'LIVE';
+
+    case 'customer360':
+      // Server-side tenant isolation enforced (org + staff + self matrix);
+      // still staff-facing only, no customer-facing surface yet.
+      return 'BETA';
+
+    case 'corporate':
+      // Organizations/branches/memberships + admin UI are real; the corporate
+      // policy engine and approval workflow are not built yet.
+      return 'BETA';
+
+    case 'taxInvoice':
+      // Official-FORMAT invoice document generation. No tax-authority
+      // (Moadian) submission integration exists — must never claim submission.
+      return 'BETA';
+
+    case 'travelHandbook':
+      // Digital handbook integrated into trip detail; AI sections are labeled
+      // as suggestions and never overwrite authoritative trip data.
+      return 'BETA';
+
+    case 'dutyOfCare':
+      return 'BETA';
 
     default:
       return 'DISABLED';
@@ -476,6 +508,61 @@ export const CAPABILITY_DEFINITIONS: Record<CapabilityKey, Omit<CapabilityDescri
     },
     badgeLabel: { fa: 'فعال', en: 'Live' },
     evidencePath: 'src/domains/loyalty/LoyaltyStreakService.ts',
+  },
+  'customer360': {
+    key: 'customer360',
+    category: 'identity',
+    name: { fa: 'نمای ۳۶۰ درجه مشتری', en: 'Customer 360 View' },
+    description: {
+      fa: 'نمای تجمیعی مشتری برای اپراتورها با اعمال سرورمحور ایزولاسیون سازمانی و ماسک PII بر اساس مجوز',
+      en: 'Aggregated customer view for operators with server-side tenant isolation and permission-gated PII masking',
+    },
+    badgeLabel: { fa: 'بتا', en: 'Beta' },
+    evidencePath: 'src/domains/identity/Customer360Service.ts',
+  },
+  'corporate': {
+    key: 'corporate',
+    category: 'corporate',
+    name: { fa: 'مرکز مدیریت سفر سازمانی', en: 'Corporate Travel Hub' },
+    description: {
+      fa: 'سازمان، شعبه، عضویت و فاکتور سازمانی فعال است؛ موتور خط‌مشی سفر و گردش‌کار تاییدیه هنوز ساخته نشده است',
+      en: 'Organizations, branches, memberships and corporate invoicing are live; the travel policy engine and approval workflow are not built yet',
+    },
+    badgeLabel: { fa: 'بتا', en: 'Beta' },
+    evidencePath: 'src/domains/identity/OrganizationService.ts',
+  },
+  'taxInvoice': {
+    key: 'taxInvoice',
+    category: 'tax',
+    name: { fa: 'صورتحساب فروش با قالب رسمی', en: 'Official-Format Tax Invoice' },
+    description: {
+      fa: 'تولید سند فاکتور در قالب رسمی؛ ارسال به سامانه مؤدیان متصل نیست و سند ادعای ثبت رسمی ندارد',
+      en: 'Official-format invoice document generation; no tax-authority (Moadian) submission integration — the document makes no regulatory claims',
+    },
+    badgeLabel: { fa: 'قالب رسمی', en: 'Official Format' },
+    evidencePath: 'src/domains/finance/InvoiceDomainService.ts',
+  },
+  'travelHandbook': {
+    key: 'travelHandbook',
+    category: 'trip',
+    name: { fa: 'دفترچه راهنمای سفر', en: 'Travel Handbook' },
+    description: {
+      fa: 'دفترچه سفر در جزئیات سفر؛ بخش‌های هوش مصنوعی به‌عنوان پیشنهاد برچسب‌خورده‌اند و اطلاعات قطعی سفر را بازنویسی نمی‌کنند',
+      en: 'Trip-detail handbook; AI sections are labeled as suggestions and never overwrite authoritative trip data',
+    },
+    badgeLabel: { fa: 'بتا', en: 'Beta' },
+    evidencePath: 'src/components/plan/DigitalTravelHandbook.tsx',
+  },
+  'dutyOfCare': {
+    key: 'dutyOfCare',
+    category: 'trip',
+    name: { fa: 'وظایف مراقبتی مسافر', en: 'Duty of Care' },
+    description: {
+      fa: 'اطلاعات ایمنی و مراقبت سفر برای مسافر و اپراتور سازمانی',
+      en: 'Travel safety and care information surfaced to travelers and corporate operators',
+    },
+    badgeLabel: { fa: 'بتا', en: 'Beta' },
+    evidencePath: 'src/lib/duty-of-care.ts',
   },
 };
 

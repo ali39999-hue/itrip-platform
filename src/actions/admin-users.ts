@@ -297,6 +297,10 @@ export async function addCustomerNoteAction(
   try {
     const admin = await requirePermission(['booking:view:all', 'ops:override:cancel']);
     const { Customer360Service } = await import('@/domains/identity/Customer360Service');
+    const { getTenantAuthContext } = await import('@/domains/identity/permission-service');
+    // Organization-scoped operators may only note customers of their own org.
+    const tenantCtx = await getTenantAuthContext(admin.id);
+    await Customer360Service.assertCustomerAccess(targetUserId, tenantCtx);
     const createdNote = await Customer360Service.addCustomerNote(targetUserId, admin.id, note);
     revalidatePath(`/admin/users/${targetUserId}`);
     return { success: true, note: createdNote };

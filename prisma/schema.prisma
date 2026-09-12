@@ -45,6 +45,54 @@ model User {
   travelerProfiles        TravelerProfile[]
   autoBuyRules            AutoBuyRule[]
   referralCodes           ReferralCode[]
+  assistantConversations  AssistantConversation[]
+  pushSubscriptions       PushSubscription[]
+}
+
+// Firuzo AI assistant (دستیار هوشمند) — persisted chat threads per user
+model AssistantConversation {
+  id        String   @id @default(cuid())
+  userId    String?
+  locale    String   @default("fa")
+  title     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  messages AssistantMessage[]
+
+  @@index([userId, updatedAt])
+}
+
+model AssistantMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           String   // USER | ASSISTANT
+  content        String   @db.Text
+  provider       String?  // gemini | deepseek | openai | claude | heuristic_fallback
+  createdAt      DateTime @default(now())
+
+  conversation AssistantConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+// Web Push subscriptions (پوش نوتیفیکیشن) — one row per browser/device
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userId    String?
+  userAgent String?
+  locale    String   @default("fa")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isActive])
 }
 
 // B2B & Organization Structure (IAM-003)
@@ -1335,6 +1383,65 @@ model WorkerLease {
   version      Int      @default(1)
 
   @@index([expiresAt])
+}
+
+// Parto CRS live-offer cache (docs/PARTO_LIVE_INTEGRATION_PLAN.fa.md)
+// Row freshness: fetchedAt + TTL (FLIGHT_CACHE_TTL_MINUTES) → expiresAt.
+// All datetimes hold Tehran wall-clock stored in UTC-shifted form.
+model FlightOfferCache {
+  id              String   @id @default(cuid())
+  supplierCode    String   // PARTO_CRS
+  offerId         String   @unique // off_PARTO_CRS_<base64url(FareSourceCode)>
+  fareSourceCode  String
+  routeKey        String   // "THR-MHD"
+  originCode      String
+  destinationCode String
+  departureDate   DateTime @db.Date
+  departureTime   DateTime
+  arrivalTime     DateTime
+  airlineCode     String
+  airlineName     String
+  flightNumber    String
+  cabinClass      String   @default("ECONOMY") // ECONOMY | BUSINESS
+  stops           Int      @default(0)
+  seatsRemaining  Int      @default(9)
+  baseFare        Decimal  @db.Decimal(18, 2)
+  totalFare       Decimal  @db.Decimal(18, 2)
+  totalTax        Decimal  @default(0) @db.Decimal(18, 2)
+  currency        String   @default("IRR")
+  baggage         String?
+  isCharter       Boolean  @default(false)
+  refundable      Boolean  @default(true)
+  ticketType      String   @default("systemic") // systemic | charter
+  durationMinutes Int?
+  terminals       Json?
+  rawJson         Json?
+  fetchedAt       DateTime @default(now())
+  expiresAt       DateTime
+
+  @@unique([supplierCode, fareSourceCode, departureDate])
+  @@index([routeKey, departureDate, fetchedAt])
+  @@index([expiresAt])
+}
+
+// Hourly refresh demand registry: which routes the worker should keep warm,
+// ordered by priority. Seeded with popular Iranian routes + user-search bumps.
+model FlightRouteDemand {
+  id              String    @id @default(cuid())
+  routeKey        String    @unique
+  originCode      String
+  destinationCode String
+  priority        Int       @default(50)
+  lookAheadDays   Int       @default(3)
+  enabled         Boolean   @default(true)
+  lastRefreshedAt DateTime?
+  lastError       String?
+  lastErrorAt     DateTime?
+  refreshCount    Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([enabled, priority])
 }
 
 

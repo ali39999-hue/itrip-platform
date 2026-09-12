@@ -10,11 +10,65 @@ import {
   Wallet as WalletIcon,
   ArrowDownRight,
   ArrowUpRight,
+  ArrowLeftRight,
   Loader2,
   LogIn,
+  Globe2,
+  Landmark,
+  Banknote,
+  Coins,
+  DollarSign,
+  CircleDollarSign,
+  Ticket,
+  Undo2,
+  FlaskConical,
+  CreditCard,
+  ReceiptText,
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { CURRENCY_TO_TOMAN } from '@/lib/money';
+import { chargeContext } from '@/lib/money';
+import { useCountryStore } from '@/stores/country-store';
+
+type TopUpCurrency = 'IRR' | 'USD' | 'USDT' | 'CNY';
+
+/** Quick-amount chips per deposit currency (amounts are in that currency). */
+const TOPUP_CHIPS: Record<TopUpCurrency, Array<{ amt: number; label: string }>> = {
+  IRR: [
+    { amt: 1000000, label: '+۱ میلیون' },
+    { amt: 5000000, label: '+۵ میلیون' },
+    { amt: 10000000, label: '+۱۰ میلیون' },
+  ],
+  USD: [
+    { amt: 25, label: '+25' },
+    { amt: 50, label: '+50' },
+    { amt: 100, label: '+100' },
+  ],
+  USDT: [
+    { amt: 25, label: '+25' },
+    { amt: 50, label: '+50' },
+    { amt: 100, label: '+100' },
+  ],
+  CNY: [
+    { amt: 100, label: '+۱۰۰' },
+    { amt: 500, label: '+۵۰۰' },
+    { amt: 1000, label: '+۱۰۰۰' },
+  ],
+};
+
+const CURRENCY_ICON: Record<TopUpCurrency, typeof Banknote> = {
+  IRR: Banknote,
+  USD: DollarSign,
+  USDT: Coins,
+  CNY: CircleDollarSign,
+};
+
+/** Map the selected country's currency onto an eCardo-supported deposit currency. */
+function countryToTopUpCurrency(countryCurrency: string): TopUpCurrency {
+  if (countryCurrency === 'IRR') return 'IRR';
+  if (countryCurrency === 'CNY') return 'CNY';
+  return 'USD';
+}
 
 export default function WalletPage() {
   const t = useTranslations('Wallet');
@@ -42,9 +96,20 @@ export default function WalletPage() {
   const [actionError, setActionError] = useState('');
 
   const [depositAmount, setDepositAmount] = useState('');
-  const [depositCurrency, setDepositCurrency] = useState<'IRR' | 'USD' | 'USDT' | 'CNY'>('IRR');
+  const [depositCurrency, setDepositCurrency] = useState<TopUpCurrency>('IRR');
   const [depositGateway, setDepositGateway] = useState<'ecardo' | 'shetab'>('ecardo');
   const [charging, setCharging] = useState(false);
+
+  // The wallet follows the country switcher: deposits default to the selected
+  // country's currency (mapped onto eCardo-supported rails: IRR/CNY, else USD).
+  const { country } = useCountryStore();
+  const countryCtx = chargeContext(country);
+  const countryDepositCurrency = countryToTopUpCurrency(countryCtx.currency);
+  const countryCurrencyNeedsFx = countryCtx.currency !== countryDepositCurrency;
+
+  useEffect(() => {
+    setDepositCurrency(countryDepositCurrency);
+  }, [countryDepositCurrency]);
 
   const [exFrom, setExFrom] = useState<'IRR' | 'USDT' | 'AED'>('IRR');
   const [exTo, setExTo] = useState<'IRR' | 'USDT' | 'AED'>('USDT');
@@ -179,6 +244,18 @@ export default function WalletPage() {
         </div>
       </div>
 
+      {process.env.NEXT_PUBLIC_ECARDO_DEMO_GATEWAY === 'true' && (
+        <div className="mb-6 flex items-start gap-2.5 p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200">
+          <FlaskConical size={18} className="shrink-0 mt-0.5" aria-hidden="true" />
+          <p className="text-xs font-bold leading-relaxed">
+            {lt(locale, {
+              fa: 'حالت دمو فعال است: با زدن «شارژ» به صفحه شبیه‌سازی درگاه ایکاردو می‌روید؛ «پرداخت موفق» کل مسیر واقعی (تایید امضای IPN، capture و شارژ کیف پول) را بدون پول واقعی اجرا می‌کند.',
+              en: 'Demo mode is ON: pressing "Deposit" opens the simulated eCardo screen; "Pay" runs the full real pipeline (signed IPN verification, capture, wallet credit) with no real money.',
+            })}
+          </p>
+        </div>
+      )}
+
       {loading ? (
         <div className="p-16 flex items-center justify-center text-brand">
           <Loader2 className="animate-spin" size={32} />
@@ -229,9 +306,12 @@ export default function WalletPage() {
           {/* Balance Cards with Mobile Snap Carousel */}
           <div className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:grid-cols-4 gap-4 md:gap-4 mb-8 pb-2 md:pb-0 scrollbar-none touch-pan-x">
             <div className="shrink-0 w-[84vw] sm:w-[260px] md:w-auto snap-start bg-gradient-to-br from-brand to-brand-dark rounded-3xl p-5 text-surface shadow-elev-2 relative overflow-hidden flex flex-col justify-between">
-              <span className="text-xs font-black opacity-80 block mb-1">
-                {lt(locale, { fa: 'IRR (تومان ایران)', en: 'IRR (Iran Toman)', ar: 'IRR (تومان)', zh: 'IRR (伊朗托曼)', ru: 'IRR (Томан)' })}
-              </span>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-black opacity-80">
+                  {lt(locale, { fa: 'IRR (تومان ایران)', en: 'IRR (Iran Toman)', ar: 'IRR (تومان)', zh: 'IRR (伊朗托曼)', ru: 'IRR (Томан)' })}
+                </span>
+                <Banknote size={18} className="opacity-80 shrink-0" aria-hidden="true" />
+              </div>
               <span className="text-2xl font-black font-mono num block mb-3">
                 {wallet.IRR.toLocaleString(
                   lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })
@@ -242,7 +322,10 @@ export default function WalletPage() {
 
             <div className="shrink-0 w-[84vw] sm:w-[260px] md:w-auto snap-start bg-surface border border-line rounded-3xl p-5 shadow-xs flex flex-col justify-between">
               <div>
-                <span className="text-xs font-black text-sub block mb-1">USDT (Tether)</span>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-black text-sub">USDT (Tether)</span>
+                  <Coins size={18} className="text-sub shrink-0" aria-hidden="true" />
+                </div>
                 <span className="text-2xl font-black text-ink font-mono num block mb-1">
                   ${wallet.USDT.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                 </span>
@@ -255,7 +338,10 @@ export default function WalletPage() {
 
             <div className="shrink-0 w-[84vw] sm:w-[260px] md:w-auto snap-start bg-surface border border-line rounded-3xl p-5 shadow-xs flex flex-col justify-between">
               <div>
-                <span className="text-xs font-black text-sub block mb-1">USD (US Dollar)</span>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-black text-sub">USD (US Dollar)</span>
+                  <DollarSign size={18} className="text-sub shrink-0" aria-hidden="true" />
+                </div>
                 <span className="text-2xl font-black text-ink font-mono num block mb-1">
                   ${(wallet.USD || 0).toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                 </span>
@@ -267,7 +353,10 @@ export default function WalletPage() {
 
             <div className="shrink-0 w-[84vw] sm:w-[260px] md:w-auto snap-start bg-surface border border-line rounded-3xl p-5 shadow-xs flex flex-col justify-between">
               <div>
-                <span className="text-xs font-black text-sub block mb-1">CNY (人民币 / 元)</span>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-black text-sub">CNY (人民币 / 元)</span>
+                  <CircleDollarSign size={18} className="text-sub shrink-0" aria-hidden="true" />
+                </div>
                 <span className="text-2xl font-black text-ink font-mono num block mb-1">
                   ¥{(wallet.CNY || 0).toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                 </span>
@@ -314,26 +403,34 @@ export default function WalletPage() {
                     <button
                       type="button"
                       onClick={() => setDepositGateway('ecardo')}
-                      className={`p-2.5 rounded-xl border text-xs font-black transition text-start flex items-center justify-between ${
+                      aria-pressed={depositGateway === 'ecardo'}
+                      className={`min-h-[44px] p-2.5 rounded-xl border text-xs font-black transition text-start flex items-center justify-between gap-2 ${
                         depositGateway === 'ecardo'
                           ? 'bg-mint/40 border-brand text-brand-dark shadow-xs'
                           : 'bg-soft border-line text-sub hover:border-brand/40'
                       }`}
                     >
-                      <span>{lt(locale, { fa: 'درگاه ای‌کاردو (بین‌المللی)', en: 'eCardo Gateway', ar: 'بوابة إيكاردو', zh: 'eCardo 跨国网关', ru: 'eCardo' })}</span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand/10 text-brand-dark font-bold">USD/USDT/CNY</span>
+                      <span className="flex items-center gap-2">
+                        <Globe2 size={18} className={depositGateway === 'ecardo' ? 'text-brand' : 'text-sub'} aria-hidden="true" />
+                        <span>{lt(locale, { fa: 'درگاه ای‌کاردو (بین‌المللی)', en: 'eCardo Gateway', ar: 'بوابة إيكاردو', zh: 'eCardo 跨国网关', ru: 'eCardo' })}</span>
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand/10 text-brand-dark font-bold shrink-0">USD/USDT/CNY</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => { setDepositGateway('shetab'); setDepositCurrency('IRR'); }}
-                      className={`p-2.5 rounded-xl border text-xs font-black transition text-start flex items-center justify-between ${
+                      aria-pressed={depositGateway === 'shetab'}
+                      className={`min-h-[44px] p-2.5 rounded-xl border text-xs font-black transition text-start flex items-center justify-between gap-2 ${
                         depositGateway === 'shetab'
                           ? 'bg-mint/40 border-brand text-brand-dark shadow-xs'
                           : 'bg-soft border-line text-sub hover:border-brand/40'
                       }`}
                     >
-                      <span>{lt(locale, { fa: 'شاپرک (شتاب ریالی)', en: 'Shetab Shaparak', ar: 'شتاب شاابراك', zh: 'Shetab 银行卡', ru: 'Shetab' })}</span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-bold">IRR</span>
+                      <span className="flex items-center gap-2">
+                        <Landmark size={18} className={depositGateway === 'shetab' ? 'text-brand' : 'text-sub'} aria-hidden="true" />
+                        <span>{lt(locale, { fa: 'شاپرک (شتاب ریالی)', en: 'Shetab Shaparak', ar: 'شتاب شاابراك', zh: 'Shetab 银行卡', ru: 'Shetab' })}</span>
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-bold shrink-0">IRR</span>
                     </button>
                   </div>
                 </div>
@@ -345,21 +442,37 @@ export default function WalletPage() {
                       {lt(locale, { fa: 'ارز واریزی:', en: 'Deposit Currency:', ar: 'عملة الإيداع:', zh: '充值币种：', ru: 'Валюта:' })}
                     </label>
                     <div className="grid grid-cols-4 gap-2">
-                      {(['IRR', 'USDT', 'USD', 'CNY'] as const).map((c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => setDepositCurrency(c)}
-                          className={`py-2 px-1 rounded-xl border text-xs font-black transition text-center ${
-                            depositCurrency === c
-                              ? 'bg-brand text-surface border-brand shadow-xs'
-                              : 'bg-soft border-line text-sub hover:border-brand/40'
-                          }`}
-                        >
-                          {c === 'IRR' ? 'تومان (IRR)' : c}
-                        </button>
-                      ))}
+                      {(['IRR', 'USD', 'USDT', 'CNY'] as const).map((c) => {
+                        const CurIcon = CURRENCY_ICON[c];
+                        return (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setDepositCurrency(c)}
+                            aria-pressed={depositCurrency === c}
+                            className={`min-h-[44px] py-2 px-1 rounded-xl border text-xs font-black transition flex flex-col items-center justify-center gap-1 ${
+                              depositCurrency === c
+                                ? 'bg-brand text-surface border-brand shadow-xs'
+                                : 'bg-soft border-line text-sub hover:border-brand/40'
+                            }`}
+                          >
+                            <CurIcon size={15} aria-hidden="true" />
+                            <span>{c === 'IRR' ? 'تومان (IRR)' : c}</span>
+                          </button>
+                        );
+                      })}
                     </div>
+                    {countryCurrencyNeedsFx && (
+                      <p className="mt-2 text-[11px] font-bold text-sub bg-soft/80 border border-line/80 rounded-lg px-3 py-2 leading-relaxed">
+                        {lt(locale, {
+                          fa: `ارز کشور انتخابی شما (${countryCtx.currency}) مستقیماً توسط ایکاردو تسویه نمی‌شود؛ شارژ با دلار (USD) انجام شده و معادل آن در کیف پول شما اعمال می‌شود.`,
+                          en: `Your selected country's currency (${countryCtx.currency}) is not settled directly by eCardo; the charge is made in USD and credited to your wallet accordingly.`,
+                          ar: `عملة البلد المحدد (${countryCtx.currency}) لا تُسوّى مباشرة عبر إيكاردو؛ يتم الشحن بالدولار الأمريكي (USD).`,
+                          zh: `所选国家货币（${countryCtx.currency}）不由 eCardo 直接结算；将以美元 (USD) 充值。`,
+                          ru: `Валюта выбранной страны (${countryCtx.currency}) не расчётная для eCardo; пополнение выполняется в USD.`,
+                        })}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -383,16 +496,12 @@ export default function WalletPage() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { amt: 1000000, label: '+۱ میلیون' },
-                    { amt: 5000000, label: '+۵ میلیون' },
-                    { amt: 10000000, label: '+۱۰ میلیون' },
-                  ].map(({ amt, label }) => (
+                  {TOPUP_CHIPS[depositCurrency].map(({ amt, label }) => (
                     <button
                       key={amt}
                       type="button"
                       onClick={() => setDepositAmount(String(amt))}
-                      className={`py-2 px-1 rounded-xl border text-xs font-black transition active:scale-95 text-center ${
+                      className={`min-h-[44px] py-2 px-1 rounded-xl border text-xs font-black transition active:scale-95 text-center ${
                         depositAmount === String(amt)
                           ? 'bg-mint border-brand text-brand-dark shadow-xs'
                           : 'bg-soft border-line text-sub hover:text-ink hover:border-brand/40'
@@ -402,6 +511,78 @@ export default function WalletPage() {
                     </button>
                   ))}
                 </div>
+
+                {/* Live Country Tax & Gateway Fee Breakdown */}
+                {Number(depositAmount) > 0 && (
+                  <div className="p-3.5 rounded-xl bg-soft/80 border border-line/80 space-y-2 text-xs animate-in fade-in duration-200">
+                    <div className="flex justify-between items-center text-sub font-bold">
+                      <span className="flex items-center gap-1.5">
+                        <Coins size={13} className="text-brand-dark" aria-hidden="true" />
+                        <span>
+                          {lt(locale, {
+                            fa: 'مبلغ واریزی به کیف پول:',
+                            en: 'Requested wallet credit:',
+                            ar: 'المبلغ المودع للمحفظة:',
+                            zh: '钱包充值入账：',
+                            ru: 'Зачисление на кошелек:',
+                          })}
+                        </span>
+                      </span>
+                      <span className="font-mono text-ink font-black">
+                        {Number(depositAmount).toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}{' '}
+                        {depositCurrency === 'IRR' ? lt(locale, { fa: 'تومان', en: 'Toman' }) : depositCurrency}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-sub font-bold">
+                      <span className="flex items-center gap-1.5">
+                        <CreditCard size={13} className="text-brand-dark" aria-hidden="true" />
+                        <span>{lt(locale, countryCtx.gatewayFeeLabel)}</span>
+                      </span>
+                      <span className={`font-mono font-bold ${depositGateway === 'shetab' || countryCtx.gatewayFeeRate === 0 ? 'text-success' : 'text-ink'}`}>
+                        {depositGateway === 'shetab' || countryCtx.gatewayFeeRate === 0
+                          ? lt(locale, { fa: 'رایگان (۰٪)', en: 'Free (0%)', ar: 'مجاناً (٠٪)', zh: '免费 (0%)', ru: 'Бесплатно (0%)' })
+                          : `+${(Number(depositAmount) * countryCtx.gatewayFeeRate).toLocaleString(undefined, { maximumFractionDigits: 2 })} ${depositCurrency}`}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-sub font-bold">
+                      <span className="flex items-center gap-1.5">
+                        <ReceiptText size={13} className="text-brand-dark" aria-hidden="true" />
+                        <span>{lt(locale, countryCtx.taxLabel)}</span>
+                      </span>
+                      <span className="font-mono font-bold text-success">
+                        {lt(locale, {
+                          fa: 'معاف از مالیات (افزایش موجودی)',
+                          en: 'Tax Exempt (Balance Credit)',
+                          ar: 'معفى من الضريبة',
+                          zh: '免税（余额充值）',
+                          ru: 'Без налога',
+                        })}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center font-black text-brand-dark pt-2 border-t border-line/60">
+                      <span>
+                        {lt(locale, {
+                          fa: 'مبلغ کل پرداختی در درگاه:',
+                          en: 'Total payable at gateway:',
+                          ar: 'إجمالي المبلغ المطلوب للدفع:',
+                          zh: '网关应付总额：',
+                          ru: 'Итого к списанию в шлюзе:',
+                        })}
+                      </span>
+                      <span className="font-mono text-sm text-price">
+                        {(() => {
+                          const amt = Number(depositAmount);
+                          const fee = depositGateway === 'shetab' ? 0 : amt * countryCtx.gatewayFeeRate;
+                          const total = amt + fee;
+                          return `${total.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US', { maximumFractionDigits: 2 })} ${depositCurrency === 'IRR' ? lt(locale, { fa: 'تومان', en: 'Toman' }) : depositCurrency}`;
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 <Button
                   onClick={doDeposit}
@@ -579,8 +760,19 @@ export default function WalletPage() {
                         className={`w-10 h-10 rounded-xl grid place-items-center shrink-0 ${
                           tx.direction === 'CREDIT' ? 'bg-success/10 text-success' : 'bg-rose-warm/10 text-rose-warm'
                         }`}
+                        aria-hidden="true"
                       >
-                        {tx.direction === 'CREDIT' ? <ArrowDownRight size={20} /> : <ArrowUpRight size={20} />}
+                        {tx.referenceType === 'BOOKING' ? (
+                          <Ticket size={20} />
+                        ) : tx.referenceType === 'REFUND' ? (
+                          <Undo2 size={20} />
+                        ) : tx.referenceType === 'FX_SPREAD' || tx.referenceType === 'WALLET_EXCHANGE' ? (
+                          <ArrowLeftRight size={20} />
+                        ) : tx.direction === 'CREDIT' ? (
+                          <ArrowDownRight size={20} />
+                        ) : (
+                          <ArrowUpRight size={20} />
+                        )}
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-black text-xs sm:text-sm text-ink truncate">

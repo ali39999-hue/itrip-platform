@@ -1201,7 +1201,7 @@ function FlightSearchInner() {
                     }}
                     aria-label={t('goToPage', { page: pageItem })}
                     aria-current={currentPage === pageItem ? 'page' : undefined}
-                    className={`min-h-10 min-w-10 px-3 rounded-xl text-[13px] font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                    className={`min-h-11 min-w-11 px-3 rounded-xl text-[13px] font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                       currentPage === pageItem
                         ? 'bg-brand text-surface'
                         : 'border border-line bg-surface text-sub hover:bg-soft'

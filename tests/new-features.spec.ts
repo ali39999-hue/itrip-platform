@@ -24,9 +24,10 @@ test.describe('New Features Tests', () => {
     // Navigate directly to result view using query params to bypass the wizard
     await page.goto('/fa/plan?dest=turkey&who=solo&days=3&bud=balanced&pace=relaxed');
 
-    // Assert buttons are visible
-    await expect(page.getByRole('button', { name: 'بهتر کردن برنامه' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'عوض کردن' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'ویرایش' })).toBeVisible();
+    // Assert buttons are visible (names per the planner result redesign:
+    // regenerate answers / edit wizard answers / auto-fix itinerary)
+    await expect(page.getByRole('button', { name: 'جواب‌هایم را عوض کن' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'ویرایش پاسخ‌های ویزارد' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'اصلاح خودکار' })).toBeVisible();
   });
 });

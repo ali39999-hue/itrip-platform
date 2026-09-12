@@ -1,4 +1,4 @@
-import type { CountryId } from './countries';
+import { COUNTRIES, type CountryId } from './countries';
 import { lt, LText } from './lt';
 
 // Toman display rates — single source of truth for UI conversions.
@@ -58,16 +58,75 @@ export function chargeContext(countryId: CountryId): {
   label: LText;
   gateway: LText;
   isHome: boolean;
+  taxRate: number;
+  taxLabel: LText;
+  gatewayFeeRate: number;
+  gatewayFeeLabel: LText;
 } {
-  const map: Record<CountryId, { currency: string; label: LText; gateway: LText }> = {
-    iran: { currency: 'IRR', label: CURRENCY_LABEL.IRR, gateway: { fa: 'درگاه ریالی شتاب', en: 'Shetab Rial Gateway', ar: 'بوابة شتاب بالريال', zh: 'Shetab 里亚尔网关', ru: 'Шлюз Shetab (риал)' } },
-    turkey: { currency: 'TRY', label: { fa: 'لیر ترکیه', en: 'Turkish Lira', ar: 'ليرة تركية', zh: '土耳其里拉', ru: 'турецкая лира' }, gateway: { fa: 'درگاه TRY', en: 'TRY Gateway', ar: 'بوابة TRY', zh: 'TRY 网关', ru: 'Шлюз TRY' } },
-    uae: { currency: 'AED', label: { fa: 'درهم امارات', en: 'UAE Dirham', ar: 'درهم إماراتي', zh: '阿联酋迪拉姆', ru: 'дирхам ОАЭ' }, gateway: { fa: 'درگاه AED بین‌المللی', en: 'International AED Gateway', ar: 'بوابة AED دولية', zh: 'AED 国际网关', ru: 'Международный шлюз AED' } },
-    georgia: { currency: 'GEL', label: { fa: 'لاری گرجستان', en: 'Georgian Lari', ar: 'لاري جورجي', zh: '格鲁吉亚拉里', ru: 'грузинский лари' }, gateway: { fa: 'درگاه GEL محلی', en: 'Local GEL Gateway', ar: 'بوابة GEL محلية', zh: 'GEL 本地网关', ru: 'Локальный шлюз GEL' } },
-    russia: { currency: 'RUB', label: { fa: 'روبل روسیه', en: 'Russian Ruble', ar: 'روبل روسي', zh: '俄罗斯卢布', ru: 'российский рубль' }, gateway: { fa: 'درگاه RUB', en: 'RUB Gateway', ar: 'بوابة RUB', zh: 'RUB 网关', ru: 'Шлюз RUB' } },
-    oman: { currency: 'OMR', label: CURRENCY_LABEL.OMR, gateway: { fa: 'درگاه OMR', en: 'OMR Gateway', ar: 'بوابة OMR', zh: 'OMR 网关', ru: 'Шлюз OMR' } },
-    china: { currency: 'CNY', label: { fa: 'یوان چین', en: 'Chinese Yuan', ar: 'يوان صيني', zh: '人民币', ru: 'китайский юань' }, gateway: { fa: 'درگاه CNY', en: 'CNY Gateway', ar: 'بوابة CNY', zh: 'CNY 网关', ru: 'Шлюз CNY' } },
+  const c = COUNTRIES[countryId] || COUNTRIES.iran;
+  const isHome = countryId === 'iran';
+  return {
+    currency: c.currency,
+    label: CURRENCY_LABEL[c.currency] || { fa: c.currencyFa, en: c.currency },
+    gateway: { fa: c.gateway, en: c.gatewayEn },
+    isHome,
+    taxRate: c.taxRate,
+    taxLabel: c.taxLabel,
+    gatewayFeeRate: c.gatewayFeeRate,
+    gatewayFeeLabel: c.gatewayFeeLabel,
   };
-  const m = map[countryId];
-  return { ...m, isHome: countryId === 'iran' };
+}
+
+export interface CountryPricingCalculation {
+  subtotal: number;
+  taxRate: number;
+  taxAmount: number;
+  taxLabel: LText;
+  gatewayFeeRate: number;
+  gatewayFeeAmount: number;
+  gatewayFeeLabel: LText;
+  totalPayable: number;
+}
+
+/**
+ * Authoritative client/server calculation for country-specific tax and gateway fees.
+ * Dynamically reacts to country switcher changes:
+ * - Checkout: itemizes country VAT (5%-20%) + gateway processing fee.
+ * - Wallet Top-up: deposit balance is tax-exempt; gateway processing fee (0%-2.5%) applies.
+ */
+export function calculateCountryPricing(params: {
+  subtotal: number;
+  countryId: CountryId;
+  gateway?: 'shetab' | 'ecardo' | 'wallet' | string;
+  isWalletTopUp?: boolean;
+}): CountryPricingCalculation {
+  const ctx = chargeContext(params.countryId);
+  const subtotal = Math.max(0, params.subtotal);
+
+  // Pure wallet deposit is VAT-free (tax is collected when services are purchased).
+  const isTopUp = Boolean(params.isWalletTopUp);
+  const taxRate = isTopUp ? 0 : ctx.taxRate;
+  const taxAmount = taxRate > 0 ? (params.countryId === 'iran' ? Math.round(subtotal * taxRate) : Number((subtotal * taxRate).toFixed(2))) : 0;
+
+  // Shetab or internal wallet payment has 0% gateway fee.
+  const isFreeGateway = params.gateway === 'shetab' || params.gateway === 'wallet' || params.gateway === 'wallet_irr';
+  const gatewayFeeRate = isFreeGateway ? 0 : ctx.gatewayFeeRate;
+  const gatewayFeeAmount = gatewayFeeRate > 0
+    ? (params.countryId === 'iran'
+        ? Math.round((subtotal + taxAmount) * gatewayFeeRate)
+        : Number(((subtotal + taxAmount) * gatewayFeeRate).toFixed(2)))
+    : 0;
+
+  const totalPayable = subtotal + taxAmount + gatewayFeeAmount;
+
+  return {
+    subtotal,
+    taxRate,
+    taxAmount,
+    taxLabel: ctx.taxLabel,
+    gatewayFeeRate,
+    gatewayFeeAmount,
+    gatewayFeeLabel: ctx.gatewayFeeLabel,
+    totalPayable,
+  };
 }

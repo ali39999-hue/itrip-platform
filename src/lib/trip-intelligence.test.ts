@@ -6,9 +6,13 @@ import {
 
 describe('Section 16: Trip Intelligence & Proactive Travel Concierge', () => {
   it('detects boarding soon alert when departure is within 3 hours', () => {
-    // 2 hours in future
+    // 2 hours in future — built from LOCAL clock components because the
+    // service parses travelDate+departureTime as local time; mixing UTC date
+    // (toISOString) with local hours made this test fail near local midnight.
     const future = new Date(Date.now() + 2 * 60 * 60 * 1000);
-    const dateStr = future.toISOString().slice(0, 10);
+    const dateStr = `${future.getFullYear()}-${String(future.getMonth() + 1).padStart(2, '0')}-${String(
+      future.getDate()
+    ).padStart(2, '0')}`;
     const timeStr = `${String(future.getHours()).padStart(2, '0')}:${String(
       future.getMinutes()
     ).padStart(2, '0')}`;

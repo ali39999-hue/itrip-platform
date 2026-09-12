@@ -22,12 +22,21 @@ interface User {
   firstNameEn?: string;
   lastNameEn?: string;
   kycApproved: boolean;
+  /** false = نام/نام خانوادگی/کد ملی هنوز تکمیل نشده — کاربر باید wizard تکمیل اطلاعات را ببیند */
+  profileComplete?: boolean;
   role: 'customer' | 'admin';
   channel?: AuthChannel;
   telegramId?: string;
   whatsappPhone?: string;
   wechatId?: string;
   baleId?: string;
+}
+
+/** بلافاصله بعد از ورود: کاربرِ ناقص به جای approved وارد مرحله name_info می‌شود */
+function kycStepAfterLogin(user: { phone: string; profileComplete?: boolean }): KycProfile {
+  return user.profileComplete === false
+    ? { step: 'name_info', phone: user.phone }
+    : { step: 'approved', phone: user.phone };
 }
 
 interface AuthState {
@@ -54,7 +63,7 @@ export const useAuthStore = create<AuthState>()(
 
         set({
           user: res.user,
-          kyc: { step: 'approved', phone: res.user.phone },
+          kyc: kycStepAfterLogin(res.user),
         });
         return true;
       },
@@ -66,7 +75,7 @@ export const useAuthStore = create<AuthState>()(
 
         set({
           user: res.user,
-          kyc: { step: 'approved', phone: res.user.phone },
+          kyc: kycStepAfterLogin(res.user),
         });
         return { success: true };
       },
@@ -78,7 +87,7 @@ export const useAuthStore = create<AuthState>()(
 
         set({
           user: res.user,
-          kyc: { step: 'approved', phone: res.user.phone },
+          kyc: kycStepAfterLogin(res.user),
         });
         return { success: true };
       },
@@ -153,6 +162,7 @@ export const useAuthStore = create<AuthState>()(
                 firstNameEn: state.user.firstNameEn,
                 lastNameEn: state.user.lastNameEn,
                 kycApproved: state.user.kycApproved,
+                profileComplete: state.user.profileComplete,
                 role: state.user.role,
                 channel: state.user.channel,
                 telegramId: state.user.telegramId,

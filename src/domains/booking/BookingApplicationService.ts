@@ -11,8 +11,8 @@ import { BookingSagaOrchestrator } from './saga-orchestrator';
 import { RefundDomainService, RefundResult } from '../refund/RefundDomainService';
 import { getTenantAuthContext, assertTenantAccess } from '../identity/permission-service';
 import { FLIGHTS, HOTELS, TOURS, TRANSFERS, VISA_SERVICES, ESIM_PACKAGES, INSURANCE_PLANS } from '@/lib/data';
-import { getHotelById } from '@/services/hotels-service';
-import { getFlightPriceById } from '@/services/flights-service';
+import { getHotelById, getHotelByIdAsync } from '@/services/hotels-service';
+import { getFlightPriceById, getLiveFlightPriceById } from '@/services/flights-service';
 import { encryptSensitive } from '@/lib/security/crypto-vault';
 import { businessMetrics } from '@/lib/observability/business-metrics';
 import { ReferralDomainService } from '../referral/ReferralDomainService';
@@ -78,7 +78,7 @@ export class BookingApplicationService {
   /**
    * Resolves canonical supplier base price server-side
    */
-  static resolveServerBasePrice(type: string, itemId?: string): number | null {
+  static async resolveServerBasePrice(type: string, itemId?: string): Promise<number | null> {
     if (!itemId) return null;
 
     const flight = FLIGHTS.find((f) => f.id === itemId);
@@ -103,14 +103,17 @@ export class BookingApplicationService {
     if (insurance) return insurance.price;
 
     if (type === 'HOTEL') {
-      const liveHotel = getHotelById(itemId);
+      const liveHotel = (await getHotelByIdAsync(itemId)) || getHotelById(itemId);
       if (liveHotel && typeof liveHotel.pricePerNight === 'number') {
         return liveHotel.pricePerNight;
       }
     }
 
     if (type === 'FLIGHT') {
-      const livePrice = getFlightPriceById(itemId);
+      const livePartoPrice = itemId ? await getLiveFlightPriceById(itemId) : null;
+      if (livePartoPrice !== null) return livePartoPrice;
+
+      const livePrice = getFlightPriceById(itemId ?? '');
       if (livePrice !== null) return livePrice;
     }
 
@@ -146,7 +149,7 @@ export class BookingApplicationService {
     const tenantCtx = await getTenantAuthContext(cmd.actorId).catch(() => null);
 
     // 1. Resolve canonical base price server-side
-    const baseUnitCost = this.resolveServerBasePrice(cmd.type, cmd.itemId);
+    const baseUnitCost = await this.resolveServerBasePrice(cmd.type, cmd.itemId);
     if (baseUnitCost === null) {
       throw new Error('Unknown item or unavailable product');
     }
@@ -385,7 +388,7 @@ export class BookingApplicationService {
     // Recalculate fresh base costs server-side
     let totalBaseCost = 0;
     for (const item of booking.items) {
-      const freshPrice = this.resolveServerBasePrice(item.type, item.inventoryItemId || undefined);
+      const freshPrice = await this.resolveServerBasePrice(item.type, item.inventoryItemId || undefined);
       if (freshPrice !== null) {
         totalBaseCost += freshPrice;
       } else {

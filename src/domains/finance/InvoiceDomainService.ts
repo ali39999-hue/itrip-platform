@@ -17,6 +17,12 @@ export interface CreateInvoiceParams {
   dueDays?: number;
 }
 
+/**
+ * DEMO/default seller identity — used ONLY when no production seller
+ * configuration is present (§76-5: production invoices must never silently
+ * render placeholder merchant identity). Real operation requires the
+ * INVOICE_SELLER_* environment variables.
+ */
 export const STATUTORY_SELLER_INFO = {
   legalName: 'شرکت خدمات مسافرت هوایی و جهانگردی فیروزه (سهامی خاص)',
   brandName: 'فیروزه (Firuzo Platform)',
@@ -29,6 +35,44 @@ export const STATUTORY_SELLER_INFO = {
   phone: '۰۲۱-۹۱۰۰۹۸۷۶',
   website: 'https://firuzo.com',
 };
+
+type StatutorySellerInfo = typeof STATUTORY_SELLER_INFO;
+
+/**
+ * Resolves the invoice seller identity. In production (fail-closed) the real
+ * legal identity MUST come from environment configuration; the demo defaults
+ * above are refused to avoid placing fabricated merchant identity on invoices.
+ */
+export function getStatutorySellerInfo(): StatutorySellerInfo {
+  const legalName = process.env.INVOICE_SELLER_LEGAL_NAME;
+  const nationalId = process.env.INVOICE_SELLER_NATIONAL_ID;
+  const economicCode = process.env.INVOICE_SELLER_ECONOMIC_CODE;
+
+  const isProduction = process.env.NODE_ENV === 'production' && process.env.DEMO_MODE !== 'true';
+  const configured = Boolean(legalName && nationalId && economicCode);
+
+  if (isProduction && !configured) {
+    throw new Error(
+      'Seller identity is not configured: set INVOICE_SELLER_LEGAL_NAME, INVOICE_SELLER_NATIONAL_ID and INVOICE_SELLER_ECONOMIC_CODE before issuing official-format invoices in production.'
+    );
+  }
+
+  if (configured) {
+    return {
+      ...STATUTORY_SELLER_INFO,
+      legalName: legalName!,
+      nationalId: nationalId!,
+      economicCode: economicCode!,
+      registrationNo: process.env.INVOICE_SELLER_REGISTRATION_NO || STATUTORY_SELLER_INFO.registrationNo,
+      vatRegistrationNo: process.env.INVOICE_SELLER_VAT_NO || STATUTORY_SELLER_INFO.vatRegistrationNo,
+      postalCode: process.env.INVOICE_SELLER_POSTAL_CODE || STATUTORY_SELLER_INFO.postalCode,
+      address: process.env.INVOICE_SELLER_ADDRESS || STATUTORY_SELLER_INFO.address,
+      phone: process.env.INVOICE_SELLER_PHONE || STATUTORY_SELLER_INFO.phone,
+    };
+  }
+
+  return STATUTORY_SELLER_INFO; // demo/dev defaults
+}
 
 export interface OfficialTaxInvoicePayload {
   invoice: {
@@ -304,7 +348,10 @@ export class InvoiceDomainService {
     const taxAmountNum = Number(invoice.taxAmount);
     const totalAmountNum = Number(invoice.totalAmount);
 
-    // Fiscal Sequential Reference (سامانه مودیان)
+    // Internal fiscal tracking reference (§22): this is a LOCAL, Firuzo-side
+    // sequential reference for traceability. It is NOT a Moadian/authority-
+    // issued tax serial and must never be presented as one — the platform has
+    // no tax-authority integration yet (capability: OFFICIAL_FORMAT only).
     const fiscalSerial = `TX-${invoice.issuedAt.getFullYear()}-${invoice.invoiceNumber.slice(-8)}`;
 
     const totalInWordsFa = this.numberToPersianWords(totalAmountNum, invoice.currency);
@@ -345,7 +392,7 @@ export class InvoiceDomainService {
         totalAmount: totalAmountNum,
         totalInWordsFa,
       },
-      seller: STATUTORY_SELLER_INFO,
+      seller: getStatutorySellerInfo(),
       buyer: {
         isCorporate,
         name: buyerName,

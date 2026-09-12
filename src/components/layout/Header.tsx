@@ -149,10 +149,12 @@ export function Header() {
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           <Logo size="sm" hideTextOnMobile />
 
-          <div className="flex items-center">
+          {/* در موبایل (< sm) جا برای این دو نمی‌ماند و گروه اکشن‌ها بیرون از
+              viewport می‌افتد؛ نسخه کامل این دو در drawer منو موجود است. */}
+          <div className="hidden sm:flex items-center">
             <CountrySwitcher />
           </div>
-          <div className="flex items-center">
+          <div className="hidden sm:flex items-center">
             <LocaleSwitcher />
           </div>
         </div>

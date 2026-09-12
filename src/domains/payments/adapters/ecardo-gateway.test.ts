@@ -8,6 +8,16 @@ describe('EcardoGatewayAdapter Suite', () => {
   const testPublicKey = process.env.ECARDO_PUBLIC_KEY || 'test_public_key';
   const testSecretKey = process.env.ECARDO_SECRET_KEY || 'test_secret_key';
 
+  // Tests exercising the REAL gateway HTTP path must opt out of the demo
+  // routing branch (vitest runs with DEMO_MODE=true).
+  function useRealGateway(): () => void {
+    const prev = process.env.DEMO_MODE;
+    process.env.DEMO_MODE = 'false';
+    return () => {
+      process.env.DEMO_MODE = prev;
+    };
+  }
+
   it('instantiates via getPaymentGateway factory', () => {
     const adapter = getPaymentGateway('gateway_ecardo');
     expect(adapter.name).toBe('ECARDO_GATEWAY');
@@ -43,7 +53,116 @@ describe('EcardoGatewayAdapter Suite', () => {
     process.env.DEMO_MODE = oldEnv;
   });
 
+  it('ECARDO_DEMO_GATEWAY routes to the simulated checkout screen without calling the real API', async () => {
+    const oldDemo = process.env.DEMO_MODE;
+    const oldNodeEnv = process.env.NODE_ENV;
+    const oldFlag = process.env.ECARDO_DEMO_GATEWAY;
+    process.env.DEMO_MODE = 'false'; // global demo off — scoped flag drives the routing
+    process.env.ECARDO_DEMO_GATEWAY = 'true';
+    process.env.NODE_ENV = 'test';
+
+    const fetchSpy = vi.spyOn(global, 'fetch');
+    try {
+      const adapter = new EcardoGatewayAdapter({ publicKey: testPublicKey, secretKey: testSecretKey });
+      const res = await adapter.createPayment({
+        intentId: 'int_demo',
+        bookingId: 'wallet_topup_user_1',
+        amount: new Money(2_500_000, 'IRR'),
+        callbackUrl: 'http://localhost:3000/api/payments/callback',
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.status).toBe('PENDING_CUSTOMER');
+      expect(res.redirectUrl).toMatch(/^\/demo\/ecardo-checkout\?/);
+      expect(res.redirectUrl).toContain('currency=IRT'); // platform IRR (Toman) → eCardo IRT
+      expect(res.redirectUrl).toContain('amount=2500000');
+      expect(res.gatewayRef).toMatch(/^FZ[A-Z0-9]{4,10}$/);
+      expect(fetchSpy).not.toHaveBeenCalled(); // no real gateway traffic in demo
+    } finally {
+      fetchSpy.mockRestore();
+      process.env.DEMO_MODE = oldDemo;
+      process.env.NODE_ENV = oldNodeEnv;
+      process.env.ECARDO_DEMO_GATEWAY = oldFlag;
+    }
+  });
+
+  it('with the demo flag OFF the real gateway path is used unchanged', async () => {
+    const oldDemo = process.env.DEMO_MODE;
+    const oldNodeEnv = process.env.NODE_ENV;
+    const oldFlag = process.env.ECARDO_DEMO_GATEWAY;
+    process.env.DEMO_MODE = 'false';
+    process.env.ECARDO_DEMO_GATEWAY = 'false';
+    process.env.NODE_ENV = 'test';
+
+    try {
+      const adapter = new EcardoGatewayAdapter({ publicKey: testPublicKey, secretKey: testSecretKey });
+      const fetchSpy = vi.spyOn(global, 'fetch').mockImplementation(async (url) => {
+        const u = String(url);
+        if (u.includes('access-token')) {
+          return new Response(JSON.stringify({ status: 'success', token: 't_real' }), { status: 200 });
+        }
+        return new Response(JSON.stringify({ status: 'success', payment_url: 'https://ecardo.ir/pay/TRXREAL01' }), {
+          status: 200,
+        });
+      });
+      try {
+        const res = await adapter.createPayment({
+          intentId: 'int_real',
+          bookingId: 'bkg_real',
+          amount: new Money(10, 'USD'),
+          callbackUrl: 'https://firuzo.com/callback',
+        });
+        expect(res.redirectUrl).toBe('https://ecardo.ir/pay/TRXREAL01'); // REAL gateway untouched
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    } finally {
+      process.env.DEMO_MODE = oldDemo;
+      process.env.NODE_ENV = oldNodeEnv;
+      process.env.ECARDO_DEMO_GATEWAY = oldFlag;
+    }
+  });
+
+  it('simulated routing is never active in production NODE_ENV (even with the flag on)', async () => {
+    const oldDemo = process.env.DEMO_MODE;
+    const oldNodeEnv = process.env.NODE_ENV;
+    const oldFlag = process.env.ECARDO_DEMO_GATEWAY;
+    process.env.DEMO_MODE = 'true';
+    process.env.ECARDO_DEMO_GATEWAY = 'true';
+    process.env.NODE_ENV = 'production';
+
+    try {
+      const adapter = new EcardoGatewayAdapter({ publicKey: testPublicKey, secretKey: testSecretKey });
+      const fetchSpy = vi.spyOn(global, 'fetch').mockImplementation(async (url) => {
+        const u = String(url);
+        if (u.includes('access-token')) {
+          return new Response(JSON.stringify({ status: 'success', token: 't' }), { status: 200 });
+        }
+        return new Response(JSON.stringify({ status: 'success', payment_url: 'https://ecardo.ir/pay/TRXPROD1' }), {
+          status: 200,
+        });
+      });
+      try {
+        const res = await adapter.createPayment({
+          intentId: 'int_prod',
+          bookingId: 'bkg_prod',
+          amount: new Money(10, 'USD'),
+          callbackUrl: 'https://firuzo.com/callback',
+        });
+        expect(res.redirectUrl).toBe('https://ecardo.ir/pay/TRXPROD1'); // real gateway, not the demo screen
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    } finally {
+      process.env.DEMO_MODE = oldDemo;
+      process.env.NODE_ENV = oldNodeEnv;
+      process.env.ECARDO_DEMO_GATEWAY = oldFlag;
+    }
+  });
+
   it('formats transaction_id <= 12 chars and description <= 20 chars', async () => {
+    const restoreDemo = useRealGateway();
+    try {
     const adapter = new EcardoGatewayAdapter({
       publicKey: testPublicKey,
       secretKey: testSecretKey,
@@ -85,6 +204,9 @@ describe('EcardoGatewayAdapter Suite', () => {
     expect(res.status).toBe('PENDING_CUSTOMER');
 
     fetchSpy.mockRestore();
+    } finally {
+      restoreDemo();
+    }
   });
 
   it('validates webhook signature per documented algorithm on a flat payload variant', async () => {
@@ -175,6 +297,8 @@ describe('EcardoGatewayAdapter Suite', () => {
   });
 
   it('accepts payment_url as the access-token response field (official doc caveat)', async () => {
+    const restoreDemo = useRealGateway();
+    try {
     const adapter = new EcardoGatewayAdapter({
       publicKey: testPublicKey,
       secretKey: testSecretKey,
@@ -210,9 +334,14 @@ describe('EcardoGatewayAdapter Suite', () => {
     expect(res.redirectUrl).toBe('https://ecardo.ir/pay/TRXTOKENVAR');
 
     fetchSpy.mockRestore();
+    } finally {
+      restoreDemo();
+    }
   });
 
   it('sends ipn_url (authoritative server-to-server channel) with make-payment', async () => {
+    const restoreDemo = useRealGateway();
+    try {
     const adapter = new EcardoGatewayAdapter({
       publicKey: testPublicKey,
       secretKey: testSecretKey,
@@ -251,6 +380,9 @@ describe('EcardoGatewayAdapter Suite', () => {
     expect(String(capturedBody.ipn_url).length).toBeLessThanOrEqual(255);
 
     fetchSpy.mockRestore();
+    } finally {
+      restoreDemo();
+    }
   });
 
   it('converts IRR base amount to USD, USDT, and CNY accurately with Decimal precision and preserves FX snapshot', async () => {

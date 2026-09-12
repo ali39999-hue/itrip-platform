@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getHotelById } from '@/services/hotels-service';
+import { getHotelByIdAsync } from '@/services/hotels-service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Hotel ID is required' }, { status: 400 });
     }
 
-    const hotel = getHotelById(id);
+    const hotel = await getHotelByIdAsync(id);
     if (!hotel) {
       return NextResponse.json({ success: false, error: 'Hotel not found' }, { status: 404 });
     }

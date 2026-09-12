@@ -20,9 +20,15 @@ export function SessionBootstrap() {
     getSessionUser()
       .then((res) => {
         if (res.success && res.user) {
+          // کاربرِ ناقص (بدون نام/کد ملی) مثل بعد از لاگین وارد wizard
+          // تکمیل اطلاعات می‌شود، نه مستقیم approved.
+          const profileComplete = res.user.profileComplete !== false;
           useAuthStore.setState({
             user: res.user,
-            kyc: { step: 'approved', phone: res.user.phone },
+            kyc: {
+              step: profileComplete ? 'approved' : 'name_info',
+              phone: res.user.phone,
+            },
           });
         }
       })

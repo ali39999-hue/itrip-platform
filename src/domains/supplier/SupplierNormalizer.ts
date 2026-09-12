@@ -9,6 +9,21 @@ import { Money } from '@/lib/finance';
 import { createTravelDateTime, type CanonicalFlightOffer } from './supplier-orchestration';
 import type { FlightOfferResult } from './flight-supplier-port';
 import type { HotelPropertyResult, HotelRoomRate } from './hotel-supplier-port';
+import { PARTO_CRS_SUPPLIER_CODE, type PartoPricedItinerary } from './adapters/PartoCrsApiClient';
+
+/** Full mapping result for an official Parto CRS PricedItinerary (v3 API). */
+export interface NormalizedPartoItinerary {
+  canonical: CanonicalFlightOffer;
+  offer: FlightOfferResult;
+  fareSourceCode: string;
+  isCharter: boolean;
+  currency: string;
+  baseFare: number;
+  totalFare: number;
+  totalTax: number;
+  terminals: { departure: string | null; arrival: string | null };
+  labelsFa: string[];
+}
 
 export class SupplierNormalizer {
   /**
@@ -97,6 +112,116 @@ export class SupplierNormalizer {
     };
 
     return { canonical, offer };
+  }
+
+  /**
+   * Normalizes an official Parto CRS v3 `PricedItinerary` (from AirLowFareSearch
+   * or AirRevalidate) into the canonical flight offer plus every extra field the
+   * flight cache needs. Returns null for unusable itineraries (missing fare
+   * reference, missing first segment, or missing total fare).
+   */
+  static normalizePricedItinerary(raw: PartoPricedItinerary): NormalizedPartoItinerary | null {
+    const fareSourceCode = raw.FareSourceCode;
+    if (!fareSourceCode) return null;
+
+    const firstOption = raw.OriginDestinationOptions?.[0];
+    const segments = firstOption?.FlightSegments ?? [];
+    const firstSegment = segments[0];
+    if (!firstSegment?.DepartureDateTime || !firstSegment.ArrivalDateTime) return null;
+
+    const itinFare = raw.AirItineraryPricingInfo?.ItinTotalFare;
+    const totalFare = Number(itinFare?.TotalFare ?? 0);
+    if (!Number.isFinite(totalFare) || totalFare <= 0) return null;
+
+    const currency = (itinFare?.Currency || 'IRR').toUpperCase();
+    const baseFare = Number(itinFare?.BaseFare ?? totalFare);
+    const totalTax = Number(itinFare?.TotalTax ?? Math.max(0, totalFare - baseFare));
+
+    const depIso = firstSegment.DepartureDateTime;
+    const arrIso = firstSegment.ArrivalDateTime;
+    const depDate = depIso.slice(0, 10);
+    const depTime = depIso.slice(11, 16) || '00:00';
+    const arrDate = arrIso.slice(0, 10) || depDate;
+    const arrTime = arrIso.slice(11, 16) || '00:00';
+
+    const departure = createTravelDateTime(depDate, depTime, 'Asia/Tehran');
+    const arrival = createTravelDateTime(arrDate, arrTime, 'Asia/Tehran');
+
+    const airlineCode = (firstSegment.MarketingAirlineCode || raw.ValidatingAirlineCode || 'XX').toUpperCase();
+    const rawFlightNumber = (firstSegment.FlightNumber || '').trim();
+    const flightNumber = rawFlightNumber.includes('-') ? rawFlightNumber : `${airlineCode}-${rawFlightNumber || '000'}`;
+
+    const durationMinutes =
+      firstOption?.JourneyDurationPerMinute ??
+      firstSegment.JourneyDurationPerMinute ??
+      Math.max(
+        60,
+        Math.round(
+          (new Date(arrival.localDateTime).getTime() - new Date(departure.localDateTime).getTime()) / 60000
+        )
+      );
+
+    const stops = Math.max(0, segments.length - 1);
+    const seatsRemaining = firstSegment.SeatsRemaining ?? 9;
+    const isCharter = firstSegment.IsCharter === true;
+    const refundable = raw.NonRefundableType !== 1 && raw.RefundMethod !== 2;
+    const baggage = firstSegment.Baggage || '20kg';
+
+    const moneyPrice = new Money(totalFare, currency);
+    const offerId = `off_${PARTO_CRS_SUPPLIER_CODE}_${Buffer.from(fareSourceCode, 'utf8').toString('base64url')}`;
+
+    const canonical: CanonicalFlightOffer = {
+      id: offerId,
+      supplierCode: PARTO_CRS_SUPPLIER_CODE,
+      airlineCode,
+      airlineName: airlineCode,
+      flightNumber,
+      originIata: (firstSegment.DepartureAirportLocationCode || '').toUpperCase(),
+      originCity: (firstSegment.DepartureAirportLocationCode || '').toUpperCase(),
+      destinationIata: (firstSegment.ArrivalAirportLocationCode || '').toUpperCase(),
+      destinationCity: (firstSegment.ArrivalAirportLocationCode || '').toUpperCase(),
+      departure,
+      arrival,
+      durationMinutes,
+      stops,
+      basePrice: moneyPrice,
+      currency,
+      refundable,
+      baggageAllowance: baggage,
+    };
+
+    const offer: FlightOfferResult = {
+      offerId,
+      supplierCode: PARTO_CRS_SUPPLIER_CODE,
+      airlineCode,
+      airlineName: airlineCode,
+      flightNumber,
+      departureTime: departure.utcInstant,
+      arrivalTime: arrival.utcInstant,
+      durationMinutes,
+      stops,
+      seatsRemaining,
+      basePrice: totalFare,
+      currency,
+      baggageAllowance: baggage,
+      refundable,
+    };
+
+    return {
+      canonical,
+      offer,
+      fareSourceCode,
+      isCharter,
+      currency,
+      baseFare,
+      totalFare,
+      totalTax,
+      terminals: {
+        departure: firstSegment.DepartureTerminal ?? null,
+        arrival: firstSegment.ArrivalTerminal ?? null,
+      },
+      labelsFa: raw.LabelsFa ?? [],
+    };
   }
 
   /**

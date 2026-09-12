@@ -16,6 +16,7 @@ import { createBookingDraft, payBooking, getWallet, repriceBookingAction } from 
 import { AlertTriangle } from 'lucide-react';
 import { useHydration } from '@/hooks/useHydration';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
+import { calculateCountryPricing, formatMoney } from '@/lib/money';
 
 import { CheckoutStepper, type CheckoutPhase } from '@/components/checkout/CheckoutStepper';
 import { PassengerSection } from '@/components/checkout/PassengerSection';
@@ -30,7 +31,6 @@ import { CryptoPaymentView } from '@/components/checkout/CryptoPaymentView';
 import { IssuingModal } from '@/components/checkout/IssuingModal';
 import { SuccessConfirmation } from '@/components/checkout/SuccessConfirmation';
 import { StickyMobileBar } from '@/components/checkout/StickyMobileBar';
-import { formatMoney } from '@/lib/money';
 import { trackFunnel } from '@/lib/analytics';
 import { PassportValidityGuard } from '@/domains/identity/PassportValidityGuard';
 import { getMyTravelerProfilesAction, saveTravelerProfileAction, saveTravelDocumentAction } from '@/actions/travelers';
@@ -44,7 +44,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const hydrated = useHydration();
   const { country } = useCountryStore();
-  const { currency } = useDisplayCurrency();
+  const { currency, taxRate, taxLabel, gatewayFeeRate, gatewayFeeLabel } = useDisplayCurrency();
   const bookingContext = useBookingStore((s) => s.bookingContext);
   const setPassengers = useBookingStore((s) => s.setPassengers);
   const wallet = useBookingStore((s) => s.wallet);
@@ -304,7 +304,17 @@ export default function CheckoutPage() {
   const baseAmount = bookingContext?.amount ?? 0;
   const itemTitle = bookingContext?.title ?? '';
   const walletBalance = serverWallet ?? wallet.IRR ?? 0;
-  const totalPayable = Math.max(0, baseAmount + (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0) - referralDiscountAmount);
+
+  const subtotalBeforeFees = Math.max(
+    0,
+    baseAmount + (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0) - referralDiscountAmount
+  );
+  const countryPricing = calculateCountryPricing({
+    subtotal: subtotalBeforeFees,
+    countryId: country,
+    gateway: method,
+  });
+  const totalPayable = countryPricing.totalPayable;
 
   function scanPassport() {
     setScanning(true);
@@ -509,6 +519,9 @@ export default function CheckoutPage() {
         const { initiateEcardoPayment } = await import('@/actions/booking');
         const initRes = await initiateEcardoPayment(draftBookingId, {
           paymentInstrument: selectedInstrument,
+          // Follow the country switcher: charge in the selected country's
+          // currency (mapped to the eCardo-supported rail server-side).
+          targetCurrency: currency,
         });
         if (initRes.success && initRes.redirectUrl) {
           window.location.href = initRes.redirectUrl;
@@ -656,6 +669,11 @@ export default function CheckoutPage() {
                 itemTitle={itemTitle}
                 discountAmount={referralDiscountAmount}
                 referralCode={referralCode ? referralCode.trim() : undefined}
+                taxRate={taxRate}
+                taxLabel={taxLabel}
+                gatewayFeeRate={gatewayFeeRate}
+                gatewayFeeLabel={gatewayFeeLabel}
+                paymentMethod={method}
               />
 
               {/* Security Badge in Sidebar */}
@@ -778,6 +796,11 @@ export default function CheckoutPage() {
                 itemTitle={itemTitle}
                 discountAmount={referralDiscountAmount}
                 referralCode={referralCode ? referralCode.trim() : undefined}
+                taxRate={taxRate}
+                taxLabel={taxLabel}
+                gatewayFeeRate={gatewayFeeRate}
+                gatewayFeeLabel={gatewayFeeLabel}
+                paymentMethod={method}
               />
             </div>
           </div>

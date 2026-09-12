@@ -368,7 +368,7 @@ export default function GuidePage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <button aria-label={ariaT('close')}
                   onClick={() => setOpenId(null)}
-                  className="absolute top-4 end-4 w-8 h-8 bg-black/40 hover:bg-black/60 text-surface rounded-full flex items-center justify-center transition-colors backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  className="absolute top-4 end-4 w-11 h-11 bg-black/40 hover:bg-black/60 text-surface rounded-full flex items-center justify-center transition-colors backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   <X size={18} />
                 </button>
@@ -379,7 +379,7 @@ export default function GuidePage() {
                 <span className="font-bold text-sub text-[12px] bg-soft px-3 py-1 rounded-full">{lt(locale, selectedArticle.category)}</span>
                 <button aria-label={ariaT('close')}
                   onClick={() => setOpenId(null)}
-                  className="w-8 h-8 bg-soft hover:bg-line/50 text-sub rounded-full flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  className="w-11 h-11 bg-soft hover:bg-line/50 text-sub rounded-full flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   <X size={18} />
                 </button>

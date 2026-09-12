@@ -338,7 +338,7 @@ export function SearchSheet({
                 ru: 'Популярные направления:',
               })}
             </span>
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            <div className="flex items-center gap-1.5 overflow-x-auto snap-x touch-pan-x pb-1 scrollbar-none">
               {POPULAR_DESTS.map((cId) => {
                 const city = CITIES.find((c) => c.id === cId);
                 if (!city) return null;

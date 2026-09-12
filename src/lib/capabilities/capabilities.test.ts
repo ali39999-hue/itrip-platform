@@ -24,7 +24,7 @@ describe('Product Capability Registry (CAP-001)', () => {
     }
   });
 
-  it('correctly tracks new v1.5.9 capabilities (cardToCard, aiRouter, loyaltyStreak)', () => {
+  it('correctly tracks commerce capabilities (cardToCard, aiRouter, loyaltyStreak)', () => {
     const cardToCard = getCapability('payment.cardToCard');
     expect(['BETA', 'DISABLED']).toContain(cardToCard.status);
     expect(cardToCard.category).toBe('payment');

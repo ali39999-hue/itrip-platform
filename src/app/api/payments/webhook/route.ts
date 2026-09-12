@@ -112,8 +112,55 @@ async function processWebhookRequest(req: NextRequest, rawBody: string, override
         }
       }
 
+      // Fallback 1: the attempt carries the gatewayRef even when no Payment row
+      // exists yet (e.g. legacy top-ups that only persisted a PaymentIntent).
+      if (!bookingId && txId) {
+        const attempt = await prisma.paymentAttempt.findFirst({
+          where: { gatewayRef: txId },
+          select: { paymentIntentId: true },
+        });
+        if (attempt?.paymentIntentId) {
+          const intent = await prisma.paymentIntent.findUnique({
+            where: { id: attempt.paymentIntentId },
+            select: { bookingId: true },
+          });
+          if (intent?.bookingId) bookingId = intent.bookingId;
+        }
+      }
+
+      // Fallback 2: eCardo may echo its own internal transaction id (the TRX…
+      // id from the payment_url) instead of our FZ… transaction_id. That id is
+      // embedded in the stored raw response, so match against it as a last resort.
+      if (!bookingId && txId) {
+        const gtx = await prisma.gatewayTransaction.findFirst({
+          where: {
+            OR: [
+              { gatewayRef: txId },
+              { rawResponse: { contains: txId } },
+            ],
+          },
+          select: { attemptId: true },
+          orderBy: { createdAt: 'desc' },
+        });
+        if (gtx?.attemptId) {
+          const attempt = await prisma.paymentAttempt.findUnique({
+            where: { id: gtx.attemptId },
+            select: { paymentIntentId: true },
+          });
+          if (attempt?.paymentIntentId) {
+            const intent = await prisma.paymentIntent.findUnique({
+              where: { id: attempt.paymentIntentId },
+              select: { bookingId: true },
+            });
+            if (intent?.bookingId) bookingId = intent.bookingId;
+          }
+        }
+      }
+
       settledAmountRaw = data.total_amount ?? settledAmountRaw;
-      settledCurrency = String(data.currency || settledCurrency);
+      // eCardo reports IRT (Toman); the platform stores that unit as IRR.
+      const rawSettledCurrency = String(data.currency || settledCurrency);
+      settledCurrency = rawSettledCurrency === 'IRT' ? 'IRR' : rawSettledCurrency;
     }
 
     // Extract security headers

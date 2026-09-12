@@ -11,6 +11,33 @@ import {
 } from '../gateway-port';
 import { getAppBaseUrl } from '@/lib/runtime-url';
 
+/**
+ * Currencies the eCardo merchant API actually accepts (official doc):
+ * USD, USDT, IRR, IRT (Toman), CNY / RMB.
+ *
+ * Platform money convention: the platform's "IRR" unit IS Toman (see
+ * CURRENCY_TO_TOMAN where IRR = 1), so platform IRR maps to eCardo IRT —
+ * sending platform toman amounts as eCardo "IRR" (rial) would undercharge 10x.
+ * Country currencies eCardo does not settle (TRY, AED, GEL, RUB, OMR) fall
+ * back to USD via the caller-side FX conversion.
+ */
+export const ECARDO_SUPPORTED_CURRENCIES = new Set(['USD', 'USDT', 'IRR', 'IRT', 'CNY', 'RMB']);
+
+export function mapToEcardoCurrency(currency: string): string {
+  const c = (currency || 'USD').toUpperCase();
+  if (c === 'TOMAN') return 'IRT';
+  if (c === 'RMB') return 'CNY';
+  if (c === 'IRR') return 'IRT';
+  if (ECARDO_SUPPORTED_CURRENCIES.has(c)) return c;
+  return 'USD';
+}
+
+/** eCardo reports IRT (Toman) in IPNs; the platform stores that unit as IRR. */
+export function normalizeEcardoCurrencyToPlatform(currency: string): string {
+  const c = (currency || '').toUpperCase();
+  return c === 'IRT' ? 'IRR' : c;
+}
+
 export interface EcardoGatewayConfig {
   baseUrl?: string;
   publicKey?: string;
@@ -126,6 +153,38 @@ export class EcardoGatewayAdapter implements PaymentGatewayPort {
       throw new Error('Ecardo payment gateway not configured: ECARDO_PUBLIC_KEY is required');
     }
 
+    // Map to an eCardo-supported currency (platform IRR/TOMAN → IRT; USD/USDT/CNY pass through).
+    const targetCurrency = mapToEcardoCurrency(req.amount.currency || 'IRR');
+
+    // Amount formatting
+    const numAmount = req.amount.toNumber();
+    const formattedAmount = (targetCurrency === 'IRR' || targetCurrency === 'IRT')
+      ? Math.round(numAmount)
+      : Number(numAmount.toFixed(2));
+
+    // Simulated-gateway routing for tester walkthroughs. Scoped to the
+    // dedicated ECARDO_DEMO_GATEWAY flag (or global DEMO_MODE) and hard-blocked
+    // in production — the REAL eCardo path stays untouched when the flag is off.
+    const demoRoutingEnabled =
+      process.env.NODE_ENV !== 'production' &&
+      (process.env.ECARDO_DEMO_GATEWAY === 'true' || process.env.DEMO_MODE === 'true');
+    if (demoRoutingEnabled) {
+      const demoTxId = `FZ${Date.now().toString(36).slice(-6)}${crypto.randomBytes(2).toString('hex')}`.slice(0, 12).toUpperCase();
+      const demoParams = new URLSearchParams({
+        ref: demoTxId,
+        bookingId: req.bookingId || '',
+        amount: String(formattedAmount),
+        currency: targetCurrency,
+      });
+      return {
+        success: true,
+        gatewayRef: demoTxId,
+        redirectUrl: `/demo/ecardo-checkout?${demoParams.toString()}`,
+        status: 'PENDING_CUSTOMER',
+        rawResponse: { demo: true, bookingId: req.bookingId, amount: formattedAmount, currency: targetCurrency },
+      };
+    }
+
     const token = await this.getAccessToken();
     const endpoint = `${this.baseUrl}/api/merchant/make-payment`;
     this.assertAllowedHost(endpoint);
@@ -134,23 +193,38 @@ export class EcardoGatewayAdapter implements PaymentGatewayPort {
     // Format: FZ + 8 uppercase alphanumeric chars = 10 chars
     const rawTxId = `FZ${Date.now().toString(36).slice(-6)}${crypto.randomBytes(2).toString('hex')}`.slice(0, 12).toUpperCase();
 
-    // Map currency: eCardo supports USD, USDT, IRR, IRT, CNY, RMB
-    let targetCurrency = (req.amount.currency || 'IRR').toUpperCase();
-    if (targetCurrency === 'TOMAN') targetCurrency = 'IRT';
-
-    // Amount formatting
-    const numAmount = req.amount.toNumber();
-    const formattedAmount = (targetCurrency === 'IRR' || targetCurrency === 'IRT')
-      ? Math.round(numAmount)
-      : Number(numAmount.toFixed(2));
-
     const description = `Firuzo ${req.bookingId ? req.bookingId.slice(-6) : 'Booking'}`.slice(0, 20);
 
     // Official doc: ipn_url (max 255) is the authoritative server-to-server
     // status notification. Without it the capture would depend solely on the
     // untrusted browser callback, which the doc checklist forbids.
-    const ipnUrl = `${getAppBaseUrl()}/api/payments/webhook?gateway=ecardo`.slice(0, 255);
-    const cancelUrl = `${getAppBaseUrl()}/checkout`.slice(0, 255);
+    // Resolution priority for IPN host:
+    // 1. ECARDO_IPN_BASE_URL (explicit dev tunnel or override)
+    // 2. Origin of req.callbackUrl if public HTTPS (Vercel deployments / custom domains)
+    // 3. Fallback to getAppBaseUrl()
+    let ipnBase = process.env.ECARDO_IPN_BASE_URL?.replace(/\/+$/, '');
+    if (!ipnBase && req.callbackUrl) {
+      try {
+        const parsedCb = new URL(req.callbackUrl);
+        if (parsedCb.protocol === 'https:' && !parsedCb.hostname.includes('localhost')) {
+          ipnBase = parsedCb.origin;
+        }
+      } catch {}
+    }
+    if (!ipnBase) {
+      ipnBase = getAppBaseUrl();
+    }
+    const ipnUrl = `${ipnBase}/api/payments/webhook?gateway=ecardo`.slice(0, 255);
+
+    let cancelUrl = `${getAppBaseUrl()}/checkout`;
+    if (req.callbackUrl) {
+      try {
+        const parsedCb = new URL(req.callbackUrl);
+        const cancelPath = req.bookingId?.startsWith('wallet_topup_') ? '/wallet' : '/checkout';
+        cancelUrl = `${parsedCb.origin}${cancelPath}`;
+      } catch {}
+    }
+    cancelUrl = cancelUrl.slice(0, 255);
     const customerEmail = req.customerInfo?.email?.slice(0, 50);
 
     const bodyPayload: Record<string, unknown> = {

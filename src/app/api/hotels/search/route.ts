@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { searchHotels, type HotelSearchParams } from '@/services/hotels-service';
+import { searchHotelsLive, type HotelSearchParams } from '@/services/hotels-service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const page = searchParams.get('page') ? Number(searchParams.get('page')) : 1;
     const limit = searchParams.get('limit') ? Number(searchParams.get('limit')) : 12;
 
-    const result = searchHotels({
+    const result = await searchHotelsLive({
       query,
       city,
       hotelName,

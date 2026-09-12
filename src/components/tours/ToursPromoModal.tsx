@@ -197,7 +197,7 @@ export function ToursPromoModal() {
               </div>
 
               {/* Destination Switcher Pills inside popup */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pt-4 pb-1 scrollbar-none">
+              <div className="flex items-center gap-1.5 overflow-x-auto snap-x touch-pan-x pt-4 pb-1 scrollbar-none">
                 {tours.map((t, idx) => (
                   <button
                     key={t.id}

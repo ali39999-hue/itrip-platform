@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { bookingSchema } from '@/lib/validations';
 import { revalidatePath } from 'next/cache';
 import { safeAuth } from '@/auth';
@@ -170,41 +171,60 @@ export async function initiateEcardoPayment(
       return { success: false, error: 'Booking is not payable in its current state' };
     }
 
-    const { EcardoGatewayAdapter } = await import('@/domains/payments/gateway-port');
+    const { EcardoGatewayAdapter, mapToEcardoCurrency, normalizeEcardoCurrencyToPlatform } = await import('@/domains/payments/gateway-port');
     const { Money } = await import('@/lib/finance');
-    const { defaultCurrencyService } = await import('@/domains/currency/CurrencyService');
-    const { getAppBaseUrl } = await import('@/lib/runtime-url');
+    const { CURRENCY_TO_TOMAN } = await import('@/lib/money');
+    const { getRequestBaseUrl } = await import('@/lib/runtime-url');
+    const { headers } = await import('next/headers');
 
-    const rawTargetCurrency = typeof options === 'string'
-      ? options
-      : options?.targetCurrency || (
-          options?.paymentInstrument === 'crypto_usdt' ? 'USDT' :
-          options?.paymentInstrument === 'wechat_alipay' ? 'CNY' :
-          options?.paymentInstrument === 'shetab_card' ? 'IRR' : 'USD'
-        );
+    const headerMap = await headers().catch(() => null);
+    const origin = getRequestBaseUrl(headerMap || undefined);
 
+    // Payment instrument pins the currency rail; otherwise the client-selected
+    // country currency (from the country switcher) is used. Unsupported country
+    // currencies (TRY/AED/GEL/RUB/OMR) map to USD, the eCardo fallback rail.
     const paymentInstrument = typeof options === 'object' ? options?.paymentInstrument : undefined;
 
-    let targetCurrency = (rawTargetCurrency || 'USD').toUpperCase();
-    if (targetCurrency === 'TOMAN') targetCurrency = 'IRT';
+    const instrumentCurrency =
+      (typeof options === 'object' && options?.paymentInstrument === 'crypto_usdt') ? 'USDT' :
+      (typeof options === 'object' && options?.paymentInstrument === 'wechat_alipay') ? 'CNY' :
+      (typeof options === 'object' && options?.paymentInstrument === 'shetab_card') ? 'IRR' : undefined;
+
+    const rawTargetCurrency =
+      instrumentCurrency ||
+      (typeof options === 'string' ? options : options?.targetCurrency) ||
+      'USD';
+
+    const targetCurrency = mapToEcardoCurrency(rawTargetCurrency);
 
     const sourceCurrency = (booking.currency || 'IRR').toUpperCase();
     const sourceMoney = new Money(booking.totalAmount, sourceCurrency);
 
-    // Automatic Real-Time FX Conversion (MONEY-001, MONEY-004)
-    let paymentMoney: import('@/lib/finance').Money;
-    let fxSnapshot: import('@/lib/finance').FxSnapshot | undefined;
-
-    if (sourceCurrency === targetCurrency || (sourceCurrency === 'IRR' && targetCurrency === 'IRT')) {
-      paymentMoney = sourceMoney;
+    // Automatic FX conversion (MONEY-001, MONEY-004).
+    // Booking amounts are stored in Toman (platform IRR unit), so conversion
+    // uses the Toman reference table (CURRENCY_TO_TOMAN) — the CurrencyService
+    // rates are rial-based and would mis-scale by 10x here.
+    const tomanAmount = sourceMoney.toNumber();
+    let convertedAmount: number;
+    if (targetCurrency === 'IRT' || sourceCurrency === targetCurrency) {
+      convertedAmount = Math.round(tomanAmount);
+    } else if (targetCurrency === 'USDT') {
+      convertedAmount = Math.round((tomanAmount / CURRENCY_TO_TOMAN.USDT) * 100) / 100;
+    } else if (targetCurrency === 'CNY') {
+      convertedAmount = Math.round((tomanAmount / CURRENCY_TO_TOMAN.CNY) * 100) / 100;
     } else {
-      const conv = defaultCurrencyService.convertMoney(
-        sourceMoney,
-        (targetCurrency === 'IRT' ? 'IRR' : targetCurrency) as import('@/domains/currency/CurrencyService').SupportedCurrency
-      );
-      paymentMoney = conv.converted;
-      fxSnapshot = conv.snapshot;
+      convertedAmount = Math.round((tomanAmount / (CURRENCY_TO_TOMAN.USD || 1)) * 100) / 100;
     }
+    const paymentMoney = new Money(convertedAmount, targetCurrency);
+    const fxSnapshot: import('@/lib/finance').FxSnapshot = {
+      transactionCurrency: sourceCurrency,
+      transactionAmount: sourceMoney,
+      baseCurrency: targetCurrency,
+      baseAmount: paymentMoney,
+      fxRate: new (Prisma.Decimal)(CURRENCY_TO_TOMAN[targetCurrency === 'IRT' ? 'IRR' : targetCurrency] || 1),
+      fxSource: 'REFERENCE_TOMAN_TABLE',
+      fxTimestamp: new Date(),
+    };
 
     const adapter = new EcardoGatewayAdapter();
 
@@ -212,7 +232,7 @@ export async function initiateEcardoPayment(
       intentId: `intent_ecardo_${booking.id}`,
       bookingId: booking.id,
       amount: paymentMoney,
-      callbackUrl: `${getAppBaseUrl()}/api/payments/ecardo/callback?bookingId=${booking.id}&order_id=${booking.id}`,
+      callbackUrl: `${origin}/api/payments/ecardo/callback?bookingId=${booking.id}&order_id=${booking.id}`,
       customerInfo: {
         email: session.user.email || undefined,
       },
@@ -229,12 +249,14 @@ export async function initiateEcardoPayment(
         paymentInstrument,
       });
 
+      // Platform-side records store the normalized unit (eCardo IRT == platform IRR/Toman)
+      const recordCurrency = normalizeEcardoCurrencyToPlatform(targetCurrency);
       await prisma.payment.upsert({
         where: { idempotencyKey: `ecardo_${booking.id}_${paymentRes.gatewayRef}` },
         update: {
           gatewayRef: paymentRes.gatewayRef,
           amount: paymentMoney.toDecimal(),
-          currency: targetCurrency,
+          currency: recordCurrency,
           status: 'PENDING',
           rawPayload: payloadMeta,
         },
@@ -243,7 +265,7 @@ export async function initiateEcardoPayment(
           method: 'gateway_ecardo',
           gatewayRef: paymentRes.gatewayRef,
           amount: paymentMoney.toDecimal(),
-          currency: targetCurrency,
+          currency: recordCurrency,
           status: 'PENDING',
           idempotencyKey: `ecardo_${booking.id}_${paymentRes.gatewayRef}`,
           rawPayload: payloadMeta,
@@ -255,7 +277,7 @@ export async function initiateEcardoPayment(
         redirectUrl: paymentRes.redirectUrl,
         gatewayRef: paymentRes.gatewayRef,
         amount: paymentMoney.toNumber(),
-        currency: targetCurrency,
+        currency: recordCurrency,
       };
     }
 
@@ -488,7 +510,6 @@ export async function requestWalletTopUp(
     }
 
     const { PaymentDomainService } = await import('@/domains/payments/PaymentDomainService');
-    const { ShetabGatewayAdapter, EcardoGatewayAdapter } = await import('@/domains/payments/gateway-port');
     const { Money } = await import('@/lib/finance');
 
     const idempotencyKey = `topup_intent_${session.user.id}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
@@ -518,17 +539,31 @@ export async function requestWalletTopUp(
       return { success: true, intentId: intent.id };
     }
 
-    // Initiate gateway payment request via selected adapter (Ecardo or Shetab)
-    const adapter = gateway === 'ecardo' ? new EcardoGatewayAdapter() : new ShetabGatewayAdapter();
-    const gwRes = await adapter.createPayment({
-      intentId: intent.id,
-      bookingId: intent.bookingId,
-      amount: new Money(intent.amount, currency),
-      callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/payments/callback`,
+    // Gateway dispatch through the canonical pipeline so a Payment record with
+    // the gatewayRef is persisted — the eCardo IPN handler resolves the wallet
+    // capture by that ref and credits the ledger via postTopUp.
+    const { headers } = await import('next/headers');
+    const { getRequestBaseUrl } = await import('@/lib/runtime-url');
+    const headerMap = await headers().catch(() => null);
+    const origin = getRequestBaseUrl(headerMap || undefined);
+    const callbackUrl = `${origin}/api/payments/callback?bookingId=wallet_topup_${session.user.id}&order_id=wallet_topup_${session.user.id}`;
+
+    const method = gateway === 'ecardo' ? 'gateway_ecardo' as const : 'gateway_shetab' as const;
+    const gwRes = await PaymentDomainService.processPayment({
+      bookingId: `wallet_topup_${session.user.id}`,
+      idempotencyKey,
+      method,
+      amount: moneyAmount,
+      currency,
+      callbackUrl,
       customerInfo: {
         email: session.user.email || undefined,
       },
     });
+
+    if (!gwRes.success || !gwRes.redirectUrl) {
+      return { success: false, error: gwRes.error || 'Failed to process top-up' };
+    }
 
     return {
       success: true,

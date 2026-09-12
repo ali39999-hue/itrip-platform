@@ -130,6 +130,33 @@
 }
 
 /*
+ * Scroll-hiding برای کاروسل‌های افقی. سراسر پروژه سه نام قدیمی استفاده شده
+ * (scrollbar-none / hide-scrollbar / no-scrollbar) — هر سه این‌جا alias می‌شوند
+ * تا استایل سراسری ::-webkit-scrollbar به snap-carousels موبایل نشت نکند.
+ */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+@utility scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+@utility hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/*
  * Design system: FIRUZO v1.0 (Downloads/firuzo-tokens.css)
  * فیروزه‌ای #00A9A5 (brand) / #046E6B (brand-dark — تنها فیروزه‌ای مجاز برای متن روی سفید)
  * + زعفرانی #F0A62A (action: فقط رزرو/پرداخت) و قیمت #9C6209 روی خنثی سرد.

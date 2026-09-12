@@ -8,7 +8,10 @@ import { useLocalizedUserName } from '@/hooks/useLocalizedUserName';
 import { Button } from '@/components/ui/button';
 import { getWallet, getMyBookings } from '@/actions/booking';
 import { updateProfileDetails, getMyKyc } from '@/actions/auth';
+import { getAccountPanelConfigAction } from '@/actions/account-panel';
+import { LOYALTY_TIERS } from '@/lib/loyalty-tiers';
 import { AccountSidebar } from '@/components/account/AccountSidebar';
+import { PushNotificationAsk } from '@/components/account/PushNotificationAsk';
 import {
   UserRound,
   Wallet,
@@ -46,6 +49,7 @@ export default function AccountPage() {
   }>>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [panelConfig, setPanelConfig] = useState<Awaited<ReturnType<typeof getAccountPanelConfigAction>> | null>(null);
 
   const [formState, setFormState] = useState({
     firstNameFa: user?.firstNameFa || '',
@@ -59,10 +63,11 @@ export default function AccountPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [walletRes, bookingsRes, kycRes] = await Promise.all([
+        const [walletRes, bookingsRes, kycRes, panelRes] = await Promise.all([
           getWallet(),
           getMyBookings(),
           getMyKyc(),
+          getAccountPanelConfigAction().catch(() => null),
         ]);
         if (walletRes.success && walletRes.balances) {
           setWallet(walletRes.balances);
@@ -81,6 +86,8 @@ export default function AccountPage() {
             lastNameEn: prev.lastNameEn || kycRes.kyc!.lastNameEn,
           }));
         }
+        // Dynamic panel content (CMS overrides + real loyalty view)
+        if (panelRes) setPanelConfig(panelRes);
       } catch (e) {
         console.error('Failed to load user account dashboard data:', e);
       }
@@ -151,6 +158,25 @@ export default function AccountPage() {
   }
 
   const kycDone = user.kycApproved;
+  // profileComplete=false یعنی نام/نام خانوادگی/کد ملی هنوز ثبت نشده —
+  // کاربر بعد از ثبت‌نام اولیه باید به تکمیل اطلاعات هویتی هدایت شود.
+  const profileIncomplete = user.profileComplete === false;
+
+  // Real loyalty view (server-authoritative coins → tier ladder)
+  const loyaltyView = panelConfig?.loyalty ?? null;
+  const loyaltyEnabled = loyaltyView ? loyaltyView.enabled : true;
+  const currentTier = loyaltyView ? LOYALTY_TIERS[Math.max(0, loyaltyView.tierIndex)] : LOYALTY_TIERS[0];
+  const nextTier = loyaltyView?.nextTierKey
+    ? LOYALTY_TIERS.find((tr) => tr.key === loyaltyView.nextTierKey) ?? null
+    : null;
+  const tierName = (t: typeof currentTier) =>
+    lt(locale, { fa: t.fa, en: t.en, ar: t.ar, zh: t.zh, ru: t.ru });
+  const heroTitle = panelConfig?.hero?.title && panelConfig.hero.title[locale as keyof typeof panelConfig.hero.title]
+    ? panelConfig.hero.title[locale as keyof typeof panelConfig.hero.title]
+    : null;
+  const heroSubtitle = panelConfig?.hero?.subtitle && panelConfig.hero.subtitle[locale as keyof typeof panelConfig.hero.subtitle]
+    ? panelConfig.hero.subtitle[locale as keyof typeof panelConfig.hero.subtitle]
+    : null;
 
   return (
     <div className="flex flex-col md:flex-row w-full max-w-[1280px] mx-auto px-4 md:px-10 py-6 md:py-8 gap-6 md:gap-8">
@@ -161,18 +187,45 @@ export default function AccountPage() {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col gap-5 md:gap-6 min-w-0">
+        {profileIncomplete && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 sm:p-5 rounded-2xl bg-gold-soft/70 border border-gold/40">
+            <div className="flex items-start gap-3">
+              <ShieldAlert size={20} className="text-gold shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-black text-ink m-0">
+                  {lt(locale, { fa: 'اطلاعات هویتی شما کامل نیست', en: 'Your identity details are incomplete', ar: 'بياناتك الهوية غير مكتملة', zh: '您的身份信息尚未完成', ru: 'Ваши данные не заполнены' })}
+                </p>
+                <p className="text-xs text-sub font-bold m-0 mt-1 leading-relaxed">
+                  {lt(locale, { fa: 'برای صدور قطعی بلیط و رزرو، نام، نام خانوادگی و کد ملی خود را تکمیل کنید.', en: 'Complete your name and national ID to finalize tickets and bookings.', ar: 'أكمل اسمك ورقم الهوية لإتمام الحجز.', zh: '请完成姓名和身份证号以完成预订。', ru: 'Заполните имя и национальный ID для завершения бронирования.' })}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => router.push('/auth')}
+              className="shrink-0 min-h-[44px] px-5 rounded-xl bg-brand-dark hover:bg-deep text-surface text-xs font-black transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              {lt(locale, { fa: 'تکمیل اطلاعات', en: 'Complete details', ar: 'إكمال البيانات', zh: '完善信息', ru: 'Заполнить данные' })}
+            </button>
+          </div>
+        )}
+
         {/* Welcome Header with Mobile-Optimized Layout */}
         <div className="bg-gradient-to-r from-brand to-brand-dark rounded-3xl p-5 sm:p-6 md:p-8 text-surface shadow-elev-1 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-surface/15 text-xs font-bold mb-2 backdrop-blur-xs">
               <Sparkles size={13} />
-              <span>{lt(locale, { fa: 'سطح کاربری: مسافر طلایی فیروزو', en: 'Tier: Gold Traveler', ar: 'المستوى: مسافر ذهبي', zh: '会员等级：黄金旅客', ru: 'Уровень: Золотой' })}</span>
+              <span>
+                {lt(locale, { fa: 'سطح کاربری: ', en: 'Tier: ', ar: 'المستوى: ', zh: '会员等级：', ru: 'Уровень: ' })}
+                {tierName(currentTier)}
+              </span>
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-black">
-              {lt(locale, { fa: 'خوش آمدید،', en: 'Welcome back,', ar: 'أهلاً بك،', zh: '欢迎回来，', ru: 'Добро пожаловать,' })} {localizedUserName || user.firstNameFa || user.phone}
+              {heroTitle || lt(locale, { fa: 'خوش آمدید،', en: 'Welcome back,', ar: 'أهلاً بك،', zh: '欢迎回来，', ru: 'Добро пожаловать,' })} {localizedUserName || user.firstNameFa || user.phone}
             </h1>
             <p className="text-surface/80 text-xs md:text-sm mt-1 leading-relaxed">
-              {lt(locale, { fa: 'مدیریت یکپارچه سفرها، مدارک هویتی، کیف پول و خدمات ویژه فیروزو', en: 'Manage bookings, identity documents, wallet and services in one place', ar: 'إدارة رحلاتك ووثائقك ومحفظتك في مكان واحد', zh: '集中管理您的行程、身份凭证与多币种钱包', ru: 'Управление поездками, документами и кошельком' })}
+              {heroSubtitle ||
+                lt(locale, { fa: 'مدیریت یکپارچه سفرها، مدارک هویتی، کیف پول و خدمات ویژه فیروزو', en: 'Manage bookings, identity documents, wallet and services in one place', ar: 'إدارة رحلاتك ووثائقك ومحفظتك في مكان واحد', zh: '集中管理您的行程、身份凭证与多币种钱包', ru: 'Управление поездками, документами и кошельком' })}
             </p>
           </div>
 
@@ -205,21 +258,62 @@ export default function AccountPage() {
           </div>
         </div>
 
-        {/* Loyalty Progression Tier Bar */}
-        <div className="bg-surface rounded-2xl p-4 sm:p-5 border border-line shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex-1 space-y-1.5">
-            <div className="flex justify-between items-center text-xs font-black">
-              <span className="text-ink">سطح طلایی (۲,۵۰۰ امتیاز)</span>
-              <span className="text-brand-dark">پلاتینیوم (۵,۰۰۰ امتیاز)</span>
+        {/* Loyalty Progression Tier Bar — real server-authoritative data */}
+        {loyaltyEnabled && loyaltyView && (
+          <div className="bg-surface rounded-2xl p-4 sm:p-5 border border-line shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex-1 space-y-1.5">
+              <div className="flex justify-between items-center text-xs font-black">
+                <span className="text-ink">
+                  {tierName(currentTier)} (
+                  {(loyaltyView.totalCoins).toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}{' '}
+                  {lt(locale, { fa: 'امتیاز', en: 'points', ar: 'نقطة', zh: '积分', ru: 'баллов' })})
+                </span>
+                {nextTier ? (
+                  <span className="text-brand-dark">{tierName(nextTier)}</span>
+                ) : (
+                  <span className="text-brand-dark">
+                    {lt(locale, { fa: 'بالاترین سطح ✨', en: 'Top tier ✨', ar: 'أعلى مستوى ✨', zh: '最高等级 ✨', ru: 'Максимальный уровень ✨' })}
+                  </span>
+                )}
+              </div>
+              <div
+                className="w-full h-2 rounded-full bg-soft overflow-hidden border border-line/60"
+                role="progressbar"
+                aria-valuenow={Math.round(loyaltyView.progress * 100)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={lt(locale, { fa: 'پیشرفت سطح باشگاه مشتریان', en: 'Loyalty tier progress', ar: 'تقدم مستوى الولاء', zh: '会员等级进度', ru: 'Прогресс уровня' })}
+              >
+                <div
+                  className="h-full bg-gradient-to-r from-action to-gold-light rounded-full transition-all duration-500"
+                  style={{ width: `${Math.max(4, Math.round(loyaltyView.progress * 100))}%` }}
+                />
+              </div>
             </div>
-            <div className="w-full h-2 rounded-full bg-soft overflow-hidden border border-line/60">
-              <div className="h-full bg-gradient-to-r from-action to-gold-light rounded-full" style={{ width: '50%' }} />
-            </div>
+            <span className="text-[11.5px] text-sub font-bold shrink-0">
+              {loyaltyView.perkText && loyaltyView.perkText[locale as keyof typeof loyaltyView.perkText]
+                ? loyaltyView.perkText[locale as keyof typeof loyaltyView.perkText]
+                : nextTier
+                  ? `${loyaltyView.coinsToNext.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')} ${lt(locale, {
+                      fa: 'امتیاز تا سطح بعد',
+                      en: 'points to the next tier',
+                      ar: 'نقطة حتى المستوى التالي',
+                      zh: '积分升至下一等级',
+                      ru: 'баллов до следующего уровня',
+                    })}`
+                  : lt(locale, {
+                      fa: 'همه مزایای باشگاه مشتریان برای شما فعال است',
+                      en: 'All loyalty perks are unlocked for you',
+                      ar: 'جميع مزايا الولاء مفتوحة لك',
+                      zh: '所有会员权益已为您解锁',
+                      ru: 'Все привилегии открыты',
+                    })}
+            </span>
           </div>
-          <span className="text-[11.5px] text-sub font-bold shrink-0">
-            ۲,۵۰۰ امتیاز تا سالن تشریفات اختصاصی فرودگاه (CIP)
-          </span>
-        </div>
+        )}
+
+        {/* Push notification soft-ask (پوش نوتیفیکیشن) */}
+        <PushNotificationAsk />
 
         {/* Financial & Status Overview Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

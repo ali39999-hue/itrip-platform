@@ -69,6 +69,25 @@ async function main() {
     },
   });
 
+  // Demo front-line booking operator (اپراتور رزرو در ERP) — same password policy as admin.
+  const operator = await prisma.user.upsert({
+    where: { email: 'operator@firuzo.com' },
+    update: {
+      passwordHash: adminPasswordHash,
+      role: 'OPERATOR',
+      isActive: true,
+    },
+    create: {
+      id: 'clr_operator_123',
+      email: 'operator@firuzo.com',
+      phone: '09120000009',
+      name: 'Firuzo Operator',
+      passwordHash: adminPasswordHash,
+      role: 'OPERATOR',
+      isActive: true,
+    },
+  });
+
   // 2. Seed Relational Permissions and Roles (IAM-001)
   const allPermissions = new Set<string>();
   Object.values(ROLE_DEFAULT_PERMISSIONS).forEach((perms) => {
@@ -115,6 +134,7 @@ async function main() {
   for (const [u, roleName] of [
     [admin, 'SUPER_ADMIN'],
     [testAdmin, 'SUPER_ADMIN'],
+    [operator, 'OPERATOR'],
     [user, 'CUSTOMER'],
   ] as const) {
     const role = await prisma.role.findUnique({ where: { name: roleName } });

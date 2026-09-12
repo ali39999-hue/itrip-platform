@@ -10,7 +10,19 @@ import { z } from 'zod';
  * shipped content.
  */
 
-export const SITE_CONTENT_KEYS = ['home.hero', 'home.promos', 'home.routes', 'home.faq', 'home.support', 'site.announcement', 'finance.fx_rates'] as const;
+export const SITE_CONTENT_KEYS = [
+  'home.hero',
+  'home.promos',
+  'home.routes',
+  'home.faq',
+  'home.support',
+  'site.announcement',
+  'finance.fx_rates',
+  'account.hero',
+  'account.sidebar',
+  'account.loyalty',
+  'support.page',
+] as const;
 export type SiteContentKey = (typeof SITE_CONTENT_KEYS)[number];
 
 // ==================== Payload schemas ====================
@@ -112,6 +124,61 @@ export const supportSectionSchema = z
   })
   .strict();
 
+// ---- Customer account panel (پنل مشتری داینامیک) ----
+
+export const accountSidebarLinkSchema = z
+  .object({
+    href: z
+      .string()
+      .trim()
+      .min(1)
+      .max(200)
+      .refine((v) => v.startsWith('/') && !v.includes('..'), { message: 'href must be an in-app absolute path' }),
+    label: textPair,
+    icon: z.enum(['LayoutGrid', 'Users', 'PlaneTakeoff', 'Gift', 'Bot', 'Building', 'Star']).optional(),
+  })
+  .strict();
+
+export const accountSidebarSchema = z
+  .object({
+    links: z.array(accountSidebarLinkSchema).min(3).max(10),
+    badgeText: textPair.optional(),
+    pointsLabel: textPair.optional(),
+  })
+  .strict();
+
+export const accountHeroSchema = z
+  .object({
+    title: textPair.optional(),
+    subtitle: textPair.optional(),
+  })
+  .strict();
+
+export const accountLoyaltySchema = z
+  .object({
+    enabled: z.boolean(),
+    perkText: textPair.optional(),
+    tierNames: z
+      .object({
+        BRONZE: textPair.optional(),
+        SILVER: textPair.optional(),
+        GOLD: textPair.optional(),
+        PLATINUM: textPair.optional(),
+      })
+      .optional(),
+  })
+  .strict();
+
+export const supportPageSchema = z
+  .object({
+    phone: z.string().trim().max(40).optional(),
+    phoneDisplay: textPair.partial().optional(),
+    email: z.string().trim().email().max(200).optional(),
+    telegram: z.string().trim().max(100).optional(),
+    faq: faqSchema.optional(),
+  })
+  .strict();
+
 export const SITE_CONTENT_SCHEMAS: Record<SiteContentKey, z.ZodTypeAny> = {
   'home.hero': heroSchema,
   'home.promos': promosSchema,
@@ -120,6 +187,10 @@ export const SITE_CONTENT_SCHEMAS: Record<SiteContentKey, z.ZodTypeAny> = {
   'home.support': supportSectionSchema,
   'site.announcement': announcementSchema,
   'finance.fx_rates': fxRatesSchema,
+  'account.hero': accountHeroSchema,
+  'account.sidebar': accountSidebarSchema,
+  'account.loyalty': accountLoyaltySchema,
+  'support.page': supportPageSchema,
 };
 
 export type HeroOverride = z.infer<typeof heroSchema>;
@@ -129,6 +200,10 @@ export type FaqItemOverride = z.infer<typeof faqItemSchema>;
 export type AnnouncementOverride = z.infer<typeof announcementSchema>;
 export type FxRatesOverride = z.infer<typeof fxRatesSchema>;
 export type SupportOverride = z.infer<typeof supportSectionSchema>;
+export type AccountSidebarOverride = z.infer<typeof accountSidebarSchema>;
+export type AccountHeroOverride = z.infer<typeof accountHeroSchema>;
+export type AccountLoyaltyOverride = z.infer<typeof accountLoyaltySchema>;
+export type SupportPageOverride = z.infer<typeof supportPageSchema>;
 
 export interface SiteContentEntry {
   key: SiteContentKey;

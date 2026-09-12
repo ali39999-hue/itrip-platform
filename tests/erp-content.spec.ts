@@ -12,6 +12,9 @@ test.describe('ERP Content Management (CMS) Suite', () => {
     await expect(page).not.toHaveURL(/\/fa\/auth/);
     await expect(page.getByRole('heading', { name: /مدیریت تورها|Content Management/i, level: 1 })).toBeVisible({ timeout: 15000 });
 
+    // 2b. The CMS now opens on the "site pages" tab — switch to tours first.
+    await page.getByRole('tab', { name: /تورهای مسافرتی/i }).click();
+
     // 3. Tab 1: Tours modal check
     await page.getByRole('button', { name: /افزودن تور جدید/i }).first().click();
     await expect(page.getByRole('heading', { name: /افزودن پکیج تور مسافرتی جدید/i })).toBeVisible();

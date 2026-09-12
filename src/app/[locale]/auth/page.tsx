@@ -10,8 +10,17 @@ import { ScanLine, CheckCircle2, Loader2, User, Lock, LogIn, Mail, Phone, Send, 
 import { lt } from '@/lib/lt';
 import { Logo } from '@/components/layout/Logo';
 import { OtpPinInput } from '@/components/ui/OtpPinInput';
-import { AuthChannel, requestOtp, getWeChatAuthUrl } from '@/actions/auth';
+import { AuthChannel, requestOtp, getAuthCapabilities, updateProfileDetails } from '@/actions/auth';
 import type { TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
+
+interface AuthCapabilities {
+  google: boolean;
+  wechatQr: boolean;
+  telegramWidget: boolean;
+  telegramBot: boolean;
+  whatsappLive: boolean;
+  baleLive: boolean;
+}
 
 export default function AuthPage() {
   const t = useTranslations('Auth');
@@ -19,6 +28,15 @@ export default function AuthPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, loginWithPassword, loginWithTelegram, setKycStep, updateKyc, kyc, user } = useAuthStore();
+
+  const [capabilities, setCapabilities] = useState<AuthCapabilities | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    getAuthCapabilities().then((caps) => {
+      if (mounted) setCapabilities(caps);
+    }).catch(() => {});
+    return () => { mounted = false; };
+  }, []);
 
   // Return the visitor to where they came from (checkout, my-trips, wallet…).
   // Only accept safe internal paths.
@@ -67,6 +85,10 @@ export default function AuthPage() {
       try {
         const res = await loginWithTelegram(tgUser);
         if (res.success) {
+          if (useAuthStore.getState().user?.profileComplete === false) {
+            setKycStep('name_info');
+            return;
+          }
           router.push(callbackUrl);
         } else {
           setError(res.error || 'خطا در احراز هویت تلگرام');
@@ -90,7 +112,7 @@ export default function AuthPage() {
       script.async = true;
       container.appendChild(script);
     }
-  }, [channel, callbackUrl, loginWithTelegram, router]);
+  }, [channel, callbackUrl, loginWithTelegram, router, setKycStep]);
 
   const step = kyc?.step || 'phone';
 
@@ -142,8 +164,8 @@ export default function AuthPage() {
         return false;
       }
     } else if (channel === 'wechat') {
-      if (!identifier.trim()) {
-        setError(lt(locale, { fa: 'شناسه وی‌چت (WeChat ID) یا شماره موبایل الزامی است', en: 'WeChat ID or mobile phone required', ar: 'معرف وي تشات أو الجوال مطلوب', zh: '微信号或绑定的手机号必填', ru: 'Введите WeChat ID یا телефон' }));
+      if (!/^\+?\d{8,15}$/.test(identifier.replace(/[\s-]/g, ''))) {
+        setError(lt(locale, { fa: 'برای دریافت کد، شماره موبایل را وارد کنید (ورود اصلی WeChat از طریق QR است)', en: 'Enter your mobile number to receive the code (main WeChat login is via QR)', ar: 'أدخل رقم هاتفك لاستلام الرمز', zh: '请输入手机号以接收验证码', ru: 'Введите номер телефона для получения кода' }));
         return false;
       }
     } else if (channel === 'bale') {
@@ -162,6 +184,18 @@ export default function AuthPage() {
     try {
       const res = await requestOtp({ identifier: identifier.trim(), channel });
       if (!res.success) {
+        if (res.error === 'WECHAT_QR_REQUIRED') {
+          setError(
+            lt(locale, {
+              fa: 'ارسال کد به شناسه وی‌چت ممکن نیست؛ لطفاً از دکمه «اسکن بارکد WeChat» بالا استفاده کنید یا شماره موبایل خود را وارد کنید.',
+              en: 'WeChat IDs cannot receive codes; please use the "WeChat QR" button above or enter your mobile number.',
+              ar: 'لا يمكن إرسال الرمز إلى معرف وي تشات؛ استخدم زر QR أعلاه أو أدخل رقم هاتفك.',
+              zh: '无法向微信号发送验证码；请使用上方的“微信扫码”按钮或输入手机号。',
+              ru: 'Нельзя отправить код на WeChat ID; используйте кнопку QR выше или введите номер телефона.',
+            })
+          );
+          return;
+        }
         setError(
           res.error
             ? lt(locale, {
@@ -194,6 +228,12 @@ export default function AuthPage() {
         setError(lt(locale, { fa: 'کد تایید اشتباه یا منقضی شده است', en: 'Invalid or expired OTP code', ar: 'رمز التحقق غير صحيح أو منتهي الصلاحية', zh: '验证码错误或已过期', ru: 'Неверный или просроченный код' }));
         return;
       }
+      // ثبت‌نام اولیه: کاربرِ ناقص به‌جای هدایت به مقصد، وارد wizard تکمیل
+      // اطلاعات هویتی می‌شود (store هم kyc.step را name_info گذاشته است).
+      if (useAuthStore.getState().user?.profileComplete === false) {
+        setKycStep('name_info');
+        return;
+      }
       router.push(callbackUrl);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -215,6 +255,10 @@ export default function AuthPage() {
       const res = await loginWithPassword(identifier.trim(), password.trim());
       if (!res.success) {
         setError(res.error || lt(locale, { fa: 'اطلاعات ورود اشتباه است', en: 'Invalid credentials', ar: 'بيانات الدخول غير صحيحة', zh: '登录信息无效', ru: 'Неверные учетные данные' }));
+        return;
+      }
+      if (useAuthStore.getState().user?.profileComplete === false) {
+        setKycStep('name_info');
         return;
       }
       router.push(callbackUrl);
@@ -242,15 +286,44 @@ export default function AuthPage() {
     setKycStep('passport_scan');
   }
 
-  function finishKyc() {
-    if (!passportNo.trim() || !expiry) {
-      setError(lt(locale, { fa: 'اطلاعات پاسپورت را تکمیل یا اسکن کنید', en: 'Please scan or enter passport details', ar: 'يرجى مسح أو إدخال بيانات جواز السفر', zh: '请扫描或填写护照信息', ru: 'Отсканируйте или введите данные паспорта' }));
+  async function finishKyc() {
+    if (passportNo.trim() && !expiry) {
+      setError(lt(locale, { fa: 'تاریخ انقضای پاسپورت را وارد کنید', en: 'Passport expiry date is required', ar: 'تاريخ انتهاء جواز السفر مطلوب', zh: '请填写护照有效期', ru: 'Укажите срок действия паспорта' }));
       return;
     }
     setError('');
-    updateKyc({ passportNo, passportExpiry: expiry });
-    setKycStep('approved');
-    router.push(callbackUrl);
+    try {
+      // ذخیره سمت سرور (owner-only action) — قبلاً این داده‌ها فقط در کلاینت
+      // می‌ماندند و با رفرش از دست می‌رفتند.
+      const res = await updateProfileDetails({
+        firstNameFa: firstFa || kyc?.firstNameFa,
+        lastNameFa: lastFa || kyc?.lastNameFa,
+        ...(nationalId.trim() ? { nationalId: nationalId.trim() } : {}),
+        ...(passportNo.trim() ? { passportNo: passportNo.trim(), passportExpiry: expiry } : {}),
+      });
+      if (!res.success) {
+        setError(
+          res.error === 'Invalid profile data'
+            ? lt(locale, { fa: 'اطلاعات واردشده معتبر نیست (کد ملی ۱۰ رقمی و پاسپورت معتبر)', en: 'Invalid identity details (10-digit national ID / passport)', ar: 'بيانات الهوية غير صالحة', zh: '身份信息无效', ru: 'Неверные данные' })
+            : lt(locale, { fa: 'ذخیره اطلاعات ناموفق بود; دوباره تلاش کنید', en: 'Could not save your details; please retry', ar: 'فشل حفظ البيانات', zh: '保存失败', ru: 'Не удалось сохранить' })
+        );
+        return;
+      }
+      updateKyc({
+        firstNameFa: firstFa || kyc?.firstNameFa,
+        lastNameFa: lastFa || kyc?.lastNameFa,
+        ...(passportNo.trim() ? { passportNo: passportNo.trim(), passportExpiry: expiry } : {}),
+      });
+      // بنر «تکمیل اطلاعات» در حساب بلافاصله محو شود
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser) {
+        useAuthStore.setState({ user: { ...currentUser, profileComplete: true } });
+      }
+      setKycStep('approved');
+      router.push(callbackUrl);
+    } catch {
+      setError(lt(locale, { fa: 'خطای غیرمنتظره در ذخیره اطلاعات', en: 'Unexpected error while saving', ar: 'خطأ غير متوقع', zh: '意外错误', ru: 'Непредвиденная ошибка' }));
+    }
   }
 
   return (
@@ -291,7 +364,9 @@ export default function AuthPage() {
               </button>
             </div>
 
-            {/* Google OAuth 2.0 Direct Sign In */}
+            {/* Google OAuth 2.0 Direct Sign In — only rendered when the upstream
+                OAuth client is configured server-side (getAuthCapabilities) */}
+            {capabilities?.google && (
             <div className="mb-5">
               <button
                 type="button"
@@ -315,6 +390,7 @@ export default function AuthPage() {
                 <div className="flex-grow border-t border-line"></div>
               </div>
             </div>
+            )}
 
             {authMode === 'otp' ? (
               <>
@@ -419,7 +495,7 @@ export default function AuthPage() {
                 )}
 
                 {/* Telegram Login Widget Container */}
-                {channel === 'telegram' && (
+                {channel === 'telegram' && capabilities?.telegramWidget && (
                   <div className="mb-4 p-3 bg-soft/60 rounded-2xl flex flex-col items-center justify-center gap-2 border border-line">
                     <span className="text-[11px] font-bold text-sub">
                       {lt(locale, { fa: 'ورود سریع از طریق ویجت رسمی تلگرام:', en: 'Quick login via official Telegram widget:', ar: 'تسجيل دخول سريع عبر تيليجرام:', zh: '通过Telegram官方组件快速登录：', ru: 'Быстрый вход через Telegram:' })}
@@ -431,26 +507,74 @@ export default function AuthPage() {
                   </div>
                 )}
 
-                {/* WeChat QR Connect Button */}
+                {/* Telegram Bot Guidance — the Bot API can only message users who
+                    opened the bot once, so guide them to Start before OTP by handle */}
+                {channel === 'telegram' && (
+                  <div className="mb-4 p-3.5 bg-[#229ED9]/10 border border-[#229ED9]/30 rounded-2xl flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-[#229ED9]">
+                        {lt(locale, {
+                          fa: 'بازوی رسمی فیروزو در تلگرام',
+                          en: 'Official Firuzo Bot on Telegram',
+                          ar: 'بوت فيروزو الرسمي في تيليجرام',
+                          zh: 'Firuzo Telegram官方机器人',
+                          ru: 'Официальный бот Firuzo в Telegram',
+                        })}
+                      </span>
+                      {process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME && (
+                        <a
+                          href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] font-black bg-[#229ED9] text-white px-2.5 py-1 rounded-xl shadow-xs hover:opacity-90 transition"
+                        >
+                          {lt(locale, { fa: 'باز کردن ربات در تلگرام ↗', en: 'Open Bot ↗', ar: 'فتح البوت ↗', zh: '打开机器人 ↗', ru: 'Открыть бота ↗' })}
+                        </a>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-sub leading-relaxed">
+                      {lt(locale, {
+                        fa: 'تلگرام اجازه‌ی پیام خودکار به کاربرانِ بات را که یک‌بار Start نزده‌اند نمی‌دهد. برای دریافت سریع کد، ویجت بالای صفحه یا بازوی رسمی را باز کرده و «شروع» را بزنید.',
+                        en: 'Telegram does not allow bots to message users who never pressed Start. Use the widget above or open the official bot and press Start to receive your code instantly.',
+                        ar: 'لا يسمح تلجرام للبوتات بالمراسلة دون الضغط على ابدأ. استخدم الأداة أعلاه أو افتح البوت الرسمي واضغط ابدأ.',
+                        zh: 'Telegram不允许机器人主动向未按Start的用户发消息。请使用上方组件或打开官方机器人并点击“启动”。',
+                        ru: 'Telegram запрещает ботам писать пользователям без нажатия Start. Используйте виджет выше или откройте бота и нажмите Start.',
+                      })}
+                    </p>
+                  </div>
+                )}
+
+                {/* WeChat QR Login — native NextAuth OAuth flow (WebsiteApp QR on
+                    desktop, OfficialAccount authorize inside the WeChat browser) */}
                 {channel === 'wechat' && (
                   <div className="mb-4">
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const res = await getWeChatAuthUrl(callbackUrl);
-                        if (res.success && res.url) {
-                          window.location.href = res.url;
-                        } else {
-                          setError(res.error || lt(locale, { fa: 'شناسه WECHAT_APP_ID روی سرور تنظیم نشده است', en: 'WECHAT_APP_ID is not configured', ar: 'WECHAT_APP_ID غير مكوّن', zh: '未配置WECHAT_APP_ID', ru: 'WECHAT_APP_ID не настроен' }));
-                        }
-                      }}
-                      className="w-full h-11 rounded-xl bg-[#07C160]/10 hover:bg-[#07C160]/20 text-[#07C160] font-black text-xs transition flex items-center justify-center gap-2 border border-[#07C160]/30"
-                    >
-                      <QrCode size={16} />
-                      <span>{lt(locale, { fa: 'اسکن بارکد در اپلیکیشن وی‌چت (WeChat QR)', en: 'WeChat Web QR Code Login', ar: 'مسح رمز الاستجابة السريعة في وي تشات', zh: '微信网页版扫码登录', ru: 'Вход через QR-код WeChat' })}</span>
-                    </button>
+                    {capabilities?.wechatQr ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const isWeChatBrowser = /MicroMessenger/i.test(
+                            typeof navigator !== 'undefined' ? navigator.userAgent : ''
+                          );
+                          signIn(isWeChatBrowser ? 'wechat_mp' : 'wechat', { callbackUrl });
+                        }}
+                        className="w-full h-11 rounded-xl bg-[#07C160]/10 hover:bg-[#07C160]/20 text-[#07C160] font-black text-xs transition flex items-center justify-center gap-2 border border-[#07C160]/30 active:scale-[0.98]"
+                      >
+                        <QrCode size={16} />
+                        <span>{lt(locale, { fa: 'اسکن بارکد در اپلیکیشن وی‌چت (WeChat QR)', en: 'WeChat Web QR Code Login', ar: 'مسح رمز الاستجابة السريعة في وي تشات', zh: '微信网页版扫码登录', ru: 'Вход через QR-код WeChat' })}</span>
+                      </button>
+                    ) : (
+                      <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-[11px] font-bold">
+                        {lt(locale, {
+                          fa: 'ورود QR وی‌چت هنوز فعال نشده است (نیاز به WECHAT_APP_ID و WECHAT_APP_SECRET روی سرور). موقتاً با شماره موبایل وارد شوید.',
+                          en: 'WeChat QR login is not enabled yet (WECHAT_APP_ID / WECHAT_APP_SECRET required on the server). Please use your phone number for now.',
+                          ar: 'لم يتم تنشيط تسجيل الدخول عبر QR في وي تشات بعد. الرجاء استخدام رقم الهاتف.',
+                          zh: '微信扫码登录尚未启用，请暂时使用手机号登录。',
+                          ru: 'Вход по QR-коду WeChat пока не активирован. Используйте номер телефона.',
+                        })}
+                      </div>
+                    )}
                     <div className="text-center my-2 text-[10px] text-sub font-bold">
-                      {lt(locale, { fa: 'یا دریافت کد از طریق شناسه وی‌چت / شماره موبایل:', en: 'or receive OTP code via WeChat ID / mobile:', ar: 'أو استلام الرمز عبر معرف وي تشات:', zh: '或通过微信号接收验证码：', ru: 'или получить код через WeChat ID:' })}
+                      {lt(locale, { fa: 'یا دریافت کد از طریق شماره موبایل:', en: 'or receive OTP code via mobile number:', ar: 'أو استلام الرمز عبر رقم الهاتف:', zh: '或通过手机号接收验证码：', ru: 'или получить код по телефону:' })}
                     </div>
                   </div>
                 )}
@@ -463,7 +587,7 @@ export default function AuthPage() {
                       {channel === 'telegram' && lt(locale, { fa: 'شناسه تلگرام یا شماره', en: 'Telegram Username / Phone', ar: 'معرف تيليجرام أو الهاتف', zh: 'Telegram 用户名/手机号', ru: 'Telegram Username / Телефон' })}
                       {channel === 'bale' && lt(locale, { fa: 'شناسه بله یا شماره موبایل', en: 'Bale Username / Phone', ar: 'معرف بله أو الهاتف', zh: 'Bale 用户名/手机号', ru: 'Bale Username / Телефон' })}
                       {channel === 'whatsapp' && lt(locale, { fa: 'شماره واتساپ بین‌المللی', en: 'WhatsApp Number (+...)', ar: 'رقم الواتساب الدولي', zh: 'WhatsApp 国际号码', ru: 'Номер WhatsApp (+...)' })}
-                      {channel === 'wechat' && lt(locale, { fa: 'شناسه وی‌چت / WeChat ID', en: 'WeChat ID / Mobile', ar: 'معرف وي تشات', zh: '微信号 / 手机号', ru: 'WeChat ID / Телефон' })}
+                      {channel === 'wechat' && lt(locale, { fa: 'شماره موبایل متصل به WeChat', en: 'Mobile Number (WeChat channel)', ar: 'رقم الجوال (قناة وي تشات)', zh: '手机号 (WeChat 通道)', ru: 'Номер телефона (канал WeChat)' })}
                     </label>
                     <input
                       id="identifier"
@@ -479,7 +603,7 @@ export default function AuthPage() {
                         channel === 'telegram' ? '@traveler_user' :
                         channel === 'bale' ? '@bale_user or 0912...' :
                         channel === 'whatsapp' ? '+971501234567' :
-                        'wxid_firuzo2026'
+                        '+8613800138000'
                       }
                       className="w-full h-12 rounded-xl border border-line px-4 font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                     />
@@ -743,13 +867,11 @@ export default function AuthPage() {
                     return;
                   }
                   setError('');
-                  updateKyc({ 
-                    firstNameFa: firstFa, 
+                  updateKyc({
+                    firstNameFa: firstFa,
                     lastNameFa: lastFa,
-                    firstNameEn: kyc.firstNameEn || firstFa,
-                    lastNameEn: kyc.lastNameEn || lastFa,
                   });
-                  router.push(callbackUrl);
+                  setKycStep('identity');
                 }}
                 className="w-full h-12 rounded-xl bg-brand text-surface font-black text-sm hover:bg-brand-dark transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
@@ -824,6 +946,15 @@ export default function AuthPage() {
             </div>
             <h1 className="font-black text-2xl text-ink mb-2">{t('passportTitle')}</h1>
             <p className="text-xs font-bold text-sub mb-6">{t('passportSubtitle')}</p>
+            <p className="text-[11px] font-bold text-brand-dark bg-mint/60 border border-mint rounded-xl p-3 mb-6 leading-relaxed">
+              {lt(locale, {
+                fa: 'پاسپورت اختیاری است؛ اگر ندارید این بخش را خالی بگذارید. تکمیل نام و کد ملی برای صدور بلیط داخلی کافی است.',
+                en: 'Passport is optional — leave this section empty if you don’t have one. Name and national ID are enough for domestic ticketing.',
+                ar: 'جواز السفر اختياري؛ اتركه فارغاً إن لم يكن لديك. الاسم ورقم الهوية كافيان للتذاكر الداخلية.',
+                zh: '护照为可选项；没有可留空。国内出票只需姓名和身份证号。',
+                ru: 'Паспорт необязателен — оставьте поле пустым. Для внутренних билетов достаточно имени и национального ID.',
+              })}
+            </p>
 
             {error && <div className="p-3 mb-4 rounded-xl bg-destructive/10 text-destructive text-xs font-bold">{error}</div>}
 

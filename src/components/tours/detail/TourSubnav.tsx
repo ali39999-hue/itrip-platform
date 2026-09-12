@@ -26,7 +26,7 @@ export function TourSubnav({ activeSection, onSectionClick }: TourSubnavProps) {
       aria-label={lt(locale, { fa: 'ناوبری بخش‌های تور', en: 'Tour sections navigation', ar: 'التنقل بين أقسام الجولة', zh: '行程各部分导航', ru: 'Навигация по разделам тура' })}
       className="sticky top-16 z-40 border-y border-line/80 bg-surface/95 backdrop-blur-xl"
     >
-      <div className="max-w-[1280px] mx-auto px-4 md:px-10 flex items-center gap-1 overflow-x-auto scrollbar-none" role="tablist">
+      <div className="max-w-[1280px] mx-auto px-4 md:px-10 flex items-center gap-1 overflow-x-auto snap-x touch-pan-x scrollbar-none" role="tablist">
         {navItems.map((item) => (
           <button
             key={item.id}

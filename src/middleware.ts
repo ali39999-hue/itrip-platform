@@ -11,14 +11,19 @@ const intlMiddleware = createMiddleware(routing);
 
 // Define route access mapped strictly to canonical relational permissions (IAM-107)
 const ROUTE_REQUIRED_PERMISSIONS: Record<string, string[]> = {
+  '/admin/operator': ['booking:view:all'],
   '/admin/finance/settlements': ['finance:view', 'finance:reports:view', 'finance:settlement:match'],
   '/admin/finance': ['finance:view', 'finance:reports:view'],
-  '/admin/users': ['user:manage', 'ops:override:cancel'],
+  '/admin/users': ['user:manage'],
   '/admin/bookings': ['booking:view:all'],
   '/admin/ops': ['ops:override:cancel'],
   '/admin/content': ['catalog:hotels:edit', 'catalog:flights:edit'],
   '/admin/travel-files': ['booking:view:all', 'ops:override:cancel'],
   '/admin/exceptions': ['ops:override:cancel', 'booking:view:all'],
+  '/admin/suppliers': ['supplier:view'],
+  '/admin/inventory': ['inventory:view'],
+  '/admin/organizations': ['booking:view:all', 'user:manage'],
+  '/admin/referrals': ['booking:view:all'],
   '/admin': ['booking:view:all', 'ops:override:cancel', 'finance:view'], // general admin back-office access
 };
 

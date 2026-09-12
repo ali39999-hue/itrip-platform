@@ -132,10 +132,10 @@ export function PromotionalBanners({ override }: { override?: PromoBannerOverrid
 
   return (
     <section aria-label="Firuzo Exclusive Tour" className="w-full max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 2xl:px-8">
-      {/* H1 — بالا سمت راست */}
-      <h1 className="text-[22px] md:text-[28px] font-black tracking-tight text-ink text-start mb-5 md:mb-6">
+      {/* عنوان سکشن — h2 است؛ h1 صفحه در HeroSection است (هر صفحه فقط یک h1) */}
+      <h2 className="text-[22px] md:text-[28px] font-black tracking-tight text-ink text-start mb-5 md:mb-6">
         {heading}
-      </h1>
+      </h2>
 
       {/* Turquoise Glass Card */}
       <div className="relative overflow-hidden rounded-[1.75rem] md:rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#071e1e] via-[#0b3d3c] to-[#0f6b69] shadow-[0_20px_60px_rgba(3,40,38,0.35),0_8px_24px_rgba(0,0,0,0.18)]">

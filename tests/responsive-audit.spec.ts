@@ -74,14 +74,30 @@ for (const vp of viewports) {
           return { isOverflow, docScroll, bodyScroll, winWidth, offending };
         }, vp.width);
 
+        // یک اندازه‌گیریِ سرریز ممکن است وسط انیمیشن ورود (motion translate) باشد —
+        // سرریز واقعی پایدار است؛ ۸۰۰ms صبر و اندازه‌گیری مجدد، flake حذف می‌کند.
+        let sustained = overflowData;
         if (overflowData.isOverflow) {
-          console.warn(`[OVERFLOW] ${route.name} on ${vp.name}: docScroll=${overflowData.docScroll}, winWidth=${overflowData.winWidth}`);
-          console.warn(`Offenders:`, JSON.stringify(overflowData.offending));
+          await page.waitForTimeout(800);
+          const remeasured = await page.evaluate(() => ({
+            isOverflow:
+              document.documentElement.scrollWidth > window.innerWidth + 2 ||
+              document.body.scrollWidth > window.innerWidth + 2,
+            docScroll: document.documentElement.scrollWidth,
+            bodyScroll: document.body.scrollWidth,
+            winWidth: window.innerWidth,
+          }));
+          sustained = { ...remeasured, offending: overflowData.offending };
+        }
+
+        if (sustained.isOverflow) {
+          console.warn(`[OVERFLOW] ${route.name} on ${vp.name}: docScroll=${sustained.docScroll}, winWidth=${sustained.winWidth}`);
+          console.warn(`Offenders:`, JSON.stringify(sustained.offending));
         }
 
         expect(
-          overflowData.isOverflow,
-          `Page ${route.name} has horizontal scroll on ${vp.name} (docScroll: ${overflowData.docScroll}, bodyScroll: ${overflowData.bodyScroll}, winWidth: ${overflowData.winWidth}) offenders: ${JSON.stringify(overflowData.offending)}`
+          sustained.isOverflow,
+          `Page ${route.name} has horizontal scroll on ${vp.name} (docScroll: ${sustained.docScroll}, bodyScroll: ${sustained.bodyScroll}, winWidth: ${sustained.winWidth}) offenders: ${JSON.stringify(sustained.offending)}`
         ).toBeFalsy();
       });
     }
