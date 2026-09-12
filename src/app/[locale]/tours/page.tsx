@@ -145,13 +145,13 @@ function ToursContent() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-deep/90 via-deep/40 to-transparent" />
         <div className="relative z-10 text-center px-4 max-w-3xl py-6 sm:py-10">
-          <span className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-surface/15 backdrop-blur-md text-surface text-[11px] sm:text-xs font-black mb-3 sm:mb-4 border border-surface/20">
+          <span className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-white/15 backdrop-blur-md text-white text-[11px] sm:text-xs font-black mb-3 sm:mb-4 border border-white/20">
             <Tent size={13} className="text-mint-bright" /> {lt(locale, { fa: 'تجربه‌های دست‌چین و برنامه‌ریزی‌شده', en: 'Curated Travel Experiences', ar: 'تجارب سفر منتقاهاً بعناية', zh: '精选旅行体验', ru: 'Тщательно отобранные впечатления' })}
           </span>
-          <h1 className="text-surface mb-2 sm:mb-3 text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
+          <h1 className="text-white hero-glow-text mb-2 sm:mb-3 text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
             {t('title')} · {c?.flag} {countryName(country, locale)}
           </h1>
-          <p className="text-surface/90 text-xs sm:text-base md:text-lg leading-relaxed max-w-xl mx-auto">
+          <p className="text-white/90 hero-glow-sub text-xs sm:text-base md:text-lg leading-relaxed max-w-xl mx-auto">
             {t('subtitle')}
           </p>
         </div>

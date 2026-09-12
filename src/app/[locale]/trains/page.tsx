@@ -140,8 +140,8 @@ export default function TrainsPage() {
         <div className="absolute inset-0 bg-brand-dark/70 mix-blend-multiply" />
         
         <div className="relative z-10 w-full px-4 md:px-6 flex flex-col items-center text-center pt-8">
-          <h1 className="text-[32px] md:text-[44px] font-black text-surface mb-2 tracking-tight">{t('title')}</h1>
-          <p className="text-sm sm:text-base md:text-lg font-bold text-surface/90 mb-8 max-w-xl">{t('subtitle')}</p>
+          <h1 className="text-[32px] md:text-[44px] font-black text-white hero-glow-text mb-2 tracking-tight">{t('title')}</h1>
+          <p className="text-sm sm:text-base md:text-lg font-bold text-white/90 hero-glow-sub mb-8 max-w-xl">{t('subtitle')}</p>
           
           {/* Search Floating Card */}
           <div className="glass-panel shadow-elev-2 rounded-2xl p-4 sm:p-6 w-full max-w-4xl mx-auto">

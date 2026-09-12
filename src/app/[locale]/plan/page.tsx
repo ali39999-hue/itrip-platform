@@ -9,7 +9,6 @@ import { PlannerWizard, QUESTIONS } from '@/components/plan/PlannerWizard';
 import { PlannerResult } from '@/components/plan/PlannerResult';
 import { FiruzoAiLoading } from '@/components/shared/FiruzoAiLoading';
 import { parseNaturalQuery } from '@/lib/natural-query';
-export { parseNaturalQuery };
 
 export default function PlanPage() {
   const locale = useLocale();

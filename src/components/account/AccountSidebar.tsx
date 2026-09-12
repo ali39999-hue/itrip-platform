@@ -4,6 +4,8 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Link, useRouter } from '@/i18n/routing';
 import { useAuthStore } from '@/stores/auth-store';
 import { lt } from '@/lib/lt';
+import { num } from '@/lib/format';
+import { getLoyaltyTierLabel } from '@/lib/loyalty';
 import {
   LayoutGrid,
   PlaneTakeoff,
@@ -43,6 +45,9 @@ export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps)
       });
 
   const initials = (user?.firstNameFa?.[0] || user?.firstNameEn?.[0] || 'ف').toUpperCase();
+  const loyaltyTier = user?.loyaltyTier || 'BRONZE';
+  const loyaltyPoints = user?.loyaltyPoints ?? 0;
+  const tierLabel = getLoyaltyTierLabel(loyaltyTier, locale);
 
   return (
     <aside className="lg:w-72 flex flex-col gap-2 bg-surface shadow-xs rounded-3xl h-fit lg:sticky top-24 shrink-0 border border-line overflow-hidden">
@@ -54,18 +59,22 @@ export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps)
         <h2 className="text-[17px] font-black text-ink mb-1">{userName}</h2>
         
         {/* Loyalty Tier Badge */}
-        <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-gold-soft border border-action/20 text-price text-[11px] font-black">
-          <Star size={12} className="fill-action text-action" />
-          <span>{lt(locale, { fa: 'مسافر طلایی فیروزو', en: 'Gold Traveler', ar: 'مسافر ذهبي', zh: '黄金旅客', ru: 'Золотой уровень' })}</span>
+        <div className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full border text-[11px] font-black ${
+          loyaltyTier === 'BRONZE'
+            ? 'bg-soft border-line/60 text-sub'
+            : 'bg-gold-soft border-action/20 text-price'
+        }`}>
+          <Star size={12} className={loyaltyTier === 'BRONZE' ? 'text-sub' : 'fill-action text-action'} />
+          <span>{tierLabel}</span>
         </div>
         
         <p className="font-bold text-[11.5px] text-sub mt-2">
           {lt(locale, {
-            fa: '۲,۵۰۰ امتیاز باشگاه مشتریان',
-            en: '2,500 Reward Points',
-            ar: '2,500 نقطة مكافآت',
-            zh: '2,500 奖励积分',
-            ru: '2 500 баллов лояльности',
+            fa: `${num(loyaltyPoints, locale)} امتیاز باشگاه مشتریان`,
+            en: `${num(loyaltyPoints, locale)} Reward Points`,
+            ar: `${num(loyaltyPoints, locale)} نقطة مكافآت`,
+            zh: `${num(loyaltyPoints, locale)} 奖励积分`,
+            ru: `${num(loyaltyPoints, locale)} баллов лояльности`,
           })}
         </p>
       </div>

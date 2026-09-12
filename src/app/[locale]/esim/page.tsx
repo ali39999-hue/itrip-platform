@@ -76,13 +76,13 @@ export default function EsimPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-soft via-brand-dark/50 to-transparent mix-blend-multiply" />
         
         <div className="relative z-10 w-full max-w-2xl px-4 flex flex-col items-center text-center pt-8">
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-surface/20 backdrop-blur-md text-mint-bright text-xs font-black mb-3 border border-surface/20">
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-mint-bright text-xs font-black mb-3 border border-white/20">
             <Zap size={14} />
             <span>{lt(locale, { fa: 'تحویل و صدور آنی بارکد فعال‌سازی در کمتر از ۶۰ ثانیه', en: 'Instant QR code delivery in under 60 seconds', ar: 'تسليم فوري لرمز التفعيل في أقل من 60 ثانية', zh: '60秒内极速生成激活二维码', ru: 'Мгновенная доставка QR-кода' })}</span>
           </span>
 
-          <h1 className="text-[32px] md:text-[44px] font-black text-surface mb-3 tracking-tight drop-shadow-md">{t('title')}</h1>
-          <p className="text-sm sm:text-base md:text-lg font-bold text-surface/90 mb-6 max-w-lg leading-relaxed">
+          <h1 className="text-[32px] md:text-[44px] font-black text-white hero-glow-text mb-3 tracking-tight drop-shadow-md">{t('title')}</h1>
+          <p className="text-sm sm:text-base md:text-lg font-bold text-white/90 hero-glow-sub mb-6 max-w-lg leading-relaxed">
             {t('subtitle')}
           </p>
           

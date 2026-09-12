@@ -1,11 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import {
-  Vazirmatn,
-  Geist_Mono,
-  Plus_Jakarta_Sans,
-  Noto_Sans,
-  Noto_Sans_SC,
-} from "next/font/google";
 import localFont from "next/font/local";
 import "../globals.css";
 import {NextIntlClientProvider} from 'next-intl';
@@ -88,45 +81,19 @@ const yekanBakh = localFont({
   display: "swap",
 });
 
-const vazirmatn = Vazirmatn({
-  variable: "--font-vazirmatn",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "500", "700", "800", "900"],
-  preload: false,
-});
-
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: "../../../public/fonts/geist/GeistMono-Variable.woff2",
   variable: "--font-geist-mono",
-  subsets: ["latin"],
-  preload: false,
-});
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  preload: false,
-});
-
-const notoSans = Noto_Sans({
-  variable: "--font-noto",
-  subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "700", "900"],
-  preload: false,
-});
-
-const notoSansSC = Noto_Sans_SC({
-  variable: "--font-noto-sc",
-  weight: ["400", "500", "700", "900"],
-  preload: false,
+  display: "swap",
+  weight: "100 900",
 });
 
 const LOCALE_FONT: Record<string, { variable: string }> = {
   fa: iranYekan,
-  ar: vazirmatn,
-  en: plusJakartaSans,
-  ru: notoSans,
-  zh: notoSansSC,
+  ar: iranYekan,
+  en: iranYekan,
+  ru: iranYekan,
+  zh: iranYekan,
 };
 
 function localeFont(locale: string) {
@@ -140,10 +107,22 @@ const LOCALE_FONT_VAR: Record<string, { sans: string; heading: string }> = {
     sans: 'var(--font-iranyekan), IRANYekanXFaNum, IRANYekanX, var(--font-yekan-bakh), "Yekan Bakh", sans-serif',
     heading: 'var(--font-iranyekan), IRANYekanXFaNum, IRANYekanX, var(--font-yekan-bakh), "Yekan Bakh", sans-serif'
   },
-  ar: { sans: 'var(--font-vazirmatn)', heading: 'var(--font-vazirmatn)' },
-  en: { sans: 'var(--font-jakarta)', heading: 'var(--font-jakarta)' },
-  ru: { sans: 'var(--font-noto)', heading: 'var(--font-noto)' },
-  zh: { sans: 'var(--font-noto-sc)', heading: 'var(--font-noto-sc)' },
+  ar: {
+    sans: 'var(--font-iranyekan), IRANYekanXFaNum, IRANYekanX, var(--font-yekan-bakh), "Yekan Bakh", "Segoe UI", Tahoma, sans-serif',
+    heading: 'var(--font-iranyekan), IRANYekanXFaNum, IRANYekanX, var(--font-yekan-bakh), "Yekan Bakh", "Segoe UI", Tahoma, sans-serif'
+  },
+  en: {
+    sans: 'var(--font-jakarta, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif)',
+    heading: 'var(--font-jakarta, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif)'
+  },
+  ru: {
+    sans: 'var(--font-noto, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif)',
+    heading: 'var(--font-noto, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif)'
+  },
+  zh: {
+    sans: 'var(--font-noto-sc, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif)',
+    heading: 'var(--font-noto-sc, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif)'
+  },
 };
 
 import { AppChrome } from '@/components/layout/AppChrome';
@@ -227,7 +206,7 @@ export default async function RootLayout({
       dir={dir}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
-      className={`${font.variable} ${plusJakartaSans.variable} ${iranYekan.variable} ${yekanBakh.variable} ${vazirmatn.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${font.variable} ${iranYekan.variable} ${yekanBakh.variable} ${geistMono.variable} h-full antialiased`}
       style={
         {
           '--font-app-sans': (LOCALE_FONT_VAR[locale] ?? LOCALE_FONT_VAR.fa).sans,

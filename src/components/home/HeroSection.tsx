@@ -61,16 +61,16 @@ export function HeroSection({ override }: { override?: HeroOverride } = {}) {
       {/* Hero content + immediate search */}
       <div className="relative z-[70] w-full max-w-[1440px] px-2.5 sm:px-4 md:px-6 2xl:px-8 mx-auto flex flex-col items-center">
         {/* Concise Mobile Heading & Editorial Desktop Typography */}
-        <h1 className="text-surface text-center mb-1.5 md:mb-2 max-w-4xl text-xl sm:text-3xl md:text-5xl lg:text-[48px] leading-[1.3] font-black drop-shadow-md">
+        <h1 className="text-white dark:text-white hero-glow-text text-center mb-1.5 md:mb-2 max-w-4xl text-xl sm:text-3xl md:text-5xl lg:text-[48px] leading-[1.3] font-black drop-shadow-md tracking-tight">
           {cmsTitle ? (
             cmsTitle
           ) : (
             <>
-              {t('titleA')} <span className="text-mint-bright">{t('titleB')}</span> {t('titleC')}
+              {t('titleA')} <span className="text-mint-bright dark:text-[#a5f3fc] hero-glow-brand">{t('titleB')}</span> {t('titleC')}
             </>
           )}
         </h1>
-        <p className="hidden sm:block text-surface/90 text-center font-bold mb-4 md:mb-8 max-w-2xl text-xs sm:text-sm md:text-base leading-relaxed drop-shadow-sm">
+        <p className="hidden sm:block text-white/95 dark:text-white/90 hero-glow-sub text-center font-bold mb-4 md:mb-8 max-w-2xl text-xs sm:text-sm md:text-base leading-relaxed drop-shadow-sm">
           {cmsSubtitle || t('subtitle')}
         </p>
 

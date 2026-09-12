@@ -95,10 +95,10 @@ export default function VisaPage() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-deep/90 via-deep/40 to-transparent" />
         <div className="relative z-10 text-center px-4 max-w-3xl py-14">
-          <h1 className="text-surface mb-4 text-[32px] md:text-[40px] leading-tight font-black tracking-tight">
+          <h1 className="text-white hero-glow-text mb-4 text-[32px] md:text-[40px] leading-tight font-black tracking-tight">
             {t('title')}
           </h1>
-          <p className="text-surface/90 mb-8 text-[16px] md:text-[18px] leading-relaxed max-w-xl mx-auto">
+          <p className="text-white/90 hero-glow-sub mb-8 text-[16px] md:text-[18px] leading-relaxed max-w-xl mx-auto">
             {t('subtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

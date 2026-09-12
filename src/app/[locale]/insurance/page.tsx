@@ -67,17 +67,17 @@ export default function InsurancePage() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-deep via-deep/40 to-transparent" />
           <div className="relative z-10 text-center px-4 max-w-3xl flex flex-col items-center gap-3 py-10">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-surface/15 backdrop-blur-md text-mint-bright text-xs font-black border border-surface/20">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/15 backdrop-blur-md text-mint-bright text-xs font-black border border-white/20">
               <Award size={14} />
               <span>{lt(locale, { fa: 'بیمه‌نامه معتبر مورد تایید سفارتخانه‌ها و کنسولگری‌های حوزه شنگن', en: 'Schengen & Embassy Approved Travel Policy', ar: 'وثيقة تأمين معتمدة لسفارات شنغن', zh: '申根签证及全球使领馆认可保单', ru: 'Полис, аккредитованный посольствами Шенгена' })}</span>
             </span>
 
-            <h1 className="font-black text-3xl sm:text-4xl md:text-5xl text-surface tracking-tight leading-tight">{t('title')}</h1>
-            <p className="font-bold text-sm sm:text-base md:text-lg text-surface/90 max-w-xl">
+            <h1 className="font-black text-3xl sm:text-4xl md:text-5xl text-white hero-glow-text tracking-tight leading-tight">{t('title')}</h1>
+            <p className="font-bold text-sm sm:text-base md:text-lg text-white/90 hero-glow-sub max-w-xl">
               {t('subtitle')}
             </p>
 
-            <div className="flex items-center gap-2 mt-2 bg-surface/15 backdrop-blur-md px-5 py-2 rounded-full border border-surface/20 text-xs font-bold text-surface">
+            <div className="flex items-center gap-2 mt-2 bg-white/15 backdrop-blur-md px-5 py-2 rounded-full border border-white/20 text-xs font-bold text-white">
               <ShieldCheck className="text-mint-bright shrink-0" size={16} />
               <span>{lt(locale, { fa: 'پوشش فوریت‌های پزشکی و گم شدن بار با پشتیبانی ۲۴ ساعته', en: '24/7 International Emergency Medical & Baggage Cover', ar: 'دعم طبي دولي على مدار الساعة', zh: '24/7 全球紧急医疗救援', ru: 'Круглосуточная медицинская поддержка' })}</span>
             </div>

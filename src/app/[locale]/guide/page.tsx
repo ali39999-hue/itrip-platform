@@ -170,13 +170,13 @@ export default function GuidePage() {
         />
         <div className="absolute inset-0 z-0 bg-gradient-to-t from-deep/90 via-deep/40 to-transparent" />
         <div className="relative z-10 w-full max-w-2xl">
-          <span className="inline-block px-4 py-1.5 bg-brand text-surface font-black text-[13px] rounded-full mb-4 shadow-sm backdrop-blur-md">
+          <span className="inline-block px-4 py-1.5 bg-brand text-white font-black text-[13px] rounded-full mb-4 shadow-sm backdrop-blur-md">
             {lt(locale, { fa: 'راهنمای سفر', en: 'Travel Guide', ar: 'دليل السفر', zh: '旅行指南', ru: 'Гид по путешествиям' })}
           </span>
-          <h1 className="font-black text-[32px] md:text-[40px] text-surface mb-4 leading-tight">
+          <h1 className="font-black text-[32px] md:text-[40px] text-white hero-glow-text mb-4 leading-tight">
             {lt(locale, { fa: 'کشف شگفتی‌های پنهان، سفر به قلب تاریخ', en: 'Discover Hidden Wonders, Journey into History', ar: 'اكتشف الروائع الخفية، وسافر إلى قلب التاريخ', zh: '探索隐秘奇观，漫游历史核心', ru: 'Откройте скрытые чудеса и отправьтесь в сердце истории' })}
           </h1>
-          <p className="font-bold text-[16px] md:text-[18px] text-surface/90 mb-8 leading-relaxed">
+          <p className="font-bold text-[16px] md:text-[18px] text-white/90 hero-glow-sub mb-8 leading-relaxed">
             {lt(locale, { fa: 'از کوچه پس کوچه‌های باستانی تا مناظر طبیعی بکر، ما راهنمای شما در کشف بهترین مقاصد گردشگری هستیم.', en: 'From ancient alleys to pristine natural landscapes, we guide you to the finest destinations.', ar: 'من الأزقة القديمة إلى الطبيعة البكر، نحن دليلك لاكتشاف أفضل الوجهات.', zh: '从古老街巷到纯净自然，我们指引您探寻绝美胜地。', ru: 'От старинных улочек до первозданной природы — ваш надежный гид.' })}
           </p>
           <Button 

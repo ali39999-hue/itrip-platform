@@ -23,6 +23,8 @@ import {
   Briefcase,
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
+import { num } from '@/lib/format';
+import { getLoyaltyConfig, getLoyaltyTierLabel } from '@/lib/loyalty';
 
 export default function AccountPage() {
   const locale = useLocale();
@@ -151,6 +153,10 @@ export default function AccountPage() {
   }
 
   const kycDone = user.kycApproved;
+  const loyaltyTier = user.loyaltyTier || 'BRONZE';
+  const loyaltyPoints = user.loyaltyPoints ?? 0;
+  const tierConfig = getLoyaltyConfig(loyaltyPoints, locale);
+  const tierLabel = getLoyaltyTierLabel(loyaltyTier, locale);
 
   return (
     <div className="flex flex-col md:flex-row w-full max-w-[1280px] mx-auto px-4 md:px-10 py-6 md:py-8 gap-6 md:gap-8">
@@ -166,7 +172,15 @@ export default function AccountPage() {
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-surface/15 text-xs font-bold mb-2 backdrop-blur-xs">
               <Sparkles size={13} />
-              <span>{lt(locale, { fa: 'سطح کاربری: مسافر طلایی فیروزو', en: 'Tier: Gold Traveler', ar: 'المستوى: مسافر ذهبي', zh: '会员等级：黄金旅客', ru: 'Уровень: Золотой' })}</span>
+              <span>
+                {lt(locale, {
+                  fa: `سطح کاربری: ${tierLabel}`,
+                  en: `Tier: ${tierLabel}`,
+                  ar: `المستوى: ${tierLabel}`,
+                  zh: `会员等级：${tierLabel}`,
+                  ru: `Уровень: ${tierLabel}`,
+                })}
+              </span>
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-black">
               {lt(locale, { fa: 'خوش آمدید،', en: 'Welcome back,', ar: 'أهلاً بك،', zh: '欢迎回来，', ru: 'Добро пожаловать,' })} {localizedUserName || user.firstNameFa || user.phone}
@@ -209,15 +223,38 @@ export default function AccountPage() {
         <div className="bg-surface rounded-2xl p-4 sm:p-5 border border-line shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex-1 space-y-1.5">
             <div className="flex justify-between items-center text-xs font-black">
-              <span className="text-ink">سطح طلایی (۲,۵۰۰ امتیاز)</span>
-              <span className="text-brand-dark">پلاتینیوم (۵,۰۰۰ امتیاز)</span>
+              <span className="text-ink">
+                {tierConfig.currentTierLabel} ({num(loyaltyPoints, locale)} {lt(locale, { fa: 'امتیاز', en: 'pts', ar: 'نقطة', zh: '分', ru: 'баллов' })})
+              </span>
+              {tierConfig.nextTierLabel && (
+                <span className="text-brand-dark">
+                  {tierConfig.nextTierLabel} ({num(tierConfig.targetPoints, locale)} {lt(locale, { fa: 'امتیاز', en: 'pts', ar: 'نقطة', zh: '分', ru: 'баллов' })})
+                </span>
+              )}
             </div>
             <div className="w-full h-2 rounded-full bg-soft overflow-hidden border border-line/60">
-              <div className="h-full bg-gradient-to-r from-action to-gold-light rounded-full" style={{ width: '50%' }} />
+              <div
+                className="h-full bg-gradient-to-r from-action to-gold-light rounded-full transition-all duration-500"
+                style={{ width: `${tierConfig.progressPercent}%` }}
+              />
             </div>
           </div>
           <span className="text-[11.5px] text-sub font-bold shrink-0">
-            ۲,۵۰۰ امتیاز تا سالن تشریفات اختصاصی فرودگاه (CIP)
+            {tierConfig.pointsToNextTier > 0
+              ? lt(locale, {
+                  fa: `${num(tierConfig.pointsToNextTier, locale)} امتیاز تا پلهٔ بعدی (${tierConfig.nextTierLabel})`,
+                  en: `${num(tierConfig.pointsToNextTier, locale)} points to next tier (${tierConfig.nextTierLabel})`,
+                  ar: `${num(tierConfig.pointsToNextTier, locale)} نقطة حتى المستوى التالي (${tierConfig.nextTierLabel})`,
+                  zh: `距离下一等级（${tierConfig.nextTierLabel}）还需 ${num(tierConfig.pointsToNextTier, locale)} 积分`,
+                  ru: `До следующего уровня (${tierConfig.nextTierLabel}): ${num(tierConfig.pointsToNextTier, locale)} баллов`,
+                })
+              : lt(locale, {
+                  fa: 'شما در بالاترین سطح وفاداری فیروزو قرار دارید',
+                  en: 'You are at the highest Firuzo loyalty tier',
+                  ar: 'أنت في أعلى مستوى ولاء لدى فيروزو',
+                  zh: '您已处于最高会员等级',
+                  ru: 'Вы находитесь на высшем уровне программы лояльности',
+                })}
           </span>
         </div>
 

@@ -23,6 +23,8 @@ interface User {
   lastNameEn?: string;
   kycApproved: boolean;
   role: 'customer' | 'admin';
+  loyaltyTier?: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM' | 'VIP';
+  loyaltyPoints?: number;
   channel?: AuthChannel;
   telegramId?: string;
   whatsappPhone?: string;
@@ -154,6 +156,8 @@ export const useAuthStore = create<AuthState>()(
                 lastNameEn: state.user.lastNameEn,
                 kycApproved: state.user.kycApproved,
                 role: state.user.role,
+                loyaltyTier: state.user.loyaltyTier,
+                loyaltyPoints: state.user.loyaltyPoints,
                 channel: state.user.channel,
                 telegramId: state.user.telegramId,
                 whatsappPhone: state.user.whatsappPhone,
