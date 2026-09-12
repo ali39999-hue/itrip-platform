@@ -168,7 +168,8 @@ export interface BookingPassenger {
   passportNo: string;
   nationalId?: string;
   birthDate: string;
-  gender: 'male' | 'female';
+  /** Matches the canonical zod Gender and Prisma `gender String?` values. */
+  gender: 'MALE' | 'FEMALE' | 'OTHER';
 }
 
 export interface Booking {
@@ -188,20 +189,10 @@ export interface Booking {
   qrPayload?: string;
 }
 
-export interface WalletTransaction {
-  id: string;
-  type: 'deposit' | 'withdraw' | 'exchange' | 'payment' | 'refund';
-  wallet: 'IRR' | 'USDT' | 'AED' | 'USD' | 'CNY';
-  amount: number;
-  resultAmount?: number;
-  resultWallet?: 'IRR' | 'USDT' | 'AED' | 'USD' | 'CNY';
-  description: string;
-  createdAt: string;
-  status: 'completed' | 'locked' | 'failed';
-}
-
 export interface KycProfile {
-  step: 'phone' | 'otp' | 'name_info' | 'identity' | 'passport_scan' | 'approved';
+  // KYC wizard steps (name_info/identity/passport_scan) were removed when
+  // enforcement moved to the checkout funnel — login only walks phone → otp.
+  step: 'phone' | 'otp' | 'approved';
   phone?: string;
   firstNameFa?: string;
   lastNameFa?: string;

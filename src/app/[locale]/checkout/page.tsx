@@ -491,7 +491,7 @@ export default function CheckoutPage() {
       passportNo: p.passportNo,
       nationalId: p.nationalId ?? '',
       birthDate: p.birthDate,
-      gender: p.gender === 'FEMALE' ? 'female' : 'male',
+      gender: p.gender,
     }));
 
     setPassengers(allBps);
