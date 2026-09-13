@@ -149,11 +149,6 @@ export function PassengerSection({
               <button
                 type="button"
                 onClick={() => setModalOpen(true)}
-                onMouseEnter={() => {
-                  if (!passportScanned && !scanning) {
-                    setModalOpen(true);
-                  }
-                }}
                 disabled={scanning}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-action hover:bg-action-hover text-ink text-[13px] font-black shadow-elev-1 transition disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer"
               >

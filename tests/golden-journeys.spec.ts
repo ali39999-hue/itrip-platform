@@ -57,12 +57,14 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     await page.waitForURL(/\/fa\/checkout/);
     await expect(page.locator('h1, h2').first()).toBeVisible();
 
-    // Fill the passenger form via the smart OCR scan (fills all required
-    // fields deterministically, including birth date).
+    // Fill the passenger form via the smart OCR scan modal (the gallery upload
+    // path runs the deterministic mock OCR and fills all required fields).
     const scanBtn = page.locator('button:has-text("اسکن هوشمند پاسپورت")').first();
     await expect(scanBtn).toBeVisible({ timeout: 10000 });
     await scanBtn.click();
-    await page.waitForTimeout(2200); // scan animation (~1.4s) fills the form
+    const scanFileInput = page.locator('input[type="file"]').first();
+    await scanFileInput.setInputFiles('tests/fixtures/passport-sample.png');
+    await page.waitForTimeout(2200); // mock OCR (~1.2s) fills the form
 
     // Submit to payment phase
     const nextBtn = page.locator('button[type="submit"]').first();
@@ -150,13 +152,15 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     await continueBtn.click();
     await page.waitForURL(/\/fa\/checkout/, { timeout: 15000 });
 
-    // 4. Fill the passenger form via the smart OCR scan (fills all required
-    // fields, including birth date), then submit — this creates the booking
+    // 4. Fill the passenger form via the smart OCR scan modal (gallery upload
+    // path, deterministic mock OCR), then submit — this creates the booking
     // draft with encrypted passenger PII.
     const scanBtn = page.locator('button:has-text("اسکن هوشمند پاسپورت")').first();
     await expect(scanBtn).toBeVisible({ timeout: 10000 });
     await scanBtn.click();
-    await page.waitForTimeout(2200); // scan animation (~1.4s) fills the form
+    const scanFileInput = page.locator('input[type="file"]').first();
+    await scanFileInput.setInputFiles('tests/fixtures/passport-sample.png');
+    await page.waitForTimeout(2200); // mock OCR (~1.2s) fills the form
     const submitBtn = page.locator('button[type="submit"]').first();
     await expect(submitBtn).toBeVisible();
     await submitBtn.click();
