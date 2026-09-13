@@ -9,7 +9,9 @@ import { encryptSensitive } from '@/lib/security/crypto-vault';
 import { createLogger } from '@/lib/observability/logger';
 import { ProductionTelegramProvider, TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
 import { getNotificationProvider } from '@/domains/events/NotificationProvider';
+import { ProductionWhatsappProvider } from '@/domains/events/providers/ProductionWhatsappProvider';
 import { ProductionSmswbsProvider, normalizeToIranE164 } from '@/domains/events/providers/ProductionSmswbsProvider';
+import WeChatProvider from 'next-auth/providers/wechat';
 
 const authLogger = createLogger('auth-service');
 
@@ -28,17 +30,28 @@ declare module 'next-auth' {
 let secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
 if (!secret) {
   if (process.env.NODE_ENV === 'production') {
-    secret = 'kw5uW6Ry8QMeXKfj8xDzbiRVVKvGo_7sRGEGhsI9mMIg0z5mJm8Ix8HxGpbHbhCO';
-    console.warn('[auth] AUTH_SECRET or NEXTAUTH_SECRET was missing in production, applied default platform secret.');
-  } else {
-    secret = 'dev-only-insecure-secret-never-use-in-production';
+    throw new Error('FATAL SECURITY ERROR: AUTH_SECRET or NEXTAUTH_SECRET must be configured in production.');
   }
+  secret = 'dev-only-insecure-secret-never-use-in-production';
 }
 const resolvedSecret = secret;
 
 const DEMO_MODE = process.env.DEMO_MODE === 'true' && process.env.NODE_ENV !== 'production';
 const OTP_TTL_MINUTES = 5;
 const OTP_MAX_ATTEMPTS = 5;
+
+/**
+ * Whether any real SMS provider is configured. When true, OTP delivery failures
+ * must surface as real errors — never silently degrade to the dev simulator.
+ */
+function hasRealSmsProvider(): boolean {
+  return Boolean(
+    (process.env.SMSWBS_USERNAME && process.env.SMSWBS_PASSWORD) ||
+    process.env.KAVENEGAR_API_KEY ||
+    process.env.SMS_PROVIDER_API_KEY ||
+    process.env.FARAZ_SMS_API_KEY
+  );
+}
 
 /**
  * Normalizes user identifier input by converting Persian and Arabic numerals to English ASCII numerals.
@@ -138,10 +151,18 @@ export async function issueOtp(
           realSent = true;
           providerUsed = dispatch.provider;
           dispatchError = undefined;
-        } else if (process.env.NODE_ENV !== 'production' || process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.DEMO_MODE === 'true') {
+        } else if (
+          dispatch?.success &&
+          dispatch.provider === 'console-simulator' &&
+          !hasRealSmsProvider() &&
+          (process.env.NODE_ENV !== 'production' || process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.DEMO_MODE === 'true')
+        ) {
+          // No real SMS provider exists at all — safe dev simulation is the honest path.
           providerUsed = 'console-simulator';
           dispatchError = undefined;
         }
+        // When a real provider IS configured but delivery failed, keep dispatchError:
+        // callers fail closed with the actual error instead of degrading login to a demo box.
       } catch (fallbackErr) {
         console.warn('[issueOtp] SMS fallback notice:', fallbackErr);
       }
@@ -201,7 +222,28 @@ export async function issueOtp(
       } else if (channel === 'telegram') {
         dispatch = await notificationProvider.sendTelegram(identifier, otpMessage);
       } else if (channel === 'whatsapp') {
-        dispatch = await notificationProvider.sendWhatsApp(identifier, otpMessage);
+        // Business-initiated WhatsApp messages outside the 24-hour service window
+        // MUST use a pre-approved template, so try the OTP template first and fall
+        // back to free-form (which still works inside an open customer session).
+        const whatsapp = new ProductionWhatsappProvider();
+        dispatch = await whatsapp.sendWhatsAppOtp(identifier, code);
+        if (!dispatch.success) {
+          dispatch = await notificationProvider.sendWhatsApp(identifier, otpMessage);
+        }
+      } else if (channel === 'wechat') {
+        // WeChat has no generic message API for arbitrary IDs. If the identifier is
+        // a phone number, SMS delivery is still possible; otherwise direct the user
+        // to the WeChat QR login (the only reliable WeChat authentication path).
+        const looksLikePhone = /^\+?\d{8,15}$/.test(identifier.replace(/[\s-]/g, ''));
+        if (looksLikePhone) {
+          dispatch = await notificationProvider.sendSms(identifier, otpMessage);
+        } else {
+          dispatch = {
+            success: false,
+            error: 'WECHAT_QR_REQUIRED',
+            provider: 'wechat-qr-guidance',
+          };
+        }
       } else if (channel === 'email' || (identifier && identifier.includes('@') && !identifier.startsWith('@'))) {
         dispatch = await notificationProvider.sendEmail(identifier, 'کد تایید ورود به فیروزو', otpMessage);
       } else {
@@ -230,7 +272,12 @@ export async function issueOtp(
     realSent,
     provider: providerUsed,
     error: dispatchError,
-    devCode: (process.env.NODE_ENV !== 'production' || process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.DEMO_MODE === 'true') && !realSent ? code : undefined,
+    devCode:
+      (process.env.NODE_ENV !== 'production' || process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.DEMO_MODE === 'true') &&
+      !realSent &&
+      providerUsed === 'console-simulator'
+        ? code
+        : undefined,
   };
 }
 
@@ -357,6 +404,39 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             clientSecret: (process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET)!,
           }),
         ]
+      : []),
+    // WeChat: website QR login (desktop browsers) and OfficialAccount authorize
+    // (inside the WeChat in-app browser). Both share the same Open Platform app.
+    ...(process.env.WECHAT_APP_ID || process.env.AUTH_WECHAT_APP_ID
+      ? (() => {
+          const wechatId = (process.env.WECHAT_APP_ID || process.env.AUTH_WECHAT_APP_ID)!;
+          const wechatSecret = (process.env.WECHAT_APP_SECRET || process.env.AUTH_WECHAT_APP_SECRET)!;
+          const wechatProfile = (profile: { unionid?: string; openid?: string; nickname?: string; headimgurl?: string }) => ({
+            // unionid is stable across WeChat apps; openid is the per-app fallback.
+            id: profile.unionid || profile.openid || '',
+            name: profile.nickname,
+            email: null as string | null,
+            image: profile.headimgurl,
+            // نقش نهایی در signIn از DB خوانده می‌شود؛ این مقدار صرفاً برای type/User است.
+            role: 'CUSTOMER' as string,
+          });
+          return [
+            WeChatProvider({
+              clientId: wechatId,
+              clientSecret: wechatSecret,
+              platformType: 'WebsiteApp',
+              profile: wechatProfile,
+            }),
+            WeChatProvider({
+              id: 'wechat_mp',
+              name: 'WeChat (In-App)',
+              clientId: wechatId,
+              clientSecret: wechatSecret,
+              platformType: 'OfficialAccount',
+              profile: wechatProfile,
+            }),
+          ];
+        })()
       : []),
     CredentialsProvider({
       name: 'Credentials',
@@ -608,7 +688,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   session: { strategy: 'jwt' },
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
       if (account?.provider === 'google') {
         const email = user.email?.toLowerCase();
         if (!email) return false;
@@ -623,6 +703,33 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               id: crypto.randomUUID(),
               email,
               name: user.name || 'Google User',
+              avatar: user.image,
+              role: 'CUSTOMER',
+              isActive: true,
+            },
+          });
+          await ensureUserRole(dbUser.id, 'CUSTOMER');
+        }
+
+        user.id = dbUser.id;
+        user.role = dbUser.role;
+        return true;
+      }
+
+      if (account?.provider === 'wechat' || account?.provider === 'wechat_mp') {
+        const wechatId = String(account.providerAccountId || (profile as { id?: string } | undefined)?.id || '');
+        if (!wechatId) return false;
+
+        let dbUser = await prisma.user.findFirst({
+          where: { wechatId },
+        });
+
+        if (!dbUser) {
+          dbUser = await prisma.user.create({
+            data: {
+              id: crypto.randomUUID(),
+              wechatId,
+              name: user.name || 'WeChat User',
               avatar: user.image,
               role: 'CUSTOMER',
               isActive: true,

@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { safeAuth } from '@/auth';
 import { toPlain } from '@/lib/serialize';
+import { ERP_STAFF_ROLES } from '@/domains/identity/permissions';
 
 export async function getUserTripsData() {
   const session = await safeAuth();
@@ -64,14 +65,22 @@ export async function findBookingByReference(reference: string, phoneOrEmail?: s
     return { success: false, error: 'NOT_FOUND' };
   }
 
-  // Security guard: verify matching phone or email if provided
-  if (phoneOrEmail && phoneOrEmail.trim()) {
+  // Security guard (IDOR Protection):
+  // If the requester is not the booking's customer or staff, phoneOrEmail MUST be supplied and match.
+  const session = await safeAuth();
+  const isOwner = Boolean(session?.user?.id && booking.customerId === session.user.id);
+  const isStaff = Boolean(session?.user?.role && (ERP_STAFF_ROLES as readonly string[]).includes(session.user.role));
+
+  if (!isOwner && !isStaff) {
+    if (!phoneOrEmail || !phoneOrEmail.trim()) {
+      return { success: false, error: 'PHONE_OR_EMAIL_REQUIRED' };
+    }
     const contact = phoneOrEmail.trim().toLowerCase();
     const customerEmail = (booking.customer?.email || '').toLowerCase();
     const customerPhone = (booking.customer?.phone || '').replace(/\D/g, '');
     const cleanInput = contact.replace(/\D/g, '');
     const matchesEmail = customerEmail && customerEmail === contact;
-    const matchesPhone = cleanInput && customerPhone.endsWith(cleanInput.slice(-8));
+    const matchesPhone = Boolean(cleanInput && cleanInput.length >= 8 && customerPhone.endsWith(cleanInput.slice(-8)));
     if (!matchesEmail && !matchesPhone) {
       return { success: false, error: 'CONTACT_MISMATCH' };
     }

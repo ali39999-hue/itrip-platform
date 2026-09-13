@@ -4,7 +4,7 @@ import { Controller, type Control, type FieldErrors, type UseFormRegister } from
 import { type Passenger } from '@/lib/validations';
 import { Input } from '@/components/ui/input';
 import { JalaliDatePicker } from '@/components/ui/DatePicker';
-import { ScanLine, Loader2, CheckCircle2, BookmarkPlus } from 'lucide-react';
+import { CheckCircle2, BookmarkPlus, ScanLine, Loader2 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
 import { EnrichedTravelerProfile } from '@/domains/identity/TravelerProfileService';
@@ -13,9 +13,9 @@ interface PassengerSectionProps {
   register: UseFormRegister<Passenger>;
   control: Control<Passenger>;
   errors: FieldErrors<Passenger>;
-  scanning: boolean;
-  onScanPassport: () => void;
-  passportScanned: boolean;
+  scanning?: boolean;
+  onScanPassport?: () => void;
+  passportScanned?: boolean;
   savedProfiles?: EnrichedTravelerProfile[];
   onSelectSavedProfile?: (profile: EnrichedTravelerProfile) => void;
   saveToAccount?: boolean;
@@ -30,9 +30,9 @@ export function PassengerSection({
   register,
   control,
   errors,
-  scanning,
+  scanning = false,
   onScanPassport,
-  passportScanned,
+  passportScanned = false,
   savedProfiles = [],
   onSelectSavedProfile,
   saveToAccount = false,
@@ -47,10 +47,12 @@ export function PassengerSection({
   const titleText =
     totalPassengers > 1
       ? lt(locale, {
+        ar: `بيانات المسافر ${currentPassengerIndex + 1} ${currentPassengerIndex === 0 ? '(الرئيسي)' : '(مرافق)'}`, zh: `旅客 ${currentPassengerIndex + 1} 信息 ${currentPassengerIndex === 0 ? '（主旅客）' : '（同行者）'}`, ru: `Пассажир ${currentPassengerIndex + 1} ${currentPassengerIndex === 0 ? '(основной)' : '(сопровождающий)'}`,
           fa: `مشخصات مسافر ${currentPassengerIndex + 1} ${currentPassengerIndex === 0 ? '(سرپرست)' : '(همراه)'}`,
           en: `Passenger ${currentPassengerIndex + 1} Details ${currentPassengerIndex === 0 ? '(Primary)' : '(Companion)'}`,
         })
       : lt(locale, {
+        ar: 'بيانات المسافر الرئيسي', zh: '主要旅客信息', ru: 'Данные основного пассажира',
           fa: 'مشخصات مسافر اصلی',
           en: 'Primary Passenger Details',
         });
@@ -65,8 +67,8 @@ export function PassengerSection({
             const status = passengersStatus?.[idx];
             const defaultLabel =
               idx === 0
-                ? lt(locale, { fa: 'مسافر ۱ (سرپرست)', en: 'Passenger 1 (Primary)' })
-                : lt(locale, { fa: `مسافر ${idx + 1} (همراه)`, en: `Passenger ${idx + 1}` });
+                ? lt(locale, { fa: 'مسافر ۱ (سرپرست)', en: 'Passenger 1 (Primary)', ar: 'المسافر ١ (الرئيسي)', zh: '旅客 1（主旅客）', ru: 'Пассажир 1 (основной)'})
+                : lt(locale, { fa: `مسافر ${idx + 1} (همراه)`, en: `Passenger ${idx + 1}`, ar: `المسافر ${idx + 1} (مرافق)`, zh: `旅客 ${idx + 1}（同行者）`, ru: `Пассажир ${idx + 1} (сопровождающий)`});
             const pName = status?.name?.trim() || defaultLabel;
 
             return (
@@ -122,6 +124,7 @@ export function PassengerSection({
               >
                 <option value="" disabled>
                   {lt(locale, {
+                    ar: `اختيار من المسافرين المحفوظين (${savedProfiles.length})`, zh: `从已保存的旅客中选择（${savedProfiles.length}）`, ru: `Выбрать из сохранённых пассажиров (${savedProfiles.length})`,
                     fa: `انتخاب از مسافران ذخیره شده (${savedProfiles.length})`,
                     en: `Select from Saved Travelers (${savedProfiles.length})`,
                   })}
@@ -135,29 +138,31 @@ export function PassengerSection({
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={onScanPassport}
-            disabled={scanning}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-action hover:bg-action-hover text-ink text-[13px] font-black shadow-elev-1 transition disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
-          >
-            {scanning ? (
-              <>
-                <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                <span>{lt(locale, { fa: 'در حال اسکن پاسپورت...', en: 'Scanning passport...', ar: 'جاري مسح الجواز...', zh: '正在扫描护照...', ru: 'Сканирование паспорта...' })}</span>
-              </>
-            ) : passportScanned ? (
-              <>
-                <CheckCircle2 size={16} className="text-success" aria-hidden="true" />
-                <span>{lt(locale, { fa: 'پاسپورت اسکن شد', en: 'Passport Scanned', ar: 'تم مسح الجواز', zh: '护照扫描完成', ru: 'Паспорт отсканирован' })}</span>
-              </>
-            ) : (
-              <>
-                <ScanLine size={16} aria-hidden="true" />
-                <span>{lt(locale, { fa: 'اسکن هوشمند پاسپورت (OCR)', en: 'Smart Passport Scan (OCR)', ar: 'المسح الذكي للجواز (OCR)', zh: '智能护照扫描 (OCR)', ru: 'Умное сканирование паспорта (OCR)' })}</span>
-              </>
-            )}
-          </button>
+          {onScanPassport && (
+            <button
+              type="button"
+              onClick={onScanPassport}
+              disabled={scanning}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-action hover:bg-action-hover text-ink text-[13px] font-black shadow-elev-1 transition disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer"
+            >
+              {scanning ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                  <span>{lt(locale, { fa: 'در حال اسکن پاسپورت...', en: 'Scanning passport...', ar: 'جاري مسح الجواز...', zh: '正在扫描护照...', ru: 'Сканирование паспорта...' })}</span>
+                </>
+              ) : passportScanned ? (
+                <>
+                  <CheckCircle2 size={16} className="text-success" aria-hidden="true" />
+                  <span>{lt(locale, { fa: 'پاسپورت اسکن شد', en: 'Passport Scanned', ar: 'تم مسح الجواز', zh: '护照扫描完成', ru: 'Паспорт отсканирован' })}</span>
+                </>
+              ) : (
+                <>
+                  <ScanLine size={16} aria-hidden="true" />
+                  <span>{lt(locale, { fa: 'اسکن هوشمند پاسپورت (OCR)', en: 'Smart Passport Scan (OCR)', ar: 'المسح الذكي للجواز (OCR)', zh: '智能护照扫描 (OCR)', ru: 'Умное сканирование паспорта (OCR)' })}</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
 
@@ -329,6 +334,7 @@ export function PassengerSection({
           <span className="text-[12.5px] font-bold text-ink flex items-center gap-1.5">
             <BookmarkPlus size={15} className="text-brand shrink-0" />
             {lt(locale, {
+              ar: 'حفظ هذا المسافر في حسابي للحجوزات القادمة', zh: '将此旅客保存到我的账户以便日后预订', ru: 'Сохранить этого пассажира в аккаунт для будущих бронирований',
               fa: 'ذخیره این مسافر در حساب کاربری برای خریدهای بعدی',
               en: 'Save this traveler to my account for future bookings',
             })}

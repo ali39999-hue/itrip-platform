@@ -22,8 +22,8 @@ export function BottomNav() {
   const user = useAuthStore((s) => s.user);
   const effectiveUser = isHydrated ? user : null;
   const items = ITEMS.map((it) => {
-    if (it.href === '/account' && !effectiveUser) return { ...it, href: '/auth' };
-    if (it.href === '/my-trips' && !effectiveUser) return { ...it, href: '/auth?redirect=/my-trips' };
+    if (it.href === '/account' && !effectiveUser) return { ...it, href: '/auth?callbackUrl=/account' };
+    if (it.href === '/my-trips' && !effectiveUser) return { ...it, href: '/auth?callbackUrl=/my-trips' };
     return it;
   });
 

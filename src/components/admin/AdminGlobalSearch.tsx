@@ -110,7 +110,7 @@ export function AdminGlobalSearch() {
             type="button"
             onClick={() => { setQuery(''); setOpen(false); inputRef.current?.focus(); }}
             aria-label={lt(locale, { fa: 'پاک کردن جستجو', en: 'Clear search', ar: 'مسح البحث', zh: '清除搜索', ru: 'Очистить поиск' })}
-            className="absolute end-2 grid h-7 w-7 place-items-center rounded-lg bg-line/40 text-sub transition hover:bg-line/70 hover:text-ink"
+            className="min-h-[44px] min-w-[44px] absolute end-2 grid h-7 w-7 place-items-center rounded-lg bg-line/40 text-sub transition hover:bg-line/70 hover:text-ink"
           >
             <X size={13} aria-hidden="true" />
           </button>

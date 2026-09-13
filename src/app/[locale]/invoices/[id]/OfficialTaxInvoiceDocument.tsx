@@ -36,20 +36,20 @@ export function OfficialTaxInvoiceDocument({ invoiceData }: Props) {
             className="inline-flex items-center gap-2 text-xs font-black text-sub hover:text-ink transition cursor-pointer"
           >
             <ArrowRight size={16} className="rtl:rotate-180" />
-            <span>{lt(locale, { fa: 'بازگشت', en: 'Back' })}</span>
+            <span>{lt(locale, { fa: 'بازگشت', en: 'Back', ar: 'رجوع', zh: '返回', ru: 'Назад'})}</span>
           </button>
 
           <div className="flex items-center gap-3">
             <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-black flex items-center gap-1">
               <CheckCircle2 size={13} />
-              صورتحساب رسمی معتبر (ماده ۱۶۹ م.م)
+              صورتحساب فروش — قالب رسمی داخلی
             </span>
             <button
               onClick={handlePrint}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-dark text-surface text-xs font-black shadow-brand transition cursor-pointer active:scale-[0.98]"
             >
               <Printer size={15} />
-              <span>{lt(locale, { fa: 'چاپ فاکتور رسمی / ذخیره PDF', en: 'Print Invoice / PDF' })}</span>
+              <span>{lt(locale, { fa: 'چاپ فاکتور رسمی / ذخیره PDF', en: 'Print Invoice / PDF', ar: 'طباعة الفاتورة الرسمية / حفظ PDF', zh: '打印正式发票 / 保存 PDF', ru: 'Печать официального счёта / Сохранить PDF'})}</span>
             </button>
           </div>
         </div>
@@ -83,7 +83,7 @@ export function OfficialTaxInvoiceDocument({ invoiceData }: Props) {
                   صورتحساب الکترونیکی فروش کالا و خدمات
                 </h1>
                 <p className="text-[10.5px] font-bold text-slate-500 mt-1">
-                  منطبق با ماده ۱۹ قانون مالیات بر ارزش افزوده و ماده ۱۶۹ م.م
+                  قالب هم‌راستا با ماده ۱۹ ق.م.ا و ماده ۱۶۹ م.م — این سند هنوز به سامانه مؤدیان ارسال نشده است
                 </p>
               </div>
 
@@ -94,7 +94,7 @@ export function OfficialTaxInvoiceDocument({ invoiceData }: Props) {
                   <strong className="text-slate-900">{invoice.invoiceNumber}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-500 font-sans">سریال مالیاتی: </span>
+                  <span className="text-slate-500 font-sans">شناسه رهگیری داخلی: </span>
                   <strong className="text-teal-800">{invoice.fiscalSerial}</strong>
                 </div>
                 <div>
@@ -247,7 +247,7 @@ export function OfficialTaxInvoiceDocument({ invoiceData }: Props) {
                 </strong>
               </div>
               <p className="text-[11px] text-slate-500 pt-2 border-t border-slate-200 leading-relaxed">
-                این سند الکترونیکی وفق مقررات قانون تجارت الکترونیک و سامانه پایانه‌های فروشگاهی و مؤدیان صادر گردیده و به منزله فاکتور رسمی معتبر است.
+                این سند به‌صورت الکترونیکی توسط فیروزو در «قالب رسمی» صادر شده است؛ تا زمان اتصال و تأیید سامانه مؤدیان، به منزله صورتحساب تسویه‌شده نزد سازمان مالیاتی نیست.
               </p>
             </div>
 

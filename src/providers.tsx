@@ -1,10 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { getSessionUser } from '@/actions/auth';
-import { getQueryClient } from '@/lib/query-client';
 import { initAnalytics } from '@/lib/analytics';
 
 /**
@@ -22,7 +20,10 @@ export function SessionBootstrap() {
         if (res.success && res.user) {
           useAuthStore.setState({
             user: res.user,
-            kyc: { step: 'approved', phone: res.user.phone },
+            kyc: {
+              step: 'approved',
+              phone: res.user.phone,
+            },
           });
         }
       })
@@ -32,10 +33,6 @@ export function SessionBootstrap() {
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  // One QueryClient per browser session (singleton); SSR gets a fresh client
-  // per request inside getQueryClient(). useState preserves identity.
-  const [queryClient] = useState(getQueryClient);
-
   useEffect(() => {
     // Privacy-safe funnel analytics: no-op without NEXT_PUBLIC_POSTHOG_KEY,
     // honors Do-Not-Track, never receives PII (see src/lib/analytics.ts).
@@ -43,9 +40,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <>
       <SessionBootstrap />
       {children}
-    </QueryClientProvider>
+    </>
   );
 }

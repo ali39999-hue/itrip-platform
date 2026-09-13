@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { InventoryEngine } from '@/domains/inventory/InventoryEngine';
 import { BookingApplicationService } from './BookingApplicationService';
@@ -60,7 +61,7 @@ export class UnifiedCartService {
     const pricedItems: Array<UnifiedCartItem & { unitPrice: number }> = [];
 
     for (const item of items) {
-      let unitPrice = BookingApplicationService.resolveServerBasePrice(item.type, item.itemId);
+      let unitPrice = await BookingApplicationService.resolveServerBasePrice(item.type, item.itemId);
 
       if (unitPrice === null && item.inventoryItemId) {
         const inv = await prisma.inventoryItem.findUnique({
@@ -211,7 +212,7 @@ export class UnifiedCartService {
       return { success: false, error: holdRes.error };
     }
 
-    const reference = `ITR-${Date.now().toString().slice(-6)}`;
+    const reference = `ITR-${Date.now()}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 min TTL
 
     try {

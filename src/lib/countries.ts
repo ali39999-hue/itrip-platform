@@ -51,6 +51,14 @@ export interface CountryConfig {
   gatewayEn: string;
   exchangeNote: string;
   exchangeNoteEn: string;
+  /** Tax / VAT rate as a decimal (e.g. 0.09 for 9% VAT) */
+  taxRate: number;
+  /** Localized tax label (e.g. "مالیات بر ارزش افزوده (۹٪)") */
+  taxLabel: { fa: string; en: string; ar?: string; zh?: string; ru?: string };
+  /** Default gateway transaction fee rate as a decimal (e.g. 0.02 for 2%) */
+  gatewayFeeRate: number;
+  /** Localized gateway processing fee label */
+  gatewayFeeLabel: { fa: string; en: string; ar?: string; zh?: string; ru?: string };
   cities: { fa: string; en: string; href: string; gradient: string }[];
   services: CountryService[];
   journeys: { title: string; titleEn: string; desc: string; descEn: string }[];
@@ -99,6 +107,10 @@ export const COUNTRIES: Record<CountryId, CountryConfig> = {
     gatewayEn: 'Shetab rial gateway · Active',
     exchangeNote: 'کیف پول چندارزی ریال/تتر با تبدیل لحظه‌ای',
     exchangeNoteEn: 'Multi-currency Rial/USDT wallet with instant swap',
+    taxRate: 0.09,
+    taxLabel: { fa: 'مالیات بر ارزش افزوده (۹٪)', en: 'VAT (9%)', ar: 'ضريبة القيمة المضافة (٩٪)', zh: '增值税 (9%)', ru: 'НДС (9%)' },
+    gatewayFeeRate: 0,
+    gatewayFeeLabel: { fa: 'کارمزد درگاه شتاب (رایگان)', en: 'Shetab Gateway Fee (Free)', ar: 'رسوم بوابة شتاب (مجاناً)', zh: 'Shetab 网关费用（免费）', ru: 'Комиссия Shetab (0%)' },
     cities: [city('تهران', 'Tehran', 0), city('مشهد', 'Mashhad', 1), city('اصفهان', 'Isfahan', 2), city('شیراز', 'Shiraz', 3), city('تبریز', 'Tabriz', 4), city('کیش', 'Kish', 5)],
     services: [
       S('stays', 'هتل و اقامتگاه', 'Hotels & stays', 'اقامت سنتی و مدرن با قوانین شفاف', 'Traditional and modern stays with transparent policies', '/hotels/search'),
@@ -140,6 +152,10 @@ export const COUNTRIES: Record<CountryId, CountryConfig> = {
     gatewayEn: 'TRY gateway · Eligibility check',
     exchangeNote: 'تبدیل تومان به لیر با نرخ نمایشی و تسویه محلی',
     exchangeNoteEn: 'Toman→Lira conversion at display rate, local settlement',
+    taxRate: 0.10,
+    taxLabel: { fa: 'مالیات خدمات گردشگری (۱۰٪)', en: 'Tourism Services Tax (10%)', ar: 'ضريبة الخدمات السياحية (١٠٪)', zh: '旅游服务税 (10%)', ru: 'Туристический налог (10%)' },
+    gatewayFeeRate: 0.02,
+    gatewayFeeLabel: { fa: 'کارمزد درگاه بین‌المللی (۲٪)', en: 'Intl Gateway Fee (2%)', ar: 'رسوم بوابة الدفع (٢٪)', zh: '国际网关费 (2%)', ru: 'Комиссия шлюза (2%)' },
     cities: [city('استانبول', 'Istanbul', 0), city('آنتالیا', 'Antalya', 1), city('کاپادوکیه', 'Cappadocia', 2), city('ازمیر', 'Izmir', 3), city('بدروم', 'Bodrum', 4), city('ترابزون', 'Trabzon', 5)],
     services: [
       S('stays', 'هتل و اقامتگاه', 'Hotels & stays', 'از بوتیک تا رزورت ساحلی', 'From boutique to beach resorts', '/hotels/search'),
@@ -180,6 +196,10 @@ export const COUNTRIES: Record<CountryId, CountryConfig> = {
     gatewayEn: 'AED gateway · Secure international payment',
     exchangeNote: 'درهم در کیف پول Firuzo قابل نگهداری و تبدیل',
     exchangeNoteEn: 'Hold and convert AED in the Firuzo wallet',
+    taxRate: 0.05,
+    taxLabel: { fa: 'مالیات فدرال امارات (۵٪)', en: 'UAE Federal VAT (5%)', ar: 'ضريبة القيمة المضافة (٥٪)', zh: '联邦增值税 (5%)', ru: 'Федеральный НДС (5%)' },
+    gatewayFeeRate: 0.025,
+    gatewayFeeLabel: { fa: 'کارمزد درگاه بین‌المللی (۲.۵٪)', en: 'Intl Gateway Fee (2.5%)', ar: 'رسوم بوابة فيزا/ماستركارد (٢.٥٪)', zh: '国际网关费 (2.5%)', ru: 'Комиссия шлюза (2.5%)' },
     cities: [city('دبی', 'Dubai', 0), city('ابوظبی', 'Abu Dhabi', 1), city('شارجه', 'Sharjah', 2), city('راس‌الخیمه', 'Ras Al Khaimah', 3), city('عجمان', 'Ajman', 4), city('فجیره', 'Fujairah', 5)],
     services: [
       S('stays', 'هتل لوکس', 'Luxury hotels', 'اقامت premium با شرایط شفاف', 'Premium stays with clear terms', '/hotels/search'),
@@ -221,6 +241,10 @@ export const COUNTRIES: Record<CountryId, CountryConfig> = {
     gatewayEn: 'GEL gateway · Local settlement',
     exchangeNote: 'لاری با نرخ لحظه‌ای در کیف پول',
     exchangeNoteEn: 'Lari at live rates in the wallet',
+    taxRate: 0.18,
+    taxLabel: { fa: 'مالیات بر ارزش افزوده گرجستان (۱۸٪)', en: 'Georgia VAT (18%)', ar: 'ضريبة القيمة المضافة (١٨٪)', zh: '格鲁吉亚增值税 (18%)', ru: 'НДС Грузии (18%)' },
+    gatewayFeeRate: 0.02,
+    gatewayFeeLabel: { fa: 'کارمزد درگاه پرداخت (۲٪)', en: 'Gateway Fee (2%)', ar: 'رسوم بوابة الدفع (٢٪)', zh: '网关手续费 (2%)', ru: 'Комиссия шлюза (2%)' },
     cities: [city('تفلیس', 'Tbilisi', 0), city('باتومی', 'Batumi', 1), city('کوتائیسی', 'Kutaisi', 2), city('گودائوری', 'Gudauri', 3), city('کازبگی', 'Kazbegi', 4), city('کاختی', 'Kakheti', 5)],
     services: [
       S('stays', 'هتل و اقامتگاه', 'Hotels & stays', 'بوتیک شهر قدیم و اقامت کوهستان', 'Old-town boutique and mountain lodges', '/hotels/search'),
@@ -261,6 +285,10 @@ export const COUNTRIES: Record<CountryId, CountryConfig> = {
     gatewayEn: 'RUB gateway · Eligibility checked',
     exchangeNote: 'اکسچنج روبل با تایید Provider',
     exchangeNoteEn: 'Ruble exchange with provider approval',
+    taxRate: 0.20,
+    taxLabel: { fa: 'مالیات بر ارزش افزوده روسیه (۲۰٪)', en: 'Russia VAT (20%)', ar: 'ضريبة القيمة المضافة في روسيا (٢٠٪)', zh: '俄罗斯增值税 (20%)', ru: 'НДС России (20%)' },
+    gatewayFeeRate: 0.02,
+    gatewayFeeLabel: { fa: 'کارمزد درگاه پرداخت (۲٪)', en: 'Payment Gateway Fee (2%)', ar: 'رسوم بوابة الدفع (٢٪)', zh: '支付网关费 (2%)', ru: 'Комиссия шлюза (2%)' },
     cities: [city('مسکو', 'Moscow', 0), city('سن‌پترزبورگ', 'St Petersburg', 1), city('کازان', 'Kazan', 2), city('سوچی', 'Sochi', 3), city('یکاترینبورگ', 'Yekaterinburg', 4), city('بایکال', 'Baikal', 5)],
     services: [
       S('stays', 'هتل', 'Hotels', 'اقامت شهری با policy مشخص', 'City stays with clear policies', '/hotels/search'),
@@ -300,6 +328,10 @@ export const COUNTRIES: Record<CountryId, CountryConfig> = {
     gatewayEn: 'OMR gateway · Local settlement',
     exchangeNote: 'اکسچنج OMR طبق تنظیم کشور',
     exchangeNoteEn: 'OMR exchange per country regulation',
+    taxRate: 0.05,
+    taxLabel: { fa: 'مالیات بر ارزش افزوده عمان (۵٪)', en: 'Oman VAT (5%)', ar: 'ضريبة القيمة المضافة في عمان (٥٪)', zh: '阿曼增值税 (5%)', ru: 'НДС Омана (5%)' },
+    gatewayFeeRate: 0.025,
+    gatewayFeeLabel: { fa: 'کارمزد درگاه بین‌المللی (۲.۵٪)', en: 'Intl Gateway Fee (2.5%)', ar: 'رسوم بوابة الدفع (٢.٥٪)', zh: '国际网关费 (2.5%)', ru: 'Комиссия шлюза (2.5%)' },
     cities: [city('مسقط', 'Muscat', 0), city('صلاله', 'Salalah', 1), city('نزوی', 'Nizwa', 2), city('جبل اخضر', 'Jebel Akhdar', 3), city('صور', 'Sur', 4), city('واحبه سندز', 'Wahiba Sands', 5)],
     services: [
       S('stays', 'هتل', 'Hotels', 'اقامت ساحلی و کویری', 'Coastal and desert stays', '/hotels/search'),
@@ -339,6 +371,10 @@ export const COUNTRIES: Record<CountryId, CountryConfig> = {
     gatewayEn: 'CNY gateway · Visa & KYC required',
     exchangeNote: 'درگاه‌های علی‌پی و وی‌چت از طریق کیف پول',
     exchangeNoteEn: 'Alipay and WeChat via wallet',
+    taxRate: 0.06,
+    taxLabel: { fa: 'مالیات خدمات مدرن چین (۶٪)', en: 'China Modern Services VAT (6%)', ar: 'ضريبة الخدمات (٦٪)', zh: '现代服务业增值税 (6%)', ru: 'НДС на услуги (6%)' },
+    gatewayFeeRate: 0.015,
+    gatewayFeeLabel: { fa: 'کارمزد علی‌پی/وی‌چت‌پِی (۱.۵٪)', en: 'Alipay/WeChat Fee (1.5%)', ar: 'رسوم علي بي/وي شات (١.٥٪)', zh: '支付宝/微信支付手续费 (1.5%)', ru: 'Комиссия Alipay/WeChat (1.5%)' },
     cities: [city('پکن', 'Beijing', 0), city('شانگهای', 'Shanghai', 1), city('گوانگژو', 'Guangzhou', 2), city('شنژن', 'Shenzhen', 3), city('هانگژو', 'Hangzhou', 4), city('شی‌آن', 'Xi\'an', 5)],
     services: [
       S('stays', 'هتل‌های تجاری', 'Business hotels', 'اقامت نزدیک مراکز نمایشگاهی', 'Stays near exhibition centers', '/hotels/search'),
@@ -427,4 +463,32 @@ export function countryName(id: CountryId, locale: string) {
     default:
       return names.en;
   }
+}
+
+export interface CountryPaymentCapabilities {
+  /** Iranian Shaparak/Shetab domestic direct gateway (Iranian debit cards only) */
+  shetab: boolean;
+  /** Iranian card-to-card / bank receipt transfer (Iranian bank cards only) */
+  cardTransfer: boolean;
+  /** Shetab debit card instrument inside the eCardo gateway */
+  shetabInstrument: boolean;
+  /** eCardo instrument pre-selected for this country's users */
+  defaultInstrument: 'visa_mastercard' | 'crypto_usdt' | 'wechat_alipay' | 'shetab_card';
+}
+
+/**
+ * Country-scoped payment capability matrix (country-reactive checkout):
+ * Iranian domestic rails (Shaparak/Shetab, card-to-card) only exist for Iran;
+ * every country gets the international eCardo gateway with a sensible default
+ * instrument (Shetab card at home, WeChat/Alipay for China, intl cards elsewhere).
+ */
+export function countryPaymentCapabilities(country: CountryId): CountryPaymentCapabilities {
+  const isIran = country === 'iran';
+  const isChina = country === 'china';
+  return {
+    shetab: isIran,
+    cardTransfer: isIran,
+    shetabInstrument: isIran,
+    defaultInstrument: isIran ? 'shetab_card' : isChina ? 'wechat_alipay' : 'visa_mastercard',
+  };
 }

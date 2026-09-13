@@ -255,7 +255,7 @@ export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
                   type="button"
                   onClick={() => setConfirmingId(null)}
                   aria-label={lt(locale, { fa: 'انصراف از تسویه', en: 'Cancel settlement', ar: 'إلغاء التسوية', zh: '取消结算', ru: 'Отменить выплату' })}
-                  className="min-w-9 min-h-9 grid place-items-center rounded-lg border border-line text-sub hover:text-ink"
+                  className="min-h-[44px] min-w-[44px] min-w-9 min-h-9 grid place-items-center rounded-lg border border-line text-sub hover:text-ink"
                 >
                   <X size={13} aria-hidden="true" />
                 </button>

@@ -152,16 +152,78 @@ function loadFlightsData(): { flights: Flight[]; airports: FlightMasterFile['air
   return { flights: cachedFlights, airports: cachedAirports, airlines: cachedAirlines };
 }
 
+export function searchFlights(params: FlightSearchParams): FlightSearchResponse {
+  const { flights } = loadFlightsData();
+
+  // Country-aware pool scoping: if country parameter is passed and no destination specified
+  const reqCountry = params.country?.toLowerCase();
+  let scopedFlights = flights;
+  if (reqCountry && !params.to) {
+    if (reqCountry === 'iran') {
+      const domestic = flights.filter((f) => ['مشهد', 'کیش', 'شیراز', 'اصفهان', 'تبریز'].some((c) => f.destinationCity.includes(c)));
+      if (domestic.length > 0) scopedFlights = domestic;
+    } else {
+      const matchPattern =
+        reqCountry === 'turkey' ? /استانبول|istanbul|آنتالیا|antalya|ازمیر|izmir|ist|ayt/i :
+        reqCountry === 'uae' ? /دبی|dubai|ابوظبی|dxb|auh/i :
+        reqCountry === 'georgia' ? /تفلیس|tbilisi|باتومی|batumi|tbs|bus/i :
+        reqCountry === 'oman' ? /مسقط|muscat|صلاله|mct|sll/i :
+        reqCountry === 'russia' ? /مسکو|moscow|svo|led/i :
+        reqCountry === 'china' ? /پکن|beijing|pek|pvg/i : null;
+      if (matchPattern) {
+        const countryFlights = flights.filter((f) => matchPattern.test(`${f.destination} ${f.destinationCity}`));
+        if (countryFlights.length > 0) scopedFlights = countryFlights;
+      }
+    }
+  }
+
+  return searchFlightsFromFlights(scopedFlights, params);
+}
+
+/** IATA → Persian/English airline display names, from the static master catalog. */
+export function getAirlineNameMap(): Map<string, { fa: string; en: string }> {
+  const { airlines } = loadFlightsData();
+  const map = new Map<string, { fa: string; en: string }>();
+  for (const a of airlines) {
+    map.set(a.iata.toUpperCase(), { fa: a.name_fa, en: a.name_en });
+  }
+  return map;
+}
+
+/** IATA → Persian city name, from the static master catalog. */
+export function getAirportCityByIata(iata: string): string | null {
+  const { airports } = loadFlightsData();
+  return airports.find((a) => a.iata === iata.toUpperCase())?.city_name ?? null;
+}
+
 /**
  * Resolves the authoritative sell price for a normalized flight id (`fl_*`).
  * The booking flow must price flights from the same live catalog the search
  * serves — not only the static seed list. Returns null when unknown so the
- * pricing engine can fail closed.
+ * pricing engine can fail closed. Live Parto offers (`off_PARTO_CRS_*`) are
+ * priced through `getLiveFlightPriceById` instead.
  */
 export function getFlightPriceById(id: string): number | null {
   const { flights } = loadFlightsData();
   const flight = flights.find((f) => f.id === id);
   return flight ? flight.price : null;
+}
+
+/**
+ * Authoritative sell price for a live (Parto CRS) flight offer, resolved from
+ * the FlightOfferCache. Returns null for expired/unknown offers so pricing
+ * fails closed — booking must never price from a stale live row.
+ */
+export async function getLiveFlightPriceById(offerId: string): Promise<number | null> {
+  if (!offerId.startsWith('off_PARTO_CRS_') && !offerId.startsWith('off_PARTO_PORTAL_')) return null;
+  try {
+    const { prisma } = await import('@/lib/prisma');
+    const row = await prisma.flightOfferCache.findUnique({ where: { offerId } });
+    if (!row || row.expiresAt.getTime() <= Date.now()) return null;
+    return Number(row.totalFare);
+  } catch {
+    return null;
+  }
 }
 
 export interface FlightSearchParams {
@@ -194,9 +256,12 @@ export interface FlightSearchResponse {
   timeCounts: { morning: number; afternoon: number; evening: number; night: number };
 }
 
-export function searchFlights(params: FlightSearchParams): FlightSearchResponse {
-  const { flights } = loadFlightsData();
-
+/**
+ * Core filter/facet/sort/paginate pipeline over any pool of flights. Used by
+ * `searchFlights` (static catalog) and by the live Parto cache overlay, so
+ * both serving paths produce identical response shapes.
+ */
+export function searchFlightsFromFlights(pool: Flight[], params: FlightSearchParams): FlightSearchResponse {
   const fromLower = params.from?.trim().toLowerCase() || '';
   const toLower = params.to?.trim().toLowerCase() || '';
 
@@ -217,30 +282,8 @@ export function searchFlights(params: FlightSearchParams): FlightSearchResponse 
     resolvedTo?.airportCode?.toLowerCase(),
   ].filter((s): s is string => Boolean(s));
 
-  // Country-aware pool scoping: if country parameter is passed and no destination specified
-  const reqCountry = params.country?.toLowerCase();
-  let scopedFlights = flights;
-  if (reqCountry && !params.to) {
-    if (reqCountry === 'iran') {
-      const domestic = flights.filter((f) => ['مشهد', 'کیش', 'شیراز', 'اصفهان', 'تبریز'].some((c) => f.destinationCity.includes(c)));
-      if (domestic.length > 0) scopedFlights = domestic;
-    } else {
-      const matchPattern =
-        reqCountry === 'turkey' ? /استانبول|istanbul|آنتالیا|antalya|ازمیر|izmir|ist|ayt/i :
-        reqCountry === 'uae' ? /دبی|dubai|ابوظبی|dxb|auh/i :
-        reqCountry === 'georgia' ? /تفلیس|tbilisi|باتومی|batumi|tbs|bus/i :
-        reqCountry === 'oman' ? /مسقط|muscat|صلاله|mct|sll/i :
-        reqCountry === 'russia' ? /مسکو|moscow|svo|led/i :
-        reqCountry === 'china' ? /پکن|beijing|pek|pvg/i : null;
-      if (matchPattern) {
-        const countryFlights = flights.filter((f) => matchPattern.test(`${f.destination} ${f.destinationCity}`));
-        if (countryFlights.length > 0) scopedFlights = countryFlights;
-      }
-    }
-  }
-
   // 1. Initial route pool filter
-  const routePool = scopedFlights.filter((f) => {
+  const routePool = pool.filter((f) => {
     if (fromNeedles.length > 0) {
       const matchOrigin = fromNeedles.some(
         (n) => f.originCity.toLowerCase().includes(n) || f.origin.toLowerCase().includes(n)
@@ -257,8 +300,8 @@ export function searchFlights(params: FlightSearchParams): FlightSearchResponse 
   });
 
   // Strict route filtering: if user queried a specific from/to, honor it without falling back to entire catalog
-  const isFilteredSearch = fromNeedles.length > 0 || toNeedles.length > 0 || Boolean(reqCountry);
-  const basePool = isFilteredSearch ? routePool : flights;
+  const isFilteredSearch = fromNeedles.length > 0 || toNeedles.length > 0;
+  const basePool = isFilteredSearch ? routePool : pool;
 
   // Calculate facets from route pool
   let minP = Infinity;

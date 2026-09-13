@@ -660,7 +660,7 @@ export default function AdminContentPage() {
                             onClick={() => openEditTour(t)}
                             aria-label={`ویرایش تور: ${t.title}`}
                             title="ویرایش تور"
-                            className="w-8 h-8 rounded-xl bg-brand/10 text-brand-dark hover:bg-brand/20 grid place-items-center transition cursor-pointer"
+                            className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-brand/10 text-brand-dark hover:bg-brand/20 grid place-items-center transition cursor-pointer"
                           >
                             <Pencil size={14} aria-hidden="true" />
                           </button>
@@ -668,7 +668,7 @@ export default function AdminContentPage() {
                             type="button"
                             onClick={() => handleDeleteTour(t.id)}
                             aria-label={`حذف تور: ${t.title}`}
-                            className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
+                            className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
                             title="حذف تور"
                           >
                             <Trash2 size={14} aria-hidden="true" />
@@ -729,7 +729,7 @@ export default function AdminContentPage() {
                           onClick={() => openEditExp(exp)}
                           aria-label={`ویرایش تجربه: ${exp.title}`}
                           title="ویرایش تجربه"
-                          className="w-8 h-8 rounded-xl bg-brand/10 text-brand-dark hover:bg-brand/20 grid place-items-center transition cursor-pointer"
+                          className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-brand/10 text-brand-dark hover:bg-brand/20 grid place-items-center transition cursor-pointer"
                         >
                           <Pencil size={14} aria-hidden="true" />
                         </button>
@@ -738,7 +738,7 @@ export default function AdminContentPage() {
                           onClick={() => handleDeleteExp(exp.id)}
                           aria-label={`حذف تجربه: ${exp.title}`}
                           title="حذف تجربه"
-                          className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
+                          className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
                         >
                           <Trash2 size={14} aria-hidden="true" />
                         </button>
@@ -784,7 +784,7 @@ export default function AdminContentPage() {
                           onClick={() => openEditTravelogue(trv)}
                           aria-label={`ویرایش سفرنامه: ${trv.titleFa}`}
                           title="ویرایش سفرنامه"
-                          className="w-8 h-8 rounded-xl bg-brand/10 text-brand-dark hover:bg-brand/20 grid place-items-center transition cursor-pointer"
+                          className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-brand/10 text-brand-dark hover:bg-brand/20 grid place-items-center transition cursor-pointer"
                         >
                           <Pencil size={14} aria-hidden="true" />
                         </button>
@@ -793,7 +793,7 @@ export default function AdminContentPage() {
                           onClick={() => handleDeleteTravelogue(trv.id)}
                           aria-label={`حذف سفرنامه: ${trv.titleFa}`}
                           title="حذف سفرنامه"
-                          className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
+                          className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
                         >
                           <Trash2 size={14} aria-hidden="true" />
                         </button>
@@ -839,7 +839,7 @@ export default function AdminContentPage() {
                           onClick={() => openEditGuide(gd)}
                           aria-label={`ویرایش راهنما: ${gd.titleFa}`}
                           title="ویرایش راهنما"
-                          className="w-8 h-8 rounded-xl bg-brand/10 text-brand-dark hover:bg-brand/20 grid place-items-center transition cursor-pointer"
+                          className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-brand/10 text-brand-dark hover:bg-brand/20 grid place-items-center transition cursor-pointer"
                         >
                           <Pencil size={14} aria-hidden="true" />
                         </button>
@@ -848,7 +848,7 @@ export default function AdminContentPage() {
                           onClick={() => handleDeleteGuide(gd.id)}
                           aria-label={`حذف راهنما: ${gd.titleFa}`}
                           title="حذف راهنما"
-                          className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
+                          className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
                         >
                           <Trash2 size={14} />
                         </button>

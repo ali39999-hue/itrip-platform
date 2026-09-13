@@ -22,6 +22,10 @@ interface User {
   firstNameEn?: string;
   lastNameEn?: string;
   kycApproved: boolean;
+  nationalId?: string;
+  passportNo?: string;
+  /** false = نام/نام خانوادگی/کد ملی هنوز تکمیل نشده — احراز هویت در مرحله خرید تکمیل می‌شود */
+  profileComplete?: boolean;
   role: 'customer' | 'admin';
   loyaltyTier?: 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM' | 'VIP';
   loyaltyPoints?: number;
@@ -30,6 +34,11 @@ interface User {
   whatsappPhone?: string;
   wechatId?: string;
   baleId?: string;
+}
+
+/** ورود و ثبت‌نام کاربر بدون توقف در KYC انجام می‌شود؛ احراز هویت هویتی در مرحله خرید اعمال می‌گردد */
+function kycStepAfterLogin(user: { phone: string; profileComplete?: boolean }): KycProfile {
+  return { step: 'approved', phone: user.phone };
 }
 
 interface AuthState {
@@ -56,7 +65,7 @@ export const useAuthStore = create<AuthState>()(
 
         set({
           user: res.user,
-          kyc: { step: 'approved', phone: res.user.phone },
+          kyc: kycStepAfterLogin(res.user),
         });
         return true;
       },
@@ -68,7 +77,7 @@ export const useAuthStore = create<AuthState>()(
 
         set({
           user: res.user,
-          kyc: { step: 'approved', phone: res.user.phone },
+          kyc: kycStepAfterLogin(res.user),
         });
         return { success: true };
       },
@@ -80,7 +89,7 @@ export const useAuthStore = create<AuthState>()(
 
         set({
           user: res.user,
-          kyc: { step: 'approved', phone: res.user.phone },
+          kyc: kycStepAfterLogin(res.user),
         });
         return { success: true };
       },
@@ -155,6 +164,7 @@ export const useAuthStore = create<AuthState>()(
                 firstNameEn: state.user.firstNameEn,
                 lastNameEn: state.user.lastNameEn,
                 kycApproved: state.user.kycApproved,
+                profileComplete: state.user.profileComplete,
                 role: state.user.role,
                 loyaltyTier: state.user.loyaltyTier,
                 loyaltyPoints: state.user.loyaltyPoints,

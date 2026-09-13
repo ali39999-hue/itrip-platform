@@ -140,11 +140,11 @@ export function PromotionalBanners({ override }: { override?: PromoBannerOverrid
 
   return (
     <section aria-label="Firuzo Exclusive Tour" className="w-full max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 2xl:px-8">
-      {/* Heading row — title + Isfahan badge beside it */}
+      {/* Heading row — title (h2 semantic for a11y) + Isfahan badge beside it */}
       <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 mb-4 sm:mb-5 md:mb-6">
-        <h1 className="text-[20px] sm:text-[22px] md:text-[28px] font-black tracking-tight text-ink text-start leading-none">
+        <h2 className="text-[20px] sm:text-[22px] md:text-[28px] font-black tracking-tight text-ink text-start leading-none">
           {heading}
-        </h1>
+        </h2>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0b3d3c] text-[#7af7f5] border border-[#0ea5a3]/30 px-3 py-1.5 text-[11px] sm:text-xs font-black tracking-wide shadow-sm whitespace-nowrap">
           <MapPin size={13} strokeWidth={2.2} aria-hidden="true" className="shrink-0" />
           {cityBadge}

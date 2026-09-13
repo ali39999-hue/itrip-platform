@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { searchFlights, type FlightSearchParams } from '@/services/flights-service';
+import { searchFlights, searchFlightsFromFlights, type FlightSearchParams } from '@/services/flights-service';
+import { overlayLiveFlights } from '@/services/flight-cache-service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
     const page = searchParams.get('page') ? Number(searchParams.get('page')) : 1;
     const limit = searchParams.get('limit') ? Number(searchParams.get('limit')) : 25;
 
-    const result = searchFlights({
+    const params: FlightSearchParams = {
       country,
       from,
       to,
@@ -45,10 +46,19 @@ export async function GET(request: NextRequest) {
       sort,
       page,
       limit,
-    });
+    };
+
+    // Static catalog is the always-available fallback; live Parto cache rows
+    // (when present for this route+date) replace it inside the overlay.
+    const staticResult = searchFlights(params);
+    const overlay = await overlayLiveFlights(staticResult, params, searchFlightsFromFlights);
 
     return NextResponse.json(
-      { success: true, data: result },
+      {
+        success: true,
+        data: overlay.data,
+        liveMeta: overlay.meta,
+      },
       {
         headers: {
           'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',

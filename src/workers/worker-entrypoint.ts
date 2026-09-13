@@ -14,6 +14,7 @@ import { OutboxConsumer } from '@/domains/events/OutboxConsumer';
 import { SagaWorker } from './saga-worker';
 import { HoldExpirationWorker } from './hold-expiration-worker';
 import { AutoBuyWorker } from './auto-buy-worker';
+import { FlightCacheWorker } from './flight-cache-worker';
 import { WorkerLeaseService } from '@/domains/events/WorkerLeaseService';
 import { QueueMetricsService } from '@/domains/events/QueueMetricsService';
 import crypto from 'crypto';
@@ -90,11 +91,26 @@ async function runQueueMetricsAndLeaseRecovery() {
   }
 }
 
+async function runFlightCacheSweep() {
+  if (isShuttingDown) return;
+  try {
+    const res = await FlightCacheWorker.runSweep(workerNodeId);
+    if (res.skipped) {
+      // Quiet no-op while Parto CRS credentials are absent (dev/e2e).
+    } else if (res.refreshes > 0 || res.failures > 0) {
+      console.log(`[WorkerRuntime:FlightCache] routes=${res.routesConsidered}, refreshes=${res.refreshes}, offers=${res.upserted}, failures=${res.failures}`);
+    }
+  } catch (err) {
+    console.error('[WorkerRuntime:FlightCache] Error during flight cache sweep:', err);
+  }
+}
+
 // Setup timers
 const outboxInterval = setInterval(runOutboxCycle, 5000);
 const sagaInterval = setInterval(runSagaCycle, 5000);
 const holdInterval = setInterval(runHoldExpirationCycle, 30000);
 const autoBuyInterval = setInterval(runAutoBuyCycle, 60000);
+const flightCacheInterval = setInterval(runFlightCacheSweep, 60 * 60 * 1000); // hourly price refresh
 const metricsInterval = setInterval(runQueueMetricsAndLeaseRecovery, 60000);
 
 // Kick off immediately on start
@@ -102,6 +118,7 @@ runOutboxCycle();
 runSagaCycle();
 runHoldExpirationCycle();
 runAutoBuyCycle();
+runFlightCacheSweep();
 runQueueMetricsAndLeaseRecovery();
 
 // Graceful shutdown handling
@@ -114,6 +131,7 @@ async function shutdown(signal: string) {
   clearInterval(sagaInterval);
   clearInterval(holdInterval);
   clearInterval(autoBuyInterval);
+  clearInterval(flightCacheInterval);
   clearInterval(metricsInterval);
 
   // Allow in-flight operations 2 seconds to complete

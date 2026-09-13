@@ -6,17 +6,18 @@ import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { LocaleSwitcher } from '@/components/layout/header/LocaleSwitcher';
 import { AdminGlobalSearch } from './AdminGlobalSearch';
+import { AdminPaymentModeToggle } from './AdminPaymentModeToggle';
 import {
   LayoutDashboard, BriefcaseBusiness, Wallet,
   PlaneTakeoff, ExternalLink, ShieldCheck, UserCheck, Activity,
   Building2, Boxes, PanelLeftClose, PanelLeftOpen, FolderKanban, Users, Menu, X,
-  ChevronLeft, Keyboard, ReceiptText, HandCoins, Building,
+  ChevronLeft, Keyboard, ReceiptText, HandCoins, Building, ListChecks,
 } from 'lucide-react';
 import { lt, LText } from '@/lib/lt';
 import { cn } from '@/lib/utils';
 import { getPendingReceiptsCount } from '@/actions/receipts';
 
-type NavItem = { href: string; label: LText; icon: typeof LayoutDashboard };
+type NavItem = { href: string; label: LText; icon: typeof LayoutDashboard; perm?: string };
 type NavGroup = { id: string; title: LText; items: NavItem[] };
 
 const NAV_GROUPS: NavGroup[] = [
@@ -25,43 +26,44 @@ const NAV_GROUPS: NavGroup[] = [
     title: { fa: 'نمای کلی', en: 'Overview', ar: 'نظرة عامة', zh: '总览', ru: 'Обзор' },
     items: [
       { href: '/admin', label: { fa: 'داشبورد', en: 'Dashboard', ar: 'لوحة القيادة', zh: '仪表盘', ru: 'Панель' }, icon: LayoutDashboard },
+      { href: '/admin/operator', label: { fa: 'میز کار اپراتور', en: 'Operator Workbench', ar: 'مكتب الموظف', zh: '运营工作台', ru: 'Пульт оператора' }, icon: ListChecks, perm: 'booking:view:all' },
     ],
   },
   {
     id: 'operations',
     title: { fa: 'عملیات و هویت', en: 'Operations & Staff', ar: 'العمليات والموظفون', zh: '运营与人员', ru: 'Операции и сотрудники' },
     items: [
-      { href: '/admin/travel-files', label: { fa: 'پرونده‌های سفر', en: 'Travel Files', ar: 'ملفات السفر', zh: '行程档案', ru: 'Файлы поездок' }, icon: BriefcaseBusiness },
-      { href: '/admin/exceptions', label: { fa: 'مرکز خطا و استثنائات', en: 'Exception Center', ar: 'مركز الاستثناءات', zh: '异常中心', ru: 'Центр исключений' }, icon: ShieldCheck },
-      { href: '/admin/ops', label: { fa: 'عملیات و پشتیبانی', en: 'Ops & Support', ar: 'العمليات والدعم', zh: '运营与支持', ru: 'Операции и поддержка' }, icon: Activity },
-      { href: '/admin/bookings', label: { fa: 'رزروها', en: 'Bookings', ar: 'الحجوزات', zh: '预订', ru: 'Бронирования' }, icon: PlaneTakeoff },
-      { href: '/admin/users', label: { fa: 'کاربران و همکاران', en: 'Staff & Users', ar: 'المستخدمون والموظفون', zh: '员工与用户', ru: 'Сотрудники и пользователи' }, icon: UserCheck },
-      { href: '/admin/organizations', label: { fa: 'سازمان‌ها و آژانس‌ها (B2B)', en: 'Organizations & B2B', ar: 'الشركات والوكالات', zh: '机构与B2B', ru: 'Организации и B2B' }, icon: Building },
+      { href: '/admin/travel-files', label: { fa: 'پرونده‌های سفر', en: 'Travel Files', ar: 'ملفات السفر', zh: '行程档案', ru: 'Файлы поездок' }, icon: BriefcaseBusiness, perm: 'booking:view:all' },
+      { href: '/admin/exceptions', label: { fa: 'مرکز خطا و استثنائات', en: 'Exception Center', ar: 'مركز الاستثناءات', zh: '异常中心', ru: 'Центр исключений' }, icon: ShieldCheck, perm: 'booking:view:all' },
+      { href: '/admin/ops', label: { fa: 'عملیات و پشتیبانی', en: 'Ops & Support', ar: 'العمليات والدعم', zh: '运营与支持', ru: 'Операции и поддержка' }, icon: Activity, perm: 'ops:override:cancel' },
+      { href: '/admin/bookings', label: { fa: 'رزروها', en: 'Bookings', ar: 'الحجوزات', zh: '预订', ru: 'Бронирования' }, icon: PlaneTakeoff, perm: 'booking:view:all' },
+      { href: '/admin/users', label: { fa: 'کاربران و همکاران', en: 'Staff & Users', ar: 'المستخدمون والموظفون', zh: '员工与用户', ru: 'Сотрудники и пользователи' }, icon: UserCheck, perm: 'user:manage' },
+      { href: '/admin/organizations', label: { fa: 'سازمان‌ها و آژانس‌ها (B2B)', en: 'Organizations & B2B', ar: 'الشركات والوكالات', zh: '机构与B2B', ru: 'Организации и B2B' }, icon: Building, perm: 'booking:view:all' },
     ],
   },
   {
     id: 'growth',
     title: { fa: 'رشد و فروش', en: 'Growth', ar: 'النمو', zh: '增长', ru: 'Рост' },
     items: [
-      { href: '/admin/referrals', label: { fa: 'کدهای معرف / سرگروه‌ها', en: 'Referrals & Leaders', ar: 'رموز الإحالة والقادة', zh: '推荐码与领队', ru: 'Рефералы и лидеры' }, icon: Users },
+      { href: '/admin/referrals', label: { fa: 'کدهای معرف / سرگروه‌ها', en: 'Referrals & Leaders', ar: 'رموز الإحالة والقادة', zh: '推荐码与领队', ru: 'Рефералы и лидеры' }, icon: Users, perm: 'booking:view:all' },
     ],
   },
   {
     id: 'finance',
     title: { fa: 'مالی', en: 'Finance', ar: 'المالية', zh: '财务', ru: 'Финансы' },
     items: [
-      { href: '/admin/finance', label: { fa: 'مالی و تراکنش‌ها', en: 'Finance & Transactions', ar: 'المالية والمعاملات', zh: '财务与交易', ru: 'Финансы и транзакции' }, icon: Wallet },
-      { href: '/admin/finance/receipts', label: { fa: 'بررسی رسیدها (پیمنتینو)', en: 'Receipts Review (Paymentino)', ar: 'مراجعة الإيصالات (بيمينتينو)', zh: '回执审核 (Paymentino)', ru: 'Проверка квитанций (Paymentino)' }, icon: ReceiptText },
-      { href: '/admin/finance/settlements', label: { fa: 'تسویه‌حساب تامین‌کنندگان', en: 'Supplier Settlements', ar: 'تسويات الموردين', zh: '供应商结算', ru: 'Расчёты с поставщиками' }, icon: HandCoins },
+      { href: '/admin/finance', label: { fa: 'مالی و تراکنش‌ها', en: 'Finance & Transactions', ar: 'المالية والمعاملات', zh: '财务与交易', ru: 'Финансы и транзакции' }, icon: Wallet, perm: 'finance:view' },
+      { href: '/admin/finance/receipts', label: { fa: 'بررسی رسیدها (پیمنتینو)', en: 'Receipts Review (Paymentino)', ar: 'مراجعة الإيصالات (بيمينتينو)', zh: '回执审核 (Paymentino)', ru: 'Проверка квитанций (Paymentino)' }, icon: ReceiptText, perm: 'finance:view' },
+      { href: '/admin/finance/settlements', label: { fa: 'تسویه‌حساب تامین‌کنندگان', en: 'Supplier Settlements', ar: 'تسويات الموردين', zh: '供应商结算', ru: 'Расчёты с поставщиками' }, icon: HandCoins, perm: 'finance:view' },
     ],
   },
   {
     id: 'catalog',
     title: { fa: 'کاتالوگ و تامین', en: 'Catalog & Supply', ar: 'الكتالوج والتوريد', zh: '目录与供应', ru: 'Каталог и поставки' },
     items: [
-      { href: '/admin/suppliers', label: { fa: 'تامین‌کنندگان', en: 'Suppliers', ar: 'الموردون', zh: '供应商', ru: 'Поставщики' }, icon: Building2 },
-      { href: '/admin/inventory', label: { fa: 'انبار و سهمیه‌ها', en: 'Inventory & Allotments', ar: 'المخزون والحصص', zh: '库存与配额', ru: 'Инвентарь и квоты' }, icon: Boxes },
-      { href: '/admin/content', label: { fa: 'مدیریت محتوا (CMS)', en: 'Content Management', ar: 'إدارة المحتوى', zh: '内容管理 (CMS)', ru: 'Управление контентом' }, icon: FolderKanban },
+      { href: '/admin/suppliers', label: { fa: 'تامین‌کنندگان', en: 'Suppliers', ar: 'الموردون', zh: '供应商', ru: 'Поставщики' }, icon: Building2, perm: 'supplier:view' },
+      { href: '/admin/inventory', label: { fa: 'انبار و سهمیه‌ها', en: 'Inventory & Allotments', ar: 'المخزون والحصص', zh: '库存与配额', ru: 'Инвентарь и квоты' }, icon: Boxes, perm: 'inventory:view' },
+      { href: '/admin/content', label: { fa: 'مدیریت محتوا (CMS)', en: 'Content Management', ar: 'إدارة المحتوى', zh: '内容管理 (CMS)', ru: 'Управление контентом' }, icon: FolderKanban, perm: 'catalog:hotels:edit' },
     ],
   },
 ];
@@ -79,18 +81,24 @@ const ROLE_LT: Record<string, LText> = {
 /**
  * Client chrome for the ERP. Access itself is authorized in the server layout;
  * this component only renders the shell for an already-authorized admin.
+ * Nav items are filtered by the caller's relational permissions so each role
+ * (SUPER_ADMIN / FINANCE / OPS / OPERATOR) only sees its own workspace.
  */
 export function AdminShell({
   children,
   userName,
   role,
+  permissions = [],
 }: {
   children: React.ReactNode;
   userName: string;
   role: string;
+  permissions?: string[];
 }) {
   const locale = useLocale();
   const pathname = usePathname() || '';
+  const isSuperAdmin = role === 'SUPER_ADMIN' || permissions.includes('*');
+  const can = (perm?: string) => !perm || isSuperAdmin || permissions.includes(perm);
   // Remember the operator's sidebar preference on this device.
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -105,6 +113,7 @@ export function AdminShell({
   const shortcutsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!can('finance:view')) return;
     let cancelled = false;
     getPendingReceiptsCount()
       .then((cnt) => {
@@ -114,7 +123,8 @@ export function AdminShell({
     return () => {
       cancelled = true;
     };
-  }, [pathname]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, role]);
 
   useEffect(() => {
     try {
@@ -182,7 +192,10 @@ export function AdminShell({
 
   const renderNav = (opts?: { onNavigate?: () => void; dark?: boolean }) => (
     <div className="flex flex-col gap-4">
-      {NAV_GROUPS.map((group) => (
+      {NAV_GROUPS.map((group) => {
+        const visibleItems = group.items.filter((n) => can(n.perm));
+        if (visibleItems.length === 0) return null;
+        return (
         <div key={group.id}>
           {!collapsed && (
             <p
@@ -195,7 +208,7 @@ export function AdminShell({
             </p>
           )}
           <div className="flex flex-col gap-0.5">
-            {group.items.map((n) => {
+            {visibleItems.map((n) => {
               const Icon = n.icon;
               const active = isActive(n.href);
               return (
@@ -240,11 +253,11 @@ export function AdminShell({
                     />
                   )}
                 </Link>
-              );
-            })}
+              );})}
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 
@@ -258,7 +271,7 @@ export function AdminShell({
       <div className="spotlight top-[50%] start-[10%] animate-pulse" />
       <a
         href="#admin-main"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:start-2 focus:z-[300] focus:rounded-xl focus:bg-brand focus:px-4 focus:py-2 focus:text-xs focus:font-black focus:text-surface"
+        className="min-h-[44px] min-w-[44px] sr-only focus:not-sr-only focus:absolute focus:top-2 focus:start-2 focus:z-[300] focus:rounded-xl focus:bg-brand focus:px-4 focus:py-2 focus:text-xs focus:font-black focus:text-surface"
       >
         {lt(locale, { fa: 'پرش به محتوای اصلی', en: 'Skip to main content', ar: 'تخطي إلى المحتوى', zh: '跳到主要内容', ru: 'Перейти к содержимому' })}
       </a>
@@ -288,7 +301,7 @@ export function AdminShell({
                 onClick={() => setMobileNavOpen(false)}
                 autoFocus
                 aria-label={lt(locale, { fa: 'بستن منو', en: 'Close menu', ar: 'إغلاق القائمة', zh: '关闭菜单', ru: 'Закрыть меню' })}
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-surface/10 text-surface transition hover:bg-surface/20"
+                className="min-h-[44px] min-w-[44px] grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-surface/10 text-surface transition hover:bg-surface/20"
               >
                 <X size={16} aria-hidden="true" />
               </button>
@@ -313,7 +326,7 @@ export function AdminShell({
                 <Link
                   href="/"
                   aria-label={lt(locale, { fa: 'سایت مسافران', en: 'Traveler Site', ar: 'موقع المسافرين', zh: '旅客网站', ru: 'Сайт для путешественников' })}
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-surface/10 transition hover:bg-surface/20"
+                  className="min-h-[44px] min-w-[44px] grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-surface/10 transition hover:bg-surface/20"
                 >
                   <ExternalLink size={14} aria-hidden="true" />
                 </Link>
@@ -350,7 +363,7 @@ export function AdminShell({
               onClick={() => setCollapsed(!collapsed)}
               aria-expanded={!collapsed}
               aria-label={lt(locale, { fa: 'جمع یا گسترش منو', en: 'Collapse or expand menu', ar: 'طي القائمة أو توسيعها', zh: '折叠或展开菜单', ru: 'Свернуть или развернуть меню' })}
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-surface/10 text-surface/80 transition hover:bg-surface/20 hover:text-surface"
+              className="min-h-[44px] min-w-[44px] grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-surface/10 text-surface/80 transition hover:bg-surface/20 hover:text-surface"
             >
               {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
             </button>
@@ -394,7 +407,7 @@ export function AdminShell({
                 type="button"
                 onClick={() => setMobileNavOpen(true)}
                 aria-label={lt(locale, { fa: 'باز کردن منوی ماژول‌ها', en: 'Open modules menu', ar: 'فتح قائمة الوحدات', zh: '打开模块菜单', ru: 'Открыть меню модулей' })}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-soft text-sub transition hover:bg-line/60 hover:text-ink lg:hidden"
+                className="min-h-[44px] min-w-[44px] grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-soft text-sub transition hover:bg-line/60 hover:text-ink lg:hidden"
               >
                 <Menu size={18} aria-hidden="true" />
               </button>
@@ -411,7 +424,7 @@ export function AdminShell({
                 <AdminGlobalSearch />
               </div>
 
-              {pendingCount > 0 && (
+              {pendingCount > 0 && can('finance:view') && (
                 <Link
                   href="/admin/finance/receipts"
                   className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-[11px] font-black hover:bg-amber-100 transition shadow-xs"
@@ -423,6 +436,7 @@ export function AdminShell({
               )}
 
               <div className="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+                <AdminPaymentModeToggle />
                 <div ref={shortcutsRef} className="relative">
                   <button
                     type="button"
@@ -430,7 +444,7 @@ export function AdminShell({
                     aria-expanded={shortcutsOpen}
                     aria-label={lt(locale, { fa: 'راهنمای میانبرهای صفحه‌کلید', en: 'Keyboard shortcuts help', ar: 'مساعدة اختصارات لوحة المفاتيح', zh: '键盘快捷键帮助', ru: 'Справка по горячим клавишам' })}
                     title={lt(locale, { fa: 'میانبرها', en: 'Shortcuts', ar: 'الاختصارات', zh: '快捷键', ru: 'Горячие клавиши' })}
-                    className="grid h-10 w-10 place-items-center rounded-xl border border-line text-sub transition hover:border-brand/40 hover:bg-mint hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    className="min-h-[44px] min-w-[44px] grid h-10 w-10 place-items-center rounded-xl border border-line text-sub transition hover:border-brand/40 hover:bg-mint hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                   >
                     <Keyboard size={15} aria-hidden="true" />
                   </button>
@@ -461,7 +475,7 @@ export function AdminShell({
                   href="/"
                   aria-label={lt(locale, { fa: 'سایت مسافران', en: 'Traveler Site', ar: 'موقع المسافرين', zh: '旅客网站', ru: 'Сайт для путешественников' })}
                   title={lt(locale, { fa: 'سایت مسافران', en: 'Traveler Site', ar: 'موقع المسافرين', zh: '旅客网站', ru: 'Сайт для путешественников' })}
-                  className="grid h-10 w-10 place-items-center rounded-xl border border-line text-sub transition hover:border-brand/40 hover:bg-mint hover:text-brand-dark"
+                  className="min-h-[44px] min-w-[44px] grid h-10 w-10 place-items-center rounded-xl border border-line text-sub transition hover:border-brand/40 hover:bg-mint hover:text-brand-dark"
                 >
                   <ExternalLink size={15} aria-hidden="true" />
                 </Link>

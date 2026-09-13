@@ -1,0 +1,353 @@
+openapi: 3.1.0
+info:
+  title: eCardo Travel API
+  version: 1.0.0
+  description: Stable Flutter and website API for eCardo Travel. Requests enter through the Cloudflare edge, provider payloads are normalized before reaching the private origin, and all purchases use the authenticated user's eCardo wallet.
+servers:
+  - url: https://trip.ecardo.ir/api
+tags:
+  - { name: Discovery }
+  - { name: Identity }
+  - { name: Hotel }
+  - { name: Flight }
+  - { name: SIM }
+security:
+  - bearerAuth: []
+paths:
+  /v1/travel/bootstrap:
+    get:
+      tags: [Discovery]
+      security: []
+      summary: Get enabled services and server-driven UI schemas
+      parameters:
+        - { $ref: '#/components/parameters/Locale' }
+      responses:
+        '200':
+          description: Service catalog
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BootstrapResponse' }
+  /v1/travel/services/{service}/search:
+    post:
+      tags: [Discovery]
+      security: []
+      summary: Search a normalized Travel service
+      parameters:
+        - { $ref: '#/components/parameters/ServiceKey' }
+        - { $ref: '#/components/parameters/Locale' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [criteria]
+              properties:
+                criteria: { type: object, additionalProperties: true }
+            examples:
+              hotel: { value: { criteria: { city: Tehran, check_in: '2026-08-10', check_out: '2026-08-12', adults: 2 } } }
+              flight: { value: { criteria: {} } }
+              esim: { value: { criteria: { country_code: TR } } }
+      responses:
+        '200':
+          description: Normalized offers. Flight criteria are optional; omitted route/date fields return nearest future catalog flights ordered by departure time.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OfferSearchResponse' }
+  /v1/travel/services/{service}/offers/{offerId}:
+    get:
+      tags: [Discovery]
+      security: []
+      summary: Get a normalized offer
+      parameters:
+        - { $ref: '#/components/parameters/ServiceKey' }
+        - { name: offerId, in: path, required: true, schema: { type: string } }
+        - { $ref: '#/components/parameters/Locale' }
+      responses:
+        '200': { description: Offer details, content: { application/json: { schema: { $ref: '#/components/schemas/OfferResponse' } } } }
+        '404': { $ref: '#/components/responses/Error' }
+  /v1/auth/exchange:
+    post:
+      tags: [Identity]
+      security: []
+      summary: Exchange the main eCardo token for a short-lived Travel token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [source_token]
+              properties: { source_token: { type: string } }
+      responses:
+        '200': { description: Travel token issued }
+        '401': { $ref: '#/components/responses/Error' }
+  /v1/catalog-orders:
+    post:
+      tags: [Discovery]
+      summary: Create a wallet-payable catalog/sandbox order
+      description: Re-reads the authoritative master catalog offer and ignores any client-submitted amount or currency. No supplier purchase is performed; a successful wallet capture leaves the order pending manual admin confirmation.
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [service, offer_id]
+              properties:
+                service: { type: string, enum: [hotel, flight] }
+                offer_id: { type: string }
+                check_in_date: { type: string, format: date }
+                check_out_date: { type: string, format: date }
+                room_count: { type: integer, minimum: 1 }
+                adult_count: { type: integer, minimum: 1 }
+                child_count: { type: integer, minimum: 0 }
+                search_metadata: { type: object, additionalProperties: true }
+      responses:
+        '201': { description: Catalog order created in pending_payment state }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+  /v1/orders/{order}/pay:
+    post:
+      tags: [Discovery]
+      summary: Capture the order currency from the matching eCardo wallet
+      description: Uses the authoritative order amount and currency, preserves idempotency, performs no supplier purchase for catalog orders, and queues manual admin confirmation after wallet capture.
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      responses:
+        '200': { description: Wallet captured; catalog orders become paid_pending_admin_approval }
+        '402': { $ref: '#/components/responses/WalletTopUp' }
+  /v2/hotels/search:
+    post:
+      tags: [Hotel]
+      summary: Search hotel inventory
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses: { '200': { description: Hotel quotes }, '422': { $ref: '#/components/responses/Error' } }
+  /v2/hotels/offers/{quote}:
+    get:
+      tags: [Hotel]
+      summary: Get hotel quote details
+      parameters: [ { name: quote, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { description: Quote details }, '404': { $ref: '#/components/responses/Error' } }
+  /v2/hotels/offers/{quote}/reprice:
+    post:
+      tags: [Hotel]
+      summary: Reprice a hotel quote
+      parameters:
+        - { name: quote, in: path, required: true, schema: { type: string } }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      responses: { '200': { description: Repriced quote }, '409': { $ref: '#/components/responses/Error' } }
+  /v2/hotel-orders:
+    get:
+      tags: [Hotel]
+      summary: List the authenticated user's hotel orders
+      responses: { '200': { description: Hotel orders } }
+    post:
+      tags: [Hotel]
+      summary: Create a hotel order
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quote_id, booking_mode]
+              properties:
+                quote_id: { type: string }
+                booking_mode: { type: string, enum: [instant, reserve] }
+      responses: { '201': { description: Hotel order created }, '422': { $ref: '#/components/responses/Error' } }
+  /v2/hotel-orders/{order}/pay:
+    post:
+      tags: [Hotel]
+      summary: Pay from the eCardo wallet and process the booking
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      responses:
+        '200': { description: Payment captured }
+        '402': { $ref: '#/components/responses/WalletTopUp' }
+  /v2/hotel-orders/{order}/confirm:
+    post:
+      tags: [Hotel]
+      summary: Pay a reserved order's remaining balance
+      parameters:
+        - { $ref: '#/components/parameters/OrderId' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      responses:
+        '200': { description: Reservation confirmed }
+        '402': { $ref: '#/components/responses/WalletTopUp' }
+  /v2/hotel-orders/{order}/voucher:
+    get:
+      tags: [Hotel]
+      summary: Get the authenticated user's voucher
+      parameters: [ { $ref: '#/components/parameters/OrderId' } ]
+      responses: { '200': { description: Voucher }, '404': { $ref: '#/components/responses/Error' } }
+  /v2/hotel-payments:
+    get:
+      tags: [Hotel]
+      summary: List the authenticated user's hotel wallet payments
+      responses: { '200': { description: Payments } }
+  /v1/flight/search:
+    post:
+      tags: [Flight]
+      security: []
+      summary: Search flights
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [origin, destination, departure_date], properties: { origin: { type: string }, destination: { type: string }, departure_date: { type: string, format: date } } } } } }
+      responses: { '200': { description: Flights } }
+  /v1/flight/revalidate:
+    post:
+      tags: [Flight]
+      security: []
+      summary: Revalidate a flight offer
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [flight_id], properties: { flight_id: { type: string } } } } } }
+      responses: { '200': { description: Revalidated flight } }
+  /v1/flight/buy:
+    post:
+      tags: [Flight]
+      summary: Buy a flight using the authenticated user's wallet
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses:
+        '200': { description: Flight order }
+        '402': { $ref: '#/components/responses/WalletTopUp' }
+  /v1/flight/orders:
+    get:
+      tags: [Flight]
+      summary: List the authenticated user's flight orders
+      responses: { '200': { description: Flight orders } }
+  /v1/sim/countries:
+    get:
+      tags: [SIM]
+      security: []
+      summary: List countries with available SIM products
+      responses: { '200': { description: Countries } }
+  /v1/sim/products:
+    get:
+      tags: [SIM]
+      security: []
+      summary: List SIM and eSIM products
+      responses: { '200': { description: Products } }
+  /v1/sim/airports:
+    get:
+      tags: [SIM]
+      security: []
+      summary: List physical SIM airport delivery points
+      responses: { '200': { description: Airports } }
+  /v1/sim/hotels:
+    get:
+      tags: [SIM]
+      security: []
+      summary: List physical SIM hotel delivery points
+      responses: { '200': { description: Hotels } }
+  /v1/sim/buy:
+    post:
+      tags: [SIM]
+      summary: Buy a SIM using the authenticated user's wallet
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+      responses:
+        '200': { description: SIM order }
+        '402': { $ref: '#/components/responses/WalletTopUp' }
+  /v1/sim/orders:
+    get:
+      tags: [SIM]
+      summary: List the authenticated user's SIM orders
+      responses: { '200': { description: SIM orders } }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: eCardo-Travel-Token }
+  parameters:
+    ServiceKey: { name: service, in: path, required: true, schema: { type: string, enum: [hotel, flight, esim] } }
+    Locale: { name: locale, in: query, schema: { type: string, example: en-US }, description: Locale values are normalized case-insensitively to a supported two-letter language code. X-Locale is also accepted. }
+    OrderId: { name: order, in: path, required: true, schema: { type: string } }
+    IdempotencyKey: { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 8, maxLength: 100 } }
+  responses:
+    Error:
+      description: Standard API error
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    WalletTopUp:
+      description: Wallet balance is insufficient; follow next_action without changing the Flutter purchase flow
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/WalletTopUpResponse' }
+          example:
+            status: error
+            error: { code: INSUFFICIENT_WALLET_BALANCE, message: Wallet balance is insufficient. }
+            wallet: { type: default, id: default, currency: IRR, balance: '1000000.00000000' }
+            required_amount: '1500000.00000000'
+            shortfall_amount: '500000.00000000'
+            next_action: { type: wallet_top_up, screen: wallet_add_money, redirect_url: 'https://ecardo.ir/api/user/add-money', api_endpoint: 'https://ecardo.ir/api/user/add-money', method: GET, currency: IRR, wallet_id: default, suggested_amount: '500000.00000000' }
+  schemas:
+    BootstrapResponse:
+      type: object
+      properties:
+        status: { type: string, const: success }
+        schema_version: { type: string, const: '1.0' }
+        data:
+          type: object
+          properties:
+            brand: { type: string }
+            currency: { type: string }
+            locale: { type: string }
+            services: { type: array, items: { type: object, additionalProperties: true } }
+    Offer:
+      type: object
+      required: [id, service, provider_key, title, pricing]
+      properties:
+        id: { type: string }
+        service: { type: string }
+        provider_key: { type: string }
+        title: { type: string }
+        subtitle: { type: string }
+        badge: { type: string }
+        image_url: { type: string }
+        product: { type: object, additionalProperties: true }
+        pricing:
+          type: object
+          required: [total_amount, currency]
+          properties:
+            total_amount: { type: number }
+            currency: { type: string }
+            components: { type: array, items: { type: object, additionalProperties: true } }
+        highlights: { type: array, items: { type: string } }
+        attributes: { type: object, additionalProperties: true }
+        policies: { type: object, additionalProperties: true }
+        actions: { type: array, items: { type: object, additionalProperties: true } }
+        booking_mode: { type: string }
+        expires_at: { type: [string, 'null'], format: date-time }
+    OfferSearchResponse:
+      type: object
+      properties:
+        status: { type: string }
+        schema_version: { type: string }
+        data:
+          type: object
+          properties:
+            service: { type: string }
+            offers: { type: array, items: { $ref: '#/components/schemas/Offer' } }
+            facets: { type: array, items: { type: object, additionalProperties: true } }
+            partial: { type: boolean }
+    OfferResponse:
+      type: object
+      properties:
+        status: { type: string }
+        data: { type: object, properties: { offer: { $ref: '#/components/schemas/Offer' } } }
+    ErrorResponse:
+      type: object
+      properties:
+        status: { type: string, const: error }
+        error: { type: object, properties: { code: { type: string }, message: { type: string } } }
+        request_id: { type: [string, 'null'] }
+    WalletTopUpResponse:
+      allOf:
+        - { $ref: '#/components/schemas/ErrorResponse' }
+        - type: object
+          properties:
+            wallet: { type: object, additionalProperties: true }
+            required_amount: { type: string }
+            shortfall_amount: { type: string }
+            next_action: { type: object, additionalProperties: true }

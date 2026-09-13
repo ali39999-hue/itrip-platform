@@ -357,7 +357,7 @@ export function CryptoPaymentView({
                 key={w.id}
                 type="button"
                 onClick={() => setSelectedWalletId(w.id)}
-                className={`p-3 rounded-2xl border-2 text-right transition-all flex items-center justify-between ${
+                className={`p-3 rounded-2xl border-2 text-start transition-all flex items-center justify-between ${
                   isSelected
                     ? 'border-teal-500 bg-teal-50/50 shadow-xs'
                     : 'border-line bg-surface hover:border-teal-300'

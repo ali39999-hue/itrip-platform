@@ -126,14 +126,15 @@ export function DestinationComparator({
           </div>
         </div>
 
-        {/* Destination Selectors */}
+        {/* Destination Selectors — min-w-0/flex-1 تا در موبایل selectها جمع شوند
+            و ردیف از لبه چپ (سمت scroll در RTL) بیرون نزند */}
         <div className="flex items-center gap-2">
           <select
             id="dest-select-1"
             aria-label="انتخاب مقصد اول برای مقایسه"
             value={dest1Id}
             onChange={(e) => setDest1Id(e.target.value)}
-            className="h-9 px-3 rounded-xl bg-soft border border-line text-xs font-bold text-ink"
+            className="h-9 px-3 min-w-0 flex-1 rounded-xl bg-soft border border-line text-xs font-bold text-ink"
           >
             {Object.values(DESTINATION_PROFILES).map((d) => (
               <option key={d.id} value={d.id}>
@@ -142,14 +143,14 @@ export function DestinationComparator({
             ))}
           </select>
 
-          <span className="text-xs font-black text-sub">VS</span>
+          <span className="text-xs font-black text-sub shrink-0">VS</span>
 
           <select
             id="dest-select-2"
             aria-label="انتخاب مقصد دوم برای مقایسه"
             value={dest2Id}
             onChange={(e) => setDest2Id(e.target.value)}
-            className="h-9 px-3 rounded-xl bg-soft border border-line text-xs font-bold text-ink"
+            className="h-9 px-3 min-w-0 flex-1 rounded-xl bg-soft border border-line text-xs font-bold text-ink"
           >
             {Object.values(DESTINATION_PROFILES).map((d) => (
               <option key={d.id} value={d.id}>
@@ -195,7 +196,9 @@ export function DestinationComparator({
                     <Clock size={14} className="text-sky-600" />
                     <span>مدت پرواز از تهران:</span>
                   </span>
-                  <span className="font-mono font-black">{dest.flightDurationHours} ساعت مستقیم</span>
+                  <span className="font-mono font-black">
+                    {dest.flightDurationHours.toLocaleString('fa-IR')} ساعت مستقیم
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-between p-2.5 rounded-xl bg-surface border border-line">

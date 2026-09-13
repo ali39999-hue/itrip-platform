@@ -13,9 +13,11 @@ import { useCountryStore } from '@/stores/country-store';
 import { countryName } from '@/lib/countries';
 import { normalizeBookingType, passengerSchema, type Passenger } from '@/lib/validations';
 import { createBookingDraft, payBooking, getWallet, repriceBookingAction } from '@/actions/booking';
+import { getAdminPaymentModeAction, setAdminPaymentModeAction } from '@/actions/admin-payment-mode';
 import { AlertTriangle } from 'lucide-react';
 import { useHydration } from '@/hooks/useHydration';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
+import { calculateCountryPricing, formatMoney } from '@/lib/money';
 
 import { CheckoutStepper, type CheckoutPhase } from '@/components/checkout/CheckoutStepper';
 import { PassengerSection } from '@/components/checkout/PassengerSection';
@@ -30,7 +32,6 @@ import { CryptoPaymentView } from '@/components/checkout/CryptoPaymentView';
 import { IssuingModal } from '@/components/checkout/IssuingModal';
 import { SuccessConfirmation } from '@/components/checkout/SuccessConfirmation';
 import { StickyMobileBar } from '@/components/checkout/StickyMobileBar';
-import { formatMoney } from '@/lib/money';
 import { trackFunnel } from '@/lib/analytics';
 import { PassportValidityGuard } from '@/domains/identity/PassportValidityGuard';
 import { getMyTravelerProfilesAction, saveTravelerProfileAction, saveTravelDocumentAction } from '@/actions/travelers';
@@ -44,7 +45,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const hydrated = useHydration();
   const { country } = useCountryStore();
-  const { currency } = useDisplayCurrency();
+  const { currency, taxRate, taxLabel, gatewayFeeRate, gatewayFeeLabel } = useDisplayCurrency();
   const bookingContext = useBookingStore((s) => s.bookingContext);
   const setPassengers = useBookingStore((s) => s.setPassengers);
   const wallet = useBookingStore((s) => s.wallet);
@@ -77,6 +78,31 @@ export default function CheckoutPage() {
   const [priceChangeAccepted, setPriceChangeAccepted] = useState(false);
   const [savedProfiles, setSavedProfiles] = useState<EnrichedTravelerProfile[]>([]);
   const [saveToAccount, setSaveToAccount] = useState(false);
+  const [adminPaymentMode, setAdminPaymentMode] = useState<'real' | 'demo'>('real');
+  const [isAdminUser, setIsAdminUser] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    getAdminPaymentModeAction()
+      .then((res) => {
+        if (!active) return;
+        setIsAdminUser(res.isAdmin);
+        setAdminPaymentMode(res.mode);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [authUser]);
+
+  async function handleToggleAdminPaymentMode(nextMode: 'real' | 'demo') {
+    setAdminPaymentMode(nextMode);
+    try {
+      await setAdminPaymentModeAction(nextMode);
+    } catch (e) {
+      console.error('Failed to set admin payment mode:', e);
+    }
+  }
 
   const totalTravelers = Math.max(1, (bookingContext?.adults ?? 1) + (bookingContext?.children ?? 0));
   const [currentPassengerIdx, setCurrentPassengerIdx] = useState(0);
@@ -196,17 +222,15 @@ export default function CheckoutPage() {
     return () => clearInterval(t);
   }, [phase]);
 
-  // Real server wallet balance (authoritative for wallet payments, locale-adapted).
+  // Real server wallet balance (authoritative for wallet payments, country-adapted).
   useEffect(() => {
     let cancelled = false;
     getWallet()
       .then((res) => {
         if (!cancelled && res.success && res.balances) {
-          const bal = locale === 'zh'
-            ? (res.balances.CNY ?? 0)
-            : locale === 'en' || locale === 'ru'
-            ? (res.balances.USDT ?? res.balances.USD ?? 0)
-            : (res.balances.IRR ?? 0);
+          const preferred = country === 'iran' ? 'IRR' : country === 'china' ? 'CNY' : 'USD';
+          const bal = res.balances[preferred]
+            ?? (preferred !== 'IRR' ? (res.balances.USDT ?? res.balances.USD ?? 0) : 0);
           setServerWallet(bal);
         }
       })
@@ -214,7 +238,7 @@ export default function CheckoutPage() {
     return () => {
       cancelled = true;
     };
-  }, [locale]);
+  }, [country]);
 
   // Wait for the persisted store before deciding — avoids a false empty state.
   if (!hydrated) {
@@ -303,8 +327,25 @@ export default function CheckoutPage() {
 
   const baseAmount = bookingContext?.amount ?? 0;
   const itemTitle = bookingContext?.title ?? '';
-  const walletBalance = serverWallet ?? wallet.IRR ?? 0;
-  const totalPayable = Math.max(0, baseAmount + (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0) - referralDiscountAmount);
+  // Demo wallet mirror follows the country currency too (BUG-007 seeding is IRR-first).
+  const walletBalance = serverWallet
+    ?? (country === 'iran'
+      ? wallet.IRR
+      : country === 'china'
+      ? (wallet.CNY ?? wallet.USDT ?? wallet.IRR)
+      : (wallet.USD ?? wallet.USDT ?? wallet.IRR))
+    ?? 0;
+
+  const subtotalBeforeFees = Math.max(
+    0,
+    baseAmount + (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0) - referralDiscountAmount
+  );
+  const countryPricing = calculateCountryPricing({
+    subtotal: subtotalBeforeFees,
+    countryId: country,
+    gateway: method,
+  });
+  const totalPayable = countryPricing.totalPayable;
 
   function scanPassport() {
     setScanning(true);
@@ -362,7 +403,9 @@ export default function CheckoutPage() {
       }).catch(() => {});
     }
 
-    const contactPhone = authUser?.phone || (authUser?.email ? '09120000001' : '');
+    // Fabricated fallback numbers corrupt booking contact data — an email-only
+    // user must add a real phone instead of silently booking under a fake one.
+    const contactPhone = authUser?.phone || '';
     if (!contactPhone) {
       setError(
         lt(locale, {
@@ -398,6 +441,51 @@ export default function CheckoutPage() {
       }
     }
 
+    // احراز هویت خریدار در مرحله خرید (KYC at Purchase):
+    // برای صدور قانونی بلیط و واچر، ثبت کد ملی معتبر یا پاسپورت مسافر اصلی الزامی است.
+    const leadPassenger = finalPassengers[0];
+    if (!leadPassenger.nationalId && !leadPassenger.passportNo) {
+      setCurrentPassengerIdx(0);
+      reset(leadPassenger);
+      setError(
+        lt(locale, {
+          fa: 'جهت احراز هویت خریدار (KYC) و صدور رسمی بلیط، ثبت کد ملی ۱۰ رقمی یا شماره گذرنامه مسافر اصلی الزامی است.',
+          en: '10-digit National ID or Passport number is required for buyer verification (KYC) and official booking.',
+          ar: 'الرقم الوطني المكون من 10 أرقام أو جواز السفر مطلوب للتحقق من هوية المشتري (KYC) وإصدار الحجز.',
+          zh: '需要主要旅客的10位身份证号或护照号用于买家实名认证（KYC）及正式预订。',
+          ru: '10-значный национальный ID или паспорт обязателен для верификации покупателя (KYC) и оформления бронирования.',
+        })
+      );
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // ذخیره خودکار اطلاعات هویتی مسافر اول در پروفایل خریدار در صورت ناقص بودن پروفایل
+    if (authUser && !authUser.profileComplete && leadPassenger.firstName && leadPassenger.lastName) {
+      import('@/actions/auth').then(({ updateProfileDetails }) => {
+        updateProfileDetails({
+          firstNameFa: leadPassenger.firstName,
+          lastNameFa: leadPassenger.lastName,
+          nationalId: leadPassenger.nationalId || undefined,
+          passportNo: leadPassenger.passportNo || undefined,
+          passportExpiry: leadPassenger.passportExpiryDate || undefined,
+        }).then((res) => {
+          if (res.success) {
+            useAuthStore.setState((s) => ({
+              user: s.user ? {
+                ...s.user,
+                firstNameFa: leadPassenger.firstName,
+                lastNameFa: leadPassenger.lastName,
+                nationalId: leadPassenger.nationalId || s.user.nationalId,
+                profileComplete: true,
+                kycApproved: true,
+              } : null,
+            }));
+          }
+        }).catch(() => {});
+      }).catch(() => {});
+    }
+
     const allFormData = finalPassengers.slice(0, totalTravelers);
 
     const allBps: import('@/lib/types').BookingPassenger[] = allFormData.map((p) => ({
@@ -408,7 +496,7 @@ export default function CheckoutPage() {
       passportNo: p.passportNo,
       nationalId: p.nationalId ?? '',
       birthDate: p.birthDate,
-      gender: p.gender === 'FEMALE' ? 'female' : 'male',
+      gender: p.gender,
     }));
 
     setPassengers(allBps);
@@ -418,6 +506,7 @@ export default function CheckoutPage() {
         type: btype,
         itemId: bookingContext?.id,
         itemTitle,
+        count: totalTravelers,
         travelDate: bookingContext?.travelDate || undefined,
         details: {
           title: itemTitle,
@@ -509,6 +598,10 @@ export default function CheckoutPage() {
         const { initiateEcardoPayment } = await import('@/actions/booking');
         const initRes = await initiateEcardoPayment(draftBookingId, {
           paymentInstrument: selectedInstrument,
+          // Follow the country switcher: charge in the selected country's
+          // currency (mapped to the eCardo-supported rail server-side).
+          targetCurrency: currency,
+          paymentMode: isAdminUser ? adminPaymentMode : undefined,
         });
         if (initRes.success && initRes.redirectUrl) {
           window.location.href = initRes.redirectUrl;
@@ -656,6 +749,11 @@ export default function CheckoutPage() {
                 itemTitle={itemTitle}
                 discountAmount={referralDiscountAmount}
                 referralCode={referralCode ? referralCode.trim() : undefined}
+                taxRate={taxRate}
+                taxLabel={taxLabel}
+                gatewayFeeRate={gatewayFeeRate}
+                gatewayFeeLabel={gatewayFeeLabel}
+                paymentMethod={method}
               />
 
               {/* Security Badge in Sidebar */}
@@ -714,6 +812,9 @@ export default function CheckoutPage() {
                     totalPayable={baseAmount + (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0)}
                     selectedInstrument={selectedInstrument}
                     setSelectedInstrument={setSelectedInstrument}
+                    isAdmin={isAdminUser}
+                    adminPaymentMode={adminPaymentMode}
+                    onToggleAdminPaymentMode={handleToggleAdminPaymentMode}
                   />
 
                   {/* Transparent Cancellation Penalty Policy */}
@@ -778,6 +879,11 @@ export default function CheckoutPage() {
                 itemTitle={itemTitle}
                 discountAmount={referralDiscountAmount}
                 referralCode={referralCode ? referralCode.trim() : undefined}
+                taxRate={taxRate}
+                taxLabel={taxLabel}
+                gatewayFeeRate={gatewayFeeRate}
+                gatewayFeeLabel={gatewayFeeLabel}
+                paymentMethod={method}
               />
             </div>
           </div>

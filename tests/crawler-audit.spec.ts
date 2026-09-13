@@ -40,7 +40,9 @@ const ROUTES = [
 test.describe('0-to-100 Platform & Link Audit', () => {
 
   test('Check all routes across fa, en, and ar for 200 OK and valid links', async ({ page, request }) => {
-    test.setTimeout(120000);
+    // 155 localized pages: in CI this runs against the production server (fast),
+    // but under a local dev server every cold route compiles on first hit.
+    test.setTimeout(600000);
 
     const brokenLinks: { to: string; status: number }[] = [];
     const collectedLinks = new Set<string>();

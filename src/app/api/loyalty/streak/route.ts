@@ -1,18 +1,16 @@
-import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { LoyaltyStreakService } from "@/domains/loyalty/LoyaltyStreakService";
+import { apiError, apiSuccess } from "@/lib/api-response";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const session = await auth();
-    const url = new URL(request.url);
-    const fallbackUserId = url.searchParams.get("userId") || undefined;
-    const userId = session?.user?.id || fallbackUserId || "guest";
+    const userId = session?.user?.id || "guest";
 
     const status = LoyaltyStreakService.getStreakStatus(userId);
-    return NextResponse.json(status);
+    return apiSuccess(status);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiError(message, 500);
   }
 }

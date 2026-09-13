@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
-import { InvoiceDomainService } from './InvoiceDomainService';
+import { InvoiceDomainService, getStatutorySellerInfo, STATUTORY_SELLER_INFO } from './InvoiceDomainService';
 
 describe('InvoiceDomainService - Statutory Invoicing Suite', () => {
   const suffix = `inv_${Date.now().toString(36)}_${randomBytes(3).toString('hex')}`;
@@ -135,5 +135,39 @@ describe('InvoiceDomainService - Statutory Invoicing Suite', () => {
     const words = InvoiceDomainService.numberToPersianWords(21_800_000, 'IRR');
     expect(words).toContain('دو میلیون');
     expect(words).toContain('یکصد و هشتاد هزار تومان');
+  });
+
+  describe('seller identity fail-closed (§76-5)', () => {
+    const OLD_ENV = { ...process.env };
+
+    afterEach(() => {
+      process.env = { ...OLD_ENV };
+    });
+
+    it('falls back to demo defaults outside production', () => {
+      process.env.NODE_ENV = 'test';
+      process.env.DEMO_MODE = 'true';
+      delete process.env.INVOICE_SELLER_LEGAL_NAME;
+      const seller = getStatutorySellerInfo();
+      expect(seller.legalName).toBe(STATUTORY_SELLER_INFO.legalName);
+    });
+
+    it('refuses demo identity in production without seller configuration', () => {
+      process.env.NODE_ENV = 'production';
+      process.env.DEMO_MODE = 'false';
+      delete process.env.INVOICE_SELLER_LEGAL_NAME;
+      expect(() => getStatutorySellerInfo()).toThrow(/Seller identity is not configured/);
+    });
+
+    it('uses environment-configured identity in production', () => {
+      process.env.NODE_ENV = 'production';
+      process.env.DEMO_MODE = 'false';
+      process.env.INVOICE_SELLER_LEGAL_NAME = 'شرکت واقعی تست';
+      process.env.INVOICE_SELLER_NATIONAL_ID = '11111111111';
+      process.env.INVOICE_SELLER_ECONOMIC_CODE = '222222222222';
+      const seller = getStatutorySellerInfo();
+      expect(seller.legalName).toBe('شرکت واقعی تست');
+      expect(seller.nationalId).toBe('11111111111');
+    });
   });
 });

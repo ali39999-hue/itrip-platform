@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
@@ -10,9 +10,27 @@ import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES, COUNTRY_ORDER, countryName } from '@/lib/countries';
 import { daysFromNow } from '@/lib/utils';
 import { shimmerDataUrl } from '@/lib/image-utils';
-import { Search, ShoppingCart, QrCode, Wifi, Signal, Globe, CheckCircle2, Smartphone, HelpCircle, X, Zap } from 'lucide-react';
+import {
+  Search,
+  ShoppingCart,
+  QrCode,
+  Wifi,
+  Signal,
+  CheckCircle2,
+  Smartphone,
+  HelpCircle,
+  X,
+  Zap,
+  Plane,
+  Building,
+  CreditCard,
+  Radio,
+  Loader2,
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { lt } from '@/lib/lt';
+import { getSimCatalogAction } from '@/actions/sim';
+import type { SimPackageItem, SimCatalogResult } from '@/services/sim-service';
 
 export default function EsimPage() {
   const t = useTranslations('Esim');
@@ -24,37 +42,85 @@ export default function EsimPage() {
 
   const [query, setQuery] = useState('');
   const [compatibilityModal, setCompatibilityModal] = useState(false);
+  const [simTypeTab, setSimTypeTab] = useState<'all' | 'esim' | 'physical'>('all');
+  const [catalog, setCatalog] = useState<SimCatalogResult | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    getSimCatalogAction()
+      .then((res) => {
+        if (!active) return;
+        if (res.success) {
+          setCatalog(res.data);
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const rawPackages: SimPackageItem[] = useMemo(() => {
+    if (catalog?.packages && catalog.packages.length > 0) {
+      return catalog.packages;
+    }
+    return ESIM_PACKAGES.map((p) => ({
+      id: p.id,
+      productId: p.id,
+      name: `${p.countryFa || p.country} - ${p.dataGb}GB`,
+      dataGb: p.dataGb,
+      durationDays: p.validityDays,
+      voiceMinutes: null,
+      priceUsd: Math.round((p.price / 55000) * 100) / 100,
+      priceToman: p.price,
+      countryCode: 'GLO',
+      countryName: p.countryFa || p.country,
+      isEsim: true,
+      type: 'data',
+      features: ['فعال‌سازی آنی با QR کد', 'سرعت 4G/5G'],
+    }));
+  }, [catalog]);
 
   const filteredPackages = useMemo(() => {
-    let list = ESIM_PACKAGES;
+    let list = rawPackages;
+
+    // Filter by type tab
+    if (simTypeTab === 'esim') {
+      list = list.filter((p) => p.isEsim);
+    } else if (simTypeTab === 'physical') {
+      list = list.filter((p) => !p.isEsim);
+    }
+
     const q = query.toLowerCase().trim();
     if (q) {
       list = list.filter((p) => {
-        const cFa = (p.countryFa || p.country).toLowerCase();
-        const cEn = (p.countryEn || p.country).toLowerCase();
-        return cFa.includes(q) || cEn.includes(q);
+        const cName = p.countryName.toLowerCase();
+        const pName = p.name.toLowerCase();
+        return cName.includes(q) || pName.includes(q);
       });
     } else if (country && country !== 'iran') {
       const cFa = c.nameFa.toLowerCase();
       const cEn = c.nameEn.toLowerCase();
       list = [...list].sort((a, b) => {
-        const aMatch = (a.countryFa || a.country).toLowerCase().includes(cFa) || (a.countryEn || a.country).toLowerCase().includes(cEn);
-        const bMatch = (b.countryFa || b.country).toLowerCase().includes(cFa) || (b.countryEn || b.country).toLowerCase().includes(cEn);
+        const aMatch = a.countryName.toLowerCase().includes(cFa) || a.countryName.toLowerCase().includes(cEn);
+        const bMatch = b.countryName.toLowerCase().includes(cFa) || b.countryName.toLowerCase().includes(cEn);
         if (aMatch && !bMatch) return -1;
         if (!aMatch && bMatch) return 1;
         return 0;
       });
     }
     return list;
-  }, [query, country, c]);
+  }, [rawPackages, simTypeTab, query, country, c]);
 
-  function buy(pkg: (typeof ESIM_PACKAGES)[number]) {
-    const countryTitle = locale === 'fa' ? (pkg.countryFa || pkg.country) : (pkg.countryEn || pkg.country);
+  function buy(pkg: SimPackageItem) {
     setBookingContext({
       type: 'esim',
-      title: `eSIM ${countryTitle}`,
-      subtitle: `${pkg.dataGb} GB • ${pkg.validityDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дн.' })}`,
-      amount: pkg.price,
+      title: pkg.name,
+      subtitle: `${pkg.dataGb} GB • ${pkg.durationDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дн.' })} · ${pkg.isEsim ? 'eSIM (QR)' : 'سیم‌کارت فیزیکی'}`,
+      amount: pkg.priceToman,
       travelDate: daysFromNow(3),
     });
     router.push('/checkout');
@@ -159,72 +225,221 @@ export default function EsimPage() {
         </section>
 
         {/* Packages Section */}
-        <section className="mb-20">
-          <h2 className="font-black text-[24px] text-ink mb-6">{t('popularPackages')}</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPackages.map((pkg, i) => (
-              <div 
-                key={i} 
-                className="bg-surface rounded-2xl p-6 border border-line flex flex-col justify-between hover:shadow-md transition-all hover:border-brand/40 group relative overflow-hidden"
+        <section className="mb-16">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-black text-[24px] text-ink">{t('popularPackages')}</h2>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  <Radio size={11} className="animate-pulse text-emerald-600" aria-hidden="true" />
+                  eCardo Travel Live
+                </span>
+              </div>
+              <p className="text-xs font-bold text-sub mt-1">
+                {lt(locale, {
+                  fa: 'بسته‌های اینترنت همراه و سیم‌کارت‌های بین‌المللی با پوشش بیش از ۸۵ کشور',
+                  en: 'Mobile data packages & international SIMs covering 85+ countries',
+                  ar: 'باقات بيانات الجوال وشريح الاتصال الدولية',
+                  zh: '覆盖85+国家的国际移动数据与SIM套餐',
+                  ru: 'Пакеты мобильного интернета и международные SIM в 85+ странах',
+                })}
+              </p>
+            </div>
+
+            {/* SIM Type Filter Tabs */}
+            <div className="inline-flex p-1 rounded-2xl bg-surface border border-line shadow-2xs self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setSimTypeTab('all')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
+                  simTypeTab === 'all'
+                    ? 'bg-brand text-surface shadow-xs'
+                    : 'text-sub hover:text-ink'
+                }`}
               >
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-mint grid place-items-center text-brand-dark">
-                      <Globe size={22} />
-                    </div>
-                    <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-soft text-sub flex items-center gap-1">
-                      <Signal size={12} className="text-brand-dark" /> 4G/5G Hotspot
-                    </span>
-                  </div>
+                {lt(locale, { fa: 'همه بسته‌ها', en: 'All Plans', ar: 'جميع الباقات', zh: '全部套餐', ru: 'Все пакеты' })}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSimTypeTab('esim')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+                  simTypeTab === 'esim'
+                    ? 'bg-brand text-surface shadow-xs'
+                    : 'text-sub hover:text-ink'
+                }`}
+              >
+                <QrCode size={13} aria-hidden="true" />
+                <span>{lt(locale, { fa: 'دیجیتال (eSIM)', en: 'eSIM (QR)', ar: 'إلكترونية (eSIM)', zh: 'eSIM (扫码)', ru: 'eSIM (QR)' })}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSimTypeTab('physical')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+                  simTypeTab === 'physical'
+                    ? 'bg-brand text-surface shadow-xs'
+                    : 'text-sub hover:text-ink'
+                }`}
+              >
+                <CreditCard size={13} aria-hidden="true" />
+                <span>{lt(locale, { fa: 'سیم‌کارت فیزیکی مسافر', en: 'Physical SIM', ar: 'شريحة فعلية', zh: '实体SIM卡', ru: 'Физическая SIM' })}</span>
+              </button>
+            </div>
+          </div>
 
-                  <h3 className="font-black text-[18px] text-ink mb-3">
-                    {locale === 'fa' ? (pkg.countryFa || pkg.country) : (pkg.countryEn || pkg.country)}
-                  </h3>
-
-                  <div className="py-4 border-y border-line flex justify-between items-baseline mb-4">
-                    <span className="font-black text-[24px] text-brand-dark">{pkg.dataGb} GB</span>
-                    <span className="text-xs font-bold text-sub">
-                      {pkg.validityDays} {lt(locale, { fa: 'روز اعتبار', en: 'Days Validity', ar: 'أيام الصلاحية', zh: '有效天数', ru: 'Дней действия' })}
-                    </span>
-                  </div>
-
-                  <ul className="space-y-1.5 text-xs text-sub font-bold mb-4">
-                    <li className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300">
-                      <CheckCircle2 size={13} />
-                      <span>{lt(locale, { fa: 'فعال‌سازی خودکار پس از اسکن QR', en: 'Auto-activates upon QR scan', ar: 'تفعيل تلقائي', zh: '扫码即刻自动激活', ru: 'Автоактивация после сканирования' })}</span>
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 size={13} className="text-brand-dark" />
-                      <span>{lt(locale, { fa: 'پشتیبانی از اشتراک اینترنت (Hotspot)', en: 'Hotspot / Tethering supported', ar: 'دعم نقطة الاتصال', zh: '支持个人热点分享', ru: 'Поддержка раздачи интернета' })}</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="flex flex-col gap-3 pt-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-sub">{lt(locale, { fa: 'قیمت:', en: 'Price:', ar: 'السعر:', zh: '价格：', ru: 'Цена:' })}</span>
-                    <div className="text-end">
-                      <span className="font-black text-[20px] text-price font-mono num">
-                        {pkg.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
+          {loading ? (
+            <div className="p-16 flex items-center justify-center text-brand">
+              <Loader2 className="animate-spin" size={32} />
+            </div>
+          ) : filteredPackages.length === 0 ? (
+            <div className="bg-surface rounded-2xl p-10 text-center border border-line">
+              <p className="text-sm font-black text-ink mb-1">
+                {lt(locale, { fa: 'بسته‌ای مطابق جستجوی شما یافت نشد', en: 'No matching packages found', ar: 'لم يتم العثور على باقة تطابق بحثك', zh: '未找到符合您搜索的套餐', ru: 'Пакеты, соответствующие вашему запросу, не найдены'})}
+              </p>
+              <button
+                type="button"
+                onClick={() => { setQuery(''); setSimTypeTab('all'); }}
+                className="text-xs font-black text-brand hover:underline mt-2 inline-block cursor-pointer"
+              >
+                {lt(locale, { fa: 'مشاهده همه بسته‌ها', en: 'View all plans', ar: 'عرض جميع الباقات', zh: '查看所有套餐', ru: 'Показать все пакеты'})}
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredPackages.map((pkg) => (
+                <div
+                  key={pkg.id}
+                  className="bg-surface rounded-2xl p-6 border border-line flex flex-col justify-between hover:shadow-md transition-all hover:border-brand/40 group relative overflow-hidden"
+                >
+                  <div>
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-mint grid place-items-center text-brand-dark">
+                        {pkg.isEsim ? <QrCode size={22} /> : <CreditCard size={22} />}
+                      </div>
+                      <span className="text-[11px] font-black px-2.5 py-1 rounded-full bg-soft text-brand-dark flex items-center gap-1">
+                        <Signal size={12} className="text-brand-dark" />
+                        {pkg.isEsim ? 'eSIM · 4G/5G' : 'Physical · تحویل حضوری'}
                       </span>
-                      <span className="text-xs font-bold text-sub ms-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
                     </div>
+
+                    <h3 className="font-black text-[18px] text-ink mb-3">{pkg.name}</h3>
+
+                    <div className="py-4 border-y border-line flex justify-between items-baseline mb-4">
+                      <span className="font-black text-[24px] text-brand-dark">{pkg.dataGb} GB</span>
+                      <span className="text-xs font-bold text-sub">
+                        {pkg.durationDays}{' '}
+                        {lt(locale, { fa: 'روز اعتبار', en: 'Days Validity', ar: 'أيام الصلاحية', zh: '有效天数', ru: 'Дней действия' })}
+                      </span>
+                    </div>
+
+                    <ul className="space-y-1.5 text-xs text-sub font-bold mb-4">
+                      {pkg.features.map((feat, idx) => (
+                        <li key={idx} className="flex items-center gap-1.5 text-ink">
+                          <CheckCircle2 size={13} className="text-brand-dark shrink-0" />
+                          <span>{feat}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
 
-                  <button 
-                    onClick={() => buy(pkg)}
-                    aria-label={lt(locale, { fa: `خرید بسته ${pkg.country}`, en: `Buy ${pkg.country} package`, ar: `شراء باقة ${pkg.country}`, zh: `购买${pkg.country}套餐`, ru: `Купить пакет ${pkg.country}` })}
-                    className="w-full py-3 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-[13px] flex items-center justify-center gap-2 transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
-                  >
-                    <ShoppingCart size={16} />
-                    <span>{t('buyEsim')}</span>
-                  </button>
+                  <div className="flex flex-col gap-3 pt-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-sub">
+                        {lt(locale, { fa: 'قیمت:', en: 'Price:', ar: 'السعر:', zh: '价格：', ru: 'Цена:' })}
+                      </span>
+                      <div className="text-end">
+                        <span className="font-black text-[18px] text-price font-mono num">
+                          {pkg.priceToman.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
+                        </span>
+                        <span className="text-xs font-bold text-sub ms-1">
+                          {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
+                        </span>
+                        <span className="block text-[11px] font-mono text-sub">
+                          ≈ ${pkg.priceUsd.toFixed(2)} USD
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => buy(pkg)}
+                      aria-label={lt(locale, {
+                        fa: `خرید بسته ${pkg.name}`,
+                        en: `Buy ${pkg.name}`,
+                        ar: `شراء ${pkg.name}`,
+                        zh: `购买${pkg.name}`,
+                        ru: `Купить ${pkg.name}`,
+                      })}
+                      className="w-full min-h-[44px] py-3 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-[13px] flex items-center justify-center gap-2 transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
+                    >
+                      <ShoppingCart size={16} />
+                      <span>{pkg.isEsim ? t('buyEsim') : lt(locale, { fa: 'سفارش سیم‌کارت فیزیکی', en: 'Order Physical SIM', ar: 'طلب شريحة فيزيائية', zh: '订购实体 SIM 卡', ru: 'Заказать физическую SIM-карту'})}</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Airport & Hotel Delivery Counters Section (eCardo Pickup Network) */}
+        {catalog && catalog.airports && catalog.airports.length > 0 && (
+          <section className="bg-surface rounded-2xl border border-line p-6 md:p-8 mb-16 shadow-xs">
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className="w-9 h-9 rounded-xl bg-mint grid place-items-center text-brand-dark">
+                <Plane size={18} />
+              </div>
+              <h3 className="font-black text-lg text-ink">
+                {lt(locale, {
+                  fa: 'شبکه باجه‌های تحویل حضوری سیم‌کارت در فرودگاه‌ها و هتل‌ها',
+                  en: 'SIM Airport & Hotel Pickup Desks Network',
+                  ar: 'مكاتب استلام الشرائح في المطارات والفنادق',
+                  zh: '机场及酒店线下SIM领取网点',
+                  ru: 'Пункты выдачи SIM в аэропортах и отелях',
+                })}
+              </h3>
+            </div>
+            <p className="text-xs font-bold text-sub mb-6 leading-relaxed">
+              {lt(locale, {
+                fa: 'سیم‌کارت‌های فیزیکی پس از ثبت سفارش، در بدو ورود به فرودگاه یا لابی هتل مقصد با ارائه پاسپورت و کد پیگیری تحویل می‌شوند.',
+                en: 'Physical SIM orders can be picked up at major airport counters or hotel lobbies upon arrival with passport and tracking code.',
+                ar: 'يمكن استلام الشرائح الفعلية في صالات الوصول بالمطارات أو الفنادق.',
+                zh: '实体SIM卡可在到达目的地机场柜台或指定酒店前台凭护照领取。',
+                ru: 'Физические SIM-карты можно получить на стойках в аэропорту или на ресепшн отеля.',
+              })}
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <span className="text-xs font-black text-brand-dark block mb-2.5 flex items-center gap-1.5">
+                  <Plane size={14} />
+                  {lt(locale, { fa: 'باجه‌های فرودگاهی تحویل سیم‌کارت:', en: 'Airport Pickup Desks:', ar: 'أكشاك تسليم الشرائح في المطار:', zh: '机场 SIM 卡领取柜台：', ru: 'Стойки выдачи SIM-карт в аэропорту:'})}
+                </span>
+                <div className="space-y-2">
+                  {catalog.airports.map((ap) => (
+                    <div key={ap.id} className="p-3 rounded-xl bg-soft border border-line/70 flex items-center justify-between text-xs font-bold">
+                      <span className="text-ink">{ap.name}</span>
+                      <span className="text-[11px] px-2 py-0.5 rounded bg-surface border border-line text-sub font-mono">{ap.city}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
+
+              <div>
+                <span className="text-xs font-black text-brand-dark block mb-2.5 flex items-center gap-1.5">
+                  <Building size={14} />
+                  {lt(locale, { fa: 'باجه‌های هتل و لابی:', en: 'Hotel Lobby Desks:', ar: 'أكشاك الفنادق واللوبي:', zh: '酒店与大堂柜台：', ru: 'Стойки в отелях и лобби:'})}
+                </span>
+                <div className="space-y-2">
+                  {catalog.hotels.map((ht) => (
+                    <div key={ht.id} className="p-3 rounded-xl bg-soft border border-line/70 flex items-center justify-between text-xs font-bold">
+                      <span className="text-ink">{ht.name}</span>
+                      <span className="text-[11px] px-2 py-0.5 rounded bg-surface border border-line text-sub font-mono">{ht.city}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* How It Works - Steps Section */}
         <section className="bg-surface rounded-2xl border border-line p-8 md:p-12 mb-16 shadow-sm">

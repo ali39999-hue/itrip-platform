@@ -34,7 +34,7 @@ export function CountrySwitcher({ showFullName = false }: { showFullName?: boole
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-label={t('aria.destinationCountry')}
-        className="min-h-[32px] inline-flex items-center gap-1 px-2 sm:px-2 py-1 rounded-full text-[11px] sm:text-[12px] font-black text-brand-dark bg-brand/10 hover:bg-brand/20 transition border border-transparent focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer"
+        className="min-h-[44px] min-w-[44px] min-h-[38px] inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full text-[12px] sm:text-[13px] font-black text-brand-dark bg-brand/10 hover:bg-brand/20 transition border border-transparent focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer"
       >
         <MapPin size={14} className="text-brand-dark shrink-0" aria-hidden="true" />
         <span className="text-sm leading-none" aria-hidden="true">{c?.flag}</span>

@@ -84,7 +84,7 @@ export function FlightCompareBar({
                 type="button"
                 onClick={() => onToggleCmp(id)}
                 aria-label={lt(locale, { fa: 'حذف از مقایسه', en: 'Remove from comparison', ar: 'إزالة من المقارنة', zh: '移出对比', ru: 'Удалить из сравнения' })}
-                className="text-sub hover:text-destructive ms-1 p-0.5"
+                className="min-h-[44px] min-w-[44px] text-sub hover:text-destructive ms-1 p-0.5"
               >
                 <X size={13} />
               </button>

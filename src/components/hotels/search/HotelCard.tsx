@@ -187,7 +187,6 @@ export function HotelCard({
               <span className="text-lg font-black text-[#9C6209] dark:text-amber-400 font-mono tabular-nums leading-none">
                 {formatAmount(priceToman)}
               </span>
-              <span className="text-[11px] font-black text-sub">تومان</span>
             </div>
           </div>
 
@@ -226,7 +225,7 @@ export function HotelCard({
             type="button"
             onClick={onFav}
             aria-label={t('addFav')}
-            className="absolute top-2.5 end-2.5 w-8 h-8 rounded-full bg-surface/85 backdrop-blur-sm text-ink grid place-items-center hover:bg-surface transition shadow-elev-1 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+            className="min-h-[44px] min-w-[44px] absolute top-2.5 end-2.5 w-8 h-8 rounded-full bg-surface/85 backdrop-blur-sm text-ink grid place-items-center hover:bg-surface transition shadow-elev-1 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
           >
             <Heart size={16} className={fav ? 'fill-rose-warm text-rose-warm' : 'text-sub'} aria-hidden="true" />
           </button>

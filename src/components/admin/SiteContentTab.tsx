@@ -16,12 +16,15 @@ import {
   Code2,
   Wand2,
   CheckCircle2,
+  UserRound,
+  LifeBuoy,
 } from 'lucide-react';
 import { ErpSectionCard, ErpAlert, erpFieldCls, erpLabelCls, erpPrimaryBtnCls, erpGhostBtnCls, erpDangerBtnCls } from '@/components/admin/erp-ui';
 import { getSiteContentAction, saveSiteContentAction, resetSiteContentAction } from '@/actions/content';
 import { DEFAULT_PROMO_BANNERS } from '@/components/home/sections/PromotionalBanners';
 import { DEFAULT_POPULAR_ROUTES } from '@/components/home/sections/PopularFlightsSection';
 import { DEFAULT_FAQ } from '@/components/home/sections/FaqSection';
+import { DEFAULT_ACCOUNT_SIDEBAR, DEFAULT_SUPPORT_PAGE } from '@/lib/account-panel-defaults';
 import type {
   SiteContentKey,
   HeroOverride,
@@ -30,9 +33,13 @@ import type {
   FaqItemOverride,
   AnnouncementOverride,
   SupportOverride,
+  AccountSidebarOverride,
+  AccountHeroOverride,
+  AccountLoyaltyOverride,
+  SupportPageOverride,
 } from '@/domains/content/SiteContentService';
 
-type SiteTab = 'hero' | 'promos' | 'routes' | 'faq' | 'announcement' | 'support';
+type SiteTab = 'hero' | 'promos' | 'routes' | 'faq' | 'announcement' | 'support' | 'accounthero' | 'accountnav' | 'accountloyalty' | 'supportpage';
 
 const SITE_TABS: Array<{ id: SiteTab; key: SiteContentKey; label: string; icon: React.ReactNode; hint: string }> = [
   { id: 'hero', key: 'home.hero', label: 'بنر اصلی (Hero)', icon: <Home size={14} aria-hidden="true" />, hint: 'عنوان، توضیح و تصویر بالای صفحه اصلی. هر فیلدی خالی بماند، همان متن پیش‌فرض فعلی نمایش داده می‌شود.' },
@@ -41,6 +48,10 @@ const SITE_TABS: Array<{ id: SiteTab; key: SiteContentKey; label: string; icon: 
   { id: 'faq', key: 'home.faq', label: 'سوالات متداول', icon: <HelpCircle size={14} aria-hidden="true" />, hint: 'آکاردئون پاسخ به پرسش‌های پرتکرار انتهای صفحه اصلی.' },
   { id: 'announcement', key: 'site.announcement', label: 'اعلان سراسری', icon: <Bell size={14} aria-hidden="true" />, hint: 'بنر اطلاع‌رسانی بالای صفحه اصلی مسافران (همان که از «اقدامات سریع» داشبورد منتشر می‌شود). با «فعال» خاموش/روشن می‌شود.' },
   { id: 'support', key: 'home.support', label: 'تماس و پشتیبانی', icon: <Headset size={14} aria-hidden="true" />, hint: 'شماره تماس ۲۴ ساعته و متن بنر پشتیبانی انتهای صفحه اصلی مسافران.' },
+  { id: 'accounthero', key: 'account.hero', label: 'پنل مشتری: خوش‌آمد', icon: <UserRound size={14} aria-hidden="true" />, hint: 'عنوان و توضیح هدر خوش‌آمدگویی داشبورد حساب کاربری مسافران. خالی = متن پیش‌فرض.' },
+  { id: 'accountnav', key: 'account.sidebar', label: 'پنل مشتری: منو', icon: <UserRound size={14} aria-hidden="true" />, hint: 'منوی کنار پنل مشتری (داشبورد، سفرهای من، کیف پول و…). آیتم‌ها با ذخیره فوراً برای همه مسافران اعمال می‌شود.' },
+  { id: 'accountloyalty', key: 'account.loyalty', label: 'پنل مشتری: باشگاه مشتریان', icon: <UserRound size={14} aria-hidden="true" />, hint: 'نمایش نوار سطح و امتیاز باشگاه مشتریان (داده امتیاز از سرور واقعی خوانده می‌شود؛ فقط متن مزیت و روشن/خاموش اینجاست).' },
+  { id: 'supportpage', key: 'support.page', label: 'صفحه پشتیبانی', icon: <LifeBuoy size={14} aria-hidden="true" />, hint: 'کانال‌های تماس صفحه /support (تلفن، ایمیل، تلگرام) و در صورت تمایل جایگزین سوالات متداول.' },
 ];
 
 interface StoredEntry {
@@ -66,6 +77,11 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
   const [routesDraft, setRoutesDraft] = useState<PopularRouteOverride[]>(DEFAULT_POPULAR_ROUTES);
   const [faqDraft, setFaqDraft] = useState<FaqItemOverride[]>(DEFAULT_FAQ);
   const [supportDraft, setSupportDraft] = useState<SupportOverride>({});
+  const [accountHeroDraft, setAccountHeroDraft] = useState<AccountHeroOverride>({});
+  const [accountNavDraft, setAccountNavDraft] = useState<AccountSidebarOverride>(DEFAULT_ACCOUNT_SIDEBAR);
+  const [accountLoyaltyDraft, setAccountLoyaltyDraft] = useState<AccountLoyaltyOverride>({ enabled: true });
+  const [supportPageDraft, setSupportPageDraft] = useState<SupportPageOverride>(DEFAULT_SUPPORT_PAGE);
+  const [supportPageFaqDraft, setSupportPageFaqDraft] = useState<FaqItemOverride[]>(DEFAULT_FAQ);
   const [announcementDraft, setAnnouncementDraft] = useState<AnnouncementOverride>({
     title: { fa: '', en: '' },
     message: { fa: '', en: '' },
@@ -88,6 +104,24 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
 
     if (map['home.support']?.payload) setSupportDraft(map['home.support'].payload as SupportOverride);
     else setSupportDraft({});
+
+    if (map['account.hero']?.payload) setAccountHeroDraft(map['account.hero'].payload as AccountHeroOverride);
+    else setAccountHeroDraft({});
+
+    if (map['account.sidebar']?.payload) setAccountNavDraft(map['account.sidebar'].payload as AccountSidebarOverride);
+    else setAccountNavDraft(DEFAULT_ACCOUNT_SIDEBAR);
+
+    if (map['account.loyalty']?.payload) setAccountLoyaltyDraft(map['account.loyalty'].payload as AccountLoyaltyOverride);
+    else setAccountLoyaltyDraft({ enabled: true });
+
+    if (map['support.page']?.payload) {
+      const sp = map['support.page'].payload as SupportPageOverride;
+      setSupportPageDraft({ ...DEFAULT_SUPPORT_PAGE, ...sp });
+      setSupportPageFaqDraft(sp.faq ?? []);
+    } else {
+      setSupportPageDraft(DEFAULT_SUPPORT_PAGE);
+      setSupportPageFaqDraft([]);
+    }
 
     if (map['site.announcement']?.payload) setAnnouncementDraft(map['site.announcement'].payload as AnnouncementOverride);
     else
@@ -130,6 +164,15 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
     if (key === 'home.routes') return routesDraft;
     if (key === 'site.announcement') return announcementDraft;
     if (key === 'home.support') return supportDraft;
+    if (key === 'account.hero') return accountHeroDraft;
+    if (key === 'account.sidebar') return accountNavDraft;
+    if (key === 'account.loyalty') return accountLoyaltyDraft;
+    if (key === 'support.page') {
+      return {
+        ...supportPageDraft,
+        faq: supportPageFaqDraft.length > 0 ? supportPageFaqDraft : undefined,
+      };
+    }
     return faqDraft;
   }
 
@@ -177,7 +220,14 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
       else if (currentMeta.key === 'home.routes') setRoutesDraft(parsed as PopularRouteOverride[]);
       else if (currentMeta.key === 'site.announcement') setAnnouncementDraft(parsed as AnnouncementOverride);
       else if (currentMeta.key === 'home.support') setSupportDraft(parsed as SupportOverride);
-      else setFaqDraft(parsed as FaqItemOverride[]);
+      else if (currentMeta.key === 'account.hero') setAccountHeroDraft(parsed as AccountHeroOverride);
+      else if (currentMeta.key === 'account.sidebar') setAccountNavDraft(parsed as AccountSidebarOverride);
+      else if (currentMeta.key === 'account.loyalty') setAccountLoyaltyDraft(parsed as AccountLoyaltyOverride);
+      else if (currentMeta.key === 'support.page') {
+        const sp = parsed as SupportPageOverride;
+        setSupportPageDraft({ ...DEFAULT_SUPPORT_PAGE, ...sp });
+        setSupportPageFaqDraft(sp.faq ?? []);
+      } else setFaqDraft(parsed as FaqItemOverride[]);
       setFeedback({ msg: 'JSON معتبر است و در فرم بارگذاری شد — برای اعمال، ذخیره کنید.', type: 'success' });
     } catch {
       setFeedback({ msg: 'JSON نامعتبر است — ساختار را بررسی کنید.', type: 'error' });
@@ -271,7 +321,7 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-black text-brand-dark">بنر {idx + 1}</span>
                       {promosDraft.length > 1 && (
-                        <button type="button" onClick={() => setPromosDraft(promosDraft.filter((_, i) => i !== idx))} className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف بنر ${idx + 1}`}>
+                        <button type="button" onClick={() => setPromosDraft(promosDraft.filter((_, i) => i !== idx))} className="min-h-[44px] min-w-[44px] w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف بنر ${idx + 1}`}>
                           <Trash2 size={13} />
                         </button>
                       )}
@@ -308,7 +358,7 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
                         مسیر {idx + 1}: {r.fromFa} ➔ {r.toFa}
                       </span>
                       {routesDraft.length > 1 && (
-                        <button type="button" onClick={() => setRoutesDraft(routesDraft.filter((_, i) => i !== idx))} className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف مسیر ${idx + 1}`}>
+                        <button type="button" onClick={() => setRoutesDraft(routesDraft.filter((_, i) => i !== idx))} className="min-h-[44px] min-w-[44px] w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف مسیر ${idx + 1}`}>
                           <Trash2 size={13} />
                         </button>
                       )}
@@ -343,7 +393,7 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-black text-brand-dark">پرسش {idx + 1}</span>
                       {faqDraft.length > 1 && (
-                        <button type="button" onClick={() => setFaqDraft(faqDraft.filter((_, i) => i !== idx))} className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف پرسش ${idx + 1}`}>
+                        <button type="button" onClick={() => setFaqDraft(faqDraft.filter((_, i) => i !== idx))} className="min-h-[44px] min-w-[44px] w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف پرسش ${idx + 1}`}>
                           <Trash2 size={13} />
                         </button>
                       )}
@@ -421,6 +471,132 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
                 <div className="sm:col-span-2">
                   <label className={erpLabelCls}>توضیحات تیم پشتیبانی (فارسی):</label>
                   <textarea rows={2} className={`${heroTextCls} h-auto py-2`} value={supportDraft.subtitle?.fa || ''} onChange={(e) => setSupportDraft({ ...supportDraft, subtitle: { ...supportDraft.subtitle, fa: e.target.value } })} placeholder="تیم پشتیبانی اختصاصی فیروز به ۵ زبان زنده دنیا..." />
+                </div>
+              </div>
+            )}
+
+            {activeSiteTab === 'accounthero' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className={erpLabelCls}>عنوان خوش‌آمد (فارسی):</label>
+                  <input className={heroTextCls} value={accountHeroDraft.title?.fa || ''} onChange={(e) => setAccountHeroDraft({ ...accountHeroDraft, title: { fa: e.target.value, en: accountHeroDraft.title?.en || '' } })} placeholder="خالی = «خوش آمدید،»" />
+                </div>
+                <div>
+                  <label className={erpLabelCls}>عنوان خوش‌آمد (انگلیسی):</label>
+                  <input className={heroTextCls} value={accountHeroDraft.title?.en || ''} onChange={(e) => setAccountHeroDraft({ ...accountHeroDraft, title: { fa: accountHeroDraft.title?.fa || '', en: e.target.value } })} placeholder="Leave empty for default" dir="ltr" />
+                </div>
+                <div>
+                  <label className={erpLabelCls}>توضیح هدر (فارسی):</label>
+                  <textarea rows={2} className={`${heroTextCls} h-auto py-2`} value={accountHeroDraft.subtitle?.fa || ''} onChange={(e) => setAccountHeroDraft({ ...accountHeroDraft, subtitle: { fa: e.target.value, en: accountHeroDraft.subtitle?.en || '' } })} placeholder="خالی = متن پیش‌فرض" />
+                </div>
+                <div>
+                  <label className={erpLabelCls}>توضیح هدر (انگلیسی):</label>
+                  <textarea rows={2} className={`${heroTextCls} h-auto py-2`} value={accountHeroDraft.subtitle?.en || ''} onChange={(e) => setAccountHeroDraft({ ...accountHeroDraft, subtitle: { fa: accountHeroDraft.subtitle?.fa || '', en: e.target.value } })} placeholder="Leave empty for default" dir="ltr" />
+                </div>
+              </div>
+            )}
+
+            {activeSiteTab === 'accountnav' && (
+              <div className="space-y-3">
+                {accountNavDraft.links.map((link, idx) => (
+                  <div key={idx} className="p-3.5 rounded-2xl border border-line bg-soft/40 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black text-brand-dark">آیتم منو {idx + 1}</span>
+                      {accountNavDraft.links.length > 3 && (
+                        <button type="button" onClick={() => setAccountNavDraft({ ...accountNavDraft, links: accountNavDraft.links.filter((_, i) => i !== idx) })} className="min-h-[44px] min-w-[44px] w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف آیتم ${idx + 1}`}>
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <input className={heroTextCls} value={link.label.fa} onChange={(e) => updateArrayItem(accountNavDraft.links, (newLinks) => setAccountNavDraft({ ...accountNavDraft, links: newLinks }), idx, { label: { ...link.label, fa: e.target.value } })} placeholder="برچسب (فارسی)" />
+                      <input className={heroTextCls} value={link.label.en} onChange={(e) => updateArrayItem(accountNavDraft.links, (newLinks) => setAccountNavDraft({ ...accountNavDraft, links: newLinks }), idx, { label: { ...link.label, en: e.target.value } })} placeholder="Label (EN)" dir="ltr" />
+                      <input className={heroTextCls} value={link.href} onChange={(e) => updateArrayItem(accountNavDraft.links, (newLinks) => setAccountNavDraft({ ...accountNavDraft, links: newLinks }), idx, { href: e.target.value })} placeholder="/my-trips" dir="ltr" />
+                      <select className={heroTextCls} value={link.icon || 'LayoutGrid'} onChange={(e) => updateArrayItem(accountNavDraft.links, (newLinks) => setAccountNavDraft({ ...accountNavDraft, links: newLinks }), idx, { icon: e.target.value as AccountSidebarOverride['links'][number]['icon'] })}>
+                        {['LayoutGrid', 'Users', 'PlaneTakeoff', 'Gift', 'Bot', 'Building', 'Star'].map((ic) => (
+                          <option key={ic} value={ic}>{ic}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                ))}
+                {accountNavDraft.links.length < 10 && (
+                  <button type="button" onClick={() => setAccountNavDraft({ ...accountNavDraft, links: [...accountNavDraft.links, structuredClone(DEFAULT_ACCOUNT_SIDEBAR.links[0])] })} className={erpGhostBtnCls}>
+                    <Plus size={13} aria-hidden="true" />
+                    <span>افزودن آیتم منو</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {activeSiteTab === 'accountloyalty' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2 flex items-end">
+                  <label className="flex items-center gap-2 text-xs font-black text-ink cursor-pointer">
+                    <input type="checkbox" checked={accountLoyaltyDraft.enabled} onChange={(e) => setAccountLoyaltyDraft({ ...accountLoyaltyDraft, enabled: e.target.checked })} className="w-4 h-4 accent-[var(--brand)]" />
+                    <span>نوار سطح و امتیاز باشگاه مشتریان نمایش داده شود</span>
+                  </label>
+                </div>
+                <div>
+                  <label className={erpLabelCls}>متن مزیت باشگاه (فارسی):</label>
+                  <input className={heroTextCls} value={accountLoyaltyDraft.perkText?.fa || ''} onChange={(e) => setAccountLoyaltyDraft({ ...accountLoyaltyDraft, perkText: { fa: e.target.value, en: accountLoyaltyDraft.perkText?.en || '' } })} placeholder="خالی = «امتیاز تا سطح بعد»" />
+                </div>
+                <div>
+                  <label className={erpLabelCls}>متن مزیت باشگاه (انگلیسی):</label>
+                  <input className={heroTextCls} value={accountLoyaltyDraft.perkText?.en || ''} onChange={(e) => setAccountLoyaltyDraft({ ...accountLoyaltyDraft, perkText: { fa: accountLoyaltyDraft.perkText?.fa || '', en: e.target.value } })} placeholder="Leave empty for default" dir="ltr" />
+                </div>
+              </div>
+            )}
+
+            {activeSiteTab === 'supportpage' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className={erpLabelCls}>شماره تماس (مقدار لینک tel):</label>
+                    <input className={heroTextCls} value={supportPageDraft.phone || ''} onChange={(e) => setSupportPageDraft({ ...supportPageDraft, phone: e.target.value })} placeholder="+982191000000" dir="ltr" />
+                  </div>
+                  <div>
+                    <label className={erpLabelCls}>شماره نمایشی (فارسی):</label>
+                    <input className={heroTextCls} value={supportPageDraft.phoneDisplay?.fa || ''} onChange={(e) => setSupportPageDraft({ ...supportPageDraft, phoneDisplay: { ...supportPageDraft.phoneDisplay, fa: e.target.value } })} placeholder="۰۲۱-۹۱۰۰۰۰۰۰" />
+                  </div>
+                  <div>
+                    <label className={erpLabelCls}>ایمیل پشتیبانی:</label>
+                    <input className={heroTextCls} dir="ltr" value={supportPageDraft.email || ''} onChange={(e) => setSupportPageDraft({ ...supportPageDraft, email: e.target.value })} placeholder="support@firuzo.com" />
+                  </div>
+                  <div>
+                    <label className={erpLabelCls}>آیدی تلگرام (بدون @):</label>
+                    <input className={heroTextCls} dir="ltr" value={supportPageDraft.telegram || ''} onChange={(e) => setSupportPageDraft({ ...supportPageDraft, telegram: e.target.value })} placeholder="firuzo_support" />
+                  </div>
+                </div>
+
+                <div className="border-t border-line/60 pt-3">
+                  <p className="text-[11px] font-black text-brand-dark mb-2">
+                    جایگزین سوالات متداول صفحه پشتیبانی {supportPageFaqDraft.length === 0 ? '(خالی = سوالات پیش‌فرض)' : `(${supportPageFaqDraft.length} پرسش)`}
+                  </p>
+                  <div className="space-y-3">
+                    {supportPageFaqDraft.map((item, idx) => (
+                      <div key={idx} className="p-3.5 rounded-2xl border border-line bg-soft/40 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-black text-brand-dark">پرسش {idx + 1}</span>
+                          <button type="button" onClick={() => setSupportPageFaqDraft(supportPageFaqDraft.filter((_, i) => i !== idx))} className="min-h-[44px] min-w-[44px] w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف پرسش ${idx + 1}`}>
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <input className={heroTextCls} value={item.q.fa} onChange={(e) => updateArrayItem(supportPageFaqDraft, setSupportPageFaqDraft, idx, { q: { ...item.q, fa: e.target.value } })} placeholder="سوال (فارسی)" />
+                          <input className={heroTextCls} value={item.q.en} onChange={(e) => updateArrayItem(supportPageFaqDraft, setSupportPageFaqDraft, idx, { q: { ...item.q, en: e.target.value } })} placeholder="Question (EN)" dir="ltr" />
+                          <textarea rows={3} className={`${heroTextCls} h-auto py-2`} value={item.a.fa} onChange={(e) => updateArrayItem(supportPageFaqDraft, setSupportPageFaqDraft, idx, { a: { ...item.a, fa: e.target.value } })} placeholder="پاسخ (فارسی)" />
+                          <textarea rows={3} className={`${heroTextCls} h-auto py-2`} value={item.a.en} onChange={(e) => updateArrayItem(supportPageFaqDraft, setSupportPageFaqDraft, idx, { a: { ...item.a, en: e.target.value } })} placeholder="Answer (EN)" dir="ltr" />
+                        </div>
+                      </div>
+                    ))}
+                    {supportPageFaqDraft.length < 20 && (
+                      <button type="button" onClick={() => setSupportPageFaqDraft([...supportPageFaqDraft, structuredClone(DEFAULT_FAQ[0])])} className={erpGhostBtnCls}>
+                        <Plus size={13} aria-hidden="true" />
+                        <span>افزودن پرسش</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

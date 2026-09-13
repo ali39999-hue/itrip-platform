@@ -121,7 +121,7 @@ export function PopularFlightsSection({ override }: { override?: PopularRouteOve
           <Link
             key={idx}
             href={`/flights/search?from=${encodeURIComponent(locale === 'fa' ? r.fromFa : r.fromEn)}&to=${encodeURIComponent(locale === 'fa' ? r.toFa : r.toEn)}`}
-            className="group relative rounded-2xl p-4 bg-surface border border-line hover:border-brand/50 hover:shadow-elev-2 transition-all flex items-center justify-between gap-3 overflow-hidden shadow-2xs cursor-pointer active:scale-[0.99]"
+            className="group relative rounded-2xl p-4 bg-surface border border-line hover:border-brand/50 hover:shadow-elev-2 transition-all flex flex-wrap items-center justify-between gap-3 overflow-hidden shadow-2xs cursor-pointer active:scale-[0.99]"
           >
             {/* City photo thumbnail */}
             <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 bg-soft">
@@ -138,7 +138,7 @@ export function PopularFlightsSection({ override }: { override?: PopularRouteOve
 
             {/* Flight info */}
             <div className="flex-1 min-w-0 flex flex-col justify-center">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mb-1 leading-tight">
                 <span className="text-sm sm:text-base font-black text-ink group-hover:text-brand-dark transition-colors">
                   {locale === 'fa' ? r.fromFa : r.fromEn}
                 </span>

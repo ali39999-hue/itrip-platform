@@ -34,7 +34,7 @@ export function HotelCompareBar({
         </button>
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-3 touch-pan-x">
+      <div className="flex items-center gap-2 overflow-x-auto snap-x pb-2 mb-3 touch-pan-x">
         {Array.from(cmp).map((id) => {
           const h = hotels.find((x) => x.id === id);
           return (

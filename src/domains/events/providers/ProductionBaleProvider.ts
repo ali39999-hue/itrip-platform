@@ -74,13 +74,19 @@ export class ProductionBaleProvider {
         };
         if (data.ok && Array.isArray(data.result) && data.result.length > 0) {
           const match = data.result.find((u) => {
-            const uName = u.message?.from?.username?.toLowerCase();
             const uId = String(u.message?.from?.id);
             const uContactPhone = u.message?.contact?.phone_number?.replace(/\D/g, '');
             const cleanPhone = clean.replace(/\D/g, '');
-            const isPhoneMatch = uContactPhone && cleanPhone && (uContactPhone.endsWith(cleanPhone.slice(-10)) || cleanPhone.endsWith(uContactPhone.slice(-10)));
+            const isPhoneMatch = Boolean(
+              uContactPhone &&
+              cleanPhone &&
+              cleanPhone.length >= 10 &&
+              uContactPhone.slice(-10) === cleanPhone.slice(-10)
+            );
 
-            return uName === clean.toLowerCase() || uId === clean || isPhoneMatch;
+            // Require explicit numeric Bale ID match or verified contact card phone match.
+            // Never match unverified public usernames against phone numbers.
+            return uId === clean || isPhoneMatch;
           });
 
           if (match?.message?.chat?.id) {

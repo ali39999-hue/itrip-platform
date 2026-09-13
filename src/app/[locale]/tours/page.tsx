@@ -124,10 +124,13 @@ function ToursContent() {
   function book(tour: Tour) {
     setBookingContext({
       type: 'tours',
+      id: tour.id,
       title: locale === 'fa' ? tour.title : tour.titleEn,
-      subtitle: `${tour.durationDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дн.' })} • ${tour.city}`,
+      subtitle: `${tour.durationDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дن.' })} • ${tour.city}`,
       amount: tour.price,
       travelDate: daysFromNow(14),
+      adults: 1,
+      children: 0,
     });
     router.push('/checkout');
   }
@@ -324,7 +327,7 @@ function ToursContent() {
                       <button
                         onClick={() => book(tour)}
                         aria-label={`رزرو ${locale === 'fa' ? tour.title : tour.titleEn}`}
-                        className="h-9 bg-action hover:bg-action-hover text-ink px-3.5 rounded-xl font-black text-xs transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand flex items-center gap-1 cursor-pointer"
+                        className="h-11 bg-action hover:bg-action-hover text-ink px-4 rounded-xl font-black text-xs transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand flex items-center gap-1 cursor-pointer"
                       >
                         <span>{t('bookTour')}</span>
                         <ArrowRight size={13} className="ltr:inline rtl:hidden" />

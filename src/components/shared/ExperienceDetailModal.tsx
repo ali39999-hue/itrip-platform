@@ -255,7 +255,7 @@ export function ExperienceDetailModal({
             {/* Quick Date Picker Pills */}
             <div>
               <span className="text-xs font-black text-ink block mb-2">انتخاب تاریخ اجرای تجربه:</span>
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+              <div className="flex items-center gap-2 overflow-x-auto snap-x touch-pan-x pb-1 scrollbar-none">
                 {[1, 3, 7, 14].map((d) => {
                   const dateStr = daysFromNow(d);
                   const isSel = selectedDate === dateStr;

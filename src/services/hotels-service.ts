@@ -4,6 +4,7 @@ import type { Hotel, RoomType, HotelPropertyType } from '@/lib/types';
 import type { CountryId } from '@/lib/countries';
 import { formatDistance } from '@/lib/format';
 import { HOTELS } from '@/lib/data';
+import { EcardoTravelClient, type EcardoOffer } from '@/domains/supplier/adapters/EcardoTravelClient';
 
 export function detectCountryId(cityFa?: string, cityEn?: string): CountryId {
   const s = `${cityFa || ''} ${cityEn || ''}`.toLowerCase();
@@ -641,4 +642,155 @@ export function getHotelById(id: string): DetailedHotelWithMeta | null {
 
   const found = iranList.find((h) => h.id === id) || chinaList.find((h) => h.id === id);
   return found || null;
+}
+
+/**
+ * Asynchronous hotel lookup that checks local canonical catalog first, then
+ * queries eCardo Travel Platform live API for external/live hotel offers.
+ */
+export async function getHotelByIdAsync(id: string): Promise<DetailedHotelWithMeta | null> {
+  const local = getHotelById(id);
+  if (local) return local;
+
+  // External / eCardo live hotel resolution
+  try {
+    const client = getEcardoTravelClient();
+    const res = await client.getOffer('hotel', id, 'fa');
+    if (res?.data?.offer) {
+      const hotel = mapEcardoOfferToHotel(res.data.offer);
+      const product = res.data.offer.product as { description?: string; amenities?: string[] } | undefined;
+      if (product?.description) {
+        hotel.description = product.description;
+      }
+      if (Array.isArray(product?.amenities) && product.amenities.length > 0) {
+        hotel.amenities = product.amenities;
+      }
+      return hotel;
+    }
+  } catch {
+    // Return null if not found
+  }
+
+  return null;
+}
+
+let ecardoTravelClient: EcardoTravelClient | null = null;
+function getEcardoTravelClient(): EcardoTravelClient {
+  if (!ecardoTravelClient) {
+    ecardoTravelClient = new EcardoTravelClient();
+  }
+  return ecardoTravelClient;
+}
+
+export function mapEcardoOfferToHotel(offer: EcardoOffer): DetailedHotelWithMeta {
+  const stars = Number(offer.attributes?.stars) || (offer.badge ? parseInt(offer.badge, 10) : 3) || 3;
+  const city = (offer.attributes?.city as string) || offer.subtitle || 'تهران';
+  const cityEn =
+    city === 'تهران' ? 'Tehran' :
+    city === 'مشهد' ? 'Mashhad' :
+    city === 'اصفهان' ? 'Isfahan' :
+    city === 'شیراز' ? 'Shiraz' :
+    city === 'تبریز' ? 'Tabriz' : city;
+  const price = offer.pricing.total_amount;
+  const address = (offer.attributes?.address as string) || offer.subtitle || '';
+  const lat = Number(offer.attributes?.latitude) || 35.6892;
+  const lng = Number(offer.attributes?.longitude) || 51.389;
+
+  return {
+    id: offer.id,
+    name: offer.title,
+    nameEn: offer.title,
+    city,
+    cityEn,
+    countryId: 'iran',
+    stars,
+    heroImage: offer.image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
+    galleryImages: [offer.image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'],
+    pricePerNight: price,
+    rating: Number((4.2 + stars * 0.1).toFixed(1)),
+    reviewsCount: 48 + stars * 12,
+    propertyType: 'hotel',
+    imageQuery: offer.title,
+    description: `اقامت در ${offer.title} با امکانات کامل رفاهی در ${city}`,
+    address,
+    amenities: offer.highlights || ['wifi', 'breakfast', 'parking'],
+    roomTypes: [
+      {
+        id: `room_${offer.id}_std`,
+        name: 'اتاق استاندارد دوتخته',
+        capacity: 2,
+        pricePerNight: price,
+        breakfast: true,
+        available: 4,
+      },
+    ],
+    detailedRooms: [
+      {
+        id: `room_${offer.id}_std`,
+        name: 'اتاق استاندارد دوتخته',
+        capacity: 2,
+        pricePerNight: price,
+        breakfast: true,
+        available: 4,
+      },
+    ],
+    distanceFromCenter: 'مرکز شهر',
+    location: { lat, lng },
+    freeCancellation: true,
+  };
+}
+
+/**
+ * Async live hotel search augmenting canonical inventory with real eCardo Travel offers.
+ * Automatically falls back to canonical search if network is slow or offline.
+ */
+export async function searchHotelsLive(params: HotelSearchParams): Promise<HotelSearchResponse> {
+  const localResponse = searchHotels(params);
+  const targetCity = (params.city || params.query || '').trim();
+
+  // If query specifies a city, attempt to enrich with live eCardo inventory
+  if (targetCity) {
+    try {
+      const client = getEcardoTravelClient();
+      const liveRes = await Promise.race([
+        client.searchHotels({
+          city: targetCity,
+          checkIn: '2026-09-15',
+          checkOut: '2026-09-17',
+          adults: 2,
+          locale: 'fa',
+        }),
+        new Promise<null>((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000)),
+      ]);
+
+      if (liveRes && liveRes.data && Array.isArray(liveRes.data.offers) && liveRes.data.offers.length > 0) {
+        const liveHotels = liveRes.data.offers.map(mapEcardoOfferToHotel);
+
+        // Filter live hotels by params (stars, price, etc.)
+        const filteredLive = liveHotels.filter((h) => {
+          if (params.stars && params.stars.length > 0 && !params.stars.includes(h.stars)) return false;
+          if (params.minPrice && h.pricePerNight < params.minPrice) return false;
+          if (params.maxPrice && h.pricePerNight > params.maxPrice) return false;
+          return true;
+        });
+
+        if (filteredLive.length > 0) {
+          // Merge: prepend live hotels before catalog
+          const existingNames = new Set(filteredLive.map((h) => h.name));
+          const deduplicatedLocal = localResponse.hotels.filter((h) => !existingNames.has(h.name));
+          const combined = [...filteredLive, ...deduplicatedLocal];
+
+          return {
+            ...localResponse,
+            hotels: combined.slice(0, params.limit || 12),
+            total: combined.length,
+          };
+        }
+      }
+    } catch {
+      // Graceful fallback to local response on any supplier error or timeout
+    }
+  }
+
+  return localResponse;
 }

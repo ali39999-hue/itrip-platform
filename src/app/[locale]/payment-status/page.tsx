@@ -38,6 +38,7 @@ function PaymentStatusContent() {
   // pending-verification view — never a fabricated "success".
   const state: PayState = useMemo(() => {
     const param = searchParams.get('status');
+    if (param === 'success' || param === 'ok' || param === 'completed') return 'confirmed';
     return VALID_STATES.includes(param as PayState) ? (param as PayState) : 'processing';
   }, [searchParams]);
 
@@ -106,7 +107,29 @@ function PaymentStatusContent() {
   const trackingCode = queryRef;
   const displayAmount = queryAmount !== null && !Number.isNaN(queryAmount) ? queryAmount : null;
   const displayCurrency = searchParams.get('currency') || 'IRR';
-  const displayTitle = queryTitle || lt(locale, { fa: 'سفارش خدمات مسافرتی فیروز', en: 'Firuzo Travel Services Booking', ar: 'طلب خدمات سفر فيروز', zh: 'Firuzo 旅行服务订单', ru: 'Заказ туристических услуг Firuzo' });
+
+  const isWalletTopUp =
+    queryRef.startsWith('wallet_topup_') ||
+    (searchParams.get('bookingId') || '').startsWith('wallet_topup_') ||
+    queryRef.startsWith('wlt_');
+
+  const displayTitle = queryTitle
+    ? queryTitle
+    : isWalletTopUp
+      ? lt(locale, {
+          fa: 'شارژ آنلاین کیف پول',
+          en: 'Online Wallet Top-up',
+          ar: 'شحن المحفظة أونلاين',
+          zh: '在线钱包充值',
+          ru: 'Пополнение кошелька',
+        })
+      : lt(locale, {
+          fa: 'سفارش خدمات مسافرتی فیروز',
+          en: 'Firuzo Travel Services Booking',
+          ar: 'طلب خدمات سفر فيروز',
+          zh: 'Firuzo 旅行服务订单',
+          ru: 'Заказ туристических услуг Firuzo',
+        });
 
   const copyPnr = () => {
     if (!trackingCode) return;
@@ -170,7 +193,7 @@ function PaymentStatusContent() {
                     type="button"
                     onClick={copyPnr}
                     aria-label={lt(locale, { fa: 'کپی کد پیگیری', en: 'Copy tracking code', ar: 'نسخ رمز التتبع', zh: '复制追踪码', ru: 'Копировать код' })}
-                    className="w-7 h-7 rounded-lg bg-surface border border-line text-sub hover:text-brand-dark grid place-items-center transition active:scale-95"
+                    className="w-11 h-11 rounded-lg bg-surface border border-line text-sub hover:text-brand-dark grid place-items-center transition active:scale-95"
                   >
                     {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
                   </button>
@@ -196,13 +219,23 @@ function PaymentStatusContent() {
           <div className="flex flex-col sm:flex-row gap-3 w-full">
             {state === 'confirmed' ? (
               <>
-                <Button 
-                  onClick={() => router.push('/my-trips')}
-                  className="flex-1 h-13 bg-brand hover:bg-brand-2 text-surface font-black rounded-2xl flex items-center justify-center gap-2 shadow-sm"
-                >
-                  <Ticket size={18} />
-                  {lt(locale, { fa: 'مشاهده بلیط و واچر', en: 'View Ticket & Voucher', ar: 'عرض التذكرة والقسيمة', zh: '查看机票与凭证', ru: 'Посмотреть билет и ваучер' })}
-                </Button>
+                {isWalletTopUp ? (
+                  <Button 
+                    onClick={() => router.push('/wallet')}
+                    className="flex-1 h-13 bg-brand hover:bg-brand-2 text-surface font-black rounded-2xl flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <Wallet size={18} />
+                    {lt(locale, { fa: 'مشاهده موجودی کیف پول', en: 'View Wallet Balance', ar: 'عرض رصيد المحفظة', zh: '查看钱包余额', ru: 'Баланс кошелька' })}
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={() => router.push('/my-trips')}
+                    className="flex-1 h-13 bg-brand hover:bg-brand-2 text-surface font-black rounded-2xl flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <Ticket size={18} />
+                    {lt(locale, { fa: 'مشاهده بلیط و واچر', en: 'View Ticket & Voucher', ar: 'عرض التذكرة والقسيمة', zh: '查看机票与凭证', ru: 'Посмотреть билет и ваучер' })}
+                  </Button>
+                )}
                 <Button 
                   onClick={() => router.push('/')}
                   variant="outline"
@@ -214,7 +247,7 @@ function PaymentStatusContent() {
             ) : state === 'failed' ? (
               <>
                 <Button 
-                  onClick={() => router.push('/checkout')}
+                  onClick={() => router.push(isWalletTopUp ? '/wallet' : '/checkout')}
                   className="flex-1 h-13 bg-brand hover:bg-brand-2 text-surface font-black rounded-2xl flex items-center justify-center gap-2"
                 >
                   {lt(locale, { fa: 'تلاش مجدد برای پرداخت', en: 'Retry Payment', ar: 'إعادة محاولة الدفع', zh: '重新尝试支付', ru: 'Повторить оплату' })}
@@ -230,10 +263,12 @@ function PaymentStatusContent() {
               </>
             ) : (
               <Button 
-                onClick={() => router.push('/my-trips')}
+                onClick={() => router.push(isWalletTopUp ? '/wallet' : '/my-trips')}
                 className="w-full h-13 bg-brand hover:bg-brand-2 text-surface font-black rounded-2xl"
               >
-                {lt(locale, { fa: 'پیگیری در سفرهای من', en: 'Track in My Trips', ar: 'متابعة في رحلاتي', zh: '在我的旅行中追踪', ru: 'Отслеживать в поездках' })}
+                {isWalletTopUp
+                  ? lt(locale, { fa: 'پیگیری در کیف پول', en: 'Track in Wallet', ar: 'متابعة في المحفظة', zh: '在钱包中追踪', ru: 'Отслеживать в кошельке' })
+                  : lt(locale, { fa: 'پیگیری در سفرهای من', en: 'Track in My Trips', ar: 'متابعة في رحلاتي', zh: '在我的旅行中追踪', ru: 'Отслеживать в поездках' })}
               </Button>
             )}
           </div>

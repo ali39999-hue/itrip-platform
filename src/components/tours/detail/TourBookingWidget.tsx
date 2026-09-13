@@ -60,9 +60,11 @@ export function TourBookingWidget({
       type: 'tours',
       id: tour.id,
       title: tourTitle,
-      subtitle: `${tour.durationDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дн.' })} • ${tour.city} • ${passengerSummary}`,
+      subtitle: `${tour.durationDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дن.' })} • ${tour.city} • ${passengerSummary}`,
       amount: totalPrice,
       travelDate: activeDate?.startDate || new Date().toISOString().slice(0, 10),
+      adults,
+      children,
       meta: {
         adults: String(adults),
         children: String(children),
@@ -332,7 +334,7 @@ export function TourBookingWidget({
                 type="button"
                 onClick={() => setMobileConfigOpen(false)}
                 aria-label={lt(locale, { fa: 'بستن', en: 'Close', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}
-                className="w-8 h-8 rounded-full bg-soft text-sub grid place-items-center cursor-pointer"
+                className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-full bg-soft text-sub grid place-items-center cursor-pointer"
               >
                 <X size={16} />
               </button>

@@ -304,7 +304,7 @@ export function AiPlannerHookSection() {
                 <label className="text-xs font-bold text-slate-400 mb-1.5 block">
                   {lt(locale, { fa: 'همسفران:', en: 'Travelers:', ar: 'المسافرون:', zh: '同行人：', ru: 'Попутчики:' })}
                 </label>
-                <div className="grid grid-cols-2 gap-1">
+                <div className="flex flex-wrap gap-1.5">
                   {[
                     { id: 'solo', label: lt(locale, { fa: 'انفرادی', en: 'Solo', ar: 'فردي', zh: '独自', ru: 'Один' }) },
                     { id: 'duo', label: lt(locale, { fa: 'دونفره', en: 'Duo', ar: 'زوجي', zh: '双人', ru: 'Вдвоем' }) },
@@ -315,7 +315,7 @@ export function AiPlannerHookSection() {
                       key={w.id}
                       type="button"
                       onClick={() => setSelectedWho(w.id as WhoType)}
-                      className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all border truncate ${
+                      className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all border whitespace-nowrap min-h-[44px] ${
                         selectedWho === w.id
                           ? 'bg-teal-500/20 border-teal-400 text-teal-300'
                           : 'bg-slate-800/60 border-slate-700 text-slate-300 hover:border-slate-600'

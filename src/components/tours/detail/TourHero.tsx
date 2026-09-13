@@ -79,7 +79,7 @@ export function TourHero({ tour }: TourHeroProps) {
     <>
       {/* Breadcrumb strip - mobile scrollable */}
       <div className="border-b border-line bg-surface">
-        <div className="max-w-[1280px] mx-auto px-4 md:px-10 flex items-center gap-2.5 py-2.5 sm:py-3 text-xs font-bold text-sub overflow-x-auto whitespace-nowrap scrollbar-none">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-10 flex items-center gap-2.5 py-2.5 sm:py-3 text-xs font-bold text-sub overflow-x-auto snap-x touch-pan-x whitespace-nowrap scrollbar-none">
           <Link
             href="/tours"
             className="inline-flex items-center gap-1 text-brand-dark hover:text-brand transition font-black shrink-0"
@@ -314,7 +314,7 @@ export function TourHero({ tour }: TourHeroProps) {
           </div>
 
           {/* Thumbnails Strip */}
-          <div className="flex items-center justify-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex items-center justify-center gap-2 overflow-x-auto snap-x touch-pan-x pb-1 scrollbar-none">
             {images.map((img, i) => (
               <button
                 key={i}

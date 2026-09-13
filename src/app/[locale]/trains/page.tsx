@@ -161,7 +161,7 @@ export default function TrainsPage() {
               <button
                 type="button"
                 onClick={swapStations}
-                className="w-9 h-9 rounded-full bg-surface border border-line shadow-xs text-brand-dark hover:bg-mint hover:scale-110 active:scale-95 transition grid place-items-center shrink-0 z-20 -my-1.5 md:my-0"
+                className="w-11 h-11 rounded-full bg-surface border border-line shadow-xs text-brand-dark hover:bg-mint hover:scale-110 active:scale-95 transition grid place-items-center shrink-0 z-20 -my-1.5 md:my-0"
                 aria-label={lt(locale, { fa: 'جابجایی مبدأ و مقصد', en: 'Swap origin and destination', ar: 'تبديل المحطات', zh: '交换起止点', ru: 'Поменять местами' })}
                 title={lt(locale, { fa: 'جابجایی مبدأ و مقصد', en: 'Swap origin and destination', ar: 'تبديل المحطات', zh: '交换起止点', ru: 'Поменять местами' })}
               >
@@ -317,7 +317,7 @@ export default function TrainsPage() {
                 <button
                   onClick={() => reserve(s)}
                   aria-label={`${t('selectTicket')}: ${lt(locale, s.title)}`}
-                  className="bg-action hover:bg-action-hover text-ink px-6 py-2.5 rounded-xl font-black text-[13px] transition-all shadow-elev-1 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  className="bg-action hover:bg-action-hover text-ink px-6 py-2.5 min-h-[44px] rounded-xl font-black text-[13px] transition-all shadow-elev-1 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   {t('selectTicket')}
                 </button>

@@ -5,6 +5,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { ContactDock } from '@/components/shared/ContactDock';
+import { FiruzoChatWidget } from '@/components/shared/FiruzoChat/FiruzoChatWidget';
 import { ToursPromoModal } from '@/components/tours/ToursPromoModal';
 import { Toaster } from 'sonner';
 
@@ -31,6 +32,7 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
       <Footer />
       {!isCheckout && <BottomNav />}
       <ContactDock />
+      <FiruzoChatWidget />
       <ToursPromoModal />
       <Toaster position="top-center" richColors closeButton />
     </>

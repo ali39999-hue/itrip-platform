@@ -25,9 +25,14 @@ export function useDisplayCurrency() {
   const currencyLabel = lt(locale, ctx.label);
 
   return {
+    country,
     currency: ctx.currency,
     currencyLabel,
     formatAmount,
     isHome: ctx.isHome,
+    taxRate: ctx.taxRate,
+    taxLabel: lt(locale, ctx.taxLabel),
+    gatewayFeeRate: ctx.gatewayFeeRate,
+    gatewayFeeLabel: lt(locale, ctx.gatewayFeeLabel),
   } as const;
 }

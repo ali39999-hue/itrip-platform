@@ -389,7 +389,7 @@ export function ERPDataGrid<T extends object>({
                     type="button"
                     onClick={(e) => handleDeleteView(view.id, e)}
                     aria-label={`Delete view ${view.name}`}
-                    className="rounded p-1.5 opacity-60 transition hover:opacity-100 hover:text-rose-warm"
+                    className="min-h-[44px] min-w-[44px] rounded p-1.5 opacity-60 transition hover:opacity-100 hover:text-rose-warm"
                   >
                     <Trash2 size={11} aria-hidden="true" />
                   </button>
@@ -590,7 +590,7 @@ export function ERPDataGrid<T extends object>({
                           type="button"
                           onClick={() => handleSort(col.key)}
                           aria-label={`Sort by ${col.header}`}
-                          className="group inline-flex items-center gap-1.5 rounded-lg px-1 py-0.5 transition hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                          className="min-h-[44px] min-w-[44px] group inline-flex items-center gap-1.5 rounded-lg px-1 py-0.5 transition hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                         >
                           <span>{col.header}</span>
                           <span aria-hidden="true" className={cn('grid h-5 w-5 place-items-center rounded-md transition', isSorted ? 'bg-deep text-surface' : 'text-sub/40 group-hover:bg-line/50 group-hover:text-sub')}>
@@ -687,7 +687,7 @@ export function ERPDataGrid<T extends object>({
               type="button"
               disabled={validCurrentPage <= 1}
               onClick={() => { setCurrentPage((p) => Math.max(1, p - 1)); setFocusedRowIndex(-1); }}
-              className="grid h-9 w-9 place-items-center rounded-xl border border-line bg-surface text-sub transition hover:border-brand/40 hover:text-ink disabled:opacity-40 disabled:pointer-events-none rtl:rotate-180"
+              className="min-h-[44px] min-w-[44px] grid h-9 w-9 place-items-center rounded-xl border border-line bg-surface text-sub transition hover:border-brand/40 hover:text-ink disabled:opacity-40 disabled:pointer-events-none rtl:rotate-180"
               aria-label="Previous Page"
             >
               <ChevronLeft size={15} aria-hidden="true" />
@@ -700,7 +700,7 @@ export function ERPDataGrid<T extends object>({
                 aria-label={`Page ${p}`}
                 aria-current={p === validCurrentPage ? 'page' : undefined}
                 className={cn(
-                  'h-9 min-w-9 rounded-xl px-2 text-xs font-black tabular-nums transition',
+                  'min-h-11 min-w-11 rounded-xl px-2 text-xs font-black tabular-nums transition',
                   p === validCurrentPage ? 'bg-deep text-surface shadow-elev-1' : 'border border-line bg-surface text-sub hover:border-brand/40 hover:text-ink',
                 )}
               >
@@ -711,7 +711,7 @@ export function ERPDataGrid<T extends object>({
               type="button"
               disabled={validCurrentPage >= totalPages}
               onClick={() => { setCurrentPage((p) => Math.min(totalPages, p + 1)); setFocusedRowIndex(-1); }}
-              className="grid h-9 w-9 place-items-center rounded-xl border border-line bg-surface text-sub transition hover:border-brand/40 hover:text-ink disabled:opacity-40 disabled:pointer-events-none rtl:rotate-180"
+              className="min-h-[44px] min-w-[44px] grid h-9 w-9 place-items-center rounded-xl border border-line bg-surface text-sub transition hover:border-brand/40 hover:text-ink disabled:opacity-40 disabled:pointer-events-none rtl:rotate-180"
               aria-label="Next Page"
             >
               <ChevronRight size={15} aria-hidden="true" />

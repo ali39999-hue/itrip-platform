@@ -37,6 +37,18 @@ export function ContactDock() {
       pathname.includes('/payment-status') ||
       /^\/([a-z]{2}\/)?(hotels|tours)\/(?!search)[^/]+$/.test(pathname));
 
+  // در موبایل تا اولین اسکرول مخفی می‌ماند تا دکمه شناور روی CTA اصلیِ
+  // بالای صفحه (فرم جستجوی فرود/hotel) و پاپ‌آپ‌های اولیه نیفتد. دسکتاپ همیشه نمایان.
+  const [pastFold, setPastFold] = useState(false);
+  useEffect(() => {
+    function onScroll() {
+      setPastFold(window.scrollY > 80);
+    }
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   useEffect(() => {
     if (phase !== 'live') return;
     const id = setInterval(() => setSeconds((s) => s + 1), 1000);
@@ -102,7 +114,11 @@ export function ContactDock() {
           isExcluded
             ? 'bottom-[calc(120px+env(safe-area-inset-bottom))] lg:bottom-6'
             : 'bottom-[calc(78px+env(safe-area-inset-bottom))] lg:bottom-6'
-        } end-4 lg:end-6`}
+        } end-4 lg:end-6 max-lg:transition-all max-lg:duration-200 ${
+          pastFold
+            ? 'max-lg:opacity-100 max-lg:visible'
+            : 'max-lg:opacity-0 max-lg:invisible max-lg:translate-y-2'
+        }`}
       >
         {/* منوی دو گزینه‌ای تماس */}
         {menuOpen && (

@@ -465,7 +465,7 @@ export default function TripDetailsPage({
                   target="_blank"
                   className="text-[10px] text-brand-dark hover:underline font-bold"
                 >
-                  {lt(locale, { fa: 'مشاهده فاکتور رسمی', en: 'View Invoice' })}
+                  {lt(locale, { fa: 'مشاهده فاکتور رسمی', en: 'View Invoice', ar: 'عرض الفاتورة الرسمية', zh: '查看正式发票', ru: 'Посмотреть официальный счёт'})}
                 </Link>
               ) : (
                 <span className="text-[10px] text-sub">تایید شد</span>

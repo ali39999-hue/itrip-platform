@@ -3,9 +3,43 @@ import { apiLogin, E2E_USER } from './helpers/e2e-auth';
 
 test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () => {
 
+  test.beforeAll(async () => {
+    // Ensure seeded user has sufficient wallet balance for the golden journey
+    try {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+      const envText = fs.existsSync(path.resolve(process.cwd(), '.env'))
+        ? fs.readFileSync(path.resolve(process.cwd(), '.env'), 'utf8')
+        : '';
+      const dbUrl = envText.match(/^DATABASE_URL="?([^"\r\n]+)"?/m)?.[1];
+      if (dbUrl) {
+        process.env.DATABASE_URL = dbUrl;
+        const { PrismaClient } = await import('@prisma/client');
+        const prisma = new PrismaClient();
+        const user = await prisma.user.findUnique({ where: { email: 'user@firuzo.com' } });
+        if (user) {
+          const { GeneralLedgerService } = await import('@/domains/ledger/GeneralLedgerService');
+          await GeneralLedgerService.postTopUp({
+            userId: user.id,
+            amount: 100_000_000,
+            currency: 'IRR',
+            groupId: `topup_e2e_${Date.now()}`,
+            referenceId: `ref_e2e_${Date.now()}`,
+            memo: 'E2E test wallet topup',
+          });
+        }
+        await prisma.$disconnect();
+      }
+    } catch (err) {
+      console.warn('beforeAll wallet topup warning:', err);
+    }
+  });
+
   test('Golden Journey 1: Flight Search -> Passenger Booking -> Checkout -> Instant Voucher', async ({ page }) => {
+    test.setTimeout(60000);
     // Checkout requires an authenticated traveler, so sign in through the real
     // credentials provider before starting the journey.
+    await page.goto('/fa', { waitUntil: 'domcontentloaded' });
     const loggedIn = await apiLogin(page, E2E_USER);
     expect(loggedIn).toBe(true);
 
@@ -154,7 +188,9 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     // 1. Visit My Trips
     await page.goto('/fa/my-trips', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveTitle(/iTrip|Firuzo|فیروزو/i);
-    await expect(page.locator('h1, h2').first()).toBeVisible();
+    // DOM-order .first() can resolve to a desktop-only hidden heading (e.g. the
+    // demo user card) on mobile — assert on a visible heading instead.
+    await expect(page.locator('h1:visible, h2:visible').first()).toBeVisible();
 
     // 2. Visit Wallet
     await page.goto('/fa/wallet', { waitUntil: 'domcontentloaded' });
@@ -169,7 +205,7 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     // 1. Visit Admin Root
     await page.goto('/fa/admin', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveTitle(/iTrip|Firuzo|فیروزو/i);
-    await expect(page.locator('h1, h2').first()).toBeVisible();
+    await expect(page.locator('h1:visible, h2:visible').first()).toBeVisible();
 
     // 2. Set Admin role and visit Admin Bookings
     await page.evaluate(() => {

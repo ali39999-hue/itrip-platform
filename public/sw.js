@@ -19,6 +19,66 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// ---- Web Push (پوش نوتیفیکیشن) ----
+
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = { body: event.data ? event.data.text() : '' };
+  }
+
+  const title = payload.title || 'فیروزو';
+  const options = {
+    body: payload.body || '',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    dir: 'rtl',
+    lang: 'fa',
+    tag: payload.tag || undefined,
+    renotify: Boolean(payload.tag),
+    data: { url: payload.url || '/my-trips' },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || '/my-trips';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        const clientPath = new URL(client.url).pathname;
+        // Focus an existing tab when it already shows the target area
+        if (clientPath.includes(target) && 'focus' in client) return client.focus();
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(target.startsWith('/') ? target : `/${target}`);
+      }
+    }),
+  );
+});
+
+// Best-effort resubscription after browser-rotated push subscription
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    self.registration.pushManager
+      .subscribe(event.oldSubscription ? { applicationServerKey: event.oldSubscription.options.applicationServerKey, userVisibleOnly: true } : { userVisibleOnly: true })
+      .then((sub) => sub.toJSON())
+      .then((json) =>
+        fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscription: json }),
+        }),
+      )
+      .catch(() => {}),
+  );
+});
+
 function isTile(url) {
   return /tile\.openstreetmap\.org\/\d+\//.test(url.href);
 }

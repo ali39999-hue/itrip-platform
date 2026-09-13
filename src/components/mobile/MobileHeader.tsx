@@ -63,7 +63,7 @@ export function MobileHeader({
             <button
               type="button"
               onClick={handleBack}
-              className="w-10 h-10 rounded-xl border border-line bg-soft/60 hover:bg-soft text-ink grid place-items-center active:scale-95 transition"
+              className="min-h-[44px] min-w-[44px] w-10 h-10 rounded-xl border border-line bg-soft/60 hover:bg-soft text-ink grid place-items-center active:scale-95 transition"
               aria-label="بازگشت به صفحه قبل"
             >
               <BackIcon size={20} />
@@ -104,7 +104,7 @@ export function MobileHeader({
             <button
               type="button"
               onClick={onSearchClick}
-              className="w-10 h-10 rounded-xl border border-line bg-soft/60 hover:bg-soft text-ink grid place-items-center active:scale-95 transition"
+              className="min-h-[44px] min-w-[44px] w-10 h-10 rounded-xl border border-line bg-soft/60 hover:bg-soft text-ink grid place-items-center active:scale-95 transition"
               aria-label="جستجو"
             >
               <Search size={18} />
@@ -115,7 +115,7 @@ export function MobileHeader({
             <button
               type="button"
               onClick={onSupportClick}
-              className="w-10 h-10 rounded-xl border border-line bg-soft/60 hover:bg-soft text-brand-dark grid place-items-center active:scale-95 transition"
+              className="min-h-[44px] min-w-[44px] w-10 h-10 rounded-xl border border-line bg-soft/60 hover:bg-soft text-brand-dark grid place-items-center active:scale-95 transition"
               aria-label="پشتیبانی ۲۴ ساعته"
             >
               <Headphones size={18} />

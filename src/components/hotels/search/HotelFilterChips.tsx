@@ -23,7 +23,7 @@ export function HotelFilterChips({ chips, onResetAll }: HotelFilterChipsProps) {
           <button
             type="button"
             onClick={chip.clear}
-            className="hover:text-destructive transition"
+            className="min-h-[44px] min-w-[44px] hover:text-destructive transition"
             aria-label={`${lt(locale, { fa: 'حذف فیلتر', en: 'Remove filter', ar: 'إزالة الفلتر', zh: '移除筛选', ru: 'Удалить фильтр' })} ${chip.label}`}
           >
             <X size={12} />

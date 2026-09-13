@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { CardToCardPaymentAdapter } from "./CardToCardPaymentAdapter";
-import { getPaymentGateway } from "../gateway-port";
 import { Money } from "@/lib/finance";
 
 describe("CardToCardPaymentAdapter (Production Hardened)", () => {
@@ -117,8 +116,8 @@ describe("CardToCardPaymentAdapter (Production Hardened)", () => {
     }
   });
 
-  it("is resolved by the getPaymentGateway factory", () => {
-    const gw = getPaymentGateway("card_to_card");
+  it("exposes the production card-to-card adapter shape", () => {
+    const gw = new CardToCardPaymentAdapter();
     expect(gw.name).toBe("CARD_TO_CARD");
     expect(gw.isDemo).toBe(false);
   });

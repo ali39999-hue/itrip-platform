@@ -8,10 +8,13 @@ export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
     const secret = process.env.CRON_SECRET;
+    const isProduction = process.env.NODE_ENV === 'production';
 
-    // If CRON_SECRET is configured in environment, require bearer authorization
-    if (secret && authHeader !== `Bearer ${secret}`) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    // Fail-closed authorization: require secret matching in production, or whenever CRON_SECRET is defined
+    if (isProduction || secret) {
+      if (!secret || authHeader !== `Bearer ${secret}`) {
+        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+      }
     }
 
     const report = await AutoBuyWorker.runSweep('cron_route');

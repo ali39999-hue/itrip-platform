@@ -130,8 +130,14 @@ describe('Customer360Service - Domain Architecture Suite', () => {
     expect(data?.travelers[0].documents[0].validity?.isValidForTravel).toBe(true);
   });
 
-  it('should return null for non-existent user ID', async () => {
-    const data = await Customer360Service.getCustomer360('non_existent_id');
+  it('should return null for a non-existent user ID when called by trusted staff', async () => {
+    const data = await Customer360Service.getCustomer360('non_existent_id', true);
     expect(data).toBeNull();
+  });
+
+  it('should deny access when no operator context is provided (server-side enforcement)', async () => {
+    await expect(Customer360Service.getCustomer360('non_existent_id')).rejects.toThrow(
+      /Unauthorized|Forbidden/
+    );
   });
 });

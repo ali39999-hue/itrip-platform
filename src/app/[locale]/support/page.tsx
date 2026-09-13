@@ -10,6 +10,23 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { lt } from '@/lib/lt';
+import { getSupportPageConfigAction } from '@/actions/account-panel';
+
+interface SupportCfg {
+  phone: string;
+  phoneDisplay: string;
+  email: string;
+  telegram: string;
+  faqOverride: Array<{ q: string; a: string }> | null;
+}
+
+const FALLBACK_SUPPORT: SupportCfg = {
+  phone: '+982191000000',
+  phoneDisplay: '+98 (21) 9100-0000',
+  email: 'support@firuzo.com',
+  telegram: 'firuzo_support',
+  faqOverride: null,
+};
 
 export default function SupportPage() {
   const t = useTranslations('Support');
@@ -24,6 +41,40 @@ export default function SupportPage() {
   const [reference, setReference] = useState('');
   const [message, setMessage] = useState('');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  // CMS-driven contact channels (support.page key) — shipped defaults until loaded
+  const [cfg, setCfg] = useState<SupportCfg>(FALLBACK_SUPPORT);
+
+  useEffect(() => {
+    let cancelled = false;
+    getSupportPageConfigAction()
+      .then((res) => {
+        if (cancelled || !res?.support) return;
+        const s = res.support;
+        const display =
+          s.phoneDisplay && locale in s.phoneDisplay
+            ? String(s.phoneDisplay[locale as keyof typeof s.phoneDisplay])
+            : FALLBACK_SUPPORT.phoneDisplay;
+        setCfg({
+          phone: s.phone || FALLBACK_SUPPORT.phone,
+          phoneDisplay: display,
+          email: s.email || FALLBACK_SUPPORT.email,
+          telegram: s.telegram || (process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || FALLBACK_SUPPORT.telegram),
+          faqOverride:
+            s.faq && s.faq.length > 0
+              ? s.faq.map((f) => ({
+                  q: String(f.q[locale as keyof typeof f.q] ?? f.q.en ?? f.q.fa),
+                  a: String(f.a[locale as keyof typeof f.a] ?? f.a.en ?? f.a.fa),
+                }))
+              : null,
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [locale]);
+
+  const telegramHref = `https://t.me/${cfg.telegram}`;
 
   useEffect(() => {
     const qRef = searchParams?.get('ref');
@@ -39,7 +90,7 @@ export default function SupportPage() {
     }
   }, [searchParams, authUser, locale]);
 
-  const FAQS = [
+  const FAQS: Array<{ q: string; a: string }> = cfg.faqOverride ?? [
     {
       q: lt(locale, { fa: 'چگونه بلیت پرواز یا واچر هتل خود را لغو یا استرداد کنم؟', en: 'How do I cancel or request a refund for flights/hotels?', ar: 'كيف يمكنني إلغاء أو استرداد التذكرة أو الفندق؟', zh: '如何取消或申请机票/酒店退款？', ru: 'Как отменить или вернуть билет/отель?' }),
       a: lt(locale, { fa: 'وارد بخش «سفرهای من» شده و روی جزئیات سفر کلیک کنید. در صورت وجود شرایط کنسلی، دکمه «درخواست لغو و استرداد» فعال بوده و پس از کسر جریمه مصوب تأمین‌کننده، مانده وجه در کمتر از چند دقیقه به کیف پول شما مسترد می‌گردد.', en: 'Go to "My Trips" and select your booking. Click "Cancel & Refund". After applying supplier penalty rules, net credit is refunded to your Firuzo wallet in minutes.', ar: 'انتقل إلى "رحلاتي" واضغط على تفاصيل الحجز ثم اختر طلب الإلغاء والاسترداد.', zh: '进入“我的行程”点击订单详情中的“申请退订”，扣除手续费后余额将在数分钟内退至钱包。', ru: 'Перейдите в «Мои поездки», откройте детали бронирования и нажмите «Запрос на отмену».' }),
@@ -82,14 +133,14 @@ export default function SupportPage() {
           {/* Quick Action Grid for Mobile (Call, Chat, Booking, Refund, Payment) */}
           <div className="w-full max-w-xl grid grid-cols-3 gap-2 text-ink">
             <a
-              href="tel:+982191000000"
+              href={`tel:${cfg.phone}`}
               className="min-h-[58px] p-2 rounded-2xl bg-surface hover:bg-mint border border-line flex flex-col items-center justify-center transition active:scale-95 shadow-sm"
             >
               <Phone size={18} className="text-action mb-1" />
               <span className="text-[11px] font-black">{lt(locale, { fa: 'تماس تلفنی', en: 'Call 24/7', ar: 'اتصال هاتفي', zh: '电话客服', ru: 'Позвонить' })}</span>
             </a>
             <a
-              href={process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ? `https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}` : 'https://t.me/firuzo_support'}
+              href={telegramHref}
               target="_blank"
               rel="noopener noreferrer"
               className="min-h-[58px] p-2 rounded-2xl bg-surface hover:bg-mint border border-line flex flex-col items-center justify-center transition active:scale-95 shadow-sm"
@@ -144,14 +195,14 @@ export default function SupportPage() {
 
             <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto shrink-0">
               <a
-                href="tel:+982191000000"
+                href={`tel:${cfg.phone}`}
                 className="h-11 px-5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs transition flex items-center justify-center gap-2 shadow-md"
               >
                 <Phone size={16} />
-                <span>+98 (21) 9100-0000</span>
+                <span>{cfg.phoneDisplay}</span>
               </a>
               <a
-                href={process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ? `https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}` : 'https://t.me/firuzo_support'}
+                href={telegramHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="h-11 px-4 rounded-xl bg-surface/15 hover:bg-surface/25 border border-surface/20 text-surface font-bold text-xs transition flex items-center justify-center gap-1.5"
@@ -175,8 +226,8 @@ export default function SupportPage() {
               <div>
                 <h3 className="font-black text-base text-ink mb-1">{t('phone')}</h3>
                 <p className="text-xs font-bold text-sub mb-2">{lt(locale, { fa: 'پاسخگویی ۲۴ ساعته در تمام روزهای هفته', en: '24/7 round-the-clock availability', ar: 'متاحون على مدار الساعة', zh: '全天候 24/7 在线', ru: 'Круглосуточно' })}</p>
-                <a href="tel:+982191000000" dir="ltr" className="text-sm font-black text-brand-dark hover:underline font-mono">
-                  +98 (21) 9100-0000
+                <a href={`tel:${cfg.phone}`} dir="ltr" className="text-sm font-black text-brand-dark hover:underline font-mono">
+                  {cfg.phoneDisplay}
                 </a>
               </div>
             </div>
@@ -188,8 +239,8 @@ export default function SupportPage() {
               <div>
                 <h3 className="font-black text-base text-ink mb-1">{t('email')}</h3>
                 <p className="text-xs font-bold text-sub mb-2">{lt(locale, { fa: 'پاسخگویی به سوالات و استردادها', en: 'Inquiries, vouchers & refunds', ar: 'الاستفسارات والقسائم والاسترداد', zh: '工单与退订申请', ru: 'Вопросы и возврат' })}</p>
-                <a href="mailto:support@firuzo.com" className="text-sm font-black text-brand-dark hover:underline font-mono">
-                  support@firuzo.com
+                <a href={`mailto:${cfg.email}`} className="text-sm font-black text-brand-dark hover:underline font-mono">
+                  {cfg.email}
                 </a>
               </div>
             </div>

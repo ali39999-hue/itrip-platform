@@ -6,6 +6,12 @@ import { ExceptionCenterService } from './ExceptionCenterService';
 import { GeneralLedgerService } from '@/domains/ledger/GeneralLedgerService';
 import { Money } from '@/lib/finance';
 
+/**
+ * Auto-Healing Suite — updated for production-truth remediation:
+ * ticketing retries may only QUEUE issuing (no fabricated PNR/ISSUED/CONFIRMED),
+ * and wallet refunds route through RefundDomainService with REF-101..107
+ * invariants and deterministic per-exception idempotency.
+ */
 describe('ExceptionRemediationService - Auto-Healing Suite', () => {
   const suffix = `remed_${Date.now().toString(36)}_${randomBytes(3).toString('hex')}`;
   let userId = '';
@@ -34,7 +40,7 @@ describe('ExceptionRemediationService - Auto-Healing Suite', () => {
     });
     operatorId = op.id;
 
-    // Booking 1 for Retry Ticketing
+    // Booking 1 for Retry Ticketing — HELD, never confirmed by a supplier.
     const b1 = await prisma.booking.create({
       data: {
         customerId: userId,
@@ -56,8 +62,7 @@ describe('ExceptionRemediationService - Auto-Healing Suite', () => {
     });
     exc1Id = e1.id;
 
-    // Booking 2 for Immediate Wallet Refund
-    // Seed initial ledger accounts so postRefund balances properly
+    // Booking 2 for Immediate Wallet Refund — payment actually captured.
     await GeneralLedgerService.postGatewayPayment({
       groupId: `seed_gw_${suffix}`,
       userId,
@@ -72,6 +77,7 @@ describe('ExceptionRemediationService - Auto-Healing Suite', () => {
         customerId: userId,
         reference: `BKG-REF-${suffix}`,
         status: 'CONFIRMED',
+        paymentStatus: 'CAPTURED',
         ticketStatus: 'FAILED',
         totalAmount: 30_000_000,
         currency: 'IRR',
@@ -92,6 +98,7 @@ describe('ExceptionRemediationService - Auto-Healing Suite', () => {
   afterAll(async () => {
     try {
       if (exc1Id || exc2Id) {
+        await prisma.auditLog.deleteMany({ where: { resourceId: { in: [exc1Id, exc2Id] } } });
         await prisma.operationalException.deleteMany({ where: { id: { in: [exc1Id, exc2Id] } } });
       }
       if (booking1Id || booking2Id) {
@@ -106,22 +113,26 @@ describe('ExceptionRemediationService - Auto-Healing Suite', () => {
     }
   });
 
-  it('retries ticketing successfully and transitions exception to RESOLVED', async () => {
+  it('retry ticketing only queues issuing — no fabricated PNR, no ISSUED, no forced CONFIRMED', async () => {
     const res = await ExceptionRemediationService.retryTicketing(exc1Id, operatorId);
     expect(res.success).toBe(true);
-    expect(res.exceptionStatus).toBe('RESOLVED');
+    expect(res.exceptionStatus).toBe('IN_PROGRESS');
 
     const updatedBooking = await prisma.booking.findUnique({ where: { id: booking1Id } });
-    expect(updatedBooking?.status).toBe('CONFIRMED');
-    expect(updatedBooking?.ticketStatus).toBe('ISSUED');
-    expect(updatedBooking?.externalPnr).toMatch(/^FZ-/);
+    expect(updatedBooking?.status).toBe('HELD'); // lifecycle untouched
+    expect(updatedBooking?.ticketStatus).toBe('ISSUING'); // queued for issuing
+    expect(updatedBooking?.externalPnr).toBeNull(); // never fabricate a PNR
 
     const updatedExc = await prisma.operationalException.findUnique({ where: { id: exc1Id } });
-    expect(updatedExc?.status).toBe('RESOLVED');
-    expect(updatedExc?.resolution).toContain('صدور مجدد بلیت با موفقیت انجام شد');
+    expect(updatedExc?.status).toBe('IN_PROGRESS');
+    expect(updatedExc?.resolution).toContain('درخواست صدور مجدد بلیت ثبت شد');
+
+    // Repeat click is idempotent.
+    const res2 = await ExceptionRemediationService.retryTicketing(exc1Id, operatorId);
+    expect(res2.exceptionStatus).toBe('IN_PROGRESS');
   });
 
-  it('executes immediate wallet refund and records balanced ledger entry', async () => {
+  it('executes immediate wallet refund via the refund domain service (capped, idempotent, balanced)', async () => {
     const res = await ExceptionRemediationService.immediateWalletRefund(
       exc2Id,
       operatorId,
@@ -135,13 +146,50 @@ describe('ExceptionRemediationService - Auto-Healing Suite', () => {
     expect(updatedBooking?.status).toBe('REFUNDED');
     expect(updatedBooking?.paymentStatus).toBe('REFUNDED');
 
-    // Verify formal Refund record created
+    // Formal Refund record with the deterministic per-exception idempotency key.
     const refund = await prisma.refund.findFirst({ where: { bookingId: booking2Id } });
     expect(refund).toBeDefined();
+    expect(refund?.idempotencyKey).toBe(`remediation_full_refund_${exc2Id}`);
     expect(Number(refund?.amount)).toBe(30_000_000);
+    expect(refund?.status).toBe('SETTLED');
 
     const updatedExc = await prisma.operationalException.findUnique({ where: { id: exc2Id } });
     expect(updatedExc?.status).toBe('RESOLVED');
-    expect(updatedExc?.resolution).toContain('استرداد آنی به مبلغ');
+    expect(updatedExc?.resolution).toContain('استرداد کامل به مبلغ');
+  });
+
+  it('refuses a wallet refund when no authoritative captured payment exists', async () => {
+    const user = await prisma.user.create({
+      data: { email: `nopay_${suffix}@firuzo.com`, name: 'مسافر بدون پرداخت' },
+    });
+    const b3 = await prisma.booking.create({
+      data: {
+        customerId: user.id,
+        reference: `BKG-NOPAY-${suffix}`,
+        status: 'CONFIRMED',
+        paymentStatus: 'INITIATED',
+        totalAmount: 5_000_000,
+        currency: 'IRR',
+      },
+    });
+    const e3 = await ExceptionCenterService.createException({
+      type: 'SUPPLIER_TIMEOUT',
+      severity: 'MEDIUM',
+      entityType: 'BOOKING',
+      entityId: b3.id,
+      title: 'رزرو بدون پرداخت ثبت‌شده',
+    });
+
+    const res = await ExceptionRemediationService.immediateWalletRefund(e3.id, operatorId);
+    expect(res.success).toBe(false);
+    expect(res.message).toContain('منبع مالی معتبر');
+
+    const refunds = await prisma.refund.findMany({ where: { bookingId: b3.id } });
+    expect(refunds).toHaveLength(0);
+
+    await prisma.auditLog.deleteMany({ where: { resourceId: e3.id } });
+    await prisma.operationalException.deleteMany({ where: { id: e3.id } });
+    await prisma.booking.deleteMany({ where: { id: b3.id } });
+    await prisma.user.deleteMany({ where: { id: user.id } });
   });
 });

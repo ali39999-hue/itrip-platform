@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Wallet,
   CreditCard,
@@ -11,8 +11,11 @@ import {
   CheckCircle2,
   Lock,
   Sparkles,
+  FlaskConical,
 } from 'lucide-react';
-import { formatMoney } from '@/lib/money';
+import { CURRENCY_TO_TOMAN, formatMoney } from '@/lib/money';
+import { countryPaymentCapabilities } from '@/lib/countries';
+import { useCountryStore } from '@/stores/country-store';
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
 
@@ -27,6 +30,9 @@ interface PaymentGatewaySelectorProps {
   totalPayable: number; // in Toman
   selectedInstrument?: EcardoInstrument;
   setSelectedInstrument?: (inst: EcardoInstrument) => void;
+  isAdmin?: boolean;
+  adminPaymentMode?: 'real' | 'demo';
+  onToggleAdminPaymentMode?: (mode: 'real' | 'demo') => void;
 }
 
 export function PaymentGatewaySelector({
@@ -36,8 +42,13 @@ export function PaymentGatewaySelector({
   totalPayable,
   selectedInstrument: externalInstrument,
   setSelectedInstrument: setExternalInstrument,
+  isAdmin = false,
+  adminPaymentMode = 'demo',
+  onToggleAdminPaymentMode,
 }: PaymentGatewaySelectorProps) {
   const locale = useLocale();
+  const country = useCountryStore((s) => s.country);
+  const caps = countryPaymentCapabilities(country);
   const hasEnoughWallet = walletBalance >= totalPayable;
 
   // Local state if not controlled from parent
@@ -45,14 +56,26 @@ export function PaymentGatewaySelector({
   const activeInstrument = externalInstrument || internalInstrument;
   const setInstrument = setExternalInstrument || setInternalInstrument;
 
-  // Adapt wallet currency presentation based on user language/locale
-  const localizedCurrency = locale === 'zh' ? 'CNY' : locale === 'en' || locale === 'ru' ? 'USDT' : 'IRR';
+  // Country-reactive guardrails: when the selected country changes, drop any
+  // method/instrument that does not exist there (e.g. Shetab outside Iran).
+  useEffect(() => {
+    if (!caps.shetabInstrument && activeInstrument === 'shetab_card') {
+      setInstrument(caps.defaultInstrument);
+    }
+  }, [country]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if ((method === 'gateway' && !caps.shetab) || (method === 'card_transfer' && !caps.cardTransfer)) {
+      setMethod('gateway_ecardo');
+    }
+  }, [country, method]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Dynamic Real-time Conversions from Toman (Base) into Target Payment Currencies
-  // 1 USD = 55,000 Toman, 1 USDT = 55,000 Toman, 1 CNY = 7,600 Toman
-  const usdAmount = totalPayable > 0 ? (totalPayable / 55000).toFixed(2) : '0.00';
-  const usdtAmount = totalPayable > 0 ? (totalPayable / 55000).toFixed(2) : '0.00';
-  const cnyAmount = totalPayable > 0 ? (totalPayable / 7600).toFixed(2) : '0.00';
+  // Wallet currency follows the selected country (not the UI language).
+  const walletCurrency = country === 'iran' ? 'IRR' : country === 'china' ? 'CNY' : 'USD';
+
+  // Conversions from Toman (base) via the shared rate table — never hardcoded.
+  const usdAmount = totalPayable > 0 ? (totalPayable / (CURRENCY_TO_TOMAN.USD || 55000)).toFixed(2) : '0.00';
+  const usdtAmount = totalPayable > 0 ? (totalPayable / (CURRENCY_TO_TOMAN.USDT || 55000)).toFixed(2) : '0.00';
+  const cnyAmount = totalPayable > 0 ? (totalPayable / (CURRENCY_TO_TOMAN.CNY || 7600)).toFixed(2) : '0.00';
   const irrAmount = totalPayable.toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US');
 
   return (
@@ -83,6 +106,86 @@ export function PaymentGatewaySelector({
           eCardo Fintech
         </span>
       </div>
+
+      {isAdmin && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-ink space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-xl bg-amber-500/20 grid place-items-center text-amber-600 font-bold shrink-0">
+                ⚡
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] font-black">
+                    {lt(locale, {
+                      fa: 'حالت درگاه پرداخت (مخصوص ادمین)',
+                      en: 'Payment Gateway Mode (Admin Only)',
+                      ar: 'وضع بوابة الدفع (خاص بالمسؤول)',
+                      zh: '支付网关模式（仅限管理员）',
+                      ru: 'Режим платежного шлюза (только для админа)',
+                    })}
+                  </span>
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/25 text-amber-800 dark:text-amber-300">
+                    ADMIN
+                  </span>
+                </div>
+                <p className="text-[11px] text-sub">
+                  {lt(locale, {
+                    fa: 'انتخاب نحوه پردازش تراکنش بین درگاه واقعی eCardo و شبیه‌ساز تست دمو:',
+                    en: 'Choose transaction routing between Real eCardo Gateway and Demo Simulator:',
+                    ar: 'اختر توجيه المعاملة بين بوابة eCardo الحقيقية ومحاكي الاختبار التجريبي:',
+                    zh: '在正式 eCardo 网关与测试沙箱模拟器之间选择处理方式：',
+                    ru: 'Выберите маршрутизацию транзакции между реальным шлюзом eCardo и демо-симулятором:',
+                  })}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center bg-surface border border-line rounded-xl p-1 shadow-xs">
+              <button
+                type="button"
+                onClick={() => onToggleAdminPaymentMode?.('demo')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-black transition-all ${
+                  adminPaymentMode === 'demo'
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'text-sub hover:text-ink'
+                }`}
+              >
+                <FlaskConical size={14} />
+                <span>
+                  {lt(locale, {
+                    fa: 'شبیه‌ساز (دمو)',
+                    en: 'Demo Simulator',
+                    ar: 'محاكي دمو',
+                    zh: '测试模拟',
+                    ru: 'Демо-симулятор',
+                  })}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onToggleAdminPaymentMode?.('real')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-black transition-all ${
+                  adminPaymentMode === 'real'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-sub hover:text-ink'
+                }`}
+              >
+                <ShieldCheck size={14} />
+                <span>
+                  {lt(locale, {
+                    fa: 'درگاه واقعی eCardo',
+                    en: 'Real eCardo Gateway',
+                    ar: 'بوابة إيكاردو الحقيقية',
+                    zh: '正式 eCardo 网关',
+                    ru: 'Боевой шлюз eCardo',
+                  })}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-3.5">
         {/* ========================================================================= */}
@@ -193,7 +296,7 @@ export function PaymentGatewaySelector({
                         ${usdAmount} <span className="text-[11px] font-sans">USD</span>
                       </span>
                       <span className="text-[11px] text-sub font-mono">
-                        1 USD ≈ 55,000 T
+                        1 USD ≈ {CURRENCY_TO_TOMAN.USD.toLocaleString('en-US')} T
                       </span>
                     </div>
                   </button>
@@ -268,12 +371,13 @@ export function PaymentGatewaySelector({
                         ¥{cnyAmount} <span className="text-[11px] font-sans">CNY (元)</span>
                       </span>
                       <span className="text-[11px] text-sub font-mono">
-                        1 CNY ≈ 7,600 T
+                        1 CNY ≈ {CURRENCY_TO_TOMAN.CNY.toLocaleString('en-US')} T
                       </span>
                     </div>
                   </button>
 
-                  {/* Option 4: Shetab Iranian Cards (IRR / IRT) */}
+                  {/* Option 4: Shetab Iranian Cards (IRR / IRT) — Iran only */}
+                  {caps.shetabInstrument && (
                   <button
                     type="button"
                     onClick={(e) => {
@@ -309,6 +413,7 @@ export function PaymentGatewaySelector({
                       </span>
                     </div>
                   </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -338,16 +443,18 @@ export function PaymentGatewaySelector({
               <div className="flex items-center gap-2">
                 <Wallet size={17} className="text-brand-dark shrink-0" aria-hidden="true" />
                 <strong className="text-[14px] font-bold text-ink">
-                  {locale === 'zh'
-                    ? 'Firuzo 账户钱包 (CNY / USDT)'
-                    : locale === 'en' || locale === 'ru'
-                    ? 'Firuzo Multi-Currency Wallet (USD / USDT)'
-                    : 'کیف پول کاربر (فیروزو / ای‌کاردو)'}
+                  {lt(locale, {
+                    fa: 'کیف پول کاربر (فیروزو / ای‌کاردو)',
+                    en: 'Firuzo Multi-Currency Wallet',
+                    ar: 'محفظة المستخدم (فيروزو / إيكاردو)',
+                    zh: 'Firuzo 账户钱包',
+                    ru: 'Мультивалютный кошелёк Firuzo',
+                  })}
                 </strong>
               </div>
               <span className="text-[12px] font-bold font-mono text-sub">
                 {lt(locale, { fa: 'موجودی:', en: 'Balance:', ar: 'الرصيد:', zh: '余额：', ru: 'Баланس:' })}{' '}
-                {formatMoney(walletBalance, localizedCurrency, locale)}
+                {formatMoney(walletBalance, walletCurrency, locale)}
               </span>
             </div>
             <p className="text-[12px] text-sub">
@@ -388,6 +495,7 @@ export function PaymentGatewaySelector({
         {/* ========================================================================= */}
         {/* 3. SHAPARAK / SHETAB BANKING GATEWAY (IRANIAN DOMESTIC DIRECT)            */}
         {/* ========================================================================= */}
+        {caps.shetab && (
         <label
           className={`flex items-start gap-3.5 p-4 rounded-xl border transition cursor-pointer ${
             method === 'gateway'
@@ -432,10 +540,12 @@ export function PaymentGatewaySelector({
             </p>
           </div>
         </label>
+        )}
 
         {/* ========================================================================= */}
         {/* 4. CARD TO CARD & RECEIPT UPLOAD (PAYMENTINO)                             */}
         {/* ========================================================================= */}
+        {caps.cardTransfer && (
         <label
           className={`flex items-start gap-3.5 p-4 rounded-xl border transition cursor-pointer ${
             method === 'card_transfer'
@@ -480,6 +590,7 @@ export function PaymentGatewaySelector({
             </p>
           </div>
         </label>
+        )}
       </div>
 
       <div className="flex items-center justify-between pt-2 border-t border-line/60 text-[11px] font-bold text-sub">

@@ -8,9 +8,22 @@ import { profileUpdateSchema, otpRequestSchema } from '@/lib/validations';
 import { RateLimiter } from '@/lib/security/rate-limiter';
 import { hasErpRole } from '@/domains/identity/permission-service';
 import { ProductionTelegramProvider, TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
-import { getAppBaseUrl } from '@/lib/runtime-url';
 
 export type AuthChannel = 'phone' | 'email' | 'telegram' | 'whatsapp' | 'wechat' | 'bale';
+
+/**
+ * KYC completeness = نام و نام خانوادگی + کد ملی. کاربران جدید بعد از
+ * ثبت‌نام اولیه تا تکمیل این سه فیلد، profileComplete=false هستند و باید
+ * به تکمیل اطلاعات هویتی هدایت شوند. Staff/ERP مشمول KYC مشتری نیست.
+ */
+function isProfileComplete(
+  u:
+    | { firstNameFa?: string | null; lastNameFa?: string | null; nationalId?: string | null; [key: string]: unknown }
+    | null
+    | undefined,
+): boolean {
+  return Boolean(u?.firstNameFa && u?.lastNameFa && u?.nationalId);
+}
 
 export async function loginWithCredentials(email: string, pass: string) {
   try {
@@ -133,6 +146,7 @@ export async function verifyOtpAndLogin(identifier: string, otp: string, channel
         name: true,
         firstNameFa: true,
         lastNameFa: true,
+        nationalId: true,
         role: true,
         telegramId: true,
         whatsappPhone: true,
@@ -168,6 +182,7 @@ export async function verifyOtpAndLogin(identifier: string, otp: string, channel
       firstNameFa: displayName,
       lastNameFa: user?.lastNameFa || '',
       kycApproved: false,
+      profileComplete: role === 'admin' ? true : isProfileComplete(user),
       role,
       loyaltyTier: 'BRONZE' as const,
       loyaltyPoints: 0,
@@ -257,6 +272,7 @@ export async function loginWithTelegram(payload: TelegramAuthPayload) {
       firstNameFa: user.firstNameFa || user.name || fullName,
       lastNameFa: user.lastNameFa || '',
       kycApproved: false,
+      profileComplete: role === 'admin' ? true : isProfileComplete(user),
       role,
       loyaltyTier: 'BRONZE' as const,
       loyaltyPoints: 0,
@@ -267,21 +283,35 @@ export async function loginWithTelegram(payload: TelegramAuthPayload) {
 }
 
 /**
- * Generates the official WeChat Open Platform QR Code web authentication URL.
+ * Server-side capability report for the login screen (SITE-002): lets the UI
+ * render only the social-login buttons whose upstream credentials are actually
+ * configured, instead of failing at click time with a missing-env error.
  */
-export async function getWeChatAuthUrl(callbackUrl: string = '/account') {
-  const appId = process.env.WECHAT_APP_ID || process.env.NEXT_PUBLIC_WECHAT_APP_ID;
-  if (!appId) {
-    return { success: false, error: 'WECHAT_APP_ID is not configured on the server' };
-  }
-
-  const baseUrl = getAppBaseUrl();
-  const redirectUri = `${baseUrl}/api/auth/callback/wechat`;
-  const url = `https://open.weixin.qq.com/connect/qrconnect?appid=${appId}&redirect_uri=${encodeURIComponent(
-    redirectUri
-  )}&response_type=code&scope=snsapi_login&state=${encodeURIComponent(callbackUrl)}#wechat_redirect`;
-
-  return { success: true, url };
+export async function getAuthCapabilities(): Promise<{
+  google: boolean;
+  wechatQr: boolean;
+  telegramWidget: boolean;
+  telegramBot: boolean;
+  whatsappLive: boolean;
+  baleLive: boolean;
+  smsLive: boolean;
+  emailLive: boolean;
+}> {
+  return {
+    google: Boolean(process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID),
+    wechatQr: Boolean(
+      (process.env.WECHAT_APP_ID || process.env.AUTH_WECHAT_APP_ID) &&
+        (process.env.WECHAT_APP_SECRET || process.env.AUTH_WECHAT_APP_SECRET)
+    ),
+    telegramWidget: Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME),
+    telegramBot: Boolean(process.env.TELEGRAM_BOT_TOKEN),
+    whatsappLive: Boolean(
+      (process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_API_TOKEN) && process.env.WHATSAPP_PHONE_NUMBER_ID
+    ),
+    baleLive: Boolean(process.env.BALE_BOT_TOKEN),
+    smsLive: Boolean(process.env.SMSWBS_USERNAME && process.env.SMSWBS_PASSWORD),
+    emailLive: Boolean(process.env.RESEND_API_KEY),
+  };
 }
 
 /**
@@ -328,6 +358,7 @@ export async function loginWithPassword(identifier: string, password: string) {
         name: true,
         firstNameFa: true,
         lastNameFa: true,
+        nationalId: true,
       },
     });
   } catch (dbErr) {
@@ -367,6 +398,7 @@ export async function loginWithPassword(identifier: string, password: string) {
       firstNameFa: user.firstNameFa || user.name || 'مدیر',
       lastNameFa: user.lastNameFa || 'سیستم',
       kycApproved: false,
+      profileComplete: role === 'admin' ? true : isProfileComplete(user),
       role,
       loyaltyTier: 'BRONZE' as const,
       loyaltyPoints: 0,
@@ -396,6 +428,10 @@ export async function updateProfileDetails(data: unknown) {
         lastNameEn: parsed.lastNameEn,
         email: parsed.email,
         phone: parsed.phone,
+        // فیلدهای هویتی KYC — schema همان whitelist را validate می‌کند
+        nationalId: parsed.nationalId,
+        passportNo: parsed.passportNo,
+        passportExpiry: parsed.passportExpiry,
       },
     });
     return { success: true, user: { id: updated.id, name: updated.name, role: updated.role } };
@@ -479,6 +515,7 @@ export async function getSessionUser() {
         name: true,
         firstNameFa: true,
         lastNameFa: true,
+        nationalId: true,
         role: true,
         telegramId: true,
         whatsappPhone: true,
@@ -500,6 +537,7 @@ export async function getSessionUser() {
         firstNameFa: user.firstNameFa || user.name || 'کاربر',
         lastNameFa: user.lastNameFa || 'فیروزو',
         kycApproved: false,
+        profileComplete: role === 'admin' ? true : isProfileComplete(user),
         role,
         loyaltyTier: 'BRONZE' as const,
         loyaltyPoints: 0,

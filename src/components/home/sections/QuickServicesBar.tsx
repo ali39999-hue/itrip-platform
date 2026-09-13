@@ -95,21 +95,24 @@ export function QuickServicesBar() {
   return (
     <section aria-label="Quick Travel Services" className="w-full max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 2xl:px-8 mt-3 sm:mt-5 relative z-30">
       <div className="bg-white dark:bg-surface rounded-3xl p-4 sm:p-6 border border-slate-200/90 dark:border-line/80 shadow-[0_4px_20px_rgba(5,63,62,0.06)]">
-        <div className="grid grid-cols-5 sm:grid-cols-5 md:grid-cols-10 gap-1.5 sm:gap-3 md:gap-4">
+        {/* ۴ ستون در موبایل: با ۵ ستون، لیبل‌های فارسی همیشه truncate می‌شدند.
+            از sm به بالا گرید intrinsic (auto-fill) — در zoom/فونت درشت ستون‌ها
+            خودشان کم می‌شوند و لیبل‌ها جا می‌گیرند (WCAG 1.4.4). */}
+        <div className="grid grid-cols-4 sm:grid-cols-[repeat(auto-fill,minmax(min(100%,8rem),1fr))] gap-2 sm:gap-4">
           {services.map((item) => {
             const Icon = item.icon;
             return (
               <Link
                 key={item.id}
                 href={item.href}
-                className="group flex flex-col items-center justify-start gap-1.5 sm:gap-2 p-1 sm:p-1.5 md:p-2 rounded-2xl hover:bg-slate-50 dark:hover:bg-soft/70 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                className="group flex min-w-0 flex-col items-center justify-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-2xl hover:bg-slate-50 dark:hover:bg-soft/70 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
                 <div
                   className={`w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-xl sm:rounded-2xl grid place-items-center transition-all duration-300 group-hover:scale-110 shrink-0 ${item.color}`}
                 >
                   <Icon size={22} aria-hidden="true" strokeWidth={2.2} className="sm:w-6 sm:h-6" />
                 </div>
-                <span className="text-[10px] sm:text-[11px] md:text-xs font-bold text-slate-800 dark:text-ink group-hover:text-brand-dark transition-colors text-center leading-[1.35] line-clamp-2 break-words w-full min-h-[2.6em] px-0.5">
+                <span className="min-w-0 text-[11px] sm:text-xs font-black text-slate-800 dark:text-ink group-hover:text-brand-dark transition-colors text-center leading-tight line-clamp-2 w-full">
                   {item.title}
                 </span>
               </Link>

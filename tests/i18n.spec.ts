@@ -20,12 +20,19 @@ test.describe('i18n Language Switching across pages', () => {
       // Check if it actually loaded without crashing
       await expect(page.locator('body')).toBeVisible();
 
-      // Open the language switcher (button with aria-label="Language")
+      // Open the language switcher (button with aria-label="Language").
+      // The SSR button can render before React attaches its onClick — if the
+      // listbox does not open, click once more (hydration race on slow dev).
       const langSwitcherBtn = page.getByRole('button', { name: /Language|زبان/i }).first();
       await expect(langSwitcherBtn).toBeVisible({ timeout: 10000 });
       await langSwitcherBtn.click();
-      
+
       const enOption = page.locator('div[role="listbox"] button').filter({ hasText: /English/i }).first();
+      try {
+        await enOption.waitFor({ state: 'visible', timeout: 4000 });
+      } catch {
+        await langSwitcherBtn.click();
+      }
       await expect(enOption).toBeVisible({ timeout: 8000 });
       await enOption.click();
       await page.waitForURL(new RegExp(`/en(${pagePath === '/' ? '($|\\?)' : pagePath})`), { timeout: 15000 });
@@ -35,6 +42,11 @@ test.describe('i18n Language Switching across pages', () => {
       await expect(langSwitcherBtnAfter).toBeVisible({ timeout: 10000 });
       await langSwitcherBtnAfter.click();
       const ruOption = page.locator('div[role="listbox"] button').filter({ hasText: /Русский/i }).first();
+      try {
+        await ruOption.waitFor({ state: 'visible', timeout: 4000 });
+      } catch {
+        await langSwitcherBtnAfter.click();
+      }
       await expect(ruOption).toBeVisible({ timeout: 8000 });
       await ruOption.click();
       await page.waitForURL(new RegExp(`/ru(${pagePath === '/' ? '($|\\?)' : pagePath})`), { timeout: 15000 });

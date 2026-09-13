@@ -147,7 +147,7 @@ export function BookingPanel({ booking, hotel, onBook, onOpenEdit }: BookingPane
                     <button
                       onClick={() => setSel((s) => { const n = { ...s }; delete n[k]; return n; })}
                       aria-label={ariaT('remove')}
-                      className="w-[22px] h-[22px] grid place-items-center rounded-full bg-mint text-sub shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                      className="min-h-[44px] min-w-[44px] w-[22px] h-[22px] grid place-items-center rounded-full bg-mint text-sub shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                     >
                       <X size={12} />
                     </button>
@@ -174,7 +174,7 @@ export function BookingPanel({ booking, hotel, onBook, onOpenEdit }: BookingPane
                   <button
                     onClick={() => setSel((s) => { const n = { ...s }; delete n[k]; return n; })}
                     aria-label={ariaT('remove')}
-                    className="w-[22px] h-[22px] grid place-items-center rounded-full bg-mint text-sub shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    className="min-h-[44px] min-w-[44px] w-[22px] h-[22px] grid place-items-center rounded-full bg-mint text-sub shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                   >
                     <X size={12} />
                   </button>

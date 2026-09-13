@@ -28,7 +28,9 @@ export async function immediateRefundRemediationAction(
   reason?: string
 ): Promise<RemediationResult> {
   try {
-    const operator = await requirePermission(['booking:view:all', 'ops:override:cancel']);
+    // Money-moving remediation requires the dedicated refund-approval
+    // permission (same taxonomy as refundBookingAdmin), not generic ops access.
+    const operator = await requirePermission(['booking:refund:approve']);
     const res = await ExceptionRemediationService.immediateWalletRefund(
       exceptionId,
       operator.id,

@@ -769,7 +769,7 @@ export function TravelFileWorkspaceClient({
                     type="button"
                     onClick={() => setRefundArmed(false)}
                     aria-label={lt(locale, { fa: 'انصراف از استرداد', en: 'Cancel refund', ar: 'إلغاء الاسترداد', zh: '取消退款', ru: 'Отменить возврат' })}
-                    className="min-h-10 min-w-10 grid place-items-center rounded-xl border border-line text-sub hover:text-ink transition"
+                    className="min-h-[44px] min-w-[44px] min-h-10 min-w-10 grid place-items-center rounded-xl border border-line text-sub hover:text-ink transition"
                   >
                     ✕
                   </button>

@@ -93,12 +93,14 @@ export function CorporateHubClientPage() {
                 </div>
                 <h1 className="text-2xl font-black text-ink">
                   {lt(locale, {
+                    ar: 'مركز السفر للشركات وB2B', zh: '企业与 B2B 商旅中心', ru: 'Корпоративный хаб и B2B-путешествия',
                     fa: 'سازمان و سفرهای شرکتی (B2B)',
                     en: 'Corporate & B2B Travel Hub',
                   })}
                 </h1>
                 <p className="text-xs sm:text-sm text-sub mt-1">
                   {lt(locale, {
+                    ar: 'إدارة حجوزات الموظفين، الصندوق النقدي للشركة، إصدار الفواتير الرسمية وصلاحيات الوكالة.', zh: '管理员工预订、企业备用金、正式发票开具与代理权限。', ru: 'Управление бронированиями сотрудников, корпоративными средствами, официальными счетами и агентскими правами.',
                     fa: 'مدیریت رزرواسیون‌های پرسنل، تنخواه شرکتی، صدور فاکتور رسمی و دسترسی‌های آژانسی.',
                     en: 'Manage business travel, corporate accounts, official tax invoices, and agency booking.',
                   })}
@@ -112,7 +114,7 @@ export function CorporateHubClientPage() {
                     className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-brand hover:bg-brand-dark text-surface text-xs font-black shadow-brand transition active:scale-[0.98]"
                   >
                     <Plane size={15} />
-                    <span>{lt(locale, { fa: 'رزرو پرواز سازمانی', en: 'Book Flight' })}</span>
+                    <span>{lt(locale, { fa: 'رزرو پرواز سازمانی', en: 'Book Flight', ar: 'حجز رحلات مؤسسية', zh: '企业航班预订', ru: 'Корпоративное бронирование рейсов'})}</span>
                   </Link>
                 </div>
               )}
@@ -139,12 +141,14 @@ export function CorporateHubClientPage() {
                 <div className="max-w-lg mx-auto space-y-2">
                   <h3 className="text-lg font-black text-ink">
                     {lt(locale, {
+                      ar: 'حسابك غير مرتبط بأي مؤسسة بعد', zh: '您的账户尚未关联企业', ru: 'Ваш аккаунт пока не привязан к организации',
                       fa: 'حساب کاربری شما هنوز به سازمانی متصل نیست',
                       en: 'No Corporate Account Linked Yet',
                     })}
                   </h3>
                   <p className="text-xs sm:text-sm text-sub leading-relaxed">
                     {lt(locale, {
+                      ar: 'إذا كنت موظفًا في مؤسسة شريكة أو مشغّل وكالة سفر متعاونة، فاطلب من مدير مؤسستك تسجيل رقمك أو بريدك في قسم أعضاء المؤسسة.', zh: '如果您是合作企业的员工或合作旅行社的运营人员，请让贵组织管理员在组织成员中登记您的手机号或邮箱。', ru: 'Если вы сотрудник организации-партнёра или оператор агентства-партнёра, попросите администратора вашей организации добавить ваш номер или email в список участников.',
                       fa: 'اگر کارمند یک سازمان طرف قرارداد یا اپراتور یک آژانس مسافرتی همکار هستید، از مدیر سازمان خود بخواهید شماره یا ایمیل شما را در بخش اعضای سازمان ثبت نماید.',
                       en: 'If you are an employee of a corporate partner or an agency travel operator, ask your administrator to add you to the organization roster.',
                     })}

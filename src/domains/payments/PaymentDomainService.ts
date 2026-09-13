@@ -14,6 +14,8 @@ export interface InitiatePaymentParams {
   method: 'wallet_irr' | 'gateway_shetab' | 'wallet_usdt' | 'gateway_ecardo';
   amount: Money; // MONEY-101: Money is the only core financial input
   currency?: string;
+  callbackUrl?: string;
+  paymentMode?: 'real' | 'demo';
   rawPayload?: Record<string, unknown>;
   customerInfo?: {
     phone?: string;
@@ -194,8 +196,9 @@ export class PaymentDomainService {
       intentId: intent.id,
       bookingId: params.bookingId || '',
       amount: new Money(decimalAmount, currency),
-      callbackUrl: `${getAppBaseUrl()}/api/payments/callback`,
+      callbackUrl: params.callbackUrl || `${getAppBaseUrl()}/api/payments/callback`,
       customerInfo: params.customerInfo,
+      paymentMode: params.paymentMode,
     };
 
     let gatewayRes;
@@ -400,9 +403,26 @@ export class PaymentDomainService {
         });
         throw new Error(`WEBHOOK_FAIL_CLOSED: ${verifyRes.error || 'Cryptographic signature verification failed'}`);
       }
+      // A validly-signed event that reports failure must never capture.
+      if (verifyRes.eventType === 'payment.failed') {
+        return this.handleGatewayReportedFailure(params, webhookRecord.id, client);
+      }
+    }
+
+    // Demo/unverified path fallback: an explicit failure status in the payload
+    // is still a failure — capture is only allowed for success reports.
+    const rawStatus = String((params.rawPayload as Record<string, unknown> | undefined)?.status ?? '').toLowerCase();
+    if (['failed', 'fail', 'cancel', 'canceled', 'cancelled', 'declined', 'error'].includes(rawStatus)) {
+      return this.handleGatewayReportedFailure(params, webhookRecord.id, client);
     }
 
     // 4. Booking & Financial Validation
+    // Wallet top-ups are not bookings: capture credits the user's ledger
+    // account directly (PAY-001) instead of confirming a Booking row.
+    if (params.bookingId.startsWith('wallet_topup_')) {
+      return this.processWalletTopUpCapture(params, webhookRecord.id, client);
+    }
+
     const booking = await client.booking.findUnique({
       where: { id: params.bookingId },
     });
@@ -424,10 +444,33 @@ export class PaymentDomainService {
       throw new Error(`WEBHOOK_FAIL_CLOSED: Booking ${booking.id} is in terminal state ${booking.status} — capture rejected`);
     }
 
-    // 4b. Amount and currency validation
+    // 4b. Amount and currency validation.
+    // For gateway payments charged in a converted currency (FX), the Payment
+    // record holds the exact amount/currency the gateway was instructed to
+    // charge — validate against it, falling back to the booking totals.
     const incomingMoney = params.settledAmount;
     const settledCurrency = (params.settledCurrency || incomingMoney.currency || booking.currency || 'IRR').toUpperCase();
-    const expectedMoney = new Money(booking.totalAmount.toString(), booking.currency);
+    const gatewayPayment = params.gatewayRef
+      ? await client.payment.findFirst({
+          where: { gatewayRef: params.gatewayRef },
+          select: { amount: true, currency: true },
+        })
+      : null;
+
+    const incomingCurrency = (params.settledCurrency || incomingMoney.currency || booking.currency || 'IRR').toUpperCase();
+    const expectedMoney = gatewayPayment
+      ? new Money(gatewayPayment.amount.toString(), gatewayPayment.currency)
+      : new Money(booking.totalAmount.toString(), booking.currency);
+    const expectedCurrency = (gatewayPayment?.currency || booking.currency).toUpperCase();
+
+    if (expectedCurrency !== incomingCurrency) {
+      const reason = `Currency mismatch: expected ${expectedCurrency} but received ${incomingCurrency}`;
+      await client.webhookEvent.update({
+        where: { id: webhookRecord.id },
+        data: { status: 'REJECTED', rejectionReason: reason },
+      });
+      throw new Error(`Payment webhook currency mismatch: ${reason}`);
+    }
 
     if (!expectedMoney.equals(incomingMoney)) {
       const reason = `Amount mismatch: expected ${expectedMoney.toString()} but received ${incomingMoney.toString()}`;
@@ -436,15 +479,6 @@ export class PaymentDomainService {
         data: { status: 'REJECTED', rejectionReason: reason },
       });
       throw new Error(`Payment webhook amount tampering detected: ${reason}`);
-    }
-
-    if (booking.currency.toUpperCase() !== settledCurrency.toUpperCase()) {
-      const reason = `Currency mismatch: expected ${booking.currency} but received ${settledCurrency}`;
-      await client.webhookEvent.update({
-        where: { id: webhookRecord.id },
-        data: { status: 'REJECTED', rejectionReason: reason },
-      });
-      throw new Error(`Payment webhook currency mismatch: ${reason}`);
     }
 
     // PAY-104: One capture per booking. A valid gateway event with a fresh eventId
@@ -478,7 +512,7 @@ export class PaymentDomainService {
         bookingId: params.bookingId,
         paymentIntentId: linkedIntent?.id,
         idempotencyKey,
-        method: 'gateway_shetab',
+        method: gatewayName.startsWith('ECARDO') ? 'gateway_ecardo' : 'gateway_shetab',
         gatewayRef: params.gatewayRef,
         amount: incomingMoney.toDecimal(),
         currency: settledCurrency,
@@ -554,6 +588,199 @@ export class PaymentDomainService {
     });
 
     businessMetrics.recordPaymentCaptured(gatewayName, incomingMoney.toNumber());
+
+    return {
+      processed: true,
+      status: 'PROCESSED',
+      paymentId: payment.id,
+    };
+  }
+
+  /**
+   * Terminal handling for a validly-signed gateway event that reports FAILURE.
+   * Marks the Payment/Intent failed so the user can retry — never captures.
+   */
+  private static async handleGatewayReportedFailure(
+    params: WebhookProcessParams,
+    webhookRecordId: string,
+    client: Prisma.TransactionClient
+  ): Promise<WebhookProcessResult> {
+    if (params.gatewayRef) {
+      await client.payment.updateMany({
+        where: { gatewayRef: params.gatewayRef, status: { in: ['PENDING', 'PENDING_CUSTOMER'] } },
+        data: { status: 'FAILED' },
+      });
+    }
+
+    const linkedIntent = await client.paymentIntent.findFirst({
+      where: { bookingId: params.bookingId },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (linkedIntent && linkedIntent.status === 'INITIATED') {
+      await client.paymentIntent.update({
+        where: { id: linkedIntent.id },
+        data: { status: 'FAILED' },
+      });
+    }
+
+    await client.webhookEvent.update({
+      where: { id: webhookRecordId },
+      data: {
+        status: 'PROCESSED',
+        processedAt: new Date(),
+        rejectionReason: 'Gateway reported payment failure — no capture performed',
+      },
+    });
+
+    return {
+      processed: true,
+      status: 'REJECTED',
+      reason: 'Gateway reported payment failure — no capture performed',
+    };
+  }
+
+  /**
+   * Wallet top-up capture path for gateway IPNs (bookingId = `wallet_topup_<userId>`).
+   * Runs after replay protection and HMAC verification: validates the settled
+   * amount against the top-up PaymentIntent, credits the user ledger via
+   * postTopUp, and records the SUCCESS Payment — exactly once per event.
+   */
+  private static async processWalletTopUpCapture(
+    params: WebhookProcessParams,
+    webhookRecordId: string,
+    client: Prisma.TransactionClient
+  ): Promise<WebhookProcessResult> {
+    const reject = async (reason: string, error: string): Promise<WebhookProcessResult> => {
+      await client.webhookEvent.update({
+        where: { id: webhookRecordId },
+        data: { status: 'REJECTED', rejectionReason: reason },
+      });
+      throw new Error(error);
+    };
+
+    // Resolve the exact top-up intent: prefer the attempt linked to this
+    // gatewayRef, falling back to the user's most recent top-up intent.
+    const resolveIntent = async () => {
+      if (params.gatewayRef) {
+        const attempt = await client.paymentAttempt.findFirst({
+          where: { gatewayRef: params.gatewayRef },
+          orderBy: { createdAt: 'desc' },
+          select: { paymentIntentId: true },
+        });
+        if (attempt?.paymentIntentId) {
+          const byRef = await client.paymentIntent.findUnique({
+            where: { id: attempt.paymentIntentId },
+          });
+          if (byRef) return byRef;
+        }
+      }
+      return client.paymentIntent.findFirst({
+        where: { bookingId: params.bookingId },
+        orderBy: { createdAt: 'desc' },
+      });
+    };
+    const intent = await resolveIntent();
+    if (!intent) {
+      return reject(
+        `Wallet top-up intent not found: ${params.bookingId}`,
+        `Payment webhook error: Wallet top-up intent ${params.bookingId} not found`
+      );
+    }
+
+    const incomingMoney = params.settledAmount;
+    const settledCurrency = (params.settledCurrency || incomingMoney.currency || intent.currency || 'IRR').toUpperCase();
+
+    if ((intent.currency || '').toUpperCase() !== settledCurrency) {
+      return reject(
+        `Currency mismatch: expected ${intent.currency} but received ${settledCurrency}`,
+        `Payment webhook currency mismatch: expected ${intent.currency} but received ${settledCurrency}`
+      );
+    }
+    const expectedMoney = new Money(intent.amount.toString(), intent.currency);
+    if (!expectedMoney.equals(incomingMoney)) {
+      return reject(
+        `Amount mismatch: expected ${expectedMoney.toString()} but received ${incomingMoney.toString()}`,
+        `Payment webhook amount tampering detected: expected ${expectedMoney.toString()} but received ${incomingMoney.toString()}`
+      );
+    }
+
+    // Exactly-once capture per gateway transaction (replay with a fresh eventId guard)
+    const existingCapture = params.gatewayRef
+      ? await client.payment.findFirst({
+          where: { gatewayRef: params.gatewayRef, status: 'SUCCESS' },
+        })
+      : null;
+    if (existingCapture) {
+      await client.webhookEvent.update({
+        where: { id: webhookRecordId },
+        data: { status: 'PROCESSED', processedAt: new Date() },
+      });
+      return {
+        processed: false,
+        status: 'DUPLICATE',
+        paymentId: existingCapture.id,
+        reason: 'Wallet top-up already captured for this gatewayRef',
+      };
+    }
+
+    const userId = params.bookingId.slice('wallet_topup_'.length);
+    const gatewayLabel = params.gatewayName || 'SHETAB_GATEWAY';
+    const method = gatewayLabel.startsWith('ECARDO') ? 'gateway_ecardo' : 'gateway_shetab';
+
+    const payment = await client.payment.create({
+      data: {
+        bookingId: params.bookingId,
+        paymentIntentId: intent.id,
+        idempotencyKey: `webhook_${gatewayLabel}_${params.eventId}`,
+        method,
+        gatewayRef: params.gatewayRef,
+        amount: incomingMoney.toDecimal(),
+        currency: settledCurrency,
+        status: 'SUCCESS',
+        rawPayload: params.rawPayload ? JSON.stringify(params.rawPayload) : null,
+      },
+    });
+
+    await client.paymentIntent.update({
+      where: { id: intent.id },
+      data: { status: 'SUCCESS' },
+    });
+
+    // Credit the wallet: GATEWAY_SETTLEMENT (DEBIT) -> USER account (CREDIT)
+    await GeneralLedgerService.postTopUp(
+      {
+        groupId: `wh_topup_grp_${params.eventId}`,
+        userId,
+        amount: incomingMoney,
+        currency: settledCurrency,
+        referenceId: intent.id,
+        memo: `Wallet top-up capture via ${gatewayLabel} (ref: ${params.gatewayRef})`,
+      },
+      client
+    );
+
+    await client.webhookEvent.update({
+      where: { id: webhookRecordId },
+      data: { status: 'PROCESSED', processedAt: new Date() },
+    });
+
+    await client.auditLog.create({
+      data: {
+        action: 'WALLET_TOPUP_CAPTURED',
+        resource: 'Payment',
+        resourceId: payment.id,
+        newData: JSON.stringify({
+          userId,
+          amount: incomingMoney.toString(),
+          currency: settledCurrency,
+          gateway: gatewayLabel,
+          gatewayRef: params.gatewayRef,
+          eventId: params.eventId,
+        }),
+      },
+    });
+
+    businessMetrics.recordPaymentCaptured(gatewayLabel, incomingMoney.toNumber());
 
     return {
       processed: true,

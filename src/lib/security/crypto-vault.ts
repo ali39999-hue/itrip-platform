@@ -1,9 +1,19 @@
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 
-// Master encryption key derived from AUTH_SECRET or dedicated ENCRYPTION_KEY
+// Master encryption key derived from AUTH_SECRET or dedicated ENCRYPTION_KEY.
+// Fail closed in production (same gate as src/auth.ts): a public fallback key
+// would make AES-256-GCM PII ciphertext trivially decryptable.
 function getMasterKey(): Buffer {
-  const secret = process.env.ENCRYPTION_KEY || process.env.AUTH_SECRET || 'dev-insecure-master-key-32-chars-ok';
+  const secret = process.env.ENCRYPTION_KEY || process.env.AUTH_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'FATAL SECURITY ERROR: ENCRYPTION_KEY or AUTH_SECRET must be configured in production — PII vault refuses to use the development fallback key.'
+      );
+    }
+    return crypto.createHash('sha256').update('dev-insecure-master-key-32-chars-ok').digest();
+  }
   return crypto.createHash('sha256').update(secret).digest();
 }
 

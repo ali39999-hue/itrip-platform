@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getNotificationProvider } from './NotificationProvider';
+import { PushDispatchService } from '@/domains/notify/PushDispatchService';
 import { decryptSensitive } from '@/lib/security/crypto-vault';
 import { createLogger } from '@/lib/observability/logger';
 import { WorkerLeaseService } from './WorkerLeaseService';
@@ -60,15 +61,6 @@ export function parseOutboxPayload(payloadStr: string): {
 }
 
 /** Generates a GDS-style PNR reference for voucher issuing. */
-function generatePnr(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let pnr = '';
-  for (let i = 0; i < 6; i++) {
-    pnr += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return `FZ-${pnr}`;
-}
-
 export class OutboxConsumer {
   /**
    * Concurrency-safe atomic outbox worker claim and execution (ASYNC-101 to ASYNC-107)
@@ -166,25 +158,50 @@ export class OutboxConsumer {
             case 'BOOKING_PAID': {
               const bookingId = (payload.bookingId as string) || event.aggregateId;
               if (bookingId) {
+                // Production truth: no supplier adapter is wired, so the
+                // consumer must NOT mint a PNR (externalPnr stays empty until a
+                // real provider confirms). The booking's own reference remains
+                // the customer-facing tracking code.
                 const booking = await prisma.booking.findUnique({
                   where: { id: bookingId },
-                  select: { id: true, externalPnr: true },
+                  select: { id: true, reference: true, externalPnr: true, customerId: true, travelDate: true },
                 });
-                if (booking && !booking.externalPnr) {
-                  const pnr = generatePnr();
-                  await prisma.booking.update({
-                    where: { id: booking.id },
-                    data: { externalPnr: pnr },
-                  });
+                if (booking) {
                   await prisma.auditLog.create({
                     data: {
-                      action: 'VOUCHER_ISSUED',
+                      action: 'BOOKING_CONFIRMED_PROCESSED',
                       resource: 'Booking',
                       resourceId: booking.id,
-                      newData: JSON.stringify({ pnr, eventVersion, schemaVersion }),
+                      newData: JSON.stringify({
+                        reference: booking.reference,
+                        supplierPnrPresent: Boolean(booking.externalPnr),
+                        eventVersion,
+                        schemaVersion,
+                      }),
                     },
                   });
-                  outboxLogger.info('Issued voucher for booking', { pnr, bookingId: booking.id });
+                  outboxLogger.info('Booking confirmation event processed', {
+                    bookingId: booking.id,
+                    supplierPnrPresent: Boolean(booking.externalPnr),
+                  });
+
+                  // Web push to the traveler — never blocks the confirmation
+                  // pipeline (push config gaps are logged, not thrown here).
+                  if (booking.customerId) {
+                    try {
+                      await PushDispatchService.sendToUser(booking.customerId, {
+                        title: 'رزرو شما تایید شد 🎉',
+                        body: `رزرو ${booking.reference} قطعی شد و در «سفرهای من» قابل پیگیری است.`,
+                        url: `/my-trips/${booking.id}`,
+                        tag: `booking-${booking.id}`,
+                      });
+                    } catch (pushErr: unknown) {
+                      outboxLogger.error('Booking confirmation push failed (non-blocking)', {
+                        bookingId: booking.id,
+                        error: pushErr instanceof Error ? pushErr.message : String(pushErr),
+                      });
+                    }
+                  }
                 }
               }
               break;
@@ -212,6 +229,22 @@ export class OutboxConsumer {
                   'اطلاعیه استرداد رزرو فیروزو',
                   `درخواست استرداد برای رزرو شماره ${booking.reference || booking.id} ثبت گردید.`
                 );
+              }
+
+              if (booking?.customerId) {
+                try {
+                  await PushDispatchService.sendToUser(booking.customerId, {
+                    title: event.eventType === 'BOOKING_REFUNDED' ? 'استرداد انجام شد 💸' : 'درخواست استرداد ثبت شد',
+                    body: `وضعیت رزرو ${booking.reference || booking.id} به‌روزرسانی شد؛ جزئیات در «سفرهای من».`,
+                    url: `/my-trips/${booking.id}`,
+                    tag: `refund-${booking.id}`,
+                  });
+                } catch (pushErr: unknown) {
+                  outboxLogger.error('Refund push failed (non-blocking)', {
+                    bookingId: booking.id,
+                    error: pushErr instanceof Error ? pushErr.message : String(pushErr),
+                  });
+                }
               }
               break;
             }
@@ -280,6 +313,31 @@ export class OutboxConsumer {
               } else if (email) {
                 await notificationProvider.sendEmail(email, title, content);
               }
+              break;
+            }
+
+            // Deliberate web-push sends (ERP broadcast, lifecycle hooks that
+            // emit this event). Unconfigured-in-production fails into the DLQ
+            // so the delivery gap stays visible in /admin/ops.
+            case 'PUSH_NOTIFICATION_DISPATCH': {
+              const title = (payload.title as string) || 'اطلاعیه فیروزو';
+              const body = (payload.body as string) || (payload.content as string) || '';
+              const url = (payload.url as string) || '/my-trips';
+              const tag = (payload.tag as string) || undefined;
+              const targetUserId = payload.userId as string | undefined;
+              const broadcast = payload.broadcast === true;
+
+              if (!body) {
+                throw new Error('PUSH_NOTIFICATION_DISPATCH payload has no body');
+              }
+
+              const report = broadcast
+                ? await PushDispatchService.sendToSubscribers({ title, body, url, tag })
+                : targetUserId
+                  ? await PushDispatchService.sendToUser(targetUserId, { title, body, url, tag })
+                  : { sent: 0, removed: 0, simulated: false };
+
+              outboxLogger.info('Push dispatch processed', { ...report, targetUserId, broadcast });
               break;
             }
 

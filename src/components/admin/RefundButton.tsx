@@ -59,7 +59,7 @@ export function RefundButton({ bookingId, reference }: { bookingId: string, refe
           setOpenModal(true);
         }}
         disabled={isPending}
-        className="min-h-9 border-rose-warm/20 text-rose-warm hover:bg-rose-warm/10 focus-visible:ring-brand font-black text-xs gap-1.5"
+        className="min-h-[44px] min-w-[44px] min-h-9 border-rose-warm/20 text-rose-warm hover:bg-rose-warm/10 focus-visible:ring-brand font-black text-xs gap-1.5"
       >
         <RotateCcw size={13} aria-hidden="true" />
         <span>{lt(locale, { fa: 'استرداد', en: 'Refund', ar: 'استرداد', zh: '退款', ru: 'Возврат' })}</span>

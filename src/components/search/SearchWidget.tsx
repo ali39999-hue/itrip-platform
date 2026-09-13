@@ -57,7 +57,7 @@ export function SearchWidget({ initialTab = 'flights' }: SearchWidgetProps) {
           <button
             type="button"
             onClick={() => setError('')}
-            className="p-1 text-destructive/80 hover:text-destructive active:scale-95 transition"
+            className="min-h-[44px] min-w-[44px] p-1 text-destructive/80 hover:text-destructive active:scale-95 transition"
             aria-label="Dismiss error"
           >
             <X size={14} />

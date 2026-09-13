@@ -335,7 +335,7 @@ export function ReceiptsClientPage({
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-right border-collapse">
+              <table className="w-full text-start border-collapse">
                 <thead>
                   <tr className="border-b border-line bg-soft/50 text-[12px] font-black text-sub">
                     <th className="py-3.5 px-4">سفارش / مسافر</th>
@@ -446,7 +446,7 @@ export function ReceiptsClientPage({
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-right border-collapse">
+              <table className="w-full text-start border-collapse">
                 <thead>
                   <tr className="border-b border-line bg-soft/50 text-[12px] font-black text-sub">
                     <th className="py-3.5 px-4">سفارش / مسافر</th>

@@ -6,23 +6,61 @@ import { useRouter } from '@/i18n/routing';
 import { useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { useAuthStore } from '@/stores/auth-store';
-import { ScanLine, CheckCircle2, Loader2, User, Lock, LogIn, Mail, Phone, Send, MessageCircle, QrCode, MessageSquare } from 'lucide-react';
+import { CheckCircle2, Loader2, Lock, LogIn, Mail, Phone, Send, MessageCircle, QrCode, MessageSquare } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { Logo } from '@/components/layout/Logo';
 import { OtpPinInput } from '@/components/ui/OtpPinInput';
-import { AuthChannel, requestOtp, getWeChatAuthUrl } from '@/actions/auth';
+import { AuthChannel, requestOtp, getAuthCapabilities } from '@/actions/auth';
 import type { TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
+
+interface AuthCapabilities {
+  google: boolean;
+  wechatQr: boolean;
+  telegramWidget: boolean;
+  telegramBot: boolean;
+  whatsappLive: boolean;
+  baleLive: boolean;
+  smsLive: boolean;
+  emailLive: boolean;
+}
 
 export default function AuthPage() {
   const t = useTranslations('Auth');
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, loginWithPassword, loginWithTelegram, setKycStep, updateKyc, kyc, user } = useAuthStore();
+  const { login, loginWithPassword, loginWithTelegram, setKycStep, kyc, user } = useAuthStore();
+
+  const [capabilities, setCapabilities] = useState<AuthCapabilities | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    getAuthCapabilities().then((caps) => {
+      if (mounted) setCapabilities(caps);
+    }).catch(() => {});
+    return () => { mounted = false; };
+  }, []);
+
+  // Channel badges derive from real provider configuration — a channel whose
+  // provider is unconfigured must never claim LIVE (honest SIM labeling).
+  // While capabilities are still fetching, badges render invisibly (no wrong flash).
+  const SIM_BADGE_CLS = 'text-[8.5px] font-black text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 rounded-full';
+  const SIM_BADGE_TEXT = lt(locale, { fa: 'شبیه‌سازی', en: 'SIM', ar: 'محاكاة', zh: '模拟', ru: 'СИМ' });
+  const channelBadge = (live: boolean | undefined, liveText: string, liveCls: string) => {
+    if (capabilities === null) return { text: '', cls: 'invisible' };
+    return live
+      ? { text: liveText, cls: liveCls }
+      : { text: SIM_BADGE_TEXT, cls: SIM_BADGE_CLS };
+  };
+  const smsBadge = channelBadge(capabilities?.smsLive, 'LIVE', 'text-[8.5px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 rounded-full');
+  const emailBadge = channelBadge(capabilities?.emailLive, 'LIVE', 'text-[8.5px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 rounded-full');
+  const telegramBadge = channelBadge(capabilities?.telegramBot, 'BETA', 'text-[8.5px] font-black text-sky-600 bg-sky-500/10 px-1.5 rounded-full');
+  const baleBadge = channelBadge(capabilities?.baleLive, 'BETA', 'text-[8.5px] font-black text-teal-600 bg-teal-500/10 px-1.5 rounded-full');
+  const whatsappBadge = channelBadge(capabilities?.whatsappLive, 'BETA', 'text-[8.5px] font-black text-emerald-600 bg-emerald-500/10 px-1.5 rounded-full');
+  const wechatBadge = channelBadge(capabilities?.wechatQr, 'BETA', 'text-[8.5px] font-black text-emerald-600 bg-emerald-500/10 px-1.5 rounded-full');
 
   // Return the visitor to where they came from (checkout, my-trips, wallet…).
-  // Only accept safe internal paths.
-  const rawCallback = searchParams.get('callbackUrl');
+  // Only accept safe internal paths. Supports both callbackUrl and redirect parameters.
+  const rawCallback = searchParams.get('callbackUrl') || searchParams.get('redirect');
   const callbackUrl =
     rawCallback && rawCallback.startsWith('/') && !rawCallback.startsWith('//') ? rawCallback : '/account';
 
@@ -37,12 +75,6 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
 
-  const [firstFa, setFirstFa] = useState(kyc?.firstNameFa || '');
-  const [lastFa, setLastFa] = useState(kyc?.lastNameFa || '');
-  const [nationalId, setNationalId] = useState(kyc?.nationalId || '');
-  const [scanning, setScanning] = useState(false);
-  const [passportNo, setPassportNo] = useState(kyc?.passportNo || '');
-  const [expiry, setExpiry] = useState(kyc?.passportExpiry || '');
   const [countdown, setCountdown] = useState(120);
   const [isRealSent, setIsRealSent] = useState<boolean>(false);
   const [devCode, setDevCode] = useState<string | undefined>(undefined);
@@ -90,7 +122,7 @@ export default function AuthPage() {
       script.async = true;
       container.appendChild(script);
     }
-  }, [channel, callbackUrl, loginWithTelegram, router]);
+  }, [channel, callbackUrl, loginWithTelegram, router, setKycStep]);
 
   const step = kyc?.step || 'phone';
 
@@ -142,8 +174,8 @@ export default function AuthPage() {
         return false;
       }
     } else if (channel === 'wechat') {
-      if (!identifier.trim()) {
-        setError(lt(locale, { fa: 'شناسه وی‌چت (WeChat ID) یا شماره موبایل الزامی است', en: 'WeChat ID or mobile phone required', ar: 'معرف وي تشات أو الجوال مطلوب', zh: '微信号或绑定的手机号必填', ru: 'Введите WeChat ID یا телефон' }));
+      if (!/^\+?\d{8,15}$/.test(identifier.replace(/[\s-]/g, ''))) {
+        setError(lt(locale, { fa: 'برای دریافت کد، شماره موبایل را وارد کنید (ورود اصلی WeChat از طریق QR است)', en: 'Enter your mobile number to receive the code (main WeChat login is via QR)', ar: 'أدخل رقم هاتفك لاستلام الرمز', zh: '请输入手机号以接收验证码', ru: 'Введите номер телефона для получения кода' }));
         return false;
       }
     } else if (channel === 'bale') {
@@ -162,6 +194,18 @@ export default function AuthPage() {
     try {
       const res = await requestOtp({ identifier: identifier.trim(), channel });
       if (!res.success) {
+        if (res.error === 'WECHAT_QR_REQUIRED') {
+          setError(
+            lt(locale, {
+              fa: 'ارسال کد به شناسه وی‌چت ممکن نیست؛ لطفاً از دکمه «اسکن بارکد WeChat» بالا استفاده کنید یا شماره موبایل خود را وارد کنید.',
+              en: 'WeChat IDs cannot receive codes; please use the "WeChat QR" button above or enter your mobile number.',
+              ar: 'لا يمكن إرسال الرمز إلى معرف وي تشات؛ استخدم زر QR أعلاه أو أدخل رقم هاتفك.',
+              zh: '无法向微信号发送验证码；请使用上方的“微信扫码”按钮或输入手机号。',
+              ru: 'Нельзя отправить код на WeChat ID; используйте кнопку QR выше или введите номер телефона.',
+            })
+          );
+          return;
+        }
         setError(
           res.error
             ? lt(locale, {
@@ -223,36 +267,6 @@ export default function AuthPage() {
     }
   }
 
-  function scanPassport() {
-    setScanning(true);
-    setTimeout(() => {
-      setPassportNo('EP' + Math.floor(Math.random() * 9000000 + 1000000));
-      setExpiry(new Date(Date.now() + 3 * 365 * 86400000).toISOString().slice(0, 10));
-      setScanning(false);
-    }, 1400);
-  }
-
-  function submitIdentity() {
-    if (!firstFa.trim() || !lastFa.trim() || !/^\d{10}$/.test(nationalId)) {
-      setError(lt(locale, { fa: 'نام، فامیل و کد ملی ۱۰ رقمی الزامی است', en: 'Full name and 10-digit National ID required', ar: 'الاسم الكامل والرقم الوطني المكوّن من 10 أرقام مطلوبان', zh: '必填姓名和10位国民身份证号', ru: 'Укажите ФИО и 10-значный национальный ID' }));
-      return;
-    }
-    setError('');
-    updateKyc({ firstNameFa: firstFa, lastNameFa: lastFa, nationalId });
-    setKycStep('passport_scan');
-  }
-
-  function finishKyc() {
-    if (!passportNo.trim() || !expiry) {
-      setError(lt(locale, { fa: 'اطلاعات پاسپورت را تکمیل یا اسکن کنید', en: 'Please scan or enter passport details', ar: 'يرجى مسح أو إدخال بيانات جواز السفر', zh: '请扫描或填写护照信息', ru: 'Отсканируйте или введите данные паспорта' }));
-      return;
-    }
-    setError('');
-    updateKyc({ passportNo, passportExpiry: expiry });
-    setKycStep('approved');
-    router.push(callbackUrl);
-  }
-
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-surface border border-line rounded-3xl p-8 shadow-sm">
@@ -291,7 +305,9 @@ export default function AuthPage() {
               </button>
             </div>
 
-            {/* Google OAuth 2.0 Direct Sign In */}
+            {/* Google OAuth 2.0 Direct Sign In — only rendered when the upstream
+                OAuth client is configured server-side (getAuthCapabilities) */}
+            {capabilities?.google && (
             <div className="mb-5">
               <button
                 type="button"
@@ -315,6 +331,7 @@ export default function AuthPage() {
                 <div className="flex-grow border-t border-line"></div>
               </div>
             </div>
+            )}
 
             {authMode === 'otp' ? (
               <>
@@ -328,7 +345,7 @@ export default function AuthPage() {
                   >
                     <Phone size={16} />
                     <span className="text-[10px]">SMS</span>
-                    <span className="text-[8.5px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 rounded-full">LIVE</span>
+                    <span className={smsBadge.cls}>{smsBadge.text}</span>
                   </button>
                   <button
                     type="button"
@@ -338,7 +355,7 @@ export default function AuthPage() {
                   >
                     <Mail size={16} />
                     <span className="text-[10px]">Email</span>
-                    <span className="text-[8.5px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 rounded-full">LIVE</span>
+                    <span className={emailBadge.cls}>{emailBadge.text}</span>
                   </button>
                   <button
                     type="button"
@@ -348,7 +365,7 @@ export default function AuthPage() {
                   >
                     <Send size={16} />
                     <span className="text-[10px]">Telegram</span>
-                    <span className="text-[8.5px] font-black text-sky-600 bg-sky-500/10 px-1.5 rounded-full">BETA</span>
+                    <span className={telegramBadge.cls}>{telegramBadge.text}</span>
                   </button>
                   <button
                     type="button"
@@ -358,7 +375,7 @@ export default function AuthPage() {
                   >
                     <MessageSquare size={16} />
                     <span className="text-[10px]">بله (Bale)</span>
-                    <span className="text-[8.5px] font-black text-teal-600 bg-teal-500/10 px-1.5 rounded-full">BETA</span>
+                    <span className={baleBadge.cls}>{baleBadge.text}</span>
                   </button>
                   <button
                     type="button"
@@ -368,7 +385,7 @@ export default function AuthPage() {
                   >
                     <MessageCircle size={16} />
                     <span className="text-[10px]">WhatsApp</span>
-                    <span className="text-[8.5px] font-black text-emerald-600 bg-emerald-500/10 px-1.5 rounded-full">BETA</span>
+                    <span className={whatsappBadge.cls}>{whatsappBadge.text}</span>
                   </button>
                   <button
                     type="button"
@@ -378,7 +395,7 @@ export default function AuthPage() {
                   >
                     <QrCode size={16} />
                     <span className="text-[10px]">WeChat</span>
-                    <span className="text-[8.5px] font-black text-emerald-600 bg-emerald-500/10 px-1.5 rounded-full">BETA</span>
+                    <span className={wechatBadge.cls}>{wechatBadge.text}</span>
                   </button>
                 </div>
 
@@ -419,7 +436,7 @@ export default function AuthPage() {
                 )}
 
                 {/* Telegram Login Widget Container */}
-                {channel === 'telegram' && (
+                {channel === 'telegram' && capabilities?.telegramWidget && (
                   <div className="mb-4 p-3 bg-soft/60 rounded-2xl flex flex-col items-center justify-center gap-2 border border-line">
                     <span className="text-[11px] font-bold text-sub">
                       {lt(locale, { fa: 'ورود سریع از طریق ویجت رسمی تلگرام:', en: 'Quick login via official Telegram widget:', ar: 'تسجيل دخول سريع عبر تيليجرام:', zh: '通过Telegram官方组件快速登录：', ru: 'Быстрый вход через Telegram:' })}
@@ -431,26 +448,74 @@ export default function AuthPage() {
                   </div>
                 )}
 
-                {/* WeChat QR Connect Button */}
+                {/* Telegram Bot Guidance — the Bot API can only message users who
+                    opened the bot once, so guide them to Start before OTP by handle */}
+                {channel === 'telegram' && (
+                  <div className="mb-4 p-3.5 bg-[#229ED9]/10 border border-[#229ED9]/30 rounded-2xl flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-[#229ED9]">
+                        {lt(locale, {
+                          fa: 'بازوی رسمی فیروزو در تلگرام',
+                          en: 'Official Firuzo Bot on Telegram',
+                          ar: 'بوت فيروزو الرسمي في تيليجرام',
+                          zh: 'Firuzo Telegram官方机器人',
+                          ru: 'Официальный бот Firuzo в Telegram',
+                        })}
+                      </span>
+                      {process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME && (
+                        <a
+                          href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] font-black bg-[#229ED9] text-white px-2.5 py-1 rounded-xl shadow-xs hover:opacity-90 transition"
+                        >
+                          {lt(locale, { fa: 'باز کردن ربات در تلگرام ↗', en: 'Open Bot ↗', ar: 'فتح البوت ↗', zh: '打开机器人 ↗', ru: 'Открыть бота ↗' })}
+                        </a>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-sub leading-relaxed">
+                      {lt(locale, {
+                        fa: 'تلگرام اجازه‌ی پیام خودکار به کاربرانِ بات را که یک‌بار Start نزده‌اند نمی‌دهد. برای دریافت سریع کد، ویجت بالای صفحه یا بازوی رسمی را باز کرده و «شروع» را بزنید.',
+                        en: 'Telegram does not allow bots to message users who never pressed Start. Use the widget above or open the official bot and press Start to receive your code instantly.',
+                        ar: 'لا يسمح تلجرام للبوتات بالمراسلة دون الضغط على ابدأ. استخدم الأداة أعلاه أو افتح البوت الرسمي واضغط ابدأ.',
+                        zh: 'Telegram不允许机器人主动向未按Start的用户发消息。请使用上方组件或打开官方机器人并点击“启动”。',
+                        ru: 'Telegram запрещает ботам писать пользователям без нажатия Start. Используйте виджет выше или откройте бота и нажмите Start.',
+                      })}
+                    </p>
+                  </div>
+                )}
+
+                {/* WeChat QR Login — native NextAuth OAuth flow (WebsiteApp QR on
+                    desktop, OfficialAccount authorize inside the WeChat browser) */}
                 {channel === 'wechat' && (
                   <div className="mb-4">
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const res = await getWeChatAuthUrl(callbackUrl);
-                        if (res.success && res.url) {
-                          window.location.href = res.url;
-                        } else {
-                          setError(res.error || lt(locale, { fa: 'شناسه WECHAT_APP_ID روی سرور تنظیم نشده است', en: 'WECHAT_APP_ID is not configured', ar: 'WECHAT_APP_ID غير مكوّن', zh: '未配置WECHAT_APP_ID', ru: 'WECHAT_APP_ID не настроен' }));
-                        }
-                      }}
-                      className="w-full h-11 rounded-xl bg-[#07C160]/10 hover:bg-[#07C160]/20 text-[#07C160] font-black text-xs transition flex items-center justify-center gap-2 border border-[#07C160]/30"
-                    >
-                      <QrCode size={16} />
-                      <span>{lt(locale, { fa: 'اسکن بارکد در اپلیکیشن وی‌چت (WeChat QR)', en: 'WeChat Web QR Code Login', ar: 'مسح رمز الاستجابة السريعة في وي تشات', zh: '微信网页版扫码登录', ru: 'Вход через QR-код WeChat' })}</span>
-                    </button>
+                    {capabilities?.wechatQr ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const isWeChatBrowser = /MicroMessenger/i.test(
+                            typeof navigator !== 'undefined' ? navigator.userAgent : ''
+                          );
+                          signIn(isWeChatBrowser ? 'wechat_mp' : 'wechat', { callbackUrl });
+                        }}
+                        className="w-full h-11 rounded-xl bg-[#07C160]/10 hover:bg-[#07C160]/20 text-[#07C160] font-black text-xs transition flex items-center justify-center gap-2 border border-[#07C160]/30 active:scale-[0.98]"
+                      >
+                        <QrCode size={16} />
+                        <span>{lt(locale, { fa: 'اسکن بارکد در اپلیکیشن وی‌چت (WeChat QR)', en: 'WeChat Web QR Code Login', ar: 'مسح رمز الاستجابة السريعة في وي تشات', zh: '微信网页版扫码登录', ru: 'Вход через QR-код WeChat' })}</span>
+                      </button>
+                    ) : (
+                      <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-[11px] font-bold">
+                        {lt(locale, {
+                          fa: 'ورود QR وی‌چت هنوز فعال نشده است (نیاز به WECHAT_APP_ID و WECHAT_APP_SECRET روی سرور). موقتاً با شماره موبایل وارد شوید.',
+                          en: 'WeChat QR login is not enabled yet (WECHAT_APP_ID / WECHAT_APP_SECRET required on the server). Please use your phone number for now.',
+                          ar: 'لم يتم تنشيط تسجيل الدخول عبر QR في وي تشات بعد. الرجاء استخدام رقم الهاتف.',
+                          zh: '微信扫码登录尚未启用，请暂时使用手机号登录。',
+                          ru: 'Вход по QR-коду WeChat пока не активирован. Используйте номер телефона.',
+                        })}
+                      </div>
+                    )}
                     <div className="text-center my-2 text-[10px] text-sub font-bold">
-                      {lt(locale, { fa: 'یا دریافت کد از طریق شناسه وی‌چت / شماره موبایل:', en: 'or receive OTP code via WeChat ID / mobile:', ar: 'أو استلام الرمز عبر معرف وي تشات:', zh: '或通过微信号接收验证码：', ru: 'или получить код через WeChat ID:' })}
+                      {lt(locale, { fa: 'یا دریافت کد از طریق شماره موبایل:', en: 'or receive OTP code via mobile number:', ar: 'أو استلام الرمز عبر رقم الهاتف:', zh: '或通过手机号接收验证码：', ru: 'или получить код по телефону:' })}
                     </div>
                   </div>
                 )}
@@ -463,7 +528,7 @@ export default function AuthPage() {
                       {channel === 'telegram' && lt(locale, { fa: 'شناسه تلگرام یا شماره', en: 'Telegram Username / Phone', ar: 'معرف تيليجرام أو الهاتف', zh: 'Telegram 用户名/手机号', ru: 'Telegram Username / Телефон' })}
                       {channel === 'bale' && lt(locale, { fa: 'شناسه بله یا شماره موبایل', en: 'Bale Username / Phone', ar: 'معرف بله أو الهاتف', zh: 'Bale 用户名/手机号', ru: 'Bale Username / Телефон' })}
                       {channel === 'whatsapp' && lt(locale, { fa: 'شماره واتساپ بین‌المللی', en: 'WhatsApp Number (+...)', ar: 'رقم الواتساب الدولي', zh: 'WhatsApp 国际号码', ru: 'Номер WhatsApp (+...)' })}
-                      {channel === 'wechat' && lt(locale, { fa: 'شناسه وی‌چت / WeChat ID', en: 'WeChat ID / Mobile', ar: 'معرف وي تشات', zh: '微信号 / 手机号', ru: 'WeChat ID / Телефон' })}
+                      {channel === 'wechat' && lt(locale, { fa: 'شماره موبایل متصل به WeChat', en: 'Mobile Number (WeChat channel)', ar: 'رقم الجوال (قناة وي تشات)', zh: '手机号 (WeChat 通道)', ru: 'Номер телефона (канал WeChat)' })}
                     </label>
                     <input
                       id="identifier"
@@ -479,7 +544,7 @@ export default function AuthPage() {
                         channel === 'telegram' ? '@traveler_user' :
                         channel === 'bale' ? '@bale_user or 0912...' :
                         channel === 'whatsapp' ? '+971501234567' :
-                        'wxid_firuzo2026'
+                        '+8613800138000'
                       }
                       className="w-full h-12 rounded-xl border border-line px-4 font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                     />
@@ -616,13 +681,13 @@ export default function AuthPage() {
               </div>
             ) : devCode ? (
               <div className="p-3.5 mb-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-bold flex items-center justify-between gap-2.5">
-                <span>{lt(locale, { fa: `کد دسترسی موقت: ${devCode}`, en: `Verification Code: ${devCode}` })}</span>
+                <span>{lt(locale, { fa: `کد دسترسی موقت: ${devCode}`, en: `Verification Code: ${devCode}` , ar: `رمز الدخول المؤقت: ${devCode}`, zh: `临时验证码：${devCode}`, ru: `Временный код доступа: ${devCode}`})}</span>
                 <button
                   type="button"
                   onClick={() => setOtp(devCode)}
                   className="px-2.5 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-[11px] transition cursor-pointer"
                 >
-                  {lt(locale, { fa: 'درج خودکار', en: 'Auto-fill' })}
+                  {lt(locale, { fa: 'درج خودکار', en: 'Auto-fill', ar: 'إدراج تلقائي', zh: '自动填入', ru: 'Вставить автоматически'})}
                 </button>
               </div>
             ) : null}
@@ -696,180 +761,6 @@ export default function AuthPage() {
                 className="w-full text-xs font-bold text-sub hover:text-ink text-center pt-1"
               >
                 {lt(locale, { fa: 'تغییر روش یا شماره موبایل', en: 'Change method or phone number', ar: 'تغيير الطريقة أو رقم الهاتف', zh: '更换手机号或登录方式', ru: 'Изменить номер или способ' })}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step: Name Info */}
-        {step === 'name_info' && (
-          <div>
-            <div className="w-12 h-12 bg-mint rounded-2xl grid place-items-center text-brand-dark mb-6">
-              <User size={24} />
-            </div>
-            <h2 className="font-black text-2xl text-ink mb-2">{lt(locale, { fa: 'نام و نام خانوادگی', en: 'Your Name', ar: 'اسمك الكامل', zh: '您的姓名', ru: 'Ваше имя' })}</h2>
-            <p className="text-xs font-bold text-sub mb-6">{lt(locale, { fa: 'لطفاً نام و نام خانوادگی خود را دقیق وارد کنید', en: 'Please enter your first and last name accurately', ar: 'يرجى إدخال اسمك الأول والأخير بدقة', zh: '请准确输入您的名字和姓氏', ru: 'Пожалуйста, введите свое имя и фамилию' })}</p>
-
-            {error && <div className="p-3 mb-4 rounded-xl bg-destructive/10 text-destructive text-xs font-bold">{error}</div>}
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'نام', en: 'First Name', ar: 'الاسم الأول', zh: '名字', ru: 'Имя' })}</label>
-                  <input
-                    type="text"
-                    value={firstFa}
-                    onChange={(e) => setFirstFa(e.target.value)}
-                    placeholder={lt(locale, { fa: 'مثال: علی', en: 'e.g. John', ar: 'مثال: أحمد', zh: '例如：张', ru: 'напр. Иван' })}
-                    className="w-full h-11 rounded-xl border border-line px-3 font-bold text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'نام خانوادگی (فارسی)', en: 'Last Name', ar: 'اسم العائلة', zh: '姓氏', ru: 'Фамилия' })}</label>
-                  <input
-                    type="text"
-                    value={lastFa}
-                    onChange={(e) => setLastFa(e.target.value)}
-                    placeholder={lt(locale, { fa: 'مثال: محمدی', en: 'e.g. Smith', ar: 'مثال: الأحمد', zh: '例如：三', ru: 'напр. Иванов' })}
-                    className="w-full h-11 rounded-xl border border-line px-3 font-bold text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                  />
-                </div>
-              </div>
-
-              <button
-                onClick={() => {
-                  if (!firstFa.trim() || !lastFa.trim()) {
-                    setError(lt(locale, { fa: 'نام و نام خانوادگی الزامی است', en: 'First and last name are required', ar: 'الاسم الأول والأخير مطلوبان', zh: '姓名和姓氏为必填项', ru: 'Имя и фамилия обязательны' }));
-                    return;
-                  }
-                  setError('');
-                  updateKyc({ 
-                    firstNameFa: firstFa, 
-                    lastNameFa: lastFa,
-                    firstNameEn: kyc.firstNameEn || firstFa,
-                    lastNameEn: kyc.lastNameEn || lastFa,
-                  });
-                  router.push(callbackUrl);
-                }}
-                className="w-full h-12 rounded-xl bg-brand text-surface font-black text-sm hover:bg-brand-dark transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-              >
-                {lt(locale, { fa: 'ادامه', en: 'Continue', ar: 'متابعة', zh: '继续', ru: 'Далее' })}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step: Basic Identity */}
-        {step === 'identity' && (
-          <div>
-            <div className="w-12 h-12 bg-mint rounded-2xl grid place-items-center text-brand-dark mb-6">
-              <User size={24} />
-            </div>
-            <h1 className="font-black text-2xl text-ink mb-2">{t('kycTitle')}</h1>
-            <p className="text-xs font-bold text-sub mb-6">{t('kycSubtitle')}</p>
-
-            {error && <div className="p-3 mb-4 rounded-xl bg-destructive/10 text-destructive text-xs font-bold">{error}</div>}
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-sub mb-1">{t('firstName')}</label>
-                <input
-                  type="text"
-                  value={firstFa}
-                  onChange={(e) => setFirstFa(e.target.value)}
-                  placeholder={lt(locale, { fa: 'علی', en: 'Ali', ar: 'علي', zh: 'Ali', ru: 'Али' })}
-                  className="w-full h-12 rounded-xl border border-line px-4 text-sm font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-sub mb-1">{t('lastName')}</label>
-                <input
-                  type="text"
-                  value={lastFa}
-                  onChange={(e) => setLastFa(e.target.value)}
-                  placeholder={lt(locale, { fa: 'محمدی', en: 'Mohammadi', ar: 'محمدي', zh: 'Mohammadi', ru: 'Мохаммади' })}
-                  className="w-full h-12 rounded-xl border border-line px-4 text-sm font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-sub mb-1">{t('nationalId')}</label>
-                <input
-                  type="text"
-                  dir="ltr"
-                  maxLength={10}
-                  value={nationalId}
-                  onChange={(e) => setNationalId(e.target.value)}
-                  placeholder="0012345678"
-                  className="w-full h-12 rounded-xl border border-line px-4 font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                />
-              </div>
-
-              <button
-                onClick={submitIdentity}
-                className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-              >
-                {t('continue')}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step: Passport Scan */}
-        {step === 'passport_scan' && (
-          <div>
-            <div className="w-12 h-12 bg-mint rounded-2xl grid place-items-center text-brand-dark mb-6">
-              <ScanLine size={24} />
-            </div>
-            <h1 className="font-black text-2xl text-ink mb-2">{t('passportTitle')}</h1>
-            <p className="text-xs font-bold text-sub mb-6">{t('passportSubtitle')}</p>
-
-            {error && <div className="p-3 mb-4 rounded-xl bg-destructive/10 text-destructive text-xs font-bold">{error}</div>}
-
-            <div className="space-y-4">
-              <div
-                onClick={scanPassport}
-                className="border-2 border-dashed border-line hover:border-brand rounded-2xl p-6 text-center cursor-pointer transition bg-soft/50 group"
-              >
-                <ScanLine size={32} className="mx-auto text-sub group-hover:text-brand mb-2" />
-                <p className="font-bold text-xs text-ink">{t('scanPrompt')}</p>
-                <p className="text-[11px] text-sub mt-1">{t('scanHint')}</p>
-                {scanning && (
-                  <div className="mt-3 flex items-center justify-center gap-2 text-xs text-brand font-bold">
-                    <Loader2 size={14} className="animate-spin" /> {t('scanning')}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-sub mb-1">{t('passportNo')}</label>
-                <input
-                  type="text"
-                  dir="ltr"
-                  value={passportNo}
-                  onChange={(e) => setPassportNo(e.target.value.toUpperCase())}
-                  placeholder="EP1234567"
-                  className="w-full h-12 rounded-xl border border-line px-4 font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-sub mb-1">{t('passportExpiry')}</label>
-                <input
-                  type="date"
-                  dir="ltr"
-                  value={expiry}
-                  onChange={(e) => setExpiry(e.target.value)}
-                  className="w-full h-12 rounded-xl border border-line px-4 font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                />
-              </div>
-
-              <button
-                onClick={finishKyc}
-                className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-              >
-                {t('finishKyc')}
               </button>
             </div>
           </div>

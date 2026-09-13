@@ -115,7 +115,9 @@ export function SpecialOffersSection() {
           </div>
         </div>
 
-        <div ref={scrollRef} className="flex overflow-x-auto snap-x snap-mandatory pb-5 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 hide-scrollbar">
+        {/* -mx با پدینگ section هم‌خوان است (px-3 در موبایل، px-4 در sm+) وگرنه
+            4px از لبه بیرون می‌زند و در RTL سرریز افقی document می‌سازد */}
+        <div ref={scrollRef} className="flex overflow-x-auto snap-x snap-mandatory pb-5 -mx-3 px-3 sm:-mx-4 sm:px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 hide-scrollbar">
           {offers.map((offer) => {
             const Icon = (CATEGORY_ICONS as Record<string, (typeof CATEGORY_ICONS)[keyof typeof CATEGORY_ICONS]>)[offer.category];
             const catLabel = experienceCategoryLabel(offer.category as Parameters<typeof experienceCategoryLabel>[0], locale);

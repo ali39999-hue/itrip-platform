@@ -358,7 +358,7 @@ export function CardTransferPaymentView({
             </p>
           )}
           {latestReceipt.receiptImages && latestReceipt.receiptImages.length > 0 && (
-            <div className="flex gap-2 pt-2 overflow-x-auto touch-pan-x">
+            <div className="flex gap-2 pt-2 overflow-x-auto snap-x touch-pan-x">
               {latestReceipt.receiptImages.map((img, idx) => (
                 <a
                   key={idx}

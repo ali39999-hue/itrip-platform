@@ -62,8 +62,15 @@ describe('UnifiedCartService server-side price authority (BUG-001)', () => {
       .mockResolvedValueOnce({ basePrice: 100, currency: 'USDT' });
 
     // Re-import with the mocked prisma to exercise the inventory fallback branch.
+    // tour.findUnique must resolve null so the TOUR branch falls through to the
+    // InventoryItem.basePrice lookup this regression test targets.
     vi.resetModules();
-    vi.doMock('@/lib/prisma', () => ({ prisma: { inventoryItem: { findUnique } } }));
+    vi.doMock('@/lib/prisma', () => ({
+      prisma: {
+        tour: { findUnique: vi.fn().mockResolvedValue(null) },
+        inventoryItem: { findUnique },
+      },
+    }));
     const { UnifiedCartService: MockedService } = await import('./UnifiedCartService');
 
     const okRes = await MockedService.resolveServerCartPricing(
