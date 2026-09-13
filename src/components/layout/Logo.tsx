@@ -24,7 +24,7 @@ export function Logo({ variant = 'full', size = 'md', className = '', hideTextOn
   return (
     <Link
       href="/"
-      className={`inline-flex items-center gap-2.5 group focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-xl p-1 -m-1 transition-all ${className}`}
+      className={`inline-flex items-center gap-1 group focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none rounded-lg p-0.5 -m-0.5 transition-all ${className}`}
       aria-label={ct('aria.homepage')}
     >
       <div className="relative shrink-0 transition-transform duration-300 group-hover:scale-105">

@@ -53,11 +53,11 @@ export function DesktopNav() {
   const isTours = pathname.startsWith('/tours');
 
   return (
-    <nav aria-label={ct('aria.mainNavigation')} className="hidden xl:flex items-center gap-0.5 2xl:gap-1 shrink-0">
+    <nav aria-label={ct('aria.mainNavigation')} className="hidden xl:flex min-w-0 flex-1 items-center justify-center gap-0">
       {/* Direct High-Intent Links (OTA Gold Standard) */}
       <Link
         href="/flights/search"
-        className={`whitespace-nowrap px-2.5 py-1.5 2xl:px-3 2xl:py-2 rounded-full text-[12.5px] 2xl:text-[13px] font-bold transition flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none ${
+        className={`whitespace-nowrap px-2 py-1.5 rounded-full text-[16px] font-bold transition flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none ${
           isFlights ? 'bg-mint text-brand-dark font-black' : 'text-ink hover:text-brand-dark hover:bg-soft'
         }`}
       >
@@ -67,7 +67,7 @@ export function DesktopNav() {
 
       <Link
         href="/hotels/search"
-        className={`whitespace-nowrap px-2.5 py-1.5 2xl:px-3 2xl:py-2 rounded-full text-[12.5px] 2xl:text-[13px] font-bold transition flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none ${
+        className={`whitespace-nowrap px-2 py-1.5 rounded-full text-[16px] font-bold transition flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none ${
           isHotels ? 'bg-mint text-brand-dark font-black' : 'text-ink hover:text-brand-dark hover:bg-soft'
         }`}
       >
@@ -77,7 +77,7 @@ export function DesktopNav() {
 
       <Link
         href="/tours"
-        className={`whitespace-nowrap px-2.5 py-1.5 2xl:px-3 2xl:py-2 rounded-full text-[12.5px] 2xl:text-[13px] font-bold transition flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none ${
+        className={`whitespace-nowrap px-2 py-1.5 rounded-full text-[16px] font-bold transition flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none ${
           isTours ? 'bg-mint text-brand-dark font-black' : 'text-ink hover:text-brand-dark hover:bg-soft'
         }`}
       >
@@ -92,7 +92,7 @@ export function DesktopNav() {
           <div key={cat.key} className="relative group">
             <button
               type="button"
-              className="whitespace-nowrap px-2.5 py-1.5 2xl:px-3 2xl:py-2 rounded-full text-[12.5px] 2xl:text-[13px] font-bold text-ink hover:text-brand-dark hover:bg-soft transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer flex items-center gap-1"
+              className="whitespace-nowrap px-2 py-1.5 rounded-full text-[16px] font-bold text-ink hover:text-brand-dark hover:bg-soft transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer flex items-center gap-0.5"
             >
               <span>{t(cat.key)}</span>
               <ChevronDown size={11} className="text-sub/80 transition-transform duration-200 group-hover:rotate-180" aria-hidden="true" />

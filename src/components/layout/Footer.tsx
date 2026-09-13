@@ -195,7 +195,7 @@ export function Footer() {
           <div className="flex flex-wrap items-center justify-between gap-4 py-2 text-xs font-bold text-sub">
             <div className="flex items-center gap-2">
               <ShieldCheck size={16} className="text-brand-dark" />
-              <span>{lt(locale, { fa: 'پلتفرم مورد تایید سازمان هواپیمایی کشوری و میراث فرهنگی', en: 'Certified by Civil Aviation Organization & Cultural Heritage', ar: 'معتمد من هيئة الطيران المدني والتراث', zh: '民航局与文化遗产认证平台', ru: 'Сертифицированная платформа гражданской авиации' })}</span>
+              <span>{lt(locale, { fa: ' -توسعه داده شده توسط رضاو علی - پلتفرم مورد تایید سازمان هواپیمایی کشوری و میراث فرهنگی', en: 'Certified by Civil Aviation Organization & Cultural Heritage', ar: 'معتمد من هيئة الطيران المدني والتراث', zh: '民航局与文化遗产认证平台', ru: 'Сертифицированная платформа гражданской авиации' })}</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="px-2.5 py-1 rounded-lg bg-soft border border-line text-[11px] font-mono text-ink">
