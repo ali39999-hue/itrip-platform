@@ -20,7 +20,7 @@ export function UserAccountMenu() {
       <Link
         href="/support"
         aria-label={ct('aria.24hSupport')}
-        className="hidden 2xl:grid w-9 h-9 place-items-center rounded-full text-sub hover:text-brand-dark hover:bg-soft transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+        className="min-h-[44px] min-w-[44px] hidden 2xl:grid w-9 h-9 place-items-center rounded-full text-sub hover:text-brand-dark hover:bg-soft transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
       >
         <Headset size={18} />
       </Link>
@@ -40,7 +40,7 @@ export function UserAccountMenu() {
           href="/account"
           title={(locale === 'fa' ? user.firstNameFa : (user.firstNameEn || user.firstNameFa)) || user.phone}
           aria-label={t('account')}
-          className="min-h-[38px] min-w-[38px] justify-center inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full bg-brand-dark text-surface hover:bg-deep text-[12px] sm:text-[13px] font-black shadow-sm transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none shrink-0"
+          className="min-h-[44px] min-w-[44px] min-h-[38px] min-w-[38px] justify-center inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full bg-brand-dark text-surface hover:bg-deep text-[12px] sm:text-[13px] font-black shadow-sm transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none shrink-0"
         >
           <UserRound size={15} />
           {/* Name pill where room exists; icon-only at 2xl where the bar is fullest */}

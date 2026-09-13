@@ -71,7 +71,7 @@ export function SuccessConfirmation({ confirmedRef, confirmedTitle }: SuccessCon
               type="button"
               onClick={copyRef}
               aria-label="Copy PNR"
-              className="w-7 h-7 rounded-lg bg-surface border border-line text-sub hover:text-brand-dark grid place-items-center transition active:scale-95"
+              className="min-h-[44px] min-w-[44px] w-7 h-7 rounded-lg bg-surface border border-line text-sub hover:text-brand-dark grid place-items-center transition active:scale-95"
             >
               {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
             </button>

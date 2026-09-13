@@ -244,7 +244,7 @@ export function OperatorWorkbenchClient({
                   </div>
                   <Link
                     href="/admin/bookings"
-                    className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-soft text-brand-dark transition hover:bg-mint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    className="min-h-[44px] min-w-[44px] grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-soft text-brand-dark transition hover:bg-mint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                     aria-label={lt(locale, { fa: 'بررسی رزرو', en: 'Review booking', ar: 'مراجعة الحجز', zh: '查看预订', ru: 'Открыть бронь' })}
                   >
                     <ChevronLeft size={15} aria-hidden="true" className="rtl:rotate-180" />
@@ -286,7 +286,7 @@ export function OperatorWorkbenchClient({
                   </div>
                   <Link
                     href="/admin/exceptions"
-                    className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-soft text-brand-dark transition hover:bg-mint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    className="min-h-[44px] min-w-[44px] grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-soft text-brand-dark transition hover:bg-mint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                     aria-label={lt(locale, { fa: 'بررسی استثنا', en: 'Review exception', ar: 'مراجعة الاستثناء', zh: '处理异常', ru: 'Открыть' })}
                   >
                     <ChevronLeft size={15} aria-hidden="true" className="rtl:rotate-180" />

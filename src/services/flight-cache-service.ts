@@ -613,8 +613,19 @@ export async function refreshStaleRoutes(opts?: { maxRoutes?: number; lookAheadD
       refreshes++;
       if (outcome.error) {
         failures++;
-        // Circuit breaker open (or auth failure) — stop hammering the supplier.
-        if (outcome.error.includes('CIRCUIT_BREAKER_OPEN') || outcome.error.includes('Err01')) break;
+        // Auth/dead-session/circuit-breaker failures poison the whole sweep —
+        // stop hammering the supplier until the operator re-captures a session.
+        const errLower = outcome.error.toLowerCase();
+        const fatal =
+          errLower.includes('circuit_breaker_open') ||
+          errLower.includes('err01') ||
+          errLower.includes('session_expired');
+        if (fatal) {
+          console.error(
+            `[FlightCache] sweep aborted early: supplier session/auth unavailable (${outcome.error.slice(0, 120)})`
+          );
+          return { routesConsidered: demand.length, refreshes, upserted, failures, skipped: 'SUPPLIER_SESSION_UNAVAILABLE' };
+        }
       } else {
         upserted += outcome.upserted;
       }

@@ -271,7 +271,7 @@ export function AdminShell({
       <div className="spotlight top-[50%] start-[10%] animate-pulse" />
       <a
         href="#admin-main"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:start-2 focus:z-[300] focus:rounded-xl focus:bg-brand focus:px-4 focus:py-2 focus:text-xs focus:font-black focus:text-surface"
+        className="min-h-[44px] min-w-[44px] sr-only focus:not-sr-only focus:absolute focus:top-2 focus:start-2 focus:z-[300] focus:rounded-xl focus:bg-brand focus:px-4 focus:py-2 focus:text-xs focus:font-black focus:text-surface"
       >
         {lt(locale, { fa: 'پرش به محتوای اصلی', en: 'Skip to main content', ar: 'تخطي إلى المحتوى', zh: '跳到主要内容', ru: 'Перейти к содержимому' })}
       </a>
@@ -301,7 +301,7 @@ export function AdminShell({
                 onClick={() => setMobileNavOpen(false)}
                 autoFocus
                 aria-label={lt(locale, { fa: 'بستن منو', en: 'Close menu', ar: 'إغلاق القائمة', zh: '关闭菜单', ru: 'Закрыть меню' })}
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-surface/10 text-surface transition hover:bg-surface/20"
+                className="min-h-[44px] min-w-[44px] grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-surface/10 text-surface transition hover:bg-surface/20"
               >
                 <X size={16} aria-hidden="true" />
               </button>
@@ -326,7 +326,7 @@ export function AdminShell({
                 <Link
                   href="/"
                   aria-label={lt(locale, { fa: 'سایت مسافران', en: 'Traveler Site', ar: 'موقع المسافرين', zh: '旅客网站', ru: 'Сайт для путешественников' })}
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-surface/10 transition hover:bg-surface/20"
+                  className="min-h-[44px] min-w-[44px] grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-surface/10 transition hover:bg-surface/20"
                 >
                   <ExternalLink size={14} aria-hidden="true" />
                 </Link>
@@ -363,7 +363,7 @@ export function AdminShell({
               onClick={() => setCollapsed(!collapsed)}
               aria-expanded={!collapsed}
               aria-label={lt(locale, { fa: 'جمع یا گسترش منو', en: 'Collapse or expand menu', ar: 'طي القائمة أو توسيعها', zh: '折叠或展开菜单', ru: 'Свернуть или развернуть меню' })}
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-surface/10 text-surface/80 transition hover:bg-surface/20 hover:text-surface"
+              className="min-h-[44px] min-w-[44px] grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-surface/10 text-surface/80 transition hover:bg-surface/20 hover:text-surface"
             >
               {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
             </button>
@@ -407,7 +407,7 @@ export function AdminShell({
                 type="button"
                 onClick={() => setMobileNavOpen(true)}
                 aria-label={lt(locale, { fa: 'باز کردن منوی ماژول‌ها', en: 'Open modules menu', ar: 'فتح قائمة الوحدات', zh: '打开模块菜单', ru: 'Открыть меню модулей' })}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-soft text-sub transition hover:bg-line/60 hover:text-ink lg:hidden"
+                className="min-h-[44px] min-w-[44px] grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-soft text-sub transition hover:bg-line/60 hover:text-ink lg:hidden"
               >
                 <Menu size={18} aria-hidden="true" />
               </button>
@@ -444,7 +444,7 @@ export function AdminShell({
                     aria-expanded={shortcutsOpen}
                     aria-label={lt(locale, { fa: 'راهنمای میانبرهای صفحه‌کلید', en: 'Keyboard shortcuts help', ar: 'مساعدة اختصارات لوحة المفاتيح', zh: '键盘快捷键帮助', ru: 'Справка по горячим клавишам' })}
                     title={lt(locale, { fa: 'میانبرها', en: 'Shortcuts', ar: 'الاختصارات', zh: '快捷键', ru: 'Горячие клавиши' })}
-                    className="grid h-10 w-10 place-items-center rounded-xl border border-line text-sub transition hover:border-brand/40 hover:bg-mint hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    className="min-h-[44px] min-w-[44px] grid h-10 w-10 place-items-center rounded-xl border border-line text-sub transition hover:border-brand/40 hover:bg-mint hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                   >
                     <Keyboard size={15} aria-hidden="true" />
                   </button>
@@ -475,7 +475,7 @@ export function AdminShell({
                   href="/"
                   aria-label={lt(locale, { fa: 'سایت مسافران', en: 'Traveler Site', ar: 'موقع المسافرين', zh: '旅客网站', ru: 'Сайт для путешественников' })}
                   title={lt(locale, { fa: 'سایت مسافران', en: 'Traveler Site', ar: 'موقع المسافرين', zh: '旅客网站', ru: 'Сайт для путешественников' })}
-                  className="grid h-10 w-10 place-items-center rounded-xl border border-line text-sub transition hover:border-brand/40 hover:bg-mint hover:text-brand-dark"
+                  className="min-h-[44px] min-w-[44px] grid h-10 w-10 place-items-center rounded-xl border border-line text-sub transition hover:border-brand/40 hover:bg-mint hover:text-brand-dark"
                 >
                   <ExternalLink size={15} aria-hidden="true" />
                 </Link>

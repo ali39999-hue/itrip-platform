@@ -12,19 +12,26 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const query = searchParams.get('q')?.toLowerCase();
 
-    // 1. Static seed tours
-    const staticTours = getAllTours();
-
-    // 2. Custom tours from database
+    // DB tours are authoritative: seed.ts mirrors the static tours into the
+    // Tour table with the same ids, so static copies sharing a DB id must be
+    // dropped (even when the DB copy is unpublished) or the API would return
+    // duplicate ids and React would render duplicate keys.
     const dbTours = await prisma.tour.findMany({
-      where: { isPublished: true },
       include: {
         departureDates: true,
         itineraryDays: true,
       },
     }).catch(() => []);
 
-    const formattedDbTours = dbTours.map((t) => ({
+    const dbIds = new Set(dbTours.map((t) => t.id));
+
+    // 1. Static seed tours not mirrored in DB
+    const staticTours = getAllTours().filter((t) => !dbIds.has(t.id));
+
+    // 2. Published custom tours from database
+    const publishedDbTours = dbTours.filter((t) => t.isPublished);
+
+    const formattedDbTours = publishedDbTours.map((t) => ({
       id: t.id,
       title: t.title,
       titleEn: t.titleEn,

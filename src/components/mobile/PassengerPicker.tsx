@@ -118,7 +118,7 @@ export function PassengerPicker({
                   type="button"
                   onClick={() => update('roomCount', -1)}
                   disabled={(localVal.roomCount ?? 1) <= 1}
-                  className="w-10 h-10 rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition"
+                  className="min-h-[44px] min-w-[44px] w-10 h-10 rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition"
                   aria-label="کاهش اتاق"
                 >
                   <Minus size={16} />
@@ -130,7 +130,7 @@ export function PassengerPicker({
                   type="button"
                   onClick={() => update('roomCount', 1)}
                   disabled={(localVal.roomCount ?? 1) >= 8}
-                  className="w-10 h-10 rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition"
+                  className="min-h-[44px] min-w-[44px] w-10 h-10 rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition"
                   aria-label="افزایش اتاق"
                 >
                   <Plus size={16} />
@@ -160,7 +160,7 @@ export function PassengerPicker({
                 type="button"
                 onClick={() => update('adults', -1)}
                 disabled={localVal.adults <= 1}
-                className="w-10 h-10 rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition"
+                className="min-h-[44px] min-w-[44px] w-10 h-10 rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition"
                 aria-label="کاهش بزرگسال"
               >
                 <Minus size={16} />
@@ -172,7 +172,7 @@ export function PassengerPicker({
                 type="button"
                 onClick={() => update('adults', 1)}
                 disabled={totalPassengers >= maxTotal}
-                className="w-10 h-10 rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition"
+                className="min-h-[44px] min-w-[44px] w-10 h-10 rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition"
                 aria-label="افزایش بزرگسال"
               >
                 <Plus size={16} />
@@ -201,7 +201,7 @@ export function PassengerPicker({
                 type="button"
                 onClick={() => update('childrenCount', -1)}
                 disabled={localVal.childrenCount <= 0}
-                className="w-10 h-10 rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition"
+                className="min-h-[44px] min-w-[44px] w-10 h-10 rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition"
                 aria-label="کاهش کودک"
               >
                 <Minus size={16} />
@@ -213,7 +213,7 @@ export function PassengerPicker({
                 type="button"
                 onClick={() => update('childrenCount', 1)}
                 disabled={totalPassengers >= maxTotal}
-                className="w-10 h-10 rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition"
+                className="min-h-[44px] min-w-[44px] w-10 h-10 rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition"
                 aria-label="افزایش کودک"
               >
                 <Plus size={16} />
@@ -242,7 +242,7 @@ export function PassengerPicker({
                 type="button"
                 onClick={() => update('infants', -1)}
                 disabled={localVal.infants <= 0}
-                className="w-10 h-10 rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition"
+                className="min-h-[44px] min-w-[44px] w-10 h-10 rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition"
                 aria-label="کاهش نوزاد"
               >
                 <Minus size={16} />
@@ -254,7 +254,7 @@ export function PassengerPicker({
                 type="button"
                 onClick={() => update('infants', 1)}
                 disabled={localVal.infants >= localVal.adults || totalPassengers >= maxTotal}
-                className="w-10 h-10 rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition"
+                className="min-h-[44px] min-w-[44px] w-10 h-10 rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition"
                 aria-label="افزایش نوزاد"
               >
                 <Plus size={16} />

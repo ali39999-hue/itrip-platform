@@ -67,7 +67,7 @@
 
 **نقشهٔ راه باقی‌ماندهٔ country-reactivity** (اولویت‌بندی‌شده): پنل رزرو هتل/اتاق‌ها هنوز Toman خام (`BookingPanel.tsx`, `HotelRooms.tsx`)؛ تبادل ارز کیف پول محدود به IRR/USDT/AED؛ مبالغ پرداخت‌شده در my-trips همیشه Toman؛ صفحات فرود/بیمه/قطار/static تومان‌محور؛ تلفن‌های +98 هاردکد (`config/brand.ts` و SupportSection/EmergencySos)؛ مبدأ همهٔ پروازهای seeded تهران (THR) و چیپ‌های شهر محبوب فیلتر کشور ندارند؛ live eCardo offers به `countryId:'iran'` قفل است؛ SSR hydration flash — فقط checkout با useHydration گارد دارد.
 
-
+### گیت پوشش i18n برای مکانیزم lt() (موج سوم)
 مکانیزم inline `lt()` (۲٬۳۸۳ فراخوانی در ~۵۰۰ فایل) تا امروز هیچ gateای نداشت. `scripts/lt-coverage-scan.mjs` + baseline (`docs/baseline/lt-i18n-baseline.json`) + اسکریپت `gate:i18n-lt`: پوشش فعلی ۲۱۵۹/۲۳۸۳ کامل (۹۰.۶٪)؛ **۲۲۴ فراخوانی فاقد ar/zh/ru** (fallback RTL-safe: ar→fa→en طبق I18N-103، پس degrade است نه شکستگی). gate رگرسیون را مسدود می‌کند و پیشرفت ترجمه قابل ردیابی است.
 
 ### موارد بررسی‌شده که سالم بودند (بدون تغییر)

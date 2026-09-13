@@ -153,7 +153,7 @@ export function FlightSearchHeader({
                       onFromChange('');
                       setFromSuggestionsOpen(false);
                     }}
-                    className="p-1 rounded-md text-sub hover:text-ink transition cursor-pointer"
+                    className="min-h-[44px] min-w-[44px] p-1 rounded-md text-sub hover:text-ink transition cursor-pointer"
                     aria-label="Clear origin"
                   >
                     <X size={14} />
@@ -191,7 +191,7 @@ export function FlightSearchHeader({
               type="button"
               onClick={handleSwap}
               aria-label="Swap origin and destination"
-              className={`w-9 h-9 rounded-full bg-soft hover:bg-line/70 border border-line grid place-items-center text-brand-dark transition-transform duration-200 shrink-0 cursor-pointer ${
+              className={`min-h-[44px] min-w-[44px] w-9 h-9 rounded-full bg-soft hover:bg-line/70 border border-line grid place-items-center text-brand-dark transition-transform duration-200 shrink-0 cursor-pointer ${
                 swapped ? 'rotate-180' : ''
               }`}
             >
@@ -232,7 +232,7 @@ export function FlightSearchHeader({
                       onToChange('');
                       setToSuggestionsOpen(false);
                     }}
-                    className="p-1 rounded-md text-sub hover:text-ink transition cursor-pointer"
+                    className="min-h-[44px] min-w-[44px] p-1 rounded-md text-sub hover:text-ink transition cursor-pointer"
                     aria-label="Clear destination"
                   >
                     <X size={14} />

@@ -16,21 +16,24 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Tour ID is required' }, { status: 400 });
     }
 
-    // 1. Try static tours
-    let tour: Tour | null = getTourById(id) || null;
+    // DB tour is authoritative (seed.ts mirrors static tours into the DB with
+    // the same ids): serve the DB copy when it exists, hide it when
+    // unpublished, and only fall back to static tours for ids absent from DB.
+    const dbTour = await prisma.tour.findUnique({
+      where: { id },
+      include: {
+        departureDates: true,
+        itineraryDays: true,
+      },
+    }).catch(() => null);
 
-    // 2. Try DB if not in static tours
-    if (!tour) {
-      const dbTour = await prisma.tour.findUnique({
-        where: { id },
-        include: {
-          departureDates: true,
-          itineraryDays: true,
-        },
-      }).catch(() => null);
+    let tour: Tour | null = null;
 
-      if (dbTour) {
-        tour = {
+    if (dbTour) {
+      if (!dbTour.isPublished) {
+        return NextResponse.json({ success: false, error: 'Tour not found' }, { status: 404 });
+      }
+      tour = {
           id: dbTour.id,
           title: dbTour.title,
           titleEn: dbTour.titleEn,
@@ -84,7 +87,11 @@ export async function GET(
             accommodation: day.accommodation || undefined,
           })),
         };
-      }
+    }
+
+    // Static seed fallback for ids that were never mirrored into the DB
+    if (!tour) {
+      tour = getTourById(id) || null;
     }
 
     if (!tour) {

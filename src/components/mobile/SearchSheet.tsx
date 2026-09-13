@@ -195,7 +195,7 @@ export function SearchSheet({
                   <button
                     type="button"
                     onClick={handleSwapAirports}
-                    className="w-9 h-9 rounded-full bg-surface border border-line shadow-sm text-brand grid place-items-center active:scale-95 transition hover:bg-mint"
+                    className="min-h-[44px] min-w-[44px] w-9 h-9 rounded-full bg-surface border border-line shadow-sm text-brand grid place-items-center active:scale-95 transition hover:bg-mint"
                     aria-label="جابجایی مبدأ و مقصد"
                   >
                     <ArrowUpDown size={15} />

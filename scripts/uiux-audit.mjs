@@ -24,6 +24,27 @@ const issues = [];
 const push = (file, line, ln, rule, detail) =>
   issues.push({ file: relative('.', file), line: ln, rule, detail: line.trim().slice(0, 220) });
 
+// Find the real end of a JSX open tag: first `>` outside quotes and outside {}/() depth
+// (a naive first-`>` search truncates at arrow functions like onClick={() => …}).
+function openTagEnd(src, start, max = 4000) {
+  let quote = null;
+  let depth = 0;
+  const end = Math.min(src.length, start + max);
+  for (let i = start; i < end; i++) {
+    const c = src[i];
+    if (quote) {
+      if (c === '\\') { i++; continue; }
+      if (c === quote) quote = null;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === '`') { quote = c; continue; }
+    if (c === '{' || c === '(') { depth++; continue; }
+    if (c === '}' || c === ')') { depth = Math.max(0, depth - 1); continue; }
+    if (c === '>' && depth === 0) return i;
+  }
+  return -1;
+}
+
 // physical-direction classes (AGENTS.md §3: logical properties only)
 const PHYS = [
   { re: /(?<![-\w])(ml|mr|pl|pr)-[a-z0-9[\]\/.-]+/g, label: 'physical spacing' },
@@ -52,12 +73,20 @@ for (const file of files) {
   let bm;
   while ((bm = btnRe.exec(src))) {
     const tagStart = bm.index;
+    const tagEnd = openTagEnd(src, tagStart);
+    if (tagEnd === -1) continue;
     const lineNo = src.slice(0, tagStart).split('\n').length;
-    // capture up to closing tag crudely: take 800 chars after open
-    const chunk = src.slice(tagStart, tagStart + 800).split('>')[0] + '>';
-    const after = src.slice(tagStart, tagStart + 2000);
-    const hasSize = /min-w-\[4[48]px\]|min-h-\[4[48]px\]|h-1[01]\b|h-12\b|size-1[124]\b|p-3\b|p-4\b|px-4\b|py-3\b/.test(chunk);
-    const iconOnly = /aria-label|sr-only/.test(after.slice(0, 400)) && !/\b[A-Z\u0600-\u06FF][\w\u0600-\u06FF ]{2,}</.test(after.slice(0, 600));
+    const chunk = src.slice(tagStart, tagEnd + 1);
+    // content window: this element's own children only (stop at its close tag),
+    // so a sibling's aria-label={t(…)} doesn't mask a true icon-only control
+    const closeMatch = src.slice(tagEnd, tagEnd + 2000).match(/<\/(?:button|Button|a|Link)>/);
+    const contentEnd = closeMatch ? tagEnd + closeMatch.index : tagEnd + 600;
+    const content = src.slice(tagEnd + 1, Math.min(contentEnd + 20, tagEnd + 600));
+    const hasSize = /min-[wh]-\[4[48]px\]|(?:min-h|h|size)-1[12]\b|p-3\b|p-4\b|py-3\b/.test(chunk);
+    // icon-only = named (aria-label/sr-only) with no visible literal or i18n text as CONTENT
+    const iconOnly = /aria-label|sr-only/.test(chunk + content)
+      && !/\b[A-Z\u0600-\u06FF][\w\u0600-\u06FF ]{2,}</.test(content)
+      && !/\{(?:t|ct)\(/.test(content);
     if (iconOnly && !hasSize) {
       push(file, chunk, lineNo, 'small-icon-target', 'icon-only control without 44px min target');
     }
@@ -72,7 +101,7 @@ for (const file of files) {
   // back/chevron without rtl flip (AGENTS.md §3) — quick heuristic
   const lines2 = src.split('\n');
   lines2.forEach((line, i) => {
-    if (DIRECTIONAL_ICON.test(line) && /className/.test(line) && /rotate-180/.test(line) === false && /rtl:/.test(line) === false && /flipForRTL|flip-rtl|isRTL/.test(line) === false && /(ChevronLeft|ChevronRight|ArrowLeft|ArrowRight)/.test(line)) {
+    if (DIRECTIONAL_ICON.test(line) && /className/.test(line) && /rotate-180/.test(line) === false && /rtl:/.test(line) === false && /ltr:(-scale-x-100|rotate-180)/.test(line) === false && /flipForRTL|flip-rtl|isRTL/.test(line) === false && /(ChevronLeft|ChevronRight|ArrowLeft|ArrowRight)/.test(line)) {
       push(file, line, i + 1, 'unflipped-chevron', 'directional icon without rtl:rotate-180 or RTL helper');
     }
   });
@@ -85,6 +114,5 @@ const byRule = {};
 for (const it of issues) (byRule[it.rule] ||= []).push(it);
 for (const [rule, list] of Object.entries(byRule)) {
   console.log(`\n## ${rule} (${list.length})`);
-  for (const it of list.slice(0, 40)) console.log(`${it.file}:${it.line}  ${it.detail}`);
-  if (list.length > 40) console.log(`... +${list.length - 40} more`);
+  for (const it of list) console.log(`${it.file}:${it.line}  ${it.detail}`);
 }

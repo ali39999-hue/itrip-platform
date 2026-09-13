@@ -126,7 +126,7 @@ export function FlightSearchForm({
           type="button"
           onClick={handleSwap}
           aria-label={t('swap')}
-          className={`hidden sm:grid absolute top-1/2 -translate-y-1/2 -end-4 z-30 w-8 h-8 place-items-center rounded-full bg-surface border border-line shadow-elev-2 text-brand-dark hover:bg-mint hover:scale-110 active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer ${
+          className={`min-h-[44px] min-w-[44px] hidden sm:grid absolute top-1/2 -translate-y-1/2 -end-4 z-30 w-8 h-8 place-items-center rounded-full bg-surface border border-line shadow-elev-2 text-brand-dark hover:bg-mint hover:scale-110 active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer ${
             swapped ? 'rotate-180' : ''
           }`}
         >

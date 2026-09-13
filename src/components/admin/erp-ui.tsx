@@ -374,7 +374,7 @@ export function ErpModal({
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-soft text-sub transition hover:text-ink"
+            className="min-h-[44px] min-w-[44px] grid h-8 w-8 shrink-0 place-items-center rounded-full bg-soft text-sub transition hover:text-ink"
           >
             ✕
           </button>
@@ -485,7 +485,7 @@ export function ErpHint({
         aria-label={label}
         aria-expanded={open}
         title={label}
-        className="grid h-5 w-5 place-items-center rounded-full bg-soft text-[11px] font-black text-sub transition hover:bg-mint hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className="min-h-[44px] min-w-[44px] grid h-5 w-5 place-items-center rounded-full bg-soft text-[11px] font-black text-sub transition hover:bg-mint hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
         ؟
       </button>

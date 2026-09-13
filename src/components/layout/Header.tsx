@@ -74,7 +74,7 @@ export function Header() {
             type="button"
             onClick={() => setMobileMenuOpen(false)}
             aria-label={ct('aria.closeMenu')}
-            className="w-10 h-10 rounded-xl bg-surface border border-line text-ink grid place-items-center active:scale-95 transition"
+            className="min-h-[44px] min-w-[44px] w-10 h-10 rounded-xl bg-surface border border-line text-ink grid place-items-center active:scale-95 transition"
           >
             <X size={20} />
           </button>
@@ -251,7 +251,7 @@ export function Header() {
             type="button"
             onClick={() => setCommandPaletteOpen(true)}
             aria-label="Search or jump to (Ctrl+K)"
-            className="hidden sm:inline-flex items-center justify-center gap-1.5 h-10 px-2.5 2xl:px-3 rounded-xl bg-soft/80 hover:bg-soft border border-line/80 text-sub hover:text-ink text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-2xs cursor-pointer"
+            className="min-h-[44px] min-w-[44px] hidden sm:inline-flex items-center justify-center gap-1.5 h-10 px-2.5 2xl:px-3 rounded-xl bg-soft/80 hover:bg-soft border border-line/80 text-sub hover:text-ink text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-2xs cursor-pointer"
           >
             <Search size={15} className="text-brand-dark" aria-hidden="true" />
             <kbd className="hidden 2xl:inline-block px-1.5 py-0.5 rounded bg-surface border border-line text-[10px] font-mono font-black text-sub">

@@ -255,7 +255,7 @@ export function ExceptionCenterClient({
                 onClick={() => handleAssign(row.id)}
                 disabled={isPending || !selectedOwnerId}
                 aria-label={lt(locale, { fa: 'تأیید ارجاع', en: 'Confirm assignment', ar: 'تأكيد التعيين', zh: '确认指派', ru: 'Подтвердить назначение' })}
-                className="min-w-8 min-h-8 grid place-items-center rounded-lg text-emerald-600 hover:bg-emerald-50 disabled:opacity-50"
+                className="min-h-[44px] min-w-[44px] min-w-8 min-h-8 grid place-items-center rounded-lg text-emerald-600 hover:bg-emerald-50 disabled:opacity-50"
               >
                 <Check size={14} aria-hidden="true" />
               </button>
@@ -263,7 +263,7 @@ export function ExceptionCenterClient({
                 type="button"
                 onClick={() => setAssigningId(null)}
                 aria-label={lt(locale, { fa: 'انصراف', en: 'Cancel', ar: 'إلغاء', zh: '取消', ru: 'Отмена' })}
-                className="min-w-8 min-h-8 grid place-items-center rounded-lg text-sub hover:text-ink hover:bg-soft"
+                className="min-h-[44px] min-w-[44px] min-w-8 min-h-8 grid place-items-center rounded-lg text-sub hover:text-ink hover:bg-soft"
               >
                 <X size={14} aria-hidden="true" />
               </button>
@@ -282,7 +282,7 @@ export function ExceptionCenterClient({
                   setSelectedOwnerId(row.ownerId || '');
                 }}
                 aria-label={lt(locale, { fa: 'ارجاع به اپراتور', en: 'Assign operator', ar: 'تعيين موظف', zh: '指派运营人员', ru: 'Назначить оператора' })}
-                className="min-w-7 min-h-7 grid place-items-center rounded-lg text-sub hover:text-ink hover:bg-soft"
+                className="min-h-[44px] min-w-[44px] min-w-7 min-h-7 grid place-items-center rounded-lg text-sub hover:text-ink hover:bg-soft"
               >
                 <UserCheck size={13} aria-hidden="true" />
               </button>
@@ -339,7 +339,7 @@ export function ExceptionCenterClient({
                 type="button"
                 onClick={() => setResolvingId(null)}
                 aria-label={lt(locale, { fa: 'انصراف', en: 'Cancel', ar: 'إلغاء', zh: '取消', ru: 'Отмена' })}
-                className="min-w-9 min-h-9 grid place-items-center rounded-lg text-sub hover:text-ink hover:bg-soft"
+                className="min-h-[44px] min-w-[44px] min-w-9 min-h-9 grid place-items-center rounded-lg text-sub hover:text-ink hover:bg-soft"
               >
                 <X size={14} aria-hidden="true" />
               </button>

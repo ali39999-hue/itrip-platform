@@ -194,14 +194,14 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
               <button
                 onClick={() => setLbIndex((lbIndex + galleryList.length - 1) % galleryList.length)}
                 aria-label={t('aria.previous')}
-                className="w-10 h-10 grid place-items-center border border-white/25 rounded-xl bg-surface/10 hover:bg-surface/20 transition"
+                className="min-h-[44px] min-w-[44px] w-10 h-10 grid place-items-center border border-white/25 rounded-xl bg-surface/10 hover:bg-surface/20 transition"
               >
                 {isRtl ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
               </button>
               <button
                 onClick={() => setLbIndex((lbIndex + 1) % galleryList.length)}
                 aria-label={t('aria.next')}
-                className="w-10 h-10 grid place-items-center border border-white/25 rounded-xl bg-surface/10 hover:bg-surface/20 transition"
+                className="min-h-[44px] min-w-[44px] w-10 h-10 grid place-items-center border border-white/25 rounded-xl bg-surface/10 hover:bg-surface/20 transition"
               >
                 {isRtl ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
               </button>
@@ -211,7 +211,7 @@ export function HotelHero({ hotel }: { hotel: Hotel }) {
               <button
                 onClick={() => setLbIndex(null)}
                 aria-label={t('aria.close')}
-                className="me-auto w-10 h-10 grid place-items-center border border-white/25 rounded-xl bg-surface/10 hover:bg-surface/20 transition"
+                className="min-h-[44px] min-w-[44px] me-auto w-10 h-10 grid place-items-center border border-white/25 rounded-xl bg-surface/10 hover:bg-surface/20 transition"
               >
                 <X size={16} />
               </button>

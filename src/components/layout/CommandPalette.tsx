@@ -102,7 +102,7 @@ export function CommandPalette({
               type="button"
               onClick={() => setIsOpen(false)}
               aria-label={lt(locale, { fa: 'بستن', en: 'Close', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}
-              className="w-8 h-8 rounded-full bg-soft text-sub hover:text-ink grid place-items-center transition"
+              className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-full bg-soft text-sub hover:text-ink grid place-items-center transition"
             >
               <X size={16} />
             </button>

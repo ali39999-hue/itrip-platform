@@ -85,7 +85,7 @@ export function AdminPaymentModeToggle() {
           ? 'Текущий режим: Демо-симуляция. Нажмите для переключения на боевой шлюз.'
           : 'Текущий режим: Боевой шлюз. Нажмите для переключения на демо.',
       })}
-      className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-[12px] font-black transition-all border shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+      className={`min-h-[44px] min-w-[44px] inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-[12px] font-black transition-all border shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
         isDemo
           ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
           : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'

@@ -321,7 +321,7 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-black text-brand-dark">بنر {idx + 1}</span>
                       {promosDraft.length > 1 && (
-                        <button type="button" onClick={() => setPromosDraft(promosDraft.filter((_, i) => i !== idx))} className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف بنر ${idx + 1}`}>
+                        <button type="button" onClick={() => setPromosDraft(promosDraft.filter((_, i) => i !== idx))} className="min-h-[44px] min-w-[44px] w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف بنر ${idx + 1}`}>
                           <Trash2 size={13} />
                         </button>
                       )}
@@ -358,7 +358,7 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
                         مسیر {idx + 1}: {r.fromFa} ➔ {r.toFa}
                       </span>
                       {routesDraft.length > 1 && (
-                        <button type="button" onClick={() => setRoutesDraft(routesDraft.filter((_, i) => i !== idx))} className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف مسیر ${idx + 1}`}>
+                        <button type="button" onClick={() => setRoutesDraft(routesDraft.filter((_, i) => i !== idx))} className="min-h-[44px] min-w-[44px] w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف مسیر ${idx + 1}`}>
                           <Trash2 size={13} />
                         </button>
                       )}
@@ -393,7 +393,7 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-black text-brand-dark">پرسش {idx + 1}</span>
                       {faqDraft.length > 1 && (
-                        <button type="button" onClick={() => setFaqDraft(faqDraft.filter((_, i) => i !== idx))} className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف پرسش ${idx + 1}`}>
+                        <button type="button" onClick={() => setFaqDraft(faqDraft.filter((_, i) => i !== idx))} className="min-h-[44px] min-w-[44px] w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف پرسش ${idx + 1}`}>
                           <Trash2 size={13} />
                         </button>
                       )}
@@ -503,7 +503,7 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-black text-brand-dark">آیتم منو {idx + 1}</span>
                       {accountNavDraft.links.length > 3 && (
-                        <button type="button" onClick={() => setAccountNavDraft({ ...accountNavDraft, links: accountNavDraft.links.filter((_, i) => i !== idx) })} className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف آیتم ${idx + 1}`}>
+                        <button type="button" onClick={() => setAccountNavDraft({ ...accountNavDraft, links: accountNavDraft.links.filter((_, i) => i !== idx) })} className="min-h-[44px] min-w-[44px] w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف آیتم ${idx + 1}`}>
                           <Trash2 size={13} />
                         </button>
                       )}
@@ -578,7 +578,7 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
                       <div key={idx} className="p-3.5 rounded-2xl border border-line bg-soft/40 space-y-2.5">
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-black text-brand-dark">پرسش {idx + 1}</span>
-                          <button type="button" onClick={() => setSupportPageFaqDraft(supportPageFaqDraft.filter((_, i) => i !== idx))} className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف پرسش ${idx + 1}`}>
+                          <button type="button" onClick={() => setSupportPageFaqDraft(supportPageFaqDraft.filter((_, i) => i !== idx))} className="min-h-[44px] min-w-[44px] w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف پرسش ${idx + 1}`}>
                             <Trash2 size={13} />
                           </button>
                         </div>

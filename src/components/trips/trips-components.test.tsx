@@ -22,7 +22,8 @@ describe('Phase 1: Trips & Boarding Pass Features', () => {
     it('calculates remaining time for a future date correctly', () => {
       // Create a date 2 days in the future
       const future = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000);
-      const dateStr = future.toISOString().slice(0, 10);
+      // Local date + local time: calculateTimeRemaining interprets wall-clock strings
+      const dateStr = `${future.getFullYear()}-${String(future.getMonth() + 1).padStart(2, '0')}-${String(future.getDate()).padStart(2, '0')}`;
       const timeStr = `${String(future.getHours()).padStart(2, '0')}:${String(
         future.getMinutes()
       ).padStart(2, '0')}`;
@@ -42,7 +43,8 @@ describe('Phase 1: Trips & Boarding Pass Features', () => {
 
     it('flags boarding soon when departure is under 3 hours', () => {
       const soon = new Date(Date.now() + 1.5 * 60 * 60 * 1000); // 1.5 hours
-      const dateStr = soon.toISOString().slice(0, 10);
+      // Local date + local time (UTC date here would disagree after ~20:30 local)
+      const dateStr = `${soon.getFullYear()}-${String(soon.getMonth() + 1).padStart(2, '0')}-${String(soon.getDate()).padStart(2, '0')}`;
       const timeStr = `${String(soon.getHours()).padStart(2, '0')}:${String(
         soon.getMinutes()
       ).padStart(2, '0')}`;
