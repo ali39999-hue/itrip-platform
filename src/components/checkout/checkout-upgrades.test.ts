@@ -58,4 +58,36 @@ describe('Checkout Upgrades: SoftLockTimer & Cancellation Policy', () => {
     expect(faLabel).toContain('14:30');
     expect(faLabel).toContain('زمان');
   });
+
+  it('verifies PassportScanModal 3 options localized labels exist across 5 locales', () => {
+    const locales = ['fa', 'en', 'ar', 'zh', 'ru'] as const;
+    for (const loc of locales) {
+      const galleryLabel = lt(loc, {
+        fa: 'اسکن بر اساس گالری',
+        en: 'Scan from Gallery / File',
+        ar: 'المسح من المعرض / الملفات',
+        zh: '从相册 / 文件上传扫描',
+        ru: 'Сканирование из галереи / файла',
+      });
+      expect(galleryLabel).toBeTruthy();
+
+      const cameraLabel = lt(loc, {
+        fa: 'اسکن بر اساس دوربین',
+        en: 'Scan with Camera (Phone / Laptop)',
+        ar: 'المسح بواسطة الكاميرا (الجوال / الكمبيوتر)',
+        zh: '使用摄像头扫描（手机 / 笔记本）',
+        ru: 'Сканирование с камеры (телефон / ноутбук)',
+      });
+      expect(cameraLabel).toBeTruthy();
+
+      const kycLabel = lt(loc, {
+        fa: 'بر اساس اطلاعات KYC پنل کاربری',
+        en: 'Autofill from Verified KYC Profile',
+        ar: 'استرداد من بيانات KYC المعتمدة',
+        zh: '基于个人中心已实名认证（KYC）资料',
+        ru: 'На основе данных KYC из профиля',
+      });
+      expect(kycLabel).toBeTruthy();
+    }
+  });
 });

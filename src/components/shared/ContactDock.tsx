@@ -174,11 +174,15 @@ export function ContactDock() {
           aria-expanded={menuOpen}
           aria-haspopup="menu"
           aria-label={lt(locale, { fa: 'تماس و پشتیبانی', en: 'Call & support', ar: 'الاتصال والدعم', zh: '通话与支持', ru: 'Звонок и поддержка' })}
-          className="min-h-[44px] max-lg:w-11 max-lg:px-0 max-lg:justify-center px-3.5 h-11 rounded-full bg-deep/95 hover:bg-deep text-surface border border-line/30 backdrop-blur-md shadow-elev-2 hover:shadow-elev-3 transition-all inline-flex items-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          className="min-h-[44px] max-lg:w-11 max-lg:px-0 max-lg:justify-center px-3.5 h-11 rounded-full bg-deep/95 hover:bg-deep text-white dark:bg-brand/20 dark:text-brand dark:border-brand/40 dark:hover:bg-brand/30 border border-line/30 backdrop-blur-md shadow-elev-2 hover:shadow-elev-3 transition-all inline-flex items-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
-          {menuOpen ? <ChevronDown size={17} className="max-lg:hidden" /> : <Headset size={17} />}
-          <span className="max-lg:hidden text-xs font-black text-surface/90 group-hover:text-surface">
-            {lt(locale, { fa: 'تماس و پشتیبانی', en: 'Call & support', ar: 'الاتصال والدعم', zh: '通话与支持', ru: 'Звонок и поддержка' })}
+          {menuOpen ? (
+            <ChevronDown size={17} className="max-lg:hidden text-white/90 group-hover:text-white dark:text-brand" />
+          ) : (
+            <Headset size={17} className="text-white/90 group-hover:text-white dark:text-brand" />
+          )}
+          <span className="max-lg:hidden text-xs font-black text-white/90 group-hover:text-white dark:text-brand">
+            {lt(locale, { fa: 'تماس و پشتیبانی', en: 'Call & support', ar: 'الاتصال والدعم', zh: '通话与支持', ru: 'Звонок و поддержка' })}
           </span>
         </button>
       </div>
