@@ -69,6 +69,18 @@ export function parseNaturalQuery(q: string): Answers | null {
     a.pace = 'packed';
   else if (/(متعادل|balanced)/.test(lower)) a.pace = 'balanced';
 
+  // Extract trip type (outbound only vs round trip)
+  if (
+    /(رفت[و‌\s]*برگشت|دو\s*طرفه|با\s*برگشت|round[\s-]?trip|return[\s-]?flight|both[\s-]?ways)/.test(
+      lower
+    )
+  )
+    a.tripType = 'round';
+  else if (
+    /(یک[‌\s]?طرفه|فقط\s*رفت|one[\s-]?way|oneway|outbound[\s-]?only)/.test(lower)
+  )
+    a.tripType = 'oneway';
+
   // Extract interests
   const ints: ExperienceCategory[] = [];
   if (

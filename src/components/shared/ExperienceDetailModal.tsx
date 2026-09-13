@@ -88,6 +88,8 @@ export function ExperienceDetailModal({
       subtitle: `${where} • ${num(travelers, locale)} ${lt(locale, { fa: 'مسافر', en: 'traveler(s)', ar: 'مسافر', zh: '人', ru: 'пасс.' })} • ${dateInfo.j || selectedDate}`,
       amount: totalPrice,
       travelDate: selectedDate,
+      adults: travelers,
+      children: 0,
       meta: {
         adults: String(travelers),
         children: '0',

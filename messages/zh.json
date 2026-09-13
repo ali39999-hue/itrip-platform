@@ -392,7 +392,17 @@
     "offersTitle": "AI 为 {country} 定制的专属行程",
     "offersAll": "查看所有方案",
     "offersStarts": "起价",
-    "offersToman": "图曼"
+    "offersToman": "图曼",
+    "qTrip": "需要返程航班吗？",
+    "qTripSub": "如果需要返程，我们会从一开始就把最后一天的返程航班计入总行程与总价。",
+    "tripRound": "往返",
+    "tripRoundBadge": "最多人选择",
+    "tripRoundDesc": "最后一天的返程航班，与去程同航司同舱位，并计入总价。",
+    "tripOneway": "单程",
+    "tripOnewayDesc": "仅计算去程；适合另行购买返程或从其他城市返回。",
+    "flightOutbound": "去程航班",
+    "flightReturn": "返程航班",
+    "returnDay": "返程日"
   },
   "Interpreter": {
     "kicker": "Firuzo 翻译服务",

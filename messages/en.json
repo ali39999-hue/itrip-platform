@@ -392,7 +392,17 @@
     "offersTitle": "AI-Tailored Itineraries for {country}",
     "offersAll": "View All Offers",
     "offersStarts": "Starts from",
-    "offersToman": "Toman"
+    "offersToman": "Toman",
+    "qTrip": "Do you need a return flight?",
+    "qTripSub": "If you are coming back with the plan, we price the return leg on the final day into your total from the start.",
+    "tripRound": "Round trip",
+    "tripRoundBadge": "Most popular",
+    "tripRoundDesc": "Return flight on the final day, same airline & cabin as the outbound, included in the total.",
+    "tripOneway": "One way",
+    "tripOnewayDesc": "Outbound only — best if you fly back separately or from another city.",
+    "flightOutbound": "Outbound flight",
+    "flightReturn": "Return flight",
+    "returnDay": "Return day"
   },
   "Interpreter": {
     "kicker": "Firuzo Interpreter",

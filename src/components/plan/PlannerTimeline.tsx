@@ -27,6 +27,7 @@ import {
   CloudRain,
   CloudSun,
   BookOpen,
+  PlaneLanding,
   type LucideIcon,
 } from 'lucide-react';
 import type { PickedExperience, PlanPackage } from '@/hooks/usePlanner';
@@ -224,7 +225,7 @@ export function PlannerTimeline(props: PlannerTimelineProps) {
             </span>
             <div>
               <h3 className="text-base font-black text-ink m-0">
-                {t('arrivalDay')} — {t('flight')}
+                {t('arrivalDay')} — {t('flightOutbound')}
               </h3>
               <span className="text-xs font-bold text-sub">
                 {plan.flight.airline} · {plan.flight.flightNo}
@@ -263,6 +264,57 @@ export function PlannerTimeline(props: PlannerTimelineProps) {
           </div>
         </div>
       </article>
+
+      {/* Return Flight Card (round trip) */}
+      {plan.returnFlight && (
+        <article className="rounded-2xl bg-surface border border-line/80 shadow-sm p-5 hover:border-brand/30 transition">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <span className="w-10 h-10 rounded-xl bg-brand-dark text-surface grid place-items-center shrink-0 shadow-xs">
+                <PlaneLanding size={18} />
+              </span>
+              <div>
+                <h3 className="text-base font-black text-ink m-0">
+                  {t('returnDay')} — {t('flightReturn')}
+                </h3>
+                <span className="text-xs font-bold text-sub">
+                  {plan.returnFlight.airline} · {plan.returnFlight.flightNo}
+                </span>
+              </div>
+            </div>
+            <div className="text-end">
+              <span className="text-price font-black num text-base">
+                {num(plan.returnFlightTotal, locale)}
+              </span>
+              <span className="text-[11px] font-bold text-sub ms-1">{currencyLabel}</span>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-soft/60 border border-line/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-bold text-ink">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="px-3 py-1 rounded-lg bg-surface border border-line text-ink font-bold shadow-2xs">
+                {plan.returnFlight.origin}
+              </span>
+              <span className="text-brand-dark flex items-center justify-center w-6 h-6 rounded-full bg-mint shrink-0 shadow-2xs">
+                <ArrowLeft size={13} className="rtl:inline ltr:hidden" />
+                <ArrowRight size={13} className="ltr:inline rtl:hidden" />
+              </span>
+              <span className="px-3 py-1 rounded-lg bg-surface border border-brand/40 text-brand-dark font-black shadow-2xs">
+                {plan.returnFlight.destination}
+              </span>
+            </div>
+            <div
+              className="flex items-center gap-2 text-sub font-mono bg-surface px-3 py-1.5 rounded-lg border border-line/50 self-start sm:self-auto shadow-2xs"
+              dir="ltr"
+            >
+              <Clock size={14} className="text-brand-dark" />
+              <span>
+                {plan.returnFlight.departureTime} — {plan.returnFlight.arrivalTime}
+              </span>
+            </div>
+          </div>
+        </article>
+      )}
 
       {/* Hotel Card */}
       <article className="rounded-2xl bg-surface border border-line/80 shadow-sm p-5 hover:border-brand/30 transition">

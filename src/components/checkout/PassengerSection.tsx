@@ -7,6 +7,7 @@ import { JalaliDatePicker } from '@/components/ui/DatePicker';
 import { CheckCircle2, BookmarkPlus, ScanLine, Loader2 } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
+import { num } from '@/lib/format';
 import { EnrichedTravelerProfile } from '@/domains/identity/TravelerProfileService';
 
 interface PassengerSectionProps {
@@ -47,9 +48,9 @@ export function PassengerSection({
   const titleText =
     totalPassengers > 1
       ? lt(locale, {
-        ar: `بيانات المسافر ${currentPassengerIndex + 1} ${currentPassengerIndex === 0 ? '(الرئيسي)' : '(مرافق)'}`, zh: `旅客 ${currentPassengerIndex + 1} 信息 ${currentPassengerIndex === 0 ? '（主旅客）' : '（同行者）'}`, ru: `Пассажир ${currentPassengerIndex + 1} ${currentPassengerIndex === 0 ? '(основной)' : '(сопровождающий)'}`,
-          fa: `مشخصات مسافر ${currentPassengerIndex + 1} ${currentPassengerIndex === 0 ? '(سرپرست)' : '(همراه)'}`,
-          en: `Passenger ${currentPassengerIndex + 1} Details ${currentPassengerIndex === 0 ? '(Primary)' : '(Companion)'}`,
+        ar: `بيانات المسافر ${num(currentPassengerIndex + 1, locale)} ${currentPassengerIndex === 0 ? '(الرئيسي)' : '(مرافق)'}`, zh: `旅客 ${num(currentPassengerIndex + 1, locale)} 信息 ${currentPassengerIndex === 0 ? '（主旅客）' : '（同行者）'}`, ru: `Пассажир ${num(currentPassengerIndex + 1, locale)} ${currentPassengerIndex === 0 ? '(основной)' : '(сопровождающий)'}`,
+          fa: `مشخصات مسافر ${num(currentPassengerIndex + 1, locale)} ${currentPassengerIndex === 0 ? '(سرپرست)' : '(همراه)'}`,
+          en: `Passenger ${num(currentPassengerIndex + 1, locale)} Details ${currentPassengerIndex === 0 ? '(Primary)' : '(Companion)'}`,
         })
       : lt(locale, {
         ar: 'بيانات المسافر الرئيسي', zh: '主要旅客信息', ru: 'Данные основного пассажира',
@@ -68,7 +69,7 @@ export function PassengerSection({
             const defaultLabel =
               idx === 0
                 ? lt(locale, { fa: 'مسافر ۱ (سرپرست)', en: 'Passenger 1 (Primary)', ar: 'المسافر ١ (الرئيسي)', zh: '旅客 1（主旅客）', ru: 'Пассажир 1 (основной)'})
-                : lt(locale, { fa: `مسافر ${idx + 1} (همراه)`, en: `Passenger ${idx + 1}`, ar: `المسافر ${idx + 1} (مرافق)`, zh: `旅客 ${idx + 1}（同行者）`, ru: `Пассажир ${idx + 1} (сопровождающий)`});
+                : lt(locale, { fa: `مسافر ${num(idx + 1, locale)} (همراه)`, en: `Passenger ${num(idx + 1, locale)}`, ar: `المسافر ${num(idx + 1, locale)} (مرافق)`, zh: `旅客 ${num(idx + 1, locale)}（同行者）`, ru: `Пассажир ${num(idx + 1, locale)} (сопровождающий)`});
             const pName = status?.name?.trim() || defaultLabel;
 
             return (

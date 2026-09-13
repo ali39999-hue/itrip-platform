@@ -68,6 +68,10 @@ function FlightSearchInner() {
   const initialTravelDate = departParam && /^\d{4}-\d{2}-\d{2}$/.test(departParam) ? departParam : daysFromNow(7);
   const [travelDate, setTravelDate] = useState<string>(initialTravelDate);
 
+  // Party size (deep links); checkout renders one passenger form per traveler.
+  const paxAdults = Math.max(1, Number(params.get('adults')) || 1);
+  const paxChildren = Math.max(0, Number(params.get('children')) || 0);
+
   const fromCity = resolveCityQuery(from);
   const toCity = resolveCityQuery(to);
   const searchFiltered = Boolean(fromCity || toCity);
@@ -349,6 +353,9 @@ function FlightSearchInner() {
       // Flight catalog prices are in IRR; booking context amounts are in Toman.
       amount: Math.round(f.price / 10),
       travelDate,
+      adults: paxAdults,
+      children: paxChildren,
+      meta: { adults: String(paxAdults), children: String(paxChildren) },
     });
     router.push('/checkout');
   }

@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { num } from '@/lib/format';
-import { Plane, BedDouble, Sparkles, Plus, CheckCircle2, Check, CarTaxiFront, Wifi, Languages, ShieldCheck, Headphones } from 'lucide-react';
+import { Plane, PlaneLanding, BedDouble, Sparkles, Plus, CheckCircle2, Check, CarTaxiFront, Wifi, Languages, ShieldCheck, Headphones } from 'lucide-react';
 import type { PlanPackage } from '@/hooks/usePlanner';
 import { lt } from '@/lib/lt';
 
@@ -40,9 +40,15 @@ export function PlannerSidebar({
         <h3 className="text-base font-black text-ink mb-4">{t('total')}</h3>
         <div className="flex flex-col gap-3 text-xs font-bold">
           <div className="flex justify-between items-center">
-            <span className="text-sub inline-flex items-center gap-1.5"><Plane size={14} className="text-brand-dark" /> {t('flight')}</span>
+            <span className="text-sub inline-flex items-center gap-1.5"><Plane size={14} className="text-brand-dark" /> {t('flightOutbound')}</span>
             <b className="num text-ink">{num(plan.flightTotal, locale)}</b>
           </div>
+          {plan.returnFlight && (
+            <div className="flex justify-between items-center">
+              <span className="text-sub inline-flex items-center gap-1.5"><PlaneLanding size={14} className="text-brand-dark" /> {t('flightReturn')}</span>
+              <b className="num text-ink">{num(plan.returnFlightTotal, locale)}</b>
+            </div>
+          )}
           <div className="flex justify-between items-center">
             <span className="text-sub inline-flex items-center gap-1.5"><BedDouble size={14} className="text-hotel" /> {t('hotel')}</span>
             <b className="num text-ink">{num(plan.hotelTotal, locale)}</b>

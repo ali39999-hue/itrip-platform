@@ -9,6 +9,8 @@ import { CATEGORY_ICONS } from '@/components/shared/CountryExperiences';
 import { 
   ArrowLeft, 
   ArrowRight, 
+  ArrowLeftRight, 
+  PlaneTakeoff, 
   Sun, 
   Sunset, 
   MoonStar, 
@@ -20,10 +22,40 @@ import {
   Check, 
   type LucideIcon 
 } from 'lucide-react';
-import { BUDGET_CAP, BUDGET_LABEL, type Answers, type BudgetTier, type Pace, type Who } from '@/hooks/usePlanner';
+import { BUDGET_CAP, BUDGET_LABEL, type Answers, type BudgetTier, type Pace, type TripType, type Who } from '@/hooks/usePlanner';
 import { lt, type LText } from '@/lib/lt';
 
-export const QUESTIONS = ['dest', 'who', 'days', 'interests', 'budget', 'pace'] as const;
+export const QUESTIONS = ['dest', 'trip', 'who', 'days', 'interests', 'budget', 'pace'] as const;
+
+const TRIP_META: Record<TripType, { Icon: LucideIcon; desc: LText; badge?: LText }> = {
+  round: {
+    Icon: ArrowLeftRight,
+    desc: {
+      fa: 'پرواز برگشت در روز پایانی سفر، با همان ایرلاین و کلاس پرواز رفت در جمع کل لحاظ می‌شود.',
+      en: 'Return flight on the final day, same airline & cabin as the outbound, included in the total.',
+      ar: 'رحلة عودة في اليوم الأخير بنفس شركة الطيران والمسافة، محتسبة في الإجمالي.',
+      zh: '最后一天的返程航班，与去程同航司同舱位，并计入总价。',
+      ru: 'Обратный рейс в последний день, той же авиакомпанией и классом, включён в итог.',
+    },
+    badge: {
+      fa: 'رایج‌ترین انتخاب',
+      en: 'Most popular',
+      ar: 'الأكثر اختياراً',
+      zh: '最多人选择',
+      ru: 'Самый популярный',
+    },
+  },
+  oneway: {
+    Icon: PlaneTakeoff,
+    desc: {
+      fa: 'فقط پرواز رفت محاسبه می‌شود؛ مناسب وقتی برگشت را جداگانه یا از شهر دیگری می‌خرید.',
+      en: 'Outbound only — best if you fly back separately or from another city.',
+      ar: 'يحتسب الذهاب فقط؛ مناسب إذا ستعود بشكل منفصل أو من مدينة أخرى.',
+      zh: '仅计算去程；适合另行购买返程或从其他城市返回。',
+      ru: 'Только вылет туда; удобно, если обратно отдельно или из другого города.',
+    },
+  },
+};
 
 const PACE_META: Record<Pace, { key: 'paceRelaxed' | 'paceBalanced' | 'pacePacked'; Icon: LucideIcon; desc: LText }> = {
   relaxed: { 
@@ -234,7 +266,7 @@ export function PlannerWizard({
                     onClick={() => { 
                       setAns((a) => ({ ...a, dest: id })); 
                       if (id !== country) setCountry(id); 
-                      setStep(1); 
+                      setStep(step + 1); 
                     }}
                     className={`p-4 rounded-2xl border text-start flex flex-col justify-between transition-all duration-200 cursor-pointer ${
                       isSelected 
@@ -271,6 +303,55 @@ export function PlannerWizard({
           </>
         )}
 
+        {/* STEP 2: TRIP TYPE (OUTBOUND ONLY VS ROUND TRIP) */}
+        {q === 'trip' && (
+          <>
+            {qHead(t('qTrip'), t('qTripSub'))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {(['round', 'oneway'] as TripType[]).map((tt) => {
+                const isSelected = ans.tripType === tt;
+                const meta = TRIP_META[tt];
+                const Icon = meta.Icon;
+                return (
+                  <button
+                    key={tt}
+                    type="button"
+                    onClick={() => { setAns((a) => ({ ...a, tripType: tt })); setStep(step + 1); }}
+                    className={`p-4 sm:p-5 rounded-2xl border text-start flex items-start gap-4 transition-all duration-200 cursor-pointer active:scale-[0.98] ${
+                      isSelected 
+                        ? 'border-brand bg-mint/50 ring-2 ring-brand/30 shadow-md shadow-brand/10' 
+                        : 'border-line bg-surface hover:border-brand/60 hover:bg-soft/50'
+                    }`}
+                  >
+                    <span className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition ${
+                      isSelected ? 'bg-brand text-surface shadow-sm' : 'bg-soft text-brand-dark'
+                    }`}>
+                      <Icon size={22} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <b className="text-base font-black text-ink">
+                          {t(tt === 'round' ? 'tripRound' : 'tripOneway')}
+                        </b>
+                        {meta.badge && !isSelected && (
+                          <span className="hidden sm:inline-flex shrink-0 px-2 py-0.5 rounded-full bg-mint text-brand-dark text-[10px] font-black">
+                            {lt(locale, meta.badge)}
+                          </span>
+                        )}
+                        {isSelected && <Check size={16} className="text-brand shrink-0" />}
+                      </div>
+                      <p className="text-xs text-sub font-medium mt-1 leading-relaxed">
+                        {lt(locale, meta.desc)}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {qFoot(true)}
+          </>
+        )}
+
         {/* STEP 2: WHO */}
         {q === 'who' && (
           <>
@@ -284,7 +365,7 @@ export function PlannerWizard({
                   <button
                     key={w}
                     type="button"
-                    onClick={() => { setAns((a) => ({ ...a, who: w })); setStep(2); }}
+                    onClick={() => { setAns((a) => ({ ...a, who: w })); setStep(step + 1); }}
                     className={`p-4 sm:p-5 rounded-2xl border text-start flex items-start gap-4 transition-all duration-200 cursor-pointer ${
                       isSelected 
                         ? 'border-brand bg-mint/50 ring-2 ring-brand/30 shadow-md shadow-brand/10' 
@@ -331,7 +412,7 @@ export function PlannerWizard({
                   <button 
                     key={n} 
                     type="button"
-                    onClick={() => { setAns((a) => ({ ...a, days: n })); setStep(3); }} 
+                    onClick={() => { setAns((a) => ({ ...a, days: n })); setStep(step + 1); }} 
                     className={`py-4 px-3 rounded-2xl border text-center transition-all cursor-pointer ${
                       isSelected 
                         ? 'border-brand bg-brand text-surface shadow-md shadow-brand/20 scale-105' 
@@ -409,7 +490,7 @@ export function PlannerWizard({
 
             <button
               type="button"
-              onClick={() => setStep(4)}
+              onClick={() => setStep(step + 1)}
               className="mt-8 w-full h-12 rounded-2xl bg-brand hover:bg-brand-dark text-surface font-black text-sm inline-flex items-center justify-center gap-2 shadow-md shadow-brand/20 transition cursor-pointer"
             >
               <span>{t('continue')}</span>
@@ -431,7 +512,7 @@ export function PlannerWizard({
                   <button 
                     key={b} 
                     type="button"
-                    onClick={() => { setAns((a) => ({ ...a, budget: b })); setStep(5); }} 
+                    onClick={() => { setAns((a) => ({ ...a, budget: b })); setStep(step + 1); }} 
                     className={`p-5 rounded-2xl border text-center transition-all cursor-pointer ${
                       isSelected 
                         ? 'border-brand bg-mint/60 ring-2 ring-brand/30 shadow-md shadow-brand/10' 
@@ -474,7 +555,7 @@ export function PlannerWizard({
                     type="button"
                     onClick={() => { 
                       setAns((a) => ({ ...a, pace: p })); 
-                      setStep(QUESTIONS.length); 
+                      setStep(step + 1); 
                       setSeed((s) => s + 1); 
                     }} 
                     className={`p-5 rounded-2xl border text-center flex flex-col items-center justify-between transition-all cursor-pointer ${

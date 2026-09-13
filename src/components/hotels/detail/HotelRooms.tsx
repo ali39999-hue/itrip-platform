@@ -396,7 +396,7 @@ export function HotelRooms({ booking, hotel, onApplyCombo, onOpenEdit }: HotelRo
                       <div className="flex items-center justify-start md:justify-end gap-2">
                         <Select
                           value={String(qty)}
-                          onValueChange={(v) => { if (!v) return; const val = +v; setSel((s) => { const n = { ...s }; if (val) n[k] = val; else delete n[k]; return n; }); }}
+                          onValueChange={(v) => { if (!v && v !== '0') return; const val = +v; setSel((s) => { const n = { ...s }; if (val) n[k] = val; else delete n[k]; return n; }); }}
                           disabled={maxSel < 1}
                         >
                           <SelectTrigger className="w-24 min-h-10 border border-line rounded-[10px] bg-surface text-[12.5px] font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">

@@ -3,9 +3,11 @@ import { useTranslations } from 'next-intl';
 import { COUNTRIES, EXPERIENCE_CATEGORY_META, type CountryId, type ExperienceCategory, type SignatureExperience } from '@/lib/countries';
 import { FLIGHTS, HOTELS, TRANSFERS, ESIM_PACKAGES, INSURANCE_PLANS, PLANNER_MAP } from '@/lib/data';
 import { interpreterGroupPlan } from '@/lib/interpreters';
+import { deriveReturnFlight } from '@/lib/return-flight';
 import { useCountryStore } from '@/stores/country-store';
 
 export type BudgetTier = 'economy' | 'balanced' | 'luxury';
+export type TripType = 'oneway' | 'round';
 export type Pace = 'relaxed' | 'balanced' | 'packed';
 export type Who = 'solo' | 'duo' | 'family' | 'friends';
 
@@ -30,6 +32,7 @@ export interface Answers {
   interests?: ExperienceCategory[];
   budget?: BudgetTier;
   pace?: Pace;
+  tripType?: TripType;
 }
 
 export interface PickedExperience {
@@ -67,6 +70,7 @@ export function usePlanner({
   const { adults, children } = WHO_MAP[who];
   const travelers = adults + children;
   const budget = ans.budget ?? 'balanced';
+  const tripType: TripType = ans.tripType ?? 'round';
   const paceBase = ans.pace ?? 'balanced';
   const pace: Pace = tune.more ? (paceBase === 'relaxed' ? 'balanced' : 'packed') : paceBase;
   const interests = useMemo(() => ans.interests ?? [], [ans.interests]);
@@ -118,7 +122,9 @@ export function usePlanner({
 
     const rooms = Math.max(1, Math.ceil(adults / 2) + (children > 0 ? 1 : 0));
     const nights = Math.max(1, days - 1);
+    const returnFlight = tripType === 'round' ? deriveReturnFlight(flight) : null;
     const flightTotal = flight.price * travelers;
+    const returnFlightTotal = returnFlight ? returnFlight.price * travelers : 0;
     const hotelTotal = hotel.pricePerNight * nights * rooms;
     const expTotalAll = picked.reduce((s, p) => s + p.e.fromPrice, 0) * travelers;
 
@@ -136,18 +142,18 @@ export function usePlanner({
       (addOnEsim ? esimTotal : 0) +
       (addOnInsurance ? insuranceTotal : 0) +
       interpreterTotal;
-    const total = flightTotal + hotelTotal + expTotalAll + addOnsTotal;
+    const total = flightTotal + returnFlightTotal + hotelTotal + expTotalAll + addOnsTotal;
     const overBy = expTotalAll - capPerPerson * travelers;
 
     return {
-      map, flight, hotel, transfer, esim, insurance, picked, rooms, nights,
-      flightTotal, hotelTotal, expTotalAll, transferTotal, esimTotal, insuranceTotal,
+      map, flight, returnFlight, hotel, transfer, esim, insurance, picked, rooms, nights,
+      flightTotal, returnFlightTotal, hotelTotal, expTotalAll, transferTotal, esimTotal, insuranceTotal,
       interpreterTotal, interpreterDays, gi, suggestInterpreter,
       addOnsTotal, total, overBy, matched: picked.length,
     };
-  }, [c, who, days, adults, children, interests, budget, pace, travelers, seed, tune, addOnTransfer, addOnEsim, addOnInsurance, addOnInterpreter, t, isEn]);
+  }, [c, who, days, adults, children, interests, budget, tripType, pace, travelers, seed, tune, addOnTransfer, addOnEsim, addOnInsurance, addOnInterpreter, t, isEn]);
 
-  return { plan, c, who, days, travelers, budget, pace, interests };
+  return { plan, c, who, days, travelers, adults, children, budget, pace, interests, tripType };
 }
 
 export type PlanPackage = ReturnType<typeof usePlanner>['plan'];

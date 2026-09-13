@@ -5,6 +5,8 @@ import type { CountryId } from '@/lib/countries';
 import { formatDistance } from '@/lib/format';
 import { HOTELS } from '@/lib/data';
 import { EcardoTravelClient, type EcardoOffer } from '@/domains/supplier/adapters/EcardoTravelClient';
+import { NadiaHotelSupplierAdapter } from '@/domains/supplier/adapters/NadiaHotelSupplierAdapter';
+import type { HotelPropertyResult } from '@/domains/supplier/hotel-supplier-port';
 
 export function detectCountryId(cityFa?: string, cityEn?: string): CountryId {
   const s = `${cityFa || ''} ${cityEn || ''}`.toLowerCase();
@@ -652,6 +654,15 @@ export async function getHotelByIdAsync(id: string): Promise<DetailedHotelWithMe
   const local = getHotelById(id);
   if (local) return local;
 
+  // Nadia CRS has no B2C detail endpoint — resolve ids from the recent-search cache
+  if (id.startsWith('nadia_')) {
+    const cached = nadiaResultCache.get(id);
+    if (cached && Date.now() - cached.at <= NADIA_RESULT_CACHE_TTL_MS) {
+      return mapNadiaPropertyToHotel(cached.prop, cached.city);
+    }
+    return null;
+  }
+
   // External / eCardo live hotel resolution
   try {
     const client = getEcardoTravelClient();
@@ -741,6 +752,113 @@ export function mapEcardoOfferToHotel(offer: EcardoOffer): DetailedHotelWithMeta
 }
 
 /**
+ * Nadia CRS live augmentation — credential-gated (NADIA_CRS_USERNAME / NADIA_CRS_PASSWORD).
+ * Silently skipped when unconfigured; never fabricates inventory.
+ * Results are cached so nadia_ hotel ids stay resolvable for the detail page.
+ */
+
+const NADIA_RESULT_CACHE_TTL_MS = 30 * 60 * 1000;
+const nadiaResultCache = new Map<string, { prop: HotelPropertyResult; city: string; at: number }>();
+
+function cacheNadiaResults(props: HotelPropertyResult[], city: string): void {
+  const now = Date.now();
+  for (const [key, value] of nadiaResultCache) {
+    if (now - value.at > NADIA_RESULT_CACHE_TTL_MS) nadiaResultCache.delete(key);
+  }
+  for (const prop of props) {
+    nadiaResultCache.set(`nadia_${prop.hotelId}`, { prop, city, at: now });
+  }
+}
+
+function nadiaDefaultDates(): { checkIn: string; checkOut: string } {
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  return {
+    checkIn: fmt(new Date(Date.now() + 2 * 86_400_000)),
+    checkOut: fmt(new Date(Date.now() + 4 * 86_400_000)),
+  };
+}
+
+export function mapNadiaPropertyToHotel(prop: HotelPropertyResult, city: string): DetailedHotelWithMeta {
+  const firstRate = prop.rates[0];
+  const price = firstRate?.pricePerNight ?? 0;
+  const heroImage = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80';
+  const roomTypes = prop.rates.slice(0, 5).map((r) => ({
+    id: r.roomId,
+    name: r.roomName,
+    capacity: 2,
+    pricePerNight: r.pricePerNight,
+    breakfast: r.mealPlan !== 'ROOM_ONLY',
+    available: 4,
+  }));
+
+  return {
+    id: `nadia_${prop.hotelId}`,
+    name: prop.name,
+    nameEn: prop.name,
+    city,
+    cityEn: city,
+    countryId: detectCountryId(prop.name, city),
+    stars: prop.stars || 3,
+    heroImage,
+    galleryImages: [heroImage],
+    pricePerNight: price,
+    rating: prop.rating || 4.0,
+    reviewsCount: 24,
+    propertyType: 'hotel',
+    imageQuery: prop.name,
+    description: `${prop.name} — موجودی زنده از تامین‌کننده نادیا (${city})`,
+    address: prop.address || city,
+    amenities: ['wifi', 'breakfast', 'parking'],
+    roomTypes,
+    detailedRooms: roomTypes,
+    distanceFromCenter: '',
+    location: { lat: 35.6892, lng: 51.389 },
+    freeCancellation: firstRate?.refundable ?? false,
+  };
+}
+
+async function tryNadiaLiveSearch(
+  params: HotelSearchParams,
+  targetCity: string,
+  localResponse: HotelSearchResponse,
+): Promise<HotelSearchResponse | null> {
+  if (!NadiaHotelSupplierAdapter.isConfigured()) return null;
+  try {
+    const adapter = new NadiaHotelSupplierAdapter();
+    const { checkIn, checkOut } = nadiaDefaultDates();
+    const props = await Promise.race([
+      adapter.search({ city: targetCity, checkIn, checkOut, rooms: 1, guests: 2 }),
+      new Promise<null>((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000)),
+    ]);
+    if (!Array.isArray(props) || props.length === 0) return null;
+
+    cacheNadiaResults(props, targetCity);
+    const liveHotels = props.map((p) => mapNadiaPropertyToHotel(p, targetCity));
+
+    // Filter live hotels by params (stars unknown → kept, price applied)
+    const filteredLive = liveHotels.filter((h) => {
+      if (params.stars && params.stars.length > 0 && h.stars > 0 && !params.stars.includes(h.stars)) return false;
+      if (params.minPrice && h.pricePerNight < params.minPrice) return false;
+      if (params.maxPrice && h.pricePerNight > params.maxPrice) return false;
+      return true;
+    });
+    if (filteredLive.length === 0) return null;
+
+    const existingNames = new Set(filteredLive.map((h) => h.name));
+    const deduplicatedLocal = localResponse.hotels.filter((h) => !existingNames.has(h.name));
+    const combined = [...filteredLive, ...deduplicatedLocal];
+
+    return {
+      ...localResponse,
+      hotels: combined.slice(0, params.limit || 12),
+      total: combined.length,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Async live hotel search augmenting canonical inventory with real eCardo Travel offers.
  * Automatically falls back to canonical search if network is slow or offline.
  */
@@ -748,8 +866,12 @@ export async function searchHotelsLive(params: HotelSearchParams): Promise<Hotel
   const localResponse = searchHotels(params);
   const targetCity = (params.city || params.query || '').trim();
 
-  // If query specifies a city, attempt to enrich with live eCardo inventory
+  // If query specifies a city, attempt to enrich with live supplier inventory
   if (targetCity) {
+    // Nadia CRS first (newest verified live source, credential-gated)
+    const nadiaResponse = await tryNadiaLiveSearch(params, targetCity, localResponse);
+    if (nadiaResponse) return nadiaResponse;
+
     try {
       const client = getEcardoTravelClient();
       const liveRes = await Promise.race([

@@ -153,6 +153,9 @@ export default function HotelDetailPage() {
       subtitle: `${num(capacity.n, locale)} ${t('navRooms')} • ${num(booking.nights.length, locale)} ${t('duration')} • ${t('passengersSummary', { adults: booking.adults, children: booking.children })}`,
       amount: amountToman,
       travelDate: booking.checkin,
+      adults: booking.adults,
+      children: booking.children,
+      meta: { adults: String(booking.adults), children: String(booking.children), rooms: String(capacity.n) },
     });
     router.push('/checkout');
   }

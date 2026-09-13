@@ -53,8 +53,20 @@ export function BookingPanel({ booking, hotel, onBook, onOpenEdit }: BookingPane
     if (children > 0 && capacity.c < children) needs.push(lt(locale, { fa: 'جای کودک در نرخ‌های انتخابی لحاظ نشده است', en: 'Child occupancy not covered', ar: 'لا تشمل الأسعار المختارة مقاعد الأطفال', zh: '所选价格未包含儿童床位', ru: 'Выбранные тарифы не учитывают детей' }));
   }
 
-  const chosenPlans = Object.keys(sel).map((k) => PLANS[k.split('|')[1] as PlanId].refund);
-  const worst = chosenPlans.includes('none') ? 'none' : chosenPlans.includes('partial') ? 'partial' : 'free';
+  // Live room selections use the key suffix 'live', which has no entry in the
+  // static PLANS catalogue — look up safely or the panel crashes the moment a
+  // live room quantity is picked.
+  const chosenPlans = Object.keys(sel)
+    .map((k) => PLANS[k.split('|')[1] as PlanId])
+    .filter((p): p is (typeof PLANS)[PlanId] => Boolean(p))
+    .map((p) => p.refund);
+  const worst = chosenPlans.includes('none')
+    ? 'none'
+    : chosenPlans.includes('partial')
+      ? 'partial'
+      : chosenPlans.length > 0 && !isLive
+        ? 'free'
+        : 'policy';
   const dl = new Date(new Date(checkin + 'T14:00:00').getTime() - FREE_CANCEL_HOURS * 36e5);
   const canBook = capacity.n > 0 && needs.length === 0;
   // Jalali for fa/ar readers (hotel dates are consumed in Jalali in Iran),

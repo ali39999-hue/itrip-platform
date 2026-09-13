@@ -51,6 +51,8 @@ export default function PlanPage() {
       if (ints.length) a.interests = ints;
       if (['economy', 'balanced', 'luxury'].includes(p.get('bud') ?? '')) a.budget = p.get('bud') as BudgetTier;
       if (['relaxed', 'balanced', 'packed'].includes(p.get('pace') ?? '')) a.pace = p.get('pace') as Pace;
+      const tt = p.get('tt');
+      if (tt === 'round' || tt === 'oneway') a.tripType = tt;
       if (a.dest) fromQuery = a;
     }
 
@@ -72,6 +74,7 @@ export default function PlanPage() {
     if (ans.interests?.length) p.set('int', ans.interests.join(','));
     if (ans.budget) p.set('bud', ans.budget);
     if (ans.pace) p.set('pace', ans.pace);
+    if (ans.tripType) p.set('tt', ans.tripType);
     
     const shareQuery = p.toString() ? `?${p.toString()}` : '';
     const fullUrl = typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}${shareQuery}` : '';

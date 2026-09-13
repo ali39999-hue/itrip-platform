@@ -10,8 +10,10 @@ import { getWallet, getMyBookings } from '@/actions/booking';
 import { updateProfileDetails, getMyKyc } from '@/actions/auth';
 import { getAccountPanelConfigAction } from '@/actions/account-panel';
 import { LOYALTY_TIERS } from '@/lib/loyalty-tiers';
+import { isKycDataComplete } from '@/lib/kyc-wizard';
 import { AccountSidebar } from '@/components/account/AccountSidebar';
 import { PushNotificationAsk } from '@/components/account/PushNotificationAsk';
+import { KycCompletionSheet } from '@/components/account/KycCompletionSheet';
 import {
   UserRound,
   Wallet,
@@ -52,6 +54,7 @@ export default function AccountPage() {
   }>>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [kycSheetOpen, setKycSheetOpen] = useState(false);
   const [panelConfig, setPanelConfig] = useState<Awaited<ReturnType<typeof getAccountPanelConfigAction>> | null>(null);
 
   const [formState, setFormState] = useState({
@@ -172,7 +175,7 @@ export default function AccountPage() {
         return;
       }
 
-      const complete = Boolean(payload.firstNameFa && payload.lastNameFa && payload.nationalId);
+      const complete = isKycDataComplete({ ...payload, nationalId });
       updateKyc({
         firstNameFa: payload.firstNameFa ?? '',
         lastNameFa: payload.lastNameFa ?? '',
@@ -211,12 +214,47 @@ export default function AccountPage() {
     }
   }
 
-  function openProfileEditor() {
-    setIsEditing(true);
-    setProfileError('');
-    setTimeout(() => {
-      document.getElementById('profile-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 60);
+  /** «تکمیل اطلاعات» = ویزارد کامل KYC (مشخصات → احراز هویت → بازبینی) */
+  function handleKycCompleted(data: {
+    firstNameFa: string;
+    lastNameFa: string;
+    firstNameEn: string;
+    lastNameEn: string;
+    nationalId: string;
+    passportNo: string;
+    passportExpiry: string;
+  }) {
+    updateKyc({
+      firstNameFa: data.firstNameFa,
+      lastNameFa: data.lastNameFa,
+      firstNameEn: data.firstNameEn,
+      lastNameEn: data.lastNameEn,
+    });
+    useAuthStore.setState((s) => ({
+      user: s.user
+        ? {
+            ...s.user,
+            firstNameFa: data.firstNameFa || s.user.firstNameFa,
+            lastNameFa: data.lastNameFa || s.user.lastNameFa,
+            firstNameEn: data.firstNameEn || s.user.firstNameEn,
+            lastNameEn: data.lastNameEn || s.user.lastNameEn,
+            nationalId: data.nationalId || s.user.nationalId,
+            passportNo: data.passportNo || s.user.passportNo,
+            profileComplete: true,
+            kycApproved: true,
+          }
+        : null,
+    }));
+    setFormState((prev) => ({
+      ...prev,
+      firstNameFa: data.firstNameFa || prev.firstNameFa,
+      lastNameFa: data.lastNameFa || prev.lastNameFa,
+      firstNameEn: data.firstNameEn || prev.firstNameEn,
+      lastNameEn: data.lastNameEn || prev.lastNameEn,
+      nationalId: data.nationalId || prev.nationalId,
+      passportNo: data.passportNo || prev.passportNo,
+      passportExpiry: data.passportExpiry || prev.passportExpiry,
+    }));
   }
 
   if (!user) {
@@ -294,13 +332,13 @@ export default function AccountPage() {
                   {lt(locale, { fa: 'اطلاعات هویتی شما کامل نیست', en: 'Your identity details are incomplete', ar: 'بياناتك الهوية غير مكتملة', zh: '您的身份信息尚未完成', ru: 'Ваши данные не заполнены' })}
                 </p>
                 <p className="text-xs text-sub font-bold m-0 mt-1 leading-relaxed">
-                  {lt(locale, { fa: 'برای صدور قطعی بلیط و رزرو، نام، نام خانوادگی و کد ملی خود را تکمیل کنید.', en: 'Complete your name and national ID to finalize tickets and bookings.', ar: 'أكمل اسمك ورقم الهوية لإتمام الحجز.', zh: '请完成姓名和身份证号以完成预订。', ru: 'Заполните имя и национальный ID для завершения бронирования.' })}
+                  {lt(locale, { fa: 'برای احراز هویت (KYC) و صدور قطعی بلیط و رزرو، نام، نام خانوادگی و کد ملی یا گذرنامه خود را تکمیل کنید.', en: 'Complete your name and national ID (or passport) to verify your identity and finalize bookings.', ar: 'أكمل اسمك ورقم الهوية (أو جواز السفر) لإكمال التحقق وإتمام الحجز.', zh: '请填写姓名和身份证号（或护照）以完成实名认证和预订。', ru: 'Заполните имя и национальный ID (или паспорт) для верификации и завершения бронирования.' })}
                 </p>
               </div>
             </div>
             <button
               type="button"
-              onClick={openProfileEditor}
+              onClick={() => setKycSheetOpen(true)}
               className="shrink-0 min-h-[44px] px-5 rounded-xl bg-brand-dark hover:bg-deep text-surface text-xs font-black transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               {lt(locale, { fa: 'تکمیل اطلاعات', en: 'Complete details', ar: 'إكمال البيانات', zh: '完善信息', ru: 'Заполнить данные' })}
@@ -480,9 +518,18 @@ export default function AccountPage() {
             <div className="mt-4">
               <span className={`text-sm font-black ${kycDone ? 'text-success' : 'text-gold'}`}>
                 {kycDone
-                  ? lt(locale, { fa: 'احراز هویت شده (پاسپورت تایید شد)', en: 'Verified & Passport Approved', ar: 'تم التحقق بنجاح', zh: '已通过身份与护照验证', ru: 'Верифицирован' })
+                  ? lt(locale, { fa: 'احراز هویت تکمیل شد', en: 'Identity Verified', ar: 'تم التحقق من الهوية', zh: '身份认证已完成', ru: 'Личность подтверждена' })
                   : lt(locale, { fa: 'در انتظار تکمیل مدارک', en: 'Pending Verification', ar: 'في انتظار الاستكمال', zh: '待完善信息', ru: 'Ожидает завершения' })}
               </span>
+              {!kycDone && (
+                <button
+                  type="button"
+                  onClick={() => setKycSheetOpen(true)}
+                  className="mt-3 w-full min-h-[44px] rounded-xl bg-gold-soft hover:bg-gold/25 text-gold border border-gold/40 text-xs font-black transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                >
+                  {lt(locale, { fa: 'تکمیل احراز هویت', en: 'Complete Verification', ar: 'إكمال التحقق', zh: '完成认证', ru: 'Пройти верификацию' })}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -839,6 +886,21 @@ export default function AccountPage() {
           </button>
         </div>
       </main>
+
+      {/* «تکمیل اطلاعات» → KYC completion wizard (bottom sheet on mobile) */}
+      <KycCompletionSheet
+        open={kycSheetOpen}
+        onClose={() => setKycSheetOpen(false)}
+        initial={{
+          firstNameFa: user.firstNameFa || formState.firstNameFa,
+          lastNameFa: user.lastNameFa || formState.lastNameFa,
+          firstNameEn: user.firstNameEn || formState.firstNameEn,
+          lastNameEn: user.lastNameEn || formState.lastNameEn,
+          nationalId: user.nationalId || formState.nationalId,
+          passportNo: user.passportNo || formState.passportNo,
+        }}
+        onCompleted={handleKycCompleted}
+      />
     </div>
   );
 }

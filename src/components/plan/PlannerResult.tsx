@@ -49,7 +49,7 @@ export function PlannerResult(props: PlannerResultProps) {
   const [addOnInsurance, setAddOnInsurance] = useState(true);
   const [addOnInterpreter, setAddOnInterpreter] = useState(true);
 
-  const { plan, c, days, travelers, budget, pace } = usePlanner({
+  const { plan, c, days, travelers, adults, children, budget, pace } = usePlanner({
     ans, tune, addOnTransfer, addOnEsim, addOnInsurance, addOnInterpreter, seed, isEn
   });
 
@@ -57,10 +57,12 @@ export function PlannerResult(props: PlannerResultProps) {
     setBookingContext({
       type: 'tours',
       title: `${t('kicker')} · ${countryName(c.id, locale)} · ${num(days, locale)} ${t('qDays')}`,
-      subtitle: `${num(travelers, locale)} pax · ${plan.flight.flightNo} · ${plan.hotel.name} · ${num(plan.picked.length, locale)} exp`,
+      subtitle: `${num(travelers, locale)} pax · ${plan.flight.flightNo}${plan.returnFlight ? ` ↔ ${plan.returnFlight.flightNo}` : ''} · ${plan.hotel.name} · ${num(plan.picked.length, locale)} exp`,
       amount: plan.total,
       travelDate: daysFromNow(days + 7),
-      meta: { planner: 'smart', country: c.id, budget, pace },
+      adults,
+      children,
+      meta: { planner: 'smart', country: c.id, budget, pace, tripType: plan.returnFlight ? 'round' : 'oneway', adults: String(adults), children: String(children) },
     });
     router.push('/checkout');
   }

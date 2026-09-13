@@ -12,17 +12,24 @@ import { ProductionTelegramProvider, TelegramAuthPayload } from '@/domains/event
 export type AuthChannel = 'phone' | 'email' | 'telegram' | 'whatsapp' | 'wechat' | 'bale';
 
 /**
- * KYC completeness = نام و نام خانوادگی + کد ملی. کاربران جدید بعد از
- * ثبت‌نام اولیه تا تکمیل این سه فیلد، profileComplete=false هستند و باید
- * به تکمیل اطلاعات هویتی هدایت شوند. Staff/ERP مشمول KYC مشتری نیست.
+ * KYC completeness = نام و نام خانوادگی + کد ملی (یا گذرنامه برای اتباع غیرایرانی،
+ * هم‌قاعده با گیت KYC مرحله خرید). کاربران جدید بعد از ثبت‌نام اولیه تا تکمیل این
+ * فیلدها profileComplete=false هستند و باید به تکمیل اطلاعات هویتی هدایت شوند.
+ * Staff/ERP مشمول KYC مشتری نیست.
  */
 function isProfileComplete(
   u:
-    | { firstNameFa?: string | null; lastNameFa?: string | null; nationalId?: string | null; [key: string]: unknown }
+    | {
+        firstNameFa?: string | null;
+        lastNameFa?: string | null;
+        nationalId?: string | null;
+        passportNo?: string | null;
+        [key: string]: unknown;
+      }
     | null
     | undefined,
 ): boolean {
-  return Boolean(u?.firstNameFa && u?.lastNameFa && u?.nationalId);
+  return Boolean(u?.firstNameFa && u?.lastNameFa && (u?.nationalId || u?.passportNo));
 }
 
 export async function loginWithCredentials(email: string, pass: string) {
@@ -147,6 +154,7 @@ export async function verifyOtpAndLogin(identifier: string, otp: string, channel
         firstNameFa: true,
         lastNameFa: true,
         nationalId: true,
+        passportNo: true,
         role: true,
         telegramId: true,
         whatsappPhone: true,
@@ -181,7 +189,7 @@ export async function verifyOtpAndLogin(identifier: string, otp: string, channel
       email: user?.email || (channel === 'email' ? identifier : undefined),
       firstNameFa: displayName,
       lastNameFa: user?.lastNameFa || '',
-      kycApproved: false,
+      kycApproved: role === 'admin' ? true : isProfileComplete(user),
       profileComplete: role === 'admin' ? true : isProfileComplete(user),
       role,
       loyaltyTier: 'BRONZE' as const,
@@ -271,7 +279,7 @@ export async function loginWithTelegram(payload: TelegramAuthPayload) {
       email: user.email || undefined,
       firstNameFa: user.firstNameFa || user.name || fullName,
       lastNameFa: user.lastNameFa || '',
-      kycApproved: false,
+      kycApproved: role === 'admin' ? true : isProfileComplete(user),
       profileComplete: role === 'admin' ? true : isProfileComplete(user),
       role,
       loyaltyTier: 'BRONZE' as const,
@@ -359,6 +367,7 @@ export async function loginWithPassword(identifier: string, password: string) {
         firstNameFa: true,
         lastNameFa: true,
         nationalId: true,
+        passportNo: true,
       },
     });
   } catch (dbErr) {
@@ -397,7 +406,7 @@ export async function loginWithPassword(identifier: string, password: string) {
       email: user.email || undefined,
       firstNameFa: user.firstNameFa || user.name || 'مدیر',
       lastNameFa: user.lastNameFa || 'سیستم',
-      kycApproved: false,
+      kycApproved: role === 'admin' ? true : isProfileComplete(user),
       profileComplete: role === 'admin' ? true : isProfileComplete(user),
       role,
       loyaltyTier: 'BRONZE' as const,
@@ -472,6 +481,8 @@ export async function getMyKyc(): Promise<{
         lastNameFa: true,
         firstNameEn: true,
         lastNameEn: true,
+        nationalId: true,
+        passportNo: true,
       },
     });
 
@@ -486,7 +497,10 @@ export async function getMyKyc(): Promise<{
         lastNameFa: user.lastNameFa || '',
         firstNameEn: user.firstNameEn || '',
         lastNameEn: user.lastNameEn || '',
-        kycApproved: false,
+        // KYC state is derived from the identity data on file — the User model
+        // has no approval column, so a hardcoded false here would flip a
+        // completed user back to "pending" after every reload.
+        kycApproved: isProfileComplete(user),
       },
     };
   } catch (err: unknown) {
@@ -516,6 +530,7 @@ export async function getSessionUser() {
         firstNameFa: true,
         lastNameFa: true,
         nationalId: true,
+        passportNo: true,
         role: true,
         telegramId: true,
         whatsappPhone: true,
@@ -536,7 +551,7 @@ export async function getSessionUser() {
         email: user.email || undefined,
         firstNameFa: user.firstNameFa || user.name || 'کاربر',
         lastNameFa: user.lastNameFa || 'فیروزو',
-        kycApproved: false,
+        kycApproved: role === 'admin' ? true : isProfileComplete(user),
         profileComplete: role === 'admin' ? true : isProfileComplete(user),
         role,
         loyaltyTier: 'BRONZE' as const,
