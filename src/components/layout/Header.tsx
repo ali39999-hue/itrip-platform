@@ -82,23 +82,25 @@ export function Header() {
 
         {/* User Profile & Account Actions in Mobile Drawer */}
         {user ? (
-          <div className="p-3.5 border-b border-line bg-surface">
-            <div className="flex items-center justify-between gap-3 mb-2.5">
+          <div className="p-3 sm:p-3.5 border-b border-line bg-surface">
+            <div className="flex items-center justify-between gap-2.5 sm:gap-3 mb-2.5">
               <Link
                 href="/account"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 min-w-0 flex-1 hover:opacity-90 transition"
+                className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 hover:opacity-90 transition group"
               >
-                <div className="w-10 h-10 rounded-full shadow-xs bg-gradient-to-br from-brand to-brand-dark text-surface flex items-center justify-center text-sm font-black shrink-0">
-                  {user.firstNameFa?.[0] || user.firstNameEn?.[0] || <UserRound size={18} />}
+                <div className="w-10 h-10 rounded-full shadow-xs bg-gradient-to-br from-brand to-brand-dark text-surface flex items-center justify-center text-sm font-black shrink-0 select-none group-hover:scale-105 transition">
+                  {((user.firstNameFa && !/^[0-9۰-۹+ -]+$/.test(user.firstNameFa)) || (user.firstNameEn && !/^[0-9۰-۹+ -]+$/.test(user.firstNameEn)))
+                    ? (user.firstNameFa?.[0] || user.firstNameEn?.[0] || '').toUpperCase()
+                    : <UserRound size={18} />}
                 </div>
-                <div className="min-w-0">
-                  <h3 className="text-xs font-black text-ink truncate">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-xs sm:text-[13px] font-black text-ink truncate leading-tight">
                     {((locale === 'fa' ? user.firstNameFa : (user.firstNameEn || user.firstNameFa)) || user.phone)}
                   </h3>
-                  <span className="text-[10.5px] font-bold text-brand-dark flex items-center gap-1">
-                    <Sparkles size={11} />
-                    <span>{lt(locale, { fa: 'داشبورد کاربری', en: 'User Dashboard', ar: 'لوحة الحساب', zh: '用户控制台', ru: 'Личный кабинет' })}</span>
+                  <span className="text-[10.5px] font-bold text-brand-dark flex items-center gap-1 mt-0.5">
+                    <Sparkles size={11} className="shrink-0" />
+                    <span className="truncate">{lt(locale, { fa: 'داشبورد کاربری', en: 'User Dashboard', ar: 'لوحة الحساب', zh: '用户控制台', ru: 'Личный кабинет' })}</span>
                   </span>
                 </div>
               </Link>
@@ -108,10 +110,11 @@ export function Header() {
                   logout();
                   setMobileMenuOpen(false);
                 }}
-                className="min-h-[44px] px-3 rounded-xl bg-rose-warm/15 text-rose-warm hover:bg-rose-warm/25 flex items-center gap-1.5 text-xs font-black shrink-0 active:scale-95 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-warm"
+                className="min-h-[40px] sm:min-h-[44px] px-2.5 sm:px-3 rounded-xl bg-rose-warm/15 text-rose-warm hover:bg-rose-warm/25 flex items-center gap-1.5 text-xs font-black shrink-0 whitespace-nowrap active:scale-95 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-warm cursor-pointer"
+                aria-label={lt(locale, { fa: 'خروج از حساب', en: 'Sign Out', ar: 'تسجيل الخروج', zh: '退出登录', ru: 'Выйти' })}
                 title={lt(locale, { fa: 'خروج از حساب', en: 'Sign Out', ar: 'تسجيل الخروج', zh: '退出登录', ru: 'Выйти' })}
               >
-                <LogOut size={14} />
+                <LogOut size={14} className="shrink-0" />
                 <span>{lt(locale, { fa: 'خروج', en: 'Logout', ar: 'خروج', zh: '退出', ru: 'Выход' })}</span>
               </button>
             </div>

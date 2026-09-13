@@ -36,6 +36,7 @@ import { trackFunnel } from '@/lib/analytics';
 import { PassportValidityGuard } from '@/domains/identity/PassportValidityGuard';
 import { getMyTravelerProfilesAction, saveTravelerProfileAction, saveTravelDocumentAction } from '@/actions/travelers';
 import { EnrichedTravelerProfile } from '@/domains/identity/TravelerProfileService';
+import { PassportScanResult } from '@/components/checkout/PassportScanModal';
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -347,18 +348,45 @@ export default function CheckoutPage() {
   });
   const totalPayable = countryPricing.totalPayable;
 
+  function handleApplyScanResult(result: PassportScanResult) {
+    setValue('firstName', result.firstName, { shouldValidate: true });
+    setValue('lastName', result.lastName, { shouldValidate: true });
+    setValue('passportNo', result.passportNo, { shouldValidate: true });
+    if (result.passportExpiryDate) setValue('passportExpiryDate', result.passportExpiryDate, { shouldValidate: true });
+    if (result.birthDate) setValue('birthDate', result.birthDate, { shouldValidate: true });
+    if (result.nationalId) setValue('nationalId', result.nationalId, { shouldValidate: true });
+    if (result.gender) setValue('gender', result.gender, { shouldValidate: true });
+
+    setPassengersList((prev) => {
+      const updated = [...prev];
+      updated[currentPassengerIdx] = {
+        firstName: result.firstName,
+        lastName: result.lastName,
+        nationalId: result.nationalId || prev[currentPassengerIdx]?.nationalId || '',
+        passportNo: result.passportNo,
+        passportExpiryDate: result.passportExpiryDate || prev[currentPassengerIdx]?.passportExpiryDate || '',
+        birthDate: result.birthDate || prev[currentPassengerIdx]?.birthDate || '',
+        gender: result.gender || prev[currentPassengerIdx]?.gender || 'MALE',
+      };
+      return updated;
+    });
+
+    setPassportScanned(true);
+  }
+
   function scanPassport() {
     setScanning(true);
     setTimeout(() => {
-      setValue('firstName', 'ALI');
-      setValue('lastName', 'MOHAMMADI');
-      setValue('passportNo', 'L2948175');
-      setValue('passportExpiryDate', '2028-10-15');
-      setValue('birthDate', '1988-06-15');
-      setValue('nationalId', '0012345678');
-      setValue('gender', 'MALE');
+      handleApplyScanResult({
+        firstName: 'ALI',
+        lastName: 'MOHAMMADI',
+        passportNo: 'L2948175',
+        passportExpiryDate: '2028-10-15',
+        birthDate: '1988-06-15',
+        nationalId: '0012345678',
+        gender: 'MALE',
+      });
       setScanning(false);
-      setPassportScanned(true);
     }, 1400);
   }
 
@@ -692,6 +720,7 @@ export default function CheckoutPage() {
                 errors={errors}
                 scanning={scanning}
                 onScanPassport={scanPassport}
+                onApplyScanResult={handleApplyScanResult}
                 passportScanned={passportScanned}
                 savedProfiles={savedProfiles}
                 onSelectSavedProfile={handleSelectSavedProfile}

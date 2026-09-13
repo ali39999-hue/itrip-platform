@@ -371,8 +371,8 @@ export default function WalletPage() {
           {/* Action Controls & Topup */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
             {/* Deposit / Topup */}
-            <div className="bg-surface border border-line rounded-2xl p-6 md:p-8 shadow-sm">
-              <div className="flex items-center justify-between mb-2">
+            <div className="bg-surface border border-line rounded-2xl p-4 sm:p-6 md:p-8 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <h2 className="font-black text-xl text-ink">{t('deposit')}</h2>
                 <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                   eCardo Gateway
@@ -400,38 +400,46 @@ export default function WalletPage() {
                   <label className="block text-xs font-bold text-sub mb-1.5">
                     {lt(locale, { fa: 'درگاه پرداخت:', en: 'Payment Gateway:', ar: 'بوابة الدفع:', zh: '支付网关：', ru: 'Платежный шлюз:' })}
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-2.5">
                     <button
                       type="button"
                       onClick={() => setDepositGateway('ecardo')}
                       aria-pressed={depositGateway === 'ecardo'}
-                      className={`min-h-[44px] p-2.5 rounded-xl border text-xs font-black transition text-start flex items-center justify-between gap-2 ${
+                      className={`min-h-[50px] p-3 rounded-xl border text-xs font-black transition text-start flex items-center justify-between gap-2.5 overflow-hidden ${
                         depositGateway === 'ecardo'
                           ? 'bg-mint/40 border-brand text-brand-dark shadow-xs'
                           : 'bg-soft border-line text-sub hover:border-brand/40'
                       }`}
                     >
-                      <span className="flex items-center gap-2">
-                        <Globe2 size={18} className={depositGateway === 'ecardo' ? 'text-brand' : 'text-sub'} aria-hidden="true" />
-                        <span>{lt(locale, { fa: 'درگاه ای‌کاردو (بین‌المللی)', en: 'eCardo Gateway', ar: 'بوابة إيكاردو', zh: 'eCardo 跨国网关', ru: 'eCardo' })}</span>
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <Globe2 size={18} className={depositGateway === 'ecardo' ? 'text-brand shrink-0' : 'text-sub shrink-0'} aria-hidden="true" />
+                        <span className="leading-snug break-words">
+                          {lt(locale, { fa: 'درگاه ای‌کاردو (بین‌المللی)', en: 'eCardo Gateway', ar: 'بوابة إيكاردو', zh: 'eCardo 跨国网关', ru: 'eCardo' })}
+                        </span>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-brand/10 text-brand-dark font-bold shrink-0 font-mono">
+                        USD/USDT/CNY
                       </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand/10 text-brand-dark font-bold shrink-0">USD/USDT/CNY</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => { setDepositGateway('shetab'); setDepositCurrency('IRR'); }}
                       aria-pressed={depositGateway === 'shetab'}
-                      className={`min-h-[44px] p-2.5 rounded-xl border text-xs font-black transition text-start flex items-center justify-between gap-2 ${
+                      className={`min-h-[50px] p-3 rounded-xl border text-xs font-black transition text-start flex items-center justify-between gap-2.5 overflow-hidden ${
                         depositGateway === 'shetab'
                           ? 'bg-mint/40 border-brand text-brand-dark shadow-xs'
                           : 'bg-soft border-line text-sub hover:border-brand/40'
                       }`}
                     >
-                      <span className="flex items-center gap-2">
-                        <Landmark size={18} className={depositGateway === 'shetab' ? 'text-brand' : 'text-sub'} aria-hidden="true" />
-                        <span>{lt(locale, { fa: 'شاپرک (شتاب ریالی)', en: 'Shetab Shaparak', ar: 'شتاب شاابراك', zh: 'Shetab 银行卡', ru: 'Shetab' })}</span>
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <Landmark size={18} className={depositGateway === 'shetab' ? 'text-brand shrink-0' : 'text-sub shrink-0'} aria-hidden="true" />
+                        <span className="leading-snug break-words">
+                          {lt(locale, { fa: 'شاپرک (شتاب ریالی)', en: 'Shetab Shaparak', ar: 'شتاب شاابراك', zh: 'Shetab 银行卡', ru: 'Shetab' })}
+                        </span>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-200 text-slate-700 font-bold shrink-0 font-mono">
+                        IRR
                       </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-bold shrink-0">IRR</span>
                     </button>
                   </div>
                 </div>
@@ -458,7 +466,7 @@ export default function WalletPage() {
                             }`}
                           >
                             <CurIcon size={15} aria-hidden="true" />
-                            <span>{c === 'IRR' ? 'تومان (IRR)' : c}</span>
+                            <span className="text-[11px] sm:text-xs leading-tight text-center break-words">{c === 'IRR' ? 'تومان (IRR)' : c}</span>
                           </button>
                         );
                       })}
@@ -502,7 +510,7 @@ export default function WalletPage() {
                       key={amt}
                       type="button"
                       onClick={() => setDepositAmount(String(amt))}
-                      className={`min-h-[44px] py-2 px-1 rounded-xl border text-xs font-black transition active:scale-95 text-center ${
+                      className={`min-h-[44px] py-2 px-1 rounded-xl border text-[11px] sm:text-xs font-black transition active:scale-95 text-center truncate ${
                         depositAmount === String(amt)
                           ? 'bg-mint border-brand text-brand-dark shadow-xs'
                           : 'bg-soft border-line text-sub hover:text-ink hover:border-brand/40'
@@ -596,7 +604,7 @@ export default function WalletPage() {
             </div>
 
             {/* Currency Exchange */}
-            <div className="bg-surface border border-line rounded-2xl p-6 md:p-8 shadow-sm">
+            <div className="bg-surface border border-line rounded-2xl p-4 sm:p-6 md:p-8 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <h2 className="font-black text-xl text-ink">{t('exchange')}</h2>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">

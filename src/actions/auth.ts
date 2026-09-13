@@ -6,6 +6,7 @@ import { signIn, signOut, safeAuth, issueOtp, normalizeIdentifier, getPhoneLooku
 import { prisma } from '@/lib/prisma';
 import { profileUpdateSchema, otpRequestSchema } from '@/lib/validations';
 import { RateLimiter } from '@/lib/security/rate-limiter';
+import { decryptSensitive } from '@/lib/security/crypto-vault';
 import { hasErpRole } from '@/domains/identity/permission-service';
 import { ProductionTelegramProvider, TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
 
@@ -456,6 +457,9 @@ export async function getMyKyc(): Promise<{
     lastNameFa: string;
     firstNameEn: string;
     lastNameEn: string;
+    nationalId?: string;
+    passportNo?: string;
+    passportExpiry?: string;
     kycApproved: boolean;
   };
 }> {
@@ -472,12 +476,19 @@ export async function getMyKyc(): Promise<{
         lastNameFa: true,
         firstNameEn: true,
         lastNameEn: true,
+        nationalId: true,
+        passportNo: true,
+        passportExpiry: true,
       },
     });
 
     if (!user) {
       return { success: false };
     }
+
+    const decryptedNationalId = user.nationalId ? decryptSensitive(user.nationalId) : '';
+    const decryptedPassportNo = user.passportNo ? decryptSensitive(user.passportNo) : '';
+    const decryptedPassportExpiry = user.passportExpiry ? decryptSensitive(user.passportExpiry) : '';
 
     return {
       success: true,
@@ -486,7 +497,10 @@ export async function getMyKyc(): Promise<{
         lastNameFa: user.lastNameFa || '',
         firstNameEn: user.firstNameEn || '',
         lastNameEn: user.lastNameEn || '',
-        kycApproved: false,
+        nationalId: decryptedNationalId,
+        passportNo: decryptedPassportNo,
+        passportExpiry: decryptedPassportExpiry,
+        kycApproved: Boolean(user.nationalId || user.passportNo),
       },
     };
   } catch (err: unknown) {

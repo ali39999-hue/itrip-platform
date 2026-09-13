@@ -1,13 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { Controller, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { type Passenger } from '@/lib/validations';
 import { Input } from '@/components/ui/input';
 import { JalaliDatePicker } from '@/components/ui/DatePicker';
-import { CheckCircle2, BookmarkPlus, ScanLine, Loader2 } from 'lucide-react';
+import { CheckCircle2, BookmarkPlus, ScanLine, Loader2, ChevronDown } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
 import { EnrichedTravelerProfile } from '@/domains/identity/TravelerProfileService';
+import { PassportScanModal, PassportScanResult } from './PassportScanModal';
 
 interface PassengerSectionProps {
   register: UseFormRegister<Passenger>;
@@ -15,6 +17,7 @@ interface PassengerSectionProps {
   errors: FieldErrors<Passenger>;
   scanning?: boolean;
   onScanPassport?: () => void;
+  onApplyScanResult?: (data: PassportScanResult) => void;
   passportScanned?: boolean;
   savedProfiles?: EnrichedTravelerProfile[];
   onSelectSavedProfile?: (profile: EnrichedTravelerProfile) => void;
@@ -32,6 +35,7 @@ export function PassengerSection({
   errors,
   scanning = false,
   onScanPassport,
+  onApplyScanResult,
   passportScanned = false,
   savedProfiles = [],
   onSelectSavedProfile,
@@ -43,6 +47,7 @@ export function PassengerSection({
   passengersStatus = [],
 }: PassengerSectionProps) {
   const locale = useLocale();
+  const [modalOpen, setModalOpen] = useState(false);
 
   const titleText =
     totalPassengers > 1
@@ -139,32 +144,53 @@ export function PassengerSection({
           )}
 
           {onScanPassport && (
-            <button
-              type="button"
-              onClick={onScanPassport}
-              disabled={scanning}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-action hover:bg-action-hover text-ink text-[13px] font-black shadow-elev-1 transition disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer"
-            >
-              {scanning ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                  <span>{lt(locale, { fa: 'در حال اسکن پاسپورت...', en: 'Scanning passport...', ar: 'جاري مسح الجواز...', zh: '正在扫描护照...', ru: 'Сканирование паспорта...' })}</span>
-                </>
-              ) : passportScanned ? (
-                <>
-                  <CheckCircle2 size={16} className="text-success" aria-hidden="true" />
-                  <span>{lt(locale, { fa: 'پاسپورت اسکن شد', en: 'Passport Scanned', ar: 'تم مسح الجواز', zh: '护照扫描完成', ru: 'Паспорт отсканирован' })}</span>
-                </>
-              ) : (
-                <>
-                  <ScanLine size={16} aria-hidden="true" />
-                  <span>{lt(locale, { fa: 'اسکن هوشمند پاسپورت (OCR)', en: 'Smart Passport Scan (OCR)', ar: 'المسح الذكي للجواز (OCR)', zh: '智能护照扫描 (OCR)', ru: 'Умное сканирование паспорта (OCR)' })}</span>
-                </>
-              )}
-            </button>
+            <div className="relative group">
+              <button
+                type="button"
+                onClick={() => setModalOpen(true)}
+                onMouseEnter={() => {
+                  if (!passportScanned && !scanning) {
+                    setModalOpen(true);
+                  }
+                }}
+                disabled={scanning}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-action hover:bg-action-hover text-ink text-[13px] font-black shadow-elev-1 transition disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer"
+              >
+                {scanning ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                    <span>{lt(locale, { fa: 'در حال اسکن پاسپورت...', en: 'Scanning passport...', ar: 'جاري مسح الجواز...', zh: '正在扫描护照...', ru: 'Сканирование паспорта...' })}</span>
+                  </>
+                ) : passportScanned ? (
+                  <>
+                    <CheckCircle2 size={16} className="text-success" aria-hidden="true" />
+                    <span>{lt(locale, { fa: 'پاسپورت اسکن شد', en: 'Passport Scanned', ar: 'تم مسح الجواز', zh: '护照扫描完成', ru: 'Паспорт отсканирован' })}</span>
+                  </>
+                ) : (
+                  <>
+                    <ScanLine size={16} aria-hidden="true" />
+                    <span>{lt(locale, { fa: 'اسکن هوشمند پاسپورت (OCR)', en: 'Smart Passport Scan (OCR)', ar: 'المسح الذكي للجواز (OCR)', zh: '智能护照扫描 (OCR)', ru: 'Умное сканирование паспорта (OCR)' })}</span>
+                    <ChevronDown size={14} className="opacity-70 group-hover:translate-y-0.5 transition-transform" />
+                  </>
+                )}
+              </button>
+            </div>
           )}
         </div>
       </div>
+
+      {/* Passport Scan Method Choice Modal */}
+      <PassportScanModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        onScanSuccess={(result) => {
+          if (onApplyScanResult) {
+            onApplyScanResult(result);
+          } else if (onScanPassport) {
+            onScanPassport();
+          }
+        }}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>

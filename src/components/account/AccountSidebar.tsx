@@ -91,7 +91,13 @@ export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps)
         ru: 'Путешественник Firuzo',
       });
 
-  const initials = (user?.firstNameFa?.[0] || user?.firstNameEn?.[0] || 'ف').toUpperCase();
+  const hasAlphabeticName = Boolean(
+    userFullName && !/^[0-9۰-۹+ -]+$/.test(userFullName)
+  );
+
+  const initials = hasAlphabeticName
+    ? (user?.firstNameFa?.[0] || user?.firstNameEn?.[0] || 'ف').toUpperCase()
+    : null;
 
   const activeHrefs = SECTION_HREFS[activeSection] || [];
   const isActive = (href: string) => activeHrefs.includes(href) || (href !== '/account' && pathname.startsWith(href));
@@ -117,31 +123,43 @@ export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps)
       {/* Mobile Account Navigation Bar (md:hidden) — ensures full access to all sections and logout on mobile */}
       <div className="md:hidden w-full space-y-2.5 mb-3">
         {/* Mobile Profile Card with Quick Logout */}
-        <div className="flex items-center justify-between gap-3 p-3.5 bg-surface rounded-2xl border border-line shadow-2xs">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-10 h-10 rounded-full shadow-xs bg-gradient-to-br from-brand to-brand-dark text-surface flex items-center justify-center text-sm font-black shrink-0">
-              {userFullName ? initials : <UserRound size={18} />}
+        <div className="flex items-center justify-between gap-2.5 sm:gap-3 p-3 sm:p-3.5 bg-surface rounded-2xl border border-line shadow-2xs">
+          <Link
+            href="/account"
+            className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 hover:opacity-90 transition group"
+            title={lt(locale, { fa: 'مشاهده حساب کاربری', en: 'View account', ar: 'عرض الحساب', zh: '查看账户', ru: 'Профиль' })}
+          >
+            <div className="w-10 h-10 rounded-full shadow-xs bg-gradient-to-br from-brand to-brand-dark text-surface flex items-center justify-center text-sm font-black shrink-0 select-none group-hover:scale-105 transition">
+              {initials ? initials : <UserRound size={18} />}
             </div>
-            <div className="min-w-0">
-              <h3 className="text-xs font-black text-ink truncate">{userName}</h3>
-              <div className="flex items-center gap-1.5 text-[10.5px] font-bold text-sub">
-                <Star size={10} className="fill-action text-action shrink-0" />
-                <span>{tierLabel}</span>
-                <span>·</span>
-                <span className="num">{(loyalty?.totalCoins ?? 0).toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')} {pointsLabel}</span>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-xs sm:text-[13px] font-black text-ink truncate leading-tight">{userName}</h3>
+              <div className="flex items-center gap-1 sm:gap-1.5 text-[10.5px] font-bold text-sub min-w-0 mt-0.5">
+                <Star size={11} className="fill-action text-action shrink-0" />
+                <span className="shrink-0 font-bold">{tierLabel}</span>
+                <span className="text-sub/40 shrink-0">·</span>
+                <span
+                  className="num truncate min-w-0"
+                  title={`${(loyalty?.totalCoins ?? 0).toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')} ${pointsLabel}`}
+                >
+                  {(loyalty?.totalCoins ?? 0).toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}{' '}
+                  <span className="hidden sm:inline">{pointsLabel}</span>
+                  <span className="sm:hidden">{lt(locale, { fa: 'امتیاز', en: 'pts', ar: 'نقطة', zh: '分', ru: 'баллов' })}</span>
+                </span>
               </div>
             </div>
-          </div>
+          </Link>
           <button
             type="button"
             onClick={() => {
               logout();
               router.push('/');
             }}
-            className="min-h-[44px] px-3.5 rounded-xl bg-rose-warm/15 text-rose-warm hover:bg-rose-warm/25 flex items-center gap-1.5 text-xs font-black shrink-0 active:scale-95 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-warm"
+            className="min-h-[40px] sm:min-h-[44px] px-2.5 sm:px-3.5 rounded-xl bg-rose-warm/15 text-rose-warm hover:bg-rose-warm/25 flex items-center gap-1.5 text-xs font-black shrink-0 whitespace-nowrap active:scale-95 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-warm cursor-pointer"
             aria-label={lt(locale, { fa: 'خروج از حساب', en: 'Sign Out', ar: 'تسجيل الخروج', zh: '退出登录', ru: 'Выйти' })}
+            title={lt(locale, { fa: 'خروج از حساب', en: 'Sign Out', ar: 'تسجيل الخروج', zh: '退出登录', ru: 'Выйти' })}
           >
-            <LogOut size={15} />
+            <LogOut size={15} className="shrink-0" />
             <span>{lt(locale, { fa: 'خروج', en: 'Logout', ar: 'خروج', zh: '退出', ru: 'Выход' })}</span>
           </button>
         </div>
@@ -189,8 +207,8 @@ export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps)
       <aside className="hidden md:flex md:w-64 lg:w-72 flex-col gap-2 bg-surface shadow-xs rounded-3xl h-fit lg:sticky top-24 shrink-0 border border-line overflow-hidden">
         <div className="p-6 border-b border-line flex flex-col items-center text-center bg-gradient-to-b from-mint/30 to-transparent">
           {/* Dynamic Initials Avatar */}
-          <div className="w-18 h-18 rounded-full mb-3 shadow-sm border-2 border-brand/20 bg-gradient-to-br from-brand to-brand-dark text-surface flex items-center justify-center text-xl font-black">
-            {userFullName ? initials : <UserRound size={26} />}
+          <div className="w-18 h-18 rounded-full mb-3 shadow-sm border-2 border-brand/20 bg-gradient-to-br from-brand to-brand-dark text-surface flex items-center justify-center text-xl font-black select-none">
+            {initials ? initials : <UserRound size={26} />}
           </div>
           <h2 className="text-[17px] font-black text-ink mb-1">{userName}</h2>
 

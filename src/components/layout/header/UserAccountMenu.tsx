@@ -40,7 +40,7 @@ export function UserAccountMenu() {
           href="/account"
           title={(locale === 'fa' ? user.firstNameFa : (user.firstNameEn || user.firstNameFa)) || user.phone}
           aria-label={t('account')}
-          className="min-h-[32px] min-w-[32px] justify-center inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-ink text-white hover:bg-ink/90 text-[12px] font-bold tracking-tight shadow-sm transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none shrink-0"
+          className="min-h-[32px] min-w-[32px] justify-center inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand text-white hover:bg-brand-dark dark:bg-brand/20 dark:text-brand dark:border dark:border-brand/40 dark:hover:bg-brand/30 text-[12px] font-bold tracking-tight shadow-sm transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none shrink-0"
         >
           <UserRound size={13} />
           {/* Name pill where room exists; icon-only at 2xl where the bar is fullest */}
@@ -51,9 +51,10 @@ export function UserAccountMenu() {
       ) : (
         <Link
           href="/auth"
-          className="min-h-[32px] min-w-[32px] justify-center inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/70 dark:bg-white/[0.07] backdrop-blur-md border border-white/50 dark:border-white/10 text-ink hover:bg-white/85 dark:hover:bg-white/[0.12] text-[12px] font-bold tracking-tight shadow-[0_1px_2px_rgba(5,63,62,0.06)] transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none active:scale-[0.98] shrink-0"
+          aria-label={t('signin')}
+          className="min-h-[32px] min-w-[32px] justify-center inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/70 dark:bg-brand/15 backdrop-blur-md border border-white/50 dark:border-brand/30 text-ink dark:text-brand hover:bg-white/85 dark:hover:bg-brand/25 text-[12px] font-bold tracking-tight shadow-[0_1px_2px_rgba(5,63,62,0.06)] transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none active:scale-[0.98] shrink-0"
         >
-          <UserRound size={13} />
+          <UserRound size={13} className="text-sub dark:text-brand" />
           <span className="hidden min-[420px]:inline">{t('signin')}</span>
         </Link>
       )}
