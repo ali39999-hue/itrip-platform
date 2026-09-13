@@ -20,17 +20,17 @@ export function UserAccountMenu() {
       <Link
         href="/support"
         aria-label={ct('aria.24hSupport')}
-        className="min-h-[44px] min-w-[44px] hidden 2xl:grid w-9 h-9 place-items-center rounded-full text-sub hover:text-brand-dark hover:bg-soft transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+        className="hidden 2xl:grid w-8 h-8 place-items-center rounded-full bg-white/60 dark:bg-white/[0.07] backdrop-blur-md border border-white/40 dark:border-white/10 text-sub hover:text-ink transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none shrink-0"
       >
-        <Headset size={18} />
+        <Headset size={15} />
       </Link>
 
-      {/* Plan Button */}
+      {/* Plan Button — glass pill */}
       <Link
         href="/plan"
-        className="hidden 2xl:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-brand/40 text-brand-dark hover:bg-mint text-[13px] font-black transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+        className="hidden 2xl:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/70 dark:bg-white/[0.07] backdrop-blur-md border border-white/50 dark:border-white/10 text-ink hover:bg-white/85 dark:hover:bg-white/[0.12] text-[12px] font-bold tracking-tight transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none shadow-[0_1px_2px_rgba(5,63,62,0.06)]"
       >
-        <Sparkles size={14} className="text-brand" />
+        <Sparkles size={12} className="text-brand-dark" />
         <span>{t('plan')}</span>
       </Link>
 
@@ -40,9 +40,9 @@ export function UserAccountMenu() {
           href="/account"
           title={(locale === 'fa' ? user.firstNameFa : (user.firstNameEn || user.firstNameFa)) || user.phone}
           aria-label={t('account')}
-          className="min-h-[44px] min-w-[44px] min-h-[38px] min-w-[38px] justify-center inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full bg-brand-dark text-surface hover:bg-deep text-[12px] sm:text-[13px] font-black shadow-sm transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none shrink-0"
+          className="min-h-[32px] min-w-[32px] justify-center inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-ink text-white hover:bg-ink/90 text-[12px] font-bold tracking-tight shadow-sm transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none shrink-0"
         >
-          <UserRound size={15} />
+          <UserRound size={13} />
           {/* Name pill where room exists; icon-only at 2xl where the bar is fullest */}
           <span className="hidden min-[420px]:inline 2xl:hidden truncate max-w-[90px] sm:max-w-none">
             {(locale === 'fa' ? user.firstNameFa : (user.firstNameEn || user.firstNameFa)) || user.phone}
@@ -51,9 +51,12 @@ export function UserAccountMenu() {
       ) : (
         <Link
           href="/auth"
-          className="min-h-[38px] min-w-[38px] justify-center inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-brand/50 text-brand-dark hover:bg-mint text-[12px] sm:text-[13px] font-black shadow-2xs transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none active:scale-95 shrink-0"
+          className="min-h-[32px] min-w-[32px] justify-center inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/70 dark:bg-white/[0.07] backdrop-blur-md border border-white/50 dark:border-white/10 text-ink hover:bg-white/85 dark:hover:bg-white/[0.12] text-[12px] font-bold tracking-tight shadow-[0_1px_2px_rgba(5,63,62,0.06)] transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none active:scale-[0.98] shrink-0"
         >
-          <UserRound size={15} />
+          <UserRound size={13} />
+          <span className="hidden min-[420px]:inline">{t('signin')}</span>
+        </Link>
+      )}
           <span className="hidden min-[420px]:inline">{t('signin')}</span>
         </Link>
       )}

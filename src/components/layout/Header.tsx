@@ -222,10 +222,10 @@ export function Header() {
   ) : null;
 
   return (
-    <header className="sticky top-0 z-[80] bg-surface/90 backdrop-blur-md border-b border-line/80 pt-[env(safe-area-inset-top,0px)]">
-      <div className="w-full max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 2xl:px-8 h-16 flex items-center justify-between gap-2 md:gap-3 2xl:gap-4">
+    <header className="sticky top-0 z-[80] bg-white/70 dark:bg-surface/55 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-surface/45 border-b border-white/50 dark:border-white/[0.07] shadow-[0_1px_0_rgba(255,255,255,0.75)_inset,0_8px_32px_rgba(5,63,62,0.08)] pt-[env(safe-area-inset-top,0px)]">
+      <div className="w-full max-w-[1440px] mx-auto px-3 sm:px-4 lg:px-6 h-[56px] sm:h-[60px] flex items-center justify-between gap-2 sm:gap-3">
         {/* Brand Logo & Switchers */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <Logo size="sm" hideTextOnMobile />
 
           {/* در موبایل (< sm) جا برای این دو نمی‌ماند و گروه اکشن‌ها بیرون از
@@ -242,7 +242,7 @@ export function Header() {
         <DesktopNav />
 
         {/* Search, User Account & Mobile Toggle */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 ms-auto">
           {/* Dark / Light Mode Toggle */}
           <ThemeToggle />
 
@@ -251,11 +251,13 @@ export function Header() {
             type="button"
             onClick={() => setCommandPaletteOpen(true)}
             aria-label="Search or jump to (Ctrl+K)"
-            className="min-h-[44px] min-w-[44px] hidden sm:inline-flex items-center justify-center gap-1.5 h-10 px-2.5 2xl:px-3 rounded-xl bg-soft/80 hover:bg-soft border border-line/80 text-sub hover:text-ink text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-2xs cursor-pointer"
+            className="hidden sm:inline-flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-full bg-white/65 dark:bg-white/[0.07] backdrop-blur-md hover:bg-white/85 dark:hover:bg-white/[0.12] border border-white/50 dark:border-white/10 text-sub hover:text-ink text-xs font-bold tracking-tight transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-[0_1px_2px_rgba(5,63,62,0.06)] cursor-pointer"
           >
-            <Search size={15} className="text-brand-dark" aria-hidden="true" />
-            <kbd className="hidden 2xl:inline-block px-1.5 py-0.5 rounded bg-surface border border-line text-[10px] font-mono font-black text-sub">
-              ⌘K
+            <Search size={13} className="text-sub" aria-hidden="true" />
+            <kbd className="hidden xl:inline-flex items-center px-1.5 py-0.5 rounded-md bg-white dark:bg-white/10 border border-line/60 dark:border-white/10 text-[10px] font-mono font-bold text-sub leading-none">
+              K ⌘
+            </kbd>
+          </button>
             </kbd>
           </button>
 
