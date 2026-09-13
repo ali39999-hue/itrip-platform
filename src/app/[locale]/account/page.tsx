@@ -61,7 +61,11 @@ export default function AccountPage() {
     lastNameEn: user?.lastNameEn || '',
     email: user?.email || '',
     phone: user?.phone || '',
+    nationalId: user?.nationalId || '',
+    passportNo: user?.passportNo || '',
+    passportExpiry: '',
   });
+  const [profileError, setProfileError] = useState('');
 
   useEffect(() => {
     async function loadData() {
@@ -100,26 +104,119 @@ export default function AccountPage() {
     }
   }, [user]);
 
+  function toAsciiDigits(input: string): string {
+    return input
+      .replace(/[۰-۹]/g, (c) => String(c.charCodeAt(0) - 1776))
+      .replace(/[٠-٩]/g, (c) => String(c.charCodeAt(0) - 1632));
+  }
+
   async function handleSaveProfile() {
     if (!user) return;
     setSaving(true);
+    setProfileError('');
     try {
-      await updateProfileDetails({
-        userId: user.id,
-        ...formState,
-      });
+      // Empty strings must be omitted — zod `.optional()` rejects '' (e.g. a
+      // phone-OTP user has no email and a bare '' previously failed silently).
+      const payload: Record<string, string> = {};
+      if (formState.firstNameFa.trim()) payload.firstNameFa = formState.firstNameFa.trim();
+      if (formState.lastNameFa.trim()) payload.lastNameFa = formState.lastNameFa.trim();
+      if (formState.firstNameEn.trim()) payload.firstNameEn = formState.firstNameEn.trim();
+      if (formState.lastNameEn.trim()) payload.lastNameEn = formState.lastNameEn.trim();
+      if (formState.email.trim()) payload.email = formState.email.trim();
+      if (formState.phone.trim()) payload.phone = formState.phone.trim();
+
+      const nationalId = toAsciiDigits(formState.nationalId || '').trim();
+      if (nationalId) {
+        if (!/^\d{10}$/.test(nationalId)) {
+          setProfileError(
+            lt(locale, {
+              fa: 'کد ملی باید دقیقاً ۱۰ رقم باشد',
+              en: 'National ID must be exactly 10 digits',
+              ar: 'يجب أن يتكون الرقم الوطني من 10 أرقام بالضبط',
+              zh: '身份证号必须正好是10位数字',
+              ru: 'Национальный ID должен содержать ровно 10 цифр',
+            })
+          );
+          return;
+        }
+        payload.nationalId = nationalId;
+      }
+      if (formState.passportNo.trim()) payload.passportNo = formState.passportNo.trim();
+      if (formState.passportExpiry.trim()) payload.passportExpiry = formState.passportExpiry.trim();
+      if (payload.firstNameFa && payload.lastNameFa) payload.name = `${payload.firstNameFa} ${payload.lastNameFa}`;
+
+      if (payload.firstNameEn && !/^[A-Za-z\s'-]*$/.test(payload.firstNameEn)) {
+        setProfileError(
+          lt(locale, {
+            fa: 'نام لاتین فقط می‌تواند شامل حروف انگلیسی باشد',
+            en: 'Latin name must contain only Latin characters',
+            ar: 'يجب أن يحتوي الاسم اللاتيني على أحرف لاتينية فقط',
+            zh: '英文姓名只能包含拉丁字符',
+            ru: 'Латинское имя должно содержать только латинские символы',
+          })
+        );
+        return;
+      }
+
+      const res = await updateProfileDetails(payload);
+      if (!res.success) {
+        setProfileError(
+          lt(locale, {
+            fa: 'ذخیره تغییرات ناموفق بود' + (res.error ? `: ${res.error}` : ''),
+            en: 'Could not save changes' + (res.error ? `: ${res.error}` : ''),
+            ar: 'فشل حفظ التغييرات' + (res.error ? `: ${res.error}` : ''),
+            zh: '保存更改失败' + (res.error ? `：${res.error}` : ''),
+            ru: 'Не удалось сохранить изменения' + (res.error ? `: ${res.error}` : ''),
+          })
+        );
+        return;
+      }
+
+      const complete = Boolean(payload.firstNameFa && payload.lastNameFa && payload.nationalId);
       updateKyc({
-        firstNameFa: formState.firstNameFa,
-        lastNameFa: formState.lastNameFa,
-        firstNameEn: formState.firstNameEn,
-        lastNameEn: formState.lastNameEn,
+        firstNameFa: payload.firstNameFa ?? '',
+        lastNameFa: payload.lastNameFa ?? '',
+        firstNameEn: payload.firstNameEn ?? '',
+        lastNameEn: payload.lastNameEn ?? '',
       });
+      useAuthStore.setState((s) => ({
+        user: s.user
+          ? {
+              ...s.user,
+              firstNameFa: payload.firstNameFa ?? s.user.firstNameFa,
+              lastNameFa: payload.lastNameFa ?? s.user.lastNameFa,
+              firstNameEn: payload.firstNameEn ?? s.user.firstNameEn,
+              lastNameEn: payload.lastNameEn ?? s.user.lastNameEn,
+              nationalId: nationalId || s.user.nationalId,
+              passportNo: payload.passportNo ?? s.user.passportNo,
+              profileComplete: s.user.profileComplete || complete,
+              kycApproved: s.user.kycApproved || complete,
+            }
+          : null,
+      }));
       setIsEditing(false);
     } catch (e) {
       console.error(e);
+      setProfileError(
+        lt(locale, {
+          fa: 'خطای غیرمنتظره در ذخیره تغییرات',
+          en: 'Unexpected error while saving changes',
+          ar: 'خطأ غير متوقع أثناء الحفظ',
+          zh: '保存更改时出现意外错误',
+          ru: 'Неожиданная ошибка при сохранении',
+        })
+      );
     } finally {
       setSaving(false);
     }
+  }
+
+  function openProfileEditor() {
+    setIsEditing(true);
+    setProfileError('');
+    setTimeout(() => {
+      document.getElementById('profile-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
   }
 
   if (!user) {
@@ -203,7 +300,7 @@ export default function AccountPage() {
             </div>
             <button
               type="button"
-              onClick={() => router.push('/auth')}
+              onClick={openProfileEditor}
               className="shrink-0 min-h-[44px] px-5 rounded-xl bg-brand-dark hover:bg-deep text-surface text-xs font-black transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               {lt(locale, { fa: 'تکمیل اطلاعات', en: 'Complete details', ar: 'إكمال البيانات', zh: '完善信息', ru: 'Заполнить данные' })}
@@ -391,7 +488,7 @@ export default function AccountPage() {
         </div>
 
         {/* Profile Details & Quick Editor */}
-        <div className="bg-surface rounded-2xl border border-line p-6 md:p-8 shadow-sm">
+        <div id="profile-card" className="bg-surface rounded-2xl border border-line p-6 md:p-8 shadow-sm scroll-mt-4">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-mint grid place-items-center text-brand-dark">
@@ -463,6 +560,15 @@ export default function AccountPage() {
 
               <div>
                 <span className="block text-xs font-bold text-sub mb-1">
+                  {lt(locale, { fa: 'کد ملی', en: 'National ID', ar: 'الرقم الوطني', zh: '身份证号', ru: 'Нац. ID' })}
+                </span>
+                <span className="text-sm font-black text-ink font-mono" dir="ltr">
+                  {user.nationalId || formState.nationalId || '—'}
+                </span>
+              </div>
+
+              <div>
+                <span className="block text-xs font-bold text-sub mb-1">
                   {lt(locale, { fa: 'شناسه تلگرام / پیام‌رسان', en: 'Connected Messengers', ar: 'المراسلات المتصلة', zh: '已绑定的社交账号', ru: 'Подключенные мессенджеры' })}
                 </span>
                 <span className="text-sm font-black text-ink font-mono">
@@ -503,7 +609,52 @@ export default function AccountPage() {
                   className="w-full h-11 rounded-xl border border-line px-3 text-sm font-bold font-mono bg-surface"
                 />
               </div>
+
+              <div>
+                <label className="block text-xs font-bold text-sub mb-1">
+                  {lt(locale, { fa: 'کد ملی (برای تکمیل احراز هویت)', en: 'National ID (required to verify)', ar: 'الرقم الوطني (لإكمال التحقق)', zh: '身份证号（用于完成验证）', ru: 'Нац. ID (для верификации)' })}
+                  <span className="text-rose-500"> *</span>
+                </label>
+                <input
+                  type="text"
+                  dir="ltr"
+                  inputMode="numeric"
+                  maxLength={10}
+                  value={formState.nationalId}
+                  placeholder="0012345678"
+                  onChange={(e) => setFormState({ ...formState, nationalId: e.target.value })}
+                  className="w-full h-11 rounded-xl border border-line px-3 text-sm font-bold font-mono bg-surface"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'شماره گذرنامه (اختیاری)', en: 'Passport No. (optional)', ar: 'رقم جواز السفر (اختياري)', zh: '护照号（可选）', ru: '№ паспорта (опционально)' })}</label>
+                <input
+                  type="text"
+                  dir="ltr"
+                  value={formState.passportNo}
+                  onChange={(e) => setFormState({ ...formState, passportNo: e.target.value.toUpperCase() })}
+                  className="w-full h-11 rounded-xl border border-line px-3 text-sm font-bold font-mono bg-surface"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-sub mb-1">{lt(locale, { fa: 'انقضای گذرنامه (اختیاری)', en: 'Passport Expiry (optional)', ar: 'انتهاء الجواز (اختياري)', zh: '护照有效期（可选）', ru: 'Срок паспорта (опционально)' })}</label>
+                <input
+                  type="date"
+                  dir="ltr"
+                  value={formState.passportExpiry}
+                  onChange={(e) => setFormState({ ...formState, passportExpiry: e.target.value })}
+                  className="w-full h-11 rounded-xl border border-line px-3 text-sm font-bold font-mono bg-surface"
+                />
+              </div>
             </div>
+          )}
+
+          {profileError && (
+            <p role="alert" className="mt-3 mb-0 p-3 rounded-xl bg-destructive/10 text-destructive text-xs font-bold">
+              {profileError}
+            </p>
           )}
         </div>
 
