@@ -29,7 +29,10 @@ declare module 'next-auth' {
 
 let secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
 if (!secret) {
-  if (process.env.NODE_ENV === 'production') {
+  // During static build collection (e.g. on CI / Vercel build phase), fall back gracefully so next build succeeds.
+  // In runtime production, fail closed immediately.
+  const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+  if (process.env.NODE_ENV === 'production' && !isBuildPhase) {
     throw new Error('FATAL SECURITY ERROR: AUTH_SECRET or NEXTAUTH_SECRET must be configured in production.');
   }
   secret = 'dev-only-insecure-secret-never-use-in-production';

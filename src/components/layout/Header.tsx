@@ -258,8 +258,6 @@ export function Header() {
               K ⌘
             </kbd>
           </button>
-            </kbd>
-          </button>
 
           <UserAccountMenu />
 

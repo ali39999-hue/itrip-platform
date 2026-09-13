@@ -1,5 +1,4 @@
 import { lt } from './lt';
-import { num } from './format';
 
 export type LoyaltyTier = 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM' | 'VIP';
 

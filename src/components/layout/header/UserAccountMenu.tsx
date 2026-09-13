@@ -57,9 +57,6 @@ export function UserAccountMenu() {
           <span className="hidden min-[420px]:inline">{t('signin')}</span>
         </Link>
       )}
-          <span className="hidden min-[420px]:inline">{t('signin')}</span>
-        </Link>
-      )}
     </div>
   );
 }
