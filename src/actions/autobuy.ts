@@ -1,29 +1,14 @@
 'use server';
 
 import { safeAuth } from '@/auth';
-import { prisma } from '@/lib/prisma';
 import { AutoBuyDomainService, type CreateAutoBuyInput } from '@/domains/autobuy/AutoBuyDomainService';
 import { revalidatePath } from 'next/cache';
 
 async function resolveUserId(): Promise<string | null> {
+  // Fail closed: never act on behalf of a user without their session — a silent
+  // demo/first-user fallback would create real rules under a fake identity.
   const session = await safeAuth();
-  if (session?.user?.id) {
-    return session.user.id;
-  }
-
-  // In non-production or demo environments, fallback to demo/primary user
-  if (process.env.NODE_ENV !== 'production' || process.env.DEMO_MODE === 'true') {
-    const demoUser = await prisma.user.findFirst({
-      where: { email: 'demo@firuzo.com' },
-    });
-    if (demoUser) return demoUser.id;
-
-    // First user in DB
-    const anyUser = await prisma.user.findFirst();
-    if (anyUser) return anyUser.id;
-  }
-
-  return null;
+  return session?.user?.id ?? null;
 }
 
 export async function createAutoBuyRuleAction(input: CreateAutoBuyInput) {

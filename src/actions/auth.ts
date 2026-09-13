@@ -290,6 +290,8 @@ export async function getAuthCapabilities(): Promise<{
   telegramBot: boolean;
   whatsappLive: boolean;
   baleLive: boolean;
+  smsLive: boolean;
+  emailLive: boolean;
 }> {
   return {
     google: Boolean(process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID),
@@ -303,6 +305,8 @@ export async function getAuthCapabilities(): Promise<{
       (process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_API_TOKEN) && process.env.WHATSAPP_PHONE_NUMBER_ID
     ),
     baleLive: Boolean(process.env.BALE_BOT_TOKEN),
+    smsLive: Boolean(process.env.SMSWBS_USERNAME && process.env.SMSWBS_PASSWORD),
+    emailLive: Boolean(process.env.RESEND_API_KEY),
   };
 }
 

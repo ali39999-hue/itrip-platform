@@ -80,8 +80,8 @@ export class ProductionSmsProvider {
     providerType?: 'kavenegar' | 'farazsms' | 'smswbs';
     defaultSender?: string;
   }) {
-    this.smswbsUser = options?.apiKey === '' ? undefined : (process.env.SMSWBS_USERNAME || '09123764868');
-    this.smswbsPass = options?.apiKey === '' ? undefined : (process.env.SMSWBS_PASSWORD || 'Hvd1367Hvd1367');
+    this.smswbsUser = options?.apiKey === '' ? undefined : process.env.SMSWBS_USERNAME;
+    this.smswbsPass = options?.apiKey === '' ? undefined : process.env.SMSWBS_PASSWORD;
 
     this.apiKey =
       options?.apiKey !== undefined

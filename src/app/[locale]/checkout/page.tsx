@@ -78,7 +78,7 @@ export default function CheckoutPage() {
   const [priceChangeAccepted, setPriceChangeAccepted] = useState(false);
   const [savedProfiles, setSavedProfiles] = useState<EnrichedTravelerProfile[]>([]);
   const [saveToAccount, setSaveToAccount] = useState(false);
-  const [adminPaymentMode, setAdminPaymentMode] = useState<'real' | 'demo'>('demo');
+  const [adminPaymentMode, setAdminPaymentMode] = useState<'real' | 'demo'>('real');
   const [isAdminUser, setIsAdminUser] = useState(false);
 
   useEffect(() => {

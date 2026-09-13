@@ -12,7 +12,7 @@ import type { PaymentGatewayMode } from '@/domains/payments/admin-payment-mode';
 
 export function AdminPaymentModeToggle() {
   const locale = useLocale();
-  const [mode, setMode] = useState<PaymentGatewayMode>('demo');
+  const [mode, setMode] = useState<PaymentGatewayMode>('real');
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [initialLoaded, setInitialLoaded] = useState(false);

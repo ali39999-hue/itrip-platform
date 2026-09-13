@@ -20,6 +20,8 @@ interface AuthCapabilities {
   telegramBot: boolean;
   whatsappLive: boolean;
   baleLive: boolean;
+  smsLive: boolean;
+  emailLive: boolean;
 }
 
 export default function AuthPage() {
@@ -37,6 +39,24 @@ export default function AuthPage() {
     }).catch(() => {});
     return () => { mounted = false; };
   }, []);
+
+  // Channel badges derive from real provider configuration — a channel whose
+  // provider is unconfigured must never claim LIVE (honest SIM labeling).
+  // While capabilities are still fetching, badges render invisibly (no wrong flash).
+  const SIM_BADGE_CLS = 'text-[8.5px] font-black text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 rounded-full';
+  const SIM_BADGE_TEXT = lt(locale, { fa: 'شبیه‌سازی', en: 'SIM', ar: 'محاكاة', zh: '模拟', ru: 'СИМ' });
+  const channelBadge = (live: boolean | undefined, liveText: string, liveCls: string) => {
+    if (capabilities === null) return { text: '', cls: 'invisible' };
+    return live
+      ? { text: liveText, cls: liveCls }
+      : { text: SIM_BADGE_TEXT, cls: SIM_BADGE_CLS };
+  };
+  const smsBadge = channelBadge(capabilities?.smsLive, 'LIVE', 'text-[8.5px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 rounded-full');
+  const emailBadge = channelBadge(capabilities?.emailLive, 'LIVE', 'text-[8.5px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 rounded-full');
+  const telegramBadge = channelBadge(capabilities?.telegramBot, 'BETA', 'text-[8.5px] font-black text-sky-600 bg-sky-500/10 px-1.5 rounded-full');
+  const baleBadge = channelBadge(capabilities?.baleLive, 'BETA', 'text-[8.5px] font-black text-teal-600 bg-teal-500/10 px-1.5 rounded-full');
+  const whatsappBadge = channelBadge(capabilities?.whatsappLive, 'BETA', 'text-[8.5px] font-black text-emerald-600 bg-emerald-500/10 px-1.5 rounded-full');
+  const wechatBadge = channelBadge(capabilities?.wechatQr, 'BETA', 'text-[8.5px] font-black text-emerald-600 bg-emerald-500/10 px-1.5 rounded-full');
 
   // Return the visitor to where they came from (checkout, my-trips, wallet…).
   // Only accept safe internal paths. Supports both callbackUrl and redirect parameters.
@@ -325,7 +345,7 @@ export default function AuthPage() {
                   >
                     <Phone size={16} />
                     <span className="text-[10px]">SMS</span>
-                    <span className="text-[8.5px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 rounded-full">LIVE</span>
+                    <span className={smsBadge.cls}>{smsBadge.text}</span>
                   </button>
                   <button
                     type="button"
@@ -335,7 +355,7 @@ export default function AuthPage() {
                   >
                     <Mail size={16} />
                     <span className="text-[10px]">Email</span>
-                    <span className="text-[8.5px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 rounded-full">LIVE</span>
+                    <span className={emailBadge.cls}>{emailBadge.text}</span>
                   </button>
                   <button
                     type="button"
@@ -345,7 +365,7 @@ export default function AuthPage() {
                   >
                     <Send size={16} />
                     <span className="text-[10px]">Telegram</span>
-                    <span className="text-[8.5px] font-black text-sky-600 bg-sky-500/10 px-1.5 rounded-full">BETA</span>
+                    <span className={telegramBadge.cls}>{telegramBadge.text}</span>
                   </button>
                   <button
                     type="button"
@@ -355,7 +375,7 @@ export default function AuthPage() {
                   >
                     <MessageSquare size={16} />
                     <span className="text-[10px]">بله (Bale)</span>
-                    <span className="text-[8.5px] font-black text-teal-600 bg-teal-500/10 px-1.5 rounded-full">BETA</span>
+                    <span className={baleBadge.cls}>{baleBadge.text}</span>
                   </button>
                   <button
                     type="button"
@@ -365,7 +385,7 @@ export default function AuthPage() {
                   >
                     <MessageCircle size={16} />
                     <span className="text-[10px]">WhatsApp</span>
-                    <span className="text-[8.5px] font-black text-emerald-600 bg-emerald-500/10 px-1.5 rounded-full">BETA</span>
+                    <span className={whatsappBadge.cls}>{whatsappBadge.text}</span>
                   </button>
                   <button
                     type="button"
@@ -375,7 +395,7 @@ export default function AuthPage() {
                   >
                     <QrCode size={16} />
                     <span className="text-[10px]">WeChat</span>
-                    <span className="text-[8.5px] font-black text-emerald-600 bg-emerald-500/10 px-1.5 rounded-full">BETA</span>
+                    <span className={wechatBadge.cls}>{wechatBadge.text}</span>
                   </button>
                 </div>
 

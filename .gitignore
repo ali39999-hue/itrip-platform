@@ -79,3 +79,4 @@ scripts/*.png
   
 # Parto portal session (human-in-the-loop capture, never commit)  
 .parto-portal-state.json  
+.env*

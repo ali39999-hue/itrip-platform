@@ -41,6 +41,19 @@ const OTP_TTL_MINUTES = 5;
 const OTP_MAX_ATTEMPTS = 5;
 
 /**
+ * Whether any real SMS provider is configured. When true, OTP delivery failures
+ * must surface as real errors — never silently degrade to the dev simulator.
+ */
+function hasRealSmsProvider(): boolean {
+  return Boolean(
+    (process.env.SMSWBS_USERNAME && process.env.SMSWBS_PASSWORD) ||
+    process.env.KAVENEGAR_API_KEY ||
+    process.env.SMS_PROVIDER_API_KEY ||
+    process.env.FARAZ_SMS_API_KEY
+  );
+}
+
+/**
  * Normalizes user identifier input by converting Persian and Arabic numerals to English ASCII numerals.
  */
 export function normalizeIdentifier(input: string): string {
@@ -138,10 +151,18 @@ export async function issueOtp(
           realSent = true;
           providerUsed = dispatch.provider;
           dispatchError = undefined;
-        } else if (process.env.NODE_ENV !== 'production' || process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.DEMO_MODE === 'true') {
+        } else if (
+          dispatch?.success &&
+          dispatch.provider === 'console-simulator' &&
+          !hasRealSmsProvider() &&
+          (process.env.NODE_ENV !== 'production' || process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.DEMO_MODE === 'true')
+        ) {
+          // No real SMS provider exists at all — safe dev simulation is the honest path.
           providerUsed = 'console-simulator';
           dispatchError = undefined;
         }
+        // When a real provider IS configured but delivery failed, keep dispatchError:
+        // callers fail closed with the actual error instead of degrading login to a demo box.
       } catch (fallbackErr) {
         console.warn('[issueOtp] SMS fallback notice:', fallbackErr);
       }
@@ -251,7 +272,12 @@ export async function issueOtp(
     realSent,
     provider: providerUsed,
     error: dispatchError,
-    devCode: (process.env.NODE_ENV !== 'production' || process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.DEMO_MODE === 'true') && !realSent ? code : undefined,
+    devCode:
+      (process.env.NODE_ENV !== 'production' || process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.DEMO_MODE === 'true') &&
+      !realSent &&
+      providerUsed === 'console-simulator'
+        ? code
+        : undefined,
   };
 }
 

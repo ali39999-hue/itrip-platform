@@ -44,9 +44,9 @@ export async function getSystemPaymentMode(): Promise<PaymentGatewayMode> {
   if (process.env.ECARDO_DEMO_GATEWAY === 'true' || process.env.DEMO_MODE === 'true') {
     return 'demo';
   }
-  // In development / local testing, default to 'demo' so checkout walkthroughs work out of the box!
-  // In production runtime, default to 'real'.
-  return process.env.NODE_ENV === 'production' ? 'real' : 'demo';
+  // The real eCardo gateway path is live and verified — demo is opt-in only
+  // (via ECARDO_DEMO_GATEWAY / DEMO_MODE / the admin toggle), never a silent default.
+  return 'real';
 }
 
 /**

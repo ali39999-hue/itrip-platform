@@ -58,17 +58,26 @@ test.describe('Ultra-wide desktop: no overflow, content capped', () => {
         await page.waitForTimeout(800);
         const overflow = await overflowPx(page);
         expect(overflow, `${route.path} overflows by ${overflow}px at ${width}px`).toBeLessThanOrEqual(0);
-        // content must not stretch edge-to-edge: the main container stays capped
-        // (max-w 1440-ish) and is centered — its box must be narrower than the viewport
-        const mainBox = await page.evaluate(() => {
-          const main = document.querySelector('main') || document.body;
-          const r = main.getBoundingClientRect();
-          return { width: Math.round(r.width), winWidth: window.innerWidth };
+        // `<main>` itself is intentionally full-width (full-bleed backgrounds); the
+        // design cap lives on inner containers (max-w-[1440px] mx-auto). Assert at
+        // least one capped container (computed max-width ≥ 1000px) exists and is
+        // horizontally centered — otherwise content stretches edge-to-edge.
+        const capped = await page.evaluate(() => {
+          const win = window.innerWidth;
+          const out: Array<{ mw: number; off: number }> = [];
+          for (const el of document.querySelectorAll('main [class*="max-w-"]')) {
+            const mw = parseFloat(getComputedStyle(el).maxWidth);
+            if (!Number.isFinite(mw) || mw < 1000 || mw >= win - 100) continue;
+            const r = el.getBoundingClientRect();
+            if (r.width < 400) continue;
+            out.push({ mw: Math.round(mw), off: Math.round(Math.abs(r.left - (win - r.right))) });
+          }
+          return out;
         });
         expect(
-          mainBox.width,
-          `main stretches to ${mainBox.width}px at ${width}px — container cap is missing`,
-        ).toBeLessThanOrEqual(1500);
+          capped.some((c) => c.off <= 64),
+          `${route.path} @${width}px: no centered capped container found (candidates: ${JSON.stringify(capped)})`,
+        ).toBe(true);
       });
     }
   }
