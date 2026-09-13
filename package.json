@@ -1,6 +1,6 @@
 {
   "name": "itrip-platform",
-  "version": "1.7.3",
+  "version": "1.7.4",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -13,6 +13,7 @@
     "gate:i18n": "node scripts/i18n-completeness-gate.mjs",
     "gate:i18n-lt": "node scripts/lt-coverage-scan.mjs --check",
     "gate:a11y": "node scripts/a11y-baseline.mjs",
+    "catalog:staleness": "node scripts/catalog-staleness.mjs",
     "security:scan": "node scripts/security-scan.mjs",
     "test:unit": "node scripts/run-unit-tests.mjs",
     "test:e2e": "playwright test",
