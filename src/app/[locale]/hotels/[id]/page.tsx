@@ -1,11 +1,9 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { useRouter } from '@/i18n/routing';
 import { useParams, notFound } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { HOTELS } from '@/lib/data';
-import { useBookingStore } from '@/stores/booking-store';
 import { num } from '@/lib/format';
 import { useHotelBooking, keyOf, toman } from '@/hooks/useHotelBooking';
 import type { DetailedHotelWithMeta } from '@/services/hotels-service';
@@ -18,15 +16,14 @@ import { BookingPanel } from '@/components/hotels/detail/BookingPanel';
 import { EditStayModal } from '@/components/hotels/detail/EditStayModal';
 import { Loader2 } from 'lucide-react';
 import { lt } from '@/lib/lt';
+import { toast as sonnerToast } from 'sonner';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 
 export default function HotelDetailPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('HotelDetail');
   const { formatAmount } = useDisplayCurrency();
-  const setBookingContext = useBookingStore((s) => s.setBookingContext);
 
   const [hotel, setHotel] = useState<DetailedHotelWithMeta | null>(null);
   const [loading, setLoading] = useState(true);
@@ -143,21 +140,25 @@ export default function HotelDetailPage() {
   }
 
   function handleBook() {
-    const hotelTitle = locale === 'fa' ? hotel!.name : (hotel!.nameEn || hotel!.name);
-    // Live rooms price in Toman already; mock catalogue prices in TRY need conversion.
-    const amountToman = booking.isLive ? Math.round(totals.total) : toman(totals.total);
-    setBookingContext({
-      type: 'hotels',
-      id: hotel!.id,
-      title: hotelTitle,
-      subtitle: `${num(capacity.n, locale)} ${t('navRooms')} • ${num(booking.nights.length, locale)} ${t('duration')} • ${t('passengersSummary', { adults: booking.adults, children: booking.children })}`,
-      amount: amountToman,
-      travelDate: booking.checkin,
-      adults: booking.adults,
-      children: booking.children,
-      meta: { adults: String(booking.adults), children: String(booking.children), rooms: String(capacity.n) },
-    });
-    router.push('/checkout');
+    sonnerToast.error(
+      lt(locale, {
+        fa: 'متاسفانه به دلیل اختلالات زیر ساختی از سوی منبع دردسترس نمیباشد',
+        en: 'Unfortunately, this service is temporarily unavailable due to infrastructure disruptions on the provider side.',
+        ar: 'عذراً، الخدمة غير متاحة حالياً بسبب اضطرابات بنيوية لدى المزود.',
+        zh: '很抱歉，由于供应商侧基础设施异常，该服务暂时不可用。',
+        ru: 'К сожалению, сервис временно недоступен из-за инфраструктурных сбоев на стороне поставщика.',
+      }),
+      {
+        description: lt(locale, {
+          fa: 'از صبر و شکیبایی شما متشکریم',
+          en: 'Thank you for your patience.',
+          ar: 'شكراً لصبركم وتفهمكم.',
+          zh: '感谢您的耐心与理解。',
+          ru: 'Спасибо за ваше терпение.',
+        }),
+        duration: 6000,
+      },
+    );
   }
 
   function handleApplyCombo() {

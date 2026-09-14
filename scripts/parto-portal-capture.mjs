@@ -51,7 +51,7 @@ if (!/^https:\/\/(www\.)?partocrs\.ir$/.test(BASE)) {
   process.exit(1);
 }
 const STATE_FILE = process.env.PARTO_PORTAL_STATE_FILE || resolve('.parto-portal-state.json');
-const OUT_DIR = 'C:\\Users\\Lenovo\\Desktop\\firouzo\\api_hunt\\portal_bundles';
+const OUT_DIR = resolve('api_hunt/portal_bundles');
 mkdirSync(OUT_DIR, { recursive: true });
 
 const [command, ...args] = process.argv.slice(2);
