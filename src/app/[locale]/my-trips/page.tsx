@@ -225,9 +225,9 @@ export default function MyTripsPage() {
               blurDataURL={shimmerDataUrl(1800, 300)}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-deep/90 via-deep/40 to-transparent" />
-            <div className="absolute bottom-6 end-6 start-6 text-surface">
-              <h1 className="font-black text-2xl md:text-3xl mb-1">{t('title')}</h1>
-              <p className="font-bold text-xs sm:text-sm text-surface/90">{t('subtitle')}</p>
+            <div className="absolute bottom-6 end-6 start-6 text-white">
+              <h1 className="font-black text-2xl md:text-3xl mb-1 text-white hero-glow-text">{t('title')}</h1>
+              <p className="font-bold text-xs sm:text-sm text-white/90 hero-glow-sub">{t('subtitle')}</p>
             </div>
           </div>
 

@@ -119,12 +119,12 @@ export default function HotelsLandingPage() {
                 </div>
               </div>
 
-              <div className="relative z-10 text-surface space-y-1.5">
-                <h3 className="text-lg font-black">{lt(locale, col.title)}</h3>
-                <p className="text-xs text-surface/80 line-clamp-2 leading-relaxed">{lt(locale, col.desc)}</p>
-                <div className="pt-2 border-t border-surface/20 flex items-center justify-between">
-                  <span className="text-xs text-surface/70">{lt(locale, { fa: 'شروع از', en: 'From', ar: 'يبدأ من', zh: '价格起', ru: 'От' })}</span>
-                  <span className="text-sm font-black font-mono">
+              <div className="relative z-10 text-white space-y-1.5">
+                <h3 className="text-lg font-black text-white hero-glow-text">{lt(locale, col.title)}</h3>
+                <p className="text-xs text-white/90 line-clamp-2 leading-relaxed">{lt(locale, col.desc)}</p>
+                <div className="pt-2 border-t border-white/20 flex items-center justify-between">
+                  <span className="text-xs text-white/80">{lt(locale, { fa: 'شروع از', en: 'From', ar: 'يبدأ من', zh: '价格起', ru: 'От' })}</span>
+                  <span className="text-sm font-black font-price">
                     {num(col.price, locale)} <span className="text-[11px] font-normal">{lt(locale, { fa: 'تومان/شب', en: 'Toman/night', ar: 'تومان/ليلة', zh: '图曼/晚', ru: 'Toman/ночь' })}</span>
                   </span>
                 </div>

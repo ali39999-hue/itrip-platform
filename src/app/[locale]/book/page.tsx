@@ -68,8 +68,8 @@ export default function BookPage() {
               </div>
 
               <div className="relative z-10 w-full">
-                <p className="font-black text-2xl text-surface mb-2">{tile.label}</p>
-                <span className="inline-flex items-center gap-1.5 text-xs font-black text-mint-bright group-hover:text-surface transition-colors">
+                <p className="font-black text-2xl text-white mb-2 hero-glow-text">{tile.label}</p>
+                <span className="inline-flex items-center gap-1.5 text-xs font-black text-mint-bright group-hover:text-white transition-colors">
                   <span>{t('startSearch')}</span>
                   <ArrowLeft size={14} className="rtl:inline ltr:hidden group-hover:-translate-x-1 transition-transform" />
                   <ArrowRight size={14} className="ltr:inline rtl:hidden group-hover:translate-x-1 transition-transform" />
