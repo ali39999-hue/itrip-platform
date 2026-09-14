@@ -88,8 +88,11 @@ export const passengerSchema = z.object({
   passportNo: z
     .string()
     .transform((v) => normalizePassportNo(v))
-    .refine((v) => v.length >= 6, "Passport number is too short")
-    .refine((v) => isValidPassportNo(v), "Passport number format is invalid"),
+    // Domestic (Iran) bookings identify passengers by national ID instead of a
+    // passport — an empty number is accepted there; a provided one must still
+    // be well-formed. The passport-OR-nationalId KYC rule is enforced on top.
+    .refine((v) => v.length === 0 || v.length >= 6, "Passport number is too short")
+    .refine((v) => v.length === 0 || isValidPassportNo(v), "Passport number format is invalid"),
   passportExpiryDate: z
     .string()
     .optional()
@@ -119,6 +122,18 @@ export const passengerSchema = z.object({
   gender: Gender,
 });
 export type Passenger = z.infer<typeof passengerSchema>;
+
+/**
+ * Domestic (Iran) tour passengers: the national ID (کد ملی) is the identity
+ * document — passport fields are not collected and must not block validation.
+ */
+export const domesticPassengerSchema = passengerSchema.extend({
+  nationalId: z
+    .string()
+    .regex(/^\d{10}$/, "National ID must be exactly 10 digits"),
+  passportNo: z.string().optional(),
+  passportExpiryDate: z.string().optional(),
+});
 
 // ─── Booking Request ──────────────────────────────────────────────────────────
 

@@ -28,6 +28,9 @@ interface PassengerSectionProps {
   currentPassengerIndex?: number;
   onSelectPassengerTab?: (index: number) => void;
   passengersStatus?: Array<{ isComplete: boolean; name?: string }>;
+  // Domestic (Iran) tours: identity is verified via national ID + Shamsi birth
+  // date — passport fields and the OCR scan are not shown at all.
+  hidePassport?: boolean;
 }
 
 export function PassengerSection({
@@ -46,6 +49,7 @@ export function PassengerSection({
   currentPassengerIndex = 0,
   onSelectPassengerTab,
   passengersStatus = [],
+  hidePassport = false,
 }: PassengerSectionProps) {
   const locale = useLocale();
   const [modalOpen, setModalOpen] = useState(false);
@@ -105,7 +109,15 @@ export function PassengerSection({
         <div>
           <h2 className="text-[16px] font-black text-ink">{titleText}</h2>
           <p className="text-[12.5px] font-bold text-sub">
-            {lt(locale, {
+            {hidePassport
+              ? lt(locale, {
+                fa: 'اطلاعات باید دقیقاً مطابق کارت ملی باشد',
+                en: 'Information must exactly match your national ID card',
+                ar: 'يجب أن تطابق المعلومات بطاقة الهوية تماماً',
+                zh: '信息须与身份证完全一致',
+                ru: 'Данные должны точно совпадать с национальным удостоверением',
+              })
+              : lt(locale, {
               fa: 'اطلاعات باید دقیقاً مطابق پاسپورت یا کارت ملی باشد',
               en: 'Information must exactly match passport or national ID',
               ar: 'يجب أن تطابق المعلومات جواز السفر تماماً',
@@ -144,7 +156,7 @@ export function PassengerSection({
             </div>
           )}
 
-          {onScanPassport && (
+          {!hidePassport && onScanPassport && (
             <div className="relative group">
               <button
                 type="button"
@@ -176,22 +188,26 @@ export function PassengerSection({
       </div>
 
       {/* Passport Scan Method Choice Modal */}
-      <PassportScanModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        onScanSuccess={(result) => {
-          if (onApplyScanResult) {
-            onApplyScanResult(result);
-          } else if (onScanPassport) {
-            onScanPassport();
-          }
-        }}
-      />
+      {!hidePassport && (
+        <PassportScanModal
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+          onScanSuccess={(result) => {
+            if (onApplyScanResult) {
+              onApplyScanResult(result);
+            } else if (onScanPassport) {
+              onScanPassport();
+            }
+          }}
+        />
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-[12px] font-bold text-ink mb-1.5" htmlFor="firstName">
-            {lt(locale, { fa: 'نام (انگلیسی)', en: 'First Name (Latin)', ar: 'الاسم الأول (باللاتينية)', zh: '名（拼音/英文）', ru: 'Имя (латиницей)' })} <span className="text-rose-warm">*</span>
+            {hidePassport
+              ? lt(locale, { fa: 'نام (مطابق کارت ملی)', en: 'First Name (as on National ID)', ar: 'الاسم الأول (حسب بطاقة الهوية)', zh: '名（与身份证一致）', ru: 'Имя (как в удостоверении)' })
+              : lt(locale, { fa: 'نام (انگلیسی)', en: 'First Name (Latin)', ar: 'الاسم الأول (باللاتينية)', zh: '名（拼音/英文）', ru: 'Имя (латиницей)' })} <span className="text-rose-warm">*</span>
           </label>
           <Input
             id="firstName"
@@ -212,7 +228,9 @@ export function PassengerSection({
 
         <div>
           <label className="block text-[12px] font-bold text-ink mb-1.5" htmlFor="lastName">
-            {lt(locale, { fa: 'نام خانوادگی (انگلیسی)', en: 'Last Name (Latin)', ar: 'اسم العائلة (باللاتينية)', zh: '姓（拼音/英文）', ru: 'Фамилия (латиницей)' })} <span className="text-rose-warm">*</span>
+            {hidePassport
+              ? lt(locale, { fa: 'نام خانوادگی (مطابق کارت ملی)', en: 'Last Name (as on National ID)', ar: 'اسم العائلة (حسب بطاقة الهوية)', zh: '姓（与身份证一致）', ru: 'Фамилия (как в удостоверении)' })
+              : lt(locale, { fa: 'نام خانوادگی (انگلیسی)', en: 'Last Name (Latin)', ar: 'اسم العائلة (باللاتينية)', zh: '姓（拼音/英文）', ru: 'Фамилия (латиницей)' })} <span className="text-rose-warm">*</span>
           </label>
           <Input
             id="lastName"
@@ -231,30 +249,35 @@ export function PassengerSection({
           )}
         </div>
 
-        <div>
-          <label className="block text-[12px] font-bold text-ink mb-1.5" htmlFor="passportNo">
-            {lt(locale, { fa: 'شماره پاسپورت', en: 'Passport Number', ar: 'رقم جواز السفر', zh: '护照号码', ru: 'Номер паспорта' })} <span className="text-rose-warm">*</span>
-          </label>
-          <Input
-            id="passportNo"
-            {...register('passportNo')}
-            placeholder={lt(locale, { fa: 'مثلاً: A12345678', en: 'e.g. A12345678', ar: 'مثلاً: A12345678', zh: '例如: A12345678', ru: 'например: A12345678' })}
-            dir="ltr"
-            autoCapitalize="characters"
-            autoCorrect="off"
-            spellCheck="false"
-            className="text-start uppercase font-mono font-bold"
-          />
-          {errors.passportNo && (
-            <span className="text-rose-warm text-[11px] font-bold mt-1 block">
-              {errors.passportNo.message}
-            </span>
-          )}
-        </div>
+        {!hidePassport && (
+          <div>
+            <label className="block text-[12px] font-bold text-ink mb-1.5" htmlFor="passportNo">
+              {lt(locale, { fa: 'شماره پاسپورت', en: 'Passport Number', ar: 'رقم جواز السفر', zh: '护照号码', ru: 'Номер паспорта' })} <span className="text-rose-warm">*</span>
+            </label>
+            <Input
+              id="passportNo"
+              {...register('passportNo')}
+              placeholder={lt(locale, { fa: 'مثلاً: A12345678', en: 'e.g. A12345678', ar: 'مثلاً: A12345678', zh: '例如: A12345678', ru: 'например: A12345678' })}
+              dir="ltr"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck="false"
+              className="text-start uppercase font-mono font-bold"
+            />
+            {errors.passportNo && (
+              <span className="text-rose-warm text-[11px] font-bold mt-1 block">
+                {errors.passportNo.message}
+              </span>
+            )}
+          </div>
+        )}
 
         <div>
           <label className="block text-[12px] font-bold text-ink mb-1.5" htmlFor="nationalId">
-            {lt(locale, { fa: 'کد ملی / شناسه هویتی', en: 'National ID / Tax Code', ar: 'الرقم الوطني / الهوية', zh: '身份证件号码', ru: 'ИИН / Идентификационный номер' })}
+            {hidePassport
+              ? lt(locale, { fa: 'کد ملی', en: 'National ID', ar: 'الرقم الوطني', zh: '身份证号码', ru: 'Национальный ID' })
+              : lt(locale, { fa: 'کد ملی / شناسه هویتی', en: 'National ID / Tax Code', ar: 'الرقم الوطني / الهوية', zh: '身份证件号码', ru: 'ИИН / Идентификационный номер' })}
+            {hidePassport && <span className="text-rose-warm"> *</span>}
           </label>
           <Input
             id="nationalId"
@@ -272,26 +295,28 @@ export function PassengerSection({
           )}
         </div>
 
-        <div>
-          <label className="block text-[12px] font-bold text-ink mb-1.5" htmlFor="passportExpiryDate">
-            {lt(locale, { fa: 'تاریخ انقضای گذرنامه', en: 'Passport Expiry Date', ar: 'تاريخ انتهاء الجواز', zh: '护照有效期至', ru: 'Срок действия паспорта' })}
-            <span className="ms-1.5 text-[10px] text-brand-dark bg-mint/50 px-2 py-0.5 rounded-full font-bold">
-              {lt(locale, { fa: 'حداقل ۶ ماه اعتبار الزامی', en: 'Min 6 months validity', ar: 'مطلوب صلاحية 6 أشهر', zh: '须至少6个月有效期', ru: 'Мин. 6 месяцев' })}
-            </span>
-          </label>
-          <Input
-            id="passportExpiryDate"
-            {...register('passportExpiryDate')}
-            placeholder="YYYY-MM-DD"
-            dir="ltr"
-            className="text-start font-mono font-bold"
-          />
-          {errors.passportExpiryDate && (
-            <span className="text-rose-warm text-[11px] font-bold mt-1 block">
-              {errors.passportExpiryDate.message}
-            </span>
-          )}
-        </div>
+        {!hidePassport && (
+          <div>
+            <label className="block text-[12px] font-bold text-ink mb-1.5" htmlFor="passportExpiryDate">
+              {lt(locale, { fa: 'تاریخ انقضای گذرنامه', en: 'Passport Expiry Date', ar: 'تاريخ انتهاء الجواز', zh: '护照有效期至', ru: 'Срок действия паспорта' })}
+              <span className="ms-1.5 text-[10px] text-brand-dark bg-mint/50 px-2 py-0.5 rounded-full font-bold">
+                {lt(locale, { fa: 'حداقل ۶ ماه اعتبار الزامی', en: 'Min 6 months validity', ar: 'مطلوب صلاحية 6 أشهر', zh: '须至少6个月有效期', ru: 'Мин. 6 месяцев' })}
+              </span>
+            </label>
+            <Input
+              id="passportExpiryDate"
+              {...register('passportExpiryDate')}
+              placeholder="YYYY-MM-DD"
+              dir="ltr"
+              className="text-start font-mono font-bold"
+            />
+            {errors.passportExpiryDate && (
+              <span className="text-rose-warm text-[11px] font-bold mt-1 block">
+                {errors.passportExpiryDate.message}
+              </span>
+            )}
+          </div>
+        )}
 
         <div>
           <label className="block text-[12px] font-bold text-ink mb-1.5" htmlFor="birthDate">
@@ -309,7 +334,15 @@ export function PassengerSection({
             )}
           />
           <span className="text-[10.5px] text-sub mt-1 block">
-            {lt(locale, {
+            {hidePassport
+              ? lt(locale, {
+                fa: 'از تقویم شمسی مطابق کارت ملی انتخاب نمایید',
+                en: 'Pick from the Jalali (Shamsi) calendar matching your national ID',
+                ar: 'اختر من التقويم الهجري المطابق لبطاقة الهوية',
+                zh: '请从与身份证一致的波斯历中选择',
+                ru: 'Выберите в солнечной хиджре согласно удостоверению',
+              })
+              : lt(locale, {
               fa: 'از تقویم انتخاب نمایید (مطابق کارت ملی یا گذرنامه)',
               en: 'Select from calendar matching passport/ID',
               ar: 'اختر من التقويم (مطابق لجواز السفر أو الهوية)',

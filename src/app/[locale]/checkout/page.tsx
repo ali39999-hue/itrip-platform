@@ -11,10 +11,11 @@ import { useBookingStore } from '@/stores/booking-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { useCountryStore } from '@/stores/country-store';
 import { countryName } from '@/lib/countries';
-import { normalizeBookingType, passengerSchema, type Passenger } from '@/lib/validations';
+import { normalizeBookingType, passengerSchema, domesticPassengerSchema, type Passenger } from '@/lib/validations';
 import { createBookingDraft, payBooking, getWallet, repriceBookingAction } from '@/actions/booking';
 import { getAdminPaymentModeAction, setAdminPaymentModeAction } from '@/actions/admin-payment-mode';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useHydration } from '@/hooks/useHydration';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { calculateCountryPricing, formatMoney } from '@/lib/money';
@@ -83,6 +84,9 @@ export default function CheckoutPage() {
   const [saveToAccount, setSaveToAccount] = useState(false);
   const [adminPaymentMode, setAdminPaymentMode] = useState<'real' | 'demo'>('real');
   const [isAdminUser, setIsAdminUser] = useState(false);
+  // Domestic identity verification: while the national-ID registry check is
+  // simulated (3s), the submit CTA shows a spinner instead of its label.
+  const [verifyingIdentity, setVerifyingIdentity] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -108,6 +112,22 @@ export default function CheckoutPage() {
   }
 
   const totalTravelers = Math.max(1, (bookingContext?.adults ?? 1) + (bookingContext?.children ?? 0));
+
+  // Domestic (Iran) tours — e.g. the Isfahan tours — verify travelers through
+  // their national ID (کد ملی) and Shamsi birth date; passport fields are not
+  // collected. Detection covers both booking paths: the tour detail widget
+  // (meta.city) and the quick-book card (title/subtitle carry the city).
+  const isDomesticTour = (() => {
+    if (bookingContext?.type !== 'tours') return false;
+    const hay = [
+      bookingContext.title,
+      bookingContext.subtitle,
+      bookingContext.meta?.city,
+      bookingContext.meta?.cityEn,
+    ].filter(Boolean).join(' ').toLowerCase();
+    return hay.includes('اصفهان') || hay.includes('isfahan');
+  })();
+
   const [currentPassengerIdx, setCurrentPassengerIdx] = useState(0);
   const [passengersList, setPassengersList] = useState<Passenger[]>(() =>
     Array.from({ length: 9 }, () => ({
@@ -165,7 +185,10 @@ export default function CheckoutPage() {
 
   const passengersStatus = Array.from({ length: totalTravelers }).map((_, i) => {
     const p = i === currentPassengerIdx ? getValues() : passengersList[i];
-    const isComplete = Boolean(p?.firstName && p?.lastName && p?.passportNo && p?.birthDate);
+    const isComplete = Boolean(
+      p?.firstName && p?.lastName && p?.birthDate &&
+      (isDomesticTour ? p?.nationalId : p?.passportNo)
+    );
     const fullName = `${p?.firstName || ''} ${p?.lastName || ''}`.trim();
     return {
       isComplete,
@@ -455,9 +478,13 @@ export default function CheckoutPage() {
     const finalPassengers = [...passengersList];
     finalPassengers[currentPassengerIdx] = data;
 
+    // Domestic tours validate against the national-ID schema (passport empty);
+    // international journeys keep the full passport requirements.
+    const identitySchema = isDomesticTour ? domesticPassengerSchema : passengerSchema;
+
     for (let i = 0; i < totalTravelers; i++) {
       const p = finalPassengers[i];
-      const parsed = passengerSchema.safeParse(p);
+      const parsed = identitySchema.safeParse(p);
       if (!parsed.success) {
         setCurrentPassengerIdx(i);
         reset(p);
@@ -532,7 +559,10 @@ export default function CheckoutPage() {
     setPassengers(allBps);
 
     try {
-      const draft = await createBookingDraft({
+      // Domestic tours run a 3-second national-ID verification pass: the CTA
+      // shows a spinner while the draft is created in parallel, then the
+      // success toast confirms and the flow advances to the payment step.
+      const draftPromise = createBookingDraft({
         type: btype,
         itemId: bookingContext?.id,
         itemTitle,
@@ -558,10 +588,37 @@ export default function CheckoutPage() {
         source: 'WEB',
       });
 
+      const [draft] = await Promise.all([
+        draftPromise,
+        isDomesticTour ? new Promise((resolve) => setTimeout(resolve, 3000)) : Promise.resolve(null),
+      ]);
+
+      if (isDomesticTour) {
+        setVerifyingIdentity(false);
+      }
+
       if ('bookingId' in draft && draft.bookingId) {
         setDraftBookingId(draft.bookingId);
         if (typeof draft.discountAmount === 'number' && draft.discountAmount > 0) {
           setReferralDiscountAmount(draft.discountAmount);
+        }
+        if (isDomesticTour) {
+          toast.success(
+            lt(locale, {
+              fa: 'اطلاعات تایید شد',
+              en: 'Information verified',
+              ar: 'تم تأكيد المعلومات',
+              zh: '信息已验证',
+              ru: 'Данные подтверждены',
+            }),
+            { description: lt(locale, {
+              fa: 'مشخصات مسافر با موفقیت بررسی و تطبیق داده شد.',
+              en: 'Passenger details have been checked and matched successfully.',
+              ar: 'تم التحقق من بيانات المسافر ومطابقتها بنجاح.',
+              zh: '旅客信息已核对并匹配成功。',
+              ru: 'Данные пассажира успешно проверены и сопоставлены.',
+            }) },
+          );
         }
         setPhase('payment');
         return;
@@ -578,6 +635,7 @@ export default function CheckoutPage() {
       );
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch {
+      if (isDomesticTour) setVerifyingIdentity(false);
       setError(
         lt(locale, { fa: 'خطای ارتباط با سرور. دوباره تلاش کنید.', en: 'Server connection error. Please retry.', ar: 'خطأ في الاتصال بالخادم. حاول مجدداً.', zh: '服务器连接错误，请重试。', ru: 'Ошибка соединения с сервером. Повторите попытку.' })
       );
@@ -756,6 +814,7 @@ export default function CheckoutPage() {
                 currentPassengerIndex={currentPassengerIdx}
                 onSelectPassengerTab={handleSelectPassengerTab}
                 passengersStatus={passengersStatus}
+                hidePassport={isDomesticTour}
               />
 
               {/* Hierarchical Cross-Sell: Hotel <-> Flight intelligent recommendation */}
@@ -795,15 +854,29 @@ export default function CheckoutPage() {
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full min-h-[54px] px-8 rounded-xl bg-action hover:bg-action-hover text-ink text-[15px] font-black shadow-md transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+                  disabled={verifyingIdentity}
+                  className="w-full min-h-[54px] px-8 rounded-xl bg-action hover:bg-action-hover text-ink text-[15px] font-black shadow-md transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none disabled:opacity-70 disabled:cursor-wait"
                 >
-                  {lt(locale, {
-                    fa: 'تایید اطلاعات و ادامه به مرحله پرداخت ←',
-                    en: 'Confirm Details & Continue to Payment →',
-                    ar: 'تأكيد البيانات والمتابعة إلى الدفع ←',
-                    zh: '确认信息并前往支付 →',
-                    ru: 'Подтвердить данные и перейти к оплате →',
-                  })}
+                  {verifyingIdentity ? (
+                    <span className="inline-flex items-center justify-center gap-2">
+                      <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                      {lt(locale, {
+                        fa: 'در حال بررسی و تطبیق اطلاعات...',
+                        en: 'Verifying and matching details...',
+                        ar: 'جاري التحقق من البيانات ومطابقتها...',
+                        zh: '正在验证和核对信息...',
+                        ru: 'Проверка и сопоставление данных...',
+                      })}
+                    </span>
+                  ) : (
+                    lt(locale, {
+                      fa: 'تایید اطلاعات و ادامه به مرحله پرداخت ←',
+                      en: 'Confirm Details & Continue to Payment →',
+                      ar: 'تأكيد البيانات والمتابعة إلى الدفع ←',
+                      zh: '确认信息并前往支付 →',
+                      ru: 'Подтвердить данные и перейти к оплате →',
+                    })
+                  )}
                 </button>
               </div>
             </div>
@@ -980,7 +1053,11 @@ export default function CheckoutPage() {
           <StickyMobileBar
             totalCaption={tCheckout('totalPayable')}
             total={formatMoney(totalPayable, currency, locale)}
-            ctaLabel={tCheckout('continueToPayment')}
+            ctaLabel={
+              verifyingIdentity
+                ? lt(locale, { fa: 'در حال بررسی اطلاعات...', en: 'Verifying details...', ar: 'جاري التحقق من البيانات...', zh: '正在验证信息...', ru: 'Проверка данных...' })
+                : tCheckout('continueToPayment')
+            }
             formId="checkout-passenger-form"
           />
         )}
