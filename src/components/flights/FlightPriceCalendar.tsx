@@ -60,6 +60,17 @@ export function FlightPriceCalendar({
   const [dayOffset, setDayOffset] = useState<number>(0);
   const [modalOpen, setModalOpen] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
+  const selectedCardRef = useRef<HTMLButtonElement>(null);
+
+  // Keep the selected day in view: in RTL the overflow strip starts scrolled
+  // to its inline-end, which hides the selected (middle) card on first paint.
+  useEffect(() => {
+    selectedCardRef.current?.scrollIntoView({
+      inline: 'center',
+      block: 'nearest',
+      behavior: 'smooth',
+    });
+  }, [selectedDate, dayOffset]);
 
   // Today ISO string
   const today = useMemo(() => {
@@ -233,10 +244,10 @@ export function FlightPriceCalendar({
         className="w-full bg-surface rounded-2xl border border-line p-2.5 sm:p-3 shadow-xs mb-4 transition-all"
       >
         {/* Header: Title + Best Price Badge + Open Full Calendar Modal Button */}
-        <div className="flex items-center justify-between gap-2 mb-2 px-1">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2 px-1">
+          <div className="flex items-center gap-2 min-w-0">
             <CalendarDays size={16} className="text-brand shrink-0" />
-            <span className="text-xs sm:text-[13px] font-black text-ink">
+            <span className="text-xs sm:text-[13px] font-black text-ink min-w-0">
               {lt(locale, {
                 fa: 'ارزان‌ترین نرخ روزهای قبل و بعد',
                 en: 'Cheapest Fares on Nearby Dates',
@@ -270,14 +281,14 @@ export function FlightPriceCalendar({
           </button>
         </div>
 
-        {/* 7-Day Horizontal Carousel with Navigation Arrows */}
-        <div className="relative flex items-center gap-1 sm:gap-2">
-          {/* Previous Days Step Button */}
+        {/* 7-Day Carousel: swipeable snap strip on mobile, arrow-stepped grid on sm+ */}
+        <div className="flex items-center gap-1 sm:gap-2">
+          {/* Previous Days Step Button (desktop only — mobile swipes the strip) */}
           <button
             type="button"
             onClick={() => setDayOffset((prev) => prev - 1)}
             aria-label={lt(locale, { fa: 'روز قبل', en: 'Previous Day', ar: 'اليوم السابق', zh: '前一天', ru: 'Предыдущий день' })}
-            className="min-h-[44px] min-w-[44px] w-11 h-16 sm:h-20 rounded-xl bg-soft hover:bg-line/70 text-sub hover:text-ink grid place-items-center shrink-0 transition cursor-pointer active:scale-95"
+            className="hidden sm:grid min-h-[44px] min-w-[44px] w-11 h-20 rounded-xl bg-soft hover:bg-line/70 text-sub hover:text-ink place-items-center shrink-0 transition cursor-pointer active:scale-95"
           >
             {locale === 'fa' || locale === 'ar' ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
           </button>
@@ -285,73 +296,77 @@ export function FlightPriceCalendar({
           {/* Days Track */}
           <div
             ref={trackRef}
-            className="flex-1 grid grid-cols-7 gap-1 sm:gap-2 overflow-hidden py-1"
+            className="flex-1 min-w-0"
           >
-            {carouselDays.map((item) => (
-              <button
-                key={item.dateStr}
-                type="button"
-                disabled={item.isPast}
-                data-selected={item.isSelected || undefined}
-                onClick={() => {
-                  if (!item.isPast) onSelectDate(item.dateStr);
-                }}
-                className={`relative rounded-xl p-1.5 sm:p-2 text-center transition-all flex flex-col justify-between min-h-[68px] sm:min-h-[82px] border cursor-pointer select-none active:scale-[0.98] ${
-                  item.isSelected
-                    ? 'bg-brand text-surface border-brand shadow-sm ring-2 ring-brand/30'
-                    : item.isCheapest
-                    ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-400 dark:border-emerald-700 text-ink hover:border-emerald-600'
-                    : item.isPast
-                    ? 'bg-soft/40 border-line/40 text-sub/40 cursor-not-allowed opacity-50'
-                    : 'bg-surface hover:bg-soft/60 border-line text-ink'
-                }`}
-              >
-                {/* Top: Day Name (e.g. سه‌شنبه) */}
-                <div className="flex items-center justify-center gap-1">
-                  <span className={`text-[10px] sm:text-[11.5px] font-black ${item.isSelected ? 'text-surface' : item.isWeekend ? 'text-rose-500' : 'text-sub'}`}>
-                    {item.dayName}
-                  </span>
-                </div>
-
-                {/* Middle: Day & Month (e.g. ۲۱ اسفند) */}
-                <div className={`text-[11px] sm:text-[12.5px] font-extrabold font-price num ${item.isSelected ? 'text-surface' : 'text-ink'}`}>
-                  {item.dateDisplay}
-                </div>
-
-                {/* Bottom: Price in Toman */}
-                <div className="mt-0.5">
-                  {item.isPast ? (
-                    <span className="text-[9.5px] font-bold text-sub/50">
-                      {lt(locale, { fa: 'گذشته', en: 'Past', ar: 'مضى', zh: '已过', ru: 'Прошло' })}
+            {/* pt-3 keeps the floating "ارزان‌ترین" badge inside the overflow box */}
+            <div className="flex gap-1.5 overflow-x-auto no-scrollbar snap-x snap-proximity pt-3 pb-1.5 px-0.5 sm:grid sm:grid-cols-7 sm:gap-2 sm:overflow-hidden sm:px-0">
+              {carouselDays.map((item) => (
+                <button
+                  key={item.dateStr}
+                  type="button"
+                  disabled={item.isPast}
+                  data-selected={item.isSelected || undefined}
+                  ref={item.isSelected ? selectedCardRef : undefined}
+                  onClick={() => {
+                    if (!item.isPast) onSelectDate(item.dateStr);
+                  }}
+                  className={`relative rounded-xl px-1.5 py-2 sm:p-2 text-center transition-all flex flex-col justify-between gap-1 w-[106px] shrink-0 snap-start min-h-[76px] sm:w-auto sm:min-w-0 sm:min-h-[82px] border cursor-pointer select-none active:scale-[0.98] overflow-hidden ${
+                    item.isSelected
+                      ? 'bg-brand text-surface border-brand shadow-sm ring-2 ring-brand/30'
+                      : item.isCheapest
+                      ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-400 dark:border-emerald-700 text-ink hover:border-emerald-600'
+                      : item.isPast
+                      ? 'bg-soft/40 border-line/40 text-sub/40 cursor-not-allowed opacity-50'
+                      : 'bg-surface hover:bg-soft/60 border-line text-ink'
+                  }`}
+                >
+                  {/* Top: Day Name (e.g. سه‌شنبه) */}
+                  <div className="flex items-center justify-center">
+                    <span className={`text-[10.5px] sm:text-[11.5px] font-black whitespace-nowrap ${item.isSelected ? 'text-surface' : item.isWeekend ? 'text-rose-500' : 'text-sub'}`}>
+                      {item.dayName}
                     </span>
-                  ) : (
-                    <div className="flex flex-col items-center">
-                      <span className={`text-[10px] sm:text-[11.5px] font-black font-price num leading-none ${item.isSelected ? 'text-surface' : item.isCheapest ? 'text-emerald-700 dark:text-emerald-300' : 'text-brand-dark'}`}>
-                        {num(item.price, locale)}
-                      </span>
-                      <span className={`text-[8.5px] font-bold leading-none mt-0.5 ${item.isSelected ? 'text-surface/80' : 'text-sub'}`}>
-                        {currencyLabel}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                  </div>
 
-                {/* Cheapest Badge (Alibaba style green badge) */}
-                {item.isCheapest && !item.isSelected && (
-                  <span className="absolute -top-2 start-1/2 -translate-x-1/2 px-1.5 py-0.2 rounded-full bg-emerald-600 text-surface text-[8.5px] font-black shadow-xs whitespace-nowrap">
-                    {lt(locale, { fa: 'ارزان‌ترین', en: 'Cheapest', ar: 'الأرخص', zh: '最低', ru: 'Эконом' })}
-                  </span>
-                )}
-              </button>
-            ))}
+                  {/* Middle: Day & Month (e.g. ۲۱ اسفند) */}
+                  <div className={`text-[11.5px] sm:text-[12.5px] font-extrabold font-price num whitespace-nowrap ${item.isSelected ? 'text-surface' : 'text-ink'}`}>
+                    {item.dateDisplay}
+                  </div>
+
+                  {/* Bottom: Price in Toman */}
+                  <div>
+                    {item.isPast ? (
+                      <span className="text-[9.5px] font-bold text-sub/50 whitespace-nowrap">
+                        {lt(locale, { fa: 'گذشته', en: 'Past', ar: 'مضى', zh: '已过', ru: 'Прошло' })}
+                      </span>
+                    ) : (
+                      <div className="flex flex-col items-center">
+                        <span className={`text-[10.5px] sm:text-[11.5px] font-black font-price num leading-none whitespace-nowrap ${item.isSelected ? 'text-surface' : item.isCheapest ? 'text-emerald-700 dark:text-emerald-300' : 'text-brand-dark'}`}>
+                          {num(item.price, locale)}
+                        </span>
+                        <span className={`text-[8.5px] font-bold leading-none mt-1 whitespace-nowrap ${item.isSelected ? 'text-surface/80' : 'text-sub'}`}>
+                          {currencyLabel}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Cheapest Badge (Alibaba style green badge) */}
+                  {item.isCheapest && !item.isSelected && (
+                    <span className="absolute -top-2 start-1/2 ltr:-translate-x-1/2 rtl:translate-x-1/2 px-1.5 py-px rounded-full bg-emerald-600 text-surface text-[8.5px] font-black shadow-xs whitespace-nowrap">
+                      {lt(locale, { fa: 'ارزان‌ترین', en: 'Cheapest', ar: 'الأرخص', zh: '最低', ru: 'Эконом' })}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Next Days Step Button */}
+          {/* Next Days Step Button (desktop only — mobile swipes the strip) */}
           <button
             type="button"
             onClick={() => setDayOffset((prev) => prev + 1)}
             aria-label={lt(locale, { fa: 'روز بعد', en: 'Next Day', ar: 'اليوم التالي', zh: '后一天', ru: 'Следующий день' })}
-            className="min-h-[44px] min-w-[44px] w-11 h-16 sm:h-20 rounded-xl bg-soft hover:bg-line/70 text-sub hover:text-ink grid place-items-center shrink-0 transition cursor-pointer active:scale-95"
+            className="hidden sm:grid min-h-[44px] min-w-[44px] w-11 h-20 rounded-xl bg-soft hover:bg-line/70 text-sub hover:text-ink place-items-center shrink-0 transition cursor-pointer active:scale-95"
           >
             {locale === 'fa' || locale === 'ar' ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
           </button>
@@ -428,7 +443,7 @@ export function FlightPriceCalendar({
                     {num(item.price, locale)}
                   </span>
                   {item.isCheapest && !item.isSelected && (
-                    <span className="absolute -top-1.5 start-1/2 -translate-x-1/2 px-1.5 py-0.2 rounded-full bg-emerald-600 text-surface text-[8px] font-black">
+                    <span className="absolute -top-1.5 start-1/2 ltr:-translate-x-1/2 rtl:translate-x-1/2 px-1.5 py-0.5 rounded-full bg-emerald-600 text-surface text-[8px] font-black">
                       {lt(locale, { fa: 'ارزان‌ترین', en: 'Min', ar: 'الأدنى', zh: '最低', ru: 'Мин' })}
                     </span>
                   )}

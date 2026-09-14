@@ -945,7 +945,9 @@ function FlightSearchInner() {
 
           {/* Quick Filter Chips & Price Drop Alert Trigger */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-2.5 sm:p-3 rounded-2xl bg-surface border border-line shadow-2xs">
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none text-xs font-black snap-x touch-pan-x">
+            {/* Full-bleed scroll on mobile: chips reach the card edge instead of
+                being cut mid-glyph at the padded boundary. */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none text-xs font-black snap-x touch-pan-x -mx-2.5 px-2.5 sm:mx-0 sm:px-0">
               <button
                 type="button"
                 onClick={() => {
@@ -1074,8 +1076,9 @@ function FlightSearchInner() {
             </button>
           </div>
 
-          {/* Sorting & mobile trigger */}
-          <div className="flex overflow-x-auto pb-1 gap-2 scrollbar-none items-center snap-x touch-pan-x">
+          {/* Sorting & mobile trigger — full-bleed scroll on mobile so tabs cut
+              at the real screen edge, not mid-glyph inside the page padding. */}
+          <div className="flex overflow-x-auto pb-1 gap-2 scrollbar-none items-center snap-x touch-pan-x -mx-4 px-4 md:mx-0 md:px-0">
             {sorts.map((s) => (
               <button
                 key={s.id}
