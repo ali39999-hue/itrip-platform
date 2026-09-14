@@ -165,7 +165,7 @@ export default function VisaPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-deep/90 via-deep/30 to-transparent" />
                     
                     <div className="absolute top-3 start-3 flex items-center gap-2">
-                      <span className="text-surface text-xl font-black drop-shadow-md">
+                      <span className="text-white text-xl font-black drop-shadow-md">
                         {locale === 'fa' ? v.countryFa : v.countryEn}
                       </span>
                       {isMatch && (
