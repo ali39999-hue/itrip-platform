@@ -13,7 +13,7 @@
     },
     {
       "path": "/api/cron/flight-refresh",
-      "schedule": "0 * * * *"
+      "schedule": "0 3 * * *"
     }
   ]
 }
