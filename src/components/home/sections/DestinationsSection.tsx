@@ -68,9 +68,9 @@ export function DestinationsSection() {
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-deep/90 via-deep/30 to-transparent" />
-              <div className="absolute bottom-4 start-4 end-4 text-surface">
-                <h3 className="text-lg font-bold mb-1">{city.name}</h3>
-                <p className="text-xs text-surface/80 line-clamp-2 leading-relaxed">{city.desc}</p>
+              <div className="absolute bottom-4 start-4 end-4 text-white">
+                <h3 className="text-lg font-bold mb-1 text-white hero-glow-text">{city.name}</h3>
+                <p className="text-xs text-white/90 line-clamp-2 leading-relaxed">{city.desc}</p>
               </div>
             </Link>
           ))}

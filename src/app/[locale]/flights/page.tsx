@@ -78,20 +78,20 @@ export default function FlightsLandingPage() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-deep/90 via-deep/30 to-transparent" />
 
-              <div className="absolute bottom-4 start-4 end-4 text-surface">
+              <div className="absolute bottom-4 start-4 end-4 text-white">
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className="text-lg font-black flex items-center gap-1.5 flex-wrap">
+                  <h3 className="text-lg font-black flex items-center gap-1.5 flex-wrap text-white hero-glow-text">
                     <span>{lt(locale, { fa: route.fromFa, en: route.fromName, ar: route.fromFa, zh: route.fromName, ru: route.fromName })}</span>
                     <ArrowRight size={14} className="inline rtl:rotate-180 text-mint-bright shrink-0" aria-hidden="true" />
                     <span>{lt(locale, { fa: route.toFa, en: route.toName, ar: route.toFa, zh: route.toName, ru: route.toName })}</span>
                   </h3>
-                  <span className="px-2 py-0.5 rounded-full bg-surface/20 backdrop-blur-sm text-xs font-bold">
+                  <span className="px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-xs font-bold text-white border border-white/20">
                     {lt(locale, { fa: route.duration, en: route.durationEn, ar: route.duration, zh: route.durationEn, ru: route.durationEn })}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-surface/80">{lt(locale, { fa: 'شروع از', en: 'From', ar: 'يبدأ من', zh: '起价', ru: 'от' })}</span>
-                  <span className="text-base font-black font-mono">
+                  <span className="text-xs text-white/80">{lt(locale, { fa: 'شروع از', en: 'From', ar: 'يبدأ من', zh: '起价', ru: 'от' })}</span>
+                  <span className="text-base font-black font-price">
                     {num(route.price, locale)} <span className="text-xs font-normal">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томан' })}</span>
                   </span>
                 </div>

@@ -177,16 +177,16 @@ export default function DestinationsPage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-deep/95 via-deep/40 to-transparent" />
                 
-                <div className="relative z-10">
+                <div className="relative z-10 text-white">
                   <span className="text-xs font-bold text-mint-bright block leading-tight">{city.en}</span>
-                  <strong className="text-2xl font-black block mt-0.5">{city.fa}</strong>
+                  <strong className="text-2xl font-black block mt-0.5 text-white hero-glow-text">{city.fa}</strong>
                 </div>
 
                 <div className="relative z-10 flex items-center justify-between w-full pt-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface/20 backdrop-blur-md text-xs font-black">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-black text-white border border-white/20">
                     <Compass size={13} /> {t('exploreHotels')}
                   </span>
-                  <span className="w-8 h-8 rounded-full bg-surface text-brand-dark grid place-items-center group-hover:scale-110 transition shadow-sm">
+                  <span className="w-8 h-8 rounded-full bg-white text-brand-dark grid place-items-center group-hover:scale-110 transition shadow-sm">
                     <ArrowLeft size={15} className="rtl:inline ltr:hidden" />
                     <ArrowRight size={15} className="ltr:inline rtl:hidden" />
                   </span>
@@ -224,10 +224,10 @@ export default function DestinationsPage() {
                     blurDataURL={shimmerDataUrl(400, 200)}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-deep/90 via-deep/30 to-transparent" />
-                  <span className="absolute top-2.5 start-2.5 px-2.5 py-0.5 rounded-full bg-surface/90 text-brand-dark text-[11px] font-black backdrop-blur-xs shadow-xs">
+                  <span className="absolute top-2.5 start-2.5 px-2.5 py-0.5 rounded-full bg-white/90 text-brand-dark text-[11px] font-black backdrop-blur-xs shadow-xs">
                     {exp.category}
                   </span>
-                  <span className="absolute bottom-2.5 start-2.5 text-xs text-surface font-bold flex items-center gap-1">
+                  <span className="absolute bottom-2.5 start-2.5 text-xs text-white font-bold flex items-center gap-1 drop-shadow-sm">
                     <Calendar size={12} className="text-mint-bright" /> {isEn ? exp.whenEn : exp.when}
                   </span>
                 </div>

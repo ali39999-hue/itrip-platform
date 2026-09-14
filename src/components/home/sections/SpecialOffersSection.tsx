@@ -102,7 +102,7 @@ export function SpecialOffersSection() {
           <div className="flex items-center gap-2 shrink-0">
             <Link
               href="/plan"
-              className="hidden sm:inline-flex items-center gap-1.5 min-h-10 px-4 rounded-full bg-brand-dark text-surface text-[13px] font-black whitespace-nowrap hover:bg-deep transition shadow-sm shadow-brand-dark/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="hidden sm:inline-flex items-center gap-1.5 min-h-10 px-4 rounded-full bg-brand-dark text-white text-[13px] font-black whitespace-nowrap hover:bg-deep transition shadow-sm shadow-brand-dark/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <Sparkles size={14} aria-hidden="true" /> {t2('plannerCta')}
             </Link>
@@ -152,9 +152,9 @@ export function SpecialOffersSection() {
                       {lt(locale, { fa: 'تجربه برگزیده', en: 'Curated Choice', ar: 'خيار مميز', zh: '精选体验', ru: 'Выбор экспертов' })}
                     </span>
                   </div>
-                  <div className="absolute bottom-3 start-3 end-3 text-surface z-10">
+                  <div className="absolute bottom-3 start-3 end-3 text-white z-10">
                     <p className="text-[11px] text-mint-bright font-bold m-0 mb-1">{when}</p>
-                    <h3 className="text-[16px] font-black leading-snug m-0 line-clamp-2">{title}</h3>
+                    <h3 className="text-[16px] font-black leading-snug m-0 line-clamp-2 text-white hero-glow-text">{title}</h3>
                   </div>
                 </div>
                 <div className="p-4 sm:p-5 flex flex-col gap-4 flex-1 justify-between">
