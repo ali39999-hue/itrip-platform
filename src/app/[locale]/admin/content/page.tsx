@@ -129,6 +129,12 @@ function AdminContentPageInner() {
       ? requestedTab
       : 'tours'
   );
+
+  useEffect(() => {
+    if (requestedTab && ['site', 'tours', 'experiences', 'travelogues', 'guides'].includes(requestedTab)) {
+      setActiveTab(requestedTab);
+    }
+  }, [requestedTab]);
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 

@@ -60,9 +60,13 @@ export default function AuthPage() {
 
   // Return the visitor to where they came from (checkout, my-trips, wallet…).
   // Only accept safe internal paths. Supports both callbackUrl and redirect parameters.
+  // Strip any leading locale prefix (/fa, /en, /ar, /zh, /ru) so next-intl's
+  // useRouter().push() does not produce double locales (e.g. /fa/fa/admin -> 404).
   const rawCallback = searchParams.get('callbackUrl') || searchParams.get('redirect');
   const callbackUrl =
-    rawCallback && rawCallback.startsWith('/') && !rawCallback.startsWith('//') ? rawCallback : '/account';
+    rawCallback && rawCallback.startsWith('/') && !rawCallback.startsWith('//')
+      ? rawCallback.replace(/^\/(?:fa|en|ar|zh|ru)(?=\/|$)/, '') || '/'
+      : '/account';
 
   const [authMode, setAuthMode] = useState<'otp' | 'password'>(
     callbackUrl.includes('/admin') ? 'password' : 'otp'
