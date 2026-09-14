@@ -158,7 +158,7 @@ export function ExperienceDetailModal({
               <Icon size={14} />
               <span>{catLabel}</span>
             </span>
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-surface/30 backdrop-blur-md text-surface font-bold text-xs border border-surface/20">
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white font-bold text-xs border border-white/20">
               <Calendar size={13} />
               <span>{when}</span>
             </span>
