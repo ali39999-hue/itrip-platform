@@ -29,173 +29,52 @@ export class ContentDomainService {
 
   // 1. Tours
   static async getTours() {
-    let tours = await prisma.tour.findMany({
-      include: {
-        departureDates: { orderBy: { startDate: 'asc' } },
-        itineraryDays: { orderBy: { day: 'asc' } },
-      },
-      orderBy: { createdAt: 'desc' },
-    }).catch(() => []);
-
-    if (!tours || tours.length === 0) {
-      try {
-        const { DETAILED_TOURS } = await import('@/services/tours-service');
-        for (const tour of DETAILED_TOURS) {
-          const createdTour = await prisma.tour.upsert({
-            where: { id: tour.id },
-            update: {
-              title: tour.title,
-              titleEn: tour.titleEn || tour.title,
-              city: tour.city,
-              cityEn: tour.cityEn || null,
-              country: tour.country || 'ایران',
-              countryEn: tour.countryEn || 'Iran',
-              durationDays: tour.durationDays,
-              durationNights: tour.durationNights || Math.max(1, tour.durationDays - 1),
-              currency: tour.currency || 'TOMAN',
-              price: new Prisma.Decimal(tour.price),
-              childPrice: tour.childPrice ? new Prisma.Decimal(tour.childPrice) : null,
-              originalPrice: tour.originalPrice ? new Prisma.Decimal(tour.originalPrice) : null,
-              discountPercent: tour.discountPercent ?? null,
-              rating: tour.rating || 5.0,
-              reviewsCount: tour.reviewsCount || 0,
-              category: tour.category || 'cultural',
-              heroImage: tour.heroImage || null,
-              gallery: tour.gallery || [],
-              summary: tour.summary || '',
-              summaryEn: tour.summaryEn || '',
-              description: tour.description || '',
-              descriptionEn: tour.descriptionEn || '',
-              highlights: tour.highlights || [],
-              includes: tour.includes || [],
-              excludes: tour.excludes || [],
-              hotelName: tour.hotelName || null,
-              hotelStars: tour.hotelStars || 5,
-              transportType: tour.transportType || null,
-              transportTypeEn: tour.transportTypeEn || null,
-              groupSize: tour.groupSize || null,
-              groupSizeEn: tour.groupSizeEn || null,
-              guideLanguages: tour.guideLanguages || ['فارسی', 'English'],
-              isPublished: true,
-            },
-            create: {
-              id: tour.id,
-              title: tour.title,
-              titleEn: tour.titleEn || tour.title,
-              city: tour.city,
-              cityEn: tour.cityEn || null,
-              country: tour.country || 'ایران',
-              countryEn: tour.countryEn || 'Iran',
-              durationDays: tour.durationDays,
-              durationNights: tour.durationNights || Math.max(1, tour.durationDays - 1),
-              currency: tour.currency || 'TOMAN',
-              price: new Prisma.Decimal(tour.price),
-              childPrice: tour.childPrice ? new Prisma.Decimal(tour.childPrice) : null,
-              originalPrice: tour.originalPrice ? new Prisma.Decimal(tour.originalPrice) : null,
-              discountPercent: tour.discountPercent ?? null,
-              rating: tour.rating || 5.0,
-              reviewsCount: tour.reviewsCount || 0,
-              category: tour.category || 'cultural',
-              heroImage: tour.heroImage || null,
-              gallery: tour.gallery || [],
-              summary: tour.summary || '',
-              summaryEn: tour.summaryEn || '',
-              description: tour.description || '',
-              descriptionEn: tour.descriptionEn || '',
-              highlights: tour.highlights || [],
-              includes: tour.includes || [],
-              excludes: tour.excludes || [],
-              hotelName: tour.hotelName || null,
-              hotelStars: tour.hotelStars || 5,
-              transportType: tour.transportType || null,
-              transportTypeEn: tour.transportTypeEn || null,
-              groupSize: tour.groupSize || null,
-              groupSizeEn: tour.groupSizeEn || null,
-              guideLanguages: tour.guideLanguages || ['فارسی', 'English'],
-              isPublished: true,
-            },
-          });
-
-          if (tour.departureDates && tour.departureDates.length > 0) {
-            await prisma.tourDepartureDate.deleteMany({ where: { tourId: createdTour.id } });
-            for (const dep of tour.departureDates) {
-              await prisma.tourDepartureDate.create({
-                data: {
-                  tourId: createdTour.id,
-                  startDate: dep.startDate,
-                  endDate: dep.endDate,
-                  currency: dep.currency || tour.currency || 'TOMAN',
-                  price: new Prisma.Decimal(dep.price),
-                  childPrice: dep.childPrice ? new Prisma.Decimal(dep.childPrice) : null,
-                  availableSeats: dep.availableSeats ?? 10,
-                  guaranteed: dep.guaranteed ?? true,
-                },
-              });
-            }
-          }
-
-          if (tour.itinerary && tour.itinerary.length > 0) {
-            await prisma.tourItineraryDay.deleteMany({ where: { tourId: createdTour.id } });
-            for (const day of tour.itinerary) {
-              await prisma.tourItineraryDay.create({
-                data: {
-                  tourId: createdTour.id,
-                  day: day.day,
-                  title: day.title,
-                  titleEn: day.titleEn || day.title,
-                  description: day.description || day.title || '',
-                  activities: day.activities || [],
-                  breakfast: day.meals?.breakfast ?? false,
-                  lunch: day.meals?.lunch ?? false,
-                  dinner: day.meals?.dinner ?? false,
-                  accommodation: day.accommodation || null,
-                },
-              });
-            }
-          }
-        }
-
-        tours = await prisma.tour.findMany({
-          include: {
-            departureDates: { orderBy: { startDate: 'asc' } },
-            itineraryDays: { orderBy: { day: 'asc' } },
-          },
-          orderBy: { createdAt: 'desc' },
-        });
-      } catch (err) {
-        console.warn('[ContentDomainService.getTours] Automatic seed fallback:', err);
+    try {
+      const tours = await prisma.tour.findMany({
+        include: {
+          departureDates: { orderBy: { startDate: 'asc' } },
+          itineraryDays: { orderBy: { day: 'asc' } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (tours && tours.length > 0) {
+        return tours.map((t) => ContentDomainService.serializeTour(t));
       }
+    } catch (err) {
+      console.warn('[ContentDomainService.getTours] Database query notice:', err);
     }
 
-    if (!tours || tours.length === 0) {
-      try {
-        const { DETAILED_TOURS } = await import('@/services/tours-service');
-        return DETAILED_TOURS.map((t) => ContentDomainService.serializeTour({
-          ...t,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          isPublished: true,
-          departureDates: t.departureDates || [],
-          itineraryDays: (t.itinerary || []).map((item) => ({
-            id: `itin_${item.day}`,
-            day: item.day,
-            title: item.title,
-            titleEn: item.titleEn,
-            description: item.description,
-            activities: item.activities || [],
-            breakfast: item.meals?.breakfast ?? true,
-            lunch: item.meals?.lunch ?? false,
-            dinner: item.meals?.dinner ?? false,
-            accommodation: item.accommodation || null,
-            tourId: t.id,
-          })),
-        }));
-      } catch {
-        return [];
-      }
+    // Instant zero-latency fallback: return canonical DETAILED_TOURS immediately
+    // so ERP and public catalog load in <1ms without freezing or timing out
+    try {
+      const { DETAILED_TOURS } = await import('@/services/tours-service');
+      return DETAILED_TOURS.map((t) => ContentDomainService.serializeTour({
+        ...t,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isPublished: true,
+        hotelName: t.hotelName || null,
+        hotelStars: t.hotelStars || 5,
+        transportType: t.transportType || null,
+        transportTypeEn: t.transportTypeEn || null,
+        departureDates: t.departureDates || [],
+        itineraryDays: (t.itinerary || []).map((item) => ({
+          id: `itin_${item.day}`,
+          day: item.day,
+          title: item.title,
+          titleEn: item.titleEn,
+          description: item.description,
+          activities: item.activities || [],
+          breakfast: item.meals?.breakfast ?? true,
+          lunch: item.meals?.lunch ?? false,
+          dinner: item.meals?.dinner ?? false,
+          accommodation: item.accommodation || null,
+          tourId: t.id,
+        })),
+      }));
+    } catch {
+      return [];
     }
-
-    return tours.map((t) => ContentDomainService.serializeTour(t));
   }
 
   static async createTour(data: {

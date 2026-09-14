@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from '@/i18n/routing';
-import { Menu, X, ChevronRight, UserRound, LogOut, Briefcase, Wallet, Users, Sparkles } from 'lucide-react';
+import { Menu, X, ChevronRight, UserRound, LogOut, Briefcase, Wallet, Users, Sparkles, ShoppingCart } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
+import { useBookingStore } from '@/stores/booking-store';
+import { UnifiedCartDrawer } from '@/components/cart/UnifiedCartDrawer';
 import { Logo } from './Logo';
 import { CountrySwitcher } from './header/CountrySwitcher';
 import { LocaleSwitcher } from './header/LocaleSwitcher';
@@ -15,12 +17,15 @@ import { ThemeToggle } from './ThemeToggle';
 import { CommandPalette } from './CommandPalette';
 import { useTranslations, useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
+import { num } from '@/lib/format';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { user, logout } = useAuthStore();
+  const cart = useBookingStore((s) => s.cart);
   const t = useTranslations('Nav');
   const ct = useTranslations('Common');
   const locale = useLocale();
@@ -255,6 +260,21 @@ export function Header() {
           {/* City & Hotel Search — سمت چپ نوبار (انتهای ردیف در RTL) */}
           <CityHotelSearch />
 
+          {/* Unified Cart Button with Live Badge */}
+          <button
+            type="button"
+            onClick={() => setCartOpen(true)}
+            aria-label={lt(locale, { fa: `سبد رزرو (${cart.length} مورد)`, en: `Booking Cart (${cart.length} items)`, ar: `سلة الحجز (${cart.length})`, zh: `预订购物车 (${cart.length})`, ru: `Корзина (${cart.length})` })}
+            className="relative min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl text-ink hover:bg-soft active:scale-95 transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer"
+          >
+            <ShoppingCart size={20} />
+            {cart.length > 0 && (
+              <span className="absolute top-1.5 end-1.5 w-4 h-4 rounded-full bg-brand text-white font-mono text-[10px] font-black flex items-center justify-center animate-in zoom-in-50">
+                {num(cart.length, locale)}
+              </span>
+            )}
+          </button>
+
           {/* Mobile Menu Button with 44px touch target */}
           <button
             type="button"
@@ -270,6 +290,9 @@ export function Header() {
 
       {/* Global Command Palette Dialog */}
       <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
+
+      {/* Unified Multi-Product Travel Cart Drawer */}
+      <UnifiedCartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
 
       {/* Render Mobile Drawer into document.body to escape header's backdrop-filter stacking context */}
       {mounted && typeof document !== 'undefined' && drawerContent && createPortal(drawerContent, document.body)}
