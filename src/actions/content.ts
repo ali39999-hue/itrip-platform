@@ -71,7 +71,7 @@ function sanitizeTour(t: Record<string, unknown>) {
     durationNights: Number(t.durationNights || 2),
     currency: String(t.currency || 'TOMAN'),
     category: String(t.category || 'cultural'),
-    isPublished: Boolean(t.isPublished),
+    isPublished: t.isPublished !== undefined ? Boolean(t.isPublished) : true,
     price: typeof t.price === 'object' && t.price !== null ? Number(t.price.toString()) : (Number(t.price) || 0),
     childPrice: t.childPrice != null ? (typeof t.childPrice === 'object' ? Number(t.childPrice.toString()) : Number(t.childPrice)) : null,
     originalPrice: t.originalPrice != null ? (typeof t.originalPrice === 'object' ? Number(t.originalPrice.toString()) : Number(t.originalPrice)) : null,

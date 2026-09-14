@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useLocale } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import {
   Compass,
   Landmark,
@@ -119,9 +120,15 @@ export interface GuideAdminItem {
   isPublished?: boolean;
 }
 
-export default function AdminContentPage() {
+function AdminContentPageInner() {
   const locale = useLocale();
-  const [activeTab, setActiveTab] = useState<ContentTab>('site');
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get('tab') as ContentTab | null;
+  const [activeTab, setActiveTab] = useState<ContentTab>(
+    requestedTab && ['site', 'tours', 'experiences', 'travelogues', 'guides'].includes(requestedTab)
+      ? requestedTab
+      : 'tours'
+  );
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
@@ -130,6 +137,14 @@ export default function AdminContentPage() {
   const [experiences, setExperiences] = useState<ExperienceAdminItem[]>([]);
   const [travelogues, setTravelogues] = useState<TravelogueAdminItem[]>([]);
   const [guides, setGuides] = useState<GuideAdminItem[]>([]);
+
+  // Pre-load tab counts and data on initial mount so badges reflect real numbers immediately
+  useEffect(() => {
+    getAdminToursAction().then((r) => { if (r.success && r.tours) setTours(r.tours); });
+    getAdminExperiencesAction().then((r) => { if (r.success && r.experiences) setExperiences(r.experiences); });
+    getAdminTraveloguesAction().then((r) => { if (r.success && r.travelogues) setTravelogues(r.travelogues); });
+    getAdminGuidesAction().then((r) => { if (r.success && r.guides) setGuides(r.guides); });
+  }, []);
 
   // Modals state
   const [tourModalOpen, setTourModalOpen] = useState(false);
@@ -1962,5 +1977,20 @@ export default function AdminContentPage() {
         </ErpModal>
       )}
     </div>
+  );
+}
+
+export default function AdminContentPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-16 text-center text-sub flex flex-col items-center justify-center gap-3 bg-surface rounded-3xl border border-line">
+          <Loader2 size={32} className="animate-spin text-brand" />
+          <span className="text-xs font-bold">در حال بارگذاری پنل مدیریت محتوا...</span>
+        </div>
+      }
+    >
+      <AdminContentPageInner />
+    </Suspense>
   );
 }

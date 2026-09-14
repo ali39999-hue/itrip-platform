@@ -17,6 +17,7 @@ const ROUTE_REQUIRED_PERMISSIONS: Record<string, string[]> = {
   '/admin/users': ['user:manage'],
   '/admin/bookings': ['booking:view:all'],
   '/admin/ops': ['ops:override:cancel'],
+  '/admin/tours': ['catalog:hotels:edit', 'catalog:flights:edit'],
   '/admin/content': ['catalog:hotels:edit', 'catalog:flights:edit'],
   '/admin/travel-files': ['booking:view:all', 'ops:override:cancel'],
   '/admin/exceptions': ['ops:override:cancel', 'booking:view:all'],

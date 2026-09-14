@@ -11,7 +11,7 @@ import {
   LayoutDashboard, BriefcaseBusiness, Wallet,
   PlaneTakeoff, ExternalLink, ShieldCheck, UserCheck, Activity,
   Building2, Boxes, PanelLeftClose, PanelLeftOpen, FolderKanban, Users, Menu, X,
-  ChevronLeft, Keyboard, ReceiptText, HandCoins, Building, ListChecks,
+  ChevronLeft, Keyboard, ReceiptText, HandCoins, Building, ListChecks, Compass,
 } from 'lucide-react';
 import { lt, LText } from '@/lib/lt';
 import { cn } from '@/lib/utils';
@@ -61,6 +61,7 @@ const NAV_GROUPS: NavGroup[] = [
     id: 'catalog',
     title: { fa: 'کاتالوگ و تامین', en: 'Catalog & Supply', ar: 'الكتالوج والتوريد', zh: '目录与供应', ru: 'Каталог и поставки' },
     items: [
+      { href: '/admin/tours', label: { fa: 'تورهای مسافرتی', en: 'Tours & Packages', ar: 'الجولات السياحية', zh: '旅游线路', ru: 'Туры и пакеты' }, icon: Compass, perm: 'catalog:hotels:edit' },
       { href: '/admin/suppliers', label: { fa: 'تامین‌کنندگان', en: 'Suppliers', ar: 'الموردون', zh: '供应商', ru: 'Поставщики' }, icon: Building2, perm: 'supplier:view' },
       { href: '/admin/inventory', label: { fa: 'انبار و سهمیه‌ها', en: 'Inventory & Allotments', ar: 'المخزون والحصص', zh: '库存与配额', ru: 'Инвентарь и квоты' }, icon: Boxes, perm: 'inventory:view' },
       { href: '/admin/content', label: { fa: 'مدیریت محتوا (CMS)', en: 'Content Management', ar: 'إدارة المحتوى', zh: '内容管理 (CMS)', ru: 'Управление контентом' }, icon: FolderKanban, perm: 'catalog:hotels:edit' },
