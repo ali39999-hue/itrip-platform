@@ -4,9 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import { useRouter, usePathname } from '@/i18n/routing';
 import { getAllTours } from '@/services/tours-service';
+import type { Tour } from '@/lib/types';
 import { TourImage } from './TourImage';
 import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
+import { getCurrencyLabel } from '@/lib/currencies';
 import {
   Sparkles,
   X,
@@ -28,7 +30,22 @@ export function ToursPromoModal() {
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
-  const tours = getAllTours();
+  const [tours, setTours] = useState<Tour[]>(getAllTours());
+
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/tours?t=${Date.now()}`, { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((json) => {
+        if (active && json.success && Array.isArray(json.data) && json.data.length > 0) {
+          setTours(json.data);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Never crowd transactional flows: search/result/detail/checkout screens need
   // every pixel for filters, sticky pills and reservation CTAs.
@@ -254,7 +271,7 @@ export function ToursPromoModal() {
 
                   {/* Highlight badges */}
                   <div className="flex flex-wrap gap-1.5 pt-1">
-                    {selectedTour.includes?.slice(0, 3).map((inc, i) => (
+                    {selectedTour.includes?.slice(0, 3).map((inc: string, i: number) => (
                       <span key={i} className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-dark bg-mint/60 px-2.5 py-0.5 rounded-lg">
                         <CheckCircle2 size={11} /> {inc}
                       </span>
@@ -271,7 +288,7 @@ export function ToursPromoModal() {
                         {num(selectedTour.price, locale)}
                       </span>
                       <span className="text-xs font-bold text-sub ms-1">
-                        {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
+                        {getCurrencyLabel(selectedTour.currency || 'TOMAN', locale)}
                       </span>
                     </div>
                   </div>

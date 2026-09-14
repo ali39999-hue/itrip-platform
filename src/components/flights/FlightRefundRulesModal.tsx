@@ -138,6 +138,49 @@ export function FlightRefundRulesModal({
             </div>
           ))}
 
+          {/* Essential Travel & Ticketing Advisories */}
+          <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-200 space-y-1.5">
+            <span className="font-black flex items-center gap-1.5">
+              <span>⚠️</span>
+              {lt(locale, {
+                fa: 'قوانین مهم صدور بلیت و راهنمای فرودگاهی:',
+                en: 'Important Ticketing & Airport Rules:',
+                ar: 'شروط هامة لإصدار التذاكر وإرشادات المطار:',
+                zh: '客票重要规则与乘机指引：',
+                ru: 'Важные правила выписки и аэропорта:',
+              })}
+            </span>
+            <ul className="text-[11px] text-sub dark:text-neutral-300 ps-4 list-disc space-y-1 m-0">
+              <li>
+                {lt(locale, {
+                  fa: 'نام و نام خانوادگی لاتین باید دقیقاً مطابق پاسپورت/کارت ملی باشد؛ پس از صدور، بلیت غیرقابل انتقال به شخص دیگری است.',
+                  en: 'Latin name spelling must match passport/ID exactly; tickets are non-transferable.',
+                  ar: 'يجب أن يطابق الاسم اللاتيني جواز السفر تماماً؛ التذكرة غير قابلة للتحويل لشخص آخر.',
+                  zh: '乘机人姓名须与身份证件严格一致，客票不可转让给他人。',
+                  ru: 'Имя латиницей должно совпадать с паспортом; передача билета третьему лицу невозможна.',
+                })}
+              </li>
+              <li>
+                {lt(locale, {
+                  fa: 'برای پروازهای بین‌المللی حداقل ۶ ماه اعتبار گذرنامه از تاریخ سفر الزامی است.',
+                  en: 'Passports must have at least 6 months validity from travel date for international flights.',
+                  ar: 'يجب أن يكون جواز السفر صالحاً لـ 6 أشهر على الأقل للرحلات الدولية.',
+                  zh: '国际航班护照有效期须在6个月以上。',
+                  ru: 'Для международных рейсов паспорт должен действовать от 6 месяцев.',
+                })}
+              </li>
+              <li>
+                {lt(locale, {
+                  fa: 'حضور در فرودگاه ۳ ساعت قبل برای پرواز خارجی و ۱.۵ ساعت قبل برای پرواز داخلی الزامی است.',
+                  en: 'Arrive at airport 3 hours prior for international, 1.5 hours prior for domestic flights.',
+                  ar: 'التواجد بالمطار قبل 3 ساعات للرحلات الدولية وقبل ساعة ونصف للداخلية.',
+                  zh: '国际航班请提前3小时到达机场，国内航班提前1.5小时。',
+                  ru: 'Прибытие в аэропорт за 3 часа (междунар.) или 1.5 часа (внутр.).',
+                })}
+              </li>
+            </ul>
+          </div>
+
           {/* Instant Refund Notice */}
           <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 flex items-center gap-2.5 text-xs text-emerald-800 dark:text-emerald-300 font-bold">
             <CheckCircle2 size={18} className="text-emerald-600 shrink-0" aria-hidden="true" />

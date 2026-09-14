@@ -91,4 +91,22 @@ describe('ExperienceDetailModal', () => {
     expect(context?.title).toContain('تور قایقی جنگل حرا');
     expect(context?.amount).toBe(850000);
   });
+
+  it('renders adventure reviews section and supports writing a review', () => {
+    render(
+      <NextIntlClientProvider locale="fa" messages={messages}>
+        <ExperienceDetailModal
+          experience={mockExperience}
+          isOpen={true}
+          onClose={vi.fn()}
+        />
+      </NextIntlClientProvider>
+    );
+
+    expect(screen.getByText(/نظر ثبت‌شده مسافران/)).toBeTruthy();
+    const writeBtn = screen.getByRole('button', { name: /ثبت نظر و امتیاز شما/ });
+    fireEvent.click(writeBtn);
+
+    expect(screen.getByText('متن نظر شما:')).toBeTruthy();
+  });
 });

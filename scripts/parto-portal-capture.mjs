@@ -92,7 +92,7 @@ async function login() {
     if (creds.password) await passInput.fill(creds.password);
 
     // Focus the math captcha input so the user can immediately type the number
-    const captchaInput = page.locator('#MathCaptchaAnswer, input[name="MathCaptchaAnswer"]');
+    const captchaInput = page.locator('#Login input[name="MathCaptchaAnswer"], input[name="MathCaptchaAnswer"]').first();
     if (await captchaInput.count()) {
       await captchaInput.focus();
       console.log('✔ Form filled from env and captcha field focused. Type the captcha on your screen and press Enter.');

@@ -13,7 +13,7 @@
 
 import { prisma } from '@/lib/prisma';
 
-const ALIBABA_BASE = 'https://ws.alibaba.ir/api/v2';
+const ALIBABA_BASE = 'https://ws.alibaba.ir/api/v1';
 const ALIBABA_AB_CHANNEL = 'WEB-NEW,PRODUCTION,CSR,www.alibaba.ir,N,Chrome,126.0.0.0,N,N,Windows';
 const ALIBABA_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0.0.0 Safari/537.36';
 const POLL_ATTEMPTS = 6;

@@ -18,6 +18,8 @@ import {
   CheckCircle2,
   UserRound,
   LifeBuoy,
+  CarFront,
+  FileCheck2,
 } from 'lucide-react';
 import { ErpSectionCard, ErpAlert, erpFieldCls, erpLabelCls, erpPrimaryBtnCls, erpGhostBtnCls, erpDangerBtnCls } from '@/components/admin/erp-ui';
 import { getSiteContentAction, saveSiteContentAction, resetSiteContentAction } from '@/actions/content';
@@ -25,6 +27,7 @@ import { DEFAULT_PROMO_BANNERS } from '@/components/home/sections/PromotionalBan
 import { DEFAULT_POPULAR_ROUTES } from '@/components/home/sections/PopularFlightsSection';
 import { DEFAULT_FAQ } from '@/components/home/sections/FaqSection';
 import { DEFAULT_ACCOUNT_SIDEBAR, DEFAULT_SUPPORT_PAGE } from '@/lib/account-panel-defaults';
+import { TRANSFERS, VISA_SERVICES, type TransferOption } from '@/lib/data';
 import type {
   SiteContentKey,
   HeroOverride,
@@ -39,7 +42,7 @@ import type {
   SupportPageOverride,
 } from '@/domains/content/SiteContentService';
 
-type SiteTab = 'hero' | 'promos' | 'routes' | 'faq' | 'announcement' | 'support' | 'accounthero' | 'accountnav' | 'accountloyalty' | 'supportpage';
+type SiteTab = 'hero' | 'promos' | 'routes' | 'faq' | 'announcement' | 'support' | 'accounthero' | 'accountnav' | 'accountloyalty' | 'supportpage' | 'transfers' | 'visas';
 
 const SITE_TABS: Array<{ id: SiteTab; key: SiteContentKey; label: string; icon: React.ReactNode; hint: string }> = [
   { id: 'hero', key: 'home.hero', label: 'بنر اصلی (Hero)', icon: <Home size={14} aria-hidden="true" />, hint: 'عنوان، توضیح و تصویر بالای صفحه اصلی. هر فیلدی خالی بماند، همان متن پیش‌فرض فعلی نمایش داده می‌شود.' },
@@ -52,6 +55,8 @@ const SITE_TABS: Array<{ id: SiteTab; key: SiteContentKey; label: string; icon: 
   { id: 'accountnav', key: 'account.sidebar', label: 'پنل مشتری: منو', icon: <UserRound size={14} aria-hidden="true" />, hint: 'منوی کنار پنل مشتری (داشبورد، سفرهای من، کیف پول و…). آیتم‌ها با ذخیره فوراً برای همه مسافران اعمال می‌شود.' },
   { id: 'accountloyalty', key: 'account.loyalty', label: 'پنل مشتری: باشگاه مشتریان', icon: <UserRound size={14} aria-hidden="true" />, hint: 'نمایش نوار سطح و امتیاز باشگاه مشتریان (داده امتیاز از سرور واقعی خوانده می‌شود؛ فقط متن مزیت و روشن/خاموش اینجاست).' },
   { id: 'supportpage', key: 'support.page', label: 'صفحه پشتیبانی', icon: <LifeBuoy size={14} aria-hidden="true" />, hint: 'کانال‌های تماس صفحه /support (تلفن، ایمیل، تلگرام) و در صورت تمایل جایگزین سوالات متداول.' },
+  { id: 'transfers', key: 'services.transfers', label: 'ترانسفرهای فرودگاهی', icon: <CarFront size={14} aria-hidden="true" />, hint: 'خودروها، مسیرهای فرودگاهی و بین‌شهری و قیمت‌های ترانسفر در صفحه /transfers و برنامه‌ریز سفر.' },
+  { id: 'visas', key: 'services.visa', label: 'خدمات اخذ ویزا', icon: <FileCheck2 size={14} aria-hidden="true" />, hint: 'بسته‌های اخذ ویزا، روزهای کاری، درصد قبولی و قیمت‌های صفحه /visa.' },
 ];
 
 interface StoredEntry {
@@ -82,6 +87,8 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
   const [accountLoyaltyDraft, setAccountLoyaltyDraft] = useState<AccountLoyaltyOverride>({ enabled: true });
   const [supportPageDraft, setSupportPageDraft] = useState<SupportPageOverride>(DEFAULT_SUPPORT_PAGE);
   const [supportPageFaqDraft, setSupportPageFaqDraft] = useState<FaqItemOverride[]>(DEFAULT_FAQ);
+  const [transfersDraft, setTransfersDraft] = useState<TransferOption[]>(TRANSFERS);
+  const [visaDraft, setVisaDraft] = useState<typeof VISA_SERVICES>(VISA_SERVICES);
   const [announcementDraft, setAnnouncementDraft] = useState<AnnouncementOverride>({
     title: { fa: '', en: '' },
     message: { fa: '', en: '' },
@@ -122,6 +129,12 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
       setSupportPageDraft(DEFAULT_SUPPORT_PAGE);
       setSupportPageFaqDraft([]);
     }
+
+    if (map['services.transfers']?.payload) setTransfersDraft(map['services.transfers'].payload as TransferOption[]);
+    else setTransfersDraft(TRANSFERS);
+
+    if (map['services.visa']?.payload) setVisaDraft(map['services.visa'].payload as typeof VISA_SERVICES);
+    else setVisaDraft(VISA_SERVICES);
 
     if (map['site.announcement']?.payload) setAnnouncementDraft(map['site.announcement'].payload as AnnouncementOverride);
     else
@@ -167,6 +180,8 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
     if (key === 'account.hero') return accountHeroDraft;
     if (key === 'account.sidebar') return accountNavDraft;
     if (key === 'account.loyalty') return accountLoyaltyDraft;
+    if (key === 'services.transfers') return transfersDraft;
+    if (key === 'services.visa') return visaDraft;
     if (key === 'support.page') {
       return {
         ...supportPageDraft,
@@ -227,6 +242,10 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
         const sp = parsed as SupportPageOverride;
         setSupportPageDraft({ ...DEFAULT_SUPPORT_PAGE, ...sp });
         setSupportPageFaqDraft(sp.faq ?? []);
+      } else if (currentMeta.key === 'services.transfers') {
+        setTransfersDraft(parsed as TransferOption[]);
+      } else if (currentMeta.key === 'services.visa') {
+        setVisaDraft(parsed as typeof VISA_SERVICES);
       } else setFaqDraft(parsed as FaqItemOverride[]);
       setFeedback({ msg: 'JSON معتبر است و در فرم بارگذاری شد — برای اعمال، ذخیره کنید.', type: 'success' });
     } catch {
@@ -598,6 +617,80 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
                     )}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {activeSiteTab === 'transfers' && (
+              <div className="space-y-3">
+                {transfersDraft.map((tr, idx) => (
+                  <div key={tr.id || idx} className="p-3.5 rounded-2xl border border-line bg-soft/40 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black text-brand-dark">
+                        ترانسفر {idx + 1}: {tr.from} ➔ {tr.to} ({tr.vehicleType})
+                      </span>
+                      {transfersDraft.length > 1 && (
+                        <button type="button" onClick={() => setTransfersDraft(transfersDraft.filter((_, i) => i !== idx))} className="min-h-[44px] min-w-[44px] w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف ترانسفر ${idx + 1}`}>
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      <input className={heroTextCls} value={tr.vehicleType} onChange={(e) => updateArrayItem(transfersDraft, setTransfersDraft, idx, { vehicleType: e.target.value })} placeholder="نوع خودرو (فارسی)" />
+                      <input className={heroTextCls} value={tr.vehicleTypeEn} onChange={(e) => updateArrayItem(transfersDraft, setTransfersDraft, idx, { vehicleTypeEn: e.target.value })} placeholder="Vehicle Type (EN)" dir="ltr" />
+                      <input className={heroTextCls} value={tr.from} onChange={(e) => updateArrayItem(transfersDraft, setTransfersDraft, idx, { from: e.target.value })} placeholder="مبدا (فارسی)" />
+                      <input className={heroTextCls} value={tr.fromEn} onChange={(e) => updateArrayItem(transfersDraft, setTransfersDraft, idx, { fromEn: e.target.value })} placeholder="From (EN)" dir="ltr" />
+                      <input className={heroTextCls} value={tr.to} onChange={(e) => updateArrayItem(transfersDraft, setTransfersDraft, idx, { to: e.target.value })} placeholder="مقصد (فارسی)" />
+                      <input className={heroTextCls} value={tr.toEn} onChange={(e) => updateArrayItem(transfersDraft, setTransfersDraft, idx, { toEn: e.target.value })} placeholder="To (EN)" dir="ltr" />
+                      <input className={heroTextCls} type="number" value={tr.price} onChange={(e) => updateArrayItem(transfersDraft, setTransfersDraft, idx, { price: Number(e.target.value) || 0 })} placeholder="قیمت (تومان)" />
+                      <div className="grid grid-cols-3 gap-1">
+                        <input className={heroTextCls} type="number" value={tr.capacity} onChange={(e) => updateArrayItem(transfersDraft, setTransfersDraft, idx, { capacity: Number(e.target.value) || 1 })} placeholder="ظرفیت" title="ظرفیت مسافر" />
+                        <input className={heroTextCls} type="number" value={tr.luggage} onChange={(e) => updateArrayItem(transfersDraft, setTransfersDraft, idx, { luggage: Number(e.target.value) || 0 })} placeholder="چمدان" title="تعداد چمدان" />
+                        <input className={heroTextCls} type="number" value={tr.durationMinutes} onChange={(e) => updateArrayItem(transfersDraft, setTransfersDraft, idx, { durationMinutes: Number(e.target.value) || 30 })} placeholder="دقیقه" title="مدت زمان به دقیقه" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {transfersDraft.length < 20 && (
+                  <button type="button" onClick={() => setTransfersDraft([...transfersDraft, { id: `tr_${Date.now()}`, vehicleType: 'ون تشریفاتی', vehicleTypeEn: 'VIP Van', from: 'فرودگاه', fromEn: 'Airport', to: 'مرکز شهر', toEn: 'City Center', price: 4500000, capacity: 6, luggage: 4, durationMinutes: 45 }])} className={erpGhostBtnCls}>
+                    <Plus size={13} aria-hidden="true" />
+                    <span>افزودن مسیر ترانسفر جدید</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {activeSiteTab === 'visas' && (
+              <div className="space-y-3">
+                {visaDraft.map((v, idx) => (
+                  <div key={v.id || idx} className="p-3.5 rounded-2xl border border-line bg-soft/40 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black text-brand-dark">
+                        خدمات ویزا {idx + 1}: {v.countryFa} ({v.type})
+                      </span>
+                      {visaDraft.length > 1 && (
+                        <button type="button" onClick={() => setVisaDraft(visaDraft.filter((_, i) => i !== idx))} className="min-h-[44px] min-w-[44px] w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف ویزا ${idx + 1}`}>
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      <input className={heroTextCls} value={v.countryFa} onChange={(e) => updateArrayItem(visaDraft, setVisaDraft, idx, { countryFa: e.target.value })} placeholder="کشور (فارسی)" />
+                      <input className={heroTextCls} value={v.countryEn} onChange={(e) => updateArrayItem(visaDraft, setVisaDraft, idx, { countryEn: e.target.value })} placeholder="Country (EN)" dir="ltr" />
+                      <input className={heroTextCls} value={v.type} onChange={(e) => updateArrayItem(visaDraft, setVisaDraft, idx, { type: e.target.value })} placeholder="نوع ویزا (فارسی)" />
+                      <input className={heroTextCls} value={v.typeEn} onChange={(e) => updateArrayItem(visaDraft, setVisaDraft, idx, { typeEn: e.target.value })} placeholder="Type (EN)" dir="ltr" />
+                      <input className={heroTextCls} type="number" value={v.price} onChange={(e) => updateArrayItem(visaDraft, setVisaDraft, idx, { price: Number(e.target.value) || 0 })} placeholder="قیمت ویزا (تومان)" />
+                      <input className={heroTextCls} type="number" value={v.processingDays} onChange={(e) => updateArrayItem(visaDraft, setVisaDraft, idx, { processingDays: Number(e.target.value) || 3 })} placeholder="مدت صدور (روز)" title="مدت صدور به روز" />
+                      <input className={heroTextCls} type="number" value={v.approvalRate} onChange={(e) => updateArrayItem(visaDraft, setVisaDraft, idx, { approvalRate: Number(e.target.value) || 95 })} placeholder="درصد قبولی (٪)" title="درصد قبولی" />
+                      <input className={heroTextCls} value={v.id} disabled placeholder="کد شناسه" dir="ltr" />
+                    </div>
+                  </div>
+                ))}
+                {visaDraft.length < 20 && (
+                  <button type="button" onClick={() => setVisaDraft([...visaDraft, { id: `v-${Date.now()}`, countryFa: 'کشور جدید', countryEn: 'New Country', processingDays: 7, price: 45000000, type: 'توریستی', typeEn: 'Tourist', approvalRate: 95 }])} className={erpGhostBtnCls}>
+                    <Plus size={13} aria-hidden="true" />
+                    <span>افزودن بسته ویزا جدید</span>
+                  </button>
+                )}
               </div>
             )}
 

@@ -729,12 +729,12 @@ export default function AccountPage() {
 
           {recentBookings.length === 0 ? (
             <div className="text-center py-8 bg-soft/30 rounded-2xl border border-line/60">
-              <p className="text-xs font-bold text-sub mb-3">{lt(locale, { fa: 'هنوز سفری ثبت نکرده‌اید. با برنامه‌ریز هوشمند سفر خود را آغاز کنید.', en: 'No bookings found yet. Start planning your journey today.', ar: 'لا توجد حجوزات حتى الآن. ابدأ رحلتك الآن.', zh: '暂无预订记录。立即使用智能规划助手开启旅程。', ru: 'У вас пока нет броней. Начните планирование поездки.' })}</p>
+              <p className="text-xs font-bold text-sub mb-3">{lt(locale, { fa: 'هنوز سفری ثبت نکرده‌اید. با سفرساز هوشمند فیروزو سفر خود را آغاز کنید.', en: 'No bookings found yet. Build your journey with Firuzo AI Trip Builder.', ar: 'لا توجد حجوزات حتى الآن. ابدأ رحلتك مع مساعد السفر الذكي.', zh: '暂无预订记录。立即使用智能行程定制开启旅程。', ru: 'У вас пока нет броней. Начните с умного سفرساز فیروزو.' })}</p>
               <Button
                 onClick={() => router.push('/plan')}
                 className="bg-brand text-surface hover:bg-brand-2 rounded-xl text-xs font-black h-9"
               >
-                {lt(locale, { fa: 'برنامه‌ریزی هوشمند سفر', en: 'Plan a New Journey', ar: 'تخطيط رحلة', zh: '智能行程规划', ru: 'Спланировать поездку' })}
+                {lt(locale, { fa: 'سفرساز هوشمند', en: 'Smart Trip Builder', ar: 'مساعد السفر الذكي', zh: '智能行程定制', ru: 'AI планировщик' })}
               </Button>
             </div>
           ) : (

@@ -282,6 +282,7 @@ export const HOTELS: Hotel[] = [
 
 export const TOURS: Tour[] = DETAILED_TOURS;
 
+export type { TransferOption };
 export const TRANSFERS: TransferOption[] = [
   { id: 'tr1', vehicleType: 'سانروف ساینا', vehicleTypeEn: 'Saipa Saina Sunroof', from: 'فرودگاه امام خمینی', fromEn: 'Imam Khomeini Airport (IKA)', to: 'مرکز تهران', toEn: 'Tehran City Center', price: 3200000, capacity: 4, luggage: 3, durationMinutes: 75 },
   { id: 'tr2', vehicleType: 'ون هیوندای ستاریا', vehicleTypeEn: 'Hyundai Staria Van', from: 'فرودگاه مشهد', fromEn: 'Mashhad Airport (MHD)', to: 'حرم مطهر', toEn: 'Holy Shrine', price: 4500000, capacity: 7, luggage: 6, durationMinutes: 40 },

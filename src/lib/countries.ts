@@ -121,7 +121,7 @@ export const COUNTRIES: Record<CountryId, CountryConfig> = {
       S('visa', 'خدمات ویزا', 'Visa services', 'اطلاعات ورود و مسیر کمکی', 'Entry info and assisted route', '/visa'),
       S('money', 'کیف پول چندارزی', 'Multi-currency wallet', 'ریال، تتر و تبدیل لحظه‌ای', 'Rial, USDT and instant exchange', '/wallet'),
       S('esim', 'سیم‌کارت و اینترنت', 'SIM & internet', 'eSIM فعال آنی در مقصد', 'Instant eSIM at the destination', '/esim'),
-      S('signature', 'تجربه اصیل', 'Signature experiences', 'جشن‌های تقویمی، بوم‌گردی و فرهنگ', 'Calendar festivals, village stays and culture', '/tours?category=signature'),
+      S('signature', 'ماجراجویی', 'Adventures & Signature', 'جشن‌های تقویمی، بوم‌گردی و فرهنگ', 'Calendar festivals, village stays and culture', '/tours?category=signature'),
       S('interpreter', 'مترجم همراه', 'Interpreter', '۴ سطح: همراه روزانه، ساعتی، SOS و کیت رایگان', '4 tiers: full-day, hourly, SOS and free kit', '/interpreter'),
     ],
     journeys: [
@@ -166,7 +166,7 @@ export const COUNTRIES: Record<CountryId, CountryConfig> = {
       S('esim', 'سیم‌کارت eSIM', 'Travel eSIM', 'اینترنت فعال از لحظه ورود', 'Internet active on arrival', '/esim'),
       S('insurance', 'بیمه مسافرتی', 'Travel insurance', 'پوشش موردنیاز ورود', 'Entry-required coverage', '/insurance'),
       S('money', 'پشتیبانی مالی محلی', 'Local money support', 'ارز، پرداخت و اکسچنج', 'Currency, payment and exchange', '/wallet'),
-      S('signature', 'تجربه اصیل', 'Signature experiences', 'بالن‌سواری، بلو کروز و حمام ترکی', 'Balloon rides, Blue Cruise and hammam', '/tours?category=signature'),
+      S('signature', 'ماجراجویی', 'Adventures & Signature', 'بالن‌سواری، بلو کروز و حمام ترکی', 'Balloon rides, Blue Cruise and hammam', '/tours?category=signature'),
       S('interpreter', 'مترجم همراه', 'Interpreter', '۴ سطح: همراه روزانه، ساعتی، SOS و کیت رایگان', '4 tiers: full-day, hourly, SOS and free kit', '/interpreter'),
     ],
     journeys: [
@@ -210,7 +210,7 @@ export const COUNTRIES: Record<CountryId, CountryConfig> = {
       S('esim', 'سیم‌کارت eSIM', 'Travel eSIM', '۲۰ گیگ با اعتبار ۳۰ روزه', '20GB with 30-day validity', '/esim'),
       S('insurance', 'بیمه مسافرتی', 'Travel insurance', 'پوشش کامل خانوادگی', 'Full family coverage', '/insurance'),
       S('money', 'کیف پول درهم', 'AED wallet', 'نگهداری و تبدیل AED', 'Hold and exchange AED', '/wallet'),
-      S('signature', 'تجربه اصیل', 'Signature experiences', 'یات‌رانی، فالکونری و F1', 'Yachting, falconry and F1', '/tours?category=signature'),
+      S('signature', 'ماجراجویی', 'Adventures & Signature', 'یات‌رانی، فالکونری و F1', 'Yachting, falconry and F1', '/tours?category=signature'),
       S('interpreter', 'مترجم همراه', 'Interpreter', '۴ سطح: همراه روزانه، ساعتی، SOS و کیت رایگان', '4 tiers: full-day, hourly, SOS and free kit', '/interpreter'),
     ],
     journeys: [
@@ -255,7 +255,7 @@ export const COUNTRIES: Record<CountryId, CountryConfig> = {
       S('esim', 'سیم‌کارت eSIM', 'Travel eSIM', '۸ گیگ ۱۴ روزه', '8GB for 14 days', '/esim'),
       S('insurance', 'بیمه مسافرتی', 'Travel insurance', 'پوشش ارتفاع و اسکی', 'Altitude and ski coverage', '/insurance'),
       S('money', 'کیف پول لاری', 'GEL wallet', 'تبدیل و نگهداری GEL', 'Hold and exchange GEL', '/wallet'),
-      S('signature', 'تجربه اصیل', 'Signature experiences', 'جشن برداشت، برج‌های سوانتی', 'Harvest festival, Svan towers', '/tours?category=signature'),
+      S('signature', 'ماجراجویی', 'Adventures & Signature', 'جشن برداشت، برج‌های سوانتی', 'Harvest festival, Svan towers', '/tours?category=signature'),
       S('interpreter', 'مترجم همراه', 'Interpreter', '۴ سطح: همراه روزانه، ساعتی، SOS و کیت رایگان', '4 tiers: full-day, hourly, SOS and free kit', '/interpreter'),
     ],
     journeys: [
@@ -299,7 +299,7 @@ export const COUNTRIES: Record<CountryId, CountryConfig> = {
       S('insurance', 'بیمه مسافرتی', 'Travel insurance', 'الزامی برای ویزا', 'Required for the visa', '/insurance'),
       S('tours', 'تور و فعالیت', 'Tours & activities', 'مسیرهای شهری و زمستانی', 'Urban and winter routes', '/tours'),
       S('money', 'پشتیبانی مالی', 'Money support', 'RUB context و اکسچنج', 'RUB context and exchange', '/wallet'),
-      S('signature', 'تجربه اصیل', 'Signature experiences', 'شب‌های سفید، باله و بانیا', 'White Nights, ballet and banya', '/tours?category=signature'),
+      S('signature', 'ماجراجویی', 'Adventures & Signature', 'شب‌های سفید، باله و بانیا', 'White Nights, ballet and banya', '/tours?category=signature'),
       S('interpreter', 'مترجم همراه', 'Interpreter', '۴ سطح: همراه روزانه، ساعتی، SOS و کیت رایگان', '4 tiers: full-day, hourly, SOS and free kit', '/interpreter'),
     ],
     journeys: [
@@ -342,7 +342,7 @@ export const COUNTRIES: Record<CountryId, CountryConfig> = {
       S('esim', 'سیم‌کارت eSIM', 'Travel eSIM', 'پوشش مسقط و صلاله', 'Muscat and Salalah coverage', '/esim'),
       S('insurance', 'بیمه مسافرتی', 'Travel insurance', 'پوشش سفر فعال', 'Active-travel coverage', '/insurance'),
       S('money', 'پشتیبانی مالی', 'Money support', 'OMR context', 'OMR context', '/wallet'),
-      S('signature', 'تجربه اصیل', 'Signature experiences', 'خریف ظفار و کروز مسندم', 'Khareef Dhofar and Musandam cruise', '/tours?category=signature'),
+      S('signature', 'ماجراجویی', 'Adventures & Signature', 'خریف ظفار و کروز مسندم', 'Khareef Dhofar and Musandam cruise', '/tours?category=signature'),
       S('interpreter', 'مترجم همراه', 'Interpreter', '۴ سطح: همراه روزانه، ساعتی، SOS و کیت رایگان', '4 tiers: full-day, hourly, SOS and free kit', '/interpreter'),
     ],
     journeys: [
@@ -385,7 +385,7 @@ export const COUNTRIES: Record<CountryId, CountryConfig> = {
       S('interpreter', 'مترجم تجاری', 'Business Interpreter', 'مترجم مسلط به مذاکرات در گوانگژو', 'Negotiation experts in Guangzhou', '/interpreter'),
       S('money', 'شارژ علی‌پی', 'Alipay Top-up', 'پرداخت با QR در چین', 'QR payments across China', '/wallet'),
       S('transfer', 'ترانسفر فرودگاهی', 'Airport transfer', 'با خودروهای برقی لوکس', 'Premium EV transfers', '/transfers'),
-      S('signature', 'تجربه اصیل', 'Signature experiences', 'دیوار چین، نمایش‌های شبانه', 'Great Wall, night shows', '/tours?category=signature'),
+      S('signature', 'ماجراجویی', 'Adventures & Signature', 'دیوار چین، نمایش‌های شبانه', 'Great Wall, night shows', '/tours?category=signature'),
       S('tours', 'تورهای تجاری', 'Business tours', 'کانتون‌فیر و بازدید کارخانه', 'Canton Fair & factory visits', '/tours'),
     ],
     journeys: [

@@ -12,6 +12,9 @@ async function checkAdminAuth() {
     return true;
   }
   if (!session?.user?.id) return false;
+  if (session.user.role === 'SUPER_ADMIN' || session.user.role === 'ADMIN' || session.user.role === 'OPERATOR') {
+    return true;
+  }
   try {
     const { hasErpRole } = await import('@/domains/identity/permission-service');
     return await hasErpRole(session.user.id);
@@ -24,6 +27,9 @@ function revalidateContentPaths() {
   revalidatePath('/[locale]/admin/content', 'page');
   revalidatePath('/[locale]', 'page');
   revalidatePath('/[locale]/tours', 'page');
+  revalidatePath('/[locale]/tours/[id]', 'page');
+  revalidatePath('/[locale]/transfers', 'page');
+  revalidatePath('/[locale]/visa', 'page');
   revalidatePath('/[locale]/destinations', 'page');
   revalidatePath('/[locale]/travelogues', 'page');
   revalidatePath('/[locale]/guide', 'page');
@@ -63,13 +69,17 @@ function sanitizeTour(t: Record<string, unknown>) {
     countryEn: t.countryEn ? String(t.countryEn) : null,
     durationDays: Number(t.durationDays || 3),
     durationNights: Number(t.durationNights || 2),
+    currency: String(t.currency || 'TOMAN'),
     category: String(t.category || 'cultural'),
     isPublished: Boolean(t.isPublished),
     price: typeof t.price === 'object' && t.price !== null ? Number(t.price.toString()) : (Number(t.price) || 0),
     childPrice: t.childPrice != null ? (typeof t.childPrice === 'object' ? Number(t.childPrice.toString()) : Number(t.childPrice)) : null,
+    originalPrice: t.originalPrice != null ? (typeof t.originalPrice === 'object' ? Number(t.originalPrice.toString()) : Number(t.originalPrice)) : null,
+    discountPercent: t.discountPercent != null ? Number(t.discountPercent) : null,
     departureDates: Array.isArray(t.departureDates)
       ? t.departureDates.map((d: Record<string, unknown>) => ({
           ...d,
+          currency: String(d.currency || t.currency || 'TOMAN'),
           price: typeof d.price === 'object' && d.price !== null ? Number(d.price.toString()) : (Number(d.price) || 0),
           childPrice: d.childPrice != null ? (typeof d.childPrice === 'object' ? Number(d.childPrice.toString()) : Number(d.childPrice)) : null,
         }))
@@ -201,7 +211,7 @@ export async function createAdminExperienceAction(data: Parameters<typeof Conten
     return { success: true, experience: sanitizeExperience(created) };
   } catch (e: unknown) {
     console.error('createAdminExperienceAction error:', e);
-    return { success: false, error: e instanceof Error ? e.message : 'خطا در ثبت تجربه اصیل' };
+    return { success: false, error: e instanceof Error ? e.message : 'خطا در ثبت ماجراجویی' };
   }
 }
 
@@ -216,7 +226,7 @@ export async function updateAdminExperienceAction(id: string, data: Parameters<t
     return { success: true, experience: sanitizeExperience(updated) };
   } catch (e: unknown) {
     console.error('updateAdminExperienceAction error:', e);
-    return { success: false, error: e instanceof Error ? e.message : 'خطا در ویرایش تجربه اصیل' };
+    return { success: false, error: e instanceof Error ? e.message : 'خطا در ویرایش ماجراجویی' };
   }
 }
 
@@ -232,6 +242,20 @@ export async function deleteAdminExperienceAction(id: string) {
   } catch (e: unknown) {
     console.error('deleteAdminExperienceAction error:', e);
     return { success: false, error: e instanceof Error ? e.message : 'خطا در حذف تجربه' };
+  }
+}
+
+export async function toggleAdminExperienceActiveAction(id: string, isActive: boolean) {
+  try {
+    const isAuthed = await checkAdminAuth();
+    if (!isAuthed) return { success: false, error: 'Unauthorized' };
+
+    const updated = await ContentDomainService.toggleExperienceActive(id, isActive);
+    revalidateContentPaths();
+    return { success: true, experience: sanitizeExperience(updated) };
+  } catch (e: unknown) {
+    console.error('toggleAdminExperienceActiveAction error:', e);
+    return { success: false, error: e instanceof Error ? e.message : 'خطا در تغییر وضعیت تجربه' };
   }
 }
 
@@ -305,6 +329,20 @@ export async function deleteAdminTravelogueAction(id: string) {
   }
 }
 
+export async function toggleAdminTraveloguePublishAction(id: string, isPublished: boolean) {
+  try {
+    const isAuthed = await checkAdminAuth();
+    if (!isAuthed) return { success: false, error: 'Unauthorized' };
+
+    const updated = await ContentDomainService.toggleTraveloguePublish(id, isPublished);
+    revalidateContentPaths();
+    return { success: true, travelogue: updated };
+  } catch (e: unknown) {
+    console.error('toggleAdminTraveloguePublishAction error:', e);
+    return { success: false, error: e instanceof Error ? e.message : 'خطا در تغییر وضعیت انتشار سفرنامه' };
+  }
+}
+
 // ==================== 4. TRAVEL GUIDES CRUD ====================
 
 export async function getPublicGuidesAction() {
@@ -372,6 +410,20 @@ export async function deleteAdminGuideAction(id: string) {
   } catch (e: unknown) {
     console.error('deleteAdminGuideAction error:', e);
     return { success: false, error: e instanceof Error ? e.message : 'خطا در حذف راهنما' };
+  }
+}
+
+export async function toggleAdminGuidePublishAction(id: string, isPublished: boolean) {
+  try {
+    const isAuthed = await checkAdminAuth();
+    if (!isAuthed) return { success: false, error: 'Unauthorized' };
+
+    const updated = await ContentDomainService.toggleGuidePublish(id, isPublished);
+    revalidateContentPaths();
+    return { success: true, guide: updated };
+  } catch (e: unknown) {
+    console.error('toggleAdminGuidePublishAction error:', e);
+    return { success: false, error: e instanceof Error ? e.message : 'خطا در تغییر وضعیت انتشار راهنما' };
   }
 }
 

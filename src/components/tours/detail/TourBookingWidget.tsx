@@ -7,6 +7,7 @@ import type { Tour } from '@/lib/types';
 import { useBookingStore } from '@/stores/booking-store';
 import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
+import { getCurrencyLabel } from '@/lib/currencies';
 import {
   Calendar,
   Plus,
@@ -47,6 +48,8 @@ export function TourBookingWidget({
 
   const adultPrice = activeDate ? activeDate.price : tour.price;
   const childPrice = activeDate?.childPrice || tour.childPrice || Math.round(tour.price * 0.7);
+  const currency = tour.currency || activeDate?.currency || 'TOMAN';
+  const currencyLabel = getCurrencyLabel(currency, locale);
 
   const totalPrice = useMemo(() => {
     return adults * adultPrice + children * childPrice;
@@ -95,12 +98,25 @@ export function TourBookingWidget({
             </span>
           </div>
 
+          {tour.originalPrice != null && Number(tour.originalPrice) > Number(adultPrice) && (
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs text-sub line-through decoration-rose-500 font-mono">
+                {num(Number(tour.originalPrice), locale)} {currencyLabel}
+              </span>
+              {tour.discountPercent != null && Number(tour.discountPercent) > 0 && (
+                <span className="px-2 py-0.5 rounded-md bg-rose-500 text-white text-[10px] font-black">
+                  {num(Number(tour.discountPercent), locale)}٪ {lt(locale, { fa: 'تخفیف', en: 'OFF', ar: 'خصم', zh: '折', ru: 'скидка' })}
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="flex items-baseline gap-1.5">
             <b className="text-2xl sm:text-3xl font-black text-price font-price num">
               {num(adultPrice, locale)}
             </b>
             <span className="text-xs font-bold text-sub">
-              {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
+              {currencyLabel}
             </span>
           </div>
         </div>
@@ -119,7 +135,7 @@ export function TourBookingWidget({
             >
               {dates.map((d) => (
                 <option key={d.id} value={d.id}>
-                  {d.startDate} {lt(locale, { fa: 'تا', en: 'to', ar: 'إلى', zh: '至', ru: 'до' })} {d.endDate} — {num(d.price, locale)} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })} ({num(d.availableSeats, locale)} {lt(locale, { fa: 'صندلی', en: 'seats', ar: 'مقاعد', zh: '余位', ru: 'мест' })})
+                  {d.startDate} {lt(locale, { fa: 'تا', en: 'to', ar: 'إلى', zh: '至', ru: 'до' })} {d.endDate} — {num(d.price, locale)} {getCurrencyLabel(d.currency || currency, locale)} ({num(d.availableSeats, locale)} {lt(locale, { fa: 'صندلی', en: 'seats', ar: 'مقاعد', zh: '余位', ru: 'мест' })})
                 </option>
               ))}
             </select>
@@ -135,7 +151,7 @@ export function TourBookingWidget({
                 {lt(locale, { fa: 'بزرگسال (۱۲ سال به بالا)', en: 'Adults (12+ years)', ar: 'البالغين (١٢+ سنة)', zh: '成人（12岁及以上）', ru: 'Взрослые (12+)' })}
               </span>
               <span className="text-[11px] font-bold text-sub">
-                {num(adultPrice, locale)} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
+                {num(adultPrice, locale)} {currencyLabel}
               </span>
             </div>
 
@@ -169,7 +185,7 @@ export function TourBookingWidget({
                 {lt(locale, { fa: 'کودک (۲ تا ۱۱ سال)', en: 'Children (2-11 years)', ar: 'الأطفال (٢-١١ سنة)', zh: '儿童（2-11岁）', ru: 'Дети (2-11 лет)' })}
               </span>
               <span className="text-[11px] font-bold text-sub">
-                {num(childPrice, locale)} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
+                {num(childPrice, locale)} {currencyLabel}
               </span>
             </div>
 
@@ -201,12 +217,12 @@ export function TourBookingWidget({
         <div className="space-y-2 pt-2 border-t border-line text-xs font-bold">
           <div className="flex justify-between text-sub">
             <span>{num(adults, locale)} × {lt(locale, { fa: 'بزرگسال', en: 'Adult', ar: 'بالغ', zh: '成人', ru: 'взрослый' })}:</span>
-            <span className="font-price text-ink">{num(adults * adultPrice, locale)} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
+            <span className="font-price text-ink">{num(adults * adultPrice, locale)} {currencyLabel}</span>
           </div>
           {children > 0 && (
             <div className="flex justify-between text-sub">
               <span>{num(children, locale)} × {lt(locale, { fa: 'کودک', en: 'Child', ar: 'طفل', zh: '儿童', ru: 'ребёнок' })}:</span>
-              <span className="font-price text-ink">{num(children * childPrice, locale)} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
+              <span className="font-price text-ink">{num(children * childPrice, locale)} {currencyLabel}</span>
             </div>
           )}
           <div className="flex justify-between text-sub">
@@ -220,7 +236,7 @@ export function TourBookingWidget({
               <span className="text-xl font-black text-price font-price">
                 {num(totalPrice, locale)}
               </span>
-              <span className="text-xs font-bold text-sub ms-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
+              <span className="text-xs font-bold text-sub ms-1">{currencyLabel}</span>
             </div>
           </div>
         </div>
@@ -281,9 +297,14 @@ export function TourBookingWidget({
             <SlidersHorizontal size={11} className="text-brand-dark ms-0.5" />
           </div>
           <div className="text-base font-black text-price font-price flex items-baseline gap-1">
+            {tour.originalPrice != null && Number(tour.originalPrice) > Number(adultPrice) && (
+              <span className="text-xs text-sub line-through decoration-rose-500 font-mono me-1">
+                {num(Number(tour.originalPrice) * adults + (tour.childPrice ? Number(tour.childPrice) * children : 0), locale)}
+              </span>
+            )}
             <span>{num(totalPrice, locale)}</span>
             <span className="text-[10px] font-bold text-sub">
-              {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
+              {currencyLabel}
             </span>
           </div>
         </button>
@@ -356,7 +377,7 @@ export function TourBookingWidget({
                       }`}
                     >
                       <span className="font-mono">{d.startDate} تا {d.endDate}</span>
-                      <span className="font-price text-price">{num(d.price, locale)} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
+                      <span className="font-price text-price">{num(d.price, locale)} {getCurrencyLabel(d.currency || currency, locale)}</span>
                     </div>
                   ))}
                 </div>
@@ -371,7 +392,7 @@ export function TourBookingWidget({
                     {lt(locale, { fa: 'بزرگسال', en: 'Adult', ar: 'بالغ', zh: '成人', ru: 'Взрослый' })}
                   </span>
                   <span className="text-[11px] font-bold text-sub">
-                    {num(adultPrice, locale)} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
+                    {num(adultPrice, locale)} {currencyLabel}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -401,7 +422,7 @@ export function TourBookingWidget({
                     {lt(locale, { fa: 'کودک (۲ تا ۱۱ سال)', en: 'Children (2-11 years)', ar: 'الأطفال (٢-١١ سنة)', zh: '儿童（2-11岁）', ru: 'Дети (2-11 лет)' })}
                   </span>
                   <span className="text-[11px] font-bold text-sub">
-                    {num(childPrice, locale)} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
+                    {num(childPrice, locale)} {currencyLabel}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -433,7 +454,7 @@ export function TourBookingWidget({
                   {lt(locale, { fa: 'جمع کل:', en: 'Total:', ar: 'المجموع:', zh: '总计：', ru: 'Всего:' })}
                 </span>
                 <span className="text-base font-black text-price font-price">
-                  {num(totalPrice, locale)} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
+                  {num(totalPrice, locale)} {currencyLabel}
                 </span>
               </div>
               <button

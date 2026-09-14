@@ -80,8 +80,9 @@ export interface TourDepartureDate {
   id: string;
   startDate: string;
   endDate: string;
+  currency?: string;
   price: number;
-  childPrice?: number;
+  childPrice?: number | null;
   availableSeats: number;
   guaranteed: boolean;
 }
@@ -106,8 +107,11 @@ export interface Tour {
   countryEn?: string;
   durationDays: number;
   durationNights?: number;
+  currency?: string;
   price: number;
-  childPrice?: number;
+  childPrice?: number | null;
+  originalPrice?: number | null;
+  discountPercent?: number | null;
   rating: number;
   reviewsCount?: number;
   imageQuery: string;
@@ -115,7 +119,17 @@ export interface Tour {
   gallery?: string[];
   includes: string[];
   excludes?: string[];
-  category: 'cultural' | 'nature' | 'medical' | 'adventure';
+  category:
+    | 'cultural'
+    | 'nature'
+    | 'medical'
+    | 'adventure'
+    | 'signature'
+    | 'pilgrimage'
+    | 'desert'
+    | 'coastal'
+    | 'luxury'
+    | 'family';
   summary?: string;
   summaryEn?: string;
   description?: string;

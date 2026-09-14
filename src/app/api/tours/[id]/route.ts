@@ -43,8 +43,15 @@ export async function GET(
           countryEn: dbTour.countryEn || undefined,
           durationDays: dbTour.durationDays,
           durationNights: dbTour.durationNights,
+          currency: dbTour.currency || 'TOMAN',
           price: Number(dbTour.price),
           childPrice: dbTour.childPrice ? Number(dbTour.childPrice) : undefined,
+          originalPrice: dbTour.originalPrice ? Number(dbTour.originalPrice) : undefined,
+          discountPercent: dbTour.discountPercent ?? (
+            dbTour.originalPrice && Number(dbTour.originalPrice) > Number(dbTour.price)
+              ? Math.round(((Number(dbTour.originalPrice) - Number(dbTour.price)) / Number(dbTour.originalPrice)) * 100)
+              : undefined
+          ),
           rating: dbTour.rating,
           reviewsCount: dbTour.reviewsCount,
           imageQuery: 'custom-tour',
@@ -68,6 +75,7 @@ export async function GET(
             id: d.id,
             startDate: d.startDate,
             endDate: d.endDate,
+            currency: d.currency || dbTour.currency || 'TOMAN',
             price: Number(d.price),
             childPrice: d.childPrice ? Number(d.childPrice) : undefined,
             availableSeats: d.availableSeats,
@@ -102,7 +110,7 @@ export async function GET(
       { success: true, data: tour },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
         },
       }
     );

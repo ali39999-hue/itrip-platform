@@ -5,7 +5,7 @@ import { Link, usePathname } from '@/i18n/routing';
 import { useLocale } from 'next-intl';
 import { Search, MapPin, Hotel as HotelIcon, Star, Loader2, X, ArrowRight, ArrowLeft } from 'lucide-react';
 import { CITIES, type CityOption } from '@/lib/data';
-import { COUNTRIES, type CountryId } from '@/lib/countries';
+import { COUNTRIES, countryName, type CountryId } from '@/lib/countries';
 import { lt } from '@/lib/lt';
 
 /** سه شهر پرطرفدار پیش‌فرض (مشهد، استانبول، دبی) */
@@ -133,8 +133,7 @@ export function CityHotelSearch() {
   }
 
   function countryLabel(countryId: CountryId) {
-    const c = COUNTRIES[countryId];
-    return lt(locale, { fa: c.nameFa, en: c.nameEn });
+    return countryName(countryId, locale);
   }
 
   function formatPrice(price: number) {
@@ -183,7 +182,7 @@ export function CityHotelSearch() {
                     {Array.from({ length: h.stars }).map((_, i) => (
                       <Star key={i} size={9} className="text-amber-400 fill-amber-400 shrink-0" aria-hidden="true" />
                     ))}
-                    <span className="truncate">{lt(locale, { fa: city.fa, en: city.en })}</span>
+                    <span className="truncate">{cityLabel(city)}</span>
                   </span>
                 </div>
                 <span className="text-[11px] font-black text-brand-dark whitespace-nowrap shrink-0">

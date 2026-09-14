@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter, Link } from '@/i18n/routing';
-import { TRANSFERS } from '@/lib/data';
+import { TRANSFERS, type TransferOption } from '@/lib/data';
 import { useBookingStore } from '@/stores/booking-store';
 import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES, COUNTRY_ORDER, countryName } from '@/lib/countries';
@@ -45,8 +45,21 @@ export default function TransfersPage() {
     { id: 'van', label: lt(locale, { fa: 'ون و مینی‌بوس', en: 'Van & Minibus', ar: 'فان وميني باص', zh: '厢式车与小巴', ru: 'Фургон и микроавтобус' }) },
   ];
 
-  const froms = useMemo(() => [...new Set(TRANSFERS.map((t) => t.from))], []);
-  const tos = useMemo(() => [...new Set(TRANSFERS.map((t) => t.to))], []);
+  const [transfersList, setTransfersList] = useState<TransferOption[]>(TRANSFERS);
+
+  useEffect(() => {
+    fetch('/api/transfers')
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          setTransfersList(json.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const froms = useMemo(() => [...new Set(transfersList.map((t) => t.from))], [transfersList]);
+  const tos = useMemo(() => [...new Set(transfersList.map((t) => t.to))], [transfersList]);
 
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -59,7 +72,7 @@ export default function TransfersPage() {
   }
 
   const results = useMemo(() => {
-    let list = (searched ? TRANSFERS.filter((t) => (!from || t.from === from) && (!to || t.to === to)) : TRANSFERS).filter(
+    let list = (searched ? transfersList.filter((t) => (!from || t.from === from) && (!to || t.to === to)) : transfersList).filter(
       (t) => types.length === 0 || types.includes(catOf(t))
     );
 
@@ -81,7 +94,7 @@ export default function TransfersPage() {
     }
 
     return list;
-  }, [searched, from, to, types, country, c]);
+  }, [searched, transfersList, from, to, types, country, c]);
 
   function reserve(transfer: (typeof TRANSFERS)[number]) {
     setBookingContext({

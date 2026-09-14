@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
@@ -41,15 +41,28 @@ export default function VisaPage() {
   const [hasPhoto, setHasPhoto] = useState(true);
   const [error, setError] = useState('');
 
+  const [visaList, setVisaList] = useState<typeof VISA_SERVICES>(VISA_SERVICES);
+
+  useEffect(() => {
+    fetch('/api/visa')
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          setVisaList(json.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const sortedVisas = useMemo(() => {
-    return [...VISA_SERVICES].sort((a, b) => {
+    return [...visaList].sort((a, b) => {
       const matchA = a.countryEn.toLowerCase() === c.nameEn.toLowerCase() || a.countryFa === c.nameFa;
       const matchB = b.countryEn.toLowerCase() === c.nameEn.toLowerCase() || b.countryFa === c.nameFa;
       if (matchA && !matchB) return -1;
       if (!matchA && matchB) return 1;
       return 0;
     });
-  }, [c]);
+  }, [c, visaList]);
 
   function start(service: (typeof VISA_SERVICES)[number]) {
     setSelected(service);

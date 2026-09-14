@@ -170,7 +170,7 @@ export default async function MyTripsPage({
                 className="px-6 py-3 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white rounded-xl font-black text-sm transition shadow-md shadow-teal-500/25 flex items-center justify-center gap-2"
               >
                 <Sparkles size={16} />
-                <span>{lt(locale, { fa: 'شروع برنامه‌ریزی هوشمند رایگان', en: 'Start Free Smart Planner', ar: 'بدء التخطيط الذكي مجاناً', zh: '开启免费智能规划', ru: 'Начать умное планирование' })}</span>
+                <span>{lt(locale, { fa: 'شروع سفرساز هوشمند رایگان', en: 'Start Free Smart Trip Builder', ar: 'بدء مساعد السفر الذكي مجاناً', zh: '开启免费智能规划', ru: 'Начать умное планирование' })}</span>
               </Link>
               <Link
                 href={`/${locale}/flights`}

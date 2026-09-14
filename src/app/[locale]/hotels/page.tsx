@@ -154,7 +154,7 @@ export default function HotelsLandingPage() {
             className="shrink-0 px-6 py-3.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 transition hover:scale-105 shadow-md shadow-teal-500/20"
           >
             <Sparkles size={16} />
-            <span>{lt(locale, { fa: 'برنامه‌ریزی هوشمند اقامت', en: 'Plan Smart Stay', ar: 'تخطيط إقامة ذكية', zh: '智能规划住宿', ru: 'Спланировать проживание' })}</span>
+            <span>{lt(locale, { fa: 'سفرساز هوشمند اقامت', en: 'Smart Stay Builder', ar: 'مساعد إقامة ذكية', zh: '智能定制住宿', ru: 'AI планировщик проживания' })}</span>
           </Link>
         </div>
       </section>

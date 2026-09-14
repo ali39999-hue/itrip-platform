@@ -22,6 +22,8 @@ export const SITE_CONTENT_KEYS = [
   'account.sidebar',
   'account.loyalty',
   'support.page',
+  'services.transfers',
+  'services.visa',
 ] as const;
 export type SiteContentKey = (typeof SITE_CONTENT_KEYS)[number];
 
@@ -179,6 +181,39 @@ export const supportPageSchema = z
   })
   .strict();
 
+export const transferOptionSchema = z
+  .object({
+    id: z.string().trim().min(1).max(50),
+    vehicleType: z.string().trim().min(1).max(100),
+    vehicleTypeEn: z.string().trim().min(1).max(100),
+    from: z.string().trim().min(1).max(100),
+    fromEn: z.string().trim().min(1).max(100),
+    to: z.string().trim().min(1).max(100),
+    toEn: z.string().trim().min(1).max(100),
+    price: z.number().int().min(100000).max(10_000_000_000),
+    capacity: z.number().int().min(1).max(100),
+    luggage: z.number().int().min(0).max(100),
+    durationMinutes: z.number().int().min(1).max(1440),
+  })
+  .strict();
+
+export const transfersSchema = z.array(transferOptionSchema).min(1).max(30);
+
+export const visaServiceSchema = z
+  .object({
+    id: z.string().trim().min(1).max(50),
+    countryFa: z.string().trim().min(1).max(100),
+    countryEn: z.string().trim().min(1).max(100),
+    processingDays: z.number().int().min(1).max(90),
+    price: z.number().int().min(100000).max(10_000_000_000),
+    type: z.string().trim().min(1).max(100),
+    typeEn: z.string().trim().min(1).max(100),
+    approvalRate: z.number().min(0).max(100),
+  })
+  .strict();
+
+export const visasSchema = z.array(visaServiceSchema).min(1).max(30);
+
 export const SITE_CONTENT_SCHEMAS: Record<SiteContentKey, z.ZodTypeAny> = {
   'home.hero': heroSchema,
   'home.promos': promosSchema,
@@ -191,6 +226,8 @@ export const SITE_CONTENT_SCHEMAS: Record<SiteContentKey, z.ZodTypeAny> = {
   'account.sidebar': accountSidebarSchema,
   'account.loyalty': accountLoyaltySchema,
   'support.page': supportPageSchema,
+  'services.transfers': transfersSchema,
+  'services.visa': visasSchema,
 };
 
 export type HeroOverride = z.infer<typeof heroSchema>;
@@ -204,6 +241,8 @@ export type AccountSidebarOverride = z.infer<typeof accountSidebarSchema>;
 export type AccountHeroOverride = z.infer<typeof accountHeroSchema>;
 export type AccountLoyaltyOverride = z.infer<typeof accountLoyaltySchema>;
 export type SupportPageOverride = z.infer<typeof supportPageSchema>;
+export type TransfersOverride = z.infer<typeof transfersSchema>;
+export type VisasOverride = z.infer<typeof visasSchema>;
 
 export interface SiteContentEntry {
   key: SiteContentKey;

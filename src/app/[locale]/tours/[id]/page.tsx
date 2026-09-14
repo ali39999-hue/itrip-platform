@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
-import { getTourById, getRelatedTours } from '@/services/tours-service';
+import { getRelatedTours } from '@/services/tours-service';
 import type { Tour, TourDepartureDate } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 
@@ -27,26 +27,58 @@ export default function TourDetailPage() {
   const locale = useLocale();
   const tourId = params?.id;
 
-  const staticTour = useMemo(() => {
-    return tourId ? getTourById(tourId) : undefined;
-  }, [tourId]);
-
-  const [tour, setTour] = useState<Tour | undefined>(staticTour);
-  const [loadingDynamic, setLoadingDynamic] = useState(!staticTour);
+  const [tour, setTour] = useState<Tour | null | undefined>(undefined);
+  const [loadingDynamic, setLoadingDynamic] = useState(true);
+  const [publishedTours, setPublishedTours] = useState<Tour[]>([]);
 
   useEffect(() => {
-    if (!staticTour && tourId) {
-      fetch(`/api/tours/${tourId}`)
-        .then((res) => res.json())
-        .then((json) => {
-          if (json.success && json.data) {
-            setTour(json.data);
-          }
-        })
-        .catch(console.error)
-        .finally(() => setLoadingDynamic(false));
-    }
-  }, [staticTour, tourId]);
+    if (!tourId) return;
+    let mounted = true;
+    setLoadingDynamic(true);
+    fetch(`/api/tours/${tourId}?t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' },
+    })
+      .then((res) => res.json())
+      .then((json) => {
+        if (!mounted) return;
+        if (json.success && json.data) {
+          setTour(json.data);
+        } else {
+          // If unpublished in DB or truly not found, respect DB authority (never leak draft)
+          setTour(null);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch tour from API:', err);
+        if (mounted) setTour(null);
+      })
+      .finally(() => {
+        if (mounted) setLoadingDynamic(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [tourId]);
+
+  useEffect(() => {
+    let mounted = true;
+    fetch(`/api/tours?t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' },
+    })
+      .then((res) => res.json())
+      .then((json) => {
+        if (mounted && json.success && Array.isArray(json.data)) {
+          setPublishedTours(json.data);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const [activeSection, setActiveSection] = useState('overview');
   const [selectedDateId, setSelectedDateId] = useState<string>('');
@@ -58,8 +90,11 @@ export default function TourDetailPage() {
   }, [tour, selectedDateId]);
 
   const relatedTours = useMemo(() => {
-    return tour ? getRelatedTours(tour.id, 3) : [];
-  }, [tour]);
+    if (!tour) return [];
+    const fromApi = publishedTours.filter((t) => t.id !== tour.id).slice(0, 3);
+    if (fromApi.length > 0) return fromApi;
+    return getRelatedTours(tour.id, 3);
+  }, [tour, publishedTours]);
 
   // IntersectionObserver to sync active subnav tab with scroll position
   useEffect(() => {

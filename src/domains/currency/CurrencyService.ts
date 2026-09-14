@@ -239,8 +239,33 @@ export class LiveFxRateProvider implements CurrencyRateProvider {
     }
   }
 
-  /** TGJU market quotes → rial prices per unit. Tolerant row parser (close price = last large numeric cell). */
+  /** TGJU market quotes → rial prices per unit. Tolerant row parser (ajax.json or summary-table-data). */
   private async fetchTgju(): Promise<Record<string, number> | null> {
+    // 1. Try ajax.json (fastest, most reliable live market endpoint)
+    try {
+      const ajax = await this.fetchJson('https://call.tgju.org/ajax.json');
+      const current = (ajax?.['current'] || {}) as Record<string, { p?: string }>;
+      if (current && typeof current === 'object') {
+        const out: Record<string, number> = {};
+        const usd = parsePriceCell(current['price_dollar_rl']?.p || current['price_dollar']?.p);
+        if (usd >= 1000) out['USD_IRR'] = usd;
+
+        const usdt = parsePriceCell(current['crypto-tether-irr']?.p || current['usdt-irr']?.p || current['price_usdt_rl']?.p);
+        if (usdt >= 1000) out['USDT_IRR'] = usdt;
+
+        const aed = parsePriceCell(current['price_aed']?.p || current['price_aed_rl']?.p);
+        if (aed >= 1000) out['AED_IRR'] = aed;
+
+        const cny = parsePriceCell(current['price_cny']?.p || current['price_cny_rl']?.p);
+        if (cny >= 1000) out['CNY_IRR'] = cny;
+
+        if (Object.keys(out).length >= 2) return out;
+      }
+    } catch {
+      // fallback to summary-table-data
+    }
+
+    // 2. Fallback to summary-table-data (also satisfies unit test fixtures)
     const base = 'https://api.tgju.org/v1/market/indicator/summary-table-data/';
     const keys = ['price_dollar_rl', 'price_usdt_rl', 'price_aed_rl', 'price_cny_rl'];
     let rows: unknown[] | null = null;
@@ -251,7 +276,12 @@ export class LiveFxRateProvider implements CurrencyRateProvider {
       rows = [];
       for (const key of keys) {
         const single = await this.fetchJson(`${base}${key}?lang=en&order_dir=asc`);
-        if (single && Array.isArray(single['data'])) rows.push(...(single['data'] as unknown[]));
+        if (single && Array.isArray(single['data'])) {
+          for (const item of single['data'] as unknown[]) {
+            if (Array.isArray(item)) rows.push([key, ...item]);
+            else rows.push(item);
+          }
+        }
       }
     }
     if (!rows || rows.length === 0) return null;

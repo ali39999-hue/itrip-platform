@@ -75,6 +75,10 @@ screenshots/
 snapshots/
 audit-screenshots/
 scripts/*.png
+*.ans
+captcha_*
+after_submit*.png
+login_preview*.png
 .superdesign
   
 # Parto portal session (human-in-the-loop capture, never commit)  

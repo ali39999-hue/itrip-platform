@@ -64,6 +64,60 @@ describe('ERP Content Management (CMS) Domain Service Suite', () => {
     testTourId = '';
   });
 
+  it('supports custom currency, discounts, and clears discount and childPrice when set to null', async () => {
+    const tour = await ContentDomainService.createTour({
+      title: `تور ارزی دلار ${suffix}`,
+      titleEn: `Dollar Tour ${suffix}`,
+      city: 'کیش',
+      country: 'ایران',
+      currency: 'USD',
+      price: 500,
+      originalPrice: 600,
+      discountPercent: 17,
+      childPrice: 350,
+      departureDates: [
+        { startDate: '2026-11-01', endDate: '2026-11-05', price: 500, availableSeats: 5 },
+      ],
+    });
+
+    expect(tour.currency).toBe('USD');
+    expect(Number(tour.price)).toBe(500);
+    expect(Number(tour.originalPrice)).toBe(600);
+    expect(Number(tour.childPrice)).toBe(350);
+    expect(tour.discountPercent).toBe(17);
+    expect(tour.departureDates[0].currency).toBe('USD');
+
+    // Now edit tour: clear discount and child price by passing null
+    const updated = await ContentDomainService.updateTour(tour.id, {
+      currency: 'EUR',
+      price: 450,
+      childPrice: null,
+      originalPrice: null,
+      discountPercent: null,
+    });
+
+    expect(updated.currency).toBe('EUR');
+    expect(Number(updated.price)).toBe(450);
+    expect(updated.childPrice).toBeNull();
+    expect(updated.originalPrice).toBeNull();
+    expect(updated.discountPercent).toBeNull();
+
+    // Verify in database directly
+    const dbTour = await prisma.tour.findUnique({
+      where: { id: tour.id },
+      include: { departureDates: true },
+    });
+    expect(dbTour?.currency).toBe('EUR');
+    expect(dbTour?.childPrice).toBeNull();
+    expect(dbTour?.originalPrice).toBeNull();
+    expect(dbTour?.discountPercent).toBeNull();
+    expect(dbTour?.departureDates[0].currency).toBe('EUR');
+    expect(dbTour?.departureDates[0].childPrice).toBeNull();
+
+    // Clean up
+    await ContentDomainService.deleteTour(tour.id);
+  });
+
   // 2. Signature Experiences
   it('creates, reads and deletes a signature experience', async () => {
     const exp = await ContentDomainService.createExperience({

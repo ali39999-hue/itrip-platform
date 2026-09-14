@@ -45,8 +45,14 @@ export function TourHero({ tour }: TourHeroProps) {
   const categoryLabels: Record<string, { fa: string; en: string; ar: string; zh: string; ru: string }> = {
     cultural: { fa: 'فرهنگی و تاریخی', en: 'Cultural & Heritage', ar: 'ثقافي وتاريخي', zh: '文化与遗产', ru: 'Культурный' },
     nature: { fa: 'طبیعت‌گردی و بوم‌گردی', en: 'Nature & Eco', ar: 'سياحة بيئية', zh: '自然与生态', ru: 'Природный' },
-    medical: { fa: 'سلامت و درمانی', en: 'Medical & Wellness', ar: 'علاجي وصحي', zh: '医疗与康养', ru: 'Оздоровительный' },
-    adventure: { fa: 'ماجراجویی و ورزشی', en: 'Adventure & Sport', ar: 'مغامرات ورياضة', zh: '探险与运动', ru: 'Приключенческий' },
+    medical: { fa: 'سلامت و آب‌درمانی', en: 'Medical & Wellness', ar: 'علاجي وصحي', zh: '医疗与康养', ru: 'Оздоровительный' },
+    adventure: { fa: 'ماجراجویی و آفرود', en: 'Adventure & Sport', ar: 'مغامرات ورياضة', zh: '探险与运动', ru: 'Приключенческий' },
+    signature: { fa: 'ماجراجویی‌های ویژه', en: 'Signature Journey', ar: 'رحلة مميزة', zh: '特色定制', ru: 'Фирменный' },
+    pilgrimage: { fa: 'زیارتی و معنوی', en: 'Pilgrimage & Spiritual', ar: 'ديني وروحاني', zh: '朝圣与文化', ru: 'Паломнический' },
+    desert: { fa: 'کویرگردی و نجوم', en: 'Desert & Stargazing', ar: 'سياحة صحراوية', zh: '沙漠观星', ru: 'Пустынный' },
+    coastal: { fa: 'ساحلی و دریایی', en: 'Coastal & Marine', ar: 'ساحلي وبحري', zh: '海滨与海岛', ru: 'Морской' },
+    luxury: { fa: 'لوکس و VIP', en: 'Luxury & VIP', ar: 'فاخر وخاص', zh: '轻奢与VIP', ru: 'Люкс и VIP' },
+    family: { fa: 'خانوادگی و تفریحی', en: 'Family & Leisure', ar: 'عائلي وترفيهي', zh: '家庭休闲', ru: 'Семейный' },
   };
 
   const catLabel = lt(locale, categoryLabels[tour.category] || { fa: 'تور ویژه', en: 'Special Tour', ar: 'جولة خاصة', zh: '特别旅游', ru: 'Специальный тур' });
@@ -102,6 +108,11 @@ export function TourHero({ tour }: TourHeroProps) {
         <div className="flex flex-col gap-3">
           {/* Badges row */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            {tour.discountPercent != null && Number(tour.discountPercent) > 0 && (
+              <span className="inline-flex items-center gap-1 px-3 py-0.5 sm:py-1 rounded-full bg-rose-600 text-white text-[11px] sm:text-xs font-black shadow-xs animate-pulse">
+                {num(Number(tour.discountPercent), locale)}٪ {lt(locale, { fa: 'تخفیف ویژه', en: 'Special Discount', ar: 'خصم خاص', zh: '特别优惠', ru: 'Скидка' })}
+              </span>
+            )}
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 sm:py-1 rounded-full bg-mint text-brand-dark text-[11px] sm:text-xs font-black">
               <Compass size={12} /> {catLabel}
             </span>

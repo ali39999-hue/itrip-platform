@@ -25,7 +25,8 @@ import { AddonsSection, ESIM_PRICE, INSURANCE_PRICE } from '@/components/checkou
 import { ReferralInputSection } from '@/components/checkout/ReferralInputSection';
 import { PriceBreakdownTable } from '@/components/checkout/PriceBreakdownTable';
 import { SoftLockTimer } from '@/components/checkout/SoftLockTimer';
-import { CancellationPolicyCard } from '@/components/checkout/CancellationPolicyCard';
+import { TravelRulesAdvisoryCard } from '@/components/travel/TravelRulesAdvisoryCard';
+import { HierarchicalCrossSell } from '@/components/checkout/HierarchicalCrossSell';
 import { PaymentGatewaySelector, type PaymentMethodType, type EcardoInstrument } from '@/components/checkout/PaymentGatewaySelector';
 import { CardTransferPaymentView } from '@/components/checkout/CardTransferPaymentView';
 import { CryptoPaymentView } from '@/components/checkout/CryptoPaymentView';
@@ -757,6 +758,20 @@ export default function CheckoutPage() {
                 passengersStatus={passengersStatus}
               />
 
+              {/* Hierarchical Cross-Sell: Hotel <-> Flight intelligent recommendation */}
+              <HierarchicalCrossSell
+                locale={locale}
+                bookingType={
+                  bookingContext?.type === 'flights'
+                    ? 'flights'
+                    : bookingContext?.type === 'tours'
+                    ? 'tours'
+                    : 'hotels'
+                }
+                title={bookingContext?.title}
+                travelDate={bookingContext?.travelDate}
+              />
+
               <AddonsSection
                 addEsim={addEsim}
                 setAddEsim={setAddEsim}
@@ -871,8 +886,12 @@ export default function CheckoutPage() {
                     onToggleAdminPaymentMode={handleToggleAdminPaymentMode}
                   />
 
-                  {/* Transparent Cancellation Penalty Policy */}
-                  <CancellationPolicyCard locale={locale} />
+                  {/* Comprehensive Ticketing Rules, Route Difficulty & Cancellation Policy */}
+                  <TravelRulesAdvisoryCard
+                    locale={locale}
+                    destinationCity={bookingContext?.title}
+                    defaultExpanded={false}
+                  />
 
                   {/* Contextual Trust Banner */}
                   <div className="p-4 rounded-2xl bg-mint/40 border border-brand/20 flex items-center gap-3 text-xs text-brand-dark font-bold">

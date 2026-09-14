@@ -21,11 +21,11 @@ export async function generateMetadata({
   params: Promise<{ id: string; locale: string }>;
 }): Promise<Metadata> {
   const { id, locale } = await params;
-  let tour: TourMeta | undefined = getTourById(id);
+  let tour: TourMeta | undefined;
 
-  if (!tour) {
-    const dbTour = await prisma.tour.findUnique({ where: { id } }).catch(() => null);
-    if (dbTour) {
+  const dbTour = await prisma.tour.findUnique({ where: { id } }).catch(() => null);
+  if (dbTour) {
+    if (dbTour.isPublished) {
       tour = {
         title: dbTour.title,
         titleEn: dbTour.titleEn,
@@ -37,6 +37,8 @@ export async function generateMetadata({
         gallery: Array.isArray(dbTour.gallery) ? (dbTour.gallery as string[]) : undefined,
       };
     }
+  } else {
+    tour = getTourById(id);
   }
 
   if (!tour) {

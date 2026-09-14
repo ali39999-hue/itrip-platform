@@ -1176,8 +1176,11 @@ model Tour {
   countryEn          String?             @default("Iran")
   durationDays       Int                 @default(3)
   durationNights     Int                 @default(2)
+  currency           String              @default("TOMAN")
   price              Decimal             @db.Decimal(18, 4)
   childPrice         Decimal?            @db.Decimal(18, 4)
+  originalPrice      Decimal?            @db.Decimal(18, 4)
+  discountPercent    Int?
   rating             Float               @default(5.0)
   reviewsCount       Int                 @default(0)
   category           String              @default("cultural") // cultural, nature, medical, adventure
@@ -1214,6 +1217,7 @@ model TourDepartureDate {
   tourId         String
   startDate      String   // YYYY-MM-DD
   endDate        String   // YYYY-MM-DD
+  currency       String   @default("TOMAN")
   price          Decimal  @db.Decimal(18, 4)
   childPrice     Decimal? @db.Decimal(18, 4)
   availableSeats Int      @default(10)

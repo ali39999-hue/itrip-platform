@@ -90,29 +90,17 @@ export class BookingApplicationService {
     const hotel = HOTELS.find((h) => h.id === itemId);
     if (hotel) return hotel.pricePerNight;
 
-    const tour = TOURS.find((t) => t.id === itemId);
-    if (tour) return tour.price;
-
-    const transfer = TRANSFERS.find((tr) => tr.id === itemId);
-    if (transfer) return transfer.price;
-
-    const visa = VISA_SERVICES.find((v) => v.id === itemId);
-    if (visa) return visa.price;
-
-    const esim = ESIM_PACKAGES.find((e) => e.id === itemId);
-    if (esim) return esim.price;
-
-    const insurance = INSURANCE_PLANS.find((i) => i.id === itemId);
-    if (insurance) return insurance.price;
-
-    if (type === 'TOUR' || type === 'TOURS') {
+    if (type === 'TOUR' || type === 'TOURS' || itemId?.startsWith('t')) {
       let dbTour: { price: unknown } | null = null;
       try {
         dbTour = await prisma.tour.findUnique({ where: { id: itemId } });
       } catch {
         dbTour = null;
       }
-      if (dbTour) return Number(dbTour.price);
+      if (dbTour && dbTour.price != null) return Number(dbTour.price);
+
+      const staticTour = TOURS.find((t) => t.id === itemId);
+      if (staticTour) return staticTour.price;
 
       if (itemId.startsWith('exp_')) {
         const { ContentDomainService } = await import('@/domains/content/ContentDomainService');
@@ -132,6 +120,36 @@ export class BookingApplicationService {
       }
       return null;
     }
+
+    // Transfers: dynamic CMS override first, then static fallback
+    if (type === 'TRANSFER' || type === 'TRANSFERS' || itemId?.startsWith('tr')) {
+      try {
+        const { SiteContentService } = await import('@/domains/content/SiteContentService');
+        const customTransfers = await SiteContentService.get<Array<{ id: string; price: number }>>('services.transfers').catch(() => null);
+        const match = customTransfers?.find((tr) => tr.id === itemId);
+        if (match && typeof match.price === 'number') return match.price;
+      } catch {}
+      const transfer = TRANSFERS.find((tr) => tr.id === itemId);
+      if (transfer) return transfer.price;
+    }
+
+    // Visa: dynamic CMS override first, then static fallback
+    if (type === 'VISA' || itemId?.startsWith('v-')) {
+      try {
+        const { SiteContentService } = await import('@/domains/content/SiteContentService');
+        const customVisas = await SiteContentService.get<Array<{ id: string; price: number }>>('services.visa').catch(() => null);
+        const match = customVisas?.find((v) => v.id === itemId);
+        if (match && typeof match.price === 'number') return match.price;
+      } catch {}
+      const visa = VISA_SERVICES.find((v) => v.id === itemId);
+      if (visa) return visa.price;
+    }
+
+    const esim = ESIM_PACKAGES.find((e) => e.id === itemId);
+    if (esim) return esim.price;
+
+    const insurance = INSURANCE_PLANS.find((i) => i.id === itemId);
+    if (insurance) return insurance.price;
 
     if (type === 'HOTEL') {
       const liveHotel = (await getHotelByIdAsync(itemId)) || getHotelById(itemId);

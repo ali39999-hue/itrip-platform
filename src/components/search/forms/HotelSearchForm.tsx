@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Search } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { CityAutocomplete } from '../CityAutocomplete';
@@ -7,6 +8,8 @@ import { JalaliDatePicker } from '@/components/ui/DatePicker';
 import { TravelerPicker } from '../TravelerPicker';
 import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
+import { useCountryStore } from '@/stores/country-store';
+import { COUNTRIES } from '@/lib/countries';
 
 interface HotelSearchFormProps {
   dest: string;
@@ -56,6 +59,15 @@ export function HotelSearchForm({
 }: HotelSearchFormProps) {
   const t = useTranslations('Search');
   const locale = useLocale();
+  const { country } = useCountryStore();
+  const c = COUNTRIES[country] || COUNTRIES.iran;
+
+  const popularCities = useMemo(() => {
+    if (c.cities && c.cities.length > 0) {
+      return c.cities.slice(0, 8);
+    }
+    return POPULAR_HOTEL_CITIES;
+  }, [c]);
 
   const isFa = locale === 'fa';
   const dateFormat = isFa ? 'D MMMM (dddd)' : 'D MMM (ddd)';
@@ -163,14 +175,15 @@ export function HotelSearchForm({
           })}
         </span>
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-          {POPULAR_HOTEL_CITIES.map((city) => {
-            const isSelected = dest === city.fa || dest.includes(city.fa);
+          {popularCities.map((city) => {
+            const cityName = locale === 'fa' ? city.fa : city.en;
+            const isSelected = dest === city.fa || dest === city.en || dest.includes(city.fa) || dest.includes(city.en);
             return (
               <button
                 key={city.fa}
                 type="button"
                 onClick={() => {
-                  setDest(city.fa);
+                  setDest(locale === 'fa' ? city.fa : city.en);
                   onErrorClear?.();
                 }}
                 className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
@@ -179,7 +192,7 @@ export function HotelSearchForm({
                     : 'bg-soft/80 hover:bg-line text-ink/90 hover:text-brand-dark'
                 }`}
               >
-                {lt(locale, city)}
+                {cityName}
               </button>
             );
           })}

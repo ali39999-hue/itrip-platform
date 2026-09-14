@@ -446,9 +446,9 @@ export const CAPABILITY_DEFINITIONS: Record<CapabilityKey, Omit<CapabilityDescri
   'ai.planner': {
     key: 'ai.planner',
     category: 'ai',
-    name: { fa: 'برنامه‌ریز هوشمند سفر فیروزو', en: 'Firuzo AI Trip Planner' },
+    name: { fa: 'سفرساز هوشمند فیروزو', en: 'Firuzo AI Smart Trip Builder' },
     description: {
-      fa: 'تولید برنامه سفر شخصی‌سازی شده بر پایه علایق، بودجه و زمان',
+      fa: 'تولید برنامه سفر شخصی‌سازی شده در سفرساز هوشمند بر پایه علایق، بودجه و زمان',
       en: 'Personalized itinerary generation based on interests and budget',
     },
     badgeLabel: { fa: 'هوشمند', en: 'AI Powered' },

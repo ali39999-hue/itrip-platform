@@ -28,6 +28,7 @@ import {
   Sparkles,
   Languages,
 } from 'lucide-react';
+import { AdventureReviewsSection } from './AdventureReviewsSection';
 
 export interface ExperienceDetailModalProps {
   experience: SignatureExperience | null;
@@ -222,6 +223,14 @@ export function ExperienceDetailModal({
             </label>
           )}
 
+          {/* Adventure Reviews & Community Feedback */}
+          <div className="pt-2 border-t border-line/80">
+            <AdventureReviewsSection
+              experienceTitle={title}
+              locale={locale}
+            />
+          </div>
+
           {/* Booking Config: Date & Travelers */}
           <div className="pt-2 border-t border-line/80 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -256,7 +265,7 @@ export function ExperienceDetailModal({
 
             {/* Quick Date Picker Pills */}
             <div>
-              <span className="text-xs font-black text-ink block mb-2">انتخاب تاریخ اجرای تجربه:</span>
+              <span className="text-xs font-black text-ink block mb-2">انتخاب تاریخ اجرای ماجراجویی:</span>
               <div className="flex items-center gap-2 overflow-x-auto snap-x touch-pan-x pb-1 scrollbar-none">
                 {[1, 3, 7, 14].map((d) => {
                   const dateStr = daysFromNow(d);

@@ -20,8 +20,21 @@ import {
   Loader2,
   Pencil,
   Wand2,
+  Coins,
+  Percent,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { num } from '@/lib/format';
+import {
+  TOUR_CURRENCIES,
+  type TourCurrency,
+  getCurrencyLabel,
+  parsePriceInput,
+  formatNumberWithCommas,
+  getHumanAmountWords,
+  getRialTomanConversionHint,
+} from '@/lib/currencies';
 import { ErpModal, ErpPageHeader, ErpTabs, erpDangerBtnCls, erpPrimaryBtnCls, erpGhostBtnCls } from '@/components/admin/erp-ui';
 import { SiteContentTab } from '@/components/admin/SiteContentTab';
 import {
@@ -34,14 +47,17 @@ import {
   createAdminExperienceAction,
   updateAdminExperienceAction,
   deleteAdminExperienceAction,
+  toggleAdminExperienceActiveAction,
   getAdminTraveloguesAction,
   createAdminTravelogueAction,
   updateAdminTravelogueAction,
   deleteAdminTravelogueAction,
+  toggleAdminTraveloguePublishAction,
   getAdminGuidesAction,
   createAdminGuideAction,
   updateAdminGuideAction,
   deleteAdminGuideAction,
+  toggleAdminGuidePublishAction,
 } from '@/actions/content';
 
 type ContentTab = 'site' | 'tours' | 'experiences' | 'travelogues' | 'guides';
@@ -53,13 +69,21 @@ export interface TourAdminItem {
   city: string;
   country: string;
   durationDays: number;
+  currency?: string | null;
   price: number | { toString(): string };
+  childPrice?: number | { toString(): string } | null;
+  originalPrice?: number | { toString(): string } | null;
+  discountPercent?: number | null;
   category: string;
   isPublished?: boolean;
   heroImage?: string | null;
   summary?: string | null;
+  description?: string | null;
   hotelName?: string | null;
+  hotelStars?: number | null;
   transportType?: string | null;
+  includes?: string[];
+  highlights?: string[];
 }
 
 export interface ExperienceAdminItem {
@@ -72,6 +96,7 @@ export interface ExperienceAdminItem {
   where?: string | null;
   when?: string | null;
   fromPrice: number | { toString(): string };
+  isActive?: boolean;
 }
 
 export interface TravelogueAdminItem {
@@ -91,6 +116,7 @@ export interface GuideAdminItem {
   readTime: string;
   excerptFa?: string | null;
   bodyFa: string;
+  isPublished?: boolean;
 }
 
 export default function AdminContentPage() {
@@ -125,17 +151,33 @@ export default function AdminContentPage() {
   // Submitting state
   const [submitting, setSubmitting] = useState(false);
 
+  // Modal feedback state
+  const [modalFeedback, setModalFeedback] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  // Tour modal tab state
+  const [tourModalTab, setTourModalTab] = useState<'basic' | 'pricing' | 'services' | 'content'>('basic');
+
   // Form states: Tour
   const [tourTitle, setTourTitle] = useState('');
   const [tourTitleEn, setTourTitleEn] = useState('');
   const [tourCity, setTourCity] = useState('');
   const [tourCountry, setTourCountry] = useState('ایران');
   const [tourDurationDays, setTourDurationDays] = useState(3);
-  const [tourPrice, setTourPrice] = useState(85000000);
+  const [tourCurrency, setTourCurrency] = useState<TourCurrency>('TOMAN');
+  const [tourPriceStr, setTourPriceStr] = useState('85,000,000');
+  const [tourChildPriceStr, setTourChildPriceStr] = useState('58,000,000');
+  const [tourDiscountMode, setTourDiscountMode] = useState<'percent' | 'amount'>('percent');
+  const [tourOriginalPriceStr, setTourOriginalPriceStr] = useState('');
+  const [tourDiscountPercent, setTourDiscountPercent] = useState<number | ''>('');
+  const [tourDiscountAmountStr, setTourDiscountAmountStr] = useState('');
   const [tourCategory, setTourCategory] = useState('cultural');
   const [tourHotel, setTourHotel] = useState('');
+  const [tourHotelStars, setTourHotelStars] = useState(5);
   const [tourTransport, setTourTransport] = useState('');
   const [tourSummary, setTourSummary] = useState('');
+  const [tourDescription, setTourDescription] = useState('');
+  const [tourIncludes, setTourIncludes] = useState('');
+  const [tourHighlights, setTourHighlights] = useState('');
   const [tourHeroImage, setTourHeroImage] = useState('');
 
   // Form states: Experience
@@ -209,54 +251,222 @@ export default function AdminContentPage() {
   }, []);  // Handlers: Tour
   function openCreateTour() {
     setEditingTourId(null);
+    setTourModalTab('basic');
+    setModalFeedback(null);
     setTourTitle('');
     setTourTitleEn('');
     setTourCity('');
     setTourCountry('ایران');
     setTourDurationDays(3);
-    setTourPrice(85000000);
+    setTourCurrency('TOMAN');
+    setTourPriceStr(formatNumberWithCommas(85000000));
+    setTourChildPriceStr(formatNumberWithCommas(58000000));
+    setTourDiscountMode('percent');
+    setTourOriginalPriceStr('');
+    setTourDiscountPercent('');
+    setTourDiscountAmountStr('');
     setTourCategory('cultural');
     setTourHotel('');
+    setTourHotelStars(5);
     setTourTransport('');
     setTourSummary('');
+    setTourDescription('');
+    setTourIncludes('پرواز رفت و برگشت، هتل ۵ ستاره، بیمه مسافرتی، ترانسفر فرودگاهی');
+    setTourHighlights('گشت شهری، بازدید از اماکن تاریخی، لیدر محلی');
     setTourHeroImage('');
     setTourModalOpen(true);
   }
 
   function openEditTour(t: TourAdminItem) {
     setEditingTourId(t.id);
+    setTourModalTab('basic');
+    setModalFeedback(null);
     setTourTitle(t.title);
     setTourTitleEn(t.titleEn || '');
     setTourCity(t.city);
     setTourCountry(t.country || 'ایران');
     setTourDurationDays(t.durationDays);
-    setTourPrice(Number(t.price));
+    setTourCurrency((t.currency as TourCurrency) || 'TOMAN');
+    const p = Number(t.price);
+    setTourPriceStr(formatNumberWithCommas(p));
+    setTourChildPriceStr(t.childPrice != null ? formatNumberWithCommas(Number(t.childPrice)) : '');
+    const orig = t.originalPrice != null ? Number(t.originalPrice) : 0;
+    setTourOriginalPriceStr(orig > 0 ? formatNumberWithCommas(orig) : '');
+    const discPct = t.discountPercent != null ? Number(t.discountPercent) : '';
+    setTourDiscountPercent(discPct);
+    if (orig > p) {
+      setTourDiscountAmountStr(formatNumberWithCommas(orig - p));
+    } else {
+      setTourDiscountAmountStr('');
+    }
+    setTourDiscountMode('percent');
     setTourCategory(t.category);
     setTourHotel(t.hotelName || '');
+    setTourHotelStars(t.hotelStars || 5);
     setTourTransport(t.transportType || '');
     setTourSummary(t.summary || '');
+    setTourDescription(t.description || '');
+    setTourIncludes(Array.isArray(t.includes) ? t.includes.join('، ') : '');
+    setTourHighlights(Array.isArray(t.highlights) ? t.highlights.join('، ') : '');
     setTourHeroImage(t.heroImage || '');
     setTourModalOpen(true);
   }
 
+  function handlePriceChange(val: string) {
+    const raw = parsePriceInput(val);
+    setTourPriceStr(val === '' ? '' : formatNumberWithCommas(raw));
+    if (tourDiscountMode === 'percent' && tourDiscountPercent !== '' && Number(tourDiscountPercent) > 0) {
+      const pct = Number(tourDiscountPercent);
+      if (pct < 100 && raw > 0) {
+        const orig = Math.round(raw / (1 - pct / 100));
+        setTourOriginalPriceStr(formatNumberWithCommas(orig));
+        setTourDiscountAmountStr(formatNumberWithCommas(orig - raw));
+      }
+    } else if (tourDiscountMode === 'amount' && tourDiscountAmountStr.trim() !== '') {
+      const diff = parsePriceInput(tourDiscountAmountStr);
+      if (diff > 0 && raw > 0) {
+        const orig = raw + diff;
+        setTourOriginalPriceStr(formatNumberWithCommas(orig));
+        setTourDiscountPercent(Math.round((diff / orig) * 100));
+      }
+    } else if (tourOriginalPriceStr.trim() !== '') {
+      const orig = parsePriceInput(tourOriginalPriceStr);
+      if (orig > raw && raw > 0) {
+        const diff = orig - raw;
+        setTourDiscountAmountStr(formatNumberWithCommas(diff));
+        setTourDiscountPercent(Math.round((diff / orig) * 100));
+      }
+    }
+  }
+
+  function handleDiscountPercentChange(val: string) {
+    if (val === '') {
+      setTourDiscountPercent('');
+      setTourOriginalPriceStr('');
+      setTourDiscountAmountStr('');
+      return;
+    }
+    const pct = Math.min(99, Math.max(1, parsePriceInput(val)));
+    setTourDiscountPercent(pct);
+    const p = parsePriceInput(tourPriceStr);
+    if (p > 0 && pct > 0 && pct < 100) {
+      const orig = Math.round(p / (1 - pct / 100));
+      const diff = orig - p;
+      setTourOriginalPriceStr(formatNumberWithCommas(orig));
+      setTourDiscountAmountStr(formatNumberWithCommas(diff));
+    }
+  }
+
+  function handleDiscountAmountChange(val: string) {
+    if (val === '') {
+      setTourDiscountAmountStr('');
+      setTourOriginalPriceStr('');
+      setTourDiscountPercent('');
+      return;
+    }
+    const diff = parsePriceInput(val);
+    setTourDiscountAmountStr(formatNumberWithCommas(diff));
+    const p = parsePriceInput(tourPriceStr);
+    if (diff > 0 && p > 0) {
+      const orig = p + diff;
+      const pct = Math.round((diff / orig) * 100);
+      setTourOriginalPriceStr(formatNumberWithCommas(orig));
+      setTourDiscountPercent(pct);
+    } else {
+      setTourOriginalPriceStr('');
+      setTourDiscountPercent('');
+    }
+  }
+
+  function handleOriginalPriceChange(val: string) {
+    if (val === '') {
+      setTourOriginalPriceStr('');
+      setTourDiscountAmountStr('');
+      setTourDiscountPercent('');
+      return;
+    }
+    const orig = parsePriceInput(val);
+    setTourOriginalPriceStr(formatNumberWithCommas(orig));
+    const p = parsePriceInput(tourPriceStr);
+    if (orig > p && p > 0) {
+      const diff = orig - p;
+      const pct = Math.round((diff / orig) * 100);
+      setTourDiscountAmountStr(formatNumberWithCommas(diff));
+      setTourDiscountPercent(pct);
+    } else {
+      setTourDiscountAmountStr('');
+      setTourDiscountPercent('');
+    }
+  }
+
+  function handleClearDiscount() {
+    setTourOriginalPriceStr('');
+    setTourDiscountPercent('');
+    setTourDiscountAmountStr('');
+  }
+
   async function handleCreateTour(e: React.FormEvent) {
     e.preventDefault();
+    setModalFeedback(null);
+
+    const title = tourTitle.trim();
+    if (!title) {
+      setModalFeedback({ msg: 'لطفاً عنوان تور را وارد کنید.', type: 'error' });
+      setTourModalTab('basic');
+      return;
+    }
+
+    const city = tourCity.trim();
+    if (!city) {
+      setModalFeedback({ msg: 'لطفاً شهر مقصد را وارد کنید.', type: 'error' });
+      setTourModalTab('basic');
+      return;
+    }
+
+    const price = parsePriceInput(tourPriceStr);
+    if (price <= 0) {
+      setModalFeedback({ msg: 'مبلغ نهایی تور باید بزرگ‌تر از صفر باشد.', type: 'error' });
+      setTourModalTab('pricing');
+      return;
+    }
+
     setSubmitting(true);
-    setFeedback(null);
     try {
+      const parsedIncludes = tourIncludes
+        .split(/[،,\n]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const parsedHighlights = tourHighlights
+        .split(/[،,\n]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const childPrice = tourChildPriceStr.trim() !== '' ? parsePriceInput(tourChildPriceStr) : null;
+      const originalPrice = tourOriginalPriceStr.trim() !== '' ? parsePriceInput(tourOriginalPriceStr) : null;
+      const discountPercent = tourDiscountPercent !== '' && Number(tourDiscountPercent) > 0 ? Number(tourDiscountPercent) : null;
+
       const payload = {
-        title: tourTitle,
-        titleEn: tourTitleEn || tourTitle,
-        city: tourCity,
-        country: tourCountry,
-        durationDays: tourDurationDays,
-        price: tourPrice,
+        title,
+        titleEn: tourTitleEn.trim() || title,
+        city,
+        country: tourCountry.trim() || 'ایران',
+        durationDays: tourDurationDays || 3,
+        currency: tourCurrency || 'TOMAN',
+        price,
+        childPrice: editingTourId ? childPrice : (childPrice ?? undefined),
+        originalPrice: editingTourId ? originalPrice : (originalPrice ?? undefined),
+        discountPercent: editingTourId ? discountPercent : (discountPercent ?? undefined),
         category: tourCategory,
-        hotelName: tourHotel || undefined,
-        transportType: tourTransport || undefined,
-        summary: tourSummary,
-        heroImage: tourHeroImage || undefined,
+        hotelName: tourHotel.trim() || (editingTourId ? null : undefined),
+        hotelStars: tourHotelStars || 5,
+        transportType: tourTransport.trim() || (editingTourId ? null : undefined),
+        summary: tourSummary.trim() || '',
+        description: tourDescription.trim() || (editingTourId ? null : undefined),
+        includes: parsedIncludes.length > 0 ? parsedIncludes : (editingTourId ? [] : undefined),
+        highlights: parsedHighlights.length > 0 ? parsedHighlights : (editingTourId ? [] : undefined),
+        heroImage: tourHeroImage.trim() || (editingTourId ? null : undefined),
       };
+
       const res = editingTourId
         ? await updateAdminTourAction(editingTourId, payload)
         : await createAdminTourAction(payload);
@@ -264,15 +474,17 @@ export default function AdminContentPage() {
       if (res.success) {
         setFeedback({ msg: editingTourId ? 'تور با موفقیت ویرایش شد.' : 'تور جدید با موفقیت اضافه شد.', type: 'success' });
         setTourModalOpen(false);
-        if (!editingTourId) {
-          setTourTitle('');
-          setTourCity('');
-        }
         setEditingTourId(null);
+        setModalFeedback(null);
         await loadData();
       } else {
-        setFeedback({ msg: res.error || 'خطا در ثبت تور', type: 'error' });
+        setModalFeedback({ msg: res.error || 'خطا در ثبت تور', type: 'error' });
       }
+    } catch (err: unknown) {
+      setModalFeedback({
+        msg: err instanceof Error ? err.message : 'خطای غیرمنتظره در ثبت تور',
+        type: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -347,7 +559,7 @@ export default function AdminContentPage() {
         : await createAdminExperienceAction(payload);
 
       if (res.success) {
-        setFeedback({ msg: editingExpId ? 'تجربه اصیل با موفقیت ویرایش شد.' : 'تجربه اصیل با موفقیت اضافه شد.', type: 'success' });
+        setFeedback({ msg: editingExpId ? 'ماجراجویی با موفقیت ویرایش شد.' : 'ماجراجویی با موفقیت اضافه شد.', type: 'success' });
         setExpModalOpen(false);
         if (!editingExpId) {
           setExpTitle('');
@@ -366,6 +578,24 @@ export default function AdminContentPage() {
   async function handleDeleteExp(id: string) {
     const target = experiences.find((e) => e.id === id);
     setPendingDelete({ kind: 'exp', id, title: target?.title || '' });
+  }
+
+  async function handleToggleExpActive(exp: ExperienceAdminItem) {
+    if (togglingId) return;
+    setTogglingId(exp.id);
+    setFeedback(null);
+    try {
+      const nextActive = exp.isActive === false ? true : false;
+      const res = await toggleAdminExperienceActiveAction(exp.id, nextActive);
+      if (res.success) {
+        setExperiences((prev) => prev.map((x) => (x.id === exp.id ? { ...x, isActive: nextActive } : x)));
+        setFeedback({ msg: nextActive ? `تجربه «${exp.title}» فعال شد.` : `تجربه «${exp.title}» غیرفعال شد.`, type: 'success' });
+      } else {
+        setFeedback({ msg: res.error || 'خطا در تغییر وضعیت تجربه', type: 'error' });
+      }
+    } finally {
+      setTogglingId(null);
+    }
   }
 
   // Handlers: Travelogue
@@ -427,6 +657,24 @@ export default function AdminContentPage() {
     setPendingDelete({ kind: 'travelogue', id, title: target?.titleFa || '' });
   }
 
+  async function handleToggleTraveloguePublish(trv: TravelogueAdminItem) {
+    if (togglingId) return;
+    setTogglingId(trv.id);
+    setFeedback(null);
+    try {
+      const nextPub = trv.isPublished === false ? true : false;
+      const res = await toggleAdminTraveloguePublishAction(trv.id, nextPub);
+      if (res.success) {
+        setTravelogues((prev) => prev.map((x) => (x.id === trv.id ? { ...x, isPublished: nextPub } : x)));
+        setFeedback({ msg: nextPub ? `سفرنامه «${trv.titleFa}» منتشر شد.` : `سفرنامه «${trv.titleFa}» به پیش‌نویس تبدیل شد.`, type: 'success' });
+      } else {
+        setFeedback({ msg: res.error || 'خطا در تغییر وضعیت سفرنامه', type: 'error' });
+      }
+    } finally {
+      setTogglingId(null);
+    }
+  }
+
   // Handlers: Guide
   function openCreateGuide() {
     setEditingGuideId(null);
@@ -486,6 +734,24 @@ export default function AdminContentPage() {
     setPendingDelete({ kind: 'guide', id, title: target?.titleFa || '' });
   }
 
+  async function handleToggleGuidePublish(gd: GuideAdminItem) {
+    if (togglingId) return;
+    setTogglingId(gd.id);
+    setFeedback(null);
+    try {
+      const nextPub = gd.isPublished === false ? true : false;
+      const res = await toggleAdminGuidePublishAction(gd.id, nextPub);
+      if (res.success) {
+        setGuides((prev) => prev.map((x) => (x.id === gd.id ? { ...x, isPublished: nextPub } : x)));
+        setFeedback({ msg: nextPub ? `راهنما «${gd.titleFa}» منتشر شد.` : `راهنما «${gd.titleFa}» به پیش‌نویس تبدیل شد.`, type: 'success' });
+      } else {
+        setFeedback({ msg: res.error || 'خطا در تغییر وضعیت راهنما', type: 'error' });
+      }
+    } finally {
+      setTogglingId(null);
+    }
+  }
+
   // One friendly in-app confirmation for all four delete flows.
   async function confirmPendingDelete() {
     if (!pendingDelete || deleting) return;
@@ -536,7 +802,7 @@ export default function AdminContentPage() {
             {activeTab === 'experiences' && (
               <button type="button" onClick={openCreateExp} className={erpPrimaryBtnCls}>
                 <Plus size={15} aria-hidden="true" />
-                <span>افزودن تجربه اصیل</span>
+                <span>افزودن ماجراجویی</span>
               </button>
             )}
             {activeTab === 'travelogues' && (
@@ -611,12 +877,26 @@ export default function AdminContentPage() {
                     >
                       <div className="space-y-2">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="px-2.5 py-0.5 rounded-full bg-mint text-brand-dark text-[11px] font-black">
-                            {t.category}
-                          </span>
-                          <div className="flex items-center gap-1 text-xs font-black text-price font-price">
-                            <span>{num(Number(t.price), locale)}</span>
-                            <span className="text-[10px] text-sub font-bold">تومان</span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="px-2.5 py-0.5 rounded-full bg-mint text-brand-dark text-[11px] font-black">
+                              {t.category}
+                            </span>
+                            {t.discountPercent != null && Number(t.discountPercent) > 0 && (
+                              <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black">
+                                {num(Number(t.discountPercent), locale)}٪ تخفیف
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-end">
+                            {t.originalPrice != null && Number(t.originalPrice) > Number(t.price) && (
+                              <span className="text-[10px] font-bold text-sub line-through decoration-rose-500">
+                                {num(Number(t.originalPrice), locale)}
+                              </span>
+                            )}
+                            <div className="flex items-center gap-1 text-xs font-black text-price font-price">
+                              <span>{num(Number(t.price), locale)}</span>
+                              <span className="text-[10px] text-sub font-bold">{getCurrencyLabel(t.currency || 'TOMAN', locale)}</span>
+                            </div>
                           </div>
                         </div>
 
@@ -688,8 +968,8 @@ export default function AdminContentPage() {
               {experiences.length === 0 ? (
                 <div className="p-12 text-center text-sub bg-surface rounded-3xl border border-line flex flex-col items-center gap-3">
                   <Landmark size={36} className="text-line" />
-                  <p className="text-sm font-black text-ink">هنوز تجربه سفارشی در دیتابیس ثبت نشده است.</p>
-                  <p className="text-xs text-sub">می‌توانید با دکمه «افزودن تجربه اصیل»، تجربه‌های گردشگری منحصربه‌فرد ثبت کنید.</p>
+                  <p className="text-sm font-black text-ink">هنوز ماجراجویی سفارشی در دیتابیس ثبت نشده است.</p>
+                  <p className="text-xs text-sub">می‌توانید با دکمه «افزودن ماجراجویی»، ماجراجویی‌های گردشگری منحصربه‌فرد ثبت کنید.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -723,25 +1003,38 @@ export default function AdminContentPage() {
                         </div>
                       </div>
 
-                      <div className="pt-2 border-t border-line/60 flex items-center justify-end gap-1.5">
+                      <div className="pt-2 border-t border-line/60 flex items-center justify-between gap-1.5">
                         <button
                           type="button"
-                          onClick={() => openEditExp(exp)}
-                          aria-label={`ویرایش تجربه: ${exp.title}`}
-                          title="ویرایش تجربه"
-                          className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-brand/10 text-brand-dark hover:bg-brand/20 grid place-items-center transition cursor-pointer"
+                          onClick={() => handleToggleExpActive(exp)}
+                          disabled={togglingId === exp.id}
+                          className={`px-3 py-1 rounded-xl text-xs font-black flex items-center gap-1 cursor-pointer transition disabled:opacity-60 ${
+                            exp.isActive !== false ? 'bg-mint text-brand-dark' : 'bg-soft text-sub'
+                          }`}
                         >
-                          <Pencil size={14} aria-hidden="true" />
+                          {togglingId === exp.id ? <Loader2 size={13} className="animate-spin" /> : exp.isActive !== false ? <Eye size={13} /> : <EyeOff size={13} />}
+                          <span>{exp.isActive !== false ? 'فعال' : 'غیرفعال'}</span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteExp(exp.id)}
-                          aria-label={`حذف تجربه: ${exp.title}`}
-                          title="حذف تجربه"
-                          className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
-                        >
-                          <Trash2 size={14} aria-hidden="true" />
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => openEditExp(exp)}
+                            aria-label={`ویرایش تجربه: ${exp.title}`}
+                            title="ویرایش تجربه"
+                            className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-brand/10 text-brand-dark hover:bg-brand/20 grid place-items-center transition cursor-pointer"
+                          >
+                            <Pencil size={14} aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteExp(exp.id)}
+                            aria-label={`حذف تجربه: ${exp.title}`}
+                            title="حذف تجربه"
+                            className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
+                          >
+                            <Trash2 size={14} aria-hidden="true" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -778,25 +1071,38 @@ export default function AdminContentPage() {
                         </p>
                       </div>
 
-                      <div className="pt-2 border-t border-line/60 flex items-center justify-end gap-1.5">
+                      <div className="pt-2 border-t border-line/60 flex items-center justify-between gap-1.5">
                         <button
                           type="button"
-                          onClick={() => openEditTravelogue(trv)}
-                          aria-label={`ویرایش سفرنامه: ${trv.titleFa}`}
-                          title="ویرایش سفرنامه"
-                          className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-brand/10 text-brand-dark hover:bg-brand/20 grid place-items-center transition cursor-pointer"
+                          onClick={() => handleToggleTraveloguePublish(trv)}
+                          disabled={togglingId === trv.id}
+                          className={`px-3 py-1 rounded-xl text-xs font-black flex items-center gap-1 cursor-pointer transition disabled:opacity-60 ${
+                            trv.isPublished !== false ? 'bg-mint text-brand-dark' : 'bg-soft text-sub'
+                          }`}
                         >
-                          <Pencil size={14} aria-hidden="true" />
+                          {togglingId === trv.id ? <Loader2 size={13} className="animate-spin" /> : trv.isPublished !== false ? <Eye size={13} /> : <EyeOff size={13} />}
+                          <span>{trv.isPublished !== false ? 'منتشر شده' : 'پیش‌نویس'}</span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteTravelogue(trv.id)}
-                          aria-label={`حذف سفرنامه: ${trv.titleFa}`}
-                          title="حذف سفرنامه"
-                          className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
-                        >
-                          <Trash2 size={14} aria-hidden="true" />
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => openEditTravelogue(trv)}
+                            aria-label={`ویرایش سفرنامه: ${trv.titleFa}`}
+                            title="ویرایش سفرنامه"
+                            className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-brand/10 text-brand-dark hover:bg-brand/20 grid place-items-center transition cursor-pointer"
+                          >
+                            <Pencil size={14} aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTravelogue(trv.id)}
+                            aria-label={`حذف سفرنامه: ${trv.titleFa}`}
+                            title="حذف سفرنامه"
+                            className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
+                          >
+                            <Trash2 size={14} aria-hidden="true" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -833,25 +1139,38 @@ export default function AdminContentPage() {
                         </p>
                       </div>
 
-                      <div className="pt-2 border-t border-line/60 flex items-center justify-end gap-1.5">
+                      <div className="pt-2 border-t border-line/60 flex items-center justify-between gap-1.5">
                         <button
                           type="button"
-                          onClick={() => openEditGuide(gd)}
-                          aria-label={`ویرایش راهنما: ${gd.titleFa}`}
-                          title="ویرایش راهنما"
-                          className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-brand/10 text-brand-dark hover:bg-brand/20 grid place-items-center transition cursor-pointer"
+                          onClick={() => handleToggleGuidePublish(gd)}
+                          disabled={togglingId === gd.id}
+                          className={`px-3 py-1 rounded-xl text-xs font-black flex items-center gap-1 cursor-pointer transition disabled:opacity-60 ${
+                            gd.isPublished !== false ? 'bg-mint text-brand-dark' : 'bg-soft text-sub'
+                          }`}
                         >
-                          <Pencil size={14} aria-hidden="true" />
+                          {togglingId === gd.id ? <Loader2 size={13} className="animate-spin" /> : gd.isPublished !== false ? <Eye size={13} /> : <EyeOff size={13} />}
+                          <span>{gd.isPublished !== false ? 'منتشر شده' : 'پیش‌نویس'}</span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteGuide(gd.id)}
-                          aria-label={`حذف راهنما: ${gd.titleFa}`}
-                          title="حذف راهنما"
-                          className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => openEditGuide(gd)}
+                            aria-label={`ویرایش راهنما: ${gd.titleFa}`}
+                            title="ویرایش راهنما"
+                            className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-brand/10 text-brand-dark hover:bg-brand/20 grid place-items-center transition cursor-pointer"
+                          >
+                            <Pencil size={14} aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteGuide(gd.id)}
+                            aria-label={`حذف راهنما: ${gd.titleFa}`}
+                            title="حذف راهنما"
+                            className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 grid place-items-center transition cursor-pointer"
+                          >
+                            <Trash2 size={14} aria-hidden="true" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -864,99 +1183,572 @@ export default function AdminContentPage() {
 
       {/* ================= MODALS ================= */}
 
-      {/* Modal 1: Create Tour */}
-      {tourModalOpen && (
-        <div className="fixed inset-0 z-[200] bg-ink/65 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto" onClick={() => setTourModalOpen(false)}>
-          <div role="dialog" aria-modal="true" aria-label="افزودن پکیج تور مسافرتی جدید" onClick={(e) => e.stopPropagation()} className="w-full max-w-xl bg-surface rounded-3xl p-6 border border-line shadow-2xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-line">
-              <h3 className="font-black text-base text-ink">{editingTourId ? 'ویرایش پکیج تور' : 'افزودن پکیج تور مسافرتی جدید'}</h3>
-              <button type="button" onClick={() => { setTourModalOpen(false); setEditingTourId(null); }} className="w-8 h-8 rounded-full bg-soft text-sub grid place-items-center cursor-pointer">
-                <X size={16} />
-              </button>
-            </div>
+      {/* Modal 1: Create / Edit Tour */}
+      {tourModalOpen && (() => {
+        const parsedPrice = parsePriceInput(tourPriceStr);
+        const parsedChildPrice = parsePriceInput(tourChildPriceStr);
+        const parsedOriginalPrice = parsePriceInput(tourOriginalPriceStr);
+        const currencyLabel = getCurrencyLabel(tourCurrency, locale);
+        const discountDiff = parsedOriginalPrice > parsedPrice ? parsedOriginalPrice - parsedPrice : 0;
+        const discountPct = tourDiscountPercent !== '' ? Number(tourDiscountPercent) : (parsedOriginalPrice > parsedPrice && parsedOriginalPrice > 0 ? Math.round((discountDiff / parsedOriginalPrice) * 100) : 0);
 
-            <form onSubmit={handleCreateTour} className="space-y-3.5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-black text-ink block mb-1">عنوان تور (فارسی):</label>
-                  <input type="text" value={tourTitle} onChange={(e) => setTourTitle(e.target.value)} required placeholder="مثال: تور VIP شیراز" className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold" />
+        return (
+          <div className="fixed inset-0 z-[200] bg-ink/65 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto" onClick={() => setTourModalOpen(false)}>
+            <div role="dialog" aria-modal="true" aria-label="مدیریت پکیج تور مسافرتی" onClick={(e) => e.stopPropagation()} className="w-full max-w-2xl bg-surface rounded-3xl p-6 border border-line shadow-2xl space-y-4 my-8 max-h-[92vh] flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-line">
+                <div className="flex items-center gap-2">
+                  <span className="p-2 rounded-xl bg-action/15 text-ink">
+                    <Compass size={18} />
+                  </span>
+                  <div>
+                    <h3 className="font-black text-base text-ink">{editingTourId ? 'ویرایش پکیج تور' : 'افزودن پکیج تور مسافرتی جدید'}</h3>
+                    <p className="text-[11px] text-sub font-medium">مشخصات، ارز، قیمت‌گذاری و محتوای پکیج را در ۴ بخش مدیریت کنید.</p>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs font-black text-ink block mb-1">عنوان انگلیسی:</label>
-                  <input type="text" value={tourTitleEn} onChange={(e) => setTourTitleEn(e.target.value)} placeholder="E.g. Shiraz VIP Tour" className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-black text-ink block mb-1">شهر مقصد:</label>
-                  <input type="text" value={tourCity} onChange={(e) => setTourCity(e.target.value)} required placeholder="شیراز" className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold" />
-                </div>
-                <div>
-                  <label className="text-xs font-black text-ink block mb-1">کشور:</label>
-                  <input type="text" value={tourCountry} onChange={(e) => setTourCountry(e.target.value)} placeholder="ایران" className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="text-xs font-black text-ink block mb-1">مدت (روز):</label>
-                  <input type="number" min={1} value={tourDurationDays} onChange={(e) => setTourDurationDays(Number(e.target.value))} className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold" />
-                </div>
-                <div>
-                  <label className="text-xs font-black text-ink block mb-1">قیمت (تومان):</label>
-                  <input type="number" min={1000000} step={1000000} value={tourPrice} onChange={(e) => setTourPrice(Number(e.target.value))} className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold font-mono" />
-                </div>
-                <div>
-                  <label className="text-xs font-black text-ink block mb-1">دسته‌بندی:</label>
-                  <select value={tourCategory} onChange={(e) => setTourCategory(e.target.value)} className="w-full h-10 px-2 rounded-xl bg-soft border border-line text-xs font-bold">
-                    <option value="cultural">فرهنگی و تاریخی</option>
-                    <option value="nature">طبیعت‌گردی</option>
-                    <option value="medical">درمانی</option>
-                    <option value="adventure">ماجراجویی</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-black text-ink block mb-1">نام هتل و اقامتگاه:</label>
-                  <input type="text" value={tourHotel} onChange={(e) => setTourHotel(e.target.value)} placeholder="هتل بزرگ شیراز" className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold" />
-                </div>
-                <div>
-                  <label className="text-xs font-black text-ink block mb-1">ناوگان حمل‌ونقل:</label>
-                  <input type="text" value={tourTransport} onChange={(e) => setTourTransport(e.target.value)} placeholder="پرواز ایران‌ایر + ون VIP" className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold" />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-black text-ink block mb-1">لینک تصویر شاخص (Hero Image):</label>
-                <input type="url" value={tourHeroImage} onChange={(e) => setTourHeroImage(e.target.value)} placeholder="https://images.unsplash.com/photo-..." className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold font-mono" />
-              </div>
-
-              <div>
-                <label className="text-xs font-black text-ink block mb-1">خلاصه معرفی تور:</label>
-                <textarea rows={3} value={tourSummary} onChange={(e) => setTourSummary(e.target.value)} placeholder="شرح جاذبه‌های برگزیده و امکانات این سفر..." className="w-full p-3 rounded-xl bg-soft border border-line text-xs font-medium" />
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2">
-                <button type="button" onClick={() => { setTourModalOpen(false); setEditingTourId(null); }} className="h-10 px-4 rounded-xl bg-soft text-ink font-bold text-xs cursor-pointer">انصراف</button>
-                <button type="submit" disabled={submitting} className="h-10 px-5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs transition flex items-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer">
-                  {submitting && <Loader2 size={13} className="animate-spin" />}
-                  <span>{editingTourId ? 'ذخیره تغییرات تور' : 'ثبت و انتشار تور'}</span>
+                <button type="button" onClick={() => { setTourModalOpen(false); setEditingTourId(null); setModalFeedback(null); }} className="w-8 h-8 rounded-full bg-soft text-sub hover:text-ink grid place-items-center cursor-pointer transition">
+                  <X size={16} />
                 </button>
               </div>
-            </form>
+
+              {/* 4 Form Tabs */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 rounded-2xl bg-soft border border-line">
+                {[
+                  { id: 'basic', label: '۱. اطلاعات پایه', icon: Compass },
+                  { id: 'pricing', label: '۲. قیمت و تخفیف', icon: Coins },
+                  { id: 'services', label: '۳. خدمات و اقامت', icon: Landmark },
+                  { id: 'content', label: '۴. محتوا و تصاویر', icon: FileText },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = tourModalTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setTourModalTab(tab.id as 'basic' | 'pricing' | 'services' | 'content')}
+                      className={`h-9 px-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-surface text-brand-dark shadow-xs border border-line'
+                          : 'text-sub hover:text-ink'
+                      }`}
+                    >
+                      <Icon size={14} />
+                      <span className="truncate">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <form onSubmit={handleCreateTour} className="flex flex-col flex-1 min-h-0 space-y-4">
+                <div className="flex-1 overflow-y-auto space-y-4 pe-1">
+                  {/* TAB 1: BASIC INFO */}
+                  {tourModalTab === 'basic' && (
+                    <div className="space-y-3.5 animate-in fade-in duration-150">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-black text-ink block mb-1">
+                            عنوان تور (فارسی) <span className="text-rose-500">*</span>:
+                          </label>
+                          <input
+                            type="text"
+                            value={tourTitle}
+                            onChange={(e) => setTourTitle(e.target.value)}
+                            required
+                            placeholder="مثال: تور VIP شیراز و تخت جمشید"
+                            className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-black text-ink block mb-1">عنوان انگلیسی:</label>
+                          <input
+                            type="text"
+                            value={tourTitleEn}
+                            onChange={(e) => setTourTitleEn(e.target.value)}
+                            placeholder="E.g. Shiraz & Persepolis VIP Tour"
+                            className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-black text-ink block mb-1">
+                            شهر مقصد <span className="text-rose-500">*</span>:
+                          </label>
+                          <input
+                            type="text"
+                            value={tourCity}
+                            onChange={(e) => setTourCity(e.target.value)}
+                            required
+                            placeholder="شیراز"
+                            className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-black text-ink block mb-1">کشور:</label>
+                          <input
+                            type="text"
+                            value={tourCountry}
+                            onChange={(e) => setTourCountry(e.target.value)}
+                            placeholder="ایران"
+                            className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-black text-ink block mb-1">
+                            مدت اقامت (روز) <span className="text-rose-500">*</span>:
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={60}
+                            value={tourDurationDays}
+                            onChange={(e) => setTourDurationDays(Number(e.target.value) || 1)}
+                            className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold"
+                          />
+                          <span className="text-[11px] text-sub block mt-1">
+                            معادل {num(Math.max(1, tourDurationDays - 1), locale)} شب اقامت
+                          </span>
+                        </div>
+                        <div>
+                          <label className="text-xs font-black text-ink block mb-1">دسته‌بندی موضوعی تور:</label>
+                          <select
+                            value={tourCategory}
+                            onChange={(e) => setTourCategory(e.target.value)}
+                            className="w-full h-10 px-2 rounded-xl bg-soft border border-line text-xs font-bold"
+                          >
+                            <option value="cultural">فرهنگی و تاریخی</option>
+                            <option value="nature">طبیعت‌گردی و کویر</option>
+                            <option value="medical">سلامت و درمانی</option>
+                            <option value="adventure">ماجراجویی و ورزشی</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 2: PRICING, CURRENCY & DISCOUNTS */}
+                  {tourModalTab === 'pricing' && (
+                    <div className="space-y-4 animate-in fade-in duration-150">
+                      {/* Currency Selector */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black text-ink block">
+                          واحد پول تور (ارز مبنا):
+                        </label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {TOUR_CURRENCIES.map((c) => {
+                            const isSelected = tourCurrency === c.code;
+                            return (
+                              <button
+                                key={c.code}
+                                type="button"
+                                onClick={() => setTourCurrency(c.code)}
+                                className={`p-2.5 rounded-2xl border text-start flex items-center justify-between transition cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-action/15 border-brand text-ink font-black shadow-xs ring-1 ring-brand'
+                                    : 'bg-soft border-line text-sub hover:text-ink hover:bg-surface'
+                                }`}
+                              >
+                                <div className="min-w-0">
+                                  <div className="text-xs font-bold truncate">{c.labelFa}</div>
+                                  <div className="text-[10px] text-sub font-mono">{c.code}</div>
+                                </div>
+                                <span className={`text-xs px-2 py-0.5 rounded-lg font-black font-price ms-1 shrink-0 ${
+                                  isSelected ? 'bg-brand text-white' : 'bg-surface text-sub border border-line'
+                                }`}>
+                                  {c.symbol}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Final Prices */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-black text-ink block mb-1">
+                            قیمت نهایی بزرگسال ({currencyLabel}) <span className="text-rose-500">*</span>:
+                          </label>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={tourPriceStr}
+                            onChange={(e) => handlePriceChange(e.target.value)}
+                            required
+                            placeholder="مثال: ۸۵,۰۰۰,۰۰۰"
+                            className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold font-mono dir-ltr text-right"
+                          />
+                          {parsedPrice > 0 && (
+                            <div className="mt-1.5 space-y-1">
+                              <p className="text-[11px] font-bold text-ink bg-soft/70 px-2.5 py-1 rounded-lg">
+                                خوانش مبلغ: <strong>{getHumanAmountWords(parsedPrice, tourCurrency)}</strong>
+                              </p>
+                              {getRialTomanConversionHint(parsedPrice, tourCurrency) && (
+                                <p className="text-[10.5px] font-bold text-sky-800 dark:text-sky-300 bg-sky-500/10 border border-sky-500/20 px-2.5 py-1 rounded-lg">
+                                  ℹ️ {getRialTomanConversionHint(parsedPrice, tourCurrency)}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-black text-ink block mb-1">
+                            قیمت کودک ({currencyLabel}) - اختیاری:
+                          </label>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={tourChildPriceStr}
+                            onChange={(e) => {
+                              const raw = parsePriceInput(e.target.value);
+                              setTourChildPriceStr(e.target.value === '' ? '' : formatNumberWithCommas(raw));
+                            }}
+                            placeholder="اختیاری (برای حذف مقدار را خالی کنید)"
+                            className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold font-mono dir-ltr text-right"
+                          />
+                          {parsedChildPrice > 0 && (
+                            <div className="mt-1.5 space-y-1">
+                              <p className="text-[11px] font-bold text-ink bg-soft/70 px-2.5 py-1 rounded-lg">
+                                خوانش مبلغ کودک: <strong>{getHumanAmountWords(parsedChildPrice, tourCurrency)}</strong>
+                              </p>
+                              {getRialTomanConversionHint(parsedChildPrice, tourCurrency) && (
+                                <p className="text-[10.5px] font-bold text-sky-800 dark:text-sky-300 bg-sky-500/10 border border-sky-500/20 px-2.5 py-1 rounded-lg">
+                                  ℹ️ {getRialTomanConversionHint(parsedChildPrice, tourCurrency)}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Discount & Strikethrough Price Setting */}
+                      <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 space-y-3">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <span className="text-xs font-black text-ink flex items-center gap-1.5">
+                            <span>🏷️</span>
+                            <span>سیستم تخفیف و قیمت خط‌خورده قبلی</span>
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {discountPct > 0 && (
+                              <span className="px-2.5 py-0.5 rounded-full bg-rose-500 text-white text-[11px] font-black">
+                                {num(discountPct, locale)}٪ تخفیف فعال
+                              </span>
+                            )}
+                            {(tourOriginalPriceStr || tourDiscountPercent !== '' || tourDiscountAmountStr) && (
+                              <button
+                                type="button"
+                                onClick={handleClearDiscount}
+                                className="text-[11px] text-rose-600 dark:text-rose-400 hover:underline font-bold cursor-pointer"
+                              >
+                                حذف تخفیف
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Discount Mode Switcher */}
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-black text-sub block">نوع تعیین تخفیف:</label>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setTourDiscountMode('percent')}
+                              className={`flex-1 h-9 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 border transition cursor-pointer ${
+                                tourDiscountMode === 'percent'
+                                  ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
+                                  : 'bg-surface text-sub border-line hover:text-ink'
+                              }`}
+                            >
+                              <Percent size={14} />
+                              <span>تخفیف درصدی (%)</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setTourDiscountMode('amount')}
+                              className={`flex-1 h-9 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 border transition cursor-pointer ${
+                                tourDiscountMode === 'amount'
+                                  ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
+                                  : 'bg-surface text-sub border-line hover:text-ink'
+                              }`}
+                            >
+                              <Coins size={14} />
+                              <span>تخفیف عددی / مبلغی</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Mode Inputs */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                          {tourDiscountMode === 'percent' ? (
+                            <div>
+                              <label className="text-[11px] font-black text-sub block mb-1">
+                                درصد تخفیف (%):
+                              </label>
+                              <input
+                                type="number"
+                                min={1}
+                                max={99}
+                                value={tourDiscountPercent}
+                                onChange={(e) => handleDiscountPercentChange(e.target.value)}
+                                placeholder="مثال: ۱۵ یا ۲۰"
+                                className="w-full h-10 px-3 rounded-xl bg-surface border border-line text-xs font-bold font-mono dir-ltr text-right"
+                              />
+                            </div>
+                          ) : (
+                            <div>
+                              <label className="text-[11px] font-black text-sub block mb-1">
+                                مبلغ تخفیف ({currencyLabel}):
+                              </label>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                value={tourDiscountAmountStr}
+                                onChange={(e) => handleDiscountAmountChange(e.target.value)}
+                                placeholder="مثال: ۱۰,۰۰۰,۰۰۰"
+                                className="w-full h-10 px-3 rounded-xl bg-surface border border-line text-xs font-bold font-mono dir-ltr text-right"
+                              />
+                            </div>
+                          )}
+
+                          <div>
+                            <label className="text-[11px] font-black text-sub block mb-1">
+                              قیمت اولیه قبل از تخفیف (خط‌خورده):
+                            </label>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              value={tourOriginalPriceStr}
+                              onChange={(e) => handleOriginalPriceChange(e.target.value)}
+                              placeholder="مثال: ۱۰۰,۰۰۰,۰۰۰"
+                              className="w-full h-10 px-3 rounded-xl bg-surface border border-line text-xs font-bold font-mono dir-ltr text-right"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Live Discount Preview Box */}
+                        {parsedOriginalPrice > parsedPrice && parsedPrice > 0 && (
+                          <div className="p-3 rounded-xl bg-surface border border-amber-500/30 text-xs space-y-1">
+                            <div className="flex items-center gap-1.5 font-black text-amber-900 dark:text-amber-200">
+                              <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400" />
+                              <span>پیش‌نمایش زنده شفاف:</span>
+                            </div>
+                            <p className="text-[11.5px] font-medium leading-relaxed text-sub">
+                              قیمت اولیه خط‌خورده: <strong className="font-mono text-ink">{formatNumberWithCommas(parsedOriginalPrice)} {currencyLabel}</strong> |
+                              {' '}مبلغ تخفیف: <strong className="font-mono text-rose-600 dark:text-rose-400">{formatNumberWithCommas(discountDiff)} {currencyLabel}</strong> ({num(discountPct, locale)}٪) |
+                              {' '}قیمت نهایی پرداختی: <strong className="font-mono text-emerald-600 dark:text-emerald-400">{formatNumberWithCommas(parsedPrice)} {currencyLabel}</strong>
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 3: SERVICES & ACCOMMODATION */}
+                  {tourModalTab === 'services' && (
+                    <div className="space-y-3.5 animate-in fade-in duration-150">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="sm:col-span-2">
+                          <label className="text-xs font-black text-ink block mb-1">نام هتل و اقامتگاه:</label>
+                          <input
+                            type="text"
+                            value={tourHotel}
+                            onChange={(e) => setTourHotel(e.target.value)}
+                            placeholder="مثال: هتل ۵ ستاره بزرگ شیراز"
+                            className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-black text-ink block mb-1">ستاره هتل:</label>
+                          <select
+                            value={tourHotelStars}
+                            onChange={(e) => setTourHotelStars(Number(e.target.value))}
+                            className="w-full h-10 px-2 rounded-xl bg-soft border border-line text-xs font-bold"
+                          >
+                            <option value={5}>۵ ستاره لوکس</option>
+                            <option value={4}>۴ ستاره عالی</option>
+                            <option value={3}>۳ ستاره اقتصادی</option>
+                            <option value={2}>۲ ستاره ساده</option>
+                            <option value={1}>اقامتگاه بوم‌گردی</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-black text-ink block mb-1">ناوگان حمل‌ونقل و پرواز:</label>
+                        <input
+                          type="text"
+                          value={tourTransport}
+                          onChange={(e) => setTourTransport(e.target.value)}
+                          placeholder="پرواز ایران‌ایر + خودروی تشریفاتی ون VIP"
+                          className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-black text-ink block mb-1">
+                          خدمات شامل پکیج (با کاما «،» جدا کنید):
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={tourIncludes}
+                          onChange={(e) => setTourIncludes(e.target.value)}
+                          placeholder="پرواز رفت و برگشت، هتل ۵ ستاره با صبحانه، ترانسفر فرودگاهی، بیمه مسافرتی"
+                          className="w-full p-3 rounded-xl bg-soft border border-line text-xs font-medium"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-black text-ink block mb-1">
+                          جاذبه‌ها و نکات برجسته تور (با کاما «،» جدا کنید):
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={tourHighlights}
+                          onChange={(e) => setTourHighlights(e.target.value)}
+                          placeholder="میدان نقش جهان، کاخ عالی‌قاپو، عصرانه در هتل عباسی، شب‌نشینی پل خواجو"
+                          className="w-full p-3 rounded-xl bg-soft border border-line text-xs font-medium"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 4: CONTENT & IMAGES */}
+                  {tourModalTab === 'content' && (
+                    <div className="space-y-3.5 animate-in fade-in duration-150">
+                      <div>
+                        <label className="text-xs font-black text-ink block mb-1">لینک تصویر شاخص (Hero Image):</label>
+                        <input
+                          type="url"
+                          value={tourHeroImage}
+                          onChange={(e) => setTourHeroImage(e.target.value)}
+                          placeholder="https://images.unsplash.com/photo-..."
+                          className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold font-mono dir-ltr text-left"
+                        />
+                        {tourHeroImage && (
+                          <div className="mt-2 relative w-full h-32 rounded-xl overflow-hidden border border-line bg-soft">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={tourHeroImage} alt="پیش‌نمایش تصویر" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-black text-ink block mb-1">خلاصه معرفی کوتاه تور:</label>
+                        <textarea
+                          rows={2}
+                          value={tourSummary}
+                          onChange={(e) => setTourSummary(e.target.value)}
+                          placeholder="شرح جاذبه‌های برگزیده و امکانات این سفر..."
+                          className="w-full p-3 rounded-xl bg-soft border border-line text-xs font-medium"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-black text-ink block mb-1">توضیحات جامع و تفصیلی تور (نمایش در صفحه اختصاصی):</label>
+                        <textarea
+                          rows={4}
+                          value={tourDescription}
+                          onChange={(e) => setTourDescription(e.target.value)}
+                          placeholder="شرح کامل جزئیات سفر، فضا و تمایزهای این تور..."
+                          className="w-full p-3 rounded-xl bg-soft border border-line text-xs font-medium"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* In-Modal Alert Box */}
+                {modalFeedback && (
+                  <div
+                    className={`p-3 rounded-2xl border flex items-center gap-2 text-xs font-bold animate-in fade-in duration-150 ${
+                      modalFeedback.type === 'success'
+                        ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/30'
+                        : 'bg-rose-500/10 text-rose-800 dark:text-rose-300 border-rose-500/30'
+                    }`}
+                  >
+                    {modalFeedback.type === 'success' ? (
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                    ) : (
+                      <AlertCircle size={16} className="text-rose-600 shrink-0" />
+                    )}
+                    <span>{modalFeedback.msg}</span>
+                  </div>
+                )}
+
+                {/* Footer Buttons */}
+                <div className="pt-3 border-t border-line flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    {tourModalTab !== 'basic' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const tabs: Array<'basic' | 'pricing' | 'services' | 'content'> = ['basic', 'pricing', 'services', 'content'];
+                          const curIdx = tabs.indexOf(tourModalTab);
+                          if (curIdx > 0) setTourModalTab(tabs[curIdx - 1]);
+                        }}
+                        className="h-10 px-3 rounded-xl bg-soft text-sub hover:text-ink font-bold text-xs flex items-center gap-1 cursor-pointer transition"
+                      >
+                        <ChevronRight size={14} className="rtl:inline ltr:hidden" />
+                        <ChevronLeft size={14} className="ltr:inline rtl:hidden" />
+                        <span>مرحله قبل</span>
+                      </button>
+                    )}
+                    {tourModalTab !== 'content' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const tabs: Array<'basic' | 'pricing' | 'services' | 'content'> = ['basic', 'pricing', 'services', 'content'];
+                          const curIdx = tabs.indexOf(tourModalTab);
+                          if (curIdx < tabs.length - 1) setTourModalTab(tabs[curIdx + 1]);
+                        }}
+                        className="h-10 px-3 rounded-xl bg-soft text-ink font-bold text-xs flex items-center gap-1 cursor-pointer transition"
+                      >
+                        <span>مرحله بعد</span>
+                        <ChevronLeft size={14} className="rtl:inline ltr:hidden" />
+                        <ChevronRight size={14} className="ltr:inline rtl:hidden" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTourModalOpen(false);
+                        setEditingTourId(null);
+                        setModalFeedback(null);
+                      }}
+                      className="h-10 px-4 rounded-xl bg-soft text-ink font-bold text-xs cursor-pointer hover:bg-line/40 transition"
+                    >
+                      انصراف
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="h-10 px-5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs transition flex items-center gap-1.5 shadow-sm disabled:opacity-50 cursor-pointer"
+                    >
+                      {submitting && <Loader2 size={13} className="animate-spin" />}
+                      <span>{editingTourId ? 'ذخیره تغییرات تور' : 'ثبت و انتشار تور'}</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Modal 2: Create Experience */}
       {expModalOpen && (
         <div className="fixed inset-0 z-[200] bg-ink/65 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto" onClick={() => setExpModalOpen(false)}>
-          <div role="dialog" aria-modal="true" aria-label="افزودن تجربه اصیل محلی" onClick={(e) => e.stopPropagation()} className="w-full max-w-lg bg-surface rounded-3xl p-6 border border-line shadow-2xl space-y-4 my-8">
+          <div role="dialog" aria-modal="true" aria-label="افزودن ماجراجویی جدید" onClick={(e) => e.stopPropagation()} className="w-full max-w-lg bg-surface rounded-3xl p-6 border border-line shadow-2xl space-y-4 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-line">
-              <h3 className="font-black text-base text-ink">{editingExpId ? 'ویرایش تجربه اصیل' : 'افزودن تجربه اصیل محلی'}</h3>
+              <h3 className="font-black text-base text-ink">{editingExpId ? 'ویرایش ماجراجویی' : 'افزودن ماجراجویی جدید'}</h3>
               <button type="button" onClick={() => { setExpModalOpen(false); setEditingExpId(null); }} className="w-8 h-8 rounded-full bg-soft text-sub grid place-items-center cursor-pointer">
                 <X size={16} />
               </button>

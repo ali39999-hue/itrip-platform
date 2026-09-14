@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
+import { useCountryStore } from '@/stores/country-store';
 import { 
   Sparkles, 
   ArrowLeft, 
@@ -28,11 +29,19 @@ export function AiPlannerHookSection() {
   const router = useRouter();
   const isRtl = locale === 'fa' || locale === 'ar';
 
+  const { country } = useCountryStore();
+
   const [prompt, setPrompt] = useState('');
-  const [selectedDest, setSelectedDest] = useState<DestinationType>('turkey');
+  const [selectedDest, setSelectedDest] = useState<DestinationType>(() => (country as DestinationType) || 'turkey');
   const [selectedDays, setSelectedDays] = useState(4);
   const [selectedWho, setSelectedWho] = useState<WhoType>('family');
   const [selectedBudget, setSelectedBudget] = useState<BudgetType>('balanced');
+
+  useEffect(() => {
+    if (country) {
+      setSelectedDest(country as DestinationType);
+    }
+  }, [country]);
 
   const destinations = [
     { id: 'iran', flag: '🇮🇷', name: lt(locale, { fa: 'ایران', en: 'Iran', ar: 'إيران', zh: '伊朗', ru: 'Иран' }) },
@@ -41,6 +50,7 @@ export function AiPlannerHookSection() {
     { id: 'georgia', flag: '🇬🇪', name: lt(locale, { fa: 'گرجستان', en: 'Georgia', ar: 'جورجيا', zh: '格鲁吉亚', ru: 'Грузия' }) },
     { id: 'russia', flag: '🇷🇺', name: lt(locale, { fa: 'روسیه', en: 'Russia', ar: 'روسيا', zh: '俄罗斯', ru: 'Россия' }) },
     { id: 'oman', flag: '🇴🇲', name: lt(locale, { fa: 'عمان', en: 'Oman', ar: 'عُمان', zh: '阿曼', ru: 'Оман' }) },
+    { id: 'china', flag: '🇨🇳', name: lt(locale, { fa: 'چین', en: 'China', ar: 'الصين', zh: '中国', ru: 'Китай' }) },
   ] as const;
 
   const samplePrompts = [

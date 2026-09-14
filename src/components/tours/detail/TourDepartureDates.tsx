@@ -4,6 +4,7 @@ import { useLocale } from 'next-intl';
 import type { Tour, TourDepartureDate } from '@/lib/types';
 import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
+import { getCurrencyLabel } from '@/lib/currencies';
 import {
   CalendarDays,
   CalendarCheck,
@@ -81,7 +82,7 @@ export function TourDepartureDates({
                 <div className="text-end">
                   <div className="text-xs sm:text-base font-black text-price font-price">
                     {num(d.price, locale)}
-                    <span className="text-[10px] sm:text-[11px] font-bold text-sub ms-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
+                    <span className="text-[10px] sm:text-[11px] font-bold text-sub ms-1">{getCurrencyLabel(d.currency || tour.currency || 'TOMAN', locale)}</span>
                   </div>
                   <span className="text-[9.5px] sm:text-[10px] font-bold text-sub block">{lt(locale, { fa: 'هر نفر بزرگسال', en: 'per adult', ar: 'لكل شخص', zh: '每位成人', ru: 'за взрослого' })}</span>
                 </div>

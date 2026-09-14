@@ -6,14 +6,20 @@ export class ContentDomainService {
     if (!t) return t;
     const priceVal = t.price;
     const childVal = t.childPrice;
+    const origVal = t.originalPrice;
+    const discVal = t.discountPercent;
     const depDates = t.departureDates;
     return {
       ...t,
+      currency: t.currency ? String(t.currency) : 'TOMAN',
       price: priceVal != null ? Number(priceVal) : 0,
       childPrice: childVal != null ? Number(childVal) : null,
+      originalPrice: origVal != null ? Number(origVal) : null,
+      discountPercent: discVal != null ? Number(discVal) : null,
       departureDates: Array.isArray(depDates)
         ? depDates.map((d: Record<string, unknown>) => ({
             ...d,
+            currency: d.currency ? String(d.currency) : (t.currency ? String(t.currency) : 'TOMAN'),
             price: d.price != null ? Number(d.price) : 0,
             childPrice: d.childPrice != null ? Number(d.childPrice) : null,
           }))
@@ -42,28 +48,33 @@ export class ContentDomainService {
     countryEn?: string;
     durationDays?: number;
     durationNights?: number;
+    currency?: string;
     price: number;
-    childPrice?: number;
+    childPrice?: number | null;
+    originalPrice?: number | null;
+    discountPercent?: number | null;
     category?: string;
-    heroImage?: string;
+    heroImage?: string | null;
     gallery?: string[];
     summary?: string;
     summaryEn?: string;
-    description?: string;
+    description?: string | null;
     descriptionEn?: string;
     highlights?: string[];
     includes?: string[];
     excludes?: string[];
-    hotelName?: string;
+    hotelName?: string | null;
     hotelStars?: number;
-    transportType?: string;
+    transportType?: string | null;
     transportTypeEn?: string;
     groupSize?: string;
     guideLanguages?: string[];
     departureDates?: Array<{
       startDate: string;
       endDate: string;
+      currency?: string;
       price: number;
+      childPrice?: number | null;
       availableSeats?: number;
       guaranteed?: boolean;
     }>;
@@ -92,8 +103,15 @@ export class ContentDomainService {
         countryEn: data.countryEn || 'Iran',
         durationDays: data.durationDays || 3,
         durationNights: data.durationNights ?? Math.max(1, (data.durationDays || 3) - 1),
+        currency: data.currency || 'TOMAN',
         price: new Prisma.Decimal(data.price || 0),
         childPrice: data.childPrice ? new Prisma.Decimal(data.childPrice) : null,
+        originalPrice: data.originalPrice ? new Prisma.Decimal(data.originalPrice) : null,
+        discountPercent: data.discountPercent ?? (
+          data.originalPrice && data.price && data.originalPrice > data.price
+            ? Math.round(((data.originalPrice - data.price) / data.originalPrice) * 100)
+            : null
+        ),
         category: data.category || 'cultural',
         heroImage: data.heroImage || null,
         gallery: data.gallery || [],
@@ -111,16 +129,49 @@ export class ContentDomainService {
         groupSize: data.groupSize || 'حداکثر ۱۲ نفر',
         guideLanguages: data.guideLanguages || ['فارسی', 'English'],
         departureDates: {
-          create: (data.departureDates || []).map((d) => ({
+          create: (
+            (data.departureDates && data.departureDates.length > 0)
+              ? data.departureDates
+              : [7, 14, 21].map((offset) => {
+                  const now = new Date();
+                  const start = new Date(now.getTime() + offset * 86400000);
+                  const end = new Date(now.getTime() + (offset + (data.durationDays || 3)) * 86400000);
+                  return {
+                    startDate: start.toISOString().split('T')[0],
+                    endDate: end.toISOString().split('T')[0],
+                    currency: data.currency || 'TOMAN',
+                    price: data.price || 0,
+                    childPrice: data.childPrice ?? null,
+                    availableSeats: 10,
+                    guaranteed: true,
+                  };
+                })
+          ).map((d) => ({
             startDate: d.startDate,
             endDate: d.endDate,
+            currency: d.currency || data.currency || 'TOMAN',
             price: new Prisma.Decimal(d.price),
+            childPrice: d.childPrice != null ? new Prisma.Decimal(d.childPrice) : (data.childPrice != null ? new Prisma.Decimal(data.childPrice) : null),
             availableSeats: d.availableSeats || 10,
             guaranteed: d.guaranteed ?? true,
           })),
         },
         itineraryDays: {
-          create: (data.itineraryDays || []).map((day) => ({
+          create: (
+            (data.itineraryDays && data.itineraryDays.length > 0)
+              ? data.itineraryDays
+              : Array.from({ length: data.durationDays || 3 }, (_, idx) => ({
+                  day: idx + 1,
+                  title: `روز ${idx + 1} - گشت شهری و اقامت`,
+                  titleEn: `Day ${idx + 1} City Tour`,
+                  description: `برنامه بازدید اختصاصی از جاذبه‌های برگزیده در ${data.city.trim()}`,
+                  activities: ['گشت شهری', 'اقامت در هتل'],
+                  breakfast: true,
+                  lunch: false,
+                  dinner: false,
+                  accommodation: data.hotelName || 'هتل ۵ ستاره لوکس',
+                }))
+          ).map((day) => ({
             day: day.day,
             title: day.title,
             titleEn: day.titleEn || day.title,
@@ -132,6 +183,10 @@ export class ContentDomainService {
             accommodation: day.accommodation || '',
           })),
         },
+      },
+      include: {
+        departureDates: { orderBy: { startDate: 'asc' } },
+        itineraryDays: { orderBy: { day: 'asc' } },
       },
     });
     return ContentDomainService.serializeTour(created);
@@ -156,18 +211,50 @@ export class ContentDomainService {
     city?: string;
     country?: string;
     durationDays?: number;
+    currency?: string;
     price?: number;
-    childPrice?: number;
+    childPrice?: number | null;
+    originalPrice?: number | null;
+    discountPercent?: number | null;
     category?: string;
-    heroImage?: string;
-    summary?: string;
-    hotelName?: string;
-    transportType?: string;
+    heroImage?: string | null;
+    gallery?: string[];
+    summary?: string | null;
+    summaryEn?: string | null;
+    description?: string | null;
+    descriptionEn?: string | null;
+    hotelName?: string | null;
+    hotelStars?: number | null;
+    transportType?: string | null;
+    transportTypeEn?: string | null;
+    groupSize?: string | null;
+    groupSizeEn?: string | null;
+    guideLanguages?: string[];
+    highlights?: string[];
+    includes?: string[];
+    excludes?: string[];
     isPublished?: boolean;
   }) {
     if (data.title !== undefined && !data.title.trim()) throw new Error('Title cannot be empty');
     if (data.city !== undefined && !data.city.trim()) throw new Error('City cannot be empty');
     if (data.durationDays !== undefined && data.durationDays < 1) throw new Error('Duration must be at least 1 day');
+
+    // Auto-sync departure dates prices and currency so checkout & booking widget reflect the updated CMS price
+    if (data.price !== undefined || data.currency !== undefined) {
+      await prisma.tourDepartureDate.updateMany({
+        where: { tourId: id },
+        data: {
+          ...(data.price !== undefined && { price: new Prisma.Decimal(data.price) }),
+          ...(data.currency !== undefined && { currency: data.currency }),
+        },
+      }).catch(() => {});
+    }
+    if (data.childPrice !== undefined) {
+      await prisma.tourDepartureDate.updateMany({
+        where: { tourId: id },
+        data: { childPrice: data.childPrice != null ? new Prisma.Decimal(data.childPrice) : null },
+      }).catch(() => {});
+    }
 
     const updated = await prisma.tour.update({
       where: { id },
@@ -180,16 +267,38 @@ export class ContentDomainService {
           durationDays: data.durationDays,
           durationNights: Math.max(1, data.durationDays - 1),
         }),
+        ...(data.currency !== undefined && { currency: data.currency }),
         ...(data.price !== undefined && { price: new Prisma.Decimal(data.price) }),
-        ...(data.childPrice !== undefined && { childPrice: data.childPrice ? new Prisma.Decimal(data.childPrice) : null }),
+        ...(data.childPrice !== undefined && {
+          childPrice: data.childPrice != null ? new Prisma.Decimal(data.childPrice) : null,
+        }),
+        ...(data.originalPrice !== undefined && {
+          originalPrice: data.originalPrice != null ? new Prisma.Decimal(data.originalPrice) : null,
+        }),
+        ...(data.discountPercent !== undefined && {
+          discountPercent: data.discountPercent != null ? data.discountPercent : null,
+        }),
+        ...(data.originalPrice === null && data.discountPercent === undefined && {
+          discountPercent: null,
+        }),
         ...(data.category !== undefined && { category: data.category }),
         ...(data.heroImage !== undefined && { heroImage: data.heroImage || null }),
         ...(data.summary !== undefined && { summary: data.summary }),
+        ...(data.description !== undefined && { description: data.description }),
         ...(data.hotelName !== undefined && { hotelName: data.hotelName || null }),
+        ...(data.hotelStars !== undefined && { hotelStars: data.hotelStars }),
         ...(data.transportType !== undefined && { transportType: data.transportType || null }),
+        ...(data.highlights !== undefined && { highlights: data.highlights }),
+        ...(data.includes !== undefined && { includes: data.includes }),
+        ...(data.excludes !== undefined && { excludes: data.excludes }),
         ...(data.isPublished !== undefined && { isPublished: data.isPublished }),
       },
+      include: {
+        departureDates: { orderBy: { startDate: 'asc' } },
+        itineraryDays: { orderBy: { day: 'asc' } },
+      },
     });
+
     return ContentDomainService.serializeTour(updated);
   }
 
@@ -289,6 +398,17 @@ export class ContentDomainService {
     };
   }
 
+  static async toggleExperienceActive(id: string, isActive: boolean) {
+    const updated = await prisma.signatureExperience.update({
+      where: { id },
+      data: { isActive },
+    });
+    return {
+      ...updated,
+      fromPrice: Number(updated.fromPrice),
+    };
+  }
+
   // 3. Travelogues
   static async getTravelogues() {
     return prisma.travelogue.findMany({
@@ -328,6 +448,13 @@ export class ContentDomainService {
 
   static async deleteTravelogue(id: string) {
     return prisma.travelogue.delete({ where: { id } });
+  }
+
+  static async toggleTraveloguePublish(id: string, isPublished: boolean) {
+    return prisma.travelogue.update({
+      where: { id },
+      data: { isPublished },
+    });
   }
 
   static async updateTravelogue(id: string, data: {
@@ -397,6 +524,13 @@ export class ContentDomainService {
 
   static async deleteGuide(id: string) {
     return prisma.guideArticle.delete({ where: { id } });
+  }
+
+  static async toggleGuidePublish(id: string, isPublished: boolean) {
+    return prisma.guideArticle.update({
+      where: { id },
+      data: { isPublished },
+    });
   }
 
   static async updateGuide(id: string, data: {

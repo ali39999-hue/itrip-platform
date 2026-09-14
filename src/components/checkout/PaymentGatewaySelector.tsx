@@ -16,6 +16,10 @@ import {
 import { CURRENCY_TO_TOMAN, formatMoney } from '@/lib/money';
 import { countryPaymentCapabilities } from '@/lib/countries';
 import { useCountryStore } from '@/stores/country-store';
+import { useAuthStore } from '@/stores/auth-store';
+import { evaluateUserKycTier } from '@/lib/kyc-payment-rules';
+import { KycCompletionSheet } from '@/components/account/KycCompletionSheet';
+import { num } from '@/lib/format';
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
 
@@ -47,6 +51,9 @@ export function PaymentGatewaySelector({
   onToggleAdminPaymentMode,
 }: PaymentGatewaySelectorProps) {
   const locale = useLocale();
+  const user = useAuthStore((s) => s.user);
+  const kycProfile = evaluateUserKycTier(user);
+  const [kycSheetOpen, setKycSheetOpen] = useState(false);
   const country = useCountryStore((s) => s.country);
   const caps = countryPaymentCapabilities(country);
   const hasEnoughWallet = walletBalance >= totalPayable;
@@ -186,6 +193,45 @@ export function PaymentGatewaySelector({
           </div>
         </div>
       )}
+
+      {/* KYC Financial Services Status Bar */}
+      <div className="p-3.5 rounded-2xl bg-soft border border-line flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-brand/10 text-brand-dark grid place-items-center shrink-0">
+            <ShieldCheck size={18} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-ink">
+                {lt(locale, { fa: 'سطح احراز هویت مالی (KYC):', en: 'Financial KYC Tier:', ar: 'مستوى التحقق المالي:', zh: '财务认证等级：', ru: 'Уровень верификации KYC:' })}
+              </span>
+              <span className={`px-2 py-0.5 rounded-full text-[11px] font-black border ${kycProfile.badgeColor}`}>
+                {locale === 'fa' ? kycProfile.tierNameFa : kycProfile.tierNameEn}
+              </span>
+            </div>
+            <span className="text-[11px] text-sub font-medium block mt-0.5">
+              {lt(locale, {
+                fa: `سقف پرداخت روزانه: ${num(kycProfile.dailyLimitToman, locale)} تومان · ${kycProfile.allowsBnplInstallment ? 'پرداخت اقساطی اسنپ‌پی فعال است' : 'پرداخت اقساطی نیازمند ارتقا به سطح ۲ طلایی'}`,
+                en: `Daily Cap: ${num(kycProfile.dailyLimitToman, locale)} Toman · ${kycProfile.allowsBnplInstallment ? 'BNPL Installments Active' : 'Installments require Level 2 KYC'}`,
+                ar: `الحد اليومي: ${num(kycProfile.dailyLimitToman, locale)} تومان`,
+                zh: `单日限额：${num(kycProfile.dailyLimitToman, locale)} 图曼`,
+                ru: `Дневной лимит: ${num(kycProfile.dailyLimitToman, locale)} томанов`,
+              })}
+            </span>
+          </div>
+        </div>
+
+        {kycProfile.requiresKycAction && (
+          <button
+            type="button"
+            onClick={() => setKycSheetOpen(true)}
+            className="self-start sm:self-auto min-h-9 px-3.5 rounded-xl bg-brand/10 hover:bg-brand/20 text-brand-dark text-xs font-black transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+          >
+            <Sparkles size={13} />
+            <span>{lt(locale, { fa: 'ارتقای سطح و افزایش سقف (+)', en: 'Upgrade KYC (+)', ar: 'ترقية الحساب (+)', zh: '提升认证额度 (+)', ru: 'Повысить лимит (+)' })}</span>
+          </button>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 gap-3.5">
         {/* ========================================================================= */}
@@ -591,6 +637,65 @@ export function PaymentGatewaySelector({
           </div>
         </label>
         )}
+
+        {/* ========================================================================= */}
+        {/* 5. BNPL / INSTALLMENTS (SNAPP-PAY / TAPSI-PAY)                            */}
+        {/* ========================================================================= */}
+        <div
+          className={`relative rounded-2xl border transition-all p-4 ${
+            kycProfile.allowsBnplInstallment
+              ? 'border-purple-300 bg-purple-50/20 dark:bg-purple-950/20'
+              : 'border-line/70 bg-soft/40 opacity-85'
+          }`}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-600 grid place-items-center shrink-0 mt-0.5">
+                <ReceiptText size={18} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <strong className="text-[14px] font-black text-ink">
+                    {lt(locale, {
+                      fa: 'پرداخت اقساطی اسنپ‌پی و تپسی‌پی (BNPL)',
+                      en: 'SnappPay / BNPL 4-Month Installments',
+                      ar: 'الدفع بالتقسيط (اسناب باي)',
+                      zh: '先买后付分期支付（4期免息）',
+                      ru: 'Оплата частями (BNPL в 4 платежа)',
+                    })}
+                  </strong>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-purple-800 border border-purple-200">
+                    {lt(locale, { fa: 'بدون کارمزد', en: '0% Interest', ar: 'بدون فائدة', zh: '0手续费', ru: '0% переплат' })}
+                  </span>
+                </div>
+                <p className="text-[11.5px] text-sub mt-1 leading-relaxed m-0">
+                  {lt(locale, {
+                    fa: 'پرداخت در ۴ قسط ماهانه بدون چک و بدون ضامن (سرویس اختصاصی ویژه کاربران سطح ۲ طلایی)',
+                    en: 'Pay in 4 equal monthly installments with no checks or guarantors (Exclusive to Level 2 Gold KYC).',
+                    ar: 'ادفع على 4 أقساط شهرية متساوية دون شيكات للمستخدمين المعتمدين.',
+                    zh: '无需担保、无需支票，享4期免息灵活分期（仅面向实名认证金卡用户）。',
+                    ru: 'Оплата 4 равными долями без залога и проверок (для пользователей 2 уровня KYC).',
+                  })}
+                </p>
+              </div>
+            </div>
+
+            {kycProfile.allowsBnplInstallment ? (
+              <span className="text-[11px] font-black px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
+                {lt(locale, { fa: 'فعال و تاییدشده', en: 'Eligible', ar: 'متاح', zh: '可使用', ru: 'Доступно' })}
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setKycSheetOpen(true)}
+                className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-surface hover:bg-line border border-line text-sub hover:text-ink shrink-0 flex items-center gap-1 cursor-pointer"
+              >
+                <Lock size={11} />
+                <span>{lt(locale, { fa: 'ارتقای KYC', en: 'Upgrade KYC', ar: 'ترقية', zh: '去认证', ru: 'KYC' })}</span>
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="flex items-center justify-between pt-2 border-t border-line/60 text-[11px] font-bold text-sub">
@@ -611,6 +716,12 @@ export function PaymentGatewaySelector({
           <span>IR-CN Corridor</span>
         </div>
       </div>
+
+      <KycCompletionSheet
+        open={kycSheetOpen}
+        onClose={() => setKycSheetOpen(false)}
+        onCompleted={() => setKycSheetOpen(false)}
+      />
     </div>
   );
 }

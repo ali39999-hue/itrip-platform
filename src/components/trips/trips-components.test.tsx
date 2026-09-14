@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 
 vi.mock('@/i18n/routing', () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -128,6 +128,15 @@ describe('Phase 1: Trips & Boarding Pass Features', () => {
       render(<DestinationComparator locale="fa" defaultDest1="istanbul" defaultDest2="dubai" />);
       expect(screen.getByText(/موتور هوشمند مقایسه دو مقصد گردشگری/)).toBeDefined();
       expect(screen.getAllByText(/برآورد هزینه روزانه:/).length).toBe(2);
+    });
+
+    it('supports expanding to 3 and 4 destinations simultaneously', () => {
+      render(<DestinationComparator locale="fa" defaultDest1="istanbul" defaultDest2="dubai" />);
+      const addBtn = screen.getByText(/افزودن مقصد برای مقایسه/);
+      fireEvent.click(addBtn);
+      expect(screen.getAllByText(/برآورد هزینه روزانه:/).length).toBe(3);
+      fireEvent.click(addBtn);
+      expect(screen.getAllByText(/برآورد هزینه روزانه:/).length).toBe(4);
     });
   });
 });

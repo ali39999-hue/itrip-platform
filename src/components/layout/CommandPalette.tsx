@@ -198,7 +198,7 @@ export function CommandPalette({
                   </div>
                   <div>
                     <span className="block font-black text-[13px]">
-                      {lt(locale, { fa: 'برنامه‌ریز هوشمند سفر با هوش مصنوعی', en: 'AI Travel Planner', ar: 'مخطط السفر الذكي', zh: 'AI 智能行程规划助手', ru: 'Умный ИИ-планировщик' })}
+                      {lt(locale, { fa: 'سفرساز هوشمند با هوش مصنوعی', en: 'AI Smart Trip Builder', ar: 'مساعد السفر الذكي بالذكاء الاصطناعي', zh: 'AI 智能行程定制助手', ru: 'AI Умный планировщик' })}
                     </span>
                     <span className="block text-[10.5px] text-sub font-medium">
                       {lt(locale, { fa: 'تنظیم برنامه اختصاصی روزانه بر اساس سلیقه و بودجه', en: 'Personalized itinerary based on your taste & budget', ar: 'خطة مخصصة لميزانيتك واهتماماتك', zh: '基于您的偏好与预算量身定制', ru: 'Индивидуальный маршрут под ваш бюджет' })}

@@ -5,6 +5,7 @@ import { Link } from '@/i18n/routing';
 import type { Tour } from '@/lib/types';
 import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
+import { getCurrencyLabel } from '@/lib/currencies';
 import { TourImage } from '../TourImage';
 import {
   Compass,
@@ -95,7 +96,7 @@ export function RelatedTours({ tours }: RelatedToursProps) {
                   <span className="text-[9.5px] sm:text-[10px] font-bold text-sub block">{lt(locale, { fa: 'شروع از', en: 'Starts from', ar: 'يبدأ من', zh: '起价', ru: 'от' })}</span>
                   <div className="text-xs sm:text-sm font-black text-price font-price">
                     {num(t.price, locale)}
-                    <span className="text-[10px] font-bold text-sub ms-1">تومان</span>
+                    <span className="text-[10px] font-bold text-sub ms-1">{getCurrencyLabel(t.currency || 'TOMAN', locale)}</span>
                   </div>
                 </div>
 

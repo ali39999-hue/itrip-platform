@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "originalPrice" DECIMAL(18,4),
+ADD COLUMN IF NOT EXISTS "discountPercent" INTEGER;

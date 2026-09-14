@@ -98,7 +98,13 @@ export function QuickActionsBar() {
                 key={a.id}
                 onClick={() => handleClick(a.id)}
                 disabled={a.soon}
-                title={a.soon ? lt(locale, { fa: 'این قابلیت هنوز در دسترس نیست', en: 'Not available yet' }) : undefined}
+                title={a.soon ? lt(locale, {
+                  fa: 'این قابلیت هنوز در دسترس نیست',
+                  en: 'Not available yet',
+                  ar: 'هذه الميزة غير متوفرة بعد',
+                  zh: '此功能尚不可用',
+                  ru: 'Эта функция пока недоступна',
+                }) : undefined}
                 className={cn(
                   'group flex min-h-[68px] items-center gap-3 rounded-xl border p-3 text-start transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-[0.98]',
                   a.soon && 'cursor-not-allowed opacity-60',

@@ -4,15 +4,16 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter, Link } from '@/i18n/routing';
-import { TOURS } from '@/lib/data';
 import type { Tour } from '@/lib/types';
 import { useBookingStore } from '@/stores/booking-store';
 import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES, COUNTRY_ORDER, countryName } from '@/lib/countries';
 import { daysFromNow } from '@/lib/utils';
 import { CountryExperiencesSection } from '@/components/shared/CountryExperiences';
-import { MapPin, Star, ArrowLeft, ArrowRight, CalendarDays, SlidersHorizontal, Tent, Search, X, Check, Eye } from 'lucide-react';
+import { MapPin, Star, ArrowLeft, ArrowRight, CalendarDays, SlidersHorizontal, Tent, Search, X, Check, Eye, Loader2 } from 'lucide-react';
 import { lt } from '@/lib/lt';
+import { num } from '@/lib/format';
+import { getCurrencyLabel } from '@/lib/currencies';
 import { TourImage } from '@/components/tours/TourImage';
 
 const TOUR_IMGS: Record<string, string> = {
@@ -38,26 +39,49 @@ function ToursContent() {
   const [sort, setSort] = useState<SortKey>('rec');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTourPreview, setSelectedTourPreview] = useState<Tour | null>(null);
-  const [allTours, setAllTours] = useState<Tour[]>(TOURS);
+  const [allTours, setAllTours] = useState<Tour[]>([]);
+  const [loadingTours, setLoadingTours] = useState(true);
 
   useEffect(() => {
-    fetch('/api/tours')
+    let mounted = true;
+    fetch(`/api/tours?t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' },
+    })
       .then((res) => res.json())
       .then((json) => {
-        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+        if (!mounted) return;
+        if (json.success && Array.isArray(json.data)) {
           setAllTours(json.data);
+        } else {
+          setAllTours([]);
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error('Failed to fetch tours from API:', err);
+        if (mounted) setAllTours([]);
+      })
+      .finally(() => {
+        if (mounted) setLoadingTours(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const CATEGORIES = [
     { id: 'all', label: t('allTours') },
     { id: 'cultural', label: t('cultural') },
     { id: 'nature', label: t('nature') },
-    { id: 'medical', label: t('medical') },
     { id: 'adventure', label: t('adventure') },
-    { id: 'signature', label: lt(locale, { fa: 'تجربه اصیل', en: 'Signature', ar: 'تجربة مميزة', zh: '特色体验', ru: 'Фирменные впечатления' }) },
+    { id: 'signature', label: lt(locale, { fa: 'ماجراجویی', en: 'Adventures', ar: 'مغامرات', zh: '精选探险', ru: 'Приключения' }) },
+    { id: 'pilgrimage', label: lt(locale, { fa: 'زیارتی و معنوی', en: 'Pilgrimage', ar: 'ديني وزيارة', zh: '朝圣文化', ru: 'Паломнический' }) },
+    { id: 'coastal', label: lt(locale, { fa: 'ساحلی و دریایی', en: 'Coastal & Islands', ar: 'سياحة شاطئية', zh: '海滨海岛', ru: 'Морской отдых' }) },
+    { id: 'desert', label: lt(locale, { fa: 'کویرگردی و نجوم', en: 'Desert & Stargazing', ar: 'رحلات صحراوية', zh: '大漠风情', ru: 'Пустынные туры' }) },
+    { id: 'luxury', label: lt(locale, { fa: 'لوکس و VIP', en: 'Luxury VIP', ar: 'فاخر VIP', zh: '高端奢华', ru: 'Люкс VIP' }) },
+    { id: 'family', label: lt(locale, { fa: 'خانوادگی و تفریحی', en: 'Family & Leisure', ar: 'عائلي وترفيهي', zh: '亲子休闲', ru: 'Семейный отдых' }) },
+    { id: 'medical', label: t('medical') },
   ] as const;
 
   const qParam = searchParams.get('category');
@@ -172,7 +196,7 @@ function ToursContent() {
               key={`tour-country-${id}`}
               type="button"
               onClick={() => setCountry(id)}
-              className={`px-3 py-1.5 rounded-xl whitespace-nowrap text-xs font-black transition cursor-pointer ${
+              className={`min-h-[44px] px-3.5 py-1.5 rounded-xl whitespace-nowrap text-xs font-black transition cursor-pointer flex items-center shrink-0 ${
                 country === id
                   ? 'bg-brand text-surface shadow-xs'
                   : 'bg-soft text-sub hover:text-ink hover:bg-line/60'
@@ -227,7 +251,7 @@ function ToursContent() {
             <button
               key={c.id}
               onClick={() => setCategory(c.id)}
-              className={`px-4 py-2 rounded-xl text-xs md:text-sm font-black whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+              className={`min-h-[44px] px-4 py-2 rounded-xl text-xs md:text-sm font-black whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand flex items-center justify-center shrink-0 cursor-pointer ${
                 category === c.id
                   ? 'bg-brand text-surface shadow-sm'
                   : 'bg-surface border border-line/80 text-sub hover:text-brand-dark hover:bg-soft'
@@ -242,6 +266,19 @@ function ToursContent() {
       {/* Dynamic Tours Section or Signature Experiences */}
       {isSignature ? (
         <CountryExperiencesSection />
+      ) : loadingTours ? (
+        <div className="py-20 text-center text-sub bg-surface rounded-3xl border border-line p-8 flex flex-col items-center justify-center gap-3">
+          <Loader2 size={36} className="animate-spin text-brand" />
+          <p className="text-xs font-bold text-sub">
+            {lt(locale, {
+              fa: 'در حال بارگذاری پکیج‌های معتبر تور...',
+              en: 'Loading tours...',
+              ar: 'جاري تحميل الجولات...',
+              zh: '正在加载旅游线路...',
+              ru: 'Загрузка туров...',
+            })}
+          </p>
+        </div>
       ) : (
         <>
           {filtered.length === 0 ? (
@@ -270,10 +307,15 @@ function ToursContent() {
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute top-2.5 start-2.5 flex gap-2">
+                      <div className="absolute top-2.5 start-2.5 flex gap-1.5 flex-wrap">
                         <span className="bg-deep/80 backdrop-blur-md text-surface text-[11px] font-black px-2.5 py-1 rounded-full flex items-center gap-1">
                           <Star size={12} className="text-gold fill-gold" /> {tour.rating}
                         </span>
+                        {tour.discountPercent != null && Number(tour.discountPercent) > 0 && (
+                          <span className="bg-rose-600 text-white text-[11px] font-black px-2.5 py-1 rounded-full shadow-xs">
+                            {num(Number(tour.discountPercent), locale)}٪ {lt(locale, { fa: 'تخفیف', en: 'OFF', ar: 'خصم', zh: '折', ru: 'скидка' })}
+                          </span>
+                        )}
                       </div>
                       <span
                         className="absolute bottom-2.5 end-2.5 px-2.5 py-1 rounded-full bg-surface/90 backdrop-blur-xs text-ink text-[11px] font-black shadow-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1"
@@ -311,10 +353,17 @@ function ToursContent() {
                   <div className="p-4 pt-0 flex flex-wrap justify-between items-center border-t border-line/60 mt-3 gap-2">
                     <div className="pt-3 min-w-0">
                       <span className="text-[10.5px] font-bold text-sub block">{lt(locale, { fa: 'قیمت هر نفر', en: 'Per Person', ar: 'للفرد', zh: '每人价格', ru: 'За человека' })}</span>
-                      <span className="text-[16px] font-black text-price font-price num whitespace-nowrap">
-                        {tour.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
-                        <span className="text-[10.5px] font-bold text-sub ms-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
-                      </span>
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                        {tour.originalPrice != null && Number(tour.originalPrice) > Number(tour.price) && (
+                          <span className="text-xs text-sub line-through decoration-rose-500 font-mono">
+                            {Number(tour.originalPrice).toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
+                          </span>
+                        )}
+                        <span className="text-[16px] font-black text-price font-price num whitespace-nowrap">
+                          {tour.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
+                          <span className="text-[10.5px] font-bold text-sub ms-1">{getCurrencyLabel(tour.currency || 'TOMAN', locale)}</span>
+                        </span>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-1.5 mt-3 shrink-0">
@@ -399,7 +448,7 @@ function ToursContent() {
               <div>
                 <span className="text-xs font-bold text-sub block">{lt(locale, { fa: 'قیمت نهایی پکیج:', en: 'Total Package Price:', ar: 'السعر الإجمالي للباقة:', zh: '套餐总价：', ru: 'Итоговая цена:' })}</span>
                 <span className="text-lg font-black text-price font-price">
-                  {selectedTourPreview.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
+                  {selectedTourPreview.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} {getCurrencyLabel(selectedTourPreview.currency || 'TOMAN', locale)}
                 </span>
               </div>
               <div className="flex items-center gap-2">

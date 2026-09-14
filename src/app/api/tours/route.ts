@@ -41,8 +41,15 @@ export async function GET(request: NextRequest) {
       countryEn: t.countryEn,
       durationDays: t.durationDays,
       durationNights: t.durationNights,
+      currency: t.currency || 'TOMAN',
       price: Number(t.price),
       childPrice: t.childPrice ? Number(t.childPrice) : undefined,
+      originalPrice: t.originalPrice ? Number(t.originalPrice) : undefined,
+      discountPercent: t.discountPercent ?? (
+        t.originalPrice && Number(t.originalPrice) > Number(t.price)
+          ? Math.round(((Number(t.originalPrice) - Number(t.price)) / Number(t.originalPrice)) * 100)
+          : undefined
+      ),
       rating: t.rating,
       reviewsCount: t.reviewsCount,
       imageQuery: 'custom-tour',
@@ -66,6 +73,7 @@ export async function GET(request: NextRequest) {
         id: d.id,
         startDate: d.startDate,
         endDate: d.endDate,
+        currency: d.currency || t.currency || 'TOMAN',
         price: Number(d.price),
         childPrice: d.childPrice ? Number(d.childPrice) : undefined,
         availableSeats: d.availableSeats,
@@ -106,7 +114,7 @@ export async function GET(request: NextRequest) {
       { success: true, count: list.length, data: list },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
         },
       }
     );

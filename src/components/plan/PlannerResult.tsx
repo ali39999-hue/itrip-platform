@@ -13,6 +13,7 @@ import { lt } from '@/lib/lt';
 
 import { PlannerTimeline } from './PlannerTimeline';
 import { PlannerSidebar } from './PlannerSidebar';
+import { TravelRulesAdvisoryCard } from '@/components/travel/TravelRulesAdvisoryCard';
 
 export interface PlannerResultProps {
   ans: Answers;
@@ -156,6 +157,17 @@ export function PlannerResult(props: PlannerResultProps) {
           addOnInterpreter={addOnInterpreter}
           setAddOnInterpreter={setAddOnInterpreter}
           bookAll={bookAll}
+        />
+      </div>
+
+      {/* Route Difficulty, Ticketing Rules & Travel Advisory */}
+      <div className="mt-8">
+        <TravelRulesAdvisoryCard
+          locale={locale}
+          destinationCity={countryName(c.id, locale)}
+          routeDifficulty={pace === 'relaxed' ? 'easy' : pace === 'packed' ? 'challenging' : 'moderate'}
+          isInternational={c.id !== 'iran'}
+          defaultExpanded={false}
         />
       </div>
 

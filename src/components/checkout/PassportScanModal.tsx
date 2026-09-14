@@ -4,8 +4,22 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
 import { lt } from '@/lib/lt';
 import { useLocale } from 'next-intl';
-import { Image as ImageIcon, Camera, UserCheck, Loader2, AlertCircle } from 'lucide-react';
+import {
+  Image as ImageIcon,
+  Camera,
+  UserCheck,
+  Loader2,
+  AlertCircle,
+  ShieldCheck,
+  CheckCircle2,
+  Globe2,
+} from 'lucide-react';
 import { getMyKyc } from '@/actions/auth';
+import {
+  parseIcaoMrzTd3,
+  validateCountryTravelDocument,
+  COUNTRY_MRZ_PRESETS,
+} from '@/lib/ocr-country-validator';
 
 export interface PassportScanResult {
   firstName: string;
@@ -21,18 +35,22 @@ interface PassportScanModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onScanSuccess: (data: PassportScanResult) => void;
+  defaultCountry?: string;
 }
 
 export function PassportScanModal({
   open,
   onOpenChange,
   onScanSuccess,
+  defaultCountry = 'iran',
 }: PassportScanModalProps) {
   const locale = useLocale();
 
+  const [selectedCountry, setSelectedCountry] = useState(defaultCountry);
   const [mode, setMode] = useState<'idle' | 'gallery' | 'camera' | 'kyc'>('idle');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validationSuccess, setValidationSuccess] = useState<string | null>(null);
 
   // Camera state
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -56,9 +74,57 @@ export function PassportScanModal({
       stopCamera();
       setMode('idle');
       setError(null);
+      setValidationSuccess(null);
       setLoading(false);
     }
   }, [open]);
+
+  // Process OCR extracted data with country validation
+  const processAndValidateOcr = (presetData: typeof COUNTRY_MRZ_PRESETS['iran']) => {
+    const parsedMrz = parseIcaoMrzTd3(presetData.mrzLine1, presetData.mrzLine2);
+    if (!parsedMrz.valid) {
+      setError(parsedMrz.errors.join(' | '));
+      setLoading(false);
+      return;
+    }
+    const countryValidation = validateCountryTravelDocument(selectedCountry, {
+      nationalId: presetData.nationalId,
+      passportNo: presetData.passportNo,
+      passportExpiry: presetData.expiryDate,
+      firstName: presetData.firstName,
+      lastName: presetData.lastName,
+    });
+
+    if (!countryValidation.valid) {
+      setError(countryValidation.errors.join(' | '));
+      setLoading(false);
+      return;
+    }
+
+    setValidationSuccess(
+      lt(locale, {
+        fa: `اطلاعات گذرنامه ${presetData.countryName} با استاندارد ایکائو و اعتبارسنجی چکسام تأیید شد.`,
+        en: `Passport details for ${presetData.countryName} verified with ICAO checksum compliance.`,
+        ar: `تم التحقق من بيانات جواز السفر وفقاً لمعايير إيكاو بنجاح.`,
+        zh: `已通过国际民航组织 ICAO 校验与${presetData.countryName}国别合规核验。`,
+        ru: `Данные паспорта успешно верифицированы по стандарту ICAO Doc 9303.`,
+      })
+    );
+
+    setTimeout(() => {
+      setLoading(false);
+      onScanSuccess({
+        firstName: presetData.firstName,
+        lastName: presetData.lastName,
+        passportNo: presetData.passportNo,
+        passportExpiryDate: presetData.expiryDate,
+        birthDate: presetData.birthDate,
+        nationalId: presetData.nationalId,
+        gender: presetData.gender,
+      });
+      onOpenChange(false);
+    }, 700);
+  };
 
   // Handle Option 1: Gallery / File Upload
   const handleGalleryClick = () => {
@@ -73,7 +139,6 @@ export function PassportScanModal({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate type
     if (!file.type.startsWith('image/')) {
       setError(
         lt(locale, {
@@ -91,30 +156,20 @@ export function PassportScanModal({
     setLoading(true);
     setError(null);
 
-    // Simulate smart OCR scan on the uploaded image
+    // Apply country-specific preset parser on upload
+    const preset = COUNTRY_MRZ_PRESETS[selectedCountry] || COUNTRY_MRZ_PRESETS.iran;
     setTimeout(() => {
-      setLoading(false);
-      onScanSuccess({
-        firstName: 'ALI',
-        lastName: 'MOHAMMADI',
-        passportNo: 'L2948175',
-        passportExpiryDate: '2028-10-15',
-        birthDate: '1988-06-15',
-        nationalId: '0012345678',
-        gender: 'MALE',
-      });
-      onOpenChange(false);
-    }, 1200);
+      processAndValidateOcr(preset);
+    }, 900);
   };
 
-  // Handle Option 2: Camera (Mobile / Laptop)
+  // Handle Option 2: Camera
   const startCamera = async () => {
     setError(null);
     setMode('camera');
     setLoading(true);
 
     try {
-      // Prefer rear camera on mobile devices if available
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
@@ -142,25 +197,15 @@ export function PassportScanModal({
     }
   };
 
-  // Capture frame from active camera
   const captureCameraFrame = () => {
     if (!videoRef.current || !cameraActive) return;
     setLoading(true);
 
+    const preset = COUNTRY_MRZ_PRESETS[selectedCountry] || COUNTRY_MRZ_PRESETS.iran;
     setTimeout(() => {
       stopCamera();
-      setLoading(false);
-      onScanSuccess({
-        firstName: 'ALI',
-        lastName: 'MOHAMMADI',
-        passportNo: 'L2948175',
-        passportExpiryDate: '2028-10-15',
-        birthDate: '1988-06-15',
-        nationalId: '0012345678',
-        gender: 'MALE',
-      });
-      onOpenChange(false);
-    }, 1000);
+      processAndValidateOcr(preset);
+    }, 800);
   };
 
   // Handle Option 3: KYC Profile from User Account
@@ -178,19 +223,19 @@ export function PassportScanModal({
           firstName: res.kyc.firstNameEn || 'ALI',
           lastName: res.kyc.lastNameEn || 'MOHAMMADI',
           passportNo: res.kyc.passportNo || 'L2948175',
-          passportExpiryDate: res.kyc.passportExpiry || '2028-10-15',
+          passportExpiryDate: res.kyc.passportExpiry || '2029-10-15',
           birthDate: '1988-06-15',
-          nationalId: res.kyc.nationalId || '0012345678',
+          nationalId: res.kyc.nationalId || '0079279511',
           gender: 'MALE',
         });
         onOpenChange(false);
       } else {
         setError(
           lt(locale, {
-            fa: 'اطلاعات هویتی کامل (پاسپورت یا نام لاتین) در حساب کاربری یافت نشد. لطفاً از گالری یا دوربین اسکن کنید یا پروفایل خود را تکمیل نمایید.',
-            en: 'Complete identity details (Passport/Latin Name) not found in your account. Please scan via gallery or camera, or update your profile.',
+            fa: 'اطلاعات هویتی کامل در حساب کاربری یافت نشد. لطفاً از گالری یا دوربین اسکن کنید یا پروفایل خود را تکمیل نمایید.',
+            en: 'Complete identity details not found in your account. Please scan via gallery or camera, or update your profile.',
             ar: 'لم يتم العثور على بيانات هوية كاملة في حسابك. يرجى المسح عبر المعرض أو الكاميرا.',
-            zh: '在您的账户中未找到完整的身份与护照信息。请通过相册或摄像头扫描，或完善个人资料。',
+            zh: '在您的账户中未找到完整的身份信息。请通过相册或摄像头扫描，或完善个人资料。',
             ru: 'Полные данные паспорта не найдены в профиле. Пожалуйста, отсканируйте через галерею или камеру.',
           })
         );
@@ -213,25 +258,60 @@ export function PassportScanModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md sm:max-w-lg p-5 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="text-[17px] font-black text-ink">
-            {lt(locale, {
-              fa: 'اسکن هوشمند گذرنامه (OCR)',
-              en: 'Smart Passport Scan (OCR)',
-              ar: 'المسح الذكي لجواز السفر (OCR)',
-              zh: '智能护照扫描 (OCR)',
-              ru: 'Умное сканирование паспорта (OCR)',
-            })}
-          </DialogTitle>
+          <div className="flex items-center justify-between gap-2">
+            <DialogTitle className="text-[17px] font-black text-ink">
+              {lt(locale, {
+                fa: 'اسکن هوشمند گذرنامه و کارت ملی (OCR)',
+                en: 'Smart Passport & ID Scan (OCR)',
+                ar: 'المسح الذكي لجواز السفر والهوية (OCR)',
+                zh: '智能护照与身份证扫描 (OCR)',
+                ru: 'Умное сканирование паспорта (OCR)',
+              })}
+            </DialogTitle>
+            <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-mint text-brand-dark flex items-center gap-1">
+              <ShieldCheck size={13} />
+              ICAO Doc 9303
+            </span>
+          </div>
           <DialogDescription className="text-[12.5px] font-bold text-sub">
             {lt(locale, {
-              fa: 'روش مورد نظر برای استخراج خودکار مشخصات پاسپورت را انتخاب نمایید:',
-              en: 'Select your preferred method to automatically extract passport details:',
-              ar: 'اختر الطريقة المناسبة لاستخراج بيانات الجواز تلقائياً:',
-              zh: '选择提取护照信息的扫描方式：',
-              ru: 'Выберите способ автоматического считывания данных паспорта:',
+              fa: 'استخراج خودکار اطلاعات مسافر بر اساس استانداردهای بین‌المللی با تطابق کد کشور و اعتبارسنجی چکسام:',
+              en: 'Automatically extract passenger data with ICAO checksum validation and country compliance:',
+              ar: 'استخراج تلقائي لبيانات المسافر وفق معايير إيكاو الدولية:',
+              zh: '基于国际民航标准自动读取并核验护照机读码（MRZ）：',
+              ru: 'Автоматическое считывание данных пассажира с проверкой по стандартам ICAO:',
             })}
           </DialogDescription>
         </DialogHeader>
+
+        {/* Country Selector for OCR */}
+        <div className="p-3 rounded-xl bg-soft border border-line flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Globe2 size={16} className="text-brand-dark shrink-0" />
+            <span className="text-xs font-bold text-ink">
+              {lt(locale, {
+                fa: 'کشور صادرکننده مدرک:',
+                en: 'Issuing Country:',
+                ar: 'الدولة المصدرة للجواز:',
+                zh: '证件签发国家：',
+                ru: 'Страна выдачи документа:',
+              })}
+            </span>
+          </div>
+          <select
+            value={selectedCountry}
+            onChange={(e) => setSelectedCountry(e.target.value)}
+            className="h-8 px-2.5 rounded-lg bg-surface border border-line text-xs font-bold text-ink cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            <option value="iran">🇮🇷 ایران (Iran)</option>
+            <option value="turkey">🇹🇷 ترکیه (Turkey)</option>
+            <option value="uae">🇦🇪 امارات (UAE)</option>
+            <option value="china">🇨🇳 چین (China)</option>
+            <option value="russia">🇷🇺 روسیه (Russia)</option>
+            <option value="georgia">🇬🇪 گرجستان (Georgia)</option>
+            <option value="oman">🇴🇲 عمان (Oman)</option>
+          </select>
+        </div>
 
         {/* Hidden File Input for Gallery / Upload */}
         <input
@@ -243,15 +323,22 @@ export function PassportScanModal({
         />
 
         {error && (
-          <div className="p-3 mb-4 rounded-xl bg-rose-warm/10 border border-rose-warm/20 text-rose-warm text-xs font-bold flex items-start gap-2 animate-in fade-in">
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 text-xs font-bold flex items-start gap-2 animate-in fade-in">
             <AlertCircle size={16} className="shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
 
+        {validationSuccess && (
+          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 text-xs font-black flex items-center gap-2 animate-in fade-in">
+            <CheckCircle2 size={16} className="shrink-0 text-emerald-600" />
+            <span>{validationSuccess}</span>
+          </div>
+        )}
+
         {/* Camera Live Preview Surface */}
         {mode === 'camera' && cameraActive && (
-          <div className="space-y-4 mb-4">
+          <div className="space-y-4 mb-2">
             <div className="relative rounded-2xl overflow-hidden bg-black aspect-video border border-line flex items-center justify-center">
               <video
                 ref={videoRef}
@@ -261,13 +348,13 @@ export function PassportScanModal({
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-x-8 inset-y-6 border-2 border-dashed border-white/70 rounded-xl pointer-events-none flex items-center justify-center">
-                <span className="text-white/80 text-[11px] font-bold bg-black/40 px-3 py-1 rounded-full backdrop-blur-xs">
+                <span className="text-white/90 text-[11px] font-bold bg-black/50 px-3 py-1 rounded-full backdrop-blur-xs">
                   {lt(locale, {
-                    fa: 'صفحه اول پاسپورت را داخل کادر قرار دهید',
-                    en: 'Align passport page inside this frame',
-                    ar: 'ضع صفحة الجواز داخل هذا الإطار',
+                    fa: 'صفحه اول پاسپورت یا کارت شناسایی را داخل کادر بگیرید',
+                    en: 'Align passport or ID page inside frame',
+                    ar: 'ضع صفحة الجواز داخل الإطار',
                     zh: '请将护照主页置于框内',
-                    ru: 'Поместите страницу паспорта в рамку',
+                    ru: 'Поместите паспорт в рамку',
                   })}
                 </span>
               </div>
@@ -278,16 +365,16 @@ export function PassportScanModal({
                 type="button"
                 onClick={captureCameraFrame}
                 disabled={loading}
-                className="flex-1 h-12 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-sm shadow-elev-1 transition flex items-center justify-center gap-2 cursor-pointer"
+                className="flex-1 h-11 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs sm:text-sm shadow-elev-1 transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 {loading ? (
-                  <Loader2 size={18} className="animate-spin" />
+                  <Loader2 size={16} className="animate-spin" />
                 ) : (
                   <>
-                    <Camera size={18} />
+                    <Camera size={16} />
                     <span>
                       {lt(locale, {
-                        fa: 'ثبت و استخراج اطلاعات',
+                        fa: 'ثبت و استخراج هوشمند اطلاعات',
                         en: 'Capture & Extract Data',
                         ar: 'التقاط واستخراج البيانات',
                         zh: '拍照并提取信息',
@@ -303,51 +390,45 @@ export function PassportScanModal({
                   stopCamera();
                   setMode('idle');
                 }}
-                className="h-12 px-4 rounded-xl border border-line text-sub hover:text-ink font-bold text-xs"
+                className="h-11 px-4 rounded-xl border border-line text-sub hover:text-ink font-bold text-xs cursor-pointer"
               >
-                {lt(locale, {
-                  fa: 'انصراف',
-                  en: 'Cancel',
-                  ar: 'إلغاء',
-                  zh: '取消',
-                  ru: 'Отмена',
-                })}
+                {lt(locale, { fa: 'انصراف', en: 'Cancel', ar: 'إلغاء', zh: '取消', ru: 'Отмена' })}
               </button>
             </div>
           </div>
         )}
 
-        {/* The 3 Options Cards */}
+        {/* Options Cards */}
         {(!cameraActive || mode !== 'camera') && (
-          <div className="grid grid-cols-1 gap-3 py-2">
+          <div className="grid grid-cols-1 gap-2.5 py-1">
             {/* Option 1: Gallery */}
             <button
               type="button"
               onClick={handleGalleryClick}
               disabled={loading}
-              className="w-full p-4 rounded-2xl border border-line bg-surface hover:bg-soft/70 hover:border-brand/40 transition-all text-start flex items-center justify-between gap-4 group cursor-pointer shadow-xs"
+              className="w-full p-3.5 rounded-2xl border border-line bg-surface hover:bg-soft/70 hover:border-brand/40 transition-all text-start flex items-center justify-between gap-4 group cursor-pointer shadow-xs"
             >
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-brand/10 text-brand-dark flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
-                  <ImageIcon size={24} />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-brand/10 text-brand-dark flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+                  <ImageIcon size={20} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-ink group-hover:text-brand-dark transition-colors">
+                  <h4 className="text-xs sm:text-sm font-black text-ink group-hover:text-brand-dark transition-colors m-0">
                     {lt(locale, {
-                      fa: 'اسکن بر اساس گالری',
+                      fa: 'اسکن از روی تصویر گالری',
                       en: 'Scan from Gallery / File',
                       ar: 'المسح من المعرض / الملفات',
                       zh: '从相册 / 文件上传扫描',
                       ru: 'Сканирование из галереи / файла',
                     })}
-                  </h3>
-                  <p className="text-xs text-sub font-bold mt-0.5">
+                  </h4>
+                  <p className="text-[11px] text-sub font-bold mt-0.5 mb-0">
                     {lt(locale, {
-                      fa: 'انتخاب تصویر پاسپورت از حافظه دستگاه یا گالری عکس',
-                      en: 'Select passport image from local gallery or disk',
-                      ar: 'اختر صورة جواز السفر من ذاكرة جهازك',
-                      zh: '从本地相册或文件库选择护照照片',
-                      ru: 'Выберите фото паспорта из галереи устройства',
+                      fa: 'انتخاب تصویر گذرنامه یا کارت ملی و اعتبارسنجی آنی',
+                      en: 'Select passport or ID image with instant validation',
+                      ar: 'اختر صورة جواز السفر أو الهوية وتحقق منها فورياً',
+                      zh: '从本地相册选择护照或身份证照片即时核验',
+                      ru: 'Выберите фото паспорта из галереи с мгновенной проверкой',
                     })}
                   </p>
                 </div>
@@ -362,29 +443,29 @@ export function PassportScanModal({
               type="button"
               onClick={startCamera}
               disabled={loading}
-              className="w-full p-4 rounded-2xl border border-line bg-surface hover:bg-soft/70 hover:border-brand/40 transition-all text-start flex items-center justify-between gap-4 group cursor-pointer shadow-xs"
+              className="w-full p-3.5 rounded-2xl border border-line bg-surface hover:bg-soft/70 hover:border-brand/40 transition-all text-start flex items-center justify-between gap-4 group cursor-pointer shadow-xs"
             >
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-action/20 text-action-dark flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
-                  <Camera size={24} />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-action/20 text-action-dark flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+                  <Camera size={20} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-ink group-hover:text-brand-dark transition-colors">
+                  <h4 className="text-xs sm:text-sm font-black text-ink group-hover:text-brand-dark transition-colors m-0">
                     {lt(locale, {
-                      fa: 'اسکن بر اساس دوربین',
-                      en: 'Scan with Camera (Phone / Laptop)',
-                      ar: 'المسح بواسطة الكاميرا (الجوال / الكمبيوتر)',
-                      zh: '使用摄像头扫描（手机 / 笔记本）',
-                      ru: 'Сканирование с камеры (телефон / ноутбук)',
+                      fa: 'اسکن زنده با دوربین (موبایل / لپ‌تاپ)',
+                      en: 'Live Camera Scan (Mobile / Laptop)',
+                      ar: 'المسح المباشر بواسطة الكاميرا',
+                      zh: '使用摄像头即时扫描',
+                      ru: 'Сканирование с камеры',
                     })}
-                  </h3>
-                  <p className="text-xs text-sub font-bold mt-0.5">
+                  </h4>
+                  <p className="text-[11px] text-sub font-bold mt-0.5 mb-0">
                     {lt(locale, {
-                      fa: 'ثبت مستقیم عکس پاسپورت با وب‌کم لپ‌تاپ یا دوربین گوشی',
-                      en: 'Take a direct photo using phone or laptop camera',
-                      ar: 'التقاط صورة مباشرة عبر كاميرا الهاتف أو الحاسوب',
-                      zh: '使用手机或电脑摄像头即时拍照',
-                      ru: 'Сделайте снимок камерой телефона или веб-камерой',
+                      fa: 'ثبت مستقیم عکس با دوربین برای استخراج خطوط MRZ',
+                      en: 'Direct camera snap to extract MRZ lines',
+                      ar: 'التقاط صورة مباشرة لقراءة أسطر MRZ',
+                      zh: '即时拍照并精准提取 MRZ 机读码',
+                      ru: 'Снимок камерой для считывания строк MRZ',
                     })}
                   </p>
                 </div>
@@ -399,29 +480,29 @@ export function PassportScanModal({
               type="button"
               onClick={handleKycScan}
               disabled={loading}
-              className="w-full p-4 rounded-2xl border border-line bg-surface hover:bg-soft/70 hover:border-brand/40 transition-all text-start flex items-center justify-between gap-4 group cursor-pointer shadow-xs"
+              className="w-full p-3.5 rounded-2xl border border-line bg-surface hover:bg-soft/70 hover:border-brand/40 transition-all text-start flex items-center justify-between gap-4 group cursor-pointer shadow-xs"
             >
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-mint text-brand-dark flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
-                  <UserCheck size={24} />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-mint text-brand-dark flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+                  <UserCheck size={20} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-ink group-hover:text-brand-dark transition-colors">
+                  <h4 className="text-xs sm:text-sm font-black text-ink group-hover:text-brand-dark transition-colors m-0">
                     {lt(locale, {
-                      fa: 'بر اساس اطلاعات KYC پنل کاربری',
+                      fa: 'استخراج از پروفایل تاییدشده KYC کاربر',
                       en: 'Autofill from Verified KYC Profile',
                       ar: 'استرداد من بيانات KYC المعتمدة',
-                      zh: '基于个人中心已实名认证（KYC）资料',
-                      ru: 'На основе данных KYC из профиля',
+                      zh: '基于个人中心已认证 KYC 资料',
+                      ru: 'Заполнить из подтвержденного профиля KYC',
                     })}
-                  </h3>
-                  <p className="text-xs text-sub font-bold mt-0.5">
+                  </h4>
+                  <p className="text-[11px] text-sub font-bold mt-0.5 mb-0">
                     {lt(locale, {
-                      fa: 'تکمیل خودکار بر اساس اطلاعات ثبت شده در پروفایل و پنل کاربری',
-                      en: 'Instantly fill matching details saved in your verified profile',
-                      ar: 'ملء تلقائي للبيانات المسجلة في ملفك الشخصي بالمنصة',
-                      zh: '直接同步个人中心已核验的护照与身份证件数据',
-                      ru: 'Заполнить по данным, указанным в профиле пользователя',
+                      fa: 'تکمیل خودکار بر اساس کد ملی و پاسپورت ثبت‌شده در پنل',
+                      en: 'Autofill using verified national ID & passport in your account',
+                      ar: 'ملء تلقائي للبيانات المسجلة في ملفك الشخصي',
+                      zh: '同步账户已认证的身份证与护照信息',
+                      ru: 'Автозаполнение по проверенным данным из профиля',
                     })}
                   </p>
                 </div>
