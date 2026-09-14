@@ -100,12 +100,51 @@ export async function middleware(request: NextRequest) {
       return withCorrelation(NextResponse.redirect(new URL('/' + locale + '/auth', request.url)));
     }
 
-    // Get next-auth token safely without throwing
+    // Get next-auth token safely without throwing.
+    // In production over HTTPS (Vercel), NextAuth v5 uses the __Secure- prefix and matching salt.
+    const hasSecureCookie =
+      request.cookies.has('__Secure-authjs.session-token') ||
+      request.cookies.has('__Secure-next-auth.session-token');
+
+    const isSecure =
+      hasSecureCookie ||
+      request.nextUrl.protocol === 'https:' ||
+      request.headers.get('x-forwarded-proto') === 'https';
+
     try {
-      const token = await getToken({
+      let token = await getToken({
         req: request,
-        secret
+        secret,
+        secureCookie: isSecure,
       });
+
+      // Robust fallback: if token wasn't resolved, try alternate secureCookie mode
+      if (!token) {
+        token = await getToken({
+          req: request,
+          secret,
+          secureCookie: !isSecure,
+        });
+      }
+
+      // Legacy fallback for next-auth cookie names if still not found
+      if (!token) {
+        if (hasSecureCookie) {
+          token = await getToken({
+            req: request,
+            secret,
+            cookieName: '__Secure-next-auth.session-token',
+            secureCookie: true,
+          });
+        } else {
+          token = await getToken({
+            req: request,
+            secret,
+            cookieName: 'next-auth.session-token',
+            secureCookie: false,
+          });
+        }
+      }
 
       // Check if logged in user has sufficient canonical permissions for admin sub-routes (IAM-107)
       if (token) {

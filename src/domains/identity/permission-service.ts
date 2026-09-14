@@ -36,7 +36,16 @@ export async function hasErpRole(userId?: string): Promise<boolean> {
       where: { userId: uid },
       select: { role: { select: { name: true } } },
     });
-    return assignments.some((ur) => (ERP_STAFF_ROLES as readonly string[]).includes(ur.role.name));
+    if (assignments.some((ur) => (ERP_STAFF_ROLES as readonly string[]).includes(ur.role.name))) {
+      return true;
+    }
+
+    // Direct User.role fallback
+    const dbUser = await prisma.user.findUnique({
+      where: { id: uid },
+      select: { role: true },
+    });
+    return dbUser?.role === 'SUPER_ADMIN' || (ERP_STAFF_ROLES as readonly string[]).includes(dbUser?.role || '');
   } catch (err) {
     console.warn('[hasErpRole] Database query failed (fallback active):', err);
     return uid === 'clr_admin_123';
@@ -138,8 +147,11 @@ export async function getTenantAuthContext(userId?: string): Promise<TenantAuthC
 
   const permissionsList = await getUserPermissions(user.id);
   const permissions = new Set<ERPPermission>(permissionsList);
-  // Authority comes from the relational role assignment, not the legacy string.
-  const isSuperAdmin = user.userRoles.some((ur) => ur.role.name === 'SUPER_ADMIN');
+  // Authority comes from the relational role assignment, with legacy string fallback
+  const isSuperAdmin = user.userRoles.some((ur) => ur.role.name === 'SUPER_ADMIN') || user.role === 'SUPER_ADMIN';
+  if (isSuperAdmin) {
+    ROLE_DEFAULT_PERMISSIONS.SUPER_ADMIN.forEach((p) => permissions.add(p));
+  }
 
   const activeMembership = user.organizationMemberships[0];
 
@@ -148,7 +160,7 @@ export async function getTenantAuthContext(userId?: string): Promise<TenantAuthC
     user.userRoles.find((ur) => (ERP_STAFF_ROLES as readonly string[]).includes(ur.role.name))?.role.name ??
     user.organizationMemberships[0]?.role?.name ??
     user.userRoles[0]?.role?.name ??
-    'CUSTOMER';
+    (user.role && (ERP_STAFF_ROLES as readonly string[]).includes(user.role) ? user.role : 'CUSTOMER');
 
   return {
     userId: user.id,
