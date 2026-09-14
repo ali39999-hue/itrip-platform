@@ -51,11 +51,17 @@ export interface PortalOfferRow {
   refundable: boolean;
   cabinClass: 'ECONOMY' | 'BUSINESS';
   stops: number;
+  /** Round-trip itineraries only: which leg of the journey this row describes. */
+  leg?: 'outbound' | 'return';
 }
 
 export interface PortalSearchOutcome {
   offers: PortalOfferRow[];
   rawHtml: string;
+  /** Portal search id when the XHR JSON engine was reachable (calibration aid). */
+  searchId?: string | null;
+  /** Which extraction engine produced the offers. */
+  resultMode?: 'json' | 'html' | 'empty';
 }
 
 const DEFAULT_BASE_URL = 'https://www.partocrs.ir';
@@ -150,6 +156,77 @@ export class PartoPortalProvider {
     destination: string;
     departureDate: string; // YYYY-MM-DD
   }): Promise<PortalSearchOutcome> {
+    const outcome = await this.runSearch(params);
+    return {
+      offers: outcome.offers,
+      rawHtml: outcome.rawHtml,
+      searchId: outcome.searchId,
+      resultMode: outcome.jsonMode ? 'json' : outcome.offers.length > 0 ? 'html' : 'empty',
+    };
+  }
+
+  /**
+   * Round-trip search (FlightType=TwoWay). The journey fare lives on the
+   * outbound leg's FareSourceCode; when the JSON engine answers with a
+   * multi-segment itinerary, one row per leg is returned (journey price is
+   * repeated on both legs — never sum them). The HTML fallback does not parse
+   * round-trip layouts yet; calibrate with
+   * `node scripts/parto-portal-capture.mjs probe THR MHD 2026-10-01 2026-10-08`.
+   */
+  async searchRoundTrip(params: {
+    origin: string;
+    destination: string;
+    departureDate: string; // YYYY-MM-DD
+    returnDate: string; // YYYY-MM-DD
+    adults?: number;
+    children?: number;
+    infants?: number;
+  }): Promise<PortalSearchOutcome> {
+    const outcome = await this.runSearch(params);
+    return {
+      offers: outcome.offers,
+      rawHtml: outcome.rawHtml,
+      searchId: outcome.searchId,
+      resultMode: outcome.jsonMode ? 'json' : outcome.offers.length > 0 ? 'html' : 'empty',
+    };
+  }
+
+  /**
+   * Session keep-alive probe (sliding ASP.NET expiration): a cheap GET against
+   * the dashboard renews the cookie without touching search endpoints.
+   */
+  async heartbeat(): Promise<'OK' | 'EXPIRED' | 'ERROR'> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    try {
+      const res = await fetch(`${this.baseUrl}/Dashboard/Home`, {
+        method: 'GET',
+        headers: this.headers({ 'Referer': `${this.baseUrl}/Dashboard` }),
+        redirect: 'manual',
+        signal: controller.signal,
+      });
+      if (res.status === 302 || res.status === 401) return 'EXPIRED';
+      if (!res.ok) return 'ERROR';
+      const body = await res.text().catch(() => '');
+      if (body.toLowerCase().includes('/authenticate')) return 'EXPIRED';
+      return 'OK';
+    } catch {
+      return 'ERROR';
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /** Shared two-step search flow (form page → token → POST → JSON/HTML extract). */
+  private async runSearch(params: {
+    origin: string;
+    destination: string;
+    departureDate: string;
+    returnDate?: string;
+    adults?: number;
+    children?: number;
+    infants?: number;
+  }): Promise<{ offers: PortalOfferRow[]; rawHtml: string; searchId: string | null; jsonMode: boolean }> {
     const formUrl = `${this.baseUrl}/Flight/Search`;
     const formRes = await fetch(formUrl, {
       method: 'GET',
@@ -176,24 +253,7 @@ export class PartoPortalProvider {
       throw new Error('PARTO_PORTAL_PARSE: __RequestVerificationToken not found on search form page');
     }
 
-    const orgCode = params.origin.includes(',') ? params.origin.toUpperCase() : `${params.origin.toUpperCase()},1`;
-    const dstCode = params.destination.includes(',') ? params.destination.toUpperCase() : `${params.destination.toUpperCase()},1`;
-
-    const body = new URLSearchParams({
-      'OriginLocationCode': orgCode,
-      'DestinationLocationCode': dstCode,
-      'DepartureDateTime': params.departureDate,
-      'DepartureDateTimeR': '',
-      'AdultCount': '1',
-      'ChildCount': '0',
-      'InfantCount': '0',
-      'CabinType': '1',
-      'VendorPreferenceCodes': '',
-      'VendorExcludeCodes': '',
-      'FlightType': 'OneWay',
-      '__RequestVerificationToken': token,
-      'DirectFlight': 'false',
-    });
+    const body = this.buildSearchFormBody(params, token);
 
     const searchRes = await fetch(`${this.baseUrl}/Flight/Search/Search`, {
       method: 'POST',
@@ -265,7 +325,7 @@ export class PartoPortalProvider {
           const jsonData = (await dataRes.json()) as Record<string, unknown>;
           const jsonOffers = parseSearchResultDataJson(jsonData);
           if (jsonOffers.length > 0) {
-            return { offers: jsonOffers, rawHtml: JSON.stringify(jsonData).slice(0, 1000) };
+            return { offers: jsonOffers, rawHtml: JSON.stringify(jsonData).slice(0, 1000), searchId, jsonMode: true };
           }
         } catch {
           // fall through to HTML parser fallback
@@ -275,7 +335,31 @@ export class PartoPortalProvider {
 
     const resultsHtml = searchHtml || '';
     const offers = parseResultsHtml(resultsHtml);
-    return { offers, rawHtml: resultsHtml };
+    return { offers, rawHtml: resultsHtml, searchId, jsonMode: false };
+  }
+
+  /** The documented B2B search form (OneWay / TwoWay). Field names from parto_page.js captures. */
+  private buildSearchFormBody(
+    params: { origin: string; destination: string; departureDate: string; returnDate?: string; adults?: number; children?: number; infants?: number },
+    token: string
+  ): URLSearchParams {
+    const orgCode = params.origin.includes(',') ? params.origin.toUpperCase() : `${params.origin.toUpperCase()},1`;
+    const dstCode = params.destination.includes(',') ? params.destination.toUpperCase() : `${params.destination.toUpperCase()},1`;
+    return new URLSearchParams({
+      'OriginLocationCode': orgCode,
+      'DestinationLocationCode': dstCode,
+      'DepartureDateTime': params.departureDate,
+      'DepartureDateTimeR': params.returnDate ?? '',
+      'AdultCount': String(params.adults ?? 1),
+      'ChildCount': String(params.children ?? 0),
+      'InfantCount': String(params.infants ?? 0),
+      'CabinType': '1',
+      'VendorPreferenceCodes': '',
+      'VendorExcludeCodes': '',
+      'FlightType': params.returnDate ? 'TwoWay' : 'OneWay',
+      '__RequestVerificationToken': token,
+      'DirectFlight': 'false',
+    });
   }
 
   private collectSetCookies(res: Response): string[] {
@@ -314,58 +398,68 @@ export function parseSearchResultDataJson(data: Record<string, unknown>): Portal
   const rows: PortalOfferRow[] = [];
   for (const item of itineraries) {
     const segments = (item['FlightSegments'] || []) as Array<Record<string, unknown>>;
-    const firstSeg = segments[0];
-    if (!firstSeg) continue;
+    if (segments.length === 0) continue;
 
-    const airlineCode = String(firstSeg['MarketingAirline'] || item['ValidatingAirlineCode'] || 'XX').toUpperCase();
-    const airlineName = airlinesMap.get(airlineCode) || String(firstSeg['OperatingAirline'] || airlineCode);
-    const rawNum = firstSeg['FlightNumber'] ? String(firstSeg['FlightNumber']).trim() : '';
-    const flightNumber = rawNum.includes('-') ? rawNum : `${airlineCode}-${rawNum || '000'}`;
+    // Round-trip itineraries carry both legs in one PricedItinerary. The
+    // journey fare (DataAttribute.PerAdult / TotalFare) covers BOTH legs — it
+    // is repeated on every leg row and must never be summed.
+    const isJourney = segments.length > 1;
 
-    const depIso = String(firstSeg['DepartureDateTime'] || '');
-    const arrIso = String(firstSeg['ArrivalDateTime'] || '');
-    if (!depIso || !arrIso) continue;
+    for (let segIndex = 0; segIndex < segments.length; segIndex++) {
+      const firstSeg = segments[segIndex];
 
-    const departureTime = new Date(`${depIso.slice(0, 19)}Z`);
-    const arrivalTime = new Date(`${arrIso.slice(0, 19)}Z`);
+      const airlineCode = String(firstSeg['MarketingAirline'] || item['ValidatingAirlineCode'] || 'XX').toUpperCase();
+      const airlineName = airlinesMap.get(airlineCode) || String(firstSeg['OperatingAirline'] || airlineCode);
+      const rawNum = firstSeg['FlightNumber'] ? String(firstSeg['FlightNumber']).trim() : '';
+      const flightNumber = rawNum.includes('-') ? rawNum : `${airlineCode}-${rawNum || '000'}`;
 
-    let durationMinutes: number | null = null;
-    if (firstSeg['Duration'] && typeof firstSeg['Duration'] === 'string') {
-      const parts = firstSeg['Duration'].split(':').map(Number);
-      if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-        durationMinutes = parts[0] * 60 + parts[1];
+      const depIso = String(firstSeg['DepartureDateTime'] || '');
+      const arrIso = String(firstSeg['ArrivalDateTime'] || '');
+      if (!depIso || !arrIso) continue;
+
+      const departureTime = new Date(`${depIso.slice(0, 19)}Z`);
+      const arrivalTime = new Date(`${arrIso.slice(0, 19)}Z`);
+
+      let durationMinutes: number | null = null;
+      if (firstSeg['Duration'] && typeof firstSeg['Duration'] === 'string') {
+        const parts = firstSeg['Duration'].split(':').map(Number);
+        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+          durationMinutes = parts[0] * 60 + parts[1];
+        }
       }
-    }
-    if (!durationMinutes) {
-      durationMinutes = Math.max(30, Math.round((arrivalTime.getTime() - departureTime.getTime()) / 60000));
-    }
+      if (!durationMinutes) {
+        durationMinutes = Math.max(30, Math.round((arrivalTime.getTime() - departureTime.getTime()) / 60000));
+      }
 
-    const dataAttr = (item['DataAttribute'] || {}) as Record<string, unknown>;
-    const perAdult = (dataAttr['PerAdult'] || {}) as Record<string, unknown>;
-    const baseFare = Number(perAdult['BaseFare'] || item['TotalFare'] || 0);
-    const totalFare = Number(perAdult['TotalFare'] || item['TotalFare'] || 0);
-    const totalTax = Number(perAdult['Tax'] || 0);
-    if (totalFare <= 0) continue;
+      const dataAttr = (item['DataAttribute'] || {}) as Record<string, unknown>;
+      const perAdult = (dataAttr['PerAdult'] || {}) as Record<string, unknown>;
+      const baseFare = Number(perAdult['BaseFare'] || item['TotalFare'] || 0);
+      const totalFare = Number(perAdult['TotalFare'] || item['TotalFare'] || 0);
+      const totalTax = Number(perAdult['Tax'] || 0);
+      if (totalFare <= 0) continue;
 
-    rows.push({
-      fareReference: String(item['FareSourceCode'] || `ref_${rows.length + 1}`),
-      airlineCode,
-      airlineName,
-      flightNumber,
-      departureTime,
-      arrivalTime,
-      durationMinutes,
-      seatsRemaining: Number(firstSeg['SeatsRemaining']) || 9,
-      baseFare,
-      totalFare,
-      totalTax,
-      currency: 'IRR',
-      baggage: firstSeg['Baggage'] ? String(firstSeg['Baggage']) : null,
-      isCharter: firstSeg['IsCharter'] === true || dataAttr['Charter'] === true,
-      refundable: item['NonRefundableType'] !== 1,
-      cabinClass: firstSeg['CabinType'] === 3 ? 'BUSINESS' : 'ECONOMY',
-      stops: Number(firstSeg['StopQuantity']) || 0,
-    });
+      const fareSourceCode = String(item['FareSourceCode'] || `ref_${rows.length + 1}`);
+      rows.push({
+        fareReference: isJourney ? `${fareSourceCode}#${segIndex === 0 ? 'out' : 'ret'}` : fareSourceCode,
+        airlineCode,
+        airlineName,
+        flightNumber,
+        departureTime,
+        arrivalTime,
+        durationMinutes,
+        seatsRemaining: Number(firstSeg['SeatsRemaining']) || 9,
+        baseFare,
+        totalFare,
+        totalTax,
+        currency: 'IRR',
+        baggage: firstSeg['Baggage'] ? String(firstSeg['Baggage']) : null,
+        isCharter: firstSeg['IsCharter'] === true || dataAttr['Charter'] === true,
+        refundable: item['NonRefundableType'] !== 1,
+        cabinClass: firstSeg['CabinType'] === 3 ? 'BUSINESS' : 'ECONOMY',
+        stops: Number(firstSeg['StopQuantity']) || 0,
+        ...(isJourney ? { leg: (segIndex === 0 ? 'outbound' : 'return') as 'outbound' | 'return' } : {}),
+      });
+    }
   }
   return rows;
 }

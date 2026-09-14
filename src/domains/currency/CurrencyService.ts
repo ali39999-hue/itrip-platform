@@ -151,9 +151,242 @@ export class CentralBankRateProvider implements CurrencyRateProvider {
     return this.cache.get(pair) || {
       pair,
       rate,
-      source: 'SANA_OFFICIAL',
+      source: 'STATIC_FALLBACK',
       timestamp: new Date(),
       expiresAt: new Date(Date.now() + this.cacheTtlMs),
+    };
+  }
+}
+
+/**
+ * Live FX Rate Provider (SCRAPING-ROADMAP: live currency feed)
+ *
+ * Replaces the SIMULATED static-rate conversion with a market feed chain that
+ * is fail-closed to the static table on ANY error — conversion must never
+ * break. Sources, in priority order (first success wins):
+ *   1. `fxapi`  — FX_RATE_API_URL (+FX_API_KEY) when the operator configured it.
+ *   2. `tgju`   — TGJU public market quotes (free-market USD/USDT/AED/CNY vs IRR).
+ *   3. `erapi`  — open.er-api.com (explicit FX_LIVE_SOURCE=erapi ONLY: it
+ *                 reports the official pegged IRR, not the market rate).
+ * Static table otherwise. IRR market truth: an OTA must use the free-market
+ * rate, so official/pegged feeds are never applied to IRR pairs in auto mode.
+ *
+ * Env: FX_LIVE_SOURCE = auto | tgju | fxapi | erapi | off (default auto).
+ */
+export class LiveFxRateProvider implements CurrencyRateProvider {
+  private cache = new Map<string, FxRateRecord>();
+  private inflight: Promise<void> | null = null;
+  private lastRefreshAt: Date | null = null;
+  private readonly ttlMs: number;
+  private readonly staticRates: Record<string, string>;
+  private readonly fetchImpl: typeof fetch;
+
+  constructor(opts?: { ttlMs?: number; fetchImpl?: typeof fetch; staticRates?: Record<string, string> }) {
+    const envTtl = Number(process.env.FX_CACHE_TTL_MS);
+    this.ttlMs = opts?.ttlMs ?? (Number.isFinite(envTtl) && envTtl > 0 ? envTtl : 15 * 60_000);
+    this.staticRates = opts?.staticRates ?? DEFAULT_EXCHANGE_RATES_DECIMAL;
+    this.fetchImpl = opts?.fetchImpl ?? fetch;
+    if (typeof window === 'undefined' && this.isLive()) {
+      this.prefetch().catch(() => {});
+    }
+  }
+
+  private isLive(): boolean {
+    if (process.env.DEMO_MODE === 'true') return false;
+    const flag = (process.env.FX_LIVE_SOURCE || 'auto').toLowerCase();
+    return flag !== 'off' && flag !== 'static';
+  }
+
+  private sourceOrder(): Array<'fxapi' | 'tgju' | 'erapi'> {
+    const flag = (process.env.FX_LIVE_SOURCE || 'auto').toLowerCase();
+    if (flag === 'tgju') return ['tgju'];
+    if (flag === 'erapi' || flag === 'er-api') return ['erapi'];
+    if (flag === 'fxapi') return ['fxapi'];
+    // auto — an explicitly configured FX endpoint keeps today's first-priority spot.
+    return process.env.FX_RATE_API_URL || process.env.FX_API_KEY ? ['fxapi', 'tgju'] : ['tgju'];
+  }
+
+  private async prefetch(): Promise<void> {
+    for (const source of this.sourceOrder()) {
+      try {
+        const rates =
+          source === 'tgju' ? await this.fetchTgju() : source === 'erapi' ? await this.fetchErApi() : await this.fetchFxApi();
+        if (rates) {
+          this.populate(rates, source === 'tgju' ? 'TGJU_MARKET' : source === 'erapi' ? 'ERAPI_OFFICIAL' : 'FXAPI_LIVE');
+          return;
+        }
+      } catch {
+        // try the next source
+      }
+    }
+    // Rate-limit the warning so a permanently dead feed doesn't spam the logs.
+    const warnAge = this.lastRefreshAt === null || Date.now() - this.lastRefreshAt.getTime() > 30 * 60_000;
+    if (warnAge) console.warn('[FX] all live rate sources failed — serving static fallback rates');
+    this.lastRefreshAt = new Date();
+  }
+
+  private async fetchJson(url: string, headers?: Record<string, string>): Promise<Record<string, unknown> | null> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 7000);
+    try {
+      const res = await this.fetchImpl(url, { headers: { 'Accept': 'application/json', ...headers }, signal: controller.signal });
+      if (!res.ok) return null;
+      return (await res.json()) as Record<string, unknown>;
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /** TGJU market quotes → rial prices per unit. Tolerant row parser (close price = last large numeric cell). */
+  private async fetchTgju(): Promise<Record<string, number> | null> {
+    const base = 'https://api.tgju.org/v1/market/indicator/summary-table-data/';
+    const keys = ['price_dollar_rl', 'price_usdt_rl', 'price_aed_rl', 'price_cny_rl'];
+    let rows: unknown[] | null = null;
+    const joined = await this.fetchJson(`${base}${keys.join(',')}?lang=en&order_dir=asc`);
+    if (joined && Array.isArray(joined['data'])) rows = joined['data'] as unknown[];
+    if (!rows) {
+      // Older deployments reject the comma-joined form — fall back per key.
+      rows = [];
+      for (const key of keys) {
+        const single = await this.fetchJson(`${base}${key}?lang=en&order_dir=asc`);
+        if (single && Array.isArray(single['data'])) rows.push(...(single['data'] as unknown[]));
+      }
+    }
+    if (!rows || rows.length === 0) return null;
+
+    const byKey = new Map<string, number>();
+    for (const row of rows) {
+      if (!Array.isArray(row) || row.length < 2) continue;
+      const key = String(row[0]);
+      let price = 0;
+      for (let i = row.length - 1; i >= 1; i--) {
+        const n = parsePriceCell(row[i]);
+        if (n >= 1000) {
+          price = n;
+          break;
+        }
+      }
+      if (price > 0) byKey.set(key, price);
+    }
+
+    const out: Record<string, number> = {};
+    const map: Array<[string, string]> = [
+      ['price_dollar_rl', 'USD_IRR'],
+      ['price_usdt_rl', 'USDT_IRR'],
+      ['price_aed_rl', 'AED_IRR'],
+      ['price_cny_rl', 'CNY_IRR'],
+    ];
+    for (const [key, pair] of map) {
+      const v = byKey.get(key);
+      if (v && v > 0) out[pair] = v;
+    }
+    return Object.keys(out).length > 0 ? out : null;
+  }
+
+  /** Explicitly opted-in configured feed (same contract as CentralBankRateProvider). */
+  private async fetchFxApi(): Promise<Record<string, number> | null> {
+    const endpoint = process.env.FX_RATE_API_URL || 'https://api.exchangerate-api.com/v4/latest/';
+    const data = await this.fetchJson(`${endpoint}USD`, process.env.FX_API_KEY ? { Authorization: `Bearer ${process.env.FX_API_KEY}` } : undefined);
+    const rates = data?.['rates'] as Record<string, number> | undefined;
+    if (!rates || !rates['IRR'] || rates['IRR'] <= 0) return null;
+    const out: Record<string, number> = { USD_IRR: Number(rates['IRR']) };
+    if (rates['AED']) out['AED_IRR'] = Number(rates['IRR']) / Number(rates['AED']);
+    if (rates['CNY']) out['CNY_IRR'] = Number(rates['IRR']) / Number(rates['CNY']);
+    return out;
+  }
+
+  /** open.er-api.com — explicit operator override only (pegged official IRR). */
+  private async fetchErApi(): Promise<Record<string, number> | null> {
+    const data = await this.fetchJson('https://open.er-api.com/v6/latest/USD');
+    const rates = data?.['rates'] as Record<string, number> | undefined;
+    if (!rates || !rates['IRR'] || rates['IRR'] <= 0) return null;
+    const out: Record<string, number> = { USD_IRR: Number(rates['IRR']) };
+    if (rates['AED']) out['AED_IRR'] = Number(rates['IRR']) / Number(rates['AED']);
+    if (rates['CNY']) out['CNY_IRR'] = Number(rates['IRR']) / Number(rates['CNY']);
+    return out;
+  }
+
+  private populate(rates: Record<string, number>, source: string): void {
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + this.ttlMs);
+    for (const [pair, value] of Object.entries(rates)) {
+      if (!value || value <= 0) continue;
+      const rate = new Prisma.Decimal(value.toString());
+      this.cache.set(pair, { pair, rate, source, timestamp: now, expiresAt });
+      const [from, to] = pair.split('_');
+      if (from && to && from !== to) {
+        const inversePair = `${to}_${from}`;
+        this.cache.set(inversePair, {
+          pair: inversePair,
+          rate: new Prisma.Decimal('1.0').div(rate),
+          source,
+          timestamp: now,
+          expiresAt,
+        });
+      }
+    }
+    this.lastRefreshAt = now;
+  }
+
+  private maybeRefresh(): void {
+    const stale = this.lastRefreshAt === null || Date.now() - this.lastRefreshAt.getTime() > this.ttlMs;
+    if (this.inflight || !stale || !this.isLive()) return;
+    this.inflight = this.prefetch().finally(() => {
+      this.inflight = null;
+    });
+  }
+
+  getRateDecimal(from: SupportedCurrency, to: SupportedCurrency): Prisma.Decimal {
+    if (from === to) return new Prisma.Decimal('1.0');
+    const now = new Date();
+    this.maybeRefresh();
+
+    // Fully-live path: both legs must come from the same live snapshot.
+    const fromRec = from === 'IRR' ? this.cache.get(`IRR_${to}`) : this.cache.get(`${from}_IRR`);
+    const toRec = to === 'IRR' ? this.cache.get(`${from}_IRR`) : this.cache.get(`IRR_${to}`);
+    const liveDirect = from !== 'IRR' && to !== 'IRR' ? this.cache.get(`${from}_${to}`) : undefined;
+    const liveViaIrr =
+      from === 'IRR'
+        ? toRec && toRec.expiresAt > now
+          ? toRec.rate
+          : null
+        : to === 'IRR'
+          ? fromRec && fromRec.expiresAt > now
+            ? fromRec.rate
+            : null
+          : fromRec && toRec && fromRec.expiresAt > now && toRec.expiresAt > now
+            ? fromRec.rate.mul(toRec.rate)
+            : null;
+
+    if (liveViaIrr && !liveDirect) return liveViaIrr;
+    if (liveDirect && liveDirect.expiresAt > now) return liveDirect.rate;
+
+    // Static fallback (fully-static path — never mix live and static legs).
+    const rateStr = this.staticRates[`${from}_${to}`];
+    if (rateStr) return new Prisma.Decimal(rateStr);
+    const fromToIrr = from === 'IRR' ? '1.0' : this.staticRates[`${from}_IRR`];
+    const irrToTarget = to === 'IRR' ? '1.0' : this.staticRates[`IRR_${to}`];
+    if (fromToIrr && irrToTarget) {
+      return new Prisma.Decimal(fromToIrr).mul(new Prisma.Decimal(irrToTarget));
+    }
+    throw new Error(`No exchange rate configured for ${from} -> ${to}`);
+  }
+
+  getRateRecord(from: SupportedCurrency, to: SupportedCurrency): FxRateRecord {
+    const pair = `${from}_${to}`;
+    const cached = this.cache.get(pair);
+    if (cached) {
+      const rate = this.getRateDecimal(from, to);
+      return { ...cached, rate };
+    }
+    return {
+      pair,
+      rate: this.getRateDecimal(from, to),
+      source: 'STATIC_FALLBACK',
+      timestamp: new Date(),
+      expiresAt: new Date(Date.now() + this.ttlMs),
     };
   }
 }
@@ -162,7 +395,8 @@ export class CurrencyService {
   private rateProvider: CurrencyRateProvider;
 
   constructor(rateProvider?: CurrencyRateProvider) {
-    this.rateProvider = rateProvider || new CentralBankRateProvider();
+    // Live feed chain (fail-closed to the static table) — see LiveFxRateProvider.
+    this.rateProvider = rateProvider || new LiveFxRateProvider();
   }
 
   /**
@@ -234,3 +468,14 @@ export class CurrencyService {
 }
 
 export const defaultCurrencyService = new CurrencyService();
+
+/** "618,500" | "۶۱۸٬۵۰۰" | "618500.00" → 618500 (0 when unparseable). */
+function parsePriceCell(cell: unknown): number {
+  if (typeof cell === 'number') return Number.isFinite(cell) ? cell : 0;
+  if (typeof cell !== 'string') return 0;
+  const faDigits = '۰۱۲۳۴۵۶۷۸۹';
+  const normalized = cell.replace(/[۰-۹]/g, (d) => String(faDigits.indexOf(d)));
+  const cleaned = normalized.replace(/[^\d.]/g, '');
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}

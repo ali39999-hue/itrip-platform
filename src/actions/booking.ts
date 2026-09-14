@@ -574,13 +574,21 @@ export async function requestWalletTopUp(
     }
 
     // Gateway dispatch through the canonical pipeline so a Payment record with
-    // the gatewayRef is persisted — the eCardo IPN handler resolves the wallet
-    // capture by that ref and credits the ledger via postTopUp.
+    // the gatewayRef is persisted. The return callback is cryptographically
+    // signed so eCardo browser returns can execute authoritative instant capture
+    // even if server-to-server IPN delivery is blocked or delayed.
     const { headers } = await import('next/headers');
     const { getRequestBaseUrl } = await import('@/lib/runtime-url');
+    const { signTopUpCallback } = await import('@/domains/payments/callback-security');
     const headerMap = await headers().catch(() => null);
     const origin = getRequestBaseUrl(headerMap || undefined);
-    const callbackUrl = `${origin}/api/payments/callback?bookingId=wallet_topup_${session.user.id}&order_id=wallet_topup_${session.user.id}`;
+    const callbackSig = signTopUpCallback(
+      session.user.id,
+      idempotencyKey,
+      moneyAmount.toDecimal().toString(),
+      currency
+    );
+    const callbackUrl = `${origin}/api/payments/callback?bookingId=wallet_topup_${session.user.id}&order_id=wallet_topup_${session.user.id}&topupId=${encodeURIComponent(idempotencyKey)}&sig=${encodeURIComponent(callbackSig)}`;
 
     const { resolveEffectivePaymentMode } = await import('@/domains/payments/admin-payment-mode');
     const paymentMode = await resolveEffectivePaymentMode({ userId: session.user.id }).catch(() => 'real' as const);

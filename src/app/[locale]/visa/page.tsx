@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { shimmerDataUrl } from '@/lib/image-utils';
 import { FileCheck2, ArrowRight, ArrowLeft, CheckCircle2, Headset, Clock } from 'lucide-react';
 import { lt } from '@/lib/lt';
+import { isValidPassportNo, normalizePassportNo } from '@/lib/passport-format';
 
 const VISA_IMGS: Record<string, string> = {
   Turkey: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&q=70&w=800',
@@ -63,7 +64,7 @@ export default function VisaPage() {
       setError(lt(locale, { fa: 'لطفاً همه فیلدها را تکمیل کنید', en: 'Please fill all required fields', ar: 'يرجى تعبئة جميع الحقول المطلوبة', zh: '请填写所有必填项', ru: 'Заполните все обязательные поля' }));
       return;
     }
-    if (!/^[A-Z0-9]{6,12}$/i.test(passport)) {
+    if (!isValidPassportNo(passport)) {
       setError(lt(locale, { fa: 'شماره پاسپورت معتبر نیست (حروف لاتین و اعداد)', en: 'Invalid passport number', ar: 'رقم جواز سفر غير صالح (أحرف لاتينية وأرقام)', zh: '护照号无效（拉丁字母和数字）', ru: 'Неверный номер паспорта (латиница и цифры)' }));
       return;
     }
@@ -72,7 +73,7 @@ export default function VisaPage() {
       setBookingContext({
         type: 'visa',
         title: `${lt(locale, { fa: 'ویزای', en: 'Visa for', ar: 'تأشيرة', zh: '签证', ru: 'Виза в' })} ${locale === 'fa' ? selected.countryFa : selected.countryEn}`,
-        subtitle: `${firstEn} ${lastEn} • ${passport.toUpperCase()}`,
+        subtitle: `${firstEn} ${lastEn} • ${normalizePassportNo(passport)}`,
         amount: selected.price,
         travelDate: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
       });

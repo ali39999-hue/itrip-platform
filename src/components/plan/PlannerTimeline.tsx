@@ -152,7 +152,7 @@ export function PlannerTimeline(props: PlannerTimelineProps) {
   };
 
   return (
-    <div className="flex flex-col gap-6 min-w-0">
+    <div className="print-area flex flex-col gap-6 min-w-0">
       {/* Destination Travel Tips & Handbook Banner */}
       <div className="rounded-2xl bg-gradient-to-r from-mint/70 via-surface to-soft border border-brand/20 p-5 shadow-sm flex flex-col sm:flex-row items-start justify-between gap-4">
         <div className="flex items-start gap-4 min-w-0">
@@ -526,7 +526,7 @@ export function PlannerTimeline(props: PlannerTimelineProps) {
       )}
 
       {/* Smart AI Refinement & Custom Itinerary Assistant */}
-      <div className="rounded-3xl border-2 border-brand/30 bg-surface p-6 shadow-elev-1">
+      <div className="no-print rounded-3xl border-2 border-brand/30 bg-surface p-6 shadow-elev-1">
         <div className="flex items-center justify-between gap-2 mb-3">
           <h4 className="text-base font-black text-ink m-0 flex items-center gap-2">
             <Sparkles size={18} className="text-brand animate-pulse" />

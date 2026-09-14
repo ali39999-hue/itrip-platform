@@ -6,6 +6,7 @@
  */
 
 import { z } from "zod";
+import { isValidPassportNo, normalizePassportNo } from "@/lib/passport-format";
 
 // ─── Shared Enums (mirroring Prisma string fields) ───────────────────────────
 
@@ -86,8 +87,9 @@ export const passengerSchema = z.object({
     .or(z.literal("")),
   passportNo: z
     .string()
-    .min(5, "Passport number is too short")
-    .max(20, "Passport number is too long"),
+    .transform((v) => normalizePassportNo(v))
+    .refine((v) => v.length >= 6, "Passport number is too short")
+    .refine((v) => isValidPassportNo(v), "Passport number format is invalid"),
   passportExpiryDate: z
     .string()
     .optional()

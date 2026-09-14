@@ -35,6 +35,10 @@ import {
   portalOfferIdFromReference,
   type PortalOfferRow,
 } from '@/domains/supplier/adapters/PartoPortalProvider';
+import {
+  alertPortalSessionExpired,
+  clearPortalSessionAlert,
+} from '@/domains/supplier/PortalSessionMonitor';
 import { SupplierNormalizer } from '@/domains/supplier/SupplierNormalizer';
 
 const DEFAULT_TTL_MINUTES = 60;
@@ -500,6 +504,8 @@ export async function refreshRouteOffers(
     await markDemandError(route, message).catch(() => {});
     if (err instanceof PartoPortalSessionExpiredError) {
       console.error('[FlightCache] Parto portal session expired — re-run scripts/parto-portal-capture.mjs login');
+      // Visible ops alert (Exception Center + Bale), deduped while open.
+      void alertPortalSessionExpired({ source: 'refresh', routeKey: route.routeKey, detectedBy: 'refresh' });
     }
     return {
       routeKey: route.routeKey,
@@ -522,7 +528,10 @@ async function markDemandRefreshed(route: ResolvedRoute, sourceCode: string): Pr
       refreshCount: { increment: 1 },
     },
   });
-  void sourceCode;
+  if (sourceCode === PARTO_PORTAL_SUPPLIER_CODE) {
+    // A successful portal refresh proves the session works again.
+    void clearPortalSessionAlert();
+  }
 }
 
 async function markDemandError(route: ResolvedRoute, message: string): Promise<void> {

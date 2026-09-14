@@ -356,7 +356,7 @@ export function CityHotelSearch() {
                   inputRef.current?.focus();
                 }}
                 aria-label={lt(locale, { fa: 'پاک کردن', en: 'Clear', ar: 'مسح', zh: '清除', ru: 'Очистить' })}
-                className="w-7 h-7 grid place-items-center rounded-lg text-sub hover:text-ink hover:bg-soft transition cursor-pointer shrink-0"
+                className="min-h-[44px] min-w-[44px] grid place-items-center rounded-lg text-sub hover:text-ink hover:bg-soft transition cursor-pointer shrink-0"
               >
                 <X size={14} />
               </button>

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-13T07:57:44.027Z",
+  "generatedAt": "2026-09-14T07:53:43.308Z",
   "baseUrl": "http://localhost:3000",
   "pages": {
     "home": {
@@ -24,13 +24,13 @@
       "url": "http://localhost:3000/fa/services",
       "violationCount": 0,
       "byRule": [],
-      "passes": 26
+      "passes": 28
     },
     "support": {
       "url": "http://localhost:3000/fa/support",
       "violationCount": 0,
       "byRule": [],
-      "passes": 27
+      "passes": 29
     }
   }
 }

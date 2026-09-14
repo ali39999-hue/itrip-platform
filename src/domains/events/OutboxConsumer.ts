@@ -393,4 +393,50 @@ export class OutboxConsumer {
       return 0;
     }
   }
+
+  /**
+   * ASYNC-109: Bounded dead-letter second chance.
+   *
+   * Requeues up to `limit` DEAD_LETTER events for one more processing cycle.
+   * Guards:
+   *  - events at or beyond `maxRetryCount` total failures stay dead (human remediation),
+   *  - UNKNOWN_EVENT_TYPE failures are permanent code bugs and are never requeued,
+   *  - events must have been dead for at least `olderThanMs` so fresh DLQ entries
+   *    finish their own backoff cycle untouched,
+   *  - optional `eventTypePrefix` scopes targeted remediation (tests, ops runs).
+   * Returns the number of requeued events.
+   */
+  static async requeueDeadLetters(
+    limit = 3,
+    opts?: { maxRetryCount?: number; olderThanMs?: number; eventTypePrefix?: string }
+  ): Promise<number> {
+    const maxRetryCount = opts?.maxRetryCount ?? 8;
+    const olderThanMs = opts?.olderThanMs ?? 60 * 60 * 1000;
+    const cutoff = new Date(Date.now() - olderThanMs);
+
+    const candidates = await prisma.outboxEvent.findMany({
+      where: {
+        status: 'DEAD_LETTER',
+        retryCount: { lt: maxRetryCount },
+        updatedAt: { lt: cutoff },
+        NOT: { lastError: { startsWith: 'UNKNOWN_EVENT_TYPE' } },
+        ...(opts?.eventTypePrefix ? { eventType: { startsWith: opts.eventTypePrefix } } : {}),
+      },
+      orderBy: { updatedAt: 'asc' },
+      take: limit,
+      select: { id: true },
+    });
+    if (candidates.length === 0) return 0;
+
+    const result = await prisma.outboxEvent.updateMany({
+      where: { id: { in: candidates.map((e) => e.id) } },
+      data: {
+        status: 'PENDING',
+        availableAt: new Date(),
+        lockedAt: null,
+        workerId: null,
+      },
+    });
+    return result.count;
+  }
 }

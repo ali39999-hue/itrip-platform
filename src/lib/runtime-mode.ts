@@ -47,13 +47,14 @@ export function assertProductionConfig(): void {
   }
 
   const gatewayConfigured = Boolean(
-    process.env.SHETAB_MERCHANT_ID && process.env.SHETAB_SECRET_KEY && process.env.SHETAB_TERMINAL_ID
+    (process.env.SHETAB_MERCHANT_ID && process.env.SHETAB_SECRET_KEY && process.env.SHETAB_TERMINAL_ID) ||
+    Boolean(process.env.ECARDO_PUBLIC_KEY)
   );
   const walletOnly = process.env.GATEWAY_MODE === 'internal_wallet';
   if (!gatewayConfigured && !walletOnly) {
     process.env.GATEWAY_MODE = 'internal_wallet';
     console.warn(
-      '[runtime-mode] Auto-configured GATEWAY_MODE=internal_wallet (Shetab credentials unset; wallet engine active).'
+      '[runtime-mode] Auto-configured GATEWAY_MODE=internal_wallet (Shetab and eCardo credentials unset; wallet engine active).'
     );
   }
 }

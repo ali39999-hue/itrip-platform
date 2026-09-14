@@ -648,3 +648,26 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* ---- Print: only the itinerary prints, never the whole page ---- */
+/* Voice-note review 2026-09-13: «کل سفر رو چاپ نکنه» — header/nav/footer/
+   docks and action chrome must stay out of the printed trip sheet. */
+@media print {
+  body { background: #fff !important; }
+  body * { visibility: hidden !important; box-shadow: none !important; }
+  .print-area, .print-area * { visibility: visible !important; }
+  .print-area {
+    position: absolute !important;
+    inset-inline-start: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .print-area .no-print,
+  .print-area button,
+  .print-area form { display: none !important; }
+  .print-area article,
+  .print-area section { break-inside: avoid; page-break-inside: avoid; border-color: #d8e0df !important; }
+}

@@ -29,6 +29,27 @@ const envAllowed = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)
   : [];
 
+// Automatically detect hostnames from cloud/environment configurations
+const autoDetectedHosts: string[] = [];
+const candidateUrls = [
+  process.env.VERCEL_PROJECT_PRODUCTION_URL,
+  process.env.VERCEL_URL,
+  process.env.NEXT_PUBLIC_SITE_URL,
+  process.env.NEXT_PUBLIC_APP_URL,
+  process.env.NEXTAUTH_URL,
+  process.env.RAILWAY_PUBLIC_DOMAIN,
+  process.env.RENDER_EXTERNAL_URL,
+];
+for (const raw of candidateUrls) {
+  if (!raw) continue;
+  try {
+    const cleaned = raw.includes('://') ? new URL(raw).host : raw.split('/')[0].trim();
+    if (cleaned && !cleaned.includes('localhost')) {
+      autoDetectedHosts.push(cleaned);
+    }
+  } catch {}
+}
+
 const baseAllowedOrigins = [
   'localhost:3000',
   '127.0.0.1:3000',
@@ -39,6 +60,7 @@ const baseAllowedOrigins = [
   'firuzo.online',
   'call.firuzo.online',
   ...(isDev ? ['*.trycloudflare.com'] : []),
+  ...autoDetectedHosts,
   ...envAllowed,
 ];
 

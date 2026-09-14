@@ -3,6 +3,7 @@ import {
   PartoPortalProvider,
   PartoPortalSessionExpiredError,
   parseResultsHtml,
+  parseSearchResultDataJson,
   portalOfferIdFromReference,
 } from './adapters/PartoPortalProvider';
 import { resolveFlightRefreshSource, portalRowsToCacheRows } from '@/services/flight-cache-service';
@@ -196,5 +197,158 @@ describe('Parto portal provider (scrape fallback — plan §7)', () => {
     expect(cacheRows[0].arrivalTime.toISOString()).toContain('2026-10-01T07:45:00');
     expect(cacheRows[0].totalFare).toBe(21_500_000);
     expect(cacheRows[0].ticketType).toBe('charter');
+  });
+});
+
+describe('Parto portal provider — round-trip & keep-alive upgrade (plan §7)', () => {
+  const originalEnv = { ...process.env };
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+    process.env.PARTO_PORTAL_PRICE_UNIT = 'toman';
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  function roundTripJsonFixture(): {
+    PricedItineraries: Array<Record<string, unknown> & { FlightSegments: Array<Record<string, unknown>> }>;
+    ViewData: Record<string, unknown>;
+  } {
+    return {
+      PricedItineraries: [
+        {
+          FareSourceCode: 'FSC-RT-1',
+          TotalFare: 4_300_000,
+          NonRefundableType: 1,
+          ValidatingAirlineCode: 'W5',
+          FlightSegments: [
+            {
+              MarketingAirline: 'W5',
+              FlightNumber: '112',
+              DepartureDateTime: '2026-10-01T08:30:00',
+              ArrivalDateTime: '2026-10-01T11:45:00',
+              SeatsRemaining: 5,
+              Baggage: '30kg',
+              IsCharter: false,
+              CabinType: 1,
+              StopQuantity: 0,
+            },
+            {
+              MarketingAirline: 'W5',
+              FlightNumber: '113',
+              DepartureDateTime: '2026-10-08T09:00:00',
+              ArrivalDateTime: '2026-10-08T12:00:00',
+              SeatsRemaining: 5,
+              Baggage: '30kg',
+              IsCharter: false,
+              CabinType: 1,
+              StopQuantity: 0,
+            },
+          ],
+          DataAttribute: { PerAdult: { BaseFare: 4_000_000, TotalFare: 4_300_000, Tax: 300_000 } },
+        },
+      ],
+      ViewData: { ValidatingAirlines: [{ Iata: 'W5', NameFa: 'ماهان‌ایر' }] },
+    };
+  }
+
+  it('splits round-trip itineraries into per-leg rows sharing the journey fare', () => {
+    const rows = parseSearchResultDataJson(roundTripJsonFixture());
+
+    expect(rows).toHaveLength(2);
+
+    expect(rows[0].leg).toBe('outbound');
+    expect(rows[0].fareReference).toBe('FSC-RT-1#out');
+    expect(rows[0].airlineName).toBe('ماهان‌ایر');
+    expect(rows[0].flightNumber).toBe('W5-112');
+    expect(rows[0].departureTime.toISOString()).toContain('2026-10-01T08:30:00');
+    // Journey fare is repeated on both legs — consumers must never sum them.
+    expect(rows[0].totalFare).toBe(4_300_000);
+    expect(rows[0].refundable).toBe(false); // NonRefundableType: 1
+
+    expect(rows[1].leg).toBe('return');
+    expect(rows[1].fareReference).toBe('FSC-RT-1#ret');
+    expect(rows[1].flightNumber).toBe('W5-113');
+    expect(rows[1].departureTime.toISOString()).toContain('2026-10-08T09:00:00');
+    expect(rows[1].totalFare).toBe(4_300_000);
+  });
+
+  it('one-way JSON itineraries stay single-row with a clean fare reference (no leg marker)', () => {
+    const fixture = roundTripJsonFixture();
+    const oneWay = {
+      PricedItineraries: [
+        { ...fixture.PricedItineraries[0], FlightSegments: [fixture.PricedItineraries[0].FlightSegments[0]] },
+      ],
+      ViewData: fixture.ViewData,
+    };
+
+    const rows = parseSearchResultDataJson(oneWay);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].leg).toBeUndefined();
+    expect(rows[0].fareReference).toBe('FSC-RT-1');
+  });
+
+  it('searchRoundTrip posts the TwoWay form with the return date', async () => {
+    const calls: Array<{ url: string; body: string }> = [];
+    const fetchMock = vi.fn().mockImplementation((url: unknown, init?: { body?: unknown }) => {
+      calls.push({ url: String(url), body: typeof init?.body === 'string' ? init.body : '' });
+      if (String(url).endsWith('/Flight/Search')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          headers: { getSetCookie: () => [] },
+          text: () =>
+            Promise.resolve(
+              `<html><input name="__RequestVerificationToken" value="CfDJ8_TOKEN_ABC" /><form action="/Authenticate/Signout"></form></html>`
+            ),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        headers: { getSetCookie: () => [] },
+        text: () => Promise.resolve(resultsHtmlFixture()),
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const provider = new PartoPortalProvider({ cookie: 'sid=abc' });
+    const outcome = await provider.searchRoundTrip({
+      origin: 'THR',
+      destination: 'MHD',
+      departureDate: '2026-10-01',
+      returnDate: '2026-10-08',
+    });
+
+    expect(outcome.offers).toHaveLength(2);
+    const postBody = new URLSearchParams(calls[1].body);
+    expect(postBody.get('FlightType')).toBe('TwoWay');
+    expect(postBody.get('DepartureDateTime')).toBe('2026-10-01');
+    expect(postBody.get('DepartureDateTimeR')).toBe('2026-10-08');
+    expect(postBody.get('AdultCount')).toBe('1');
+  });
+
+  it('heartbeat reports OK on a healthy dashboard and EXPIRED on login redirect', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: { getSetCookie: () => [] },
+        text: () => Promise.resolve('<html><body>Dashboard — خوش آمدید</body></html>'),
+      })
+    );
+    const provider = new PartoPortalProvider({ cookie: 'sid=abc' });
+    await expect(provider.heartbeat()).resolves.toBe('OK');
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: false, status: 302, headers: { getSetCookie: () => [] }, text: () => Promise.resolve('') })
+    );
+    await expect(provider.heartbeat()).resolves.toBe('EXPIRED');
   });
 });

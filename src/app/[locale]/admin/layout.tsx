@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { safeAuth } from '@/auth';
 import { hasErpRole, getTenantAuthContext } from '@/domains/identity/permission-service';
 import { AdminShell } from '@/components/admin/AdminShell';
+import { AdminIdleLock } from '@/components/admin/AdminIdleLock';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
@@ -28,8 +29,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <AdminShell userName={session.user.name || 'Admin'} role={role} permissions={permissions}>
-      {children}
-    </AdminShell>
+    <>
+      <AdminIdleLock />
+      <AdminShell userName={session.user.name || 'Admin'} role={role} permissions={permissions}>
+        {children}
+      </AdminShell>
+    </>
   );
 }

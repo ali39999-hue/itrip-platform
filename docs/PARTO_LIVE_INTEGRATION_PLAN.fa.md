@@ -185,7 +185,16 @@ node scripts/parto_probe.mjs          # الان: Err0102001 (creds الکی) �
    - اسکریپت کوکی‌های معتبر سشن را در فایل محلی `.parto-portal-state.json` (که در `.gitignore` محافظت شده) ذخیره می‌کند و مقدار `PARTO_PORTAL_COOKIE` را هم چاپ می‌کند.
 3. **نگهداری سشن (Keep-Alive)**:
    - درخواست‌های دوره‌ای ورکر ساعتی (`flight-cache-worker.ts`) سشن اسلایدینگ پارتو را فعال و زنده نگه می‌دارند.
-   - در صورت انقضای سشن، خطای تمیز `PartoPortalSessionExpiredError` ثبت شده و در Exception Center قرار می‌گیرد تا ادمین مجدداً با یک کلیک سشن را تمدید کند.
+   - **ورکر Keep-Alive اختصاصی (2026-09-13)**: `PartoSessionHeartbeatWorker` در فرآیند `npm run worker` (و در مسیر cron `/api/cron/flight-refresh`) هر `PARTO_PORTAL_KEEPALIVE_MINUTES` دقیقه (پیش‌فرض ۱۰) با یک GET سبک به داشبورد سشن را تمدید می‌کند — تا در ساعات بی‌ترافیک سشن از انقضای اسلایدینگ نمیرد. غیرفعال‌سازی با `PARTO_PORTAL_KEEPALIVE=off`؛ وقتی منبع فعال API رسمی باشد خودکار skip می‌شود.
+   - در صورت انقضای سشن، خطای تمیز `PartoPortalSessionExpiredError` ثبت شده و **`PortalSessionMonitor`** به‌صورت خودکار یک رکورد `SUPPLIER_SESSION_EXPIRED` (شدت HIGH، SLA ۱۲۰ دقیقه) در Exception Center می‌سازد و یک پیام Bale به ادمین‌های دارای `baleId` می‌فرستد (فقط در لحظه‌ی آغاز رخداد — بدون اسپم). با اولین رفرش/پینگ موفق، رکورد به‌صورت خودکار RESOLVED می‌شود.
+4. **پرواز رفت‌وبرگشت (TwoWay)**:
+   - `PartoPortalProvider.searchRoundTrip()` فرم `FlightType=TwoWay` با `DepartureDateTimeR` را ارسال می‌کند؛ موتور JSON نتایج چندسگمنتی را به ردیف‌های per-leg (با نشانگر `leg: outbound/return` و مرجع `#out/#ret`) تفکیک می‌کند. قیمتِ سفر (journey fare) روی هر دو ردیف تکرار می‌شود و نباید جمع شود.
+   - کالیبراسیون زنده با `node scripts/parto-portal-capture.mjs probe THR MHD 2026-10-01 2026-10-08`.
+5. **کالیبراسیون زنده**:
+   - تست‌ها روی فیگچر شبیه‌سازی‌شده هستند؛ پس از هر لاگین، با `probe` هم HTML و هم JSON ساختاریافته‌ی `/SearchResultData/{id}` در `api_hunt/portal_bundles` ذخیره می‌شود تا پارسرها با پاسخ واقعی تطبیق داده شوند (به‌ویژه نام فیلدهای فرم TwoWay و واحد قیمت — `PARTO_PORTAL_PRICE_UNIT`).
+
+### نکته‌ی امنیتی (2026-09-13):
+- اعتبارنامه‌ی اگنسی که قبلاً به‌صورت هاردکد در `parto-portal-capture.mjs` بود حذف شد (env-only). چون آن نسخه در تاریخچه‌ی git عمومی موجود است، **تغییر پسورد پنل پارتو از طریق پشتیبانی/پنل الزامی است** (الگوی درس SMSWBS).
 
 ### تنظیمات محیطی اسکرپ در `.env`:
 ```bash

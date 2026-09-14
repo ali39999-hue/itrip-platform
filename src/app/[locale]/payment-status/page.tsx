@@ -1,11 +1,13 @@
 'use client';
 
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, Clock, Wallet, RefreshCcw, Ticket, Headset, Copy, Check, type LucideIcon } from 'lucide-react';
 import { num } from '@/lib/format';
+import { formatTomanHuman } from '@/lib/iranian-commerce';
+import { translateGatewayError } from '@/domains/payments/gateway-errors';
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
 import { useHydration } from '@/hooks/useHydration';
@@ -108,10 +110,70 @@ function PaymentStatusContent() {
   const displayAmount = queryAmount !== null && !Number.isNaN(queryAmount) ? queryAmount : null;
   const displayCurrency = searchParams.get('currency') || 'IRR';
 
+  // PAY-UX: gateway callbacks may carry an error code (`?code=…`). When the
+  // final state is failed, translate it into actionable localized guidance —
+  // unknown codes silently fall back to the generic failed description.
+  const gatewayErrorCode = searchParams.get('code') || searchParams.get('reason') || '';
+  const gatewayReasonText =
+    state === 'failed' ? translateGatewayError(gatewayErrorCode, locale) : null;
+
+  // Stored payment amounts are Toman carried under the IRR label (eCardo IRT
+  // normalization), so the Persian human readout is valid for fa users.
+  const humanAmount =
+    displayAmount !== null && locale === 'fa' && displayCurrency === 'IRR'
+      ? formatTomanHuman(displayAmount)
+      : null;
+
   const isWalletTopUp =
     queryRef.startsWith('wallet_topup_') ||
     (searchParams.get('bookingId') || '').startsWith('wallet_topup_') ||
     queryRef.startsWith('wlt_');
+
+  // Live settlement polling: the gateway browser return is UX-only — the
+  // HMAC-signed IPN webhook is the capture authority. While the page shows
+  // "processing", poll the read-only probe until the DB flips to SUCCESS/FAILED
+  // so the user is not stuck on a static screen (voice-note bug: «دیتا خوب
+  // برنگشته» — they had to refresh manually to see the top-up settle).
+  const pollRef = useRef(searchParams.get('bookingId') || '');
+  useEffect(() => {
+    if (state !== 'processing') return;
+    const ref = queryRef;
+    const bookingId = pollRef.current;
+    if (!ref && !bookingId) return;
+
+    let alive = true;
+    let attempts = 0;
+    const tick = async () => {
+      attempts += 1;
+      if (attempts > 48) return; // give up silently after ~4 minutes
+      try {
+        const qs = new URLSearchParams();
+        if (ref) qs.set('ref', ref);
+        if (bookingId) qs.set('bookingId', bookingId);
+        const res = await fetch(`/api/payments/status?${qs.toString()}`, { cache: 'no-store' });
+        const data = await res.json().catch(() => null);
+        if (!alive || !data?.success) return;
+        if (data.status === 'SUCCESS') {
+          const next = new URLSearchParams(window.location.search);
+          next.set('status', 'confirmed');
+          router.replace(`/payment-status?${next.toString()}`);
+        } else if (data.status === 'FAILED') {
+          const next = new URLSearchParams(window.location.search);
+          next.set('status', 'failed');
+          router.replace(`/payment-status?${next.toString()}`);
+        }
+      } catch {
+        // transient network error — keep polling
+      }
+    };
+
+    const interval = setInterval(tick, 5000);
+    tick();
+    return () => {
+      alive = false;
+      clearInterval(interval);
+    };
+  }, [state, queryRef, router]);
 
   const displayTitle = queryTitle
     ? queryTitle
@@ -171,9 +233,18 @@ function PaymentStatusContent() {
           <h1 className="text-2xl md:text-3xl font-black text-ink mb-3 leading-tight tracking-tight">
             {s.title}
           </h1>
-          <p className="text-sub font-bold text-sm md:text-base max-w-[480px] leading-relaxed mb-8">
+          <p className={`text-sub font-bold text-sm md:text-base max-w-[480px] leading-relaxed ${gatewayReasonText ? 'mb-4' : 'mb-8'}`}>
             {s.desc}
           </p>
+
+          {gatewayReasonText && (
+            <div
+              role="status"
+              className="mb-8 w-full max-w-[480px] rounded-2xl border border-rose-warm/30 bg-rose-warm/10 px-5 py-4"
+            >
+              <p className="text-xs font-bold leading-relaxed text-rose-warm">{gatewayReasonText}</p>
+            </div>
+          )}
 
           {/* Transaction Summary Box */}
           <div className="w-full bg-soft/60 rounded-2xl p-6 border border-line/60 flex flex-col gap-4 text-start mb-8">
@@ -202,16 +273,21 @@ function PaymentStatusContent() {
             </div>
 
             <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-sub">{lt(locale, { fa: 'مبلغ پرداختی', en: 'Paid Amount', ar: 'المبلغ المدفوع', zh: '支付金额', ru: 'Сумма оплаты' })}</span>
-              <span className="text-lg font-black text-price font-price num">
-                {displayAmount !== null ? (
-                  <>
-                    {num(displayAmount, locale)} <span className="text-xs font-bold text-sub">{displayCurrency}</span>
-                  </>
-                ) : (
-                  '—'
+              <span className="text-xs font-bold text-sub">{lt(locale, { fa: 'مبلغ پرداختی', en: 'Paid Amount', ar: 'المبلغ المدفوع', zh: '支付金额', ru: 'Сумما оплаты' })}</span>
+              <div className="flex flex-col items-end gap-1">
+                <span className="text-lg font-black text-price font-price num">
+                  {displayAmount !== null ? (
+                    <>
+                      {num(displayAmount, locale)} <span className="text-xs font-bold text-sub">{displayCurrency}</span>
+                    </>
+                  ) : (
+                    '—'
+                  )}
+                </span>
+                {humanAmount && (
+                  <span className="text-[11px] font-bold text-sub">{humanAmount}</span>
                 )}
-              </span>
+              </div>
             </div>
           </div>
 

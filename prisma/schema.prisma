@@ -1444,4 +1444,26 @@ model FlightRouteDemand {
   @@index([enabled, priority])
 }
 
+// Competitor price probe (best-price-guarantee support) — lowest observed
+// bookable adult fare per competitor for a route+departure. Gated by
+// COMPETITOR_PROBE_ENABLED and low-rate by design
+// (docs/SCRAPING_STATUS_AND_ROADMAP.fa.md).
+model CompetitorPriceSnapshot {
+  id              String   @id @default(cuid())
+  competitor      String   // ALIBABA, ...
+  routeKey        String   // "THR-MHD"
+  originCode      String
+  destinationCode String
+  departureDate   DateTime @db.Date
+  currency        String   @default("IRR")
+  minPrice        Decimal? @db.Decimal(18, 2) // cheapest bookable adult fare (IRR)
+  offersChecked   Int      @default(0)
+  cheapestFlight  String?
+  probedAt        DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([competitor, routeKey, departureDate])
+  @@index([routeKey, departureDate])
+}
+
 

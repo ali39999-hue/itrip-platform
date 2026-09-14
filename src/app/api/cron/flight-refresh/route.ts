@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { FlightCacheWorker } from '@/workers/flight-cache-worker';
+import { PartoSessionHeartbeatWorker } from '@/workers/parto-session-heartbeat-worker';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -18,7 +19,10 @@ export async function GET(request: NextRequest) {
     }
 
     const report = await FlightCacheWorker.runSweep('cron_route');
-    return NextResponse.json({ success: true, report });
+    // Cron-driven deployments have no dedicated worker process — use this
+    // invocation as the portal session keep-alive ping too (self-gating).
+    const portalHeartbeat = await PartoSessionHeartbeatWorker.runPing('cron_route').catch(() => null);
+    return NextResponse.json({ success: true, report, portalHeartbeat });
   } catch (error: unknown) {
     console.error('Error in /api/cron/flight-refresh:', error);
     return NextResponse.json(

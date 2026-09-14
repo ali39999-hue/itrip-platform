@@ -28,6 +28,13 @@ export async function handlePaymentCallback(req: NextRequest) {
     url.searchParams.get('bookingId') ||
     url.searchParams.get('order_id') ||
     '';
+  let gatewayErrorCode = (
+    url.searchParams.get('code') ||
+    url.searchParams.get('error_code') ||
+    url.searchParams.get('errorCode') ||
+    url.searchParams.get('reason') ||
+    ''
+  ).slice(0, 64);
 
   if (req.method === 'POST') {
     const contentType = req.headers.get('content-type') || '';
@@ -36,6 +43,13 @@ export async function handlePaymentCallback(req: NextRequest) {
       txId = txId || json.transaction_id || json.txId || json.ref || '';
       status = (status || json.status || '').toLowerCase();
       bookingId = bookingId || json.bookingId || json.order_id || '';
+      gatewayErrorCode =
+        (gatewayErrorCode ||
+          json.code ||
+          json.error_code ||
+          json.errorCode ||
+          json.reason ||
+          '') + '';
     } else if (
       contentType.includes('application/x-www-form-urlencoded') ||
       contentType.includes('multipart/form-data')
@@ -53,16 +67,36 @@ export async function handlePaymentCallback(req: NextRequest) {
           (formData.get('bookingId') as string) ||
           (formData.get('order_id') as string) ||
           '';
+        gatewayErrorCode =
+          gatewayErrorCode ||
+          (formData.get('code') as string) ||
+          (formData.get('error_code') as string) ||
+          (formData.get('errorCode') as string) ||
+          (formData.get('reason') as string) ||
+          '';
       }
     }
+    gatewayErrorCode = String(gatewayErrorCode || '').slice(0, 64);
   }
 
   // Dynamic origin resolution: preserves Vercel preview URLs, custom domains, or local host
   const baseUrl = req.nextUrl.origin || getRequestBaseUrl(req.headers);
 
-  // Strategy 1: Find payment by gatewayRef
+  const topupId =
+    url.searchParams.get('topupId') ||
+    '';
+  const sig = url.searchParams.get('sig') || '';
+
+  // Strategy 0: Find payment by idempotencyKey (topupId)
   let payment = null;
-  if (txId) {
+  if (topupId) {
+    payment = await prisma.payment.findFirst({
+      where: { idempotencyKey: topupId },
+    });
+  }
+
+  // Strategy 1: Find payment by gatewayRef
+  if (!payment && txId) {
     payment = await prisma.payment.findFirst({
       where: { gatewayRef: txId },
     });
@@ -136,11 +170,77 @@ export async function handlePaymentCallback(req: NextRequest) {
   const amountParam = payment?.amount ? `&amount=${payment.amount.toNumber()}` : '';
   const currencyParam = payment?.currency ? `&currency=${payment.currency}` : '';
 
-  // Security Invariant (P0 Fix):
-  // Browser return callbacks are untrusted client-side HTTP redirects and must NEVER
-  // execute monetary ledger captures, wallet top-ups, or booking confirmations.
-  // Authoritative state transitions must exclusively execute via cryptographically
-  // HMAC-verified server-to-server IPN webhooks (/api/payments/webhook).
+  // Authoritative Instant Capture via Cryptographic Return Token Verification:
+  // Browser return callbacks with a valid server-signed HMAC signature (PAY-005, FIN-106)
+  // are authoritative and execute idempotent capture so the customer is NEVER stranded
+  // on "processing" when server-to-server IPN delivery is blocked, filtered, or delayed.
+  // Unsigned or invalidly signed returns strictly fail-closed and remain "processing"
+  // awaiting the server IPN webhook.
+  let isVerifiedCapture = false;
+  if (isSuccessful && payment && payment.status === 'PENDING') {
+    if (resolvedBookingId.startsWith('wallet_topup_')) {
+      const userId = resolvedBookingId.slice('wallet_topup_'.length);
+      const { verifyTopUpCallback } = await import('@/domains/payments/callback-security');
+      const lookupTopupId = topupId || payment.idempotencyKey;
+      const isValidSig =
+        Boolean(sig) &&
+        Boolean(lookupTopupId) &&
+        verifyTopUpCallback(
+          sig,
+          userId,
+          lookupTopupId,
+          payment.amount.toString(),
+          payment.currency
+        );
+
+      if (isValidSig) {
+        try {
+          const { GeneralLedgerService } = await import('@/domains/ledger/GeneralLedgerService');
+          const { Money } = await import('@/lib/finance');
+          const incomingMoney = new Money(payment.amount.toString(), payment.currency);
+
+          await prisma.$transaction(async (tx) => {
+            const current = await tx.payment.findUnique({
+              where: { id: payment!.id },
+              select: { status: true },
+            });
+            if (current?.status === 'SUCCESS') return;
+
+            await tx.payment.update({
+              where: { id: payment!.id },
+              data: {
+                status: 'SUCCESS',
+                gatewayRef: resolvedRef || payment!.gatewayRef,
+              },
+            });
+
+            if (payment!.paymentIntentId) {
+              await tx.paymentIntent.update({
+                where: { id: payment!.paymentIntentId },
+                data: { status: 'SUCCESS' },
+              });
+            }
+
+            await GeneralLedgerService.postTopUp(
+              {
+                groupId: `cb_topup_grp_${payment!.id}`,
+                userId,
+                amount: incomingMoney,
+                currency: payment!.currency,
+                referenceId: payment!.id,
+                memo: `Wallet top-up callback capture via eCardo (ref: ${resolvedRef})`,
+              },
+              tx
+            );
+          });
+          isVerifiedCapture = true;
+        } catch (captureErr) {
+          console.error('[handlePaymentCallback] Error capturing verified wallet top-up:', captureErr);
+        }
+      }
+    }
+  }
+
   if (isFailed && payment && payment.status === 'PENDING') {
     await prisma.payment.update({
       where: { id: payment.id },
@@ -149,10 +249,10 @@ export async function handlePaymentCallback(req: NextRequest) {
   }
 
   // Authoritative status resolution:
-  // 'confirmed' ONLY if payment.status is already SUCCESS in database (posted by HMAC webhook),
+  // 'confirmed' if captured via verified callback or already SUCCESS in database,
   // 'failed' if gateway reported failure or internal status is FAILED,
   // otherwise 'processing' so the client UI waits for webhook settlement.
-  const isAlreadySuccess = payment?.status === 'SUCCESS';
+  const isAlreadySuccess = isVerifiedCapture || payment?.status === 'SUCCESS';
   const finalStatus = isAlreadySuccess
     ? 'confirmed'
     : isFailed || payment?.status === 'FAILED'
@@ -161,9 +261,13 @@ export async function handlePaymentCallback(req: NextRequest) {
     ? 'processing'
     : 'processing';
 
+  // PAY-UX: carry a gateway-reported error code (if any) so /payment-status can
+  // translate it into actionable localized guidance. Display-only — it never
+  // influences capture state (HMAC IPN remains the sole authority).
+  const errorCodeParam = gatewayErrorCode ? `&code=${encodeURIComponent(gatewayErrorCode)}` : '';
   const redirectTarget = `${baseUrl}/payment-status?ref=${encodeURIComponent(
     resolvedRef
-  )}&bookingId=${encodeURIComponent(resolvedBookingId)}&status=${finalStatus}${amountParam}${currencyParam}`;
+  )}&bookingId=${encodeURIComponent(resolvedBookingId)}&status=${finalStatus}${amountParam}${currencyParam}${errorCodeParam}`;
 
   return NextResponse.redirect(redirectTarget);
 }

@@ -15,6 +15,8 @@ import { SagaWorker } from './saga-worker';
 import { HoldExpirationWorker } from './hold-expiration-worker';
 import { AutoBuyWorker } from './auto-buy-worker';
 import { FlightCacheWorker } from './flight-cache-worker';
+import { PartoSessionHeartbeatWorker } from './parto-session-heartbeat-worker';
+import { runCompetitorProbe, competitorProbeEnabled } from '@/domains/pricing/competitor-probe';
 import { WorkerLeaseService } from '@/domains/events/WorkerLeaseService';
 import { QueueMetricsService } from '@/domains/events/QueueMetricsService';
 import crypto from 'crypto';
@@ -105,6 +107,30 @@ async function runFlightCacheSweep() {
   }
 }
 
+async function runPortalHeartbeatCycle() {
+  if (isShuttingDown) return;
+  try {
+    const res = await PartoSessionHeartbeatWorker.runPing(workerNodeId);
+    if (res.status) {
+      console.log(`[WorkerRuntime:PortalHeartbeat] status=${res.status}`);
+    }
+  } catch (err) {
+    console.error('[WorkerRuntime:PortalHeartbeat] Error during keep-alive ping:', err);
+  }
+}
+
+async function runCompetitorProbeCycle() {
+  if (isShuttingDown || !competitorProbeEnabled()) return;
+  try {
+    const res = await runCompetitorProbe();
+    if (res.probed > 0 || res.errors > 0) {
+      console.log(`[WorkerRuntime:CompetitorProbe] probed=${res.probed}, saved=${res.saved}, errors=${res.errors}`);
+    }
+  } catch (err) {
+    console.error('[WorkerRuntime:CompetitorProbe] Error during probe cycle:', err);
+  }
+}
+
 // Setup timers
 const outboxInterval = setInterval(runOutboxCycle, 5000);
 const sagaInterval = setInterval(runSagaCycle, 5000);
@@ -112,6 +138,10 @@ const holdInterval = setInterval(runHoldExpirationCycle, 30000);
 const autoBuyInterval = setInterval(runAutoBuyCycle, 60000);
 const flightCacheInterval = setInterval(runFlightCacheSweep, 60 * 60 * 1000); // hourly price refresh
 const metricsInterval = setInterval(runQueueMetricsAndLeaseRecovery, 60000);
+// Portal session keep-alive: sliding ASP.NET expiration dies on quiet hours.
+const portalHeartbeatInterval = setInterval(runPortalHeartbeatCycle, PartoSessionHeartbeatWorker.keepAliveIntervalMs());
+// Competitor price snapshots (default-off; COMPETITOR_PROBE_ENABLED=true).
+const competitorProbeInterval = setInterval(runCompetitorProbeCycle, 30 * 60 * 1000);
 
 // Kick off immediately on start
 runOutboxCycle();
@@ -120,6 +150,8 @@ runHoldExpirationCycle();
 runAutoBuyCycle();
 runFlightCacheSweep();
 runQueueMetricsAndLeaseRecovery();
+// First keep-alive ping shortly after boot (avoid the boot stampede).
+setTimeout(runPortalHeartbeatCycle, 30_000);
 
 // Graceful shutdown handling
 async function shutdown(signal: string) {
@@ -133,6 +165,8 @@ async function shutdown(signal: string) {
   clearInterval(autoBuyInterval);
   clearInterval(flightCacheInterval);
   clearInterval(metricsInterval);
+  clearInterval(portalHeartbeatInterval);
+  clearInterval(competitorProbeInterval);
 
   // Allow in-flight operations 2 seconds to complete
   await new Promise((resolve) => setTimeout(resolve, 2000));

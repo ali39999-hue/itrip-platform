@@ -4,6 +4,14 @@
   "regions": ["fra1"],
   "crons": [
     {
+      "path": "/api/cron/async-engine",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/flight-refresh",
+      "schedule": "0 * * * *"
+    },
+    {
       "path": "/api/cron/auto-buy",
       "schedule": "0 0 * * *"
     }

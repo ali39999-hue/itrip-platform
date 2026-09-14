@@ -139,7 +139,7 @@ export function ThemeToggle() {
         aria-label={ariaLabel}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="w-8 h-8 sm:w-9 sm:h-9 grid place-items-center rounded-xl text-ink hover:bg-soft active:scale-95 transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer shrink-0"
+        className="h-11 w-11 grid place-items-center rounded-xl text-ink hover:bg-soft active:scale-95 transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer shrink-0"
       >
         <CurrentIcon size={19} aria-hidden="true" className={mounted ? '' : 'opacity-0'} />
       </button>

@@ -1,4 +1,7 @@
 # iTRIP / FIRUZO — SYSTEM ARCHITECTURE SPECIFICATION
+
+> 📘 **مرجع رسمی و به‌روز معماری:** [docs/ARCHITECTURE.fa.md](docs/ARCHITECTURE.fa.md) — این فایل به‌عنوان spec تاریخی هستهٔ تراکنشی (v3.0) حفظ شده و با v1.7.x به‌روزرسانی نشده است. برای ساختار فعلی، قانون لایه‌بندی، تأمین‌کنندگان و ADRها به سند مرجع رجوع کنید.
+
 **Version:** 3.0 (Production Hardened)  
 **Architectural Style:** Modular Monolith with Outbox & Saga Orchestration  
 **Primary Language & Framework:** TypeScript 5, Next.js 16 (App Router), React 19  

@@ -1,7 +1,10 @@
 {
   "name": "itrip-platform",
-  "version": "1.7.5",
+  "version": "1.7.6",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev",
     "prebuild": "node scripts/auto-setup.mjs",

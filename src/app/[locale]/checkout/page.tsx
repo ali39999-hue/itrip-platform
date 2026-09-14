@@ -33,6 +33,7 @@ import { IssuingModal } from '@/components/checkout/IssuingModal';
 import { SuccessConfirmation } from '@/components/checkout/SuccessConfirmation';
 import { StickyMobileBar } from '@/components/checkout/StickyMobileBar';
 import { trackFunnel } from '@/lib/analytics';
+import { translateGatewayError } from '@/domains/payments/gateway-errors';
 import { PassportValidityGuard } from '@/domains/identity/PassportValidityGuard';
 import { getMyTravelerProfilesAction, saveTravelerProfileAction, saveTravelDocumentAction } from '@/actions/travelers';
 import { EnrichedTravelerProfile } from '@/domains/identity/TravelerProfileService';
@@ -635,11 +636,30 @@ export default function CheckoutPage() {
           window.location.href = initRes.redirectUrl;
           return;
         }
-        setError(initRes.error || 'Failed to initialize Ecardo payment session');
+        setError(
+          translateGatewayError(initRes.error, locale) ??
+            lt(locale, {
+              fa: 'راه‌اندازی درگاه پرداخت ناموفق بود؛ دوباره تلاش کنید.',
+              en: 'Failed to initialize the payment session. Please retry.',
+              ar: 'فشل تهيئة بوابة الدفع. حاول مرة أخرى.',
+              zh: '支付会话初始化失败，请重试。',
+              ru: 'Не удалось инициализировать платёжную сессию. Повторите попытку.',
+            })
+        );
         setPhase('payment');
         return;
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Ecardo gateway error');
+        const rawGatewayError = err instanceof Error ? err.message : null;
+        setError(
+          translateGatewayError(rawGatewayError, locale) ??
+            lt(locale, {
+              fa: 'خطای درگاه پرداخت؛ دوباره تلاش کنید.',
+              en: 'Payment gateway error. Please retry.',
+              ar: 'خطأ في بوابة الدفع. حاول مرة أخرى.',
+              zh: '支付网关错误，请重试。',
+              ru: 'Ошибка платёжного шлюза. Повторите попытку.',
+            })
+        );
         setPhase('payment');
         return;
       }
@@ -682,7 +702,12 @@ export default function CheckoutPage() {
           lt(locale, { fa: 'ابتدا اطلاعات مسافر را ثبت کنید.', en: 'Submit passenger details first.', ar: 'أدخل بيانات المسافر أولاً.', zh: '请先提交乘客信息。', ru: 'Сначала укажите данные пассажира.' })
         );
       } else {
-        setError((paymentRes as { error?: string }).error || 'Payment failed');
+        const rawPaymentError = (paymentRes as { error?: string }).error;
+        setError(
+          translateGatewayError(rawPaymentError, locale) ??
+            translateGatewayError('Payment failed', locale) ??
+            'Payment failed'
+        );
       }
       setPhase('payment');
       return;

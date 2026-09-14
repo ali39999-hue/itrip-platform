@@ -26,6 +26,7 @@ import {
   ReceiptText,
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
+import { num } from '@/lib/format';
 import { CURRENCY_TO_TOMAN } from '@/lib/money';
 import { chargeContext } from '@/lib/money';
 import { useCountryStore } from '@/stores/country-store';
@@ -277,13 +278,13 @@ export default function WalletPage() {
               <span className="text-[10.5px] font-bold text-sub block leading-none mb-1">
                 {lt(locale, { fa: 'در انتظار تسویه', en: 'Pending', ar: 'معلق', zh: '待结算', ru: 'В обработке' })}
               </span>
-              <span className="text-sm sm:text-base font-black text-sub font-mono">۰</span>
+              <span className="text-sm sm:text-base font-black text-sub font-mono">{num(0, locale)}</span>
             </div>
             <div className="p-1">
               <span className="text-[10.5px] font-bold text-sub block leading-none mb-1">
                 {lt(locale, { fa: 'مسدود / قفل', en: 'Locked', ar: 'محجوز', zh: '冻结', ru: 'Заблокировано' })}
               </span>
-              <span className="text-sm sm:text-base font-black text-sub font-mono">۰</span>
+              <span className="text-sm sm:text-base font-black text-sub font-mono">{num(0, locale)}</span>
             </div>
           </div>
 
@@ -466,7 +467,7 @@ export default function WalletPage() {
                             }`}
                           >
                             <CurIcon size={15} aria-hidden="true" />
-                            <span className="text-[11px] sm:text-xs leading-tight text-center break-words">{c === 'IRR' ? 'تومان (IRR)' : c}</span>
+                            <span className="text-[11px] sm:text-xs leading-tight text-center break-words">{lt(locale, { fa: 'تومان (IRR)', en: 'Toman (IRR)', ar: 'تومان (IRR)', zh: '托曼 (IRR)', ru: 'Туман (IRR)' })}</span>
                           </button>
                         );
                       })}
@@ -800,7 +801,7 @@ export default function WalletPage() {
                     </div>
 
                     <div className="text-end ps-12 sm:ps-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-center">
-                      <span className="text-[11px] text-sub sm:hidden">مبلغ:</span>
+                      <span className="text-[11px] text-sub sm:hidden">{lt(locale, { fa: 'مبلغ:', en: 'Amount:', ar: 'المبلغ:', zh: '金额:', ru: 'Сумма:' })}</span>
                       <span
                         className={`font-black text-sm sm:text-base font-price num ${
                           tx.direction === 'CREDIT' ? 'text-success' : 'text-rose-warm'

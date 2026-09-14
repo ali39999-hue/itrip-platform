@@ -23,7 +23,20 @@ const hostDomain =
 console.log(`• Environment: ${isVercel ? 'Vercel Serverless' : (process.env.NODE_ENV || 'server')}`);
 console.log(`• Detected Host Domain: ${hostDomain}`);
 
-// 2. Generate Prisma Client
+// 2. Secret & Configuration Diagnostics
+if (!process.env.AUTH_SECRET && !process.env.NEXTAUTH_SECRET) {
+  console.warn('  ⚠️ AUTH_SECRET or NEXTAUTH_SECRET is not set. NextAuth may fail in production.');
+} else {
+  console.log('  ✓ Auth secret detected.');
+}
+
+if (process.env.ECARDO_PUBLIC_KEY) {
+  console.log('  ✓ Ecardo Payment Gateway credentials detected.');
+} else {
+  console.log('  ℹ Ecardo Payment Gateway credentials unset (wallet-only or demo fallback).');
+}
+
+// 3. Generate Prisma Client
 try {
   console.log('• Ensuring Prisma Client is generated...');
   execSync('npx prisma generate', { stdio: 'inherit' });
@@ -32,7 +45,7 @@ try {
   console.warn('  ⚠️ Prisma generate encountered a warning:', err.message);
 }
 
-// 3. Automated Database Migrations
+// 4. Automated Database Migrations
 if (process.env.DATABASE_URL) {
   console.log('• DATABASE_URL detected. Checking and applying database migrations...');
   try {

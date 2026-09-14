@@ -61,7 +61,7 @@ export function LocaleSwitcher() {
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-label={t('language')}
-        className="min-h-[32px] inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] sm:text-[12px] font-bold text-ink bg-white/65 dark:bg-white/[0.07] backdrop-blur-md hover:bg-white/85 dark:hover:bg-white/[0.12] transition border border-white/50 dark:border-white/10 shadow-[0_1px_2px_rgba(5,63,62,0.06)] focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer"
+        className="min-h-[44px] inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] sm:text-[12px] font-bold text-ink bg-white/65 dark:bg-white/[0.07] backdrop-blur-md hover:bg-white/85 dark:hover:bg-white/[0.12] transition border border-white/50 dark:border-white/10 shadow-[0_1px_2px_rgba(5,63,62,0.06)] focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer"
       >
         <Globe size={13} className="text-sub shrink-0" />
         <span className="truncate max-w-[70px] sm:max-w-none tracking-tight">{cur.label}</span>
