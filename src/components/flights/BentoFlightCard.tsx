@@ -171,10 +171,13 @@ export function BentoFlightCard({
             </div>
           </div>
 
-          {/* Mobile Bottom Row: Price & Action CTA (FlyToday layout) */}
-          <div className="pt-2.5 border-t border-slate-100 dark:border-line/70 flex items-center justify-between gap-3">
-            {/* Left: Baggage, details toggle & compare */}
-            <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-sub flex-wrap">
+          {/* Mobile Bottom Section (FlyToday layout): meta chips wrap on their
+              own row; price + CTA get a dedicated row so the CTA is never
+              squeezed out of the card edge. Price sits at the inline-start
+              (راست در RTL), CTA at the inline-end. */}
+          <div className="pt-2.5 border-t border-slate-100 dark:border-line/70 flex flex-col gap-2">
+            {/* Meta chips: baggage, details, compare, refund */}
+            <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-sub flex-wrap">
               <span className="flex items-center gap-1 font-bold text-[11px]">
                 <Briefcase size={12} className="text-brand dark:text-mint-bright" />
                 {flight.baggage}
@@ -221,19 +224,17 @@ export function BentoFlightCard({
               )}
             </div>
 
-            {/* Right: Price & CTA Button */}
-            <div className="flex items-center gap-2.5">
-              <div className="text-end flex flex-col items-end">
-                <div className="flex items-baseline gap-1" dir="ltr">
-                  <span className="text-xl font-black tracking-tight text-[#9C6209] dark:text-amber-400 leading-none tabular-nums font-mono">
-                    {formatAmount(priceInToman)}
-                  </span>
-                </div>
+            {/* Price + CTA row — single line, never wrapped or clipped */}
+            <div className="flex items-center justify-between gap-3">
+              <div dir="ltr" className="min-w-0 text-start">
+                <span className="text-xl font-black tracking-tight text-[#9C6209] dark:text-amber-400 leading-none tabular-nums font-mono whitespace-nowrap">
+                  {formatAmount(priceInToman)}
+                </span>
               </div>
               <button
                 type="button"
                 onClick={onSelect}
-                className="min-h-11 px-4.5 rounded-xl bg-action hover:bg-action-hover active:bg-action-active text-slate-950 font-black text-xs sm:text-sm transition active:scale-95 shadow-[0_4px_14px_rgba(240,166,42,0.4)] cursor-pointer flex items-center justify-center shrink-0"
+                className="min-h-11 px-5 rounded-xl bg-action hover:bg-action-hover active:bg-action-active text-slate-950 font-black text-xs sm:text-sm transition active:scale-95 shadow-[0_4px_14px_rgba(240,166,42,0.4)] cursor-pointer flex items-center justify-center shrink-0 whitespace-nowrap"
               >
                 {t('selectTicket')}
               </button>
