@@ -216,25 +216,44 @@ describe('Real Suppliers & Integration Contract Suite (SUP-101 to SUP-109)', () 
   });
 
   it('SUP-101 & SUP-102: Adapters fail closed in production when credentials are missing', async () => {
+    // Snapshot & clear every credential variable the adapters actually read.
+    // Clearing only the legacy *_API_KEY names is not enough: on machines whose
+    // local .env carries real PARTO_CRS_* credentials the adapters would go
+    // live instead of failing closed, making this suite environment-dependent.
+    const envKeys = [
+      'NODE_ENV',
+      'PARTO_CRS_OFFICE_ID',
+      'PARTO_CRS_USERNAME',
+      'PARTO_CRS_PASSWORD',
+      'EGHAMAT_API_KEY',
+    ];
+    const savedEnv: Record<string, string | undefined> = {};
+    for (const key of envKeys) savedEnv[key] = process.env[key];
+    for (const key of envKeys) delete process.env[key];
     (process.env as Record<string, string | undefined>).NODE_ENV = 'production';
-    delete process.env.PARTO_API_KEY;
-    delete process.env.EGHAMAT_API_KEY;
 
-    const flightAdapter = new PartoFlightSupplierAdapter();
-    await expect(flightAdapter.search({
-      origin: 'IKA',
-      destination: 'IST',
-      departureDate: '2026-10-15',
-      passengers: { adults: 1 },
-    })).rejects.toThrow('FAIL_CLOSED');
+    try {
+      const flightAdapter = new PartoFlightSupplierAdapter();
+      await expect(flightAdapter.search({
+        origin: 'IKA',
+        destination: 'IST',
+        departureDate: '2026-10-15',
+        passengers: { adults: 1 },
+      })).rejects.toThrow('FAIL_CLOSED');
 
-    const hotelAdapter = new EghamatHotelSupplierAdapter();
-    await expect(hotelAdapter.search({
-      city: 'Tehran',
-      checkIn: '2026-10-15',
-      checkOut: '2026-10-18',
-      rooms: 1,
-      guests: 2,
-    })).rejects.toThrow('FAIL_CLOSED');
+      const hotelAdapter = new EghamatHotelSupplierAdapter();
+      await expect(hotelAdapter.search({
+        city: 'Tehran',
+        checkIn: '2026-10-15',
+        checkOut: '2026-10-18',
+        rooms: 1,
+        guests: 2,
+      })).rejects.toThrow('FAIL_CLOSED');
+    } finally {
+      for (const key of envKeys) {
+        if (savedEnv[key] === undefined) delete process.env[key];
+        else process.env[key] = savedEnv[key];
+      }
+    }
   });
 });

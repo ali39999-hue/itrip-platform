@@ -84,3 +84,7 @@ login_preview*.png
 # Parto portal session (human-in-the-loop capture, never commit)  
 .parto-portal-state.json  
 .env*
+
+# Supplier portal capture bundles (local parser calibration artifacts)
+api_hunt/
+

@@ -10,6 +10,10 @@
     {
       "path": "/api/cron/auto-buy",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/flight-refresh",
+      "schedule": "0 * * * *"
     }
   ]
 }

@@ -108,7 +108,63 @@
 
 /* Latin numerals/labels inside RTL (fa/ar) locales — e.g. prices, phone numbers. */
 @utility font-en {
-  font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-jakarta), "FaNumFallback", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Fallback Faces: Persian/Arabic digits & separators —
+   When any element switches to a Latin/mono stack (Geist Mono, Jakarta) the
+   Persian digits produced by toLocaleString('fa-IR' → U+06F0-06F9 + U+066C ٬)
+   would otherwise fall back to a system serif and break the amount line
+   (the screenshot: ۳۳٬۸۸۰٬۰۰۰ IRR). These unicode-range faces inject
+   IRANYekanXFaNum glyphs for exactly those codepoints, so «همه اعداد
+   به‌صورت خودکار» FaNum — without touching Latin 0-9 / comma / dot. */
+@font-face {
+  font-family: 'FaNumFallback';
+  src: url('/fonts/iranyekan/IRANYekanXFaNum-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+06F0-06F9, U+0660-0669, U+066B-066C, U+060C;
+}
+@font-face {
+  font-family: 'FaNumFallback';
+  src: url('/fonts/iranyekan/IRANYekanXFaNum-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+06F0-06F9, U+0660-0669, U+066B-066C, U+060C;
+}
+@font-face {
+  font-family: 'FaNumFallback';
+  src: url('/fonts/iranyekan/IRANYekanXFaNum-DemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+06F0-06F9, U+0660-0669, U+066B-066C, U+060C;
+}
+@font-face {
+  font-family: 'FaNumFallback';
+  src: url('/fonts/iranyekan/IRANYekanXFaNum-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+06F0-06F9, U+0660-0669, U+066B-066C, U+060C;
+}
+@font-face {
+  font-family: 'FaNumFallback';
+  src: url('/fonts/iranyekan/IRANYekanXFaNum-Bold.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+06F0-06F9, U+0660-0669, U+066B-066C, U+060C;
+}
+@font-face {
+  font-family: 'FaNumFallback';
+  src: url('/fonts/iranyekan/IRANYekanXFaNum-Bold.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+06F0-06F9, U+0660-0669, U+066B-066C, U+060C;
 }
 
 /* Safe Area insets for notch, Dynamic Island, and home indicator */
@@ -168,11 +224,11 @@
   --color-foreground: var(--foreground);
   /* --font-app-sans / --font-app-heading are set per-locale on <html>
      ([locale]/layout.tsx); without a locale they fall back to the system stack. */
-  --font-sans: var(--font-app-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: var(--font-geist-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
-  /* قیمت و اعداد فارسی — فونت مونواسپیس گلیف ارقام فارسی (U+06F0–U+06F9) و
-     جداکننده «٬» ندارد و باعث fallback ناهماهنگ می‌شود؛ همیشه فونت خود سایت. */
-  --font-price: var(--font-app-sans), "IRANYekanXFaNum", "IRANYekanX", "Yekan Bakh", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-app-sans), "FaNumFallback", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), "FaNumFallback", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  /* قیمت و اعداد فارسی —IRANYekanXFaNum گلیف «٬» و ارقام فارسی را دارد؛
+     + FaNumFallback تضمین می‌کند حتی داخل font-mono هم همان گلیف بنشیند. */
+  --font-price: var(--font-app-sans), "IRANYekanXFaNum", "IRANYekanX", "FaNumFallback", "Yekan Bakh", ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-app-heading, var(--font-app-sans)), ui-sans-serif, system-ui, sans-serif;
   /* Elevation — سایه با ته‌مایه فیروزه deep rgba(5,63,62,…), نه خاکستری خام */
   --shadow-elev-1: 0 1px 2px rgba(5, 63, 62, 0.05), 0 4px 16px rgba(5, 63, 62, 0.06);
@@ -546,9 +602,38 @@ a.bg-brand, button.bg-brand, [role="button"].bg-brand, label.bg-brand {
     break-inside: avoid;
     margin-bottom: 1.5rem;
   }
-  /* اعداد و قیمت — هم‌ترازی عمودی ستون‌ها */
+  /* اعداد و قیمت — هم‌ترازی عمودی ستون‌ها + FaNum tabular
+     همهٔ اعداد (Persian fa-IR یا Latin) به‌صورت tabular تا ستون‌ها
+     نلرزد؛ FaNumFallback از @font-face با unicode-range گلیف فارسی/٬ را
+     حتی داخل font-mono/Geist هم پوشش می‌دهد. */
   .num {
     font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+  /* مبلغ‌ها: عدد + واحد پول کنارش یک‌دست FaNum و LTR isolate تا
+     «۳۳٬۸۸۰٬۰۰۰ IRR/تومان» داخل RTL نریزد و «٬» با همان فونت بنشیند.
+     روی ظرفِ مبلغ بگذارید (اسپن/دیوِ دورِ عدد+واحد). */
+  .price {
+    font-family: var(--font-price);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+  .price-fa {
+    font-family: var(--font-price);
+    font-variant-numeric: tabular-nums;
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+  /* همهٔ utilityهای عددی به‌صورت پیش‌فرض tabular —
+     تا «FLIGHT — ۱۴۰۵/۶/۲۲» یا «۳۳٬۸۸۰٬۰۰۰» حتی بدون کلاس price درست بایستد.
+     font-en/mono/price که ستون فونت را عوض می‌کنند هم FaNumFallback دارند
+     (فقط tabular؛ isolate جهت را فقط ظرفِ مبلغ/کد انجام می‌دهد تا متن
+     فارسیِ داخل mono ناخواسته LTR نشود). */
+  .font-mono, .font-price {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
   }
 }
 
