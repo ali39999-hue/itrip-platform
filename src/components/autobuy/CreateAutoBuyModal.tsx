@@ -299,7 +299,7 @@ export function CreateAutoBuyModal({
                 onChange={(e) => setMaxPrice(Number(e.target.value))}
                 min={1000000}
                 step={500000}
-                className="w-full h-11 px-3.5 rounded-xl bg-soft border border-line text-xs font-black text-price font-mono"
+                className="w-full h-11 px-3.5 rounded-xl bg-soft border border-line text-xs font-black text-price font-price"
                 required
               />
               <span className="text-[10.5px] font-bold text-sub block">

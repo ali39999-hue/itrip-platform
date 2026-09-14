@@ -313,7 +313,7 @@ export default function WalletPage() {
                 </span>
                 <Banknote size={18} className="opacity-80 shrink-0" aria-hidden="true" />
               </div>
-              <span className="text-2xl font-black font-mono num block mb-3">
+              <span className="text-2xl font-black font-price num block mb-3">
                 {wallet.IRR.toLocaleString(
                   lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })
                 )}
@@ -327,7 +327,7 @@ export default function WalletPage() {
                   <span className="text-xs font-black text-sub">USDT (Tether)</span>
                   <Coins size={18} className="text-sub shrink-0" aria-hidden="true" />
                 </div>
-                <span className="text-2xl font-black text-ink font-mono num block mb-1">
+                <span className="text-2xl font-black text-ink font-price num block mb-1">
                   ${wallet.USDT.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                 </span>
               </div>
@@ -343,7 +343,7 @@ export default function WalletPage() {
                   <span className="text-xs font-black text-sub">USD (US Dollar)</span>
                   <DollarSign size={18} className="text-sub shrink-0" aria-hidden="true" />
                 </div>
-                <span className="text-2xl font-black text-ink font-mono num block mb-1">
+                <span className="text-2xl font-black text-ink font-price num block mb-1">
                   ${(wallet.USD || 0).toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                 </span>
               </div>
@@ -358,7 +358,7 @@ export default function WalletPage() {
                   <span className="text-xs font-black text-sub">CNY (人民币 / 元)</span>
                   <CircleDollarSign size={18} className="text-sub shrink-0" aria-hidden="true" />
                 </div>
-                <span className="text-2xl font-black text-ink font-mono num block mb-1">
+                <span className="text-2xl font-black text-ink font-price num block mb-1">
                   ¥{(wallet.CNY || 0).toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                 </span>
               </div>
@@ -581,7 +581,7 @@ export default function WalletPage() {
                           ru: 'Итого к списанию в шлюзе:',
                         })}
                       </span>
-                      <span className="font-mono text-sm text-price">
+                      <span className="font-price text-sm text-price">
                         {(() => {
                           const amt = Number(depositAmount);
                           const fee = depositGateway === 'shetab' ? 0 : amt * countryCtx.gatewayFeeRate;
@@ -802,7 +802,7 @@ export default function WalletPage() {
                     <div className="text-end ps-12 sm:ps-0 flex sm:flex-col items-center sm:items-end justify-between sm:justify-center">
                       <span className="text-[11px] text-sub sm:hidden">مبلغ:</span>
                       <span
-                        className={`font-black text-sm sm:text-base font-mono num ${
+                        className={`font-black text-sm sm:text-base font-price num ${
                           tx.direction === 'CREDIT' ? 'text-success' : 'text-rose-warm'
                         }`}
                       >

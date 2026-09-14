@@ -271,7 +271,7 @@ export default function SupplierDetailClient({ supplier }: SupplierProps) {
               <tbody className="divide-y divide-line">
                 {supplier.healthRecords.map((record) => (
                   <tr key={record.id} className="hover:bg-soft/30 transition">
-                    <td className="px-4 py-3 font-mono text-xs">{new Date(record.windowStart).toLocaleString()}</td>
+                    <td className="px-4 py-3 font-price text-xs">{new Date(record.windowStart).toLocaleString()}</td>
                     <td className="px-4 py-3 font-bold text-success">{record.successRate.toFixed(1)}%</td>
                     <td className="px-4 py-3 font-bold text-destructive">{record.errorRate.toFixed(1)}%</td>
                     <td className="px-4 py-3 font-mono">{record.latencyP50}ms</td>
@@ -301,7 +301,7 @@ export default function SupplierDetailClient({ supplier }: SupplierProps) {
                 </div>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between"><span className="text-sub font-bold">Commission:</span><span className="font-mono font-black">{c.commission * 100}%</span></div>
-                  <div className="flex justify-between"><span className="text-sub font-bold">Credit Limit:</span><span className="font-mono font-black">{c.creditLimit.toLocaleString()} {c.currency}</span></div>
+                  <div className="flex justify-between"><span className="text-sub font-bold">Credit Limit:</span><span className="font-price font-black">{c.creditLimit.toLocaleString()} {c.currency}</span></div>
                 </div>
               </ErpSectionCard>
             ))}

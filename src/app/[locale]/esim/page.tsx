@@ -347,7 +347,7 @@ export default function EsimPage() {
                         {lt(locale, { fa: 'قیمت:', en: 'Price:', ar: 'السعر:', zh: '价格：', ru: 'Цена:' })}
                       </span>
                       <div className="text-end">
-                        <span className="font-black text-[18px] text-price font-mono num">
+                        <span className="font-black text-[18px] text-price font-price num">
                           {pkg.priceToman.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                         </span>
                         <span className="text-xs font-bold text-sub ms-1">

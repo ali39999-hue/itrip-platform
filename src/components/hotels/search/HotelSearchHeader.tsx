@@ -290,7 +290,7 @@ export function HotelSearchHeader({
                       >
                         <Minus size={14} />
                       </button>
-                      <span className="w-6 text-center text-sm font-black font-mono">{num(rooms, locale)}</span>
+                      <span className="w-6 text-center text-sm font-black font-price">{num(rooms, locale)}</span>
                       <button
                         type="button"
                         onClick={() => onRoomsChange?.(Math.min(5, rooms + 1))}
@@ -319,7 +319,7 @@ export function HotelSearchHeader({
                       >
                         <Minus size={14} />
                       </button>
-                      <span className="w-6 text-center text-sm font-black font-mono">{num(adults, locale)}</span>
+                      <span className="w-6 text-center text-sm font-black font-price">{num(adults, locale)}</span>
                       <button
                         type="button"
                         onClick={() => onAdultsChange?.(Math.min(9, adults + 1))}
@@ -348,7 +348,7 @@ export function HotelSearchHeader({
                       >
                         <Minus size={14} />
                       </button>
-                      <span className="w-6 text-center text-sm font-black font-mono">{num(childrenCount, locale)}</span>
+                      <span className="w-6 text-center text-sm font-black font-price">{num(childrenCount, locale)}</span>
                       <button
                         type="button"
                         onClick={() => onChildrenCountChange?.(Math.min(6, childrenCount + 1))}

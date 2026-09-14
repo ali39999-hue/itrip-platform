@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from '@/i18n/routing';
-import { Menu, X, ChevronRight, Search, UserRound, LogOut, Briefcase, Wallet, Users, Sparkles } from 'lucide-react';
+import { Menu, X, ChevronRight, UserRound, LogOut, Briefcase, Wallet, Users, Sparkles } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { Logo } from './Logo';
 import { CountrySwitcher } from './header/CountrySwitcher';
 import { LocaleSwitcher } from './header/LocaleSwitcher';
 import { DesktopNav, NAV_CATEGORIES } from './header/DesktopNav';
 import { UserAccountMenu } from './header/UserAccountMenu';
+import { CityHotelSearch } from './header/CityHotelSearch';
 import { ThemeToggle } from './ThemeToggle';
 import { CommandPalette } from './CommandPalette';
 import { useTranslations, useLocale } from 'next-intl';
@@ -249,30 +250,10 @@ export function Header() {
           {/* Dark / Light Mode Toggle */}
           <ThemeToggle />
 
-          {/* Quick Command Search Button (Ctrl+K / Cmd+K) */}
-          <button
-            type="button"
-            onClick={() => setCommandPaletteOpen(true)}
-            aria-label="Search or jump to (Ctrl+K)"
-            className="hidden sm:inline-flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-full bg-white/65 dark:bg-white/[0.07] backdrop-blur-md hover:bg-white/85 dark:hover:bg-white/[0.12] border border-white/50 dark:border-white/10 text-sub hover:text-ink text-xs font-bold tracking-tight transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-[0_1px_2px_rgba(5,63,62,0.06)] cursor-pointer"
-          >
-            <Search size={13} className="text-sub" aria-hidden="true" />
-            <kbd className="hidden xl:inline-flex items-center px-1.5 py-0.5 rounded-md bg-white dark:bg-white/10 border border-line/60 dark:border-white/10 text-[10px] font-mono font-bold text-sub leading-none">
-              K ⌘
-            </kbd>
-          </button>
-
           <UserAccountMenu />
 
-          {/* Mobile Search Button */}
-          <button
-            type="button"
-            onClick={() => setCommandPaletteOpen(true)}
-            aria-label="Search"
-            className="sm:hidden w-11 h-11 grid place-items-center rounded-2xl text-ink hover:bg-soft active:scale-95 transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
-          >
-            <Search size={19} />
-          </button>
+          {/* City & Hotel Search — سمت چپ نوبار (انتهای ردیف در RTL) */}
+          <CityHotelSearch />
 
           {/* Mobile Menu Button with 44px touch target */}
           <button

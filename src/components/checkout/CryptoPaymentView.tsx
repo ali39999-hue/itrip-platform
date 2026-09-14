@@ -271,7 +271,7 @@ export function CryptoPaymentView({
             </h3>
             <p className="text-[11px] text-teal-800">
               نرخ محاسبه‌شده هر تتر برابر با{' '}
-              <strong className="font-mono">{booking?.rateToman?.toLocaleString('fa-IR')}</strong> تومان
+              <strong className="font-price">{booking?.rateToman?.toLocaleString('fa-IR')}</strong> تومان
               است و تا پایان زمان زیر بدون تغییر تضمین می‌شود.
             </p>
           </div>

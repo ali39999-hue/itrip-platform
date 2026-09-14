@@ -350,14 +350,14 @@ export function HotelCard({
                     ru: `Всего за ${num(nights, locale)} ноч.:`,
                   })}
                 </span>{' '}
-                <strong className="text-ink font-black font-mono">{formatAmount(priceToman * nights)}</strong>
+                <strong className="text-ink font-black font-price">{formatAmount(priceToman * nights)}</strong>
               </div>
             </div>
 
             <div className="flex items-center justify-between sm:justify-end gap-4">
               <div className="text-end">
                 <span className="text-[11px] text-sub block font-medium">{t('perNightFrom')}</span>
-                <div className="text-base sm:text-lg font-black text-brand-dark font-mono num flex items-baseline gap-1">
+                <div className="text-base sm:text-lg font-black text-brand-dark font-price num flex items-baseline gap-1">
                   <span>{formatAmount(priceToman)}</span>
                 </div>
               </div>

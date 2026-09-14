@@ -267,7 +267,7 @@ export function ToursPromoModal() {
                       {lt(locale, { fa: 'شروع قیمت پکیج کامل:', en: 'Starting package rate:', ar: 'يبدأ من:', zh: '全包参考价：', ru: 'Цена от:' })}
                     </span>
                     <div className="text-end">
-                      <span className="text-base sm:text-xl font-black text-price font-mono">
+                      <span className="text-base sm:text-xl font-black text-price font-price">
                         {num(selectedTour.price, locale)}
                       </span>
                       <span className="text-xs font-bold text-sub ms-1">

@@ -106,7 +106,7 @@ export function TravelerPicker({
                   >
                     <Minus size={13} />
                   </button>
-                  <span className="w-5 text-center text-[13px] font-bold text-ink font-mono num">
+                  <span className="w-5 text-center text-[13px] font-bold text-ink font-price num">
                     {num(adults, locale)}
                   </span>
                   <button
@@ -137,7 +137,7 @@ export function TravelerPicker({
                   >
                     <Minus size={13} />
                   </button>
-                  <span className="w-5 text-center text-[13px] font-bold text-ink font-mono num">
+                  <span className="w-5 text-center text-[13px] font-bold text-ink font-price num">
                     {num(childrenCount, locale)}
                   </span>
                   <button
@@ -169,7 +169,7 @@ export function TravelerPicker({
                     >
                       <Minus size={13} />
                     </button>
-                    <span className="w-5 text-center text-[13px] font-bold text-ink font-mono num">
+                    <span className="w-5 text-center text-[13px] font-bold text-ink font-price num">
                       {num(rooms, locale)}
                     </span>
                     <button
@@ -226,7 +226,7 @@ export function TravelerPicker({
                     >
                       <Minus size={16} />
                     </button>
-                    <span className="w-6 text-center text-base font-black text-ink font-mono num">
+                    <span className="w-6 text-center text-base font-black text-ink font-price num">
                       {num(adults, locale)}
                     </span>
                     <button
@@ -257,7 +257,7 @@ export function TravelerPicker({
                     >
                       <Minus size={16} />
                     </button>
-                    <span className="w-6 text-center text-base font-black text-ink font-mono num">
+                    <span className="w-6 text-center text-base font-black text-ink font-price num">
                       {num(childrenCount, locale)}
                     </span>
                     <button
@@ -289,7 +289,7 @@ export function TravelerPicker({
                     >
                       <Minus size={16} />
                     </button>
-                    <span className="w-6 text-center text-base font-black text-ink font-mono num">
+                    <span className="w-6 text-center text-base font-black text-ink font-price num">
                       {num(rooms, locale)}
                     </span>
                     <button

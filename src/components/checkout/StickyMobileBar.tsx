@@ -57,7 +57,7 @@ export function StickyMobileBar({
       <div className="glass-card flex items-center gap-3 rounded-2xl p-3">
         <div className="min-w-0 flex-1 ps-1">
           <span className="block text-[10px] font-bold text-sub">{totalCaption}</span>
-          <span className="num block truncate font-mono text-base font-black text-price" aria-live="polite">
+          <span className="num block truncate font-price text-base font-black text-price" aria-live="polite">
             {total}
           </span>
         </div>

@@ -309,7 +309,7 @@ export default function TrainsPage() {
               <div className="flex flex-row md:flex-col justify-between md:justify-center items-center md:items-end w-full md:w-auto gap-3 pt-4 md:pt-0 border-t md:border-t-0 border-line">
                 <div className="text-start md:text-end">
                   <span className="text-xs font-bold text-sub block">{t('perPassenger')}</span>
-                  <span className="text-[20px] font-black text-price font-mono num">
+                  <span className="text-[20px] font-black text-price font-price num">
                     {s.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                     <span className="text-xs font-bold text-sub ms-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
                   </span>

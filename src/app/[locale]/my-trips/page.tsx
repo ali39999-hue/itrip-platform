@@ -505,7 +505,7 @@ export default function MyTripsPage() {
                                 ru: 'Оплачено:',
                               })}
                             </span>
-                            <span className="text-price font-black text-[15px] font-mono num">
+                            <span className="text-price font-black text-[15px] font-price num">
                               {totalAmt.toLocaleString(
                                 lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })
                               )}{' '}

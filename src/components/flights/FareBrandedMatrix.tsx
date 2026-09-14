@@ -143,7 +143,7 @@ export function FareBrandedMatrix({
                   {isSelected && <Check size={16} className="text-brand" />}
                 </div>
 
-                <div className="text-lg font-black text-price font-mono mb-4">
+                <div className="text-lg font-black text-price font-price mb-4">
                   {calculatedPrice.toLocaleString('fa-IR')} تومان
                 </div>
 

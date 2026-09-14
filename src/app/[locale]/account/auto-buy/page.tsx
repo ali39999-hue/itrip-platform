@@ -181,7 +181,7 @@ export default function AutoBuyAccountPage() {
               </div>
               <div>
                 <span className="text-[11.5px] font-bold text-sub block">سفارش‌های فعال در حال پایش</span>
-                <span className="text-xl font-black text-ink font-mono">{num(activeCount, locale)} ربات</span>
+                <span className="text-xl font-black text-ink font-price">{num(activeCount, locale)} ربات</span>
               </div>
             </div>
 
@@ -191,7 +191,7 @@ export default function AutoBuyAccountPage() {
               </div>
               <div>
                 <span className="text-[11.5px] font-bold text-sub block">خریدهای موفق نهایی‌شده</span>
-                <span className="text-xl font-black text-price font-mono">{num(fulfilledCount, locale)} خرید</span>
+                <span className="text-xl font-black text-price font-price">{num(fulfilledCount, locale)} خرید</span>
               </div>
             </div>
 
@@ -201,7 +201,7 @@ export default function AutoBuyAccountPage() {
               </div>
               <div>
                 <span className="text-[11.5px] font-bold text-sub block">نیازمند شارژ کیف‌پول</span>
-                <span className="text-xl font-black text-amber-700 font-mono">{num(failedCount, locale)} مورد</span>
+                <span className="text-xl font-black text-amber-700 font-price">{num(failedCount, locale)} مورد</span>
               </div>
             </div>
           </div>
@@ -297,7 +297,7 @@ export default function AutoBuyAccountPage() {
                             <span className="flex items-center gap-1 text-ink">
                               <Wallet size={13} className="text-brand" />
                               <span>سقف بودجه:</span>
-                              <b className="font-mono text-price">{num(Number(rule.maxPrice), locale)} تومان</b>
+                              <b className="font-price text-price">{num(Number(rule.maxPrice), locale)} تومان</b>
                             </span>
                             <span>•</span>
                             <span className="flex items-center gap-1">

@@ -419,7 +419,7 @@ export function PlannerWizard({
                         : 'border-line bg-soft/50 hover:bg-soft text-ink hover:border-brand/40'
                     }`}
                   >
-                    <span className="text-2xl font-black block font-mono mb-1">{num(n, locale)}</span>
+                    <span className="text-2xl font-black block font-price mb-1">{num(n, locale)}</span>
                     <span className="text-xs font-bold block">{t('qDays')}</span>
                     <span className={`text-[10px] font-bold block mt-1 ${isSelected ? 'text-surface/80' : 'text-sub'}`}>
                       {isEn ? tagEn : tagFa}
@@ -529,7 +529,7 @@ export function PlannerWizard({
                     </span>
                     <div className="pt-3 border-t border-line/60">
                       <span className="block text-xs font-bold text-sub">{t('perPerson')}</span>
-                      <span className="text-sm font-black text-price font-mono">
+                      <span className="text-sm font-black text-price font-price">
                         تا {num(BUDGET_CAP[b], locale)} <span className="text-[10px]">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'Toman' })}</span>
                       </span>
                     </div>

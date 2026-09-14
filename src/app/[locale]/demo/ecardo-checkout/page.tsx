@@ -175,7 +175,7 @@ function DemoCheckoutContent() {
                   <span className="text-xs font-bold text-white/60">
                     {lt(locale, { fa: 'مبلغ قابل پرداخت', en: 'Amount due' , ar: 'المبلغ المستحق', zh: '应付金额', ru: 'Сумма к оплате'})}
                   </span>
-                  <span className="flex items-center gap-2 text-xl sm:text-2xl font-black font-mono num" dir="ltr">
+                  <span className="flex items-center gap-2 text-xl sm:text-2xl font-black font-price num" dir="ltr">
                     <CurrencyIcon size={20} className="text-emerald-300" aria-hidden="true" />
                     {amountText}
                   </span>

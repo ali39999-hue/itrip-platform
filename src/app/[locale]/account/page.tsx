@@ -467,7 +467,7 @@ export default function AccountPage() {
               <Wallet size={18} className="text-brand" />
             </div>
             <div className="mt-4">
-              <span className="text-2xl font-black text-ink font-mono num">
+              <span className="text-2xl font-black text-ink font-price num">
                 {wallet.IRR.toLocaleString(
                   lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })
                 )}
@@ -492,7 +492,7 @@ export default function AccountPage() {
               <BadgeCheck size={18} className="text-brand-dark" />
             </div>
             <div className="mt-4">
-              <span className="text-2xl font-black text-ink font-mono num">
+              <span className="text-2xl font-black text-ink font-price num">
                 $
                 {wallet.USDT.toLocaleString(
                   lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })

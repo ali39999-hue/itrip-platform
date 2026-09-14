@@ -161,7 +161,7 @@ export function PopularFlightsSection({ override }: { override?: PopularRouteOve
               <span className="text-[10px] text-sub font-bold block leading-none mb-1">
                 {lt(locale, { fa: 'شروع نرخ از:', en: 'Starting from:', ar: 'يبدأ من:', zh: '起价：', ru: 'От:' })}
               </span>
-              <div className="text-sm sm:text-base font-black text-brand-dark font-mono num leading-tight">
+              <div className="text-sm sm:text-base font-black text-brand-dark font-price num leading-tight">
                 {num(r.price, locale)}
               </div>
               <span className="text-[10px] font-bold text-sub block mt-0.5">

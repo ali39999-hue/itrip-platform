@@ -75,11 +75,11 @@ export function TourDepartureDates({
                 <div className="flex items-center gap-1 text-[11px] sm:text-xs font-bold text-sub">
                   <Users size={13} className="text-brand-dark shrink-0" />
                   <span>{lt(locale, { fa: 'ظرفیت:', en: 'Seats:', ar: 'الشاغر:', zh: '余位：', ru: 'Мест:' })}</span>
-                  <b className="text-ink font-mono">{num(d.availableSeats, locale)} {lt(locale, { fa: 'صندلی', en: 'seats', ar: 'مقاعد', zh: '位', ru: 'мест' })}</b>
+                  <b className="text-ink font-price">{num(d.availableSeats, locale)} {lt(locale, { fa: 'صندلی', en: 'seats', ar: 'مقاعد', zh: '位', ru: 'мест' })}</b>
                 </div>
 
                 <div className="text-end">
-                  <div className="text-xs sm:text-base font-black text-price font-mono">
+                  <div className="text-xs sm:text-base font-black text-price font-price">
                     {num(d.price, locale)}
                     <span className="text-[10px] sm:text-[11px] font-bold text-sub ms-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
                   </div>

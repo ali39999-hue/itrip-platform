@@ -311,7 +311,7 @@ function ToursContent() {
                   <div className="p-4 pt-0 flex flex-wrap justify-between items-center border-t border-line/60 mt-3 gap-2">
                     <div className="pt-3 min-w-0">
                       <span className="text-[10.5px] font-bold text-sub block">{lt(locale, { fa: 'قیمت هر نفر', en: 'Per Person', ar: 'للفرد', zh: '每人价格', ru: 'За человека' })}</span>
-                      <span className="text-[16px] font-black text-price font-mono num whitespace-nowrap">
+                      <span className="text-[16px] font-black text-price font-price num whitespace-nowrap">
                         {tour.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                         <span className="text-[10.5px] font-bold text-sub ms-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
                       </span>
@@ -398,7 +398,7 @@ function ToursContent() {
             <div className="pt-3 border-t border-line flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <div>
                 <span className="text-xs font-bold text-sub block">{lt(locale, { fa: 'قیمت نهایی پکیج:', en: 'Total Package Price:', ar: 'السعر الإجمالي للباقة:', zh: '套餐总价：', ru: 'Итоговая цена:' })}</span>
-                <span className="text-lg font-black text-price font-mono">
+                <span className="text-lg font-black text-price font-price">
                   {selectedTourPreview.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
                 </span>
               </div>

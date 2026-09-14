@@ -203,7 +203,7 @@ function PaymentStatusContent() {
 
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-sub">{lt(locale, { fa: 'مبلغ پرداختی', en: 'Paid Amount', ar: 'المبلغ المدفوع', zh: '支付金额', ru: 'Сумма оплаты' })}</span>
-              <span className="text-lg font-black text-price font-mono num">
+              <span className="text-lg font-black text-price font-price num">
                 {displayAmount !== null ? (
                   <>
                     {num(displayAmount, locale)} <span className="text-xs font-bold text-sub">{displayCurrency}</span>

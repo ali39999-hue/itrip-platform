@@ -209,7 +209,7 @@ export default function VisaPage() {
                 <div className="flex justify-between items-baseline mb-3">
                   <span className="text-xs font-bold text-sub">{lt(locale, { fa: 'شروع نرخ:', en: 'Starting from:', ar: 'يبدأ من:', zh: '价格起：', ru: 'От:' })}</span>
                   <div className="text-end">
-                    <span className="text-lg font-black text-price font-mono num">
+                    <span className="text-lg font-black text-price font-price num">
                       {v.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                     </span>
                     <span className="text-xs font-bold text-sub ms-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>

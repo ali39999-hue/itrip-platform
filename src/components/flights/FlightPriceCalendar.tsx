@@ -314,7 +314,7 @@ export function FlightPriceCalendar({
                 </div>
 
                 {/* Middle: Day & Month (e.g. ۲۱ اسفند) */}
-                <div className={`text-[11px] sm:text-[12.5px] font-extrabold font-mono num ${item.isSelected ? 'text-surface' : 'text-ink'}`}>
+                <div className={`text-[11px] sm:text-[12.5px] font-extrabold font-price num ${item.isSelected ? 'text-surface' : 'text-ink'}`}>
                   {item.dateDisplay}
                 </div>
 
@@ -326,7 +326,7 @@ export function FlightPriceCalendar({
                     </span>
                   ) : (
                     <div className="flex flex-col items-center">
-                      <span className={`text-[10px] sm:text-[11.5px] font-black font-mono num leading-none ${item.isSelected ? 'text-surface' : item.isCheapest ? 'text-emerald-700 dark:text-emerald-300' : 'text-brand-dark'}`}>
+                      <span className={`text-[10px] sm:text-[11.5px] font-black font-price num leading-none ${item.isSelected ? 'text-surface' : item.isCheapest ? 'text-emerald-700 dark:text-emerald-300' : 'text-brand-dark'}`}>
                         {num(item.price, locale)}
                       </span>
                       <span className={`text-[8.5px] font-bold leading-none mt-0.5 ${item.isSelected ? 'text-surface/80' : 'text-sub'}`}>
@@ -421,10 +421,10 @@ export function FlightPriceCalendar({
                   <span className={`text-[10.5px] font-bold ${item.isSelected ? 'text-surface/80' : item.isWeekend ? 'text-rose-500' : 'text-sub'}`}>
                     {item.dayName}
                   </span>
-                  <span className={`text-xs font-black font-mono num ${item.isSelected ? 'text-surface' : 'text-ink'}`}>
+                  <span className={`text-xs font-black font-price num ${item.isSelected ? 'text-surface' : 'text-ink'}`}>
                     {item.dateDisplay}
                   </span>
-                  <span className={`text-[11px] font-black font-mono num mt-1 ${item.isSelected ? 'text-surface' : item.isCheapest ? 'text-emerald-700 dark:text-emerald-300' : 'text-brand-dark'}`}>
+                  <span className={`text-[11px] font-black font-price num mt-1 ${item.isSelected ? 'text-surface' : item.isCheapest ? 'text-emerald-700 dark:text-emerald-300' : 'text-brand-dark'}`}>
                     {num(item.price, locale)}
                   </span>
                   {item.isCheapest && !item.isSelected && (

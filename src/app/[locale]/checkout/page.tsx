@@ -983,11 +983,11 @@ export default function CheckoutPage() {
               <div className="p-4 rounded-2xl bg-soft border border-line space-y-2 text-xs font-bold">
                 <div className="flex justify-between text-sub">
                   <span>{lt(locale, { fa: 'مبلغ قبلی:', en: 'Previous Total:', ar: 'السعر السابق:', zh: '原价：', ru: 'Прежняя цена:' })}</span>
-                  <span className="line-through font-mono">{formatMoney(priceChangeInfo.oldAmount, priceChangeInfo.currency, locale)}</span>
+                  <span className="line-through font-price">{formatMoney(priceChangeInfo.oldAmount, priceChangeInfo.currency, locale)}</span>
                 </div>
                 <div className="flex justify-between text-ink font-black text-sm pt-1 border-t border-line">
                   <span>{lt(locale, { fa: 'مبلغ نهایی جدید:', en: 'New Total:', ar: 'السعر الجديد:', zh: '最新应付：', ru: 'Новая сумма:' })}</span>
-                  <span className="text-price font-mono">{formatMoney(priceChangeInfo.newAmount, priceChangeInfo.currency, locale)}</span>
+                  <span className="text-price font-price">{formatMoney(priceChangeInfo.newAmount, priceChangeInfo.currency, locale)}</span>
                 </div>
               </div>
 

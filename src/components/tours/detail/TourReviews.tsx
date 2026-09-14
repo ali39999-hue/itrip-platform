@@ -63,7 +63,7 @@ export function TourReviews({ tour }: TourReviewsProps) {
             <div key={i} className="flex flex-col gap-1">
               <div className="flex items-center justify-between text-[11px] sm:text-xs font-bold text-ink">
                 <span className="truncate">{item.label}</span>
-                <span className="font-mono text-brand-dark shrink-0 ms-2">{num(item.score, locale)}</span>
+                <span className="font-price text-brand-dark shrink-0 ms-2">{num(item.score, locale)}</span>
               </div>
               <div className="w-full h-1.5 sm:h-2 rounded-full bg-surface overflow-hidden border border-line/60">
                 <div
@@ -102,7 +102,7 @@ export function TourReviews({ tour }: TourReviewsProps) {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 bg-gold-soft px-2 py-0.5 rounded-lg text-xs font-black text-price font-mono shrink-0">
+                <div className="flex items-center gap-1 bg-gold-soft px-2 py-0.5 rounded-lg text-xs font-black text-price font-price shrink-0">
                   <Star size={11} className="fill-gold text-gold" />
                   <span>{num(rev.rating, locale)}</span>
                 </div>

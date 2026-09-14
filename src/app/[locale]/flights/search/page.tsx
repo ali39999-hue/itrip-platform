@@ -519,13 +519,13 @@ function FlightSearchInner() {
                 <span className="text-[10px] text-sub block leading-none mb-0.5">
                   {lt(locale, { fa: 'از:', en: 'From:', ar: 'من:', zh: '起：', ru: 'От:' })}
                 </span>
-                <span className="text-brand-dark font-black font-mono num">{formatAmount(price[0])}</span>
+                <span className="text-brand-dark font-black font-price num">{formatAmount(price[0])}</span>
               </div>
               <div className="text-end">
                 <span className="text-[10px] text-sub block leading-none mb-0.5">
                   {lt(locale, { fa: 'تا:', en: 'To:', ar: 'إلى:', zh: '止：', ru: 'До:' })}
                 </span>
-                <span className="text-brand-dark font-black font-mono num">{formatAmount(price[1])}</span>
+                <span className="text-brand-dark font-black font-price num">{formatAmount(price[1])}</span>
               </div>
             </div>
 

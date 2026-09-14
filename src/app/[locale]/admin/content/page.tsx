@@ -614,7 +614,7 @@ export default function AdminContentPage() {
                           <span className="px-2.5 py-0.5 rounded-full bg-mint text-brand-dark text-[11px] font-black">
                             {t.category}
                           </span>
-                          <div className="flex items-center gap-1 text-xs font-black text-price font-mono">
+                          <div className="flex items-center gap-1 text-xs font-black text-price font-price">
                             <span>{num(Number(t.price), locale)}</span>
                             <span className="text-[10px] text-sub font-bold">تومان</span>
                           </div>
@@ -703,7 +703,7 @@ export default function AdminContentPage() {
                           <span className="px-2.5 py-0.5 rounded-full bg-mint text-brand-dark text-[11px] font-black">
                             {exp.countryId} • {exp.category}
                           </span>
-                          <span className="font-mono text-xs font-black text-price">
+                          <span className="font-price text-xs font-black text-price">
                             {num(Number(exp.fromPrice), locale)} تومان
                           </span>
                         </div>

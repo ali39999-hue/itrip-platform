@@ -312,7 +312,7 @@ export default function TransfersPage() {
                   <div className="flex justify-between items-center mt-6 pt-4 border-t border-line">
                     <div>
                       <span className="text-xs font-bold text-sub block">{lt(locale, { fa: 'قیمت کل مسیر', en: 'Total route price', ar: 'سعر المسار الإجمالي', zh: '全程总价', ru: 'Итоговая цена маршрута' })}</span>
-                      <span className="text-[20px] md:text-[24px] font-black text-price font-mono num">
+                      <span className="text-[20px] md:text-[24px] font-black text-price font-price num">
                         {tr.price.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                         <span className="text-xs font-bold text-sub ms-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
                       </span>

@@ -168,7 +168,7 @@ export default function InsurancePage() {
                           ru: `Страховая премия (${duration} дн.):`,
                         })}
                       </span>
-                      <span className="font-black text-2xl text-price font-mono num">
+                      <span className="font-black text-2xl text-price font-price num">
                         {calculatedPrice.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                       </span>
                       <span className="text-xs font-bold text-sub ms-1">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>

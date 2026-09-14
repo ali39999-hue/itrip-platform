@@ -241,7 +241,7 @@ export default function DestinationsPage() {
                   <div className="pt-3 border-t border-line/60 flex items-center justify-between">
                     <div>
                       <span className="text-[10px] text-sub font-bold block">{lt(locale, { fa: 'شروع نرخ:', en: 'From:', ar: 'يبدأ من:', zh: '起步价：', ru: 'От:' })}</span>
-                      <span className="text-sm font-black text-price font-mono">
+                      <span className="text-sm font-black text-price font-price">
                         {formatMoney(exp.fromPrice, c.currency, locale)}
                       </span>
                     </div>

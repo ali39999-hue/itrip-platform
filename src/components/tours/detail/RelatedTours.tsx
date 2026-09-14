@@ -93,7 +93,7 @@ export function RelatedTours({ tours }: RelatedToursProps) {
               <div className="p-3.5 sm:p-4 pt-0 border-t border-line/60 mt-1 flex items-center justify-between">
                 <div className="pt-2">
                   <span className="text-[9.5px] sm:text-[10px] font-bold text-sub block">{lt(locale, { fa: 'شروع از', en: 'Starts from', ar: 'يبدأ من', zh: '起价', ru: 'от' })}</span>
-                  <div className="text-xs sm:text-sm font-black text-price font-mono">
+                  <div className="text-xs sm:text-sm font-black text-price font-price">
                     {num(t.price, locale)}
                     <span className="text-[10px] font-bold text-sub ms-1">تومان</span>
                   </div>

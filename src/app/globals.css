@@ -170,6 +170,9 @@
      ([locale]/layout.tsx); without a locale they fall back to the system stack. */
   --font-sans: var(--font-app-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-geist-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  /* قیمت و اعداد فارسی — فونت مونواسپیس گلیف ارقام فارسی (U+06F0–U+06F9) و
+     جداکننده «٬» ندارد و باعث fallback ناهماهنگ می‌شود؛ همیشه فونت خود سایت. */
+  --font-price: var(--font-app-sans), "IRANYekanXFaNum", "IRANYekanX", "Yekan Bakh", ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-app-heading, var(--font-app-sans)), ui-sans-serif, system-ui, sans-serif;
   /* Elevation — سایه با ته‌مایه فیروزه deep rgba(5,63,62,…), نه خاکستری خام */
   --shadow-elev-1: 0 1px 2px rgba(5, 63, 62, 0.05), 0 4px 16px rgba(5, 63, 62, 0.06);

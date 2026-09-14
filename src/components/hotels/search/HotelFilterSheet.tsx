@@ -133,7 +133,7 @@ export function HotelFilterSheet({
                       : 'bg-surface border-line text-ink hover:bg-soft'
                   }`}
                 >
-                  <span className="font-mono">{num(s, locale)}</span>
+                  <span className="font-price">{num(s, locale)}</span>
                   <span>★</span>
                   {facets?.starCounts?.[s] !== undefined && (
                     <span className="text-[10px] opacity-70">({num(facets.starCounts[s], locale)})</span>
