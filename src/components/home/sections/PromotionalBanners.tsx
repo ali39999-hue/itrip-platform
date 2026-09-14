@@ -71,14 +71,14 @@ interface CountryExclusiveDeal {
 const COUNTRY_EXCLUSIVES: Record<CountryId, CountryExclusiveDeal> = {
   iran: {
     cityBadge: { fa: 'تور اصفهان فیروزو', en: 'Isfahan Tour · Firuzo' },
-    eyebrow: { fa: 'تور ۳ روزه اختصاصی', en: '3-Day Exclusive Tour' },
+    eyebrow: { fa: 'تور ۲.۵ روزه زمینی VIP', en: '2.5-Day Overland VIP Tour' },
     brand: { fa: 'اصفهان نصف جهان', en: 'Isfahan Legacy' },
     description: {
-      fa: 'سفری سه روزه به قلب تاریخ و هنر ایران؛ بازدید از جاذبه‌های بی‌نظیر میدان نقش جهان، کاخ عالی‌قاپو و اقامت در هتل ۵ ستاره عباسی با پذیرایی VIP.',
-      en: 'A three-day journey to the heart of Persian history and art — discover Naqsh-e Jahan Square, Ali Qapu Palace, and stay at the historic 5-star Abbasi Hotel.',
+      fa: 'سفر ۲.۵ روزه آخر هفته با اتوبوس VIP تخت‌شو از تهران؛ گشت کامل میدان نقش جهان، کاخ چهلستون، محله جلفا و کلیسای وانک با یک شب اقامت در هتل ۴ ستاره مرکز شهر اصفهان.',
+      en: 'A 2.5-day weekend overland escape from Tehran aboard a VIP recliner bus — Naqsh-e Jahan Square, Chehel Sotoun, New Julfa and Vank Cathedral with one night at a 4-star hotel in central Isfahan.',
     },
     img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Naghshe_Jahan_Square_Isfahan_modified.jpg/960px-Naghshe_Jahan_Square_Isfahan_modified.jpg',
-    href: '/tours/t1',
+    href: '/tours/t5',
   },
   turkey: {
     cityBadge: { fa: 'تور VIP استانبول و بسفر', en: 'Istanbul VIP & Bosphorus' },
