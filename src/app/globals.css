@@ -369,7 +369,10 @@
 .dark .img-overlay.text-surface[class],
 .dark .bg-deep [class*="text-surface"],
 .dark [class*="from-deep"] [class*="text-surface"],
-.dark [class*="via-brand-dark"] [class*="text-surface"] {
+.dark [class*="via-brand-dark"] [class*="text-surface"],
+.dark [class*="to-transparent"] ~ [class*="text-surface"],
+.dark [class*="from-deep"] ~ [class*="text-surface"],
+.dark [class*="to-transparent"] [class*="text-surface"] {
   color: #ffffff !important;
 }
 
