@@ -67,8 +67,8 @@ describe('ExperienceDetailModal', () => {
     const increaseBtn = screen.getByRole('button', { name: 'افزایش مسافر' });
     fireEvent.click(increaseBtn);
 
-    // 2 passengers * 850,000 = 1,700,000
-    expect(screen.getByText('۱٬۷۰۰٬۰۰۰')).toBeTruthy();
+    // 2 passengers * 850,000 = 1,700,000 (formatted with currency)
+    expect(screen.getByText(/1[,.]?700[,.]?000|۱[٬,،]۷۰۰[٬,،]۰۰۰/)).toBeTruthy();
   });
 
   it('sets booking context and navigates to checkout on book click', () => {

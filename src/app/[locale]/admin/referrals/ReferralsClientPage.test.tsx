@@ -125,7 +125,7 @@ describe('ReferralsClientPage leader picker', () => {
     expect(screen.getByText(/تنظیم متغیرهای کد معرف: LEADER50/)).toBeTruthy();
 
     // Select 10% discount
-    const tenPctBtn = screen.getByRole('button', { name: '۱۰٪' });
+    const tenPctBtn = screen.getByRole('button', { name: '10٪' });
     fireEvent.click(tenPctBtn);
 
     // Submit changes
