@@ -181,10 +181,10 @@ export function ToursPromoModal() {
           aria-modal="true"
           aria-label={lt(locale, { fa: 'پاپ‌آپ معرفی تورهای فیروزو', en: 'Firuzo Curated Tours Promo', ar: 'جولات فيروزو', zh: 'Firuzo 旅游推介', ru: 'Туры Firuzo' })}
         >
-          <div className="relative w-full max-w-2xl bg-surface rounded-t-3xl sm:rounded-3xl overflow-hidden border-t sm:border border-line shadow-2xl flex flex-col max-h-[90vh] my-0 sm:my-6 pb-[env(safe-area-inset-bottom)] sm:pb-0 animate-in slide-in-from-bottom sm:slide-in-from-none sm:zoom-in-95 duration-250">
-            <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto mt-2.5 mb-1" />
+          <div className="relative w-full max-w-2xl bg-surface rounded-t-3xl sm:rounded-3xl overflow-hidden border-t sm:border border-line shadow-2xl flex flex-col max-h-[92dvh] sm:max-h-[90vh] my-0 sm:my-6 pb-[env(safe-area-inset-bottom)] sm:pb-0 animate-in slide-in-from-bottom sm:slide-in-from-none sm:zoom-in-95 duration-250">
+            <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto mt-2.5 mb-1 shrink-0" />
             {/* Header / Top banner with glowing badge */}
-            <div className="relative p-5 sm:p-6 bg-gradient-to-r from-deep via-brand-dark to-deep text-surface overflow-hidden">
+            <div className="relative shrink-0 p-4 sm:p-6 bg-gradient-to-r from-deep via-brand-dark to-deep text-surface overflow-hidden">
               <div className="absolute -top-12 -end-12 w-48 h-48 bg-mint/15 rounded-full blur-2xl pointer-events-none" />
 
               <div className="relative z-10 flex items-start justify-between gap-3">
@@ -193,10 +193,10 @@ export function ToursPromoModal() {
                     <Sparkles size={13} className="text-mint-bright" />
                     <span>{lt(locale, { fa: 'پیشنهاد ویژه مسافران فیروزو', en: 'Special Curated Experiences', ar: 'عروض حصرية لمسافري فيروزو', zh: 'Firuzo 贵宾专享精选', ru: 'Эксклюзивные впечатления' })}</span>
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-black text-surface tracking-tight leading-snug">
+                  <h2 className="text-lg sm:text-2xl font-black text-surface tracking-tight leading-snug line-clamp-2">
                     {lt(locale, { fa: 'سفرهای اختصاصی، هتل‌های ۵ ستاره و خاطرات ماندگار', en: 'Curated Itineraries, 5-Star Luxury & Lifelong Memories', ar: 'رحلات حصرية وفنادق فاخرة', zh: '深度定制、五星级礼遇与难忘旅程', ru: 'Особые маршруты и 5-звёздочный комфорт' })}
                   </h2>
-                  <p className="text-surface/80 text-xs sm:text-[13px] font-medium mt-1 leading-relaxed max-w-xl">
+                  <p className="hidden sm:block text-surface/80 text-[13px] font-medium mt-1 leading-relaxed max-w-xl">
                     {lt(locale, { fa: 'برنامه‌ریزی دقیق روز به روز، پروازهای تاییدشده، راهنمای محلی و امکان خرید خودکار با ربات هوشمند.', en: 'Day-by-day itineraries, confirmed flight seats, expert local guides, and smart auto-buy bot.', ar: 'برامج يومية مفصلة مع طيران مؤكد وإمكانية الشراء التلقائي.', zh: '每日详细行程、即时出票、专业司导及一键智能自动订票。', ru: 'Полноценные маршруты, авиаперелёт и умная автопокупка.' })}
                   </p>
                 </div>
@@ -214,7 +214,7 @@ export function ToursPromoModal() {
               </div>
 
               {/* Destination Switcher Pills inside popup */}
-              <div className="flex items-center gap-1.5 overflow-x-auto snap-x touch-pan-x pt-4 pb-1 scrollbar-none">
+              <div className="flex items-center gap-1.5 overflow-x-auto snap-x touch-pan-x pt-3 sm:pt-4 pb-1 scrollbar-none">
                 {tours.map((t, idx) => (
                   <button
                     key={t.id}
@@ -233,7 +233,8 @@ export function ToursPromoModal() {
               </div>
             </div>
 
-            {/* Featured Tour Preview Box */}
+            {/* Scrollable body: tour preview + trust badges */}
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
             <div className="p-4 sm:p-6 space-y-4 bg-surface">
               <div className="grid grid-cols-1 sm:grid-cols-[220px_1fr] gap-4 items-center">
                 {/* Tour Photo with Badges */}
@@ -314,39 +315,39 @@ export function ToursPromoModal() {
                   <span className="truncate">{lt(locale, { fa: 'ربات خرید خودکار', en: 'Auto-Buy bot', ar: 'شراء تلقائي', zh: '自动订票助理', ru: 'Автопокупка' })}</span>
                 </div>
               </div>
+            </div>
+            </div>
 
-              {/* Action Buttons & "Don't show today" toggle */}
-              <div className="pt-3 border-t border-line flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                {/* Remember preference checkbox */}
-                <label className="flex items-center gap-2 text-xs font-bold text-sub cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={dontShowToday}
-                    onChange={(e) => setDontShowToday(e.target.checked)}
-                    className="w-4 h-4 rounded border-line text-brand focus:ring-brand accent-brand cursor-pointer"
-                  />
-                  <span>{lt(locale, { fa: 'امروز دیگر این پیام را نمایش نده', en: 'Do not show again today', ar: 'لا تظهر هذا مجدداً اليوم', zh: '今日不再弹出', ru: 'Не показывать сегодня' })}</span>
-                </label>
+            {/* Sticky footer: action buttons + "Don't show today" toggle */}
+            <div className="shrink-0 border-t border-line bg-surface px-4 pt-2.5 pb-3 sm:px-6 sm:py-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
+              <label className="flex items-center justify-center sm:justify-start gap-2 text-xs font-bold text-sub cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={dontShowToday}
+                  onChange={(e) => setDontShowToday(e.target.checked)}
+                  className="w-4 h-4 rounded border-line text-brand focus:ring-brand accent-brand cursor-pointer"
+                />
+                <span>{lt(locale, { fa: 'امروز دیگر این پیام را نمایش نده', en: 'Do not show again today', ar: 'لا تظهر هذا مجدداً اليوم', zh: '今日不再弹出', ru: 'Не показывать сегодня' })}</span>
+              </label>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleViewAllTours}
-                    className="h-11 px-4 rounded-xl border border-line bg-soft hover:bg-line/40 text-ink font-bold text-xs transition cursor-pointer"
-                  >
-                    {lt(locale, { fa: 'همه تورها', en: 'All Tours', ar: 'جميع الجولات', zh: '查看全部', ru: 'Все туры' })}
-                  </button>
+              <div className="flex items-stretch sm:items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleViewAllTours}
+                  className="h-11 px-4 rounded-xl border border-line bg-soft hover:bg-line/40 text-ink font-bold text-xs transition cursor-pointer shrink-0"
+                >
+                  {lt(locale, { fa: 'همه تورها', en: 'All Tours', ar: 'جميع الجولات', zh: '查看全部', ru: 'Все туры' })}
+                </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleExploreTour(selectedTour.id)}
-                    className="h-11 px-5 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs transition flex items-center justify-center gap-1.5 shadow-md shadow-action/25 cursor-pointer"
-                  >
-                    <span>{lt(locale, { fa: 'مشاهده و رزرو این تور', en: 'Explore & Book Tour', ar: 'عرض وحجز هذه الجولة', zh: '查看并预订本线路', ru: 'Подробнее и бронь' })}</span>
-                    <ArrowRight size={13} className="ltr:inline rtl:hidden" />
-                    <ArrowLeft size={13} className="rtl:inline ltr:hidden" />
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => handleExploreTour(selectedTour.id)}
+                  className="h-11 px-5 flex-1 sm:flex-none rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs transition flex items-center justify-center gap-1.5 shadow-md shadow-action/25 cursor-pointer"
+                >
+                  <span>{lt(locale, { fa: 'مشاهده و رزرو این تور', en: 'Explore & Book Tour', ar: 'عرض وحجز هذه الجولة', zh: '查看并预订本线路', ru: 'Подробнее и бронь' })}</span>
+                  <ArrowRight size={13} className="ltr:inline rtl:hidden" />
+                  <ArrowLeft size={13} className="rtl:inline ltr:hidden" />
+                </button>
               </div>
             </div>
           </div>
