@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Command } from 'cmdk';
 import { useRouter } from '@/i18n/routing';
 import { useLocale } from 'next-intl';
@@ -28,9 +29,14 @@ export function CommandPalette({
   open: externalOpen,
   onOpenChange: setExternalOpen,
 }: CommandPaletteProps) {
+  const [mounted, setMounted] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
   const router = useRouter();
   const locale = useLocale();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isControlled = externalOpen !== undefined;
   const isOpen = isControlled ? externalOpen : internalOpen;
@@ -63,13 +69,14 @@ export function CommandPalette({
   }, [isOpen, setIsOpen]);
 
   if (!isOpen) return null;
+  if (!mounted || typeof document === 'undefined') return null;
 
   function handleSelect(href: string) {
     setIsOpen(false);
     router.push(href);
   }
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -317,6 +324,7 @@ export function CommandPalette({
           </div>
         </Command>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

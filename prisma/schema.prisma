@@ -15,6 +15,7 @@ datasource db {
 model User {
   id             String   @id @default(cuid())
   email          String?  @unique
+  username       String?  @unique // Email-channel login handle (stored lowercase; null for OTP-only/social accounts)
   phone          String?  @unique
   telegramId     String?  @unique
   whatsappPhone   String?  @unique

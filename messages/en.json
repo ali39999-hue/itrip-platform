@@ -88,7 +88,8 @@
     "book": "Book",
     "search": "Search",
     "places": "Places",
-    "ariaLabel": "Mobile navigation"
+    "ariaLabel": "Mobile navigation",
+    "about": "About Us"
   },
   "Common": {
     "aria": {
@@ -974,5 +975,62 @@
     "stepGuide": "Step-by-Step Guide",
     "routeDiscoveries": "Route Discoveries",
     "routeStopsWorth": "Worthwhile stops on this route:"
+  },
+  "About": {
+    "badge": "About Firuzo",
+    "title": "About Us",
+    "subtitle": "Firuzo is your digital travel companion — flights, hotels and city services across the region, all in one platform.",
+    "jumpToContact": "See address & contact",
+    "heroStats": {
+      "countries": "7 countries covered",
+      "airlines": "400+ airlines",
+      "support": "24/7 support"
+    },
+    "story": {
+      "kicker": "Our story",
+      "title": "We made travel simple",
+      "p1": "Firuzo began with a simple idea: travelling to Iran and across the region should be as easy as the journey you imagine. Today, our all-in-one platform brings every travel need — flights, hotels, cultural tours and city services — together in one place.",
+      "p2": "Our team is on the ground in 7 countries, from airport meet-and-greet and private transfers to interpreters and round-the-clock support. Backed by technology and deep local knowledge, we make every domestic and international trip hassle-free.",
+      "p3": "Every day thousands of travellers plan and go with Firuzo — and every day we work to make your next trip the easiest one yet."
+    },
+    "values": {
+      "kicker": "What we stand for",
+      "title": "Why Firuzo?",
+      "v1Title": "Transparent pricing",
+      "v1Desc": "Final prices with no hidden fees — what you see is exactly what you pay.",
+      "v2Title": "Always by your side",
+      "v2Desc": "24/7 support at every step of the journey, from booking to the flight home.",
+      "v3Title": "Smart technology",
+      "v3Desc": "AI trip planner, live fare comparison and instant ticketing.",
+      "v4Title": "Secure payments",
+      "v4Desc": "Multi-currency wallet with secure local and international payments."
+    },
+    "mapCard": {
+      "title": "Firuzo head office",
+      "subtitle": "A hand-drawn wayfinding map",
+      "metro": "Vanak Metro",
+      "street": "Valiasr St.",
+      "park": "Mellat Park",
+      "office": "Firuzo Office",
+      "routeHint": "From Vanak Metro station, about a 5-minute walk heading north to Firuzo Tower.",
+      "legendOffice": "Our office",
+      "legendMetro": "Metro station",
+      "legendPark": "Green space"
+    },
+    "contact": {
+      "title": "Address & contact",
+      "subtitle": "We are always here to help",
+      "addressLabel": "Head office",
+      "addressValue": "Firuzo Tower, 12th floor, Unit 3, Valiasr St., above Vanak Sq., Tehran, Iran",
+      "phoneLabel": "Support phone",
+      "phoneValue": "+98 21 91000000",
+      "emailLabel": "Email",
+      "telegramLabel": "Telegram",
+      "hoursLabel": "Working hours",
+      "hoursValue": "Saturday–Thursday, 9:00–18:00",
+      "hoursOnline": "Online support: 24/7",
+      "callCta": "Call us",
+      "supportCta": "Help center"
+    }
   }
 }

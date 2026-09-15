@@ -217,7 +217,7 @@ export async function issueOtp(
   if (!isIranMobile) {
     try {
       const notificationProvider = getNotificationProvider();
-      const otpMessage = `کد تایید ورود به فیروزو: ${code}\nاعتبار: ۵ دقیقه`;
+      const otpMessage = `به فیروزو خوش آمدید \n کد ورود شما : ${code}`;
       let dispatch;
 
       if (channel === 'bale') {

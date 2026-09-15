@@ -2,9 +2,11 @@
 
 import { headers } from 'next/headers';
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
+import { Prisma } from '@prisma/client';
 import { signIn, signOut, safeAuth, issueOtp, normalizeIdentifier, getPhoneLookupCandidates } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { profileUpdateSchema, otpRequestSchema } from '@/lib/validations';
+import { profileUpdateSchema, otpRequestSchema, emailAuthSchema, emailRegisterSchema } from '@/lib/validations';
 import { RateLimiter } from '@/lib/security/rate-limiter';
 import { decryptSensitive } from '@/lib/security/crypto-vault';
 import { hasErpRole } from '@/domains/identity/permission-service';
@@ -48,6 +50,334 @@ export async function loginWithCredentials(email: string, pass: string) {
   } catch (error: unknown) {
     const err = error as { message?: string };
     return { success: false, error: err?.message || 'Invalid credentials' };
+  }
+}
+
+/**
+ * Extracts the caller IP for auth rate limiting; falls back safely when the
+ * action runs outside a request context (e.g. unit tests).
+ */
+async function getAuthClientIp(): Promise<string> {
+  try {
+    const hdrs = await headers();
+    return (
+      hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      hdrs.get('x-real-ip')?.trim() ||
+      'unknown_ip'
+    );
+  } catch {
+    return 'unknown_ip';
+  }
+}
+
+/** Stable error codes returned by the email password flow; the UI maps them to localized messages. */
+export type EmailAuthErrorCode =
+  | 'INVALID_EMAIL'
+  | 'INVALID_USERNAME'
+  | 'WEAK_PASSWORD'
+  | 'EMAIL_TAKEN'
+  | 'USERNAME_TAKEN'
+  | 'INVALID_CREDENTIALS'
+  | 'RATE_LIMITED'
+  | 'REGISTRATION_FAILED'
+  | 'LOGIN_FAILED';
+
+/**
+ * Registration-state probe for the email channel (drives the adaptive login UI):
+ * - registered=true  + hasPassword=true  → show email + password login form
+ * - registered=true  + hasPassword=false → account exists from the OTP/social
+ *   flow; password login is impossible (and must never silently adopt the
+ *   account — that would be an unverified takeover), so the UI offers OTP.
+ * - registered=false                     → show email + username + password sign-up form
+ */
+export async function checkEmailRegistration(
+  email: string
+): Promise<{ success: boolean; registered?: boolean; hasPassword?: boolean; error?: EmailAuthErrorCode | string }> {
+  const parsedEmail = email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parsedEmail)) {
+    return { success: false, error: 'INVALID_EMAIL' };
+  }
+
+  const ip = await getAuthClientIp();
+  const rateCheck = await RateLimiter.checkRateLimit(`auth:emailcheck:${ip}`, 20, 60);
+  if (!rateCheck.allowed) {
+    return { success: false, error: 'RATE_LIMITED' };
+  }
+
+  try {
+    const user = await prisma.user.findFirst({
+      where: { email: parsedEmail },
+      select: { id: true, passwordHash: true },
+    });
+    return {
+      success: true,
+      registered: Boolean(user),
+      hasPassword: Boolean(user?.passwordHash),
+    };
+  } catch (dbErr) {
+    console.warn('[checkEmailRegistration] Database unreachable:', dbErr);
+    return { success: false, error: 'LOGIN_FAILED' };
+  }
+}
+
+/**
+ * Email + username + password sign-up for the email channel. Creates a NEW
+ * CUSTOMER account and signs the user in. Existing emails are rejected —
+ * accounts created by OTP/social channels are never silently adopted here
+ * (password setting requires proof of mailbox ownership, which this action
+ * does not have).
+ */
+export async function registerWithEmail(data: unknown): Promise<{
+  success: boolean;
+  error?: EmailAuthErrorCode | string;
+  user?: {
+    id: string;
+    phone: string;
+    email?: string;
+    firstNameFa: string;
+    lastNameFa: string;
+    kycApproved: boolean;
+    profileComplete: boolean;
+    role: 'admin' | 'customer';
+    loyaltyTier: 'BRONZE';
+    loyaltyPoints: number;
+  };
+}> {
+  let parsed;
+  try {
+    parsed = emailRegisterSchema.parse(data);
+  } catch (err: unknown) {
+    if (err && typeof err === 'object' && 'issues' in err) {
+      const issues = (err as { issues: Array<{ path: Array<string | number>; message: string }> }).issues;
+      const field = issues[0]?.path?.[0];
+      if (field === 'username') return { success: false, error: 'INVALID_USERNAME' };
+      if (field === 'password') return { success: false, error: 'WEAK_PASSWORD' };
+      return { success: false, error: 'INVALID_EMAIL' };
+    }
+    return { success: false, error: 'REGISTRATION_FAILED' };
+  }
+
+  const ip = await getAuthClientIp();
+  const rateCheck = await RateLimiter.checkRateLimit(`auth:emailreg:${ip}`, 5, 300);
+  if (!rateCheck.allowed) {
+    return { success: false, error: 'RATE_LIMITED' };
+  }
+
+  let created;
+  try {
+    created = await prisma.$transaction(async (tx) => {
+      const emailClash = await tx.user.findFirst({ where: { email: parsed.email }, select: { id: true } });
+      if (emailClash) return { clash: 'EMAIL_TAKEN' as const };
+
+      const usernameClash = await tx.user.findFirst({ where: { username: parsed.username }, select: { id: true } });
+      if (usernameClash) return { clash: 'USERNAME_TAKEN' as const };
+
+      const passwordHash = await bcrypt.hash(parsed.password, 10);
+      const user = await tx.user.create({
+        data: {
+          id: crypto.randomUUID(),
+          email: parsed.email,
+          username: parsed.username,
+          name: parsed.username,
+          firstNameFa: parsed.username,
+          lastNameFa: '',
+          passwordHash,
+          role: 'CUSTOMER',
+          isActive: true,
+        },
+      });
+
+      const role = await tx.role.upsert({
+        where: { name: 'CUSTOMER' },
+        update: {},
+        create: { name: 'CUSTOMER', description: 'Customer Role' },
+      });
+      await tx.userRole.upsert({
+        where: { userId_roleId: { userId: user.id, roleId: role.id } },
+        update: {},
+        create: { userId: user.id, roleId: role.id },
+      });
+
+      return { user };
+    });
+  } catch (err: unknown) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === 'P2002'
+    ) {
+      // Concurrent registration raced past the pre-checks; the unique
+      // constraints on email/username are the real gate.
+      const target = (err.meta as { target?: string[] } | undefined)?.target || [];
+      return { success: false, error: target.includes('username') ? 'USERNAME_TAKEN' : 'EMAIL_TAKEN' };
+    }
+    console.error('registerWithEmail error:', err);
+    return { success: false, error: 'REGISTRATION_FAILED' };
+  }
+
+  if ('clash' in created) {
+    return { success: false, error: created.clash };
+  }
+
+  // Sign the freshly created user in through the standard credentials provider.
+  try {
+    await signIn('credentials', {
+      identifier: parsed.email,
+      password: parsed.password,
+      channel: 'credentials',
+      redirect: false,
+    });
+  } catch (error: unknown) {
+    const err = error as { message?: string; digest?: string; type?: string; name?: string };
+    if (!err?.message?.includes('NEXT_REDIRECT') && !err?.digest?.startsWith('NEXT_REDIRECT')) {
+      console.error('registerWithEmail signIn error:', err);
+      // Account exists; the user can retry via the login form.
+      return { success: false, error: 'LOGIN_FAILED' };
+    }
+  }
+
+  return {
+    success: true,
+    user: {
+      id: created.user.id,
+      phone: created.user.phone || '',
+      email: created.user.email || parsed.email,
+      firstNameFa: created.user.firstNameFa || parsed.username,
+      lastNameFa: '',
+      kycApproved: false,
+      profileComplete: false,
+      role: 'customer',
+      loyaltyTier: 'BRONZE',
+      loyaltyPoints: 0,
+    },
+  };
+}
+
+/**
+ * Email + password login for the email channel (registered accounts only).
+ * Email-strict: unlike the generic staff login, phone numbers and the admin
+ * shorthand identifiers are not accepted here.
+ */
+export async function loginWithEmailPassword(email: string, password: string): Promise<{
+  success: boolean;
+  error?: EmailAuthErrorCode | string;
+  user?: {
+    id: string;
+    phone: string;
+    email?: string;
+    firstNameFa: string;
+    lastNameFa: string;
+    kycApproved: boolean;
+    profileComplete: boolean;
+    role: 'admin' | 'customer';
+    loyaltyTier: 'BRONZE';
+    loyaltyPoints: number;
+  };
+}> {
+  let parsed;
+  try {
+    parsed = emailAuthSchema.parse({ email, password });
+  } catch (err: unknown) {
+    if (err && typeof err === 'object' && 'issues' in err) {
+      const issues = (err as { issues: Array<{ path: Array<string | number> }> }).issues;
+      const field = issues[0]?.path?.[0];
+      return { success: false, error: field === 'password' ? 'WEAK_PASSWORD' : 'INVALID_EMAIL' };
+    }
+    return { success: false, error: 'LOGIN_FAILED' };
+  }
+
+  const ip = await getAuthClientIp();
+  const rateCheck = await RateLimiter.checkRateLimit(`auth:emaillogin:${ip}`, 10, 300);
+  if (!rateCheck.allowed) {
+    return { success: false, error: 'RATE_LIMITED' };
+  }
+
+  try {
+    await signIn('credentials', {
+      identifier: parsed.email,
+      password: parsed.password,
+      channel: 'credentials',
+      redirect: false,
+    });
+  } catch (error: unknown) {
+    const err = error as { message?: string; digest?: string; type?: string; name?: string };
+    if (err?.message?.includes('NEXT_REDIRECT') || err?.digest?.startsWith('NEXT_REDIRECT')) {
+      // Expected redirect on successful signIn
+    } else if (err?.type === 'CredentialsSignin' || err?.name === 'CredentialsSignin') {
+      return { success: false, error: 'INVALID_CREDENTIALS' };
+    }
+    return { success: false, error: 'LOGIN_FAILED' };
+  }
+
+  try {
+    const user = await prisma.user.findFirst({
+      where: { email: parsed.email },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        name: true,
+        firstNameFa: true,
+        lastNameFa: true,
+        nationalId: true,
+        passportNo: true,
+      },
+    });
+
+    if (!user) {
+      // signIn succeeded (session cookie is set) — resolve the profile without
+      // failing the login just because the display lookup came up empty.
+      return {
+        success: true,
+        user: {
+          id: `user_${crypto.randomUUID()}`,
+          phone: '',
+          email: parsed.email,
+          firstNameFa: parsed.email,
+          lastNameFa: '',
+          kycApproved: false,
+          profileComplete: false,
+          role: 'customer',
+          loyaltyTier: 'BRONZE',
+          loyaltyPoints: 0,
+        },
+      };
+    }
+
+    const isStaff = await hasErpRole(user.id);
+    const role = isStaff ? ('admin' as const) : ('customer' as const);
+
+    return {
+      success: true,
+      user: {
+        id: user.id,
+        phone: user.phone || '',
+        email: user.email || parsed.email,
+        firstNameFa: user.firstNameFa || user.name || parsed.email,
+        lastNameFa: user.lastNameFa || '',
+        kycApproved: role === 'admin' ? true : isProfileComplete(user),
+        profileComplete: role === 'admin' ? true : isProfileComplete(user),
+        role,
+        loyaltyTier: 'BRONZE',
+        loyaltyPoints: 0,
+      },
+    };
+  } catch (dbErr) {
+    console.warn('[loginWithEmailPassword] Profile lookup fallback after successful signIn:', dbErr);
+    return {
+      success: true,
+      user: {
+        id: `user_${crypto.randomUUID()}`,
+        phone: '',
+        email: parsed.email,
+        firstNameFa: parsed.email,
+        lastNameFa: '',
+        kycApproved: false,
+        profileComplete: false,
+        role: 'customer',
+        loyaltyTier: 'BRONZE',
+        loyaltyPoints: 0,
+      },
+    };
   }
 }
 

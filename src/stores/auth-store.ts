@@ -3,7 +3,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { KycProfile } from '@/lib/types';
-import { verifyOtpAndLogin, loginWithPassword as loginWithPasswordAction, logoutUser, loginWithTelegram as loginWithTelegramAction, type AuthChannel } from '@/actions/auth';
+import {
+  verifyOtpAndLogin,
+  loginWithPassword as loginWithPasswordAction,
+  loginWithEmailPassword as loginWithEmailAction,
+  registerWithEmail as registerWithEmailAction,
+  logoutUser,
+  loginWithTelegram as loginWithTelegramAction,
+  type AuthChannel,
+} from '@/actions/auth';
 import type { TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
 
 interface User {
@@ -46,6 +54,8 @@ interface AuthState {
   kyc: KycProfile;
   login: (identifier: string, otp: string, channel?: AuthChannel) => Promise<boolean>;
   loginWithPassword: (identifier: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  registerWithEmail: (email: string, username: string, password: string) => Promise<{ success: boolean; error?: string }>;
   loginWithTelegram: (payload: TelegramAuthPayload) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   setKycStep: (step: KycProfile['step']) => void;
@@ -73,6 +83,30 @@ export const useAuthStore = create<AuthState>()(
         const res = await loginWithPasswordAction(identifier, password);
         if (!res.success || !res.user) {
           return { success: false, error: res.error || 'ورود ناموفق بود' };
+        }
+
+        set({
+          user: res.user,
+          kyc: kycStepAfterLogin(res.user),
+        });
+        return { success: true };
+      },
+      loginWithEmail: async (email, password) => {
+        const res = await loginWithEmailAction(email, password);
+        if (!res.success || !res.user) {
+          return { success: false, error: res.error || 'ورود ناموفق بود' };
+        }
+
+        set({
+          user: res.user,
+          kyc: kycStepAfterLogin(res.user),
+        });
+        return { success: true };
+      },
+      registerWithEmail: async (email, username, password) => {
+        const res = await registerWithEmailAction({ email, username, password });
+        if (!res.success || !res.user) {
+          return { success: false, error: res.error || 'ثبت‌نام ناموفق بود' };
         }
 
         set({

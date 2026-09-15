@@ -224,6 +224,25 @@ export const otpRequestSchema = z.object({
 });
 export type OtpRequest = z.infer<typeof otpRequestSchema>;
 
+// ─── Email Password Auth (login / registration on the email channel) ─────────
+
+export const emailAuthSchema = z.object({
+  email: z.string().trim().toLowerCase().email("Invalid email address").max(254),
+  password: z.string().min(8, "Password must be at least 8 characters").max(72, "Password is too long"),
+});
+export type EmailAuthInput = z.infer<typeof emailAuthSchema>;
+
+export const emailRegisterSchema = emailAuthSchema.extend({
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(3, "Username must be at least 3 characters")
+    .max(32, "Username cannot exceed 32 characters")
+    .regex(/^[a-z0-9][a-z0-9._-]*[a-z0-9]$/, "Username may only contain Latin letters, numbers, dots, hyphens and underscores"),
+});
+export type EmailRegisterInput = z.infer<typeof emailRegisterSchema>;
+
 // ─── Search ───────────────────────────────────────────────────────────────────
 
 export const searchSchema = z.object({

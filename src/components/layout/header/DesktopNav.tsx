@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import {
   Map, Compass, Newspaper, BookOpen, Wallet, CreditCard, Plane,
   BedDouble, ShieldCheck, CarTaxiFront, Train, Smartphone, Briefcase,
-  FileCheck, LifeBuoy, ChevronDown
+  FileCheck, LifeBuoy, Info, ChevronDown
 } from 'lucide-react';
 
 export const NAV_CATEGORIES = [
@@ -30,6 +30,7 @@ export const NAV_CATEGORIES = [
       { key: 'transfer', href: '/transfers', icon: CarTaxiFront },
       { key: 'trains', href: '/trains', icon: Train },
       { key: 'esim', href: '/esim', icon: Smartphone },
+      { key: 'about', href: '/services/about', icon: Info },
     ],
   },
   {

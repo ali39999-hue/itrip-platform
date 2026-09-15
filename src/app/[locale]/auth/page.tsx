@@ -6,11 +6,11 @@ import { useRouter } from '@/i18n/routing';
 import { useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { useAuthStore } from '@/stores/auth-store';
-import { CheckCircle2, Loader2, Lock, LogIn, Mail, Phone, Send, MessageCircle, QrCode, MessageSquare } from 'lucide-react';
+import { CheckCircle2, Loader2, Lock, LogIn, Mail, Phone, Send, MessageCircle, QrCode, MessageSquare, User, KeyRound } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { Logo } from '@/components/layout/Logo';
 import { OtpPinInput } from '@/components/ui/OtpPinInput';
-import { AuthChannel, requestOtp, getAuthCapabilities } from '@/actions/auth';
+import { AuthChannel, requestOtp, getAuthCapabilities, checkEmailRegistration } from '@/actions/auth';
 import type { TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
 
 interface AuthCapabilities {
@@ -29,7 +29,15 @@ export default function AuthPage() {
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, loginWithPassword, loginWithTelegram, setKycStep, kyc, user } = useAuthStore();
+  const { login, loginWithPassword, loginWithEmail, registerWithEmail, loginWithTelegram, setKycStep, kyc, user } = useAuthStore();
+
+  // ── Email channel adaptive flow (registered → email+password login,
+  //    unregistered → email+username+password sign-up) ──
+  const [emailStep, setEmailStep] = useState<'email' | 'login' | 'register'>('email');
+  const [emailPassword, setEmailPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [emailOtpHint, setEmailOtpHint] = useState(false); // account exists but is passwordless (OTP/social)
 
   const [capabilities, setCapabilities] = useState<AuthCapabilities | null>(null);
   useEffect(() => {
@@ -191,8 +199,122 @@ export default function AuthPage() {
     return true;
   }
 
-  async function sendOtp() {
-    if (!validateIdentifier()) return;
+  function resetEmailFlow() {
+    setEmailStep('email');
+    setEmailPassword('');
+    setUsername('');
+    setEmailOtpHint(false);
+    setError('');
+  }
+
+  // Stable server error codes → localized, user-safe messages (never raw internals).
+  function mapEmailAuthError(code: string | undefined): string {
+    switch (code) {
+      case 'RATE_LIMITED':
+        return lt(locale, { fa: 'تعداد تلاش‌ها زیاد است؛ کمی بعد دوباره امتحان کنید.', en: 'Too many attempts; please try again later.', ar: 'محاولات كثيرة جداً؛ حاول لاحقاً.', zh: '尝试次数过多；请稍后再试。', ru: 'Слишком много попыток; попробуйте позже.' });
+      case 'INVALID_EMAIL':
+        return lt(locale, { fa: 'آدرس ایمیل معتبر نیست', en: 'Invalid email address', ar: 'عنوان بريد إلكتروني غير صالح', zh: '邮箱格式错误', ru: 'Неверный адрес эл. почты' });
+      case 'INVALID_USERNAME':
+        return lt(locale, { fa: 'نام کاربری باید ۳ تا ۳۲ کاراکتر و فقط شامل حروف انگلیسی، عدد، نقطه، خط تیره یا زیرخط باشد.', en: 'Username must be 3–32 characters: Latin letters, numbers, dot, hyphen or underscore only.', ar: 'يجب أن يكون اسم المستخدم ٣–٣٢ حرفاً بأحرف لاتينية وأرقام فقط.', zh: '用户名需3-32个字符，仅限字母、数字、点、连字符或下划线。', ru: 'Имя пользователя: 3–32 символа, только латиница, цифры, точка, дефис или подчёркивание.' });
+      case 'WEAK_PASSWORD':
+        return lt(locale, { fa: 'کلمه عبور باید حداقل ۸ کاراکتر باشد.', en: 'Password must be at least 8 characters.', ar: 'يجب أن تكون كلمة المرور ٨ أحرف على الأقل.', zh: '密码至少需要8个字符。', ru: 'Пароль должен содержать не менее 8 символов.' });
+      case 'EMAIL_TAKEN':
+        return lt(locale, { fa: 'این ایمیل قبلاً ثبت شده است؛ کلمه عبور خود را وارد کنید.', en: 'This email is already registered; enter your password.', ar: 'هذا البريد مسجل بالفعل؛ أدخل كلمة المرور.', zh: '该邮箱已注册；请输入密码。', ru: 'Эта почта уже зарегистрирована; введите пароль.' });
+      case 'USERNAME_TAKEN':
+        return lt(locale, { fa: 'این نام کاربری قبلاً استفاده شده است.', en: 'This username is already taken.', ar: 'اسم المستخدم محجوز مسبقاً.', zh: '该用户名已被占用。', ru: 'Это имя пользователя уже занято.' });
+      case 'INVALID_CREDENTIALS':
+        return lt(locale, { fa: 'ایمیل یا کلمه عبور اشتباه است.', en: 'Incorrect email or password.', ar: 'البريد أو كلمة المرور غير صحيحة.', zh: '邮箱或密码错误。', ru: 'Неверная почта или пароль.' });
+      case 'REGISTRATION_FAILED':
+        return lt(locale, { fa: 'ثبت‌نام ناموفق بود؛ دوباره تلاش کنید.', en: 'Sign-up failed; please try again.', ar: 'فشل التسجيل؛ حاول مجدداً.', zh: '注册失败；请重试。', ru: 'Ошибка регистрации; попробуйте снова.' });
+      case 'LOGIN_FAILED':
+      default:
+        return lt(locale, { fa: 'ورود ناموفق بود؛ دوباره تلاش کنید.', en: 'Sign-in failed; please try again.', ar: 'فشل تسجيل الدخول؛ حاول مجدداً.', zh: '登录失败；请重试。', ru: 'Ошибка входа; попробуйте снова.' });
+    }
+  }
+
+  // Step 1 of the email channel: probe registration state, then branch the UI.
+  async function continueWithEmail() {
+    const email = identifier.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError(mapEmailAuthError('INVALID_EMAIL'));
+      return;
+    }
+    setCheckingEmail(true);
+    setError('');
+    setEmailOtpHint(false);
+    try {
+      const res = await checkEmailRegistration(email);
+      if (!res.success) {
+        setError(mapEmailAuthError(res.error));
+        return;
+      }
+      if (res.registered && res.hasPassword) {
+        setEmailStep('login');
+      } else if (res.registered && !res.hasPassword) {
+        // Account exists from the OTP/social flow — never adopt it with a new
+        // password here (unverified takeover); offer the existing OTP path.
+        setEmailOtpHint(true);
+      } else {
+        setEmailStep('register');
+      }
+    } catch {
+      setError(mapEmailAuthError('LOGIN_FAILED'));
+    } finally {
+      setCheckingEmail(false);
+    }
+  }
+
+  async function handleEmailLogin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!emailPassword.trim()) {
+      setError(mapEmailAuthError('WEAK_PASSWORD'));
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await loginWithEmail(identifier.trim(), emailPassword);
+      if (!res.success) {
+        setError(mapEmailAuthError(res.error));
+        return;
+      }
+      router.push(callbackUrl);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleEmailRegister(e: React.FormEvent) {
+    e.preventDefault();
+    const uname = username.trim().toLowerCase();
+    if (!/^[a-z0-9][a-z0-9._-]*[a-z0-9]$/.test(uname) || uname.length < 3 || uname.length > 32) {
+      setError(mapEmailAuthError('INVALID_USERNAME'));
+      return;
+    }
+    if (emailPassword.length < 8) {
+      setError(mapEmailAuthError('WEAK_PASSWORD'));
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await registerWithEmail(identifier.trim(), uname, emailPassword);
+      if (!res.success) {
+        if (res.error === 'EMAIL_TAKEN') {
+          // Raced into registration with an email that does have a password —
+          // land the user on the login form instead.
+          setEmailStep('login');
+        }
+        setError(mapEmailAuthError(res.error));
+        return;
+      }
+      router.push(callbackUrl);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function sendOtp() {    if (!validateIdentifier()) return;
     setError('');
     setSending(true);
     try {
@@ -343,7 +465,7 @@ export default function AuthPage() {
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 p-1 bg-soft rounded-2xl mb-6">
                   <button
                     type="button"
-                    onClick={() => { setChannel('phone'); setError(''); setIdentifier(''); }}
+                    onClick={() => { setChannel('phone'); setIdentifier(''); resetEmailFlow(); }}
                     className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'phone' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
                     title="SMS / Phone"
                   >
@@ -353,7 +475,7 @@ export default function AuthPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setChannel('email'); setError(''); setIdentifier(''); }}
+                    onClick={() => { setChannel('email'); setIdentifier(''); resetEmailFlow(); }}
                     className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'email' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
                     title="Email"
                   >
@@ -363,7 +485,7 @@ export default function AuthPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setChannel('telegram'); setError(''); setIdentifier(''); }}
+                    onClick={() => { setChannel('telegram'); setIdentifier(''); resetEmailFlow(); }}
                     className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'telegram' ? 'bg-[#229ED9]/15 text-[#229ED9] shadow-xs' : 'text-sub hover:text-ink'}`}
                     title="Telegram"
                   >
@@ -373,7 +495,7 @@ export default function AuthPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setChannel('bale'); setError(''); setIdentifier(''); }}
+                    onClick={() => { setChannel('bale'); setIdentifier(''); resetEmailFlow(); }}
                     className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'bale' ? 'bg-[#00A693]/15 text-[#00A693] shadow-xs' : 'text-sub hover:text-ink'}`}
                     title="Bale (پیام‌رسان بله)"
                   >
@@ -383,7 +505,7 @@ export default function AuthPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setChannel('whatsapp'); setError(''); setIdentifier(''); }}
+                    onClick={() => { setChannel('whatsapp'); setIdentifier(''); resetEmailFlow(); }}
                     className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'whatsapp' ? 'bg-[#25D366]/15 text-[#25D366] shadow-xs' : 'text-sub hover:text-ink'}`}
                     title="WhatsApp"
                   >
@@ -393,7 +515,7 @@ export default function AuthPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setChannel('wechat'); setError(''); setIdentifier(''); }}
+                    onClick={() => { setChannel('wechat'); setIdentifier(''); resetEmailFlow(); }}
                     className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'wechat' ? 'bg-[#07C160]/15 text-[#07C160] shadow-xs' : 'text-sub hover:text-ink'}`}
                     title="WeChat"
                   >
@@ -525,66 +647,238 @@ export default function AuthPage() {
                 )}
 
                 <div className="space-y-4">
-                  <div>
-                    <label htmlFor="identifier" className="block text-xs font-bold text-sub mb-1">
-                      {channel === 'phone' && lt(locale, { fa: 'شماره موبایل', en: 'Phone Number', ar: 'رقم الهاتف', zh: '手机号', ru: 'Номер телефона' })}
-                      {channel === 'email' && lt(locale, { fa: 'آدرس ایمیل', en: 'Email Address', ar: 'البريد الإلكتروني', zh: '电子邮箱', ru: 'Эل. почта' })}
-                      {channel === 'telegram' && lt(locale, { fa: 'شناسه تلگرام یا شماره', en: 'Telegram Username / Phone', ar: 'معرف تيليجرام أو الهاتف', zh: 'Telegram 用户名/手机号', ru: 'Telegram Username / Телефон' })}
-                      {channel === 'bale' && lt(locale, { fa: 'شناسه بله یا شماره موبایل', en: 'Bale Username / Phone', ar: 'معرف بله أو الهاتف', zh: 'Bale 用户名/手机号', ru: 'Bale Username / Телефон' })}
-                      {channel === 'whatsapp' && lt(locale, { fa: 'شماره واتساپ بین‌المللی', en: 'WhatsApp Number (+...)', ar: 'رقم الواتساب الدولي', zh: 'WhatsApp 国际号码', ru: 'Номер WhatsApp (+...)' })}
-                      {channel === 'wechat' && lt(locale, { fa: 'شماره موبایل متصل به WeChat', en: 'Mobile Number (WeChat channel)', ar: 'رقم الجوال (قناة وي تشات)', zh: '手机号 (WeChat 通道)', ru: 'Номер телефона (канал WeChat)' })}
-                    </label>
-                    <input
-                      id="identifier"
-                      type={channel === 'email' ? 'email' : channel === 'phone' ? 'tel' : 'text'}
-                      dir="ltr"
-                      inputMode={channel === 'phone' ? 'tel' : channel === 'email' ? 'email' : 'text'}
-                      autoComplete={channel === 'phone' ? 'tel' : channel === 'email' ? 'email' : 'username'}
-                      value={identifier}
-                      onChange={(e) => setIdentifier(toAsciiDigits(e.target.value))}
-                      placeholder={
-                        channel === 'phone' ? '09123456789' :
-                        channel === 'email' ? 'user@firuzo.com' :
-                        channel === 'telegram' ? '@traveler_user' :
-                        channel === 'bale' ? '@bale_user or 0912...' :
-                        channel === 'whatsapp' ? '+971501234567' :
-                        '+8613800138000'
-                      }
-                      className="w-full h-12 rounded-xl border border-line px-4 font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                    />
-                    {channel === 'bale' && (
-                      <p className="text-[10px] text-sub mt-1 font-medium">
-                        {lt(locale, {
-                          fa: 'کد تایید ورود مستقیماً از طریق پیام‌رسان بله برای شما ارسال خواهد شد.',
-                          en: 'Verification code will be sent to your Bale messenger account.',
-                          ar: 'سيتم إرسال رمز التحقق مباشرة إلى حسابك في بله.',
-                          zh: '验证码将直接发送至您的Bale账号。',
-                          ru: 'Код подтверждения будет отправлен прямо в ваш аккаунт Bale.'
-                        })}
+                  {channel === 'email' && emailStep === 'login' ? (
+                    /* Registered email → email + password login */
+                    <form onSubmit={handleEmailLogin} className="space-y-4">
+                      <div className="p-3.5 bg-mint/60 dark:bg-mint/20 border border-line rounded-2xl flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-xs font-black text-ink">
+                            {lt(locale, { fa: 'ورود با ایمیل', en: 'Sign in with email', ar: 'تسجيل الدخول بالبريد الإلكتروني', zh: '邮箱登录', ru: 'Вход по эл. почте' })}
+                          </p>
+                          <p className="text-[11px] text-sub font-bold truncate" dir="ltr">{identifier}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => { setIdentifier(''); resetEmailFlow(); }}
+                          className="text-[11px] font-black text-brand-dark hover:underline flex-shrink-0"
+                        >
+                          {lt(locale, { fa: 'تغییر ایمیل', en: 'Change email', ar: 'تغيير البريد', zh: '更改邮箱', ru: 'Изменить почту' })}
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-sub font-bold -mt-1">
+                        {lt(locale, { fa: 'حساب شما پیدا شد؛ کلمه عبور خود را وارد کنید.', en: 'We found your account; enter your password.', ar: 'تم العثور على حسابك؛ أدخل كلمة المرور.', zh: '已找到您的账户；请输入密码。', ru: 'Аккаунт найден; введите пароль.' })}
                       </p>
-                    )}
-                    {channel === 'whatsapp' && (
-                      <p className="text-[10px] text-sub mt-1 font-medium">
-                        {lt(locale, {
-                          fa: 'کد تایید مستقیماً به شماره واتساپ شما ارسال خواهد شد.',
-                          en: 'Verification code will be sent directly to your WhatsApp.',
-                          ar: 'سيتم إرسال رمز التحقق مباشرة إلى رقم واتساب الخاص بك.',
-                          zh: '验证码将直接发送至您的WhatsApp。',
-                          ru: 'Код подтверждения будет отправлен прямо в ваш WhatsApp.'
-                        })}
+                      <div>
+                        <label htmlFor="email-login-password" className="block text-xs font-bold text-sub mb-1">
+                          {lt(locale, { fa: 'کلمه عبور', en: 'Password', ar: 'كلمة المرور', zh: '密码', ru: 'Пароль' })}
+                        </label>
+                        <input
+                          id="email-login-password"
+                          type="password"
+                          dir="ltr"
+                          autoComplete="current-password"
+                          value={emailPassword}
+                          onChange={(e) => { setEmailPassword(e.target.value); if (error) setError(''); }}
+                          placeholder="••••••••"
+                          className="w-full h-12 rounded-xl border border-line px-4 font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60"
+                      >
+                        {loading && <Loader2 size={16} className="animate-spin" />}
+                        {lt(locale, { fa: 'ورود', en: 'Sign in', ar: 'تسجيل الدخول', zh: '登录', ru: 'Войти' })}
+                      </button>
+                    </form>
+                  ) : channel === 'email' && emailStep === 'register' ? (
+                    /* New email → email + username + password sign-up */
+                    <form onSubmit={handleEmailRegister} className="space-y-4">
+                      <div className="p-3.5 bg-mint/60 dark:bg-mint/20 border border-line rounded-2xl flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-xs font-black text-ink">
+                            {lt(locale, { fa: 'ساخت حساب جدید', en: 'Create your account', ar: 'إنشاء حساب جديد', zh: '创建账户', ru: 'Создать аккаунт' })}
+                          </p>
+                          <p className="text-[11px] text-sub font-bold truncate" dir="ltr">{identifier}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => { setIdentifier(''); resetEmailFlow(); }}
+                          className="text-[11px] font-black text-brand-dark hover:underline flex-shrink-0"
+                        >
+                          {lt(locale, { fa: 'تغییر ایمیل', en: 'Change email', ar: 'تغيير البريد', zh: '更改邮箱', ru: 'Изменить почту' })}
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-sub font-bold -mt-1">
+                        {lt(locale, { fa: 'حسابی با این ایمیل پیدا نشد؛ برای ثبت‌نام نام کاربری و کلمه عبور انتخاب کنید.', en: 'No account with this email yet; choose a username and password to sign up.', ar: 'لا يوجد حساب بهذا البريد؛ اختر اسم مستخدم وكلمة مرور للتسجيل.', zh: '该邮箱尚未注册；请设置用户名和密码完成注册。', ru: 'Аккаунта с этой почтой нет; задайте имя пользователя и пароль.' })}
                       </p>
-                    )}
-                  </div>
+                      <div>
+                        <label htmlFor="reg-username" className="block text-xs font-bold text-sub mb-1">
+                          {lt(locale, { fa: 'نام کاربری', en: 'Username', ar: 'اسم المستخدم', zh: '用户名', ru: 'Имя пользователя' })}
+                        </label>
+                        <div className="relative">
+                          <User size={16} className="absolute top-1/2 -translate-y-1/2 start-3.5 text-sub pointer-events-none" />
+                          <input
+                            id="reg-username"
+                            type="text"
+                            dir="ltr"
+                            autoComplete="username"
+                            value={username}
+                            onChange={(e) => { setUsername(e.target.value); if (error) setError(''); }}
+                            placeholder="traveler_user"
+                            className="w-full h-12 rounded-xl border border-line ps-10 pe-4 font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                          />
+                        </div>
+                        <p className="text-[10px] text-sub mt-1 font-medium">
+                          {lt(locale, { fa: 'فقط حروف انگلیسی، عدد، نقطه، خط تیره و زیرخط (۳ تا ۳۲ کاراکتر).', en: 'Latin letters, numbers, dot, hyphen and underscore only (3–32 characters).', ar: 'حروف لاتينية وأرقام والنقطة والشرطة والشرطة السفلية فقط (٣–٣٢).', zh: '仅限字母、数字、点、连字符和下划线（3-32个字符）。', ru: 'Только латиница, цифры, точка, дефис и подчёркивание (3–32 символа).' })}
+                        </p>
+                      </div>
+                      <div>
+                        <label htmlFor="reg-password" className="block text-xs font-bold text-sub mb-1">
+                          {lt(locale, { fa: 'کلمه عبور', en: 'Password', ar: 'كلمة المرور', zh: '密码', ru: 'Пароль' })}
+                        </label>
+                        <div className="relative">
+                          <KeyRound size={16} className="absolute top-1/2 -translate-y-1/2 start-3.5 text-sub pointer-events-none" />
+                          <input
+                            id="reg-password"
+                            type="password"
+                            dir="ltr"
+                            autoComplete="new-password"
+                            value={emailPassword}
+                            onChange={(e) => { setEmailPassword(e.target.value); if (error) setError(''); }}
+                            placeholder="••••••••"
+                            className="w-full h-12 rounded-xl border border-line ps-10 pe-4 font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                          />
+                        </div>
+                        <p className="text-[10px] text-sub mt-1 font-medium">
+                          {lt(locale, { fa: 'حداقل ۸ کاراکتر.', en: 'At least 8 characters.', ar: '٨ أحرف على الأقل.', zh: '至少8个字符。', ru: 'Не менее 8 символов.' })}
+                        </p>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60"
+                      >
+                        {loading && <Loader2 size={16} className="animate-spin" />}
+                        {lt(locale, { fa: 'ثبت‌نام و ورود', en: 'Sign up & continue', ar: 'التسجيل والمتابعة', zh: '注册并继续', ru: 'Зарегистрироваться' })}
+                      </button>
+                    </form>
+                  ) : (
+                    <>
+                      <div>
+                        <label htmlFor="identifier" className="block text-xs font-bold text-sub mb-1">
+                          {channel === 'phone' && lt(locale, { fa: 'شماره موبایل', en: 'Phone Number', ar: 'رقم الهاتف', zh: '手机号', ru: 'Номер телефона' })}
+                          {channel === 'email' && lt(locale, { fa: 'آدرس ایمیل', en: 'Email Address', ar: 'البريد الإلكتروني', zh: '电子邮箱', ru: 'Эл. почта' })}
+                          {channel === 'telegram' && lt(locale, { fa: 'شناسه تلگرام یا شماره', en: 'Telegram Username / Phone', ar: 'معرف تيليجرام أو الهاتف', zh: 'Telegram 用户名/手机号', ru: 'Telegram Username / Телефон' })}
+                          {channel === 'bale' && lt(locale, { fa: 'شناسه بله یا شماره موبایل', en: 'Bale Username / Phone', ar: 'معرف بله أو الهاتف', zh: 'Bale 用户名/手机号', ru: 'Bale Username / Телефон' })}
+                          {channel === 'whatsapp' && lt(locale, { fa: 'شماره واتساپ بین‌المللی', en: 'WhatsApp Number (+...)', ar: 'رقم الواتساب الدولي', zh: 'WhatsApp 国际号码', ru: 'Номер WhatsApp (+...)' })}
+                          {channel === 'wechat' && lt(locale, { fa: 'شماره موبایل متصل به WeChat', en: 'Mobile Number (WeChat channel)', ar: 'رقم الجوال (قناة وي تشات)', zh: '手机号 (WeChat 通道)', ru: 'Номер телефона (канал WeChat)' })}
+                        </label>
+                        <input
+                          id="identifier"
+                          type={channel === 'email' ? 'email' : channel === 'phone' ? 'tel' : 'text'}
+                          dir="ltr"
+                          inputMode={channel === 'phone' ? 'tel' : channel === 'email' ? 'email' : 'text'}
+                          autoComplete={channel === 'phone' ? 'tel' : channel === 'email' ? 'email' : 'username'}
+                          value={identifier}
+                          onChange={(e) => setIdentifier(toAsciiDigits(e.target.value))}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (channel === 'email') continueWithEmail();
+                              else sendOtp();
+                            }
+                          }}
+                          placeholder={
+                            channel === 'phone' ? '09123456789' :
+                            channel === 'email' ? 'user@firuzo.com' :
+                            channel === 'telegram' ? '@traveler_user' :
+                            channel === 'bale' ? '@bale_user or 0912...' :
+                            channel === 'whatsapp' ? '+971501234567' :
+                            '+8613800138000'
+                          }
+                          className="w-full h-12 rounded-xl border border-line px-4 font-mono font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                        />
+                        {channel === 'bale' && (
+                          <p className="text-[10px] text-sub mt-1 font-medium">
+                            {lt(locale, {
+                              fa: 'کد تایید ورود مستقیماً از طریق پیام‌رسان بله برای شما ارسال خواهد شد.',
+                              en: 'Verification code will be sent to your Bale messenger account.',
+                              ar: 'سيتم إرسال رمز التحقق مباشرة إلى حسابك في بله.',
+                              zh: '验证码将直接发送至您的Bale账号。',
+                              ru: 'Код подтверждения будет отправлен прямо в ваш аккаунт Bale.'
+                            })}
+                          </p>
+                        )}
+                        {channel === 'whatsapp' && (
+                          <p className="text-[10px] text-sub mt-1 font-medium">
+                            {lt(locale, {
+                              fa: 'کد تایید مستقیماً به شماره واتساپ شما ارسال خواهد شد.',
+                              en: 'Verification code will be sent directly to your WhatsApp.',
+                              ar: 'سيتم إرسال رمز التحقق مباشرة إلى رقم واتساب الخاص بك.',
+                              zh: '验证码将直接发送至您的WhatsApp。',
+                              ru: 'Код подтверждения будет отправлен прямо в ваш WhatsApp.'
+                            })}
+                          </p>
+                        )}
+                      </div>
 
-                  <button
-                    id="auth-submit-btn"
-                    onClick={sendOtp}
-                    disabled={sending}
-                    className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60"
-                  >
-                    {sending && <Loader2 size={16} className="animate-spin" />}
-                    {channel === 'phone' ? t('sendOtp') : lt(locale, { fa: 'دریافت کد تأیید ورود', en: 'Send Login Code', ar: 'إرسال رمز الدخول', zh: '发送登录验证码', ru: 'Получить код входа' })}
-                  </button>
+                      {channel === 'email' && emailOtpHint && (
+                        <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-[11px] font-bold flex flex-col gap-2">
+                          <span>
+                            {lt(locale, {
+                              fa: 'این ایمیل قبلاً با کد یک‌بارمصرف ثبت شده است؛ برای ورود، کد تأیید دریافت کنید.',
+                              en: 'This email was registered via a one-time code; request a code to sign in.',
+                              ar: 'تم تسجيل هذا البريد برمز لمرة واحدة؛ اطلب رمز الدخول.',
+                              zh: '该邮箱已通过一次性验证码注册；请获取验证码登录。',
+                              ru: 'Эта почта зарегистрирована через одноразовый код; запросите код для входа.'
+                            })}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={sendOtp}
+                            disabled={sending}
+                            className="self-start px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-[11px] transition disabled:opacity-60"
+                          >
+                            {lt(locale, { fa: 'دریافت کد ورود', en: 'Send login code', ar: 'إرسال رمز الدخول', zh: '发送登录验证码', ru: 'Отправить код входа' })}
+                          </button>
+                        </div>
+                      )}
+
+                      {channel === 'email' ? (
+                        <>
+                          <button
+                            id="auth-submit-btn"
+                            onClick={continueWithEmail}
+                            disabled={checkingEmail}
+                            className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60"
+                          >
+                            {checkingEmail && <Loader2 size={16} className="animate-spin" />}
+                            {lt(locale, { fa: 'ادامه', en: 'Continue', ar: 'متابعة', zh: '继续', ru: 'Продолжить' })}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={sendOtp}
+                            disabled={sending}
+                            className="w-full text-xs font-bold text-sub hover:text-ink transition"
+                          >
+                            {lt(locale, { fa: 'ورود با کد یک‌بارمصرف ایمیل', en: 'Sign in with an email OTP code instead', ar: 'الدخول برمز لمرة واحدة عبر البريد', zh: '使用邮箱验证码登录', ru: 'Войти с одноразовым кодом на почту' })}
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          id="auth-submit-btn"
+                          onClick={sendOtp}
+                          disabled={sending}
+                          className="w-full h-12 rounded-xl bg-brand hover:bg-brand-2 text-surface font-black text-sm transition flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-60"
+                        >
+                          {sending && <Loader2 size={16} className="animate-spin" />}
+                          {channel === 'phone' ? t('sendOtp') : lt(locale, { fa: 'دریافت کد تأیید ورود', en: 'Send Login Code', ar: 'إرسال رمز الدخول', zh: '发送登录验证码', ru: 'Получить код входа' })}
+                        </button>
+                      )}
+                    </>
+                  )}
                 </div>
               </>
             ) : (

@@ -88,7 +88,8 @@
     "book": "预订",
     "search": "搜索",
     "places": "目的地",
-    "ariaLabel": "移动端导航"
+    "ariaLabel": "移动端导航",
+    "about": "关于我们"
   },
   "Common": {
     "aria": {
@@ -974,5 +975,62 @@
     "stepGuide": "Step-by-Step Guide",
     "routeDiscoveries": "Route Discoveries",
     "routeStopsWorth": "Worthwhile stops on this route:"
+  },
+  "About": {
+    "badge": "关于 Firuzo",
+    "title": "关于我们",
+    "subtitle": "Firuzo 是您的数字旅行伙伴 —— 机票、酒店与城市服务，一站直达。",
+    "jumpToContact": "查看地址与联系方式",
+    "heroStats": {
+      "countries": "覆盖 7 国",
+      "airlines": "400+ 家航空公司",
+      "support": "全天候支持"
+    },
+    "story": {
+      "kicker": "我们的故事",
+      "title": "让旅行更简单",
+      "p1": "Firuzo 源于一个简单的想法：到伊朗和地区各国旅行，应当像您想象的那样轻松。如今，我们把机票、酒店、文化之旅与城市服务等一切旅行所需汇聚到一个平台。",
+      "p2": "我们的团队覆盖 7 个国家：机场迎宾与专车接送、随行翻译、全天候支持。凭借技术与深厚的本地经验，让每一次国内外出行都轻松无忧。",
+      "p3": "每天都有成千上万的旅客与 Firuzo 一起规划出发；我们也在不断努力，让您的下一次旅行成为最轻松的一次。"
+    },
+    "values": {
+      "kicker": "我们的理念",
+      "title": "为什么选择 Firuzo？",
+      "v1Title": "透明定价",
+      "v1Desc": "一口价无隐藏费用，所见即所付。",
+      "v2Title": "全程陪伴",
+      "v2Desc": "从预订到返程，24 小时全程支持。",
+      "v3Title": "智能科技",
+      "v3Desc": "AI 行程规划、实时比价与即刻出票。",
+      "v4Title": "安全支付",
+      "v4Desc": "多币种钱包，本地与国际支付皆安全。"
+    },
+    "mapCard": {
+      "title": "Firuzo 总部",
+      "subtitle": "手绘位置示意图",
+      "metro": "Vanak 地铁站",
+      "street": "Valiasr 街",
+      "park": "Mellat 公园",
+      "office": "Firuzo 办公室",
+      "routeHint": "从 Vanak 地铁站步行约 5 分钟，向北即可到达 Firuzo 大厦。",
+      "legendOffice": "我们的办公室",
+      "legendMetro": "地铁站",
+      "legendPark": "绿地"
+    },
+    "contact": {
+      "title": "地址与联系方式",
+      "subtitle": "我们随时为您服务",
+      "addressLabel": "总部地址",
+      "addressValue": "伊朗德黑兰市 Valiasr 街 Vanak 广场以北 Firuzo 大厦 12 层 3 室",
+      "phoneLabel": "客服电话",
+      "phoneValue": "+98 21 91000000",
+      "emailLabel": "电子邮箱",
+      "telegramLabel": "Telegram",
+      "hoursLabel": "工作时间",
+      "hoursValue": "周六至周四 9:00–18:00",
+      "hoursOnline": "在线支持：24/7",
+      "callCta": "立即致电",
+      "supportCta": "帮助中心"
+    }
   }
 }

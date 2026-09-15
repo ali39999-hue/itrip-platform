@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { useBookingStore } from '@/stores/booking-store';
@@ -40,6 +41,7 @@ const ITEM_ICONS: Record<string, React.ElementType> = {
 };
 
 export function UnifiedCartDrawer({ open, onClose }: UnifiedCartDrawerProps) {
+  const [mounted, setMounted] = useState(false);
   const locale = useLocale();
   const router = useRouter();
   const isRtl = ['fa', 'ar'].includes(locale);
@@ -49,17 +51,29 @@ export function UnifiedCartDrawer({ open, onClose }: UnifiedCartDrawerProps) {
   const clearCart = useBookingStore((s) => s.clearCart);
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
 
-  // Esc key and backdrop lock
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Esc key and backdrop body scroll lock
   useEffect(() => {
     if (!open) return;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [open, onClose]);
 
   if (!open) return null;
+  if (!mounted || typeof document === 'undefined') return null;
 
   // Cart calculations
   let grossAmount = 0;
@@ -115,7 +129,7 @@ export function UnifiedCartDrawer({ open, onClose }: UnifiedCartDrawerProps) {
     router.push('/checkout');
   };
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -286,7 +300,7 @@ export function UnifiedCartDrawer({ open, onClose }: UnifiedCartDrawerProps) {
                             {num(item.count, locale)}{' '}
                             {item.type.toUpperCase() === 'HOTEL'
                               ? `${item.nights || 1} ${lt(locale, { fa: 'شب', en: 'nights', ar: 'ليلة', zh: '晚', ru: 'ноч.' })}`
-                              : lt(locale, { fa: 'نفر', en: 'pax', ar: 'شخص', zh: '人', ru: 'чел.' })}
+                              : lt(locale, { fa: 'نفر', en: 'pax', ar: 'شخص', zh: '人', ru: 'чеل.' })}
                           </span>
                         </div>
                       </div>
@@ -336,7 +350,7 @@ export function UnifiedCartDrawer({ open, onClose }: UnifiedCartDrawerProps) {
             {/* Price breakdown summary */}
             <div className="space-y-1.5 text-xs">
               <div className="flex items-center justify-between text-sub font-bold">
-                <span>{lt(locale, { fa: 'مجموع قیمت اقلام:', en: 'Subtotal:', ar: 'المجموع:', zh: '商品总价：', ru: 'Сумма:' })}</span>
+                <span>{lt(locale, { fa: 'مجموع قیمت اقلام:', en: 'Subtotal:', ar: 'المجموع:', zh: '商品总价：', ru: 'Сумما:' })}</span>
                 <span className="font-mono font-bold text-ink">{formatMoney(grossAmount, currency, locale)}</span>
               </div>
               {hasCombo && (
@@ -374,6 +388,7 @@ export function UnifiedCartDrawer({ open, onClose }: UnifiedCartDrawerProps) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
