@@ -7,6 +7,7 @@ import { useLocale } from 'next-intl';
 import { ArrowLeft, Clock } from 'lucide-react';
 import { num } from '@/lib/format';
 import { lt } from '@/lib/lt';
+import { formatMoney } from '@/lib/money';
 import { shimmerDataUrl } from '@/lib/image-utils';
 import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES, countryName, type CountryId } from '@/lib/countries';
@@ -523,7 +524,7 @@ export function PopularFlightsSection({ override }: { override?: PopularRouteOve
   const { country } = useCountryStore();
 
   const countryRoutes = POPULAR_ROUTES_BY_COUNTRY[country] || DEFAULT_POPULAR_ROUTES;
-  const routes = override ?? countryRoutes;
+  const routes = (country !== 'iran' && POPULAR_ROUTES_BY_COUNTRY[country]) ? countryRoutes : (override ?? countryRoutes);
 
   return (
     <section aria-label="Popular Flight Routes" className="w-full max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 2xl:px-8">
@@ -606,10 +607,7 @@ export function PopularFlightsSection({ override }: { override?: PopularRouteOve
                 {lt(locale, { fa: 'شروع از', en: 'from', ar: 'من', zh: '起', ru: 'от' })}
               </span>
               <span className="text-sm sm:text-base font-black text-price font-price num whitespace-nowrap">
-                {num(r.price, locale)}
-                <span className="text-[10px] font-bold text-sub ms-1">
-                  {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
-                </span>
+                {formatMoney(r.price, COUNTRIES[country]?.currency || 'IRR', locale)}
               </span>
             </div>
           </Link>

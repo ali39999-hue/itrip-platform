@@ -18,6 +18,8 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
+import { formatMoney } from '@/lib/money';
+import { COUNTRIES } from '@/lib/countries';
 
 type DestinationType = 'iran' | 'turkey' | 'uae' | 'georgia' | 'russia' | 'oman' | 'china';
 type WhoType = 'solo' | 'duo' | 'family' | 'friends';
@@ -114,7 +116,7 @@ export function AiPlannerHookSection() {
         lt(locale, { fa: 'کروز اختصاصی در تنگه بسفر در غروب آفتاب', en: 'Sunset private cruise on the Bosphorus strait', ar: 'رحلة بحرية خاصة في مضيق البوسفور عند الغروب', zh: '博斯普鲁斯海峡日落私人游船', ru: 'Круиз на закате по Босфору' }),
         lt(locale, { fa: 'ترانسفر VIP فرودگاهی رفت و برگشت', en: 'Roundtrip VIP airport transfer', ar: 'توصيل VIP من وإلى المطار', zh: '往返机场 VIP 接送', ru: 'VIP трансфер из/в аэропорт' }),
       ],
-      price: lt(locale, { fa: 'از ۱۹,۸۰۰,۰۰۰ تومان', en: 'From 19,800,000 Toman', ar: 'من 19,800,000 تومان', zh: '起价 19,800,000 图曼', ru: 'От 19 800 000 туманов' }),
+      price: `${lt(locale, { fa: 'شروع از ', en: 'From ', ar: 'يبدأ من ', zh: '起价 ', ru: 'От ' })}${formatMoney(19800000, COUNTRIES.turkey.currency, locale)}`,
     },
     iran: {
       city: lt(locale, { fa: 'اصفهان و شیراز، ایران', en: 'Isfahan & Shiraz, Iran', ar: 'أصفهان وشيراز، إيران', zh: '伊朗伊斯法罕与设拉子', ru: 'Исфахан и Шираз, Иран' }),
@@ -124,7 +126,7 @@ export function AiPlannerHookSection() {
         lt(locale, { fa: 'دیدار از میدان نقش جهان و عمارت عالی‌قاپو', en: 'Naqsh-e Jahan Square & Ali Qapu Palace', ar: 'زيارة ساحة نقش جهان وقصر عالي قابو', zh: '伊玛目广场与阿里卡普宫', ru: 'Площадь Накш-э Джахан и дворец Али-Капу' }),
         lt(locale, { fa: 'گشت تخت جمشید و آرامگاه حافظ با راهنما', en: 'Persepolis & Hafez tomb guided tour', ar: 'جولة برسبوليس وضريح حافظ مع مرشد', zh: '波斯波利斯与哈菲兹墓导览游', ru: 'Экскурсия в Персеполь и мавзолей Хафиза' }),
       ],
-      price: lt(locale, { fa: 'از ۷,۴۰۰,۰۰۰ تومان', en: 'From 7,400,000 Toman', ar: 'من 7,400,000 تومان', zh: '起价 7,400,000 图曼', ru: 'От 7 400 000 туманов' }),
+      price: `${lt(locale, { fa: 'شروع از ', en: 'From ', ar: 'يبدأ من ', zh: '起价 ', ru: 'От ' })}${formatMoney(7400000, COUNTRIES.iran.currency, locale)}`,
     },
     uae: {
       city: lt(locale, { fa: 'دبی، امارات متحده', en: 'Dubai, United Arab Emirates', ar: 'دبي، الإمارات العربية المتحدة', zh: '阿联酋迪拜', ru: 'Дубай, ОАЭ' }),
@@ -134,7 +136,7 @@ export function AiPlannerHookSection() {
         lt(locale, { fa: 'سافاری بیابانی VIP با شام باربیکیو و شترسواری', en: 'VIP Desert Safari with BBQ dinner & camel ride', ar: 'سفاري صحراوي VIP مع عشاء مشاوي وركوب الجمال', zh: 'VIP 沙漠冲沙含烧烤晚餐与骑骆驼', ru: 'VIP сафари по пустыне с ужином и катанием на верблюдах' }),
         lt(locale, { fa: 'بلیط اختصاصی طبقات بالای برج خلیفه', en: 'Burj Khalifa Top Floors Exclusive Entry', ar: 'تذكرة خاصة للأدوار العليا في برج خليفة', zh: '哈利法塔观景台专属入场券', ru: 'Билет на смотровую площадку Бурдж-Халифа' }),
       ],
-      price: lt(locale, { fa: 'از ۲۴,۵۰۰,۰۰۰ تومان', en: 'From 24,500,000 Toman', ar: 'من 24,500,000 تومان', zh: '起价 24,500,000 图曼', ru: 'От 24 500 000 туманов' }),
+      price: `${lt(locale, { fa: 'شروع از ', en: 'From ', ar: 'يبدأ من ', zh: '起价 ', ru: 'От ' })}${formatMoney(24500000, COUNTRIES.uae.currency, locale)}`,
     },
     georgia: {
       city: lt(locale, { fa: 'تفلیس، گرجستان', en: 'Tbilisi, Georgia', ar: 'تبليسي، جورجيا', zh: '格鲁吉亚第比利斯', ru: 'Тбилиси, Грузия' }),
@@ -144,7 +146,7 @@ export function AiPlannerHookSection() {
         lt(locale, { fa: 'تله‌کابین تفلیس و بازدید از قلعه ناریکالا', en: 'Tbilisi Cable Car & Narikala Fortress visit', ar: 'تلفريك تبليسي وزيارة قلعة ناريكالا', zh: '第比利斯缆车与纳里卡拉要塞', ru: 'Канатная дорога Тбилиси и крепость Нарикала' }),
         lt(locale, { fa: 'تور یک‌روزه کوه‌های کازبگی و کلیسای گرگتی', en: 'Kazbegi mountains & Gergeti Trinity church day trip', ar: 'رحلة يوم كامل لجبال كازبيجي وكنيسة جرجيتي', zh: '卡兹别克雪山与格尔盖蒂教堂一日游', ru: 'Однодневный тур в горы Казбеги и храм Гергети' }),
       ],
-      price: lt(locale, { fa: 'از ۱۴,۲۰۰,۰۰۰ تومان', en: 'From 14,200,000 Toman', ar: 'من 14,200,000 تومان', zh: '起价 14,200,000 图曼', ru: 'От 14 200 000 туманов' }),
+      price: `${lt(locale, { fa: 'شروع از ', en: 'From ', ar: 'يبدأ من ', zh: '起价 ', ru: 'От ' })}${formatMoney(14200000, COUNTRIES.georgia.currency, locale)}`,
     },
     russia: {
       city: lt(locale, { fa: 'مسکو و سن‌پترزبورگ، روسیه', en: 'Moscow & Saint Petersburg, Russia', ar: 'موسكو وسانت بطرسبرغ، روسيا', zh: '俄罗斯莫斯科与圣彼得堡', ru: 'Москва и Санкт-Петербург, Россия' }),
@@ -153,7 +155,7 @@ export function AiPlannerHookSection() {
         lt(locale, { fa: 'پرواز مستقیم ماهان یا ایرفلوت', en: 'Direct flight via Mahan or Aeroflot', ar: 'طيران مباشر ماهان أو إيروفلوت', zh: '马汉或俄航直飞航线', ru: 'Прямой рейс Mahan или Аэрофлот' }),
         lt(locale, { fa: 'گشت میدان سرخ، کاخ کرملین و متروی تاریخی مسکو', en: 'Red Square, Kremlin & historic Moscow Metro', ar: 'الساحة الحمراء، الكرملين ومترو موسكو التاريخي', zh: '红场、克里姆林宫及历史地铁游览', ru: 'Красная площадь, Кремль и историческое метро' }),
       ],
-      price: lt(locale, { fa: 'از ۳۱,۰۰۰,۰۰۰ تومان', en: 'From 31,000,000 Toman', ar: 'من 31,000,000 تومان', zh: '起价 31,000,000 图曼', ru: 'От 31 000 000 туманов' }),
+      price: `${lt(locale, { fa: 'شروع از ', en: 'From ', ar: 'يبدأ من ', zh: '起价 ', ru: 'От ' })}${formatMoney(31000000, COUNTRIES.russia.currency, locale)}`,
     },
     oman: {
       city: lt(locale, { fa: 'مسقط، سلطنت عمان', en: 'Muscat, Oman', ar: 'مسقط، سلطنة عُمان', zh: '阿曼马斯喀特', ru: 'Маскат, Оман' }),
@@ -162,7 +164,18 @@ export function AiPlannerHookSection() {
         lt(locale, { fa: 'پرواز مستقیم قشم ایر یا عمان ایر', en: 'Direct flight via Qeshm Air or Oman Air', ar: 'طيران مباشر قشم إير أو الطيران العماني', zh: '阿曼航空或格什姆航空直飞', ru: 'Прямой рейс Oman Air или Qeshm Air' }),
         lt(locale, { fa: 'تور دلفین‌ها در اقیانوس و غواصی در بندر خیران', en: 'Dolphin watching & snorkeling in Bandar Khairan', ar: 'جولة مشاهدة الدلافين والغطس في بندر الخيران', zh: '观海豚与班达尔海兰浮潜游', ru: 'Наблюдение за дельфинами и снорклинг' }),
       ],
-      price: lt(locale, { fa: 'از ۲۱,۵۰۰,۰۰۰ تومان', en: 'From 21,500,000 Toman', ar: 'من 21,500,000 تومان', zh: '起价 21,500,000 图曼', ru: 'От 21 500 000 туманов' }),
+      price: `${lt(locale, { fa: 'شروع از ', en: 'From ', ar: 'يبدأ من ', zh: '起价 ', ru: 'От ' })}${formatMoney(21500000, COUNTRIES.oman.currency, locale)}`,
+    },
+    china: {
+      city: lt(locale, { fa: 'پکن و شانگهای، چین', en: 'Beijing & Shanghai, China', ar: 'بكين وشانغهاي، الصين', zh: '中国北京与上海', ru: 'Пекин и Шанхай, Китай' }),
+      hotel: lt(locale, { fa: 'هتل ۵ ستاره گرند حیات پکن', en: 'Grand Hyatt Beijing 5*', ar: 'فندق گراند حيات بكين 5 نجوم', zh: '北京东方君悦大酒店五星级', ru: 'Отель Grand Hyatt Beijing 5*' }),
+      spots: [
+        lt(locale, { fa: 'پرواز مستقیم تهران - پکن با ماهان ایر', en: 'Direct flight Tehran - Beijing via Mahan Air', ar: 'طيران مباشر طهران - بكين عبر ماهان إير', zh: '德黑兰至北京马汉航空直飞', ru: 'Прямой рейс Тегеран - Пекин Mahan Air' }),
+        lt(locale, { fa: 'گشت دیوار بزرگ چین و شهر ممنوعه با راهنما', en: 'Great Wall & Forbidden City guided tour', ar: 'جولة سور الصين العظيم والمدينة المحرمة مع مرشد', zh: '长城与故宫专业导览游', ru: 'Экскурсия на Великую Китайскую стену и в Запретный город' }),
+        lt(locale, { fa: 'قطار سریع‌السیر ۳۵۰ کیلومتر بر ساعت پکن به شانگهای', en: '350 km/h Bullet train from Beijing to Shanghai', ar: 'قطار فائق السرعة 350 كم/س من بكين إلى شانغهاي', zh: '京沪350公里时速复兴号高铁体验', ru: 'Скоростной поезд 350 км/ч Пекин — Шанхай' }),
+        lt(locale, { fa: 'کروز شبانه رودخانه هوانگ‌پو شانگهای', en: 'Huangpu River evening cruise in Shanghai', ar: 'رحلة كروز ليلية في نهر هوانغبو بشانغهاي', zh: '上海黄浦江夜游游船', ru: 'Вечерний круиз по реке Хуанпу в Шанхае' }),
+      ],
+      price: `${lt(locale, { fa: 'شروع از ', en: 'From ', ar: 'يبدأ من ', zh: '起价 ', ru: 'От ' })}${formatMoney(28000000, COUNTRIES.china.currency, locale)}`,
     },
   };
 

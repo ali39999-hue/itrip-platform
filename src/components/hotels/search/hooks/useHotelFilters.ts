@@ -73,6 +73,10 @@ export function useHotelFilters({
   const [totalPages, setTotalPages] = useState(1);
   const [priceBuckets, setPriceBuckets] = useState<number[]>(new Array(14).fill(20));
   const [facets, setFacets] = useState<HotelFacets | undefined>(undefined);
+  // Network/server failure channel: without it a failed fetch silently shows
+  // stale results (or a misleading "no hotels" empty state on first load).
+  const [error, setError] = useState<string | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -88,6 +92,7 @@ export function useHotelFilters({
     abortControllerRef.current = new AbortController();
 
     setLoading(true);
+    setError(null);
 
     try {
       const q = new URLSearchParams();
@@ -157,6 +162,15 @@ export function useHotelFilters({
     } catch (err: unknown) {
       if ((err as Error).name !== 'AbortError') {
         console.error('Failed to fetch live hotels:', err);
+        setError(
+          lt(locale, {
+            fa: 'خطا در دریافت لیست هتل‌ها. اتصال را بررسی و دوباره تلاش کنید.',
+            en: 'Could not load hotels. Check your connection and retry.',
+            ar: 'تعذر تحميل الفنادق. تحقق من الاتصال وحاول مجدداً.',
+            zh: '加载酒店失败，请检查网络后重试。',
+            ru: 'Не удалось загрузить отели. Проверьте соединение и повторите.',
+          })
+        );
         setLoading(false);
       }
     }
@@ -175,7 +189,13 @@ export function useHotelFilters({
     maxPrice,
     sort,
     currentPage,
+    retryNonce,
+    locale,
   ]);
+
+  const retry = useCallback(() => {
+    setRetryNonce((n) => n + 1);
+  }, []);
 
   useEffect(() => {
     if (debounceTimerRef.current) {
@@ -435,5 +455,7 @@ export function useHotelFilters({
     facets,
     chips,
     activeFiltersCount: chips.length,
+    error,
+    retry,
   };
 }

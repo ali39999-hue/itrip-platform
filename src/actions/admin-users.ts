@@ -323,3 +323,141 @@ export async function addCustomerNoteAction(
     return { success: false, error: msg };
   }
 }
+
+export async function createAdminCustomerUser(data: {
+  name: string;
+  phone?: string;
+  email?: string;
+  nationalId?: string;
+  password?: string;
+}) {
+  try {
+    const admin = await requirePermission('user:manage');
+
+    if (!data.name?.trim()) {
+      return { success: false, error: 'نام مسافر الزامی است.' };
+    }
+    if (!data.phone?.trim() && !data.email?.trim()) {
+      return { success: false, error: 'حداقل یکی از موارد شماره همراه یا ایمیل الزامی است.' };
+    }
+
+    const cleanPhone = data.phone?.trim() || null;
+    const cleanEmail = data.email?.trim().toLowerCase() || null;
+
+    if (cleanPhone) {
+      const existing = await prisma.user.findUnique({ where: { phone: cleanPhone } });
+      if (existing) return { success: false, error: 'این شماره تماس قبلاً ثبت شده است.' };
+    }
+    if (cleanEmail) {
+      const existing = await prisma.user.findUnique({ where: { email: cleanEmail } });
+      if (existing) return { success: false, error: 'این ایمیل قبلاً ثبت شده است.' };
+    }
+
+    const passwordHash = data.password?.trim()
+      ? await bcrypt.hash(data.password.trim(), 10)
+      : await bcrypt.hash('Traveler@Firuzo2026', 10);
+
+    const user = await prisma.user.create({
+      data: {
+        name: data.name.trim(),
+        phone: cleanPhone,
+        email: cleanEmail,
+        nationalId: data.nationalId?.trim() || null,
+        role: 'CUSTOMER',
+        passwordHash,
+        isActive: true,
+      },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: admin.id,
+        action: 'CUSTOMER_CREATED_BY_ADMIN',
+        resource: 'User',
+        resourceId: user.id,
+        newData: JSON.stringify({ name: user.name, phone: user.phone }),
+        reason: `Operator ${admin.email || admin.id} manually created customer account`,
+      },
+    });
+
+    revalidatePath('/admin/users');
+    return { success: true, userId: user.id };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'خطا در ثبت مسافر جدید' };
+  }
+}
+
+export async function updateAdminUserProfile(
+  userId: string,
+  data: {
+    name?: string;
+    phone?: string;
+    email?: string;
+    nationalId?: string;
+    passportNo?: string;
+    isActive?: boolean;
+  }
+) {
+  try {
+    const admin = await requirePermission('user:manage');
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(data.name !== undefined ? { name: data.name.trim() } : {}),
+        ...(data.phone !== undefined ? { phone: data.phone.trim() || null } : {}),
+        ...(data.email !== undefined ? { email: data.email.trim().toLowerCase() || null } : {}),
+        ...(data.nationalId !== undefined ? { nationalId: data.nationalId.trim() || null } : {}),
+        ...(data.passportNo !== undefined ? { passportNo: data.passportNo.trim() || null } : {}),
+        ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
+      },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: admin.id,
+        action: 'USER_PROFILE_UPDATED_BY_ADMIN',
+        resource: 'User',
+        resourceId: userId,
+        newData: JSON.stringify(data),
+        reason: `Operator ${admin.email || admin.id} modified user profile`,
+      },
+    });
+
+    revalidatePath('/admin/users');
+    revalidatePath(`/admin/users/${userId}`);
+    return { success: true, user: updated };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'خطا در ویرایش اطلاعات کاربر' };
+  }
+}
+
+export async function resetAdminUserPassword(userId: string, newPassword: string) {
+  try {
+    const admin = await requirePermission('user:manage');
+
+    if (!newPassword || newPassword.length < 6) {
+      return { success: false, error: 'رمز عبور باید حداقل ۶ کاراکتر باشد.' };
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: admin.id,
+        action: 'USER_PASSWORD_RESET_BY_ADMIN',
+        resource: 'User',
+        resourceId: userId,
+        reason: `Operator ${admin.email || admin.id} reset password for user ${userId}`,
+      },
+    });
+
+    return { success: true };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : 'خطا در تغییر رمز عبور' };
+  }
+}

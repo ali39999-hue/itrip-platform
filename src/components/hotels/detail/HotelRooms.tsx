@@ -15,6 +15,9 @@ import { getRoomsForLocale, getPlansForLocale } from '@/lib/hotel-mock';
 import { quote, TAX, keyOf, toman, type useHotelBooking } from '@/hooks/useHotelBooking';
 import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
+import { formatMoney } from '@/lib/money';
+import { useCountryStore } from '@/stores/country-store';
+import { COUNTRIES } from '@/lib/countries';
 import type { Hotel, RoomType } from '@/lib/types';
 import {
   HotelRatePlanService,
@@ -32,6 +35,9 @@ interface HotelRoomsProps {
 export function HotelRooms({ booking, hotel, onApplyCombo, onOpenEdit }: HotelRoomsProps) {
   const t = useTranslations('HotelDetail');
   const locale = useLocale();
+  const { country } = useCountryStore();
+  const hotelCountry = hotel?.countryId || country;
+  const currency = COUNTRIES[hotelCountry]?.currency || 'IRR';
   const {
     sel,
     setSel,
@@ -202,8 +208,13 @@ export function HotelRooms({ booking, hotel, onApplyCombo, onOpenEdit }: HotelRo
                     </div>
                   </div>
                   <div className="md:text-end">
-                    <div className="text-lg font-black leading-snug text-price num">{num(effectiveUnitPrice, locale)} <small className="text-[11.5px] font-extrabold text-sub">{lt(locale, { fa: 'تومان / شب', en: 'Toman / night', ar: 'تومان / ليلة', zh: '图曼 / 晚', ru: 'томанов / ночь' })}</small></div>
-                    <div className="text-[11.5px] font-bold text-sub">{lt(locale, { fa: `جمع ${num(nightCount, locale)} شب:`, en: `Total ${num(nightCount, locale)} nights:`, ar: `المجموع:`, zh: `共:`, ru: `Итого:` })} <b>{num(effectiveTotalToman, locale)} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</b></div>
+                    <div className="text-lg font-black leading-snug text-price num">
+                      {formatMoney(effectiveUnitPrice, currency, locale)} <small className="text-[11.5px] font-extrabold text-sub">/ {lt(locale, { fa: 'شب', en: 'night', ar: 'ليلة', zh: '晚', ru: 'ночь' })}</small>
+                    </div>
+                    <div className="text-[11.5px] font-bold text-sub">
+                      {lt(locale, { fa: `جمع ${num(nightCount, locale)} شب:`, en: `Total ${num(nightCount, locale)} nights:`, ar: `المجموع:`, zh: `共:`, ru: `Итого:` })}{' '}
+                      <b>{formatMoney(effectiveTotalToman, currency, locale)}</b>
+                    </div>
                   </div>
                   <div className="flex items-center justify-start md:justify-end gap-2">
                     <Select
@@ -389,9 +400,14 @@ export function HotelRooms({ booking, hotel, onApplyCombo, onOpenEdit }: HotelRo
                         </button>
                       </div>
                       <div className="md:text-end">
-                        {pid === 'saver' && <div className="text-sub text-xs font-bold line-through">{fa(toman(ref))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</div>}
-                        <div className="text-lg font-black leading-snug text-price num">{fa(toman(q.avg))} <small className="text-[11.5px] font-extrabold text-sub">{lt(locale, { fa: 'تومان / شب', en: 'Toman / night', ar: 'تومان / ليلة', zh: '图曼 / 晚', ru: 'томанов / ночь' })}</small></div>
-                        <div className="text-[11.5px] font-bold text-sub">{locale === 'fa' ? `جمع ${fa(nights.length)} شب:` : `Total ${nights.length} nights:`} <b>{fa(toman(q.total))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</b></div>
+                        {pid === 'saver' && <div className="text-sub text-xs font-bold line-through">{formatMoney(toman(ref), currency, locale)}</div>}
+                        <div className="text-lg font-black leading-snug text-price num">
+                          {formatMoney(toman(q.avg), currency, locale)} <small className="text-[11.5px] font-extrabold text-sub">/ {lt(locale, { fa: 'شب', en: 'night', ar: 'ليلة', zh: '晚', ru: 'ночь' })}</small>
+                        </div>
+                        <div className="text-[11.5px] font-bold text-sub">
+                          {locale === 'fa' ? `جمع ${fa(nights.length)} شب:` : `Total ${nights.length} nights:`}{' '}
+                          <b>{formatMoney(toman(q.total), currency, locale)}</b>
+                        </div>
                       </div>
                       <div className="flex items-center justify-start md:justify-end gap-2">
                         <Select
@@ -421,7 +437,7 @@ export function HotelRooms({ booking, hotel, onApplyCombo, onOpenEdit }: HotelRo
                                     {stayDateShort(n.date, locale)}
                                   </td>
                                   <td className="py-1 text-end font-extrabold">
-                                    <span>{fa(toman(n.price))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
+                                    <span>{formatMoney(toman(n.price), currency, locale)}</span>
                                     <span className="text-[10px] text-sub font-mono ms-1.5">({fa(n.price)} TRY)</span>
                                   </td>
                                 </tr>
@@ -429,14 +445,14 @@ export function HotelRooms({ booking, hotel, onApplyCombo, onOpenEdit }: HotelRo
                               <tr>
                                 <td className="py-1 font-bold">{lt(locale, { fa: `مالیات و عوارض (${fa(TAX * 100)}٪)`, en: `Taxes & Fees (${TAX * 100}%)`, ar: `الضرائب والرسوم (${TAX * 100}%)`, zh: `税费 (${TAX * 100}%)`, ru: `Налоги и сборы (${TAX * 100}%)` })}</td>
                                 <td className="py-1 text-end font-extrabold">
-                                  <span>{fa(toman(q.tax))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
+                                  <span>{formatMoney(toman(q.tax), currency, locale)}</span>
                                   <span className="text-[10px] text-sub font-mono ms-1.5">({fa(q.tax)} TRY)</span>
                                 </td>
                               </tr>
                               <tr>
                                 <td className="pt-1 font-black">{lt(locale, { fa: 'جمع کل یک اتاق', en: 'Total per room', ar: 'الإجمالي لكل غرفة', zh: '每间房合计', ru: 'Итого за номер' })}</td>
                                 <td className="pt-1 text-end font-black text-price">
-                                  <span>{fa(toman(q.total))} {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</span>
+                                  <span>{formatMoney(toman(q.total), currency, locale)}</span>
                                   <span className="text-[10px] text-sub font-mono ms-1.5">({fa(q.total)} TRY)</span>
                                 </td>
                               </tr>

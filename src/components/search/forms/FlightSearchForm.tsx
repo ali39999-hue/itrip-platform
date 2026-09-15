@@ -93,7 +93,7 @@ export function FlightSearchForm({
               setTripType('oneWay');
               setDate2('');
             }}
-            className={`min-h-[36px] px-4 py-1.5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer ${
+            className={`min-h-[44px] px-4 py-1.5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer ${
               tripType === 'oneWay'
                 ? 'bg-surface text-brand-dark shadow-xs'
                 : 'text-sub hover:text-ink'
@@ -114,7 +114,7 @@ export function FlightSearchForm({
                 setDate2(d.toISOString().slice(0, 10));
               }
             }}
-            className={`min-h-[36px] px-4 py-1.5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer ${
+            className={`min-h-[44px] px-4 py-1.5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer ${
               tripType === 'round'
                 ? 'bg-surface text-brand-dark shadow-xs'
                 : 'text-sub hover:text-ink'
@@ -149,7 +149,7 @@ export function FlightSearchForm({
             type="button"
             onClick={handleSwap}
             aria-label={t('swap')}
-            className={`absolute top-1/2 -translate-y-1/2 end-3 z-30 w-8 h-8 rounded-full bg-surface border border-line shadow-sm text-brand-dark hover:bg-mint active:scale-95 transition-transform duration-300 grid place-items-center cursor-pointer ${
+            className={`absolute top-1/2 -translate-y-1/2 end-3 z-30 size-11 rounded-full bg-surface border border-line shadow-sm text-brand-dark hover:bg-mint active:scale-95 transition-transform duration-300 grid place-items-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
               swapped ? 'rotate-180' : ''
             }`}
           >

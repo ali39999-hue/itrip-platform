@@ -47,9 +47,12 @@ export function TravelerPicker({
     }
   }, [open, setOpen]);
 
+  const isRtl = ['fa', 'ar'].includes(locale);
+  const comma = isRtl ? '، ' : ', ';
+
   const guestSummary = showRooms
     ? childrenCount > 0
-      ? `${num(adults, locale)} ${t('adult')}، ${num(childrenCount, locale)} ${t('child')} • ${num(rooms, locale)} ${t('room')}`
+      ? `${num(adults, locale)} ${t('adult')}${comma}${num(childrenCount, locale)} ${t('child')} • ${num(rooms, locale)} ${t('room')}`
       : rooms > 1
         ? `${num(adults, locale)} ${t('adult')} • ${num(rooms, locale)} ${t('room')}`
         : `${num(adults, locale)} ${t('adult')}`

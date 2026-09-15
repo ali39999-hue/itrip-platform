@@ -90,6 +90,7 @@ export class BookingDomainService {
     currency?: SupportedCurrency;
     referralDiscountPercent?: number;
     referralCode?: string;
+    referralMaxDiscountCapIrr?: number | null;
     promoDiscountPercent?: number;
   }): {
     rawNetCost: number;
@@ -117,6 +118,7 @@ export class BookingDomainService {
       currency,
       referralDiscountPercent: params.referralDiscountPercent,
       referralCode: params.referralCode,
+      referralMaxDiscountCapIrr: params.referralMaxDiscountCapIrr,
       promoDiscountPercent: params.promoDiscountPercent,
     });
 
@@ -168,6 +170,11 @@ export class BookingDomainService {
           data: { status: 'EXPIRED' },
         });
         if (updated.count === 0) return false;
+        // Expired drafts never convert: revoke any attached referral benefit.
+        await tx.bookingReferral.updateMany({
+          where: { bookingId: booking.id },
+          data: { applied: false },
+        });
         await tx.bookingStatusHistory.create({
           data: {
             bookingId: booking.id,

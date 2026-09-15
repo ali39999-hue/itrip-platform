@@ -30,7 +30,7 @@ export default function HotelsSearchPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-soft/40 py-6 px-4 md:px-8" aria-busy="true" aria-live="polite">
+        <div className="min-h-dvh bg-soft/40 py-6 px-4 md:px-8" aria-busy="true" aria-live="polite">
           <div className="max-w-[1400px] mx-auto space-y-6">
             <div className="h-14 rounded-2xl bg-soft animate-pulse" />
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -136,6 +136,8 @@ function HotelsSearchInner() {
     facets,
     chips,
     activeFiltersCount,
+    error,
+    retry,
   } = useHotelFilters({
     initialCity,
     initialSort,
@@ -170,7 +172,7 @@ function HotelsSearchInner() {
         : [1, 'ellipsis', currentPage - 1, currentPage, currentPage + 1, 'ellipsis-end', totalPages];
 
   return (
-    <div className="min-h-screen bg-soft/40 py-6 px-4 md:px-8">
+    <div className="min-h-dvh bg-soft/40 py-6 px-4 md:px-8">
       <div className="max-w-[1400px] mx-auto space-y-6">
         <HotelSearchHeader
           query={query}
@@ -317,6 +319,23 @@ function HotelsSearchInner() {
           <div className={`space-y-4 ${showMap ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
             {loading ? (
               <HotelSkeletonList count={3} />
+            ) : error ? (
+              <div className="bg-surface rounded-2xl border border-rose-200 p-10 text-center shadow-sm" role="alert">
+                <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 grid place-items-center mx-auto mb-3">
+                  <SlidersHorizontal size={24} aria-hidden="true" />
+                </div>
+                <h3 className="text-base font-black text-ink mb-1">
+                  {lt(locale, { fa: 'اختلال موقت در ارتباط با تأمین‌کننده هتل', en: 'Hotel supplier connection issue', ar: 'مشكلة مؤقتة في الاتصال بمورد الفنادق', zh: '酒店供应商连接问题', ru: 'Временная ошибка поставщика отелей' })}
+                </h3>
+                <p className="text-sub font-bold text-xs max-w-md mx-auto mb-4">{error}</p>
+                <button
+                  type="button"
+                  onClick={retry}
+                  className="min-h-[44px] px-5 py-2 rounded-xl bg-brand text-surface font-black text-xs hover:bg-brand-dark transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  {lt(locale, { fa: 'تلاش مجدد استعلام', en: 'Retry query', ar: 'إعادة المحاولة', zh: '重试查询', ru: 'Повторить запрос' })}
+                </button>
+              </div>
             ) : results.length === 0 ? (
               <HotelEmptyState onResetFilters={resetAll} />
             ) : (

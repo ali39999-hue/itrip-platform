@@ -14,6 +14,11 @@ export interface PricingContext {
   promoDiscountPercent?: number; // e.g. 0.05 for 5% off
   referralDiscountPercent?: number; // e.g. 0.05 for 5% off (calculated on baseCost)
   referralCode?: string;
+  /**
+   * Per-code cap override: `undefined` inherits the global
+   * REFERRAL_CONFIG.maxDiscountCapIrr, `null` means uncapped.
+   */
+  referralMaxDiscountCapIrr?: number | null;
   fxRate?: Prisma.Decimal | number;
   targetCurrency?: string;
 }
@@ -44,6 +49,10 @@ export interface PricingResult {
   sellPrice: number;
   currency: string;
   roundingDelta: number;
+
+  // Referral-only benefit + winner (attribution; total discountAmount may be promo)
+  referralDiscountAmount: number;
+  appliedDiscountType: 'NONE' | 'PROMO' | 'REFERRAL' | 'STACKED';
 }
 
 /**
@@ -157,9 +166,13 @@ export function calculatePricing(ctx: PricingContext): PricingResult {
     const refRate = new Prisma.Decimal(ctx.referralDiscountPercent.toString());
     referralDiscountAmount = baseCost.mul(refRate).round(0);
 
-    // Apply cap if defined
-    if (REFERRAL_CONFIG.maxDiscountCapIrr !== null && currency === 'IRR') {
-      const capMoney = new Money(REFERRAL_CONFIG.maxDiscountCapIrr, 'IRR');
+    // Apply cap if defined (per-code override wins over the global default)
+    const effectiveCapIrr =
+      ctx.referralMaxDiscountCapIrr !== undefined
+        ? ctx.referralMaxDiscountCapIrr
+        : REFERRAL_CONFIG.maxDiscountCapIrr;
+    if (effectiveCapIrr !== null && currency === 'IRR') {
+      const capMoney = new Money(effectiveCapIrr, 'IRR');
       if (referralDiscountAmount.greaterThan(capMoney)) {
         referralDiscountAmount = capMoney;
       }
@@ -251,6 +264,10 @@ export function calculatePricing(ctx: PricingContext): PricingResult {
   return {
     breakdown,
     snapshot,
+    // Referral-only portion (attribution): total `discountAmount` may be a
+    // promo under HIGHER_BENEFIT — never attribute promo money to referrals.
+    referralDiscountAmount: referralDiscountAmount.toNumber(),
+    appliedDiscountType,
     netCost: baseCost.toNumber(),
     markupAmount: rawMarkup.toNumber(),
     serviceFee: platformFee.add(supplierFee).toNumber(),

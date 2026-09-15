@@ -7,6 +7,7 @@ import { Search, MapPin, Hotel as HotelIcon, Star, Loader2, X, ArrowRight, Arrow
 import { CITIES, type CityOption } from '@/lib/data';
 import { COUNTRIES, countryName, type CountryId } from '@/lib/countries';
 import { lt } from '@/lib/lt';
+import { formatMoney } from '@/lib/money';
 
 /** سه شهر پرطرفدار پیش‌فرض (مشهد، استانبول، دبی) */
 const POPULAR_CITY_IDS = ['mhd', 'ist', 'dxb'];
@@ -186,8 +187,7 @@ export function CityHotelSearch() {
                   </span>
                 </div>
                 <span className="text-[11px] font-black text-brand-dark whitespace-nowrap shrink-0">
-                  {formatPrice(h.pricePerNight)}
-                  <span className="text-sub font-bold"> {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: 'Toman', ru: 'Toman' })}</span>
+                  {formatMoney(h.pricePerNight, COUNTRIES[city.countryId]?.currency || 'IRR', locale)}
                 </span>
               </Link>
             </li>
@@ -206,7 +206,7 @@ export function CityHotelSearch() {
       {/* سه شهر پرطرفدار */}
       <div className="px-3 pt-3 pb-2">
         <span className="text-[11px] font-black text-brand-dark block mb-2">
-          {lt(locale, { fa: 'شهرهای پرطرفدار', en: 'Popular cities', ar: 'مدن پرطرفدار', zh: '热门城市', ru: 'Популярные города' })}
+          {lt(locale, { fa: 'شهرهای پرطرفدار', en: 'Popular cities', ar: 'المدن الأكثر طلباً', zh: '热门城市', ru: 'Популярные города' })}
         </span>
         <div className="flex flex-wrap gap-1.5">
           {popularCities.map((c) => (

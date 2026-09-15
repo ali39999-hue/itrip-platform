@@ -171,8 +171,8 @@ export function PlannerResult(props: PlannerResultProps) {
         />
       </div>
 
-      {/* MOBILE STICKY PLAN CONVERSION BAR */}
-      <div className="lg:hidden fixed bottom-[calc(58px+env(safe-area-inset-bottom,0px))] inset-x-0 z-40 bg-surface/95 backdrop-blur-md border-t border-line px-4 py-3 shadow-elev-3 flex items-center justify-between gap-4">
+      {/* MOBILE STICKY PLAN CONVERSION BAR — offset above BottomNav (62px) + safe area */}
+      <div className="lg:hidden fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] inset-x-0 z-40 bg-surface/95 backdrop-blur-md border-t border-line px-4 py-3 shadow-elev-3 flex items-center justify-between gap-4">
         <div>
           <span className="text-[11px] font-bold text-sub block leading-none mb-1">
             {num(days, locale)} {t('qDays')} • {num(travelers, locale)} {lt(locale, { fa: 'مسافر', en: 'travelers', ar: 'مسافر', zh: '名旅客', ru: 'пассажиров' })}

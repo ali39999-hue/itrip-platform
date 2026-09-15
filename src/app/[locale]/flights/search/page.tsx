@@ -27,7 +27,19 @@ import {
 } from '@/components/flights';
 import { AirlineLogo } from '@/components/flights/AirlineLogo';
 import { CrossSellBundle } from '@/components/shared/CrossSellBundle';
+import { CapabilityBadge } from '@/components/ui/CapabilityBadge';
 import { trackFunnel } from '@/lib/analytics';
+
+/** Live-supplier overlay meta returned by /api/flights/search (null = static catalog). */
+interface LiveFlightMeta {
+  supplier: string;
+  routeKey: string;
+  departureDate: string;
+  updatedAt: string;
+  ageMinutes: number;
+  stale: boolean;
+  count: number;
+}
 import {
   PlaneTakeoff,
   PlaneLanding,
@@ -186,6 +198,7 @@ function FlightSearchInner() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [liveMeta, setLiveMeta] = useState<LiveFlightMeta | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -253,6 +266,7 @@ function FlightSearchInner() {
         setFlights(json.data.flights || []);
         setTotalCount(json.data.total || 0);
         setTotalPages(json.data.totalPages || 1);
+        setLiveMeta((json.liveMeta as LiveFlightMeta | null) ?? null);
 
         if (json.data.airlineFacets) {
           setAirlineOptions(json.data.airlineFacets);
@@ -284,6 +298,7 @@ function FlightSearchInner() {
       if ((err as Error).name !== 'AbortError') {
         console.error('Failed to fetch live flights:', err);
         setError('خطا در دریافت لیست پروازهای لایو');
+        setLiveMeta(null);
       }
     } finally {
       setLoading(false);
@@ -881,7 +896,7 @@ function FlightSearchInner() {
   );
 
   return (
-    <div className="min-h-screen bg-paper pb-32 sm:pb-24 lg:pb-20">
+    <div className="min-h-dvh bg-paper pb-32 sm:pb-24 lg:pb-20">
       {/* ================= DESKTOP FLIGHT SEARCH HEADER ================= */}
       <FlightSearchHeader
         from={fromInput}
@@ -1125,17 +1140,42 @@ function FlightSearchInner() {
             </button>
           </div>
 
-          <div className="flex items-center justify-between">
-            <p className="text-[12px] text-sub font-bold">
-              {loading && flights.length === 0
-                ? lt(locale, {
-                    fa: 'در حال جستجو و استعلام پروازها...',
-                    en: 'Searching available flights...',
-                    ar: 'جاري البحث عن الرحلات المتاحة...',
-                    zh: '正在查询可用航班...',
-                    ru: 'Поиск доступных рейсов...',
-                  })
-                : `${num(totalCount, locale)} ${t('flights')}`}
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[12px] text-sub font-bold flex items-center gap-2 min-w-0">
+              <span className="truncate">
+                {loading && flights.length === 0
+                  ? lt(locale, {
+                      fa: 'در حال جستجو و استعلام پروازها...',
+                      en: 'Searching available flights...',
+                      ar: 'جاري البحث عن الرحلات المتاحة...',
+                      zh: '正在查询可用航班...',
+                      ru: 'Поиск доступных рейсов...',
+                    })
+                  : `${num(totalCount, locale)} ${t('flights')}`}
+              </span>
+              {!loading && !error && flights.length > 0 && (
+                <span className="inline-flex items-center gap-1.5 shrink-0">
+                  <CapabilityBadge
+                    status={liveMeta ? 'LIVE' : 'MOCK'}
+                    locale={locale}
+                    showTooltip
+                  />
+                  {liveMeta && (
+                    <span
+                      className={`text-[10px] font-bold tabular-nums ${liveMeta.stale ? 'text-amber-700 dark:text-amber-300' : 'text-sub'}`}
+                      title={new Date(liveMeta.updatedAt).toLocaleString()}
+                    >
+                      {lt(locale, {
+                        fa: liveMeta.stale ? `به‌روزرسانی ${num(liveMeta.ageMinutes, locale)} دقیقه پیش` : `${num(liveMeta.ageMinutes, locale)} دقیقه پیش به‌روزرسانی شد`,
+                        en: liveMeta.stale ? `Stale · updated ${liveMeta.ageMinutes}m ago` : `Updated ${liveMeta.ageMinutes}m ago`,
+                        ar: liveMeta.stale ? `قديمة · حُدّثت قبل ${liveMeta.ageMinutes} د` : `حُدّثت قبل ${liveMeta.ageMinutes} د`,
+                        zh: liveMeta.stale ? `已过期 · ${liveMeta.ageMinutes}分钟前更新` : `${liveMeta.ageMinutes}分钟前更新`,
+                        ru: liveMeta.stale ? `Устарело · обновлено ${liveMeta.ageMinutes} мин назад` : `Обновлено ${liveMeta.ageMinutes} мин назад`,
+                      })}
+                    </span>
+                  )}
+                </span>
+              )}
             </p>
             {error && <span className="text-xs text-destructive font-bold">{error}</span>}
             {loading && (
@@ -1524,7 +1564,7 @@ export default function FlightSearchPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-paper flex items-center justify-center">
+        <div className="min-h-dvh bg-paper flex items-center justify-center">
           <Loader2 className="animate-spin text-brand" size={36} />
         </div>
       }

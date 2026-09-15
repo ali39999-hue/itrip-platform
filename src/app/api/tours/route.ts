@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllTours } from '@/services/tours-service';
 import { prisma } from '@/lib/prisma';
+import { DELETED_STATIC_KIND_TOUR, mergeStaticTours } from '@/domains/content/ContentDomainService';
 import type { Tour } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -16,17 +17,29 @@ export async function GET(request: NextRequest) {
     // Tour table with the same ids, so static copies sharing a DB id must be
     // dropped (even when the DB copy is unpublished) or the API would return
     // duplicate ids and React would render duplicate keys.
-    const dbTours = await prisma.tour.findMany({
-      include: {
-        departureDates: true,
-        itineraryDays: true,
-      },
-    }).catch(() => []);
+    // Additionally, ids explicitly deleted in the CMS (tombstones) must not
+    // resurrect their static twins.
+    const [dbTours, tombstonedIds] = await Promise.all([
+      prisma.tour.findMany({
+        include: {
+          departureDates: true,
+          itineraryDays: true,
+        },
+      }).catch(() => []),
+      prisma.deletedStaticRef.findMany({
+        where: { kind: DELETED_STATIC_KIND_TOUR },
+        select: { refId: true },
+      }).catch(() => [] as Array<{ refId: string }>),
+    ]);
 
     const dbIds = new Set(dbTours.map((t) => t.id));
 
-    // 1. Static seed tours not mirrored in DB
-    const staticTours = getAllTours().filter((t) => !dbIds.has(t.id));
+    // 1. Static seed tours not mirrored in DB and not CMS-deleted
+    const staticTours = mergeStaticTours(
+      getAllTours(),
+      dbIds,
+      tombstonedIds.map((r) => r.refId),
+    );
 
     // 2. Published custom tours from database
     const publishedDbTours = dbTours.filter((t) => t.isPublished);

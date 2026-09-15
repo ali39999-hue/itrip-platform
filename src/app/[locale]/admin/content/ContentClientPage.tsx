@@ -1662,8 +1662,10 @@ function AdminContentPageInner({
                         />
                         {tourHeroImage && (
                           <div className="mt-2 relative w-full h-32 rounded-xl overflow-hidden border border-line bg-soft">
+                            {/* Raw <img> intentional: admin-entered arbitrary-host preview URL
+                                in a fixed h-32 box (no CLS); next/image remotePatterns can't cover free-form input. */}
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={tourHeroImage} alt="پیش‌نمایش تصویر" className="w-full h-full object-cover" />
+                            <img src={tourHeroImage} alt="پیش‌نمایش تصویر" loading="lazy" className="w-full h-full object-cover" />
                           </div>
                         )}
                       </div>

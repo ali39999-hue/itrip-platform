@@ -88,6 +88,7 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
+
 const LOCALE_FONT: Record<string, { variable: string }> = {
   fa: iranYekan,
   ar: iranYekan,
@@ -100,31 +101,8 @@ function localeFont(locale: string) {
   return LOCALE_FONT[locale] ?? iranYekan;
 }
 
-// CSS variables consumed by the --font-sans / --font-heading tokens in globals.css.
-// FlyToday exact font stack: IRANYekanXFaNum as primary font
-const LOCALE_FONT_VAR: Record<string, { sans: string; heading: string }> = {
-  fa: {
-    sans: 'var(--font-iranyekan), IRANYekanXFaNum, IRANYekanX, var(--font-yekan-bakh), "Yekan Bakh", sans-serif',
-    heading: 'var(--font-iranyekan), IRANYekanXFaNum, IRANYekanX, var(--font-yekan-bakh), "Yekan Bakh", sans-serif'
-  },
-  ar: {
-    sans: 'var(--font-iranyekan), IRANYekanXFaNum, IRANYekanX, var(--font-yekan-bakh), "Yekan Bakh", "Segoe UI", Tahoma, sans-serif',
-    heading: 'var(--font-iranyekan), IRANYekanXFaNum, IRANYekanX, var(--font-yekan-bakh), "Yekan Bakh", "Segoe UI", Tahoma, sans-serif'
-  },
-  en: {
-    sans: 'var(--font-jakarta, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif)',
-    heading: 'var(--font-jakarta, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif)'
-  },
-  ru: {
-    sans: 'var(--font-noto, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif)',
-    heading: 'var(--font-noto, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif)'
-  },
-  zh: {
-    sans: 'var(--font-noto-sc, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif)',
-    heading: 'var(--font-noto-sc, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif)'
-  },
-};
-
+import { LOCALE_FONT_VAR } from '@/lib/fonts';
+import { LocaleHtmlSync } from '@/components/layout/LocaleHtmlSync';
 import { AppChrome } from '@/components/layout/AppChrome';
 import { PwaBoot } from '@/components/pwa/PwaBoot';
 import { Analytics } from '@vercel/analytics/next';
@@ -209,8 +187,8 @@ export default async function RootLayout({
       className={`${font.variable} ${iranYekan.variable} ${yekanBakh.variable} ${geistMono.variable} h-full antialiased`}
       style={
         {
-          '--font-app-sans': (LOCALE_FONT_VAR[locale] ?? LOCALE_FONT_VAR.fa).sans,
-          '--font-app-heading': (LOCALE_FONT_VAR[locale] ?? LOCALE_FONT_VAR.fa).heading,
+          '--font-app-sans': (LOCALE_FONT_VAR[locale] || LOCALE_FONT_VAR.fa || { sans: 'sans-serif', heading: 'sans-serif' }).sans,
+          '--font-app-heading': (LOCALE_FONT_VAR[locale] || LOCALE_FONT_VAR.fa || { sans: 'sans-serif', heading: 'sans-serif' }).heading,
         } as React.CSSProperties
       }
     >
@@ -255,6 +233,7 @@ export default async function RootLayout({
           })}
         </a>
         <NextIntlClientProvider messages={messages}>
+          <LocaleHtmlSync />
           <Providers>
             <AppChrome>
               {children}

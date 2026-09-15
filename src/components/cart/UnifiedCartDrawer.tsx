@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { useBookingStore } from '@/stores/booking-store';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
 import { formatMoney } from '@/lib/money';
@@ -55,22 +56,18 @@ export function UnifiedCartDrawer({ open, onClose }: UnifiedCartDrawerProps) {
     setMounted(true);
   }, []);
 
-  // Esc key and backdrop body scroll lock
+  // Focus trap: initial focus, Tab wrap, Escape→close, focus restore.
+  const panelRef = useFocusTrap<HTMLDivElement>(open, { onEscape: onClose });
+
+  // Body scroll lock with restore (mirror Header mobile drawer pattern).
   useEffect(() => {
     if (!open) return;
-
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
     return () => {
       document.body.style.overflow = prevOverflow;
-      window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
   if (!mounted || typeof document === 'undefined') return null;
@@ -134,13 +131,14 @@ export function UnifiedCartDrawer({ open, onClose }: UnifiedCartDrawerProps) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="cart-drawer-title"
-      className="fixed inset-0 z-[160] flex justify-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-[200] flex justify-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
       onClick={onClose}
     >
       {/* Drawer Surface: Bottom Sheet on Mobile (<768px), Slide-Over on Desktop (>=768px) */}
       <div
+        ref={panelRef}
         onClick={(e) => e.stopPropagation()}
-        className="w-full md:max-w-md bg-surface border-t md:border-t-0 md:border-s border-line shadow-2xl flex flex-col h-full max-h-[92vh] md:max-h-full rounded-t-3xl md:rounded-none mt-auto md:mt-0 transition-transform overflow-hidden"
+        className="w-full md:max-w-md bg-surface border-t md:border-t-0 md:border-s border-line shadow-2xl flex flex-col h-full max-h-[92vh] md:max-h-full rounded-t-3xl md:rounded-none mt-auto md:mt-0 overflow-hidden animate-in slide-in-from-bottom md:slide-in-from-right rtl:md:slide-in-from-left duration-300"
       >
         {/* Mobile Drag Indicator */}
         <div className="md:hidden pt-3 pb-1 flex justify-center">

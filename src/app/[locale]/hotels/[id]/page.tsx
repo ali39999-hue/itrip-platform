@@ -60,7 +60,7 @@ export default function HotelDetailPage() {
         const maxAttempts = 3;
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
           try {
-            const res = await fetch(`/api/hotels/${params.id}`);
+            const res = await fetch(`/api/hotels/${encodeURIComponent(params.id)}`);
             if (res.status === 404) {
               // Definitive answer: this hotel does not exist.
               const staticMatch = HOTELS.find((h) => h.id === params.id);

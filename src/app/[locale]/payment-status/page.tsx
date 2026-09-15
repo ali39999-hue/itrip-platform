@@ -20,7 +20,7 @@ export default function PaymentStatusPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center py-12 px-4" aria-busy="true" aria-live="polite">
+        <div className="min-h-dvh flex items-center justify-center py-12 px-4" aria-busy="true" aria-live="polite">
           <div className="w-full max-w-[650px] h-80 rounded-3xl bg-soft animate-pulse" />
         </div>
       }
@@ -202,14 +202,14 @@ function PaymentStatusContent() {
 
   if (!hydrated) {
     return (
-      <div className="min-h-screen flex items-center justify-center py-12 px-4" aria-busy="true" aria-live="polite">
+      <div className="min-h-dvh flex items-center justify-center py-12 px-4" aria-busy="true" aria-live="polite">
         <div className="w-full max-w-[650px] h-80 rounded-3xl bg-soft animate-pulse" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden py-12 px-4">
+    <div className="min-h-dvh flex flex-col items-center justify-center relative overflow-hidden py-12 px-4">
       
       {/* Ambient Background Elements */}
       <div className="absolute top-0 start-0 w-full h-full pointer-events-none -z-10 opacity-30">

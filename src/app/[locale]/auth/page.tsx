@@ -10,7 +10,7 @@ import { CheckCircle2, Loader2, Lock, LogIn, Mail, Phone, Send, MessageCircle, Q
 import { lt } from '@/lib/lt';
 import { Logo } from '@/components/layout/Logo';
 import { OtpPinInput } from '@/components/ui/OtpPinInput';
-import { AuthChannel, requestOtp, getAuthCapabilities, checkEmailRegistration } from '@/actions/auth';
+import { AuthChannel, requestOtp, getAuthCapabilities, checkEmailRegistration, getSessionUser } from '@/actions/auth';
 import type { TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
 
 interface AuthCapabilities {
@@ -91,10 +91,43 @@ export default function AuthPage() {
   const [isRealSent, setIsRealSent] = useState<boolean>(false);
   const [devCode, setDevCode] = useState<string | undefined>(undefined);
 
-  // Already signed-in users don't need the auth flow — send them on their way.
+  // Already signed-in users: verify server session before auto-redirecting.
+  // If the server session expired (e.g. idle timeout), clear stale client state
+  // so the user can immediately enter their credentials without being trapped in a loop.
   useEffect(() => {
     if (kyc?.step === 'approved' && user) {
-      router.push(callbackUrl);
+      let isMounted = true;
+      getSessionUser()
+        .then((res) => {
+          if (!isMounted) return;
+          if (res.success && res.user) {
+            router.push(callbackUrl);
+          } else {
+            useAuthStore.getState().logout();
+            if (callbackUrl.includes('/admin')) {
+              setAuthMode('password');
+              if (user?.email || user?.phone) {
+                setIdentifier(user.email || user.phone);
+              }
+            }
+            const reason = searchParams.get('reason');
+            if (reason === 'idle_timeout') {
+              setError(
+                lt(locale, {
+                  fa: 'نشست شما به دلیل عدم فعالیت منقضی شده است. لطفاً مجدداً وارد شوید.',
+                  en: 'Your session has expired due to inactivity. Please sign in again.',
+                  ar: 'انتهت جلستك بسبب عدم النشاط. يرجى تسجيل الدخول مرة أخرى.',
+                  zh: '会话已过期，请重新登录。',
+                  ru: 'Сессия истекла из-за неактивности. Пожалуйста, войдите снова.',
+                })
+              );
+            }
+          }
+        })
+        .catch(() => {});
+      return () => {
+        isMounted = false;
+      };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kyc?.step, user]);

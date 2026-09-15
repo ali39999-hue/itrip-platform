@@ -52,7 +52,7 @@ export default function HotelsLandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-soft/30">
+    <div className="min-h-dvh bg-soft/30">
       {/* Hero Section with Search */}
       <section className="relative py-12 md:py-16 px-4 md:px-10 bg-gradient-to-b from-mint/40 via-surface to-soft/20">
         <div className="max-w-[1280px] mx-auto text-center mb-8">

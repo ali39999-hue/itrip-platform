@@ -1,7 +1,61 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
+export const DELETED_STATIC_KIND_TOUR = 'tour' as const;
+
+/**
+ * Pure merge helper (unit-testable, no I/O): DB rows win by id; static seed
+ * copies fill the gaps EXCEPT ids the CMS explicitly deleted (tombstones).
+ * A tombstone never hides an existing DB row (e.g. restored by seed).
+ */
+export function mergeStaticTours<T extends { id: string }>(
+  staticTours: T[],
+  dbIds: Set<string> | string[],
+  tombstonedIds: Set<string> | string[],
+): T[] {
+  const db = dbIds instanceof Set ? dbIds : new Set(dbIds);
+  const tomb = tombstonedIds instanceof Set ? tombstonedIds : new Set(tombstonedIds);
+  return staticTours.filter((t) => !db.has(t.id) && !tomb.has(t.id));
+}
+
 export class ContentDomainService {
+  /** Ids the CMS explicitly deleted (suppresses static fallbacks only). */
+  static async getDeletedStaticIds(kind: string): Promise<string[]> {
+    try {
+      const rows = await prisma.deletedStaticRef.findMany({
+        where: { kind },
+        select: { refId: true },
+      });
+      return rows.map((r) => r.refId);
+    } catch {
+      return [];
+    }
+  }
+
+  /** Records a CMS deletion so the static twin can't resurrect (best-effort). */
+  static async tombstoneStaticRef(kind: string, refId: string, reason = 'cms_delete'): Promise<void> {
+    try {
+      await prisma.deletedStaticRef.upsert({
+        where: { kind_refId: { kind, refId } },
+        update: {},
+        create: { kind, refId, reason },
+      });
+    } catch {
+      // Tombstone is advisory — the row delete above already succeeded.
+    }
+  }
+
+  /** Clears tombstones for ids that exist again (e.g. canonical seed restore). */
+  static async untombstoneStaticRefs(kind: string, refIds: string[]): Promise<void> {
+    if (refIds.length === 0) return;
+    try {
+      await prisma.deletedStaticRef.deleteMany({
+        where: { kind, refId: { in: refIds } },
+      });
+    } catch {
+      // Advisory only.
+    }
+  }
   private static serializeTour<T extends Record<string, unknown>>(t: T): T {
     if (!t) return t;
     const priceVal = t.price;
@@ -45,10 +99,16 @@ export class ContentDomainService {
     }
 
     // Instant zero-latency fallback: return canonical DETAILED_TOURS immediately
-    // so ERP and public catalog load in <1ms without freezing or timing out
+    // so ERP and public catalog load in <1ms without freezing or timing out.
+    // Tombstoned ids (explicitly deleted in the CMS) stay excluded so a
+    // deletion can't resurrect its static twin.
     try {
       const { DETAILED_TOURS } = await import('@/services/tours-service');
-      return DETAILED_TOURS.map((t) => ContentDomainService.serializeTour({
+      const tombstoned = new Set(await ContentDomainService.getDeletedStaticIds(DELETED_STATIC_KIND_TOUR));
+      const visible = tombstoned.size > 0
+        ? DETAILED_TOURS.filter((t) => !tombstoned.has(t.id))
+        : DETAILED_TOURS;
+      return visible.map((t) => ContentDomainService.serializeTour({
         ...t,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -231,7 +291,19 @@ export class ContentDomainService {
   }
 
   static async deleteTour(id: string) {
-    return prisma.tour.delete({ where: { id } });
+    const deleted = await prisma.tour.delete({ where: { id } });
+    // If this was a seeded/static tour, its static twin would otherwise
+    // reappear on the next read (static fallback for ids absent from DB).
+    // Record the deletion intent so read paths keep it hidden.
+    try {
+      const { DETAILED_TOURS } = await import('@/services/tours-service');
+      if (DETAILED_TOURS.some((t) => t.id === id)) {
+        await ContentDomainService.tombstoneStaticRef(DELETED_STATIC_KIND_TOUR, id);
+      }
+    } catch {
+      // Advisory only — the row delete above already succeeded.
+    }
+    return deleted;
   }
 
   static async toggleTourPublish(id: string, isPublished: boolean) {

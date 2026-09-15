@@ -82,7 +82,11 @@ for (const file of files) {
     const closeMatch = src.slice(tagEnd, tagEnd + 2000).match(/<\/(?:button|Button|a|Link)>/);
     const contentEnd = closeMatch ? tagEnd + closeMatch.index : tagEnd + 600;
     const content = src.slice(tagEnd + 1, Math.min(contentEnd + 20, tagEnd + 600));
-    const hasSize = /min-[wh]-\[4[48]px\]|(?:min-h|h|size)-1[12]\b|p-3\b|p-4\b|py-3\b/.test(chunk);
+    // Numeric min-w/min-h in px (e.g. min-h-[50px]) count when >= 44;
+    // important-prefixed (!min-h-[44px]) forms are accepted too.
+    const explicitMins = [...chunk.matchAll(/!?(?:min-[wh])-?\[(\d+)px\]/g)].map((m) => Number(m[1]));
+    const hasSize = explicitMins.some((n) => n >= 44)
+      || /min-[wh]-\[4[48]px\]|(?:min-h|h|size)-1[12]\b|p-3\b|p-4\b|py-3\b/.test(chunk);
     // icon-only = named (aria-label/sr-only) with no visible literal or i18n text as CONTENT
     const iconOnly = /aria-label|sr-only/.test(chunk + content)
       && !/\b[A-Z\u0600-\u06FF][\w\u0600-\u06FF ]{2,}</.test(content)

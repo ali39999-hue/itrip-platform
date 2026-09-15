@@ -12,6 +12,7 @@ import { businessMetrics } from '@/lib/observability/business-metrics';
 import { TravelFileService } from '@/domains/erp/TravelFileService';
 import { ExceptionCenterService } from '@/domains/erp/ExceptionCenterService';
 import { SiteContentService, FxRatesOverride } from '@/domains/content/SiteContentService';
+import { REFERRAL_CONFIG } from '@/lib/referral/config';
 import { toPlain } from '@/lib/serialize';
 
 export async function runLedgerReconciliation(): Promise<ReconciliationReport> {
@@ -867,6 +868,15 @@ export async function createReferralCodeAction(data: { code: string; leaderId: s
       return { success: false, error: 'این کد معرف قبلاً ثبت شده است' };
     }
 
+    // Fail fast with a clear message instead of a raw Prisma FK error.
+    const leader = await prisma.user.findUnique({
+      where: { id: parsed.leaderId },
+      select: { id: true },
+    });
+    if (!leader) {
+      return { success: false, error: 'سرگروه با این شناسه یافت نشد' };
+    }
+
     const created = await prisma.referralCode.create({
       data: {
         code: normalized,
@@ -874,6 +884,11 @@ export async function createReferralCodeAction(data: { code: string; leaderId: s
         customTierConfig: data.customTierConfig || null,
       },
     });
+
+    // Resolve the "saved for later" promise: bookings that were placed with
+    // this raw code while it was UNMATCHED now link to the real code record.
+    // Only non-terminal bookings are touched; attribution stays auditable.
+    const resolvedCount = await ReferralDomainService.resolveUnmatchedForCode(created.id, normalized);
 
     await prisma.auditLog.create({
       data: {
@@ -887,10 +902,64 @@ export async function createReferralCodeAction(data: { code: string; leaderId: s
     });
 
     revalidatePath('/admin/referrals');
-    return { success: true, referralCode: created };
+    return { success: true, referralCode: created, resolvedUnmatched: resolvedCount };
   } catch (err: unknown) {
     console.error('createReferralCodeAction error:', err);
     return { success: false, error: err instanceof Error ? err.message : 'Failed to create referral code' };
+  }
+}
+
+export async function updateReferralCodeAction(data: {
+  id: string;
+  isActive?: boolean;
+  leaderId?: string;
+  customTierConfig?: string | null;
+}) {
+  try {
+    const admin = await requirePermission('ops:override:cancel');
+    const existing = await prisma.referralCode.findUnique({
+      where: { id: data.id },
+    });
+    if (!existing) {
+      return { success: false, error: 'کد معرف یافت نشد' };
+    }
+
+    if (data.leaderId && data.leaderId !== existing.leaderId) {
+      const leader = await prisma.user.findUnique({
+        where: { id: data.leaderId },
+        select: { id: true },
+      });
+      if (!leader) {
+        return { success: false, error: 'سرگروه با این شناسه یافت نشد' };
+      }
+    }
+
+    const updated = await prisma.referralCode.update({
+      where: { id: data.id },
+      data: {
+        ...(typeof data.isActive === 'boolean' ? { isActive: data.isActive } : {}),
+        ...(data.leaderId ? { leaderId: data.leaderId } : {}),
+        ...(data.customTierConfig !== undefined ? { customTierConfig: data.customTierConfig } : {}),
+      },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: admin.id,
+        action: 'REFERRAL_CODE_UPDATED',
+        resource: 'ReferralCode',
+        resourceId: updated.id,
+        oldData: JSON.stringify(existing),
+        newData: JSON.stringify(updated),
+        reason: 'Group leader referral code updated by admin',
+      },
+    });
+
+    revalidatePath('/admin/referrals');
+    return { success: true, referralCode: updated };
+  } catch (err: unknown) {
+    console.error('updateReferralCodeAction error:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to update referral code' };
   }
 }
 
@@ -903,32 +972,60 @@ export async function updateBookingReferralAction(bookingId: string, newCode: st
 
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { referral: true },
+      include: { referral: true, items: true },
     });
     if (!booking) return { success: false, error: 'رزرو یافت نشد' };
 
     const validation = await ReferralDomainService.validateCode(newCode, booking.customerId);
     const oldReferralData = booking.referral ? JSON.stringify(booking.referral) : null;
 
+    // Recompute attribution from stored items (previously amounts/pax went
+    // stale while only the code linkage changed; totals stay untouched —
+    // this row is attribution, and the change is audit-logged below).
+    const baseSum = booking.items.reduce((sum, item) => sum + Number(item.netCost || 0), 0);
+    let paxCount = booking.referral?.paxCount ?? 1;
+    try {
+      const details = JSON.parse((booking.items[0]?.details as string | undefined) || '{}') as {
+        passengers?: unknown[];
+        count?: unknown;
+      };
+      if (Array.isArray(details.passengers) && details.passengers.length > 0) {
+        paxCount = details.passengers.length;
+      } else if (typeof details.count === 'number' && details.count > 0) {
+        paxCount = Math.floor(details.count);
+      }
+    } catch {
+      // Keep previous paxCount on malformed details.
+    }
+    const cap = REFERRAL_CONFIG.maxDiscountCapIrr;
+    const recomputedDiscount = validation.valid
+      ? Math.min(
+          Math.round(baseSum * validation.discountPercent),
+          cap === null ? Number.POSITIVE_INFINITY : cap
+        )
+      : 0;
+
+    const referralData = {
+      referralCodeId: validation.referralCodeId || null,
+      rawCode: ReferralDomainService.normalizeCode(validation.rawCode || newCode),
+      status: validation.status,
+      paxCount,
+      discountAmount: new Prisma.Decimal(recomputedDiscount),
+      discountPercent: new Prisma.Decimal(validation.discountPercent.toString()),
+      applied: validation.valid && recomputedDiscount > 0,
+    };
+
     let updatedReferral;
     if (booking.referral) {
       updatedReferral = await prisma.bookingReferral.update({
         where: { bookingId },
-        data: {
-          referralCodeId: validation.referralCodeId || null,
-          rawCode: validation.rawCode || newCode,
-          status: validation.status,
-          applied: validation.valid,
-        },
+        data: referralData,
       });
     } else {
       updatedReferral = await prisma.bookingReferral.create({
         data: {
           bookingId,
-          referralCodeId: validation.referralCodeId || null,
-          rawCode: validation.rawCode || newCode,
-          status: validation.status,
-          applied: validation.valid,
+          ...referralData,
           source: 'ADMIN',
           registeredByUserId: admin.id,
         },

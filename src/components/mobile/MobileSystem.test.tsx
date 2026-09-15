@@ -61,15 +61,51 @@ describe('Mobile Design System Components', () => {
       expect(onClick).not.toHaveBeenCalled();
     });
 
-    it('renders loading spinner when loading is true', () => {
-      renderWithIntl(
+    it('renders loading spinner with loadingLabel when loading is true', () => {
+      const { rerender } = renderWithIntl(
         <StickyCTA
           ctaLabel="پرداخت"
           onClick={vi.fn()}
           loading={true}
+          loadingLabel="در حال پردازش..."
         />
       );
       expect(screen.getByText('در حال پردازش...')).toBeTruthy();
+
+      // Without loadingLabel the CTA label stays visible (no hardcoded locale text)
+      rerender(
+        <NextIntlClientProvider locale="fa" messages={messages}>
+          <StickyCTA ctaLabel="پرداخت" onClick={vi.fn()} loading={true} />
+        </NextIntlClientProvider>
+      );
+      expect(screen.getByText('پرداخت')).toBeTruthy();
+    });
+
+    it('submits the bound form when formId is provided', () => {
+      renderWithIntl(
+        <form id="cta-form">
+          <StickyCTA ctaLabel="تأیید" onClick={vi.fn()} formId="cta-form" />
+        </form>
+      );
+      const button = screen.getByRole('button', { name: 'تأیید' });
+      expect(button.getAttribute('type')).toBe('submit');
+      expect(button.getAttribute('form')).toBe('cta-form');
+    });
+
+    it('offsets above BottomNav when aboveNav is true (no sticky collision)', () => {
+      const { container, rerender } = renderWithIntl(
+        <StickyCTA ctaLabel="رزرو" onClick={vi.fn()} price={1000} />
+      );
+      const bar = container.querySelector('aside');
+      expect(bar?.className).toContain('bottom-0');
+
+      rerender(
+        <NextIntlClientProvider locale="fa" messages={messages}>
+          <StickyCTA ctaLabel="رزرو" onClick={vi.fn()} price={1000} aboveNav />
+        </NextIntlClientProvider>
+      );
+      const raised = container.querySelector('aside');
+      expect(raised?.className).toContain('72px');
     });
   });
 

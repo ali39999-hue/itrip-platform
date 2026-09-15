@@ -3,7 +3,15 @@ import { Prisma } from '@prisma/client';
 import { Money } from '@/lib/finance';
 import { REFERRAL_CONFIG, ReferralTier } from '@/lib/referral/config';
 
-export type ReferralStatus = 'VALID' | 'UNMATCHED' | 'SELF_REFERRAL' | 'INACTIVE';
+export type ReferralStatus = 'VALID' | 'UNMATCHED' | 'SELF_REFERRAL' | 'INACTIVE' | 'USAGE_LIMIT_EXCEEDED';
+
+/** Per-code effective parameters: global REFERRAL_CONFIG with JSON overrides applied. */
+export interface EffectiveReferralConfig {
+  discountPercent: number;
+  maxDiscountCapIrr: number | null;
+  maxUses: number | null;
+  tiers: ReferralTier[];
+}
 
 export interface ValidationResult {
   valid: boolean;
@@ -15,7 +23,11 @@ export interface ValidationResult {
   leaderName?: string;
   leaderPhone?: string;
   discountPercent: number;
-  reason?: 'NOT_FOUND' | 'INACTIVE' | 'SELF_REFERRAL' | 'EMPTY';
+  /** Effective per-code cap (null = uncapped). Always set, even when invalid. */
+  discountCapIrr: number | null;
+  maxUses?: number | null;
+  usedCount?: number;
+  reason?: 'NOT_FOUND' | 'INACTIVE' | 'SELF_REFERRAL' | 'EMPTY' | 'USAGE_LIMIT_EXCEEDED';
 }
 
 export interface LeaderDashboardRow {
@@ -29,6 +41,12 @@ export interface LeaderDashboardRow {
   confirmedPax: number;
   pendingPax: number;
   cancelledPax: number;
+  /** Effective per-code settings (for admin display + settlement math). */
+  discountPercent: number;
+  maxDiscountCapIrr: number | null;
+  maxUses: number | null;
+  usedCount: number;
+  customTierConfig?: string | null;
   currentTier: ReferralTier | null;
   rewardPercent: number; // 0, 0.25, 0.50, 1.00
   nextTierDistance: number; // Pax needed to reach next tier
@@ -56,6 +74,92 @@ export class ReferralDomainService {
   }
 
   /**
+   * Parses a ReferralCode.customTierConfig JSON blob. Returns null when absent
+   * or invalid (caller falls back to global defaults — never throws).
+   */
+  static parsePerCodeConfig(raw?: string | null): {
+    discountPercent?: number;
+    maxDiscountCapIrr?: number | null;
+    maxUses?: number | null;
+    tiers?: Array<{ minPax: number; maxPax: number | null; rewardPercent: number }>;
+  } | null {
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+      const out: {
+        discountPercent?: number;
+        maxDiscountCapIrr?: number | null;
+        maxUses?: number | null;
+        tiers?: Array<{ minPax: number; maxPax: number | null; rewardPercent: number }>;
+      } = {};
+      const rec = parsed as Record<string, unknown>;
+      if (typeof rec.discountPercent === 'number' && rec.discountPercent >= 0 && rec.discountPercent <= 1) {
+        out.discountPercent = rec.discountPercent;
+      }
+      if (rec.maxDiscountCapIrr === null || (typeof rec.maxDiscountCapIrr === 'number' && rec.maxDiscountCapIrr >= 0)) {
+        out.maxDiscountCapIrr = rec.maxDiscountCapIrr;
+      }
+      if (rec.maxUses === null || (typeof rec.maxUses === 'number' && Number.isInteger(rec.maxUses) && rec.maxUses >= 1)) {
+        out.maxUses = rec.maxUses;
+      }
+      if (Array.isArray(rec.tiers)) {
+        const tiers = rec.tiers.filter(
+          (t): t is { minPax: number; maxPax: number | null; rewardPercent: number } =>
+            !!t &&
+            typeof t === 'object' &&
+            Number.isInteger((t as { minPax: unknown }).minPax) &&
+            (t as { minPax: number }).minPax >= 1 &&
+            ((t as { maxPax: unknown }).maxPax === null ||
+              (Number.isInteger((t as { maxPax: unknown }).maxPax) &&
+                ((t as { maxPax: number }).maxPax as number) >= (t as { minPax: number }).minPax)) &&
+            typeof (t as { rewardPercent: unknown }).rewardPercent === 'number' &&
+            (t as { rewardPercent: number }).rewardPercent >= 0 &&
+            (t as { rewardPercent: number }).rewardPercent <= 1
+        );
+        if (tiers.length > 0) out.tiers = tiers;
+      }
+      return Object.keys(out).length > 0 ? out : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Resolves the effective parameters for one code: global defaults with the
+   * code's JSON overrides applied. Invalid JSON can never break pricing —
+   * it is ignored in favor of the defaults.
+   */
+  static getEffectiveConfig(codeRow: { customTierConfig?: string | null } | null): EffectiveReferralConfig {
+    const base: EffectiveReferralConfig = {
+      discountPercent: REFERRAL_CONFIG.referralDiscountPercent,
+      maxDiscountCapIrr: REFERRAL_CONFIG.maxDiscountCapIrr,
+      maxUses: null,
+      tiers: REFERRAL_CONFIG.tiers,
+    };
+    if (!codeRow) return base;
+    const override = this.parsePerCodeConfig(codeRow.customTierConfig);
+    if (!override) return base;
+    return {
+      discountPercent: override.discountPercent ?? base.discountPercent,
+      maxDiscountCapIrr:
+        override.maxDiscountCapIrr !== undefined ? override.maxDiscountCapIrr : base.maxDiscountCapIrr,
+      maxUses: override.maxUses !== undefined ? override.maxUses : null,
+      tiers: override.tiers
+        ? [...override.tiers]
+            .sort((a, b) => a.minPax - b.minPax)
+            .map((t, i) => ({
+              minPax: t.minPax,
+              maxPax: t.maxPax ?? Number.POSITIVE_INFINITY,
+              rewardPercent: t.rewardPercent,
+              labelFa: `سطح ${i + 1}: استرداد ${Math.round(t.rewardPercent * 100)}٪ از ${t.minPax} نفر`,
+              labelEn: `Tier ${i + 1}: ${Math.round(t.rewardPercent * 100)}% refund from ${t.minPax} pax`,
+            }))
+        : base.tiers,
+    };
+  }
+
+  /**
    * Validates a referral code against active leaders and checks self-referral rule.
    */
   static async validateCode(
@@ -72,6 +176,7 @@ export class ReferralDomainService {
         rawCode: rawCode || '',
         normalizedCode: '',
         discountPercent: 0,
+        discountCapIrr: REFERRAL_CONFIG.maxDiscountCapIrr,
         reason: 'EMPTY',
       };
     }
@@ -97,9 +202,12 @@ export class ReferralDomainService {
         rawCode: rawCode || '',
         normalizedCode,
         discountPercent: 0,
+        discountCapIrr: REFERRAL_CONFIG.maxDiscountCapIrr,
         reason: 'NOT_FOUND',
       };
     }
+
+    const effective = this.getEffectiveConfig(referral);
 
     if (!referral.isActive) {
       return {
@@ -111,11 +219,13 @@ export class ReferralDomainService {
         leaderId: referral.leaderId,
         leaderName: referral.leader.name || undefined,
         discountPercent: 0,
+        discountCapIrr: effective.maxDiscountCapIrr,
+        maxUses: effective.maxUses,
         reason: 'INACTIVE',
       };
     }
 
-    // Self-referral rule: Group leader cannot claim 5% discount on their own trip
+    // Self-referral rule: Group leader cannot claim the discount on their own trip
     // and cannot count themselves towards their own quota.
     if (customerId && referral.leaderId === customerId) {
       return {
@@ -127,8 +237,41 @@ export class ReferralDomainService {
         leaderId: referral.leaderId,
         leaderName: referral.leader.name || undefined,
         discountPercent: 0,
+        discountCapIrr: effective.maxDiscountCapIrr,
+        maxUses: effective.maxUses,
         reason: 'SELF_REFERRAL',
       };
+    }
+
+    // Capacity / Max Uses quota: If maxUses is configured, count active/valid bookings using this code
+    let usedCount = 0;
+    if (effective.maxUses !== null && effective.maxUses > 0) {
+      usedCount = await client.bookingReferral.count({
+        where: {
+          referralCodeId: referral.id,
+          status: 'VALID',
+          booking: {
+            status: { notIn: ['CANCELLED', 'REFUNDED', 'EXPIRED', 'FAILED'] },
+          },
+        },
+      });
+
+      if (usedCount >= effective.maxUses) {
+        return {
+          valid: false,
+          status: 'USAGE_LIMIT_EXCEEDED',
+          rawCode: rawCode || '',
+          normalizedCode,
+          referralCodeId: referral.id,
+          leaderId: referral.leaderId,
+          leaderName: referral.leader.name || undefined,
+          discountPercent: 0,
+          discountCapIrr: effective.maxDiscountCapIrr,
+          maxUses: effective.maxUses,
+          usedCount,
+          reason: 'USAGE_LIMIT_EXCEEDED',
+        };
+      }
     }
 
     return {
@@ -140,7 +283,10 @@ export class ReferralDomainService {
       leaderId: referral.leaderId,
       leaderName: referral.leader.name || undefined,
       leaderPhone: referral.leader.phone || undefined,
-      discountPercent: REFERRAL_CONFIG.referralDiscountPercent,
+      discountPercent: effective.discountPercent,
+      discountCapIrr: effective.maxDiscountCapIrr,
+      maxUses: effective.maxUses,
+      usedCount,
     };
   }
 
@@ -167,7 +313,11 @@ export class ReferralDomainService {
    * Calculates discount amount based strictly on BASE price (not subtotal/taxes).
    * Enforces configurable maximum discount cap.
    */
-  static calculateDiscount(baseCost: Money | number, discountPercent = REFERRAL_CONFIG.referralDiscountPercent): {
+  static calculateDiscount(
+    baseCost: Money | number,
+    discountPercent = REFERRAL_CONFIG.referralDiscountPercent,
+    maxDiscountCapIrr: number | null = REFERRAL_CONFIG.maxDiscountCapIrr
+  ): {
     discountMoney: Money;
     discountAmount: number;
   } {
@@ -181,9 +331,9 @@ export class ReferralDomainService {
     const rate = new Prisma.Decimal(discountPercent.toString());
     let discount = baseMoney.mul(rate).round(0);
 
-    // Enforce maximum cap if configured
-    if (REFERRAL_CONFIG.maxDiscountCapIrr !== null && currency === 'IRR') {
-      const capMoney = new Money(REFERRAL_CONFIG.maxDiscountCapIrr, 'IRR');
+    // Enforce maximum cap if configured (per-code cap wins over default)
+    if (maxDiscountCapIrr !== null && currency === 'IRR') {
+      const capMoney = new Money(maxDiscountCapIrr, 'IRR');
       if (discount.greaterThan(capMoney)) {
         discount = capMoney;
       }
@@ -198,13 +348,13 @@ export class ReferralDomainService {
   /**
    * Determines leader reward tier dynamically from confirmed passenger count.
    */
-  static getTierForPax(confirmedPax: number): {
+  static getTierForPax(confirmedPax: number, tiersOverride?: ReferralTier[]): {
     tier: ReferralTier | null;
     rewardPercent: number;
     nextTierDistance: number;
     nextTierPercent: number;
   } {
-    const tiers = [...REFERRAL_CONFIG.tiers].sort((a, b) => a.minPax - b.minPax);
+    const tiers = [...(tiersOverride ?? REFERRAL_CONFIG.tiers)].sort((a, b) => a.minPax - b.minPax);
     let matchedTier: ReferralTier | null = null;
     let nextTier: ReferralTier | null = null;
 
@@ -278,7 +428,9 @@ export class ReferralDomainService {
     const travelers: LeaderDashboardRow['travelers'] = [];
 
     const PENDING_STATUSES = ['DRAFT', 'HELD', 'PENDING_PAYMENT', 'PAYMENT_CONFIRMED', 'CONFIRMING_SUPPLIER'];
-    const CANCELLED_STATUSES = ['CANCEL_REQUESTED', 'CANCELLING', 'CANCELLED', 'REFUND_INITIATED', 'REFUNDED'];
+    // Terminal non-converting states: EXPIRED (abandoned drafts) and FAILED
+    // must count as cancelled, otherwise their pax vanishes from every bucket.
+    const CANCELLED_STATUSES = ['CANCEL_REQUESTED', 'CANCELLING', 'CANCELLED', 'REFUND_INITIATED', 'REFUNDED', 'EXPIRED', 'FAILED'];
 
     for (const ref of referral.referrals) {
       const b = ref.booking;
@@ -322,7 +474,11 @@ export class ReferralDomainService {
       }
     }
 
-    const { tier, rewardPercent, nextTierDistance, nextTierPercent } = this.getTierForPax(confirmedPax);
+    const effective = this.getEffectiveConfig(referral);
+    const { tier, rewardPercent, nextTierDistance, nextTierPercent } = this.getTierForPax(
+      confirmedPax,
+      effective.tiers
+    );
 
     // Resolve leader's own confirmed booking cost to calculate reward
     const leaderConfirmedBooking = await client.booking.findFirst({
@@ -342,6 +498,10 @@ export class ReferralDomainService {
       ? (latestSettlement.status as 'PENDING' | 'SETTLED')
       : 'NONE';
 
+    const usedCount = referral.referrals.filter(
+      (r) => r.status === 'VALID' && r.booking && !CANCELLED_STATUSES.includes(r.booking.status)
+    ).length;
+
     return {
       id: referral.id,
       code: referral.code,
@@ -353,6 +513,11 @@ export class ReferralDomainService {
       confirmedPax,
       pendingPax,
       cancelledPax,
+      discountPercent: effective.discountPercent,
+      maxDiscountCapIrr: effective.maxDiscountCapIrr,
+      maxUses: effective.maxUses,
+      usedCount,
+      customTierConfig: referral.customTierConfig,
       currentTier: tier,
       rewardPercent,
       nextTierDistance,
@@ -362,6 +527,44 @@ export class ReferralDomainService {
       settlementStatus,
       travelers,
     };
+  }
+
+  /**
+   * Fulfills the "saved for later" promise: bookings placed with a raw code
+   * while it was UNMATCHED link to the code record once an admin registers
+   * it. Only non-terminal bookings are touched (cancelled/refunded/expired/
+   * failed trips never resurrect attribution). Returns the linked count.
+   */
+  static async resolveUnmatchedForCode(
+    referralCodeId: string,
+    normalizedCode: string,
+    client: Prisma.TransactionClient | typeof prisma = prisma
+  ): Promise<number> {
+    // Case-insensitive on purpose: rows written before the rawCode
+    // normalization fix may hold lowercase variants of the same code.
+    const unmatched = await client.bookingReferral.findMany({
+      where: {
+        referralCodeId: null,
+        status: 'UNMATCHED',
+        rawCode: { equals: normalizedCode, mode: 'insensitive' },
+        booking: { status: { notIn: ['CANCELLED', 'REFUNDED', 'EXPIRED', 'FAILED'] } },
+      },
+      select: { bookingId: true },
+    });
+    if (unmatched.length === 0) return 0;
+    const res = await client.bookingReferral.updateMany({
+      where: {
+        bookingId: { in: unmatched.map((u) => u.bookingId) },
+        referralCodeId: null,
+        status: 'UNMATCHED',
+      },
+      data: {
+        referralCodeId,
+        rawCode: normalizedCode,
+        status: 'VALID',
+      },
+    });
+    return res.count;
   }
 
   /**

@@ -7,6 +7,9 @@ import { ROOMS, PLANS, type PlanId } from '@/lib/hotel-mock';
 import { quote, toman, type useHotelBooking, FREE_CANCEL_HOURS } from '@/hooks/useHotelBooking';
 import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
+import { formatMoney } from '@/lib/money';
+import { useCountryStore } from '@/stores/country-store';
+import { COUNTRIES } from '@/lib/countries';
 import type { Hotel } from '@/lib/types';
 
 interface BookingPanelProps {
@@ -20,6 +23,9 @@ export function BookingPanel({ booking, hotel, onBook, onOpenEdit }: BookingPane
   const t = useTranslations('HotelDetail');
   const ariaT = useTranslations('Common.aria');
   const locale = useLocale();
+  const { country } = useCountryStore();
+  const hotelCountry = hotel?.countryId || country;
+  const currency = COUNTRIES[hotelCountry]?.currency || 'IRR';
   const {
     sel,
     setSel,
@@ -80,8 +86,9 @@ export function BookingPanel({ booking, hotel, onBook, onOpenEdit }: BookingPane
           {capacity.n ? `${locale === 'fa' ? `جمع ${fa(capacity.n)} اتاق برای ${fa(nights.length)} شب` : `Total ${capacity.n} rooms for ${nights.length} nights`}` : (lt(locale, { fa: 'شروع قیمت برای اقامت شما', en: 'Starting rate for your dates', ar: 'السعر الابتدائي لتواريخ إقامتك', zh: '您所选日期的起步价', ru: 'Стартовая цена на ваши даты' }))}
         </div>
         <div className="flex items-baseline gap-1.5">
-          <b className="text-[26px] font-black text-price num">{num(Math.round(panelAmount), locale)}</b>
-          <small className="text-xs font-extrabold text-sub">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}</small>
+          <b className="text-[26px] font-black text-price num">
+            {formatMoney(Math.round(panelAmount), currency, locale)}
+          </b>
         </div>
       </div>
       
@@ -177,11 +184,13 @@ export function BookingPanel({ booking, hotel, onBook, onOpenEdit }: BookingPane
                   </div>
                   <div className="text-end shrink-0">
                     <span className="text-xs font-black whitespace-nowrap block text-price">
-                      {fa(itemTotalToman)} {tomanLabel}
+                      {formatMoney(itemTotalToman, currency, locale)}
                     </span>
-                    <span className="text-[10px] text-sub font-mono block">
-                      ({fa(qt.total * q)} TRY)
-                    </span>
+                    {!isLive && (
+                      <span className="text-[10px] text-sub font-mono block">
+                        ({fa(qt.total * q)} TRY)
+                      </span>
+                    )}
                   </div>
                   <button
                     onClick={() => setSel((s) => { const n = { ...s }; delete n[k]; return n; })}
@@ -201,7 +210,7 @@ export function BookingPanel({ booking, hotel, onBook, onOpenEdit }: BookingPane
             <div className="flex justify-between items-center text-[12.5px] font-bold text-sub">
               <span>{lt(locale, { fa: 'مبلغ اتاق‌ها', en: 'Rooms total', ar: 'إجمالي الغرف', zh: '房费合计', ru: 'Итого за номера' })}</span>
               <div className="text-end">
-                <b className="text-ink">{num(subToman, locale)} {tomanLabel}</b>
+                <b className="text-ink">{formatMoney(subToman, currency, locale)}</b>
                 {!isLive && <span className="text-[10px] text-sub font-mono block">({fa(totals.sub)} TRY)</span>}
               </div>
             </div>
@@ -209,7 +218,7 @@ export function BookingPanel({ booking, hotel, onBook, onOpenEdit }: BookingPane
               <div className="flex justify-between items-center text-[12.5px] font-bold text-sub">
                 <span>{lt(locale, { fa: 'تخت اضافه کودک', en: 'Extra child bed', ar: 'سرير أطفال إضافي', zh: '儿童加床', ru: 'Детская кровать' })}</span>
                 <div className="text-end">
-                  <b className="text-ink">{num(extraToman, locale)} {tomanLabel}</b>
+                  <b className="text-ink">{formatMoney(extraToman, currency, locale)}</b>
                   {!isLive && <span className="text-[10px] text-sub font-mono block">({fa(totals.extra)} TRY)</span>}
                 </div>
               </div>
@@ -217,7 +226,7 @@ export function BookingPanel({ booking, hotel, onBook, onOpenEdit }: BookingPane
             <div className="flex justify-between items-center text-[12.5px] font-bold text-sub">
               <span>{lt(locale, { fa: 'مالیات و عوارض اقامت (۱۰٪)', en: 'Taxes and fees (10%)', ar: 'الضرائب والرسوم (10%)', zh: '税费 (10%)', ru: 'Налоги и сборы (10%)' })}</span>
               <div className="text-end">
-                <b className="text-ink">{num(taxToman, locale)} {tomanLabel}</b>
+                <b className="text-ink">{formatMoney(taxToman, currency, locale)}</b>
                 {!isLive && <span className="text-[10px] text-sub font-mono block">({fa(totals.tax)} TRY)</span>}
               </div>
             </div>
@@ -227,7 +236,7 @@ export function BookingPanel({ booking, hotel, onBook, onOpenEdit }: BookingPane
             </div>
             <div className="flex justify-between items-baseline pt-2.5 border-t border-line text-[15px] font-black">
               <span>{lt(locale, { fa: 'مبلغ قابل پرداخت', en: 'Total payable', ar: 'المبلغ المستحق', zh: '应付金额', ru: 'К оплате' })}</span>
-              <span className="text-[19px] text-price font-black">{num(totalToman, locale)} {tomanLabel}</span>
+              <span className="text-[19px] text-price font-black">{formatMoney(totalToman, currency, locale)}</span>
             </div>
             {!isLive && (
               <div className="flex justify-between text-[10.5px] font-bold text-sub">

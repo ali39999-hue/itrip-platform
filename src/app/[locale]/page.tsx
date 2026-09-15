@@ -74,7 +74,7 @@ export default async function HomePage() {
   const activeAnnouncement = announcement?.active ? announcement : null;
 
   return (
-    <div className="flex flex-col min-h-screen bg-soft/20">
+    <div className="flex flex-col min-h-dvh bg-soft/20">
       {/* 0. Global announcement banner (ERP → Quick Actions) */}
       {activeAnnouncement && (
         <div

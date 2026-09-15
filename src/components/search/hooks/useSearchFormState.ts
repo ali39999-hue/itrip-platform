@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { useCountryStore } from '@/stores/country-store';
-import { COUNTRIES } from '@/lib/countries';
+import { COUNTRIES, type CountryId } from '@/lib/countries';
 import { SEARCH_TABS, type SearchTabId } from '../SearchModeTabs';
 
 const ROUTES: Record<SearchTabId, string> = {
@@ -14,20 +14,32 @@ const ROUTES: Record<SearchTabId, string> = {
   tours: '/tours',
 };
 
+function getCountryCities(cId: CountryId, loc: string) {
+  const isFa = loc === 'fa';
+  const cObj = COUNTRIES[cId] || COUNTRIES.iran;
+  const primary = cObj.cities?.[0];
+  const isIran = cId === 'iran';
+  const origin = isFa ? 'تهران' : 'Tehran';
+  const flightDest = isIran
+    ? (isFa ? 'مشهد' : 'Mashhad')
+    : isFa
+      ? primary?.fa || 'مشهد'
+      : primary?.en || 'Mashhad';
+  const hotelDest = isIran
+    ? (isFa ? 'مشهد' : 'Mashhad')
+    : isFa
+      ? primary?.fa || 'مشهد'
+      : primary?.en || 'Mashhad';
+  return { origin, flightDest, hotelDest };
+}
+
 export function useSearchFormState(initialTab: SearchTabId = 'flights') {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations('Search');
   const { country } = useCountryStore();
 
-  const isFa = locale === 'fa';
-  const c = COUNTRIES[country] || COUNTRIES.iran;
-  const primaryCity = c.cities?.[0];
-  const primaryCityName = isFa ? (primaryCity?.fa || 'مشهد') : (primaryCity?.en || 'Mashhad');
-
-  const defaultFrom = isFa ? 'تهران' : 'Tehran';
-  const defaultTo = country === 'iran' ? (isFa ? 'مشهد' : 'Mashhad') : primaryCityName;
-  const defaultHotelCity = country === 'iran' ? (isFa ? 'مشهد' : 'Mashhad') : primaryCityName;
+  const { origin: defaultFrom, flightDest: defaultTo, hotelDest: defaultHotelCity } = getCountryCities(country, locale);
 
   const [tab, setTabState] = useState<SearchTabId>(initialTab);
   const [query, setQuery] = useState('');
@@ -42,44 +54,52 @@ export function useSearchFormState(initialTab: SearchTabId = 'flights') {
   const [error, setError] = useState('');
   const [tourType, setTourType] = useState('recreational');
 
-  // React to country changes from header switcher across the entire platform
+  // React to country AND locale changes from header switchers across the entire platform
   const prevCountryRef = useRef(country);
+  const prevLocaleRef = useRef(locale);
+
   useEffect(() => {
-    if (prevCountryRef.current !== country) {
+    const countryChanged = prevCountryRef.current !== country;
+    const localeChanged = prevLocaleRef.current !== locale;
+
+    if (countryChanged || localeChanged) {
       prevCountryRef.current = country;
-      const newCountryObj = COUNTRIES[country] || COUNTRIES.iran;
-      const newPrimary = newCountryObj.cities?.[0];
-      const targetName = isFa ? (newPrimary?.fa || 'مشهد') : (newPrimary?.en || 'Mashhad');
+      prevLocaleRef.current = locale;
+
+      const { origin, flightDest, hotelDest } = getCountryCities(country, locale);
+
       if (tab === 'hotels' || tab === 'tours') {
-        setDest(targetName);
+        setDest(hotelDest);
       } else if (tab === 'flights') {
-        setRouteTo(targetName);
+        setDest(origin);
+        setRouteTo(flightDest);
       } else if (tab === 'plan') {
-        setQuery(targetName);
+        setQuery(hotelDest);
       }
     }
-  }, [country, isFa, tab]);
+  }, [country, locale, tab]);
 
   const tabDef = SEARCH_TABS.find((tb) => tb.id === tab)!;
 
   function setTab(newTab: SearchTabId) {
     setTabState(newTab);
     setError('');
-    if (newTab === 'hotels') {
-      if (!dest.trim() || dest === defaultFrom) {
-        setDest(defaultHotelCity);
-      }
+    const { origin, flightDest, hotelDest } = getCountryCities(country, locale);
+    if (newTab === 'hotels' || newTab === 'tours') {
+      setDest(hotelDest);
       if (!date2) {
         setDate2('2026-09-26');
       }
     } else if (newTab === 'flights') {
-      if (!dest.trim()) setDest(defaultFrom);
-      if (!routeTo.trim()) setRouteTo(defaultTo);
+      setDest(origin);
+      setRouteTo(flightDest);
     }
   }
 
   function submit(e?: React.FormEvent) {
     if (e) e.preventDefault();
+    const { origin, flightDest, hotelDest } = getCountryCities(country, locale);
+
     if (tab === 'plan') {
       if (!query.trim()) {
         router.push('/plan');
@@ -90,9 +110,9 @@ export function useSearchFormState(initialTab: SearchTabId = 'flights') {
     }
 
     // Gracefully fallback to sensible standard destinations if left empty
-    const effectiveFrom = dest.trim() || defaultFrom;
-    const effectiveTo = routeTo.trim() || defaultTo;
-    const effectiveDest = dest.trim() || defaultHotelCity;
+    const effectiveFrom = dest.trim() || origin;
+    const effectiveTo = routeTo.trim() || flightDest;
+    const effectiveDest = dest.trim() || hotelDest;
 
     setError('');
 

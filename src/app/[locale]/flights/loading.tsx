@@ -1,6 +1,6 @@
 export default function FlightsLoading() {
   return (
-    <div className="min-h-screen bg-soft/40 py-8 px-4 md:px-8">
+    <div className="min-h-dvh bg-soft/40 py-8 px-4 md:px-8">
       <div className="max-w-5xl mx-auto space-y-4">
         <div className="h-14 bg-surface border border-line rounded-2xl animate-pulse mb-6" />
         {[1, 2, 3, 4].map((i) => (

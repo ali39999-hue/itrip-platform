@@ -237,6 +237,7 @@ export class BookingApplicationService {
       currency: 'IRR',
       referralDiscountPercent,
       referralCode: referralValidation?.normalizedCode || cmd.referralCode,
+      referralMaxDiscountCapIrr: referralValidation?.discountCapIrr,
     });
 
     const finalTotalAmount = pricing.sellPrice;
@@ -357,12 +358,17 @@ export class BookingApplicationService {
             ? {
                 create: {
                   referralCodeId: referralValidation.referralCodeId || null,
-                  rawCode: referralValidation.rawCode || cmd.referralCode || '',
+                  // Schema contract: trimmed + uppercase (matches ReferralCode.code).
+                  rawCode: ReferralDomainService.normalizeCode(
+                    referralValidation.rawCode || cmd.referralCode || ''
+                  ),
                   status: referralValidation.status,
                   paxCount: (cmd.passengers && cmd.passengers.length > 0) ? cmd.passengers.length : quantity,
-                  discountAmount: pricing.snapshot.discountAmount,
+                  // Attribution: referral-only portion, never promo money
+                  // (HIGHER_BENEFIT may award the promo instead).
+                  discountAmount: pricing.referralDiscountAmount,
                   discountPercent: referralValidation.discountPercent,
-                  applied: referralValidation.valid && Number(pricing.snapshot.discountAmount) > 0,
+                  applied: referralValidation.valid && pricing.referralDiscountAmount > 0,
                   source: cmd.source || 'WEB',
                   registeredByUserId: cmd.actorId,
                 },
@@ -404,6 +410,10 @@ export class BookingApplicationService {
       reference: booking.reference,
       totalAmount: finalTotalAmount,
       discountAmount: Number(pricing.snapshot.discountAmount),
+      // Referral-only benefit for checkout display sync (server authoritative
+      // over the client's cap-unaware estimate, including explicit zero).
+      referralDiscountAmount: pricing.referralDiscountAmount,
+      appliedDiscountType: pricing.appliedDiscountType,
       currency,
       status: booking.status,
       referralStatus: referralValidation ? referralValidation.status : undefined,
@@ -417,7 +427,7 @@ export class BookingApplicationService {
   static async repriceBooking(cmd: RepriceBookingCommand) {
     const booking = await prisma.booking.findUnique({
       where: { id: cmd.bookingId },
-      include: { items: true },
+      include: { items: true, referral: true },
     });
 
     if (!booking) throw new Error('Booking not found');
@@ -453,6 +463,15 @@ export class BookingApplicationService {
       }
     }
 
+    // Preserve an attached referral code across repricing (previously the
+    // discount was silently wiped while BookingReferral stayed VALID/applied).
+    const preservedReferral = booking.referral && booking.referral.status === 'VALID'
+      ? {
+          code: booking.referral.rawCode,
+          percent: Number(booking.referral.discountPercent) || 0,
+        }
+      : null;
+
     const { pricing } = BookingDomainService.computeDraftPricing({
       productType: booking.items[0]?.type || 'HOTEL',
       baseUnitCost: totalBaseCost,
@@ -460,6 +479,8 @@ export class BookingApplicationService {
       nights: 1,
       userRole: 'CUSTOMER',
       currency: booking.currency as SupportedCurrency,
+      referralDiscountPercent: preservedReferral?.percent,
+      referralCode: preservedReferral?.code,
     });
 
     const oldTotalMoney = new Money(booking.totalAmount, booking.currency);
@@ -511,6 +532,17 @@ export class BookingApplicationService {
         where: { id: booking.id },
         data: { totalAmount: newTotalMoney.toDecimal() },
       });
+
+      // Keep the referral attribution row in sync with the repriced benefit.
+      if (booking.referral) {
+        await tx.bookingReferral.update({
+          where: { bookingId: booking.id },
+          data: {
+            discountAmount: pricing.referralDiscountAmount,
+            applied: booking.referral.status === 'VALID' && pricing.referralDiscountAmount > 0,
+          },
+        });
+      }
 
       if (priceChanged) {
         await tx.bookingStatusHistory.create({
@@ -619,6 +651,13 @@ export class BookingApplicationService {
       await tx.booking.update({
         where: { id: booking.id },
         data: { status: 'CANCEL_REQUESTED' },
+      });
+
+      // Revoke the referral benefit on cancellation: stats bucket by booking
+      // status, but without this the row keeps applied=true (phantom discount).
+      await tx.bookingReferral.updateMany({
+        where: { bookingId: booking.id },
+        data: { applied: false },
       });
 
       await tx.bookingStatusHistory.create({

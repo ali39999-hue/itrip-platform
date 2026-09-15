@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { searchHotelsLive, mapEcardoOfferToHotel, getHotelByIdAsync } from './hotels-service';
+import { searchHotelsLive, mapEcardoOfferToHotel, mapNadiaPropertyToHotel, getHotelByIdAsync } from './hotels-service';
 import type { EcardoOffer } from '@/domains/supplier/adapters/EcardoTravelClient';
 
 describe('searchHotelsLive & eCardo Hotel Normalizer Suite', () => {
@@ -38,6 +38,36 @@ describe('searchHotelsLive & eCardo Hotel Normalizer Suite', () => {
     expect(hotel.amenities).toContain('لابی');
     expect(hotel.roomTypes.length).toBeGreaterThan(0);
     expect(hotel.location?.lat).toBe(35.687);
+    // Transparency invariant: live-supplier mappings must be labeled live
+    expect(hotel.source).toBe('live');
+  });
+
+  it('labels Nadia CRS live properties as live source', () => {
+    const hotel = mapNadiaPropertyToHotel(
+      {
+        hotelId: 'NADIA-1',
+        name: 'هتل نمونه تهران',
+        stars: 4,
+        rating: 4.3,
+        address: 'تهران',
+        rates: [
+          {
+            roomId: 'r1',
+            roomName: 'Standard',
+            mealPlan: 'BREAKFAST',
+            cancellationPolicy: 'free',
+            refundable: true,
+            pricePerNight: 5000000,
+            totalPrice: 10000000,
+            currency: 'IRR',
+          },
+        ],
+      },
+      'تهران'
+    );
+
+    expect(hotel.id).toBe('nadia_NADIA-1');
+    expect(hotel.source).toBe('live');
   });
 
   it('performs live hotel search and returns a valid HotelSearchResponse', async () => {

@@ -144,13 +144,14 @@ export function ThemeToggle() {
         <CurrentIcon size={19} aria-hidden="true" className={mounted ? '' : 'opacity-0'} />
       </button>
 
-      {/* dropdown: hover on desktop, click on mobile — animated */}
+      {/* dropdown: hover on desktop, click on mobile — mounted only when open
+          so the hidden menu can never widen the page at 320px or trap
+          keyboard focus / screen readers (same pattern as LocaleSwitcher) */}
+      {open && (
       <div
         role="menu"
         aria-label={ariaLabel}
-        className={`absolute top-[calc(100%+8px)] end-0 z-[120] min-w-[148px] p-1.5 rounded-2xl border border-line bg-surface shadow-elev-3 transition-all duration-150 origin-top ${
-          open ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto' : 'opacity-0 -translate-y-1 scale-95 pointer-events-none'
-        }`}
+        className="absolute top-[calc(100%+8px)] end-0 z-[120] min-w-[148px] p-1.5 rounded-2xl border border-line bg-surface shadow-elev-3 origin-top animate-in fade-in slide-in-from-top-1 duration-200"
       >
         {(['light', 'dark', 'system'] as Theme[]).map((t) => {
           const active = theme === t;
@@ -183,6 +184,7 @@ export function ThemeToggle() {
           })}
         </p>
       </div>
+      )}
     </div>
   );
 }

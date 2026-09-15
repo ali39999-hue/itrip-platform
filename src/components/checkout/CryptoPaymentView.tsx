@@ -385,6 +385,8 @@ export function CryptoPaymentView({
           <div className="md:col-span-4 flex flex-col items-center justify-center text-center space-y-2">
             <div className="p-3 bg-white rounded-2xl border border-line shadow-xs inline-block">
               {qrCodeDataUrl ? (
+                // Raw <img> intentional: QR data-URLs are incompatible with
+                // next/image; fixed 160px box (no CLS).
                 <img
                   src={qrCodeDataUrl}
                   alt="کیوآرکد آدرس ولت"

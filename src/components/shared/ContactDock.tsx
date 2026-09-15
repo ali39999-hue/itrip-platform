@@ -6,6 +6,9 @@ import { useLocale, useTranslations } from 'next-intl';
 import { INTERPRETERS, INTERPRETER_PRICING as P } from '@/lib/interpreters';
 import { num } from '@/lib/format';
 import { lt } from '@/lib/lt';
+import { formatMoney } from '@/lib/money';
+import { useCountryStore } from '@/stores/country-store';
+import { COUNTRIES } from '@/lib/countries';
 import { toast } from 'sonner';
 import { Siren, PhoneCall, PhoneOff, X, Headphones, Headset, ChevronDown } from 'lucide-react';
 
@@ -21,6 +24,8 @@ export function ContactDock() {
   const t = useTranslations('Interpreter');
   const ariaT = useTranslations('Common.aria');
   const locale = useLocale();
+  const { country } = useCountryStore();
+  const currency = COUNTRIES[country]?.currency || 'IRR';
   const [menuOpen, setMenuOpen] = useState(false);
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<Phase>('pick');
@@ -280,8 +285,8 @@ export function ContactDock() {
                     </p>
                     <b className="block mt-1 text-ink">
                       {lt(locale, { fa: 'نرخ:', en: 'Rate:', ar: 'السعر:', zh: '费率:', ru: 'Тариф:' })}{' '}
-                      {num(P.sosPerCall / 1000, locale)}{' '}
-                      {lt(locale, { fa: 'هزار تومان / هر تماس', en: 'thousand Toman / per call', ar: 'ألف تومان / لكل مكالمة', zh: '千图曼 / 每次通话', ru: 'тыс. томан / за звонок' })}
+                      {formatMoney(P.sosPerCall, currency, locale)}{' '}
+                      {lt(locale, { fa: '/ هر تماس', en: '/ per call', ar: '/ لكل مكالمة', zh: '/ 每次通话', ru: '/ за звонок' })}
                     </b>
                   </div>
 

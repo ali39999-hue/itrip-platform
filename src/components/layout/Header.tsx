@@ -291,8 +291,12 @@ export function Header() {
       {/* Global Command Palette Dialog */}
       <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
 
-      {/* Unified Multi-Product Travel Cart Drawer */}
-      <UnifiedCartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
+      {/* Unified Multi-Product Travel Cart Drawer — portaled to document.body:
+          the header's backdrop-filter creates a containing block that breaks
+          `fixed` positioning for inline descendants (drawer opened clipped). */}
+      {mounted && typeof document !== 'undefined' && (
+        <>{createPortal(<UnifiedCartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />, document.body)}</>
+      )}
 
       {/* Render Mobile Drawer into document.body to escape header's backdrop-filter stacking context */}
       {mounted && typeof document !== 'undefined' && drawerContent && createPortal(drawerContent, document.body)}

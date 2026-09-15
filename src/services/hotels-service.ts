@@ -639,6 +639,13 @@ export function getHotelById(id: string): DetailedHotelWithMeta | null {
   const foundCanonical = canonicalList.find((h) => h.id === id);
   if (foundCanonical) return foundCanonical;
 
+  // Support master_json:hotel:<numericId> by resolving to local canonical ir_<numericId>
+  if (id.startsWith('master_json:hotel:')) {
+    const rawId = id.replace('master_json:hotel:', '');
+    const localMatch = getHotelById(`ir_${rawId}`);
+    if (localMatch) return localMatch;
+  }
+
   const iranList = loadIranHotels();
   const chinaList = loadChinaHotels();
 
@@ -653,6 +660,13 @@ export function getHotelById(id: string): DetailedHotelWithMeta | null {
 export async function getHotelByIdAsync(id: string): Promise<DetailedHotelWithMeta | null> {
   const local = getHotelById(id);
   if (local) return local;
+
+  // Support master_json:hotel:<numericId> by resolving to local canonical ir_<numericId>
+  if (id.startsWith('master_json:hotel:')) {
+    const rawId = id.replace('master_json:hotel:', '');
+    const localMatch = getHotelById(`ir_${rawId}`);
+    if (localMatch) return localMatch;
+  }
 
   // Nadia CRS has no B2C detail endpoint — resolve ids from the recent-search cache
   if (id.startsWith('nadia_')) {
@@ -748,6 +762,7 @@ export function mapEcardoOfferToHotel(offer: EcardoOffer): DetailedHotelWithMeta
     distanceFromCenter: 'مرکز شهر',
     location: { lat, lng },
     freeCancellation: true,
+    source: 'live' as const,
   };
 }
 
@@ -814,6 +829,7 @@ export function mapNadiaPropertyToHotel(prop: HotelPropertyResult, city: string)
     distanceFromCenter: '',
     location: { lat: 35.6892, lng: 51.389 },
     freeCancellation: firstRate?.refundable ?? false,
+    source: 'live' as const,
   };
 }
 

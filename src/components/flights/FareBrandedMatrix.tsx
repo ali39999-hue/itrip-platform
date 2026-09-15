@@ -11,6 +11,8 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
+import { formatMoney } from '@/lib/money';
+import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 
 export type FareBrandCode = 'LIGHT' | 'STANDARD' | 'FLEX_BUSINESS';
 
@@ -80,6 +82,7 @@ export function FareBrandedMatrix({
   onSelectBrand,
   className = '',
 }: FareBrandedMatrixProps) {
+  const { currency } = useDisplayCurrency();
   const [activeCode, setActiveCode] = useState<FareBrandCode>(selectedBrand);
 
   const handleSelect = (brand: FareBrandOption) => {
@@ -131,54 +134,66 @@ export function FareBrandedMatrix({
               {/* Badge */}
               {brand.badge && (
                 <span className="absolute -top-3 start-4 px-2.5 py-0.5 rounded-full bg-brand-dark text-white text-[10px] font-black shadow-xs">
-                  {isEnLocale(locale) ? brand.badge.en : brand.badge.fa}
+                  {locale === 'fa' ? brand.badge.fa : brand.badge.en}
                 </span>
               )}
 
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-sm font-black text-ink m-0">
-                    {isEnLocale(locale) ? brand.title.en : brand.title.fa}
+                    {locale === 'fa' ? brand.title.fa : brand.title.en}
                   </h4>
                   {isSelected && <Check size={16} className="text-brand" />}
                 </div>
 
                 <div className="text-lg font-black text-price font-price mb-4">
-                  {calculatedPrice.toLocaleString('fa-IR')} تومان
+                  {formatMoney(calculatedPrice, currency, locale)}
                 </div>
 
                 {/* Inclusions List */}
                 <div className="space-y-2.5 text-xs font-bold text-ink border-t border-line/60 pt-3">
                   <div className="flex items-center gap-2">
                     <Briefcase size={14} className="text-sub shrink-0" />
-                    <span>بار کابین: {brand.cabinBaggage}</span>
+                    <span>
+                      {lt(locale, { fa: 'بار کابین:', en: 'Cabin baggage:', ar: 'أمتعة المقصورة:', zh: '手提行李：', ru: 'Ручная кладь:' })}{' '}
+                      {brand.cabinBaggage}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <Luggage size={14} className="text-sub shrink-0" />
                     <span className={brand.checkedBaggage.includes('بدون') ? 'text-amber-700' : ''}>
-                      بار باربری: {brand.checkedBaggage}
+                      {lt(locale, { fa: 'بار باربری:', en: 'Checked baggage:', ar: 'الأمتعة المسجلة:', zh: '托运行李：', ru: 'Багаж:' })}{' '}
+                      {locale === 'fa'
+                        ? brand.checkedBaggage
+                        : brand.checkedBaggage.includes('بدون')
+                        ? lt(locale, { fa: 'بدون بار', en: 'No checked baggage', ar: 'بدون أمتعة', zh: '无托运行李', ru: 'Без багажа' })
+                        : brand.checkedBaggage}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <Armchair size={14} className="text-sub shrink-0" />
                     <span>
-                      {brand.freeSeatSelection ? 'انتخاب رایگان صندلی' : 'صندلی تصادفی سیستمی'}
+                      {brand.freeSeatSelection
+                        ? lt(locale, { fa: 'انتخاب رایگان صندلی', en: 'Free seat selection', ar: 'اختيار مجاني للمقعد', zh: '免费选座', ru: 'Бесплатный выбор места' })
+                        : lt(locale, { fa: 'صندلی تصادفی سیستمی', en: 'Random system seat', ar: 'تخصيص مقعد عشوائي', zh: '系统随机分配', ru: 'Случайное место' })}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <Utensils size={14} className="text-sub shrink-0" />
-                    <span>پذیرایی کامل و کترینگ حین پرواز</span>
+                    <span>
+                      {lt(locale, { fa: 'پذیرایی کامل حین پرواز', en: 'Complimentary in-flight meal', ar: 'وجبة طعام مجانية', zh: '包含机上餐食', ru: 'Питание на борту' })}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <RotateCcw size={14} className="text-sub shrink-0" />
                     <span className={brand.isRefundable ? 'text-emerald-700' : 'text-rose-700'}>
                       {brand.isRefundable
-                        ? `امکان استرداد (جریمه ${brand.changePenaltyPercent}٪)`
-                        : 'کاملاً غیرقابل استرداد'}
+                        ? `${lt(locale, { fa: 'امکان استرداد (جریمه ', en: 'Refundable (penalty ', ar: 'قابل للاسترداد (غرامة ', zh: '可退改（手续费 ', ru: 'Возвратный (штраф ' })}${brand.changePenaltyPercent}٪)`
+                        : lt(locale, { fa: 'کاملاً غیرقابل استرداد', en: 'Non-refundable', ar: 'غير قابل للاسترداد', zh: '不可退款', ru: 'Невозвратный' })}
                     </span>
                   </div>
                 </div>
@@ -193,7 +208,9 @@ export function FareBrandedMatrix({
                       : 'bg-soft hover:bg-line text-ink'
                   }`}
                 >
-                  {isSelected ? 'انتخاب شده' : 'انتخاب این کلاس نرخی'}
+                  {isSelected
+                    ? lt(locale, { fa: 'انتخاب شده', en: 'Selected', ar: 'محدد', zh: '已选择', ru: 'Выбрано' })
+                    : lt(locale, { fa: 'انتخاب این کلاس نرخی', en: 'Select this fare', ar: 'اختر هذه الباقة', zh: '选择此等级', ru: 'Выбрать этот тариф' })}
                 </button>
               </div>
             </div>
@@ -202,8 +219,4 @@ export function FareBrandedMatrix({
       </div>
     </div>
   );
-}
-
-function isEnLocale(locale: string): boolean {
-  return locale === 'en' || locale === 'ru';
 }

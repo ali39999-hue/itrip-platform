@@ -23,6 +23,13 @@ export interface StickyCTAProps {
   disabled?: boolean;
   /** Loading spinner state */
   loading?: boolean;
+  /** Accessible loading label (defaults to localized "processing" via caller; never hardcode) */
+  loadingLabel?: string;
+  /**
+   * Form submitter mode (parity with checkout StickyMobileBar):
+   * renders the CTA as `type=submit` bound to `formId` instead of onClick.
+   */
+  formId?: string;
   /** Badge text (e.g. "تضمین نرخ", "فوری") */
   badge?: string;
   /** Secondary action button (e.g. "بازگشت", "قوانین استرداد") */
@@ -30,14 +37,23 @@ export interface StickyCTAProps {
     label: string;
     onClick: () => void;
   };
+  /**
+   * When true, offsets above BottomNav (62px + safe area) for pages where
+   * BottomNav stays visible. Default false = anchored to viewport bottom
+   * (use only on pages that hide BottomNav, e.g. checkout/payment/detail).
+   */
+  aboveNav?: boolean;
   /** Additional custom class */
   className?: string;
 }
 
 /**
- * Mobile-first sticky bottom action bar.
- * Designed specifically for high conversion and one-thumb usability
- * on mobile checkouts, hotel room reservation, and flight booking flows.
+ * Mobile-first sticky bottom action bar — DOCKED VARIANT (full-bleed bar).
+ *
+ * Ownership contract (see also `StickyMobileBar` — the checkout variant):
+ * - Use THIS component on detail/search pages; pass `aboveNav` when BottomNav
+ *   stays visible so the bar offsets to 72px + safe-area instead of colliding.
+ * - Use `StickyMobileBar` on checkout/payment flows where BottomNav is hidden.
  */
 export function StickyCTA({
   ctaLabel,
@@ -49,8 +65,11 @@ export function StickyCTA({
   onPriceDetailsClick,
   disabled = false,
   loading = false,
+  loadingLabel,
+  formId,
   badge,
   secondaryAction,
+  aboveNav = false,
   className = '',
 }: StickyCTAProps) {
   const formattedPrice =
@@ -59,8 +78,8 @@ export function StickyCTA({
   return (
     <aside
       aria-label="نوار رزرو و پرداخت سریع"
-      className={`fixed inset-x-0 bottom-0 z-[80] border-t border-line/80 bg-surface/95 backdrop-blur-xl shadow-[0_-10px_35px_rgba(5,63,62,.10)] lg:hidden transition-all duration-200 ${className}`}
-      style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 10px)' }}
+      className={`fixed inset-x-0 ${aboveNav ? 'bottom-[calc(72px+env(safe-area-inset-bottom,0px))]' : 'bottom-0'} z-[80] border-t border-line/80 bg-surface/95 backdrop-blur-xl shadow-[0_-10px_35px_rgba(5,63,62,.10)] lg:hidden transition-all duration-200 ${className}`}
+      style={aboveNav ? undefined : { paddingBottom: 'max(env(safe-area-inset-bottom), 10px)' }}
     >
       <div className="max-w-lg mx-auto px-4 pt-3 pb-1 flex items-center justify-between gap-3">
         {/* Left: Price summary (or secondary action) */}
@@ -104,8 +123,9 @@ export function StickyCTA({
 
         {/* Right: Primary Call to Action */}
         <button
-          type="button"
-          onClick={onClick}
+          type={formId ? 'submit' : 'button'}
+          form={formId}
+          onClick={formId ? undefined : onClick}
           disabled={disabled || loading}
           className={`min-h-[50px] px-6 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 shadow-md ${
             disabled
@@ -116,7 +136,7 @@ export function StickyCTA({
           {loading ? (
             <>
               <Loader2 size={18} className="animate-spin" aria-hidden="true" />
-              <span>در حال پردازش...</span>
+              <span>{loadingLabel ?? ctaLabel}</span>
             </>
           ) : (
             <span>{ctaLabel}</span>

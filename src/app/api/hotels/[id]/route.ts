@@ -9,10 +9,11 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params;
-    if (!id) {
+    const { id: rawId } = await context.params;
+    if (!rawId) {
       return NextResponse.json({ success: false, error: 'Hotel ID is required' }, { status: 400 });
     }
+    const id = decodeURIComponent(rawId);
 
     const hotel = await getHotelByIdAsync(id);
     if (!hotel) {

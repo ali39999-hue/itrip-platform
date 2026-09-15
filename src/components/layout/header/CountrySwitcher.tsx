@@ -1,14 +1,18 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { useRouter, usePathname } from '@/i18n/routing';
+import { useSearchParams } from 'next/navigation';
 import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES, COUNTRY_ORDER, countryName, type CountryId } from '@/lib/countries';
 import { MapPin, ChevronDown, Check } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 
 export function CountrySwitcher({ showFullName = false }: { showFullName?: boolean }) {
   const t = useTranslations('Common');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { country, setCountry } = useCountryStore();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -26,6 +30,17 @@ export function CountrySwitcher({ showFullName = false }: { showFullName?: boole
       return () => document.removeEventListener('pointerdown', onDoc);
     }
   }, [open]);
+
+  function handleSelectCountry(id: CountryId) {
+    setCountry(id);
+    setOpen(false);
+
+    if (searchParams && searchParams.has('country')) {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      nextParams.set('country', id);
+      router.replace(`${pathname}?${nextParams.toString()}`);
+    }
+  }
 
   return (
     <div ref={ref} className="relative">
@@ -55,7 +70,7 @@ export function CountrySwitcher({ showFullName = false }: { showFullName?: boole
               type="button"
               role="option"
               aria-selected={id === country}
-              onClick={() => { setCountry(id); setOpen(false); }}
+              onClick={() => handleSelectCountry(id)}
               className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-[12.5px] sm:text-[13px] font-bold transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer ${
                 id === country ? 'bg-mint text-brand-dark' : 'text-ink hover:bg-soft'
               }`}

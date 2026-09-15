@@ -47,6 +47,12 @@ export interface Hotel {
   freeCancellation: boolean;
   roomTypes: RoomType[];
   propertyType?: HotelPropertyType;
+  /**
+   * Inventory provenance (transparency — never show live and catalog
+   * results indistinguishably). Live supplier mappings set `'live'`;
+   * static catalog entries leave it undefined (treated as catalog).
+   */
+  source?: 'live' | 'catalog';
 }
 
 export interface RoomType {

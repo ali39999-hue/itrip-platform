@@ -61,8 +61,9 @@ describe('Referral & Group Leader System Suite (Phase 2 & 3 Requirements)', () =
     try {
       await prisma.leaderSettlement.deleteMany({ where: { referralCodeId } });
       await prisma.bookingReferral.deleteMany({ where: { referralCodeId } });
-      await prisma.bookingReferral.deleteMany({ where: { rawCode: { contains: suffix } } });
+      await prisma.bookingReferral.deleteMany({ where: { rawCode: { contains: suffix.toUpperCase(), mode: 'insensitive' } } });
       await prisma.referralCode.deleteMany({ where: { id: referralCodeId } });
+      await prisma.referralCode.deleteMany({ where: { code: { contains: suffix.toUpperCase() } } });
       await prisma.bookingStatusHistory.deleteMany({ where: { booking: { customerId: { in: [customer1Id, customer2Id, leaderUserId] } } } });
       await prisma.priceSnapshot.deleteMany({ where: { booking: { customerId: { in: [customer1Id, customer2Id, leaderUserId] } } } });
       await prisma.bookingItem.deleteMany({ where: { booking: { customerId: { in: [customer1Id, customer2Id, leaderUserId] } } } });
@@ -321,6 +322,296 @@ describe('Referral & Group Leader System Suite (Phase 2 & 3 Requirements)', () =
       expect(refRecord!.referralCodeId).toBeNull();
       expect(refRecord!.rawCode).toBe('INVALID_CODE_123');
       expect(refRecord!.applied).toBe(false);
+    });
+  });
+
+  describe('6. Registration & Lifecycle Regression Fixes', () => {
+    const inactiveCode = `INACT_${suffix.toUpperCase()}`;
+
+    it('persists INACTIVE codes end-to-end (domain → booking row, no discount)', async () => {
+      await prisma.referralCode.create({
+        data: { code: inactiveCode, leaderId: leaderUserId, isActive: false },
+      });
+
+      const validation = await ReferralDomainService.validateCode(inactiveCode, customer1Id);
+      expect(validation.valid).toBe(false);
+      expect(validation.status).toBe('INACTIVE');
+      expect(validation.reason).toBe('INACTIVE');
+
+      const draft = await BookingApplicationService.createDraft({
+        actorId: customer1Id,
+        type: 'FLIGHT',
+        itemId: 'f1',
+        count: 1,
+        referralCode: inactiveCode,
+        source: 'WEB',
+      });
+      expect(draft.success).toBe(true);
+      expect(draft.referralStatus).toBe('INACTIVE');
+      expect(draft.referralDiscountAmount).toBe(0);
+
+      const refRecord = await prisma.bookingReferral.findUnique({
+        where: { bookingId: draft.bookingId },
+      });
+      expect(refRecord!.status).toBe('INACTIVE');
+      expect(refRecord!.applied).toBe(false);
+      expect(Number(refRecord!.discountAmount)).toBe(0);
+    });
+
+    it('stores rawCode normalized (trimmed + uppercase, per schema contract)', async () => {
+      const draft = await BookingApplicationService.createDraft({
+        actorId: customer1Id,
+        type: 'FLIGHT',
+        itemId: 'f1',
+        count: 1,
+        referralCode: `  ${testCode.toLowerCase()}  `,
+        source: 'WEB',
+      });
+      expect(draft.success).toBe(true);
+      expect(draft.referralStatus).toBe('VALID');
+
+      const refRecord = await prisma.bookingReferral.findUnique({
+        where: { bookingId: draft.bookingId },
+      });
+      expect(refRecord!.rawCode).toBe(testCode);
+      // Attribution holds the referral-only portion (never promo money).
+      expect(Number(refRecord!.discountAmount)).toBe(draft.referralDiscountAmount);
+      expect(Number(refRecord!.discountAmount)).toBeGreaterThan(0);
+    });
+
+    it('reprice preserves an attached referral discount instead of wiping it', async () => {
+      const draft = await BookingApplicationService.createDraft({
+        actorId: customer1Id,
+        type: 'FLIGHT',
+        itemId: 'f1',
+        count: 2,
+        referralCode: testCode,
+        source: 'WEB',
+      });
+      expect(draft.success).toBe(true);
+      const before = Number(
+        (await prisma.bookingReferral.findUnique({ where: { bookingId: draft.bookingId } }))!.discountAmount
+      );
+      expect(before).toBeGreaterThan(0);
+
+      const repriced = await BookingApplicationService.repriceBooking({
+        bookingId: draft.bookingId,
+        actorId: customer1Id,
+        acceptPriceChange: true,
+      });
+      expect(repriced.success).toBe(true);
+
+      const after = await prisma.bookingReferral.findUnique({
+        where: { bookingId: draft.bookingId },
+      });
+      expect(after!.status).toBe('VALID');
+      expect(after!.applied).toBe(true);
+      expect(Number(after!.discountAmount)).toBeGreaterThan(0);
+    });
+
+    it('cancellation revokes the referral benefit (no phantom applied=true)', async () => {
+      const draft = await BookingApplicationService.createDraft({
+        actorId: customer2Id,
+        type: 'FLIGHT',
+        itemId: 'f1',
+        count: 1,
+        referralCode: testCode,
+        source: 'WEB',
+      });
+      expect(draft.success).toBe(true);
+
+      // Walk the legal chain to CONFIRMED first (DRAFT→CANCEL_REQUESTED is
+      // illegal by design; only confirmed trips are cancellable).
+      await prisma.booking.update({
+        where: { id: draft.bookingId },
+        data: { status: 'CONFIRMED' },
+      });
+
+      await BookingApplicationService.cancelBooking({
+        bookingId: draft.bookingId,
+        actorId: customer2Id,
+        reason: 'test cancellation revokes referral',
+      });
+
+      const refRecord = await prisma.bookingReferral.findUnique({
+        where: { bookingId: draft.bookingId },
+      });
+      expect(refRecord!.applied).toBe(false);
+    });
+
+    it('buckets EXPIRED and FAILED bookings as cancelled pax (nothing vanishes)', async () => {
+      const isoLeader = await prisma.user.create({
+        data: {
+          id: `usr_iso_leader_${suffix}`,
+          name: 'Iso Leader',
+          email: `iso_leader_${suffix}@firuzo.com`,
+        },
+      });
+      const isoCustomer = await prisma.user.create({
+        data: {
+          id: `usr_iso_cust_${suffix}`,
+          name: 'Iso Customer',
+          email: `iso_cust_${suffix}@firuzo.com`,
+        },
+      });
+      const isoCode = await prisma.referralCode.create({
+        data: { code: `ISO_${suffix.toUpperCase()}`, leaderId: isoLeader.id },
+      });
+
+      const mkDraft = (count: number) =>
+        BookingApplicationService.createDraft({
+          actorId: isoCustomer.id,
+          type: 'FLIGHT',
+          itemId: 'f1',
+          count,
+          referralCode: isoCode.code,
+          source: 'WEB',
+        });
+      const d1 = await mkDraft(2);
+      const d2 = await mkDraft(3);
+      expect(d1.success).toBe(true);
+      expect(d2.success).toBe(true);
+
+      await prisma.booking.update({ where: { id: d1.bookingId }, data: { status: 'EXPIRED' } });
+      await prisma.booking.update({ where: { id: d2.bookingId }, data: { status: 'FAILED' } });
+
+      const stats = await ReferralDomainService.calculateLeaderStats(isoCode.id);
+      expect(stats!.confirmedPax).toBe(0);
+      expect(stats!.pendingPax).toBe(0);
+      expect(stats!.cancelledPax).toBe(5);
+
+      await prisma.bookingReferral.deleteMany({ where: { booking: { customerId: isoCustomer.id } } });
+      await prisma.bookingStatusHistory.deleteMany({ where: { booking: { customerId: isoCustomer.id } } });
+      await prisma.bookingItem.deleteMany({ where: { booking: { customerId: isoCustomer.id } } });
+      await prisma.booking.deleteMany({ where: { customerId: isoCustomer.id } });
+      await prisma.referralCode.deleteMany({ where: { id: isoCode.id } });
+      await prisma.user.deleteMany({ where: { id: { in: [isoLeader.id, isoCustomer.id] } } });
+    });
+
+    it('resolves UNMATCHED bookings when the code is registered later', async () => {
+      const lateCode = `LATE_${suffix.toUpperCase()}`;
+      const draft = await BookingApplicationService.createDraft({
+        actorId: customer2Id,
+        type: 'FLIGHT',
+        itemId: 'f1',
+        count: 1,
+        referralCode: lateCode.toLowerCase(),
+        source: 'WEB',
+      });
+      expect(draft.success).toBe(true);
+      expect(draft.referralStatus).toBe('UNMATCHED');
+
+      const created = await prisma.referralCode.create({
+        data: { code: lateCode, leaderId: leaderUserId },
+      });
+      const resolved = await ReferralDomainService.resolveUnmatchedForCode(created.id, lateCode);
+      expect(resolved).toBeGreaterThanOrEqual(1);
+
+      const refRecord = await prisma.bookingReferral.findUnique({
+        where: { bookingId: draft.bookingId },
+      });
+      expect(refRecord!.status).toBe('VALID');
+      expect(refRecord!.referralCodeId).toBe(created.id);
+      expect(refRecord!.rawCode).toBe(lateCode);
+
+      await prisma.referralCode.deleteMany({ where: { id: created.id } });
+    });
+  });
+
+  describe('7. Per-Code Variables Configuration (Discount, Cap, Max Uses Quota)', () => {
+    const customConfigCode = `CONFIG_${suffix.toUpperCase()}`;
+    const quotaCode = `QUOTA_${suffix.toUpperCase()}`;
+
+    it('enforces custom discount percent and custom cap per code', async () => {
+      // Create code with 15% discount and 20,000,000 IRR cap
+      const refCode = await prisma.referralCode.create({
+        data: {
+          code: customConfigCode,
+          leaderId: leaderUserId,
+          customTierConfig: JSON.stringify({
+            discountPercent: 0.15,
+            maxDiscountCapIrr: 20_000_000,
+          }),
+        },
+      });
+
+      const validation = await ReferralDomainService.validateCode(customConfigCode, customer1Id);
+      expect(validation.valid).toBe(true);
+      expect(validation.status).toBe('VALID');
+      expect(validation.discountPercent).toBe(0.15);
+      expect(validation.discountCapIrr).toBe(20_000_000);
+
+      // Verify custom discount calculation with cap enforcement
+      const calc1 = ReferralDomainService.calculateDiscount(100_000_000, 0.15, 20_000_000);
+      // 15% of 100M is 15M, which is under 20M cap
+      expect(calc1.discountAmount).toBe(15_000_000);
+
+      const calc2 = ReferralDomainService.calculateDiscount(200_000_000, 0.15, 20_000_000);
+      // 15% of 200M is 30M, which exceeds 20M cap -> capped at 20M
+      expect(calc2.discountAmount).toBe(20_000_000);
+
+      await prisma.referralCode.deleteMany({ where: { id: refCode.id } });
+    });
+
+    it('enforces maxUses capacity limit and rejects bookings when quota is exhausted', async () => {
+      // Create code with maxUses: 1 (valid for exactly one active booking)
+      const refCode = await prisma.referralCode.create({
+        data: {
+          code: quotaCode,
+          leaderId: leaderUserId,
+          customTierConfig: JSON.stringify({
+            discountPercent: 0.10,
+            maxUses: 1,
+          }),
+        },
+      });
+
+      // 1. Initial check -> Valid
+      const initialValidation = await ReferralDomainService.validateCode(quotaCode, customer1Id);
+      expect(initialValidation.valid).toBe(true);
+      expect(initialValidation.status).toBe('VALID');
+      expect(initialValidation.maxUses).toBe(1);
+
+      // 2. Customer 1 uses the code (fills the quota)
+      const draft1 = await BookingApplicationService.createDraft({
+        actorId: customer1Id,
+        type: 'FLIGHT',
+        itemId: 'f1',
+        count: 1,
+        referralCode: quotaCode,
+        source: 'WEB',
+      });
+      expect(draft1.success).toBe(true);
+      expect(draft1.referralStatus).toBe('VALID');
+      expect(draft1.referralDiscountAmount).toBeGreaterThan(0);
+
+      // 3. Customer 2 tries to use the same code -> Quota reached!
+      const postQuotaValidation = await ReferralDomainService.validateCode(quotaCode, customer2Id);
+      expect(postQuotaValidation.valid).toBe(false);
+      expect(postQuotaValidation.status).toBe('USAGE_LIMIT_EXCEEDED');
+      expect(postQuotaValidation.reason).toBe('USAGE_LIMIT_EXCEEDED');
+
+      // 4. Booking creation with exhausted code succeeds without discount
+      const draft2 = await BookingApplicationService.createDraft({
+        actorId: customer2Id,
+        type: 'FLIGHT',
+        itemId: 'f1',
+        count: 1,
+        referralCode: quotaCode,
+        source: 'WEB',
+      });
+      expect(draft2.success).toBe(true);
+      expect(draft2.referralStatus).toBe('USAGE_LIMIT_EXCEEDED');
+      expect(draft2.referralDiscountAmount).toBe(0);
+
+      // Cleanup
+      await prisma.bookingReferral.deleteMany({ where: { referralCodeId: refCode.id } });
+      await prisma.bookingReferral.deleteMany({ where: { rawCode: quotaCode } });
+      await prisma.bookingStatusHistory.deleteMany({ where: { booking: { id: { in: [draft1.bookingId, draft2.bookingId] } } } });
+      await prisma.priceSnapshot.deleteMany({ where: { booking: { id: { in: [draft1.bookingId, draft2.bookingId] } } } });
+      await prisma.bookingItem.deleteMany({ where: { booking: { id: { in: [draft1.bookingId, draft2.bookingId] } } } });
+      await prisma.booking.deleteMany({ where: { id: { in: [draft1.bookingId, draft2.bookingId] } } });
+      await prisma.referralCode.deleteMany({ where: { id: refCode.id } });
     });
   });
 });

@@ -29,8 +29,8 @@ export function HeroSection({ override }: { override?: HeroOverride } = {}) {
     setImgError(false);
   }, [country]);
 
-  const cmsTitle = override?.title?.[locale === 'fa' ? 'fa' : 'en']?.trim();
-  const cmsSubtitle = override?.subtitle?.[locale === 'fa' ? 'fa' : 'en']?.trim();
+  const cmsTitle = override?.title ? lt(locale, override.title)?.trim() : undefined;
+  const cmsSubtitle = override?.subtitle ? lt(locale, override.subtitle)?.trim() : undefined;
   const currentHeroImg =
     (override?.imageUrl && override.imageUrl !== '' ? override.imageUrl : null) ||
     HERO_IMAGES[country] ||

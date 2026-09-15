@@ -375,7 +375,7 @@ function ToursContent() {
                       </Link>
                       <button
                         onClick={() => book(tour)}
-                        aria-label={`رزرو ${locale === 'fa' ? tour.title : tour.titleEn}`}
+                        aria-label={`${t('bookTour')} - ${locale === 'fa' ? tour.title : tour.titleEn}`}
                         className="h-11 bg-action hover:bg-action-hover text-ink px-4 rounded-xl font-black text-xs transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand flex items-center gap-1 cursor-pointer"
                       >
                         <span>{t('bookTour')}</span>
@@ -481,7 +481,7 @@ function ToursContent() {
 
 export default function ToursPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-soft animate-pulse" />}>
+    <Suspense fallback={<div className="min-h-dvh bg-soft animate-pulse" />}>
       <ToursContent />
     </Suspense>
   );

@@ -106,7 +106,7 @@ export function PriceBreakdownTable({
                       en: `Referral Discount (${referralCode})`,
                       ar: `خصم كود الإحالة (${referralCode})`,
                       zh: `推荐码折扣 (${referralCode})`,
-                      ru: `Сکیдка по промокоду (${referralCode})`,
+                      ru: `Скидка по промокоду (${referralCode})`,
                     })
                   : lt(locale, { fa: 'تخفیف ویژه', en: 'Special Discount', ar: 'خصم خاص', zh: '特别折扣', ru: 'Специальная скидка' })}
               </span>

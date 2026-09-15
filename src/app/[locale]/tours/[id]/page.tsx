@@ -152,7 +152,7 @@ export default function TourDetailPage() {
   }
 
   return (
-    <div className="bg-paper pb-36 sm:pb-32 lg:pb-24 min-h-screen">
+    <div className="bg-paper pb-36 sm:pb-32 lg:pb-24 min-h-dvh">
       {/* 1. Hero with Breadcrumbs, Badges, Title & Photo Grid */}
       <TourHero tour={tour} />
 

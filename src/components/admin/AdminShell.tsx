@@ -12,6 +12,7 @@ import {
   PlaneTakeoff, ExternalLink, ShieldCheck, UserCheck, Activity,
   Building2, Boxes, PanelLeftClose, PanelLeftOpen, FolderKanban, Users, Menu, X,
   ChevronLeft, Keyboard, ReceiptText, HandCoins, Building, ListChecks, Compass,
+  MessageSquareQuote, Settings,
 } from 'lucide-react';
 import { lt, LText } from '@/lib/lt';
 import { cn } from '@/lib/utils';
@@ -34,6 +35,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: { fa: 'عملیات و هویت', en: 'Operations & Staff', ar: 'العمليات والموظفون', zh: '运营与人员', ru: 'Операции и сотрудники' },
     items: [
       { href: '/admin/travel-files', label: { fa: 'پرونده‌های سفر', en: 'Travel Files', ar: 'ملفات السفر', zh: '行程档案', ru: 'Файлы поездок' }, icon: BriefcaseBusiness, perm: 'booking:view:all' },
+      { href: '/admin/tickets', label: { fa: 'تیکت‌های پشتیبانی', en: 'Support Tickets', ar: 'تذاكر الدعم', zh: '客服工单', ru: 'Тикеты поддержки' }, icon: MessageSquareQuote, perm: 'booking:view:all' },
       { href: '/admin/exceptions', label: { fa: 'مرکز خطا و استثنائات', en: 'Exception Center', ar: 'مركز الاستثناءات', zh: '异常中心', ru: 'Центр исключений' }, icon: ShieldCheck, perm: 'booking:view:all' },
       { href: '/admin/ops', label: { fa: 'عملیات و پشتیبانی', en: 'Ops & Support', ar: 'العمليات والدعم', zh: '运营与支持', ru: 'Операции и поддержка' }, icon: Activity, perm: 'ops:override:cancel' },
       { href: '/admin/bookings', label: { fa: 'رزروها', en: 'Bookings', ar: 'الحجوزات', zh: '预订', ru: 'Бронирования' }, icon: PlaneTakeoff, perm: 'booking:view:all' },
@@ -46,6 +48,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: { fa: 'رشد و فروش', en: 'Growth', ar: 'النمو', zh: '增长', ru: 'Рост' },
     items: [
       { href: '/admin/referrals', label: { fa: 'کدهای معرف / سرگروه‌ها', en: 'Referrals & Leaders', ar: 'رموز الإحالة والقادة', zh: '推荐码与领队', ru: 'Рефералы и лидеры' }, icon: Users, perm: 'booking:view:all' },
+      { href: '/admin/analytics/behavior', label: { fa: 'رفتار و هیت‌مپ کاربران', en: 'Behavior & Heatmap', ar: 'سلوك المستخدمين وخريطة الحرارة', zh: '用户行为与热力图', ru: 'Поведение и тепловая карта' }, icon: Activity, perm: 'booking:view:all' },
     ],
   },
   {
@@ -65,6 +68,13 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/admin/suppliers', label: { fa: 'تامین‌کنندگان', en: 'Suppliers', ar: 'الموردون', zh: '供应商', ru: 'Поставщики' }, icon: Building2, perm: 'supplier:view' },
       { href: '/admin/inventory', label: { fa: 'انبار و سهمیه‌ها', en: 'Inventory & Allotments', ar: 'المخزون والحصص', zh: '库存与配额', ru: 'Инвентарь и квоты' }, icon: Boxes, perm: 'inventory:view' },
       { href: '/admin/content', label: { fa: 'مدیریت محتوا (CMS)', en: 'Content Management', ar: 'إدارة المحتوى', zh: '内容管理 (CMS)', ru: 'Управление контентом' }, icon: FolderKanban, perm: 'catalog:hotels:edit' },
+    ],
+  },
+  {
+    id: 'settings',
+    title: { fa: 'سیستم و تنظیمات', en: 'System & Settings', ar: 'النظام والإعدادات', zh: '系统与设置', ru: 'Система и настройки' },
+    items: [
+      { href: '/admin/settings', label: { fa: 'تنظیمات سامانه و پیامک', en: 'Platform & SMS Settings', ar: 'إعدادات النظام والرسائل', zh: '系统与短信设置', ru: 'Настройки и SMS' }, icon: Settings, perm: 'user:manage' },
     ],
   },
 ];
@@ -263,7 +273,7 @@ export function AdminShell({
   );
 
   return (
-    <div data-admin-root="true" className="min-h-screen bg-soft/30 relative">
+    <div data-admin-root="true" className="min-h-dvh bg-soft/30 relative">
       {/* Grid pattern lives on its own layer: the .bg-grid-fade mask must never
           wrap content, or the radial mask fades real page content toward the
           document bottom on long pages. */}

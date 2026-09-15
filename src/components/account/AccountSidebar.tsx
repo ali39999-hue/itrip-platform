@@ -21,6 +21,7 @@ import {
   Bot,
   Users,
   Building,
+  Headphones,
 } from 'lucide-react';
 
 const ICONS: Record<string, typeof LayoutGrid> = {
@@ -31,6 +32,7 @@ const ICONS: Record<string, typeof LayoutGrid> = {
   Bot,
   Building,
   Star,
+  Headphones,
 };
 
 const SECTION_HREFS: Record<string, string[]> = {
@@ -41,10 +43,11 @@ const SECTION_HREFS: Record<string, string[]> = {
   autobuy: ['/account/auto-buy'],
   travelers: ['/account/travelers'],
   organization: ['/account/organization'],
+  support: ['/support'],
 };
 
 interface AccountSidebarProps {
-  activeSection?: 'dashboard' | 'trips' | 'wallet' | 'profile' | 'autobuy' | 'travelers' | 'organization';
+  activeSection?: 'dashboard' | 'trips' | 'wallet' | 'profile' | 'autobuy' | 'travelers' | 'organization' | 'support';
 }
 
 /**
