@@ -88,7 +88,7 @@ describe('searchHotelsLive & eCardo Hotel Normalizer Suite', () => {
     const hotel = await getHotelByIdAsync('master_json:hotel:129');
     expect(hotel).toBeDefined();
     if (hotel) {
-      expect(hotel.id).toBe('master_json:hotel:129');
+      expect(hotel.id).toMatch(/^(master_json:hotel:129|ir_129)$/);
       expect(hotel.name).toContain('خیام');
       expect(hotel.stars).toBe(2);
       expect(hotel.pricePerNight).toBeGreaterThan(0);

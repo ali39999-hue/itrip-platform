@@ -162,7 +162,7 @@ function ReferralVariableFields({
             <button
               key={opt.key}
               type="button"
-              onClick={() => setCapType(opt.key as any)}
+              onClick={() => setCapType(opt.key as 'standard' | 'double' | 'uncapped' | 'custom')}
               className={`py-1.5 px-1 text-center rounded-xl text-[11px] font-bold transition border ${
                 capType === opt.key
                   ? 'bg-brand text-surface border-brand shadow-xs'
@@ -217,7 +217,7 @@ function ReferralVariableFields({
             <button
               key={opt.key}
               type="button"
-              onClick={() => setMaxUsesType(opt.key as any)}
+              onClick={() => setMaxUsesType(opt.key as 'unlimited' | '5' | '10' | '20' | '50' | 'custom')}
               className={`py-1.5 px-1 text-center rounded-xl text-[11px] font-bold transition border ${
                 maxUsesType === opt.key
                   ? 'bg-brand text-surface border-brand shadow-xs'

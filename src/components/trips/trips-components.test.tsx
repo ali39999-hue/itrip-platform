@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
 
 vi.mock('@/i18n/routing', () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -116,7 +117,11 @@ describe('Phase 1: Trips & Boarding Pass Features', () => {
 
   describe('FareBrandedMatrix Component (FlyNext pattern)', () => {
     it('renders multiple fare tiers with baggage inclusions', () => {
-      render(<FareBrandedMatrix basePrice={20_000_000} locale="fa" />);
+      render(
+        <NextIntlClientProvider locale="fa" messages={{}}>
+          <FareBrandedMatrix basePrice={20_000_000} locale="fa" />
+        </NextIntlClientProvider>
+      );
       expect(screen.getByText(/اکونومی پایه \(لایت\)/)).toBeDefined();
       expect(screen.getByText(/اکونومی استاندارد/)).toBeDefined();
       expect(screen.getByText(/بیزینس فلکس اختصاصی/)).toBeDefined();

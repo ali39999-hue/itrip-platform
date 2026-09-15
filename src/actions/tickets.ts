@@ -35,7 +35,7 @@ export async function createSupportTicketAction(
       userId: session?.user?.id || null,
       name: validated.name,
       email: validated.email || session?.user?.email || null,
-      phone: validated.phone || session?.user?.phone || null,
+      phone: validated.phone || (session?.user as { phone?: string | null })?.phone || null,
       subject: validated.subject,
       category: validated.category as TicketCategory,
       priority: (validated.priority as TicketPriority) || 'MEDIUM',
@@ -69,7 +69,7 @@ export async function getUserTicketsAction(): Promise<{
 
     const tickets = await TicketDomainService.getUserTickets(
       session.user.id,
-      session.user.phone || session.user.email || undefined
+      ((session.user as { phone?: string | null })?.phone || session.user.email || undefined)
     );
     return { success: true, tickets };
   } catch (err: unknown) {

@@ -5,7 +5,6 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, usePathname } from '@/i18n/routing';
 import { useSearchParams } from 'next/navigation';
 import { Globe, ChevronDown, Check } from 'lucide-react';
-import { LOCALE_FONT_VAR } from '@/lib/fonts';
 
 export const LOCALES = [
   { id: 'fa', label: 'فارسی', dir: 'RTL' },
@@ -51,23 +50,9 @@ export function LocaleSwitcher() {
     }
 
     persistLocaleCookie(nextLocale);
-
-    // Immediately update document root attributes so direction & font change without delay
-    const isRtl = ['fa', 'ar'].includes(nextLocale);
-    document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
-    document.documentElement.lang = nextLocale;
-
-    const fontVar = LOCALE_FONT_VAR[nextLocale] ?? LOCALE_FONT_VAR.fa;
-    document.documentElement.style.setProperty('--font-app-sans', fontVar.sans);
-    document.documentElement.style.setProperty('--font-app-heading', fontVar.heading);
-
-    // Full navigation ensures complete, clean reload of SSR messages,
-    // calendars (Jalali vs Gregorian), and fresh React components
-    const targetPath = pathname || '/';
     const qs = searchParams ? searchParams.toString() : '';
-    const cleanPath = targetPath === '/' ? '' : targetPath;
-    const targetUrl = `/${nextLocale}${cleanPath}${qs ? `?${qs}` : ''}`;
-    window.location.href = targetUrl;
+    const targetPath = (pathname || '/') + (qs ? `?${qs}` : '');
+    router.replace(targetPath, { locale: nextLocale });
     setOpen(false);
   }
 

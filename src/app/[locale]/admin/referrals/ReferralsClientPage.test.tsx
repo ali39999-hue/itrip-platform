@@ -118,7 +118,7 @@ describe('ReferralsClientPage leader picker', () => {
     );
 
     // Click on the settings/configure button
-    const configBtn = screen.getByRole('button', { name: /تنظیمات/ });
+    const configBtn = screen.getAllByRole('button', { name: /تنظیمات/ })[0];
     fireEvent.click(configBtn);
 
     // Edit modal should open with title

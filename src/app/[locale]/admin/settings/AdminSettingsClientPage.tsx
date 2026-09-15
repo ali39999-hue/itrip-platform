@@ -1,15 +1,14 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import {
   Settings, MessageSquare, CreditCard, Globe, Send,
   CheckCircle2, AlertCircle, RefreshCw, Plus, Trash2,
-  ToggleLeft, ToggleRight, ShieldCheck, Phone, Mail,
-  Coins, KeyRound, Radio, ExternalLink
+  ShieldCheck
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { Input } from '@/components/ui/input';
-import { ErpBadge, ErpEmptyState, ErpPageHeader, ErpSectionCard } from '@/components/admin/erp-ui';
+import { ErpBadge, ErpPageHeader } from '@/components/admin/erp-ui';
 import {
   saveSmsSettingsAction,
   sendTestSmsAction,
@@ -93,8 +92,6 @@ export function AdminSettingsClientPage({
   });
   const [walletError, setWalletError] = useState('');
   const [isAddingWallet, setIsAddingWallet] = useState(false);
-
-  const numFmt = locale === 'fa' ? 'fa-IR' : 'en-US';
 
   // Handler: Save SMS Settings
   async function handleSaveSms(e: React.FormEvent) {

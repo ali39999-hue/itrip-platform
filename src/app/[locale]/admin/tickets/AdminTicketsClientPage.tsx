@@ -2,13 +2,12 @@
 
 import { useState, useTransition } from 'react';
 import {
-  MessageSquareQuote, Search, Send, CheckCircle2, Clock,
-  AlertCircle, ChevronRight, RefreshCw, User, Phone, Mail,
-  Ticket, Tag, ArrowUpRight, ShieldCheck, CheckCheck
+  MessageSquareQuote, Search, Send, CheckCircle2,
+  RefreshCw, User, Phone, Mail
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { Input } from '@/components/ui/input';
-import { ErpBadge, ErpEmptyState, ErpPageHeader, ErpSectionCard } from '@/components/admin/erp-ui';
+import { ErpBadge, ErpEmptyState, ErpPageHeader } from '@/components/admin/erp-ui';
 import {
   getAdminTicketsAction,
   getTicketDetailsAction,
@@ -23,12 +22,12 @@ import type {
 } from '@/domains/tickets/TicketDomainService';
 
 const STATUS_CONFIG: Record<
-  TicketStatus,
-  { label: { fa: string; en: string }; tone: 'gold' | 'rose' | 'green' | 'neutral' | 'blue' }
+  string,
+  { label: { fa: string; en: string }; tone: 'gold' | 'rose' | 'green' | 'neutral' | 'sky' }
 > = {
   OPEN: { label: { fa: 'جدید / باز', en: 'Open' }, tone: 'rose' },
   IN_PROGRESS: { label: { fa: 'در حال بررسی', en: 'In Progress' }, tone: 'gold' },
-  WAITING_USER: { label: { fa: 'منتظر پاسخ کاربر', en: 'Waiting Customer' }, tone: 'blue' },
+  WAITING_USER: { label: { fa: 'منتظر پاسخ کاربر', en: 'Waiting Customer' }, tone: 'sky' },
   RESOLVED: { label: { fa: 'رسیدگی شده', en: 'Resolved' }, tone: 'green' },
   CLOSED: { label: { fa: 'بسته شده', en: 'Closed' }, tone: 'neutral' },
 };
@@ -163,7 +162,7 @@ export function AdminTicketsClientPage({
             <ErpBadge tone={counts.open > 0 ? 'rose' : 'green'} dot>
               {counts.open.toLocaleString(numFmt)} {lt(locale, { fa: 'باز / جدید', en: 'open', ar: 'مفتوحة', zh: '待处理', ru: 'новых' })}
             </ErpBadge>
-            <ErpBadge tone={counts.waitingUser > 0 ? 'blue' : 'neutral'}>
+            <ErpBadge tone={counts.waitingUser > 0 ? 'sky' : 'neutral'}>
               {counts.waitingUser.toLocaleString(numFmt)} {lt(locale, { fa: 'منتظر کاربر', en: 'waiting customer', ar: 'في انتظار العميل', zh: '等待回复', ru: 'ждут клиента' })}
             </ErpBadge>
             <ErpBadge tone="neutral">

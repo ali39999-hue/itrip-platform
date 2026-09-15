@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
+import { lt } from '@/lib/lt';
 import { useCountryStore } from '@/stores/country-store';
 import type { CountryId } from '@/lib/countries';
 import { SearchWidget } from '@/components/search/SearchWidget';
@@ -29,8 +30,8 @@ export function HeroSection({ override }: { override?: HeroOverride } = {}) {
     setImgError(false);
   }, [country]);
 
-  const cmsTitle = override?.title ? lt(locale, override.title)?.trim() : undefined;
-  const cmsSubtitle = override?.subtitle ? lt(locale, override.subtitle)?.trim() : undefined;
+  const cmsTitle = override?.title?.fa ? lt(locale, { fa: override.title.fa, en: override.title.en || override.title.fa })?.trim() : undefined;
+  const cmsSubtitle = override?.subtitle?.fa ? lt(locale, { fa: override.subtitle.fa, en: override.subtitle.en || override.subtitle.fa })?.trim() : undefined;
   const currentHeroImg =
     (override?.imageUrl && override.imageUrl !== '' ? override.imageUrl : null) ||
     HERO_IMAGES[country] ||

@@ -137,7 +137,7 @@ export const accountSidebarLinkSchema = z
       .max(200)
       .refine((v) => v.startsWith('/') && !v.includes('..'), { message: 'href must be an in-app absolute path' }),
     label: textPair,
-    icon: z.enum(['LayoutGrid', 'Users', 'PlaneTakeoff', 'Gift', 'Bot', 'Building', 'Star']).optional(),
+    icon: z.enum(['LayoutGrid', 'Users', 'PlaneTakeoff', 'Gift', 'Bot', 'Building', 'Star', 'Headphones']).optional(),
   })
   .strict();
 

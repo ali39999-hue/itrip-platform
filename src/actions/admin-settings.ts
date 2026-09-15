@@ -1,8 +1,6 @@
 'use server';
 
-import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { safeAuth } from '@/auth';
 import { revalidatePath } from 'next/cache';
 import { requirePermission } from '@/domains/identity/permission-service';
 import { ProductionSmsProvider } from '@/domains/events/providers/ProductionSmsProvider';
@@ -483,7 +481,7 @@ export async function toggleDestinationBankCardActiveAction(
   isActive: boolean
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const admin = await requirePermission(['finance:view', 'user:manage']);
+    await requirePermission(['finance:view', 'user:manage']);
 
     await prisma.destinationBankCard.update({
       where: { id },
@@ -630,7 +628,7 @@ export async function toggleDestinationCryptoWalletActiveAction(
   isActive: boolean
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const admin = await requirePermission(['finance:view', 'user:manage']);
+    await requirePermission(['finance:view', 'user:manage']);
 
     await prisma.destinationCryptoWallet.update({
       where: { id },

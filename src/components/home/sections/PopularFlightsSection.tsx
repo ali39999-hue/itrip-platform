@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { Link } from '@/i18n/routing';
 import { useLocale } from 'next-intl';
 import { ArrowLeft, Clock } from 'lucide-react';
-import { num } from '@/lib/format';
 import { lt } from '@/lib/lt';
 import { formatMoney } from '@/lib/money';
 import { shimmerDataUrl } from '@/lib/image-utils';

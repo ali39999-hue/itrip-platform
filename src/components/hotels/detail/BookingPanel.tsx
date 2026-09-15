@@ -9,7 +9,7 @@ import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
 import { formatMoney } from '@/lib/money';
 import { useCountryStore } from '@/stores/country-store';
-import { COUNTRIES } from '@/lib/countries';
+import { COUNTRIES, type CountryId } from '@/lib/countries';
 import type { Hotel } from '@/lib/types';
 
 interface BookingPanelProps {
@@ -24,7 +24,7 @@ export function BookingPanel({ booking, hotel, onBook, onOpenEdit }: BookingPane
   const ariaT = useTranslations('Common.aria');
   const locale = useLocale();
   const { country } = useCountryStore();
-  const hotelCountry = hotel?.countryId || country;
+  const hotelCountry = (hotel?.countryId || country) as CountryId;
   const currency = COUNTRIES[hotelCountry]?.currency || 'IRR';
   const {
     sel,

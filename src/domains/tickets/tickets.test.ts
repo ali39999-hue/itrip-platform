@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TicketDomainService } from './TicketDomainService';
 import { prisma } from '@/lib/prisma';
+import type { SiteContent, OutboxEvent } from '@prisma/client';
 
 describe('TicketDomainService - CRM & Support Architecture Tests', () => {
   const mockStorage = new Map<string, string>();
@@ -9,34 +10,34 @@ describe('TicketDomainService - CRM & Support Architecture Tests', () => {
     mockStorage.clear();
     vi.spyOn(prisma.siteContent, 'findUnique').mockImplementation(async ({ where }) => {
       const payload = mockStorage.get(where.key);
-      if (!payload) return null as any;
+      if (!payload) return null as unknown as SiteContent;
       return {
         key: where.key,
         payload,
         updatedBy: 'system',
         createdAt: new Date(),
         updatedAt: new Date(),
-      } as any;
+      } as unknown as SiteContent;
     });
 
     vi.spyOn(prisma.siteContent, 'create').mockImplementation(async ({ data }) => {
       mockStorage.set(data.key, data.payload);
-      return data as any;
+      return data as unknown as SiteContent;
     });
 
     vi.spyOn(prisma.siteContent, 'update').mockImplementation(async ({ where, data }) => {
       mockStorage.set(where.key, data.payload as string);
-      return { key: where.key, payload: data.payload } as any;
+      return { key: where.key, payload: data.payload } as unknown as SiteContent;
     });
 
     vi.spyOn(prisma.siteContent, 'upsert').mockImplementation(async ({ where, create, update }) => {
       const payload = mockStorage.has(where.key) ? update.payload : create.payload;
       mockStorage.set(where.key, payload as string);
-      return { key: where.key, payload } as any;
+      return { key: where.key, payload } as unknown as SiteContent;
     });
 
     vi.spyOn(prisma.outboxEvent, 'create').mockImplementation(async ({ data }) => {
-      return { id: 'outbox_1', ...data } as any;
+      return { id: 'outbox_1', ...data } as unknown as OutboxEvent;
     });
   });
 

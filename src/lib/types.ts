@@ -1,3 +1,5 @@
+import type { CountryId } from '@/lib/countries';
+
 export type ServiceType = 'flights' | 'hotels' | 'tours' | 'transfers' | 'trains';
 
 export interface Flight {
@@ -26,6 +28,7 @@ export type HotelPropertyType = 'hotel' | 'apartment' | 'boutique' | 'villa';
 
 export interface Hotel {
   id: string;
+  countryId?: CountryId;
   name: string;
   nameEn: string;
   city: string;

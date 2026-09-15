@@ -137,10 +137,6 @@ export function CityHotelSearch() {
     return countryName(countryId, locale);
   }
 
-  function formatPrice(price: number) {
-    return new Intl.NumberFormat(locale === 'fa' ? 'fa-IR' : 'en-US').format(price);
-  }
-
   const BackIcon = locale === 'fa' || locale === 'ar' ? ArrowRight : ArrowLeft;
 
   const hotelsSection = (city: CityOption, data: CityHotels | null) => (

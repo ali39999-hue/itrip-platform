@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { INTERPRETERS, INTERPRETER_PRICING as P } from '@/lib/interpreters';
-import { num } from '@/lib/format';
 import { lt } from '@/lib/lt';
 import { formatMoney } from '@/lib/money';
 import { useCountryStore } from '@/stores/country-store';

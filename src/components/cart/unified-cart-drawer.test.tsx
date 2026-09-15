@@ -109,8 +109,8 @@ describe('UnifiedCartDrawer Component (Miracuves / Lulan Pattern)', () => {
   });
 
   it('renders above sheets/dialogs with an enter animation', () => {
-    const { container } = renderWithIntl(<UnifiedCartDrawer open={true} onClose={vi.fn()} />);
-    const overlay = container.querySelector('[role="dialog"]') as HTMLElement | null;
+    renderWithIntl(<UnifiedCartDrawer open={true} onClose={vi.fn()} />);
+    const overlay = document.body.querySelector('[role="dialog"]') as HTMLElement | null;
     expect(overlay?.className).toContain('z-[200]');
     const panel = overlay?.firstElementChild as HTMLElement | null;
     expect(panel?.className).toContain('animate-in');

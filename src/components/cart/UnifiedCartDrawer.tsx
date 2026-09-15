@@ -59,6 +59,16 @@ export function UnifiedCartDrawer({ open, onClose }: UnifiedCartDrawerProps) {
   // Focus trap: initial focus, Tab wrap, Escape→close, focus restore.
   const panelRef = useFocusTrap<HTMLDivElement>(open, { onEscape: onClose });
 
+  // Escape listener
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
+
   // Body scroll lock with restore (mirror Header mobile drawer pattern).
   useEffect(() => {
     if (!open) return;

@@ -6,7 +6,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useAuthStore } from '@/stores/auth-store';
 import {
   Phone, Mail, MessageSquare, Send, CheckCircle2, Headphones,
-  ChevronDown, Clock, Zap, MessageSquareQuote, ShieldAlert, RefreshCw, AlertCircle
+  ChevronDown, Clock, Zap, MessageSquareQuote, RefreshCw, AlertCircle
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { lt } from '@/lib/lt';
