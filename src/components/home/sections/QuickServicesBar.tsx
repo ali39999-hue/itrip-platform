@@ -7,11 +7,9 @@ import {
   Plane,
   BedDouble,
   Compass,
-  TrainFront,
   BusFront,
   FileCheck2,
   ShieldCheck,
-  Wifi,
   CarFront,
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
