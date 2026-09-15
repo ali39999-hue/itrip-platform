@@ -6,9 +6,10 @@ import { useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { useTranslations, useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
-import { resolveCityQuery } from '@/lib/cities';
+import { resolveCityQuery, localizedAirportLabel } from '@/lib/cities';
 import type { Flight } from '@/lib/types';
 import { toast } from 'sonner';
+import { useBookingStore } from '@/stores/booking-store';
 import { useCountryStore } from '@/stores/country-store';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { daysFromNow } from '@/lib/utils';
@@ -53,6 +54,7 @@ function FlightSearchInner() {
   const locale = useLocale();
   const t = useTranslations('Flights');
   const params = useSearchParams();
+  const setBookingContext = useBookingStore((s) => s.setBookingContext);
   const { formatAmount } = useDisplayCurrency();
   const ariaT = useTranslations('Common.aria');
 
@@ -346,25 +348,41 @@ function FlightSearchInner() {
       stops: f.stops,
       refundable: f.refundable ?? undefined,
     });
-    toast.error(
-      lt(locale, {
-        fa: 'سرویس مورد نظر بدلیل اختلالات اینترنتی از سمت منبع دردسترس نمیباشد',
-        en: 'The requested service is temporarily unavailable due to connectivity issues on the provider side.',
-        ar: 'الخدمة المطلوبة غير متاحة حالياً بسبب اضطرابات في الاتصال من جانب المزود.',
-        zh: '由于供应商侧网络异常，当前服务暂时不可用。',
-        ru: 'Сервис временно недоступен из-за проблем с подключением на стороне поставщика.',
-      }),
-      {
-        description: lt(locale, {
-          fa: 'از صبر و شکیبایی شما متشکریم',
-          en: 'Thank you for your patience.',
-          ar: 'شكراً لصبركم وتفهمكم.',
-          zh: '感谢您的耐心与理解。',
-          ru: 'Спасибо за ваше терпение.',
+    if (process.env.NEXT_PUBLIC_MAINTENANCE_OUTAGE === 'true') {
+      toast.error(
+        lt(locale, {
+          fa: 'سرویس مورد نظر بدلیل اختلالات اینترنتی از سمت منبع دردسترس نمیباشد',
+          en: 'The requested service is temporarily unavailable due to connectivity issues on the provider side.',
+          ar: 'الخدمة المطلوبة غير متاحة حالياً بسبب اضطرابات في الاتصال من جانب المزود.',
+          zh: '由于供应商侧网络异常，当前服务暂时不可用。',
+          ru: 'Сервис временно недоступен из-за проблем с подключением на стороне поставщика.',
         }),
-        duration: 6000,
-      },
-    );
+        {
+          description: lt(locale, {
+            fa: 'از صبر و شکیبایی شما متشکریم',
+            en: 'Thank you for your patience.',
+            ar: 'شكراً لصبركم وتفهمكم.',
+            zh: '感谢您的耐心与理解。',
+            ru: 'Спасибо за ваше терпение.',
+          }),
+          duration: 6000,
+        },
+      );
+      return;
+    }
+
+    setBookingContext({
+      type: 'flights',
+      id: f.id,
+      title: `${localizedAirportLabel(f.origin, locale)} ✈ ${localizedAirportLabel(f.destination, locale)} (${f.flightNo})`,
+      subtitle: `${locale === 'fa' ? f.airline : (f.airlineEn || f.airline)} • ${f.departureTime}`,
+      amount: Math.round(f.price / 10),
+      travelDate,
+      adults: paxAdults,
+      children: paxChildren,
+      meta: { adults: String(paxAdults), children: String(paxChildren) },
+    });
+    router.push('/checkout');
   }
 
   const rangeSpan = Math.max(priceBounds.max - priceBounds.min, 1);
