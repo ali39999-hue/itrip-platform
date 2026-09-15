@@ -8,7 +8,10 @@ import { useBookingStore } from '@/stores/booking-store';
 import {
   type SignatureExperience,
   experienceCategoryLabel,
+  COUNTRIES,
 } from '@/lib/countries';
+import { useCountryStore } from '@/stores/country-store';
+import { formatMoney } from '@/lib/money';
 import { CATEGORY_ICONS } from './CountryExperiences';
 import { CATEGORY_PHOTO_MAP, shimmerDataUrl } from '@/lib/image-utils';
 import { num } from '@/lib/format';
@@ -45,6 +48,10 @@ export function ExperienceDetailModal({
   const locale = useLocale();
   const isRtl = ['fa', 'ar'].includes(locale);
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
+
+  const { country } = useCountryStore();
+  const c = COUNTRIES[country] || COUNTRIES.iran;
+  const currency = c.currency;
 
   const [travelers, setTravelers] = useState(1);
   const [selectedDate, setSelectedDate] = useState(() => daysFromNow(3));
@@ -186,19 +193,19 @@ export function ExperienceDetailModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 p-3.5 rounded-2xl bg-soft/60 border border-line/60 text-xs">
             <div className="flex items-center gap-2 font-bold text-ink">
               <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-              <span>راهنما و سرپرست محلی مجرب</span>
+              <span>{lt(locale, { fa: 'راهنما و سرپرست محلی مجرب', en: 'Experienced local tour guide', ar: 'مرشد محلي خبير', zh: '经验丰富的本地导游', ru: 'Опытный местный гид' })}</span>
             </div>
             <div className="flex items-center gap-2 font-bold text-ink">
               <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-              <span>ورودیه‌ها و هماهنگی کامل اماکن</span>
+              <span>{lt(locale, { fa: 'ورودیه‌ها و هماهنگی کامل اماکن', en: 'All entry tickets & permits included', ar: 'جميع تذاكر الدخول مشمولة', zh: '包含全部门票与出入协调', ru: 'Входные билеты включены' })}</span>
             </div>
             <div className="flex items-center gap-2 font-bold text-ink">
               <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-              <span>پوشش کامل بیمه مسافرتی سامان</span>
+              <span>{lt(locale, { fa: 'پوشش کامل بیمه مسافرتی سامان', en: 'Comprehensive travel insurance', ar: 'تأمين سفر شامل', zh: '全程旅行综合保险保障', ru: 'Полная туристическая страховка' })}</span>
             </div>
             <div className="flex items-center gap-2 font-bold text-ink">
               <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-              <span>تضمین کمترین نرخ و بدون هزینه مخفی</span>
+              <span>{lt(locale, { fa: 'تضمین کمترین نرخ و بدون هزینه مخفی', en: 'Best rate guarantee, no hidden fees', ar: 'ضمان أفضل سعر دون رسوم خفية', zh: '最优价格保证无隐形消费', ru: 'Гарантия лучшей цены' })}</span>
             </div>
           </div>
 
@@ -210,8 +217,12 @@ export function ExperienceDetailModal({
                   <Languages size={16} />
                 </span>
                 <div>
-                  <span className="text-xs font-black text-ink block">مترجم همراه اختصاصی (انگلیسی / چینی / روسی)</span>
-                  <span className="text-[11px] font-bold text-sub block">+ ۱,۲۰۰,۰۰۰ تومان برای کل برنامه</span>
+                  <span className="text-xs font-black text-ink block">
+                    {lt(locale, { fa: 'مترجم همراه اختصاصی (انگلیسی / چینی / روسی)', en: 'Private Interpreter (EN / ZH / RU)', ar: 'مترجم مرافق خاص (إنجليزي / صيني / روسي)', zh: '专属同程翻译陪同（英/中/俄）', ru: 'Персональный гид-переводчик' })}
+                  </span>
+                  <span className="text-[11px] font-bold text-sub block">
+                    + {formatMoney(1200000, currency, locale)} {lt(locale, { fa: 'برای کل برنامه', en: 'for entire trip', ar: 'لكامل الرحلة', zh: '全行程费用', ru: 'за всю программу' })}
+                  </span>
                 </div>
               </div>
               <input
@@ -235,8 +246,11 @@ export function ExperienceDetailModal({
           <div className="pt-2 border-t border-line/80 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <span className="text-xs font-black text-ink block">تعداد مسافران</span>
-                <span className="text-[11px] font-bold text-sub">قیمت هر نفر: {num(basePrice, locale)} تومان</span>
+                <span className="text-xs font-black text-ink block">{lt(locale, { fa: 'تعداد مسافران', en: 'Number of Travelers', ar: 'عدد المسافرين', zh: '出行人数', ru: 'Количество пассажиров' })}</span>
+                <span className="text-[11px] font-bold text-sub">
+                  {lt(locale, { fa: 'قیمت هر نفر: ', en: 'Price per person: ', ar: 'السعر للشخص: ', zh: '每人价格：', ru: 'Цена за человека: ' })}
+                  {formatMoney(basePrice, currency, locale)}
+                </span>
               </div>
               <div className="flex items-center gap-3">
                 <button
@@ -244,19 +258,19 @@ export function ExperienceDetailModal({
                   onClick={() => setTravelers((v) => Math.max(1, v - 1))}
                   disabled={travelers <= 1}
                   className="min-w-[44px] min-h-[44px] rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
-                  aria-label="کاهش مسافر"
+                  aria-label={lt(locale, { fa: 'کاهش مسافر', en: 'Decrease traveler', ar: 'تقليل المسافرين', zh: '减少人数', ru: 'Уменьшить' })}
                 >
                   <Minus size={16} />
                 </button>
-                <span className="w-6 text-center font-black text-base text-ink">
-                  {travelers}
+                <span className="w-6 text-center font-black text-base text-ink font-price num">
+                  {num(travelers, locale)}
                 </span>
                 <button
                   type="button"
                   onClick={() => setTravelers((v) => Math.min(10, v + 1))}
                   disabled={travelers >= 10}
                   className="min-w-[44px] min-h-[44px] rounded-full border border-line bg-soft text-ink grid place-items-center active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
-                  aria-label="افزایش مسافر"
+                  aria-label={lt(locale, { fa: 'افزایش مسافر', en: 'Increase traveler', ar: 'زيادة المسافرين', zh: '增加人数', ru: 'Увеличить' })}
                 >
                   <Plus size={16} />
                 </button>
@@ -265,7 +279,9 @@ export function ExperienceDetailModal({
 
             {/* Quick Date Picker Pills */}
             <div>
-              <span className="text-xs font-black text-ink block mb-2">انتخاب تاریخ اجرای ماجراجویی:</span>
+              <span className="text-xs font-black text-ink block mb-2">
+                {lt(locale, { fa: 'انتخاب تاریخ اجرای ماجراجویی:', en: 'Select experience date:', ar: 'اختر موعد الرحلة:', zh: '选择出行日期：', ru: 'Выберите дату поездки:' })}
+              </span>
               <div className="flex items-center gap-2 overflow-x-auto snap-x touch-pan-x pb-1 scrollbar-none">
                 {[1, 3, 7, 14].map((d) => {
                   const dateStr = daysFromNow(d);
@@ -295,20 +311,23 @@ export function ExperienceDetailModal({
         {/* Sticky Action Footer -> DIRECT TO CHECKOUT */}
         <div className="p-4 sm:p-5 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-line bg-surface flex items-center justify-between gap-4 shadow-elev-1">
           <div>
-            <span className="text-[11px] font-bold text-sub block">مبلغ کل و نهایی:</span>
+            <span className="text-[11px] font-bold text-sub block">
+              {lt(locale, { fa: 'مبلغ کل و نهایی:', en: 'Total payable:', ar: 'المبلغ الإجمالي:', zh: '应付总额：', ru: 'Итого к оплате:' })}
+            </span>
             <div className="flex items-baseline gap-1">
-              <span className="text-xl sm:text-2xl font-black text-price">{num(totalPrice, locale)}</span>
-              <span className="text-xs font-black text-sub">تومان</span>
+              <span className="text-xl sm:text-2xl font-black text-price font-price num">
+                {formatMoney(totalPrice, currency, locale)}
+              </span>
             </div>
           </div>
 
           <button
             type="button"
             onClick={handleProceedToCheckout}
-            className="min-h-[50px] px-6 rounded-2xl bg-action hover:bg-action-hover active:bg-action-active text-ink font-black text-sm transition-all shadow-[0_6px_20px_rgba(240,166,42,0.35)] flex items-center gap-2 active:scale-95"
+            className="min-h-[50px] px-6 rounded-2xl bg-action hover:bg-action-hover active:bg-action-active text-ink font-black text-sm transition-all shadow-[0_6px_20px_rgba(240,166,42,0.35)] flex items-center gap-2 active:scale-95 cursor-pointer"
           >
             <Lock size={16} className="text-ink" />
-            <span>رزرو و ادامه به پرداخت</span>
+            <span>{lt(locale, { fa: 'رزرو و ادامه به پرداخت', en: 'Reserve & Checkout', ar: 'الحجز والمتابعة للدفع', zh: '立即预订并结算', ru: 'Забронировать и оплатить' })}</span>
             {isRtl ? <ArrowLeft size={16} /> : <ArrowRight size={16} />}
           </button>
         </div>

@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { num } from '@/lib/format';
 import { lt } from '@/lib/lt';
+import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
+import { toLocalCurrency } from '@/lib/money';
 
 interface FlightPriceCalendarProps {
   selectedDate: string;
@@ -53,6 +55,7 @@ export function FlightPriceCalendar({
   basePrice,
   locale,
 }: FlightPriceCalendarProps) {
+  const { currency, currencyLabel } = useDisplayCurrency();
   // Normalize basePrice to Toman (if passed in Rials > 15M)
   const baseToman = basePrice > 15_000_000 ? Math.round(basePrice / 10) : basePrice || 2_850_000;
 
@@ -226,8 +229,6 @@ export function FlightPriceCalendar({
     }));
   }, [today, selectedDate, locale, computePriceForDate, isFaLocale]);
 
-  const currencyLabel = lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томан' });
-
   return (
     <>
       {/* ========================================================================= */}
@@ -332,7 +333,7 @@ export function FlightPriceCalendar({
                     {item.dateDisplay}
                   </div>
 
-                  {/* Bottom: Price in Toman */}
+                  {/* Bottom: Price in Local Currency */}
                   <div>
                     {item.isPast ? (
                       <span className="text-[9.5px] font-bold text-sub/50 whitespace-nowrap">
@@ -341,7 +342,7 @@ export function FlightPriceCalendar({
                     ) : (
                       <div className="flex flex-col items-center">
                         <span className={`text-[10.5px] sm:text-[11.5px] font-black font-price num leading-none whitespace-nowrap ${item.isSelected ? 'text-surface' : item.isCheapest ? 'text-emerald-700 dark:text-emerald-300' : 'text-brand-dark'}`}>
-                          {num(item.price, locale)}
+                          {num(toLocalCurrency(item.price, currency), locale)}
                         </span>
                         <span className={`text-[8.5px] font-bold leading-none mt-1 whitespace-nowrap ${item.isSelected ? 'text-surface/80' : 'text-sub'}`}>
                           {currencyLabel}
@@ -440,7 +441,7 @@ export function FlightPriceCalendar({
                     {item.dateDisplay}
                   </span>
                   <span className={`text-[11px] font-black font-price num mt-1 ${item.isSelected ? 'text-surface' : item.isCheapest ? 'text-emerald-700 dark:text-emerald-300' : 'text-brand-dark'}`}>
-                    {num(item.price, locale)}
+                    {num(toLocalCurrency(item.price, currency), locale)} {currencyLabel}
                   </span>
                   {item.isCheapest && !item.isSelected && (
                     <span className="absolute -top-1.5 start-1/2 ltr:-translate-x-1/2 rtl:translate-x-1/2 px-1.5 py-0.5 rounded-full bg-emerald-600 text-surface text-[8px] font-black">

@@ -231,8 +231,8 @@ export function SnappRechargeWidget({ locale, initialAmount }: { locale: string;
         </div>
       </div>
 
-      {/* Mobile Sticky Payment Bar */}
-      <div className="md:hidden fixed bottom-[58px] inset-x-0 z-40 bg-surface/95 backdrop-blur-md border-t border-line px-4 py-3 shadow-elev-3 flex items-center justify-between gap-3">
+      {/* Mobile Sticky Payment Bar — offset above BottomNav (62px) + safe area */}
+      <div className="md:hidden fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] inset-x-0 z-40 bg-surface/95 backdrop-blur-md border-t border-line px-4 py-3 shadow-elev-3 flex items-center justify-between gap-3">
         <div>
           <span className="text-[10.5px] font-bold text-sub block leading-none mb-0.5">
             شارژ حساب اسنپ

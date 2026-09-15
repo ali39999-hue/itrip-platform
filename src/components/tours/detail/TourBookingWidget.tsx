@@ -20,7 +20,9 @@ import {
   X,
   SlidersHorizontal,
   Bot,
+  ShoppingCart,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { CreateAutoBuyModal } from '@/components/autobuy/CreateAutoBuyModal';
 
 interface TourBookingWidgetProps {
@@ -37,6 +39,7 @@ export function TourBookingWidget({
   const router = useRouter();
   const locale = useLocale();
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
+  const addToCart = useBookingStore((s) => s.addToCart);
 
   const dates = tour.departureDates || [];
   const activeDate = dates.find((d) => d.id === selectedDateId) || dates[0];
@@ -78,6 +81,37 @@ export function TourBookingWidget({
     });
 
     router.push('/checkout');
+  }
+
+  /** Adds the configured tour to the unified cart (drawer badge + checkout multi-item flow). */
+  function handleAddToCart() {
+    if (isSoldOut) return;
+    const travelers = adults + children;
+    const tourTitle = locale === 'fa' ? tour.title : (tour.titleEn || tour.title);
+    addToCart({
+      type: 'TOUR',
+      title: tourTitle,
+      subtitle: `${tour.city} • ${activeDate?.startDate || ''}`,
+      count: travelers,
+      unitPrice: Math.round(totalPrice / Math.max(1, travelers)),
+      currency,
+      travelDate: activeDate?.startDate || new Date().toISOString().slice(0, 10),
+      details: {
+        tourId: tour.id,
+        departureDateId: activeDate?.id,
+        adults,
+        children,
+      },
+    });
+    toast.success(
+      lt(locale, {
+        fa: 'تور به سبد خرید اضافه شد',
+        en: 'Tour added to cart',
+        ar: 'تمت إضافة الجولة إلى السلة',
+        zh: '已加入购物车',
+        ru: 'Тур добавлен в корзину',
+      })
+    );
   }
 
   const maxAvailable = activeDate ? activeDate.availableSeats : 0;
@@ -257,6 +291,17 @@ export function TourBookingWidget({
           )}
         </button>
 
+        {/* Add to Unified Cart (secondary: keeps browsing, badge increments) */}
+        <button
+          type="button"
+          disabled={isSoldOut}
+          onClick={handleAddToCart}
+          className="w-full min-h-[44px] rounded-2xl border border-line bg-surface hover:bg-soft text-ink font-black text-xs flex items-center justify-center gap-2 transition active:scale-[0.98] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <ShoppingCart size={16} aria-hidden="true" />
+          <span>{lt(locale, { fa: 'افزودن به سبد خرید', en: 'Add to Cart', ar: 'أضف إلى السلة', zh: '加入购物车', ru: 'В корзину' })}</span>
+        </button>
+
         {/* Auto-Buy Bot Button */}
         <button
           type="button"
@@ -314,7 +359,7 @@ export function TourBookingWidget({
           <button
             type="button"
             onClick={() => setAutoBuyOpen(true)}
-            className="h-10 px-2.5 rounded-xl border border-brand/30 bg-mint text-brand-dark flex items-center justify-center gap-1 text-xs font-black cursor-pointer shadow-xs"
+            className="min-h-[44px] px-2.5 rounded-xl border border-brand/30 bg-mint text-brand-dark flex items-center justify-center gap-1 text-xs font-black cursor-pointer shadow-xs"
             title={lt(locale, { fa: 'ربات خرید خودکار', en: 'Auto-Buy', ar: 'شراء تلقائي', zh: '自动订票', ru: 'Автопокупка' })}
           >
             <Bot size={15} />
@@ -325,7 +370,7 @@ export function TourBookingWidget({
             type="button"
             disabled={isSoldOut}
             onClick={handleBook}
-            className={`h-10 px-4 sm:px-5 rounded-xl ${isSoldOut ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-action hover:bg-action-hover text-ink cursor-pointer'} font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95 shadow-md shadow-action/25 shrink-0`}
+            className={`min-h-[44px] px-4 sm:px-5 rounded-xl ${isSoldOut ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-action hover:bg-action-hover text-ink cursor-pointer'} font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95 shadow-md shadow-action/25 shrink-0`}
           >
             <span>{isSoldOut ? lt(locale, { fa: 'تکمیل ظرفیت', en: 'Sold Out', ar: 'مكتمل', zh: '已满', ru: 'Мест нет' }) : lt(locale, { fa: 'رزرو و پرداخت', en: 'Book & Pay', ar: 'حجز ودفع', zh: '立即预订', ru: 'Оплатить' })}</span>
             {!isSoldOut && (
@@ -355,7 +400,7 @@ export function TourBookingWidget({
                 type="button"
                 onClick={() => setMobileConfigOpen(false)}
                 aria-label={lt(locale, { fa: 'بستن', en: 'Close', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}
-                className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-full bg-soft text-sub grid place-items-center cursor-pointer"
+                className="size-11 rounded-full bg-soft text-sub grid place-items-center cursor-pointer"
               >
                 <X size={16} />
               </button>
@@ -400,7 +445,7 @@ export function TourBookingWidget({
                     type="button"
                     disabled={adults <= 1}
                     onClick={() => setAdults((prev) => Math.max(1, prev - 1))}
-                    className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 cursor-pointer"
+                    className="size-11 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 cursor-pointer shrink-0"
                   >
                     <Minus size={14} />
                   </button>
@@ -409,7 +454,7 @@ export function TourBookingWidget({
                     type="button"
                     disabled={isSoldOut || (adults + children) >= maxAvailable}
                     onClick={() => setAdults((prev) => prev + 1)}
-                    className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 cursor-pointer"
+                    className="size-11 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 cursor-pointer shrink-0"
                   >
                     <Plus size={14} />
                   </button>
@@ -430,7 +475,7 @@ export function TourBookingWidget({
                     type="button"
                     disabled={children <= 0}
                     onClick={() => setChildren((prev) => Math.max(0, prev - 1))}
-                    className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 cursor-pointer"
+                    className="size-11 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 cursor-pointer shrink-0"
                   >
                     <Minus size={14} />
                   </button>
@@ -439,7 +484,7 @@ export function TourBookingWidget({
                     type="button"
                     disabled={isSoldOut || (adults + children) >= maxAvailable}
                     onClick={() => setChildren((prev) => prev + 1)}
-                    className="w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 cursor-pointer"
+                    className="size-11 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 cursor-pointer shrink-0"
                   >
                     <Plus size={14} />
                   </button>
@@ -457,13 +502,24 @@ export function TourBookingWidget({
                   {num(totalPrice, locale)} {currencyLabel}
                 </span>
               </div>
-              <button
-                type="button"
-                onClick={() => setMobileConfigOpen(false)}
-                className="h-10 px-5 rounded-xl bg-brand hover:bg-brand-dark text-surface font-black text-xs cursor-pointer shadow-sm transition active:scale-95"
-              >
-                {lt(locale, { fa: 'تایید و بستن', en: 'Confirm & Close', ar: 'تأكيد وإغلاق', zh: '确认并关闭', ru: 'Подтвердить' })}
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  disabled={isSoldOut}
+                  onClick={() => { handleAddToCart(); setMobileConfigOpen(false); }}
+                  aria-label={lt(locale, { fa: 'افزودن به سبد خرید', en: 'Add to Cart', ar: 'أضف إلى السلة', zh: '加入购物车', ru: 'В корзину' })}
+                  className="min-h-[44px] min-w-[44px] rounded-xl border border-line bg-surface text-ink grid place-items-center cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  <ShoppingCart size={16} aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileConfigOpen(false)}
+                  className="min-h-[44px] px-5 rounded-xl bg-brand hover:bg-brand-dark text-surface font-black text-xs cursor-pointer shadow-sm transition active:scale-95"
+                >
+                  {lt(locale, { fa: 'تایید و بستن', en: 'Confirm & Close', ar: 'تأكيد وإغلاق', zh: '确认并关闭', ru: 'Подтвердить' })}
+                </button>
+              </div>
             </div>
           </div>
         </div>

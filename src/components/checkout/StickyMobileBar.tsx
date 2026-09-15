@@ -4,10 +4,14 @@ import { motion } from 'motion/react';
 import { Loader2 } from 'lucide-react';
 
 /**
- * Sticky mobile conversion bar (UX benchmark: sticky CTA lifts booking
- * conversion; guest-checkout research shows the total must stay visible).
+ * Sticky mobile conversion bar — CHECKOUT VARIANT (floating glass card).
  *
- * - Fixed above the bottom nav on mobile only (`lg:hidden`), safe-area aware.
+ * Ownership contract (see also `StickyCTA` — the docked variant):
+ * - Use THIS component on checkout/payment flows where BottomNav is hidden
+ *   (floating card anchored at `bottom: max(safe-area, 8px)`).
+ * - Use `StickyCTA` on detail/search pages; pass `aboveNav` when BottomNav
+ *   stays visible so the bar offsets to 72px + safe-area instead of colliding.
+ *
  * - Shows the payable total at all times — never a blind "Pay" button.
  * - Works as a form submitter (`formId`) or a plain action (`onCta`).
  * - `motion` entrance + `prefers-reduced-motion` respected by the library.

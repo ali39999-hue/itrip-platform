@@ -5,7 +5,7 @@ import { Link } from '@/i18n/routing';
 import {
   Users, UserCheck, UserPlus, Shield, RefreshCw,
   Search, CheckCircle2, XCircle,
-  Loader2, Phone, Mail, UserCog, Eye
+  Loader2, Phone, Mail, UserCog, Eye, Edit, KeyRound, Plus
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import {
@@ -14,6 +14,9 @@ import {
   createAdminStaffUser,
   updateAdminUserRole,
   toggleAdminUserActive,
+  createAdminCustomerUser,
+  updateAdminUserProfile,
+  resetAdminUserPassword,
 } from '@/actions/admin-users';
 import {
   ErpAlert, ErpBadge, ErpEmptyState, ErpModal,
@@ -50,6 +53,26 @@ export function UsersClientPage({
   const [staffPhone, setStaffPhone] = useState('');
   const [staffRole, setStaffRole] = useState<'OPS' | 'FINANCE' | 'SUPER_ADMIN'>('OPS');
   const [staffPassword, setStaffPassword] = useState('');
+
+  // Add Customer Modal
+  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+  const [custName, setCustName] = useState('');
+  const [custPhone, setCustPhone] = useState('');
+  const [custEmail, setCustEmail] = useState('');
+  const [custNationalId, setCustNationalId] = useState('');
+  const [creatingCust, setCreatingCust] = useState(false);
+
+  // Edit Profile Modal
+  const [editingProfileUser, setEditingProfileUser] = useState<AdminUserListItem | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Reset Password Modal
+  const [resettingUser, setResettingUser] = useState<AdminUserListItem | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [resettingPassword, setResettingPassword] = useState(false);
 
   // Role Edit Modal
   const [editingUser, setEditingUser] = useState<AdminUserListItem | null>(null);
@@ -129,6 +152,85 @@ export function UsersClientPage({
     }
   }
 
+  async function handleCreateCustomer(e: React.FormEvent) {
+    e.preventDefault();
+    if (!custName.trim() || creatingCust) return;
+    setCreatingCust(true);
+    setFeedback(null);
+    try {
+      const res = await createAdminCustomerUser({
+        name: custName,
+        phone: custPhone || undefined,
+        email: custEmail || undefined,
+        nationalId: custNationalId || undefined,
+      });
+      if (res.success) {
+        setFeedback({
+          tone: 'success',
+          msg: `حساب کاربری مسافر «${custName}» با موفقیت ایجاد شد.`,
+        });
+        setShowAddCustomerModal(false);
+        setCustName('');
+        setCustPhone('');
+        setCustEmail('');
+        setCustNationalId('');
+        await loadUsers();
+      } else {
+        setFeedback({ tone: 'error', msg: res.error || 'خطا در تعریف مسافر جدید' });
+      }
+    } catch (err) {
+      setFeedback({ tone: 'error', msg: err instanceof Error ? err.message : 'خطای ارتباط با سرور' });
+    } finally {
+      setCreatingCust(false);
+    }
+  }
+
+  async function handleSaveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingProfileUser || savingProfile) return;
+    setSavingProfile(true);
+    setFeedback(null);
+    try {
+      const res = await updateAdminUserProfile(editingProfileUser.id, {
+        name: editName,
+        phone: editPhone || undefined,
+        email: editEmail || undefined,
+      });
+      if (res.success) {
+        setFeedback({ tone: 'success', msg: 'مشخصات کاربر با موفقیت به‌روزرسانی شد.' });
+        setEditingProfileUser(null);
+        await loadUsers();
+      } else {
+        setFeedback({ tone: 'error', msg: res.error || 'خطا در ویرایش مشخصات' });
+      }
+    } catch (err) {
+      setFeedback({ tone: 'error', msg: err instanceof Error ? err.message : 'خطای ارتباط با سرور' });
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resettingUser || resettingPassword || !newPassword) return;
+    setResettingPassword(true);
+    setFeedback(null);
+    try {
+      const res = await resetAdminUserPassword(resettingUser.id, newPassword);
+      if (res.success) {
+        setFeedback({ tone: 'success', msg: `رمز عبور کاربر «${resettingUser.name}» با موفقیت تغییر کرد.` });
+        setResettingUser(null);
+        setNewPassword('');
+      } else {
+        setFeedback({ tone: 'error', msg: res.error || 'خطا در تغییر رمز' });
+      }
+    } catch (err) {
+      setFeedback({ tone: 'error', msg: err instanceof Error ? err.message : 'خطای ارتباط با سرور' });
+    } finally {
+      setResettingPassword(false);
+    }
+  }
+
   async function handleSaveRole(e: React.FormEvent) {
     e.preventDefault();
     if (!editingUser || savingRole) return;
@@ -205,6 +307,14 @@ export function UsersClientPage({
             <button type="button" onClick={() => loadUsers()} className={erpGhostBtnCls}>
               <RefreshCw size={13} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
               <span>{lt(locale, { fa: 'به‌روزرسانی', en: 'Refresh' , ar: 'تحديث', zh: '刷新', ru: 'Обновить'})}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowAddCustomerModal(true)}
+              className="h-9 px-3.5 rounded-xl bg-mint hover:bg-mint/80 text-brand-dark text-xs font-black transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <Plus size={14} aria-hidden="true" />
+              <span>{lt(locale, { fa: 'ثبت مسافر جدید', en: 'Add Customer', ar: 'إضافة مسافر', zh: '添加新旅客', ru: 'Добавить клиента' })}</span>
             </button>
             <button type="button" onClick={() => setShowAddModal(true)} className={erpPrimaryBtnCls}>
               <UserPlus size={15} aria-hidden="true" />
@@ -388,6 +498,31 @@ export function UsersClientPage({
                           <button
                             type="button"
                             onClick={() => {
+                              setEditingProfileUser(u);
+                              setEditName(u.name || '');
+                              setEditPhone(u.phone || '');
+                              setEditEmail(u.email || '');
+                            }}
+                            className="inline-flex items-center gap-1 rounded-xl bg-soft hover:bg-line/50 text-ink px-2 py-1 text-xs font-black transition cursor-pointer"
+                            title={lt(locale, { fa: 'ویرایش مشخصات مسافر/کاربر', en: 'Edit User Profile', ar: 'تعديل البيانات', zh: '编辑资料', ru: 'Редактировать' })}
+                          >
+                            <Edit size={12} />
+                            <span>{lt(locale, { fa: 'ویرایش', en: 'Edit', ar: 'تعديل', zh: '编辑', ru: 'Правка' })}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setResettingUser(u);
+                              setNewPassword('');
+                            }}
+                            className="inline-flex items-center gap-1 rounded-xl bg-soft hover:bg-line/50 text-ink p-1.5 text-xs font-black transition cursor-pointer"
+                            title={lt(locale, { fa: 'تغییر رمز عبور', en: 'Reset Password', ar: 'إعادة تعيين كلمة المرور', zh: '重置密码', ru: 'Сброс пароля' })}
+                          >
+                            <KeyRound size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
                               setEditingUser(u);
                               const currentRole = u.roles[0];
                               setSelectedNewRole(
@@ -544,6 +679,166 @@ export function UsersClientPage({
                 <option value="SUPER_ADMIN">مدیر ارشد (SUPER_ADMIN)</option>
                 <option value="CUSTOMER">کاربر مسافر عادی (CUSTOMER — سلب دسترسی ERP)</option>
               </select>
+            </div>
+          </form>
+        </ErpModal>
+      )}
+
+      {/* Modal 3: Add Customer */}
+      {showAddCustomerModal && (
+        <ErpModal
+          title={lt(locale, { fa: 'ثبت کاربر مسافر جدید', en: 'Register New Customer', ar: 'تسجيل مسافر جديد', zh: '注册新旅客', ru: 'Регистрация нового клиента' })}
+          subtitle={lt(locale, { fa: 'ایجاد حساب کاربری مسافر جهت رزروهای تلفنی یا شرکتی', en: 'Create customer account for phone or corporate bookings', ar: 'إنشاء حساب مسافر للحجوزات الهاتفية أو المؤسسية', zh: '为电话或企业预订创建旅客账户', ru: 'Создание аккаунта клиента' })}
+          onClose={() => setShowAddCustomerModal(false)}
+          footer={
+            <>
+              <button type="button" onClick={() => setShowAddCustomerModal(false)} className={erpGhostBtnCls}>
+                {lt(locale, { fa: 'انصراف', en: 'Cancel', ar: 'إلغاء', zh: '取消', ru: 'Отмена' })}
+              </button>
+              <button type="submit" form="add-customer-form" disabled={creatingCust} className={erpPrimaryBtnCls}>
+                {creatingCust ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                <span>{lt(locale, { fa: 'ثبت نهایی مسافر', en: 'Create Customer', ar: 'تسجيل المسافر', zh: '创建旅客', ru: 'Создать' })}</span>
+              </button>
+            </>
+          }
+        >
+          <form id="add-customer-form" onSubmit={handleCreateCustomer} className="space-y-3.5">
+            <div>
+              <label className={erpLabelCls}>{lt(locale, { fa: 'نام و نام خانوادگی:', en: 'Full Name:', ar: 'الاسم الكامل:', zh: '姓名：', ru: 'ФИО:' })}</label>
+              <input
+                type="text"
+                required
+                value={custName}
+                onChange={(e) => setCustName(e.target.value)}
+                placeholder="مثال: رضا محمدی"
+                className={erpFieldCls}
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className={erpLabelCls}>{lt(locale, { fa: 'شماره همراه:', en: 'Phone Number:', ar: 'رقم الهاتف:', zh: '手机号：', ru: 'Телефон:' })}</label>
+                <input
+                  type="tel"
+                  value={custPhone}
+                  onChange={(e) => setCustPhone(e.target.value)}
+                  placeholder="09123456789"
+                  className={erpFieldCls}
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <label className={erpLabelCls}>{lt(locale, { fa: 'کد ملی:', en: 'National ID:', ar: 'الرقم الوطني:', zh: '身份证号：', ru: 'Нац. номер:' })}</label>
+                <input
+                  type="text"
+                  value={custNationalId}
+                  onChange={(e) => setCustNationalId(e.target.value)}
+                  placeholder="0012345678"
+                  className={erpFieldCls}
+                  dir="ltr"
+                />
+              </div>
+            </div>
+            <div>
+              <label className={erpLabelCls}>{lt(locale, { fa: 'ایمیل (اختیاری):', en: 'Email (Optional):', ar: 'البريد الإلكتروني:', zh: '邮箱（可选）：', ru: 'Email:' })}</label>
+              <input
+                type="email"
+                value={custEmail}
+                onChange={(e) => setCustEmail(e.target.value)}
+                placeholder="reza@gmail.com"
+                className={erpFieldCls}
+                dir="ltr"
+              />
+            </div>
+          </form>
+        </ErpModal>
+      )}
+
+      {/* Modal 4: Edit Profile */}
+      {editingProfileUser && (
+        <ErpModal
+          title={lt(locale, { fa: 'ویرایش مشخصات کاربر', en: 'Edit User Profile', ar: 'تعديل بيانات المستخدم', zh: '编辑用户资料', ru: 'Редактировать профиль' })}
+          subtitle={lt(locale, { fa: `ویرایش اطلاعات هویتی و تماسی کاربر ${editingProfileUser.name}`, en: `Update contact and identity for ${editingProfileUser.name}`, ar: `تعديل بيانات ${editingProfileUser.name}`, zh: `更新 ${editingProfileUser.name} 的资料`, ru: `Редактирование ${editingProfileUser.name}` })}
+          onClose={() => setEditingProfileUser(null)}
+          footer={
+            <>
+              <button type="button" onClick={() => setEditingProfileUser(null)} className={erpGhostBtnCls}>
+                {lt(locale, { fa: 'انصراف', en: 'Cancel', ar: 'إلغاء', zh: '取消', ru: 'Отмена' })}
+              </button>
+              <button type="submit" form="edit-profile-form" disabled={savingProfile} className={erpPrimaryBtnCls}>
+                {savingProfile ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                <span>{lt(locale, { fa: 'ذخیره مشخصات', en: 'Save Profile', ar: 'حفظ البيانات', zh: '保存资料', ru: 'Сохранить' })}</span>
+              </button>
+            </>
+          }
+        >
+          <form id="edit-profile-form" onSubmit={handleSaveProfile} className="space-y-3.5">
+            <div>
+              <label className={erpLabelCls}>{lt(locale, { fa: 'نام نمایشی / کامل:', en: 'Full Name:', ar: 'الاسم الكامل:', zh: '姓名：', ru: 'ФИО:' })}</label>
+              <input
+                type="text"
+                required
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className={erpFieldCls}
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className={erpLabelCls}>{lt(locale, { fa: 'شماره تماس:', en: 'Phone:', ar: 'الهاتف:', zh: '手机号：', ru: 'Телефон:' })}</label>
+                <input
+                  type="tel"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  className={erpFieldCls}
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <label className={erpLabelCls}>{lt(locale, { fa: 'ایمیل:', en: 'Email:', ar: 'البريد:', zh: '邮箱：', ru: 'Email:' })}</label>
+                <input
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  className={erpFieldCls}
+                  dir="ltr"
+                />
+              </div>
+            </div>
+          </form>
+        </ErpModal>
+      )}
+
+      {/* Modal 5: Reset Password */}
+      {resettingUser && (
+        <ErpModal
+          title={lt(locale, { fa: 'بازنشانی کلمه عبور کاربر', en: 'Reset User Password', ar: 'إعادة تعيين كلمة المرور', zh: '重置用户密码', ru: 'Сброс пароля пользователя' })}
+          subtitle={lt(locale, { fa: `تعیین رمز عبور جدید برای «${resettingUser.name}»`, en: `Set new password for "${resettingUser.name}"`, ar: `تعيين كلمة مرور جديدة للمستخدم «${resettingUser.name}»`, zh: `为「${resettingUser.name}」设置新密码`, ru: `Новый пароль для «${resettingUser.name}»` })}
+          onClose={() => setResettingUser(null)}
+          footer={
+            <>
+              <button type="button" onClick={() => setResettingUser(null)} className={erpGhostBtnCls}>
+                {lt(locale, { fa: 'انصراف', en: 'Cancel', ar: 'إلغاء', zh: '取消', ru: 'Отмена' })}
+              </button>
+              <button type="submit" form="reset-password-form" disabled={resettingPassword} className={erpPrimaryBtnCls}>
+                {resettingPassword ? <Loader2 size={14} className="animate-spin" /> : <KeyRound size={14} />}
+                <span>{lt(locale, { fa: 'تغییر و ذخیره رمز', en: 'Update Password', ar: 'تحديث كلمة المرور', zh: '更新密码', ru: 'Обновить пароль' })}</span>
+              </button>
+            </>
+          }
+        >
+          <form id="reset-password-form" onSubmit={handleResetPassword} className="space-y-3.5">
+            <div>
+              <label className={erpLabelCls}>{lt(locale, { fa: 'کلمه عبور جدید (حداقل ۶ کاراکتر):', en: 'New Password (min 6 chars):', ar: 'كلمة المرور الجديدة:', zh: '新密码（至少6位）：', ru: 'Новый пароль:' })}</label>
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="••••••••"
+                className={erpFieldCls}
+                dir="ltr"
+              />
             </div>
           </form>
         </ErpModal>

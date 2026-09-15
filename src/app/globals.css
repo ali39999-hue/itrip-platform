@@ -108,7 +108,7 @@
 
 /* Latin numerals/labels inside RTL (fa/ar) locales — e.g. prices, phone numbers. */
 @utility font-en {
-  font-family: var(--font-jakarta), "FaNumFallback", ui-sans-serif, system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 /* Fallback Faces: Persian/Arabic digits & separators —
@@ -497,6 +497,7 @@ a.bg-brand, button.bg-brand, [role="button"].bg-brand, label.bg-brand {
   body {
     background: var(--color-paper);
     color: var(--color-ink);
+    font-family: var(--font-sans);
     overflow-x: clip;
     max-width: 100vw;
   }

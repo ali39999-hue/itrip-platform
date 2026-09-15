@@ -17,6 +17,13 @@ export function PwaBoot() {
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const r of registrations) {
+          r.unregister().catch(() => {});
+        }
+      }).catch(() => {});
+    }
     if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }

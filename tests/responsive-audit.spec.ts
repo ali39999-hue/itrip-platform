@@ -46,48 +46,72 @@ for (const vp of viewports) {
     for (const route of routes) {
       test(`${route.name} (${route.path}) layout and overflow check`, async ({ page }) => {
         await page.goto(route.path, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        // Let client redirects (e.g. guest → /auth) settle before measuring:
+        // evaluating mid-navigation destroys the execution context (flake).
+        await page.waitForLoadState('load', { timeout: 30000 }).catch(() => {});
         await page.waitForTimeout(1000);
 
-        // Check horizontal overflow
-        const overflowData = await page.evaluate(() => {
-          const docScroll = document.documentElement.scrollWidth;
-          const bodyScroll = document.body.scrollWidth;
-          const winWidth = window.innerWidth;
-          const isOverflow = docScroll > winWidth + 2 || bodyScroll > winWidth + 2;
+        // Server-component redirects (e.g. /fa/trips → /fa/my-trips) can land
+        // after load on a busy dev server — retry the measurement instead of
+        // failing on a destroyed execution context.
+        async function measure() {
+          return page.evaluate(() => {
+            const docScroll = document.documentElement.scrollWidth;
+            const bodyScroll = document.body.scrollWidth;
+            const winWidth = window.innerWidth;
+            return { docScroll, bodyScroll, winWidth };
+          });
+        }
+        async function measureWithRetry() {
+          try {
+            return await measure();
+          } catch (e) {
+            if (!String(e).includes('Execution context was destroyed')) throw e;
+            await page.waitForLoadState('load', { timeout: 30000 }).catch(() => {});
+            await page.waitForTimeout(1000);
+            return measure();
+          }
+        }
 
-          const offending = [];
-          if (isOverflow) {
+        // Check horizontal overflow
+        const dims = await measureWithRetry();
+        const isOverflow = dims.docScroll > dims.winWidth + 2 || dims.bodyScroll > dims.winWidth + 2;
+        let offending: Array<Record<string, unknown>> = [];
+        if (isOverflow) {
+          offending = await page.evaluate(() => {
+            const out: Array<Record<string, unknown>> = [];
+            const winWidth = window.innerWidth;
             const all = document.querySelectorAll('*');
             for (const el of all) {
               const rect = el.getBoundingClientRect();
               if (rect.right > winWidth + 2 || rect.left < -2) {
-                offending.push({
+                out.push({
                   tag: el.tagName,
                   className: typeof el.className === 'string' ? el.className.slice(0, 80) : '',
                   id: el.id,
                   rect: { left: Math.round(rect.left), right: Math.round(rect.right), width: Math.round(rect.width) }
                 });
-                if (offending.length >= 5) break;
+                if (out.length >= 5) break;
               }
             }
-          }
-          return { isOverflow, docScroll, bodyScroll, winWidth, offending };
-        }, vp.width);
+            return out;
+          }, vp.width);
+        }
+        const overflowData = { ...dims, isOverflow, offending };
 
         // یک اندازه‌گیریِ سرریز ممکن است وسط انیمیشن ورود (motion translate) باشد —
         // سرریز واقعی پایدار است؛ ۸۰۰ms صبر و اندازه‌گیری مجدد، flake حذف می‌کند.
         let sustained = overflowData;
         if (overflowData.isOverflow) {
           await page.waitForTimeout(800);
-          const remeasured = await page.evaluate(() => ({
+          const remeasured = await measureWithRetry();
+          sustained = {
+            ...remeasured,
             isOverflow:
-              document.documentElement.scrollWidth > window.innerWidth + 2 ||
-              document.body.scrollWidth > window.innerWidth + 2,
-            docScroll: document.documentElement.scrollWidth,
-            bodyScroll: document.body.scrollWidth,
-            winWidth: window.innerWidth,
-          }));
-          sustained = { ...remeasured, offending: overflowData.offending };
+              remeasured.docScroll > remeasured.winWidth + 2 ||
+              remeasured.bodyScroll > remeasured.winWidth + 2,
+            offending: overflowData.offending,
+          };
         }
 
         if (sustained.isOverflow) {

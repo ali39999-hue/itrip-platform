@@ -127,7 +127,7 @@ export default function EsimPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-soft">
+    <div className="flex flex-col min-h-dvh bg-soft">
       {/* Hero Section */}
       <section className="relative w-full h-[440px] md:h-[500px] flex items-center justify-center overflow-hidden mb-12 img-overlay-strong">
         <Image

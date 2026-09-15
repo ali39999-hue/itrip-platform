@@ -164,7 +164,16 @@ export const bookingSchema = z.object({
     .string()
     .min(7, "Phone number is too short")
     .max(20, "Phone number is too long"),
-  referralCode: z.string().trim().max(30).optional(),
+  // Aligned with referralCodeSchema: codes are created 3-20 chars,
+  // [A-Za-z0-9_-] only. Anything else can never be VALID — reject early so
+  // checkout and admin agree on what a code looks like.
+  referralCode: z
+    .string()
+    .trim()
+    .min(3, 'Referral code is too short')
+    .max(20, 'Referral code is too long')
+    .regex(/^[A-Za-z0-9_-]+$/, 'Referral code has invalid characters')
+    .optional(),
   // Client-generated key (e.g. one per checkout session). Replay with the same
   // key returns the original draft instead of creating a duplicate (BUG-003).
   idempotencyKey: z.string().trim().min(8).max(64).optional(),
@@ -180,8 +189,35 @@ export const referralCodeSchema = z.object({
     .max(20, "Code cannot exceed 20 characters")
     .regex(/^[A-Za-z0-9_-]+$/, "Code may only contain letters, numbers, hyphens and underscores"),
   leaderId: z.string().min(1, "Leader ID is required"),
+  customTierConfig: z.string().nullable().optional(),
 });
 export type ReferralCodeInput = z.infer<typeof referralCodeSchema>;
+
+// ─── Per-code referral overrides (stored as JSON in ReferralCode.customTierConfig) ──
+// Everything optional: absent keys inherit the global REFERRAL_CONFIG.
+export const referralTierOverrideSchema = z.object({
+  minPax: z.number().int().min(1, 'Tier min pax must be at least 1'),
+  maxPax: z.number().int().min(1, 'Tier max pax must be at least 1').nullable(),
+  rewardPercent: z.number().min(0, 'Reward percent cannot be negative').max(1, 'Reward percent cannot exceed 100%'),
+}).refine((t) => t.maxPax === null || t.maxPax >= t.minPax, {
+  message: 'Tier max pax must be open-ended or >= min pax',
+});
+
+export const referralCodeConfigSchema = z.object({
+  discountPercent: z.number().min(0, 'Discount cannot be negative').max(1, 'Discount cannot exceed 100%').optional(),
+  maxDiscountCapIrr: z.number().int().min(0, 'Cap cannot be negative').nullable().optional(),
+  maxUses: z.number().int().min(1, 'Max uses must be at least 1').nullable().optional(),
+  tiers: z.array(referralTierOverrideSchema).min(1).max(10).optional(),
+});
+export type ReferralCodeConfig = z.infer<typeof referralCodeConfigSchema>;
+
+export const updateReferralCodeSchema = z.object({
+  id: z.string().min(1, 'Referral code ID is required'),
+  isActive: z.boolean().optional(),
+  leaderId: z.string().min(1).optional(),
+  customTierConfig: z.string().nullable().optional(),
+});
+export type UpdateReferralCodeInput = z.infer<typeof updateReferralCodeSchema>;
 
 // ─── Wallet Top-up ────────────────────────────────────────────────────────────
 
@@ -239,3 +275,127 @@ export const searchSchema = z.object({
   rooms: z.number().int().min(1).max(5).default(1),
 });
 export type SearchParams = z.infer<typeof searchSchema>;
+
+// ─── CMS (tours / experiences / travelogues / guides) ────────────────────────
+// NOTE: these schemas live here (plain lib module) instead of
+// `src/actions/content.ts` because a `"use server"` file may only export
+// async functions — exporting zod objects from there breaks every importer
+// with `invalid-use-server-value` (500 on /admin/content).
+
+export const tourInputSchema = z.object({
+  title: z.string().trim().min(2, 'عنوان تور باید حداقل ۲ کاراکتر باشد').max(200),
+  titleEn: z.string().trim().max(200).optional(),
+  city: z.string().trim().min(1, 'نام شهر الزامی است').max(100),
+  cityEn: z.string().trim().max(100).optional(),
+  country: z.string().trim().max(100).optional(),
+  countryEn: z.string().trim().max(100).optional(),
+  durationDays: z.coerce.number().int().min(1, 'مدت تور باید حداقل ۱ روز باشد').max(90).optional(),
+  durationNights: z.coerce.number().int().min(0).max(90).optional(),
+  currency: z.string().trim().max(10).optional(),
+  price: z.coerce.number().min(0, 'قیمت نمی‌تواند منفی باشد'),
+  childPrice: z.coerce.number().min(0).nullable().optional(),
+  originalPrice: z.coerce.number().min(0).nullable().optional(),
+  discountPercent: z.coerce.number().min(0).max(100).nullable().optional(),
+  category: z.string().trim().max(50).optional(),
+  heroImage: z.string().trim().nullable().optional().or(z.literal('')),
+  gallery: z.array(z.string().trim()).optional(),
+  summary: z.string().trim().max(1000).optional(),
+  summaryEn: z.string().trim().max(1000).optional(),
+  description: z.string().trim().max(10000).nullable().optional().or(z.literal('')),
+  descriptionEn: z.string().trim().max(10000).optional(),
+  highlights: z.array(z.string().trim()).optional(),
+  includes: z.array(z.string().trim()).optional(),
+  excludes: z.array(z.string().trim()).optional(),
+  hotelName: z.string().trim().max(150).nullable().optional().or(z.literal('')),
+  hotelStars: z.coerce.number().int().min(1).max(5).optional(),
+  transportType: z.string().trim().max(100).nullable().optional().or(z.literal('')),
+  transportTypeEn: z.string().trim().max(100).optional(),
+  groupSize: z.string().trim().max(100).optional(),
+  guideLanguages: z.array(z.string().trim()).optional(),
+  isPublished: z.boolean().optional(),
+  departureDates: z.array(z.any()).optional(),
+  itineraryDays: z.array(z.any()).optional(),
+});
+
+export const tourUpdateSchema = tourInputSchema.partial();
+
+export const experienceInputSchema = z.object({
+  countryId: z.string().trim().default('iran').optional(),
+  category: z.string().trim().default('cultural').optional(),
+  title: z.string().trim().min(2, 'عنوان تجربه باید حداقل ۲ کاراکتر باشد'),
+  titleEn: z.string().trim().optional(),
+  desc: z.string().trim().min(2, 'توضیحات تجربه الزامی است'),
+  descEn: z.string().trim().optional(),
+  where: z.string().trim().default('ایران').optional(),
+  whereEn: z.string().trim().optional(),
+  when: z.string().trim().default('تمام ایام سال').optional(),
+  whenEn: z.string().trim().optional(),
+  fromPrice: z.coerce.number().min(0).default(0),
+  image: z.string().trim().nullable().optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const experienceUpdateSchema = experienceInputSchema.partial();
+
+const travelogueRawObject = z.object({
+  title: z.string().trim().optional(),
+  titleFa: z.string().trim().optional(),
+  titleEn: z.string().trim().optional(),
+  destFa: z.string().trim().optional(),
+  city: z.string().trim().optional(),
+  cityEn: z.string().trim().optional(),
+  userName: z.string().trim().optional(),
+  author: z.string().trim().optional(),
+  authorEn: z.string().trim().optional(),
+  authorAvatar: z.string().trim().nullable().optional(),
+  country: z.string().trim().optional(),
+  countryId: z.string().trim().optional(),
+  countryEn: z.string().trim().optional(),
+  summary: z.string().trim().optional(),
+  summaryEn: z.string().trim().optional(),
+  contentFa: z.string().trim().optional(),
+  content: z.string().trim().optional(),
+  contentEn: z.string().trim().optional(),
+  image: z.string().trim().nullable().optional(),
+  coverImage: z.string().trim().nullable().optional(),
+  readTime: z.string().trim().optional(),
+  likesCount: z.coerce.number().int().min(0).optional(),
+  isPublished: z.boolean().optional(),
+});
+
+export const travelogueInputSchema = travelogueRawObject.refine((d) => Boolean(d.title || d.titleFa), {
+  message: 'عنوان سفرنامه الزامی است',
+  path: ['titleFa'],
+});
+
+export const travelogueUpdateSchema = travelogueRawObject.partial();
+
+const guideRawObject = z.object({
+  title: z.string().trim().optional(),
+  titleFa: z.string().trim().optional(),
+  titleEn: z.string().trim().optional(),
+  category: z.string().trim().optional(),
+  categoryFa: z.string().trim().optional(),
+  categoryEn: z.string().trim().optional(),
+  slug: z.string().trim().optional(),
+  countryId: z.string().trim().optional(),
+  readTime: z.string().trim().optional(),
+  summary: z.string().trim().optional(),
+  summaryEn: z.string().trim().optional(),
+  excerptFa: z.string().trim().optional(),
+  excerptEn: z.string().trim().optional(),
+  content: z.string().trim().optional(),
+  contentEn: z.string().trim().optional(),
+  bodyFa: z.string().trim().optional(),
+  bodyEn: z.string().trim().optional(),
+  image: z.string().trim().nullable().optional(),
+  coverImage: z.string().trim().nullable().optional(),
+  isPublished: z.boolean().optional(),
+});
+
+export const guideInputSchema = guideRawObject.refine((d) => Boolean(d.title || d.titleFa), {
+  message: 'عنوان راهنما الزامی است',
+  path: ['titleFa'],
+});
+
+export const guideUpdateSchema = guideRawObject.partial();

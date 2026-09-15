@@ -14,6 +14,7 @@ export const DEFAULT_ACCOUNT_SIDEBAR: AccountSidebarOverride = {
     { href: '/wallet', label: { fa: 'کیف پول و امتیازات', en: 'Wallet & Rewards' }, icon: 'Gift' },
     { href: '/account/auto-buy', label: { fa: 'خرید خودکار (ربات سفر)', en: 'Auto-Buy (Smart Bot)' }, icon: 'Bot' },
     { href: '/account/organization', label: { fa: 'سازمان و سفرهای شرکتی (B2B)', en: 'Corporate & B2B Hub' }, icon: 'Building' },
+    { href: '/support', label: { fa: 'پشتیبانی و تیکت‌ها', en: 'Support & Tickets' }, icon: 'Headphones' },
   ],
   badgeText: { fa: 'مسافر فیروزو', en: 'Firuzo Traveler' },
 };

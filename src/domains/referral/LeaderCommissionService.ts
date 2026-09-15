@@ -1,5 +1,10 @@
-import { prisma } from '@/lib/prisma';
-import { LedgerInvariantValidator } from '@/domains/ledger/LedgerInvariantValidator';
+/**
+ * NOTE: settlement execution lives ONLY in `settleLeaderRewardAction`
+ * (src/actions/admin.ts) — idempotent, audited, tiered per REFERRAL_CONFIG.
+ * A previous `settleLeaderCommission` DB writer was removed: it had zero
+ * callers, used a divergent tier matrix, posted no real ledger rows, and had
+ * no idempotency guard. This module keeps pure reward math only.
+ */
 
 export interface CommissionCalculationResult {
   referralCode: string;
@@ -50,53 +55,4 @@ export class LeaderCommissionService {
     };
   }
 
-  /**
-   * Records a settlement in LeaderSettlement and posts double-entry ledger entries.
-   */
-  static async settleLeaderCommission(params: {
-    referralCodeId: string;
-    qualifiedPax: number;
-    rewardAmount: number;
-    rewardPercent: number;
-    currency?: string;
-    settledByUserId: string;
-    notes?: string;
-  }): Promise<{ success: boolean; settlementId?: string; error?: string }> {
-    const currency = params.currency || 'IRR';
-
-    try {
-      const settlement = await prisma.$transaction(async (tx) => {
-        const s = await tx.leaderSettlement.create({
-          data: {
-            referralCodeId: params.referralCodeId,
-            qualifiedPax: params.qualifiedPax,
-            rewardPercent: params.rewardPercent,
-            rewardAmount: params.rewardAmount,
-            currency,
-            status: 'SETTLED',
-            settledAt: new Date(),
-            settledBy: params.settledByUserId,
-            notes: params.notes,
-          },
-        });
-
-        // Ensure double-entry invariants (ShopVerse pattern)
-        const entries = [
-          { direction: 'DEBIT', amount: params.rewardAmount, currency },
-          { direction: 'CREDIT', amount: params.rewardAmount, currency },
-        ];
-        LedgerInvariantValidator.assertBalancedPosting(entries, `stl_${s.id}`);
-
-        return s;
-      });
-
-      return { success: true, settlementId: settlement.id };
-    } catch (err: unknown) {
-      console.error('settleLeaderCommission error:', err);
-      return {
-        success: false,
-        error: err instanceof Error ? err.message : 'Failed to settle leader commission',
-      };
-    }
-  }
 }

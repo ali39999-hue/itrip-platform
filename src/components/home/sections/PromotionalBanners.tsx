@@ -269,10 +269,10 @@ export function PromotionalBanners({ override: _override }: { override?: PromoBa
               <Link
                 href={deal.href}
                 aria-label={cta}
-                className="group inline-flex w-full sm:w-auto items-center justify-center sm:justify-start gap-3 rounded-full bg-[#7af7f5] hover:bg-[#9afaf8] active:bg-[#6ee7e5] text-[#052524] ps-5 pe-1.5 py-1.5 text-sm font-black shadow-[0_8px_24px_rgba(74,242,240,0.35)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b3d3c] min-h-[44px] touch-manipulation cursor-pointer"
+                className="group inline-flex w-full sm:w-auto items-center justify-center sm:justify-start gap-2 rounded-full bg-[#7af7f5] hover:bg-[#9afaf8] active:bg-[#6ee7e5] text-[#052524] ps-4 pe-1.5 py-1.5 text-sm font-black shadow-[0_8px_24px_rgba(74,242,240,0.35)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b3d3c] min-h-[44px] touch-manipulation cursor-pointer"
               >
                 <span className="flex-1 sm:flex-none text-center sm:text-start">{cta}</span>
-                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#052524] text-white group-hover:bg-black group-active:bg-black transition-colors shrink-0">
+                <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#052524] text-white group-hover:bg-black group-active:bg-black transition-colors shrink-0">
                   {isRtl ? <ArrowLeft size={16} aria-hidden="true" /> : <ArrowRight size={16} aria-hidden="true" />}
                 </span>
               </Link>

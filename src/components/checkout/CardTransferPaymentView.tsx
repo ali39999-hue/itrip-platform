@@ -367,7 +367,9 @@ export function CardTransferPaymentView({
                   rel="noopener noreferrer"
                   className="w-14 h-14 rounded-lg overflow-hidden border border-current/30 shrink-0 hover:opacity-80 transition"
                 >
-                  <img src={img} alt="رسید" className="w-full h-full object-cover" />
+                  {/* Raw <img> intentional: receipt URLs are arbitrary upload hosts
+                      (outside next/image remotePatterns) in a fixed 56px box (no CLS). */}
+                  <img src={img} alt="رسید" loading="lazy" className="w-full h-full object-cover" />
                 </a>
               ))}
             </div>
@@ -529,14 +531,18 @@ export function CardTransferPaymentView({
                   key={idx}
                   className="relative group rounded-xl overflow-hidden border border-line aspect-square bg-black/5"
                 >
+                  {/* Raw <img> intentional: blob object-URL local previews are
+                      incompatible with next/image; parent is aspect-square (no CLS). */}
                   <img src={url} alt={`رسید ${idx + 1}`} className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => removeReceiptFile(idx)}
-                    className="absolute top-1 end-1 w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center opacity-90 hover:opacity-100 transition shadow-sm"
-                    title="حذف این تصویر"
+                    aria-label={`حذف رسید ${idx + 1}`}
+                    className="absolute top-0 end-0 min-w-[44px] min-h-[44px] flex items-start justify-end p-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 rounded-xl"
                   >
-                    <X size={13} />
+                    <span className="w-6 h-6 rounded-full bg-rose-600 text-white grid place-items-center opacity-90 hover:opacity-100 transition shadow-sm">
+                      <X size={13} aria-hidden="true" />
+                    </span>
                   </button>
                   <span className="absolute bottom-1 start-1 text-[10px] font-mono bg-black/60 text-white px-1.5 py-0.5 rounded">
                     #{idx + 1}
@@ -614,6 +620,8 @@ export function CardTransferPaymentView({
             />
           ) : (
             <div className="flex items-center gap-3">
+              {/* Raw <img> intentional: blob object-URL local preview is
+                  incompatible with next/image; fixed 64×48 box (no CLS). */}
               <img
                 src={nationalIdPreview}
                 alt="کارت ملی"

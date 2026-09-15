@@ -127,7 +127,7 @@ export default function AutoBuyAccountPage() {
   const failedCount = rules.filter((r) => r.status === 'FAILED_FUNDS').length;
 
   return (
-    <div className="bg-paper min-h-screen py-8">
+    <div className="bg-paper min-h-dvh py-8">
       <div className="max-w-[1280px] mx-auto px-4 md:px-10 flex flex-col lg:flex-row gap-8 items-start">
         {/* Account Navigation Sidebar */}
         <AccountSidebar activeSection="autobuy" />

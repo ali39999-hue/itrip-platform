@@ -9,6 +9,7 @@ import { shimmerDataUrl, getHotelImage } from '@/lib/image-utils';
 import { num, formatDistance } from '@/lib/format';
 import { lt, LText } from '@/lib/lt';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
+import { CapabilityBadge } from '@/components/ui/CapabilityBadge';
 import type { HotelCardProps } from './types';
 
 const AM_MAP: Record<string, LText> = {
@@ -144,6 +145,9 @@ export function HotelCard({
                   <span className="px-1.5 py-0.5 rounded bg-soft text-brand-dark text-[9.5px] font-black border border-line">
                     {hotel.propertyType === 'apartment' ? 'آپارتمان' : hotel.propertyType === 'boutique' ? 'سنتی' : 'ویلا'}
                   </span>
+                )}
+                {hotel.source === 'live' && (
+                  <CapabilityBadge status="LIVE" locale={locale} />
                 )}
               </div>
 

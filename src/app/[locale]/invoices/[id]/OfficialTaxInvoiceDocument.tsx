@@ -27,7 +27,7 @@ export function OfficialTaxInvoiceDocument({ invoiceData }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-soft py-8 px-4 sm:px-6 lg:px-8 print:bg-white print:p-0">
+    <div className="min-h-dvh bg-soft py-8 px-4 sm:px-6 lg:px-8 print:bg-white print:p-0">
       <div className="max-w-4xl mx-auto space-y-6 print:max-w-none print:w-full print:space-y-0">
         {/* Actions Bar (Hidden when printing) */}
         <div className="print:hidden flex items-center justify-between bg-surface p-4 rounded-2xl border border-line shadow-xs">

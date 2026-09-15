@@ -16,11 +16,52 @@ import {
   AlertCircle,
   Coins,
   CreditCard,
+  ImageOff,
 } from 'lucide-react';
 import { formatMoney } from '@/lib/money';
 import { lt } from '@/lib/lt';
 import { reviewCardTransferReceipt, listCardTransferReceipts } from '@/actions/receipts';
 import { reviewCryptoPayment, listCryptoPayments } from '@/actions/crypto-payments';
+
+/**
+ * Receipt thumbnail with graceful degradation: uploaded receipt files can go
+ * missing on disk (stale dev/test rows, pruned storage) — show a neutral
+ * placeholder tile instead of a broken-image icon so the review queue stays
+ * scannable.
+ */
+function SafeReceiptImg({
+  src,
+  alt,
+  className,
+  locale,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  locale: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <span
+        role="img"
+        aria-label={lt(locale, {
+          fa: 'تصویر فیش در دسترس نیست',
+          en: 'Receipt image unavailable',
+          ar: 'صورة الإيصال غير متوفرة',
+          zh: '收据图片不可用',
+          ru: 'Изображение квитанции недоступно',
+        })}
+        className={`inline-flex items-center justify-center bg-soft text-sub/60 border border-dashed border-line ${className || ''}`}
+      >
+        <ImageOff size={16} aria-hidden="true" />
+      </span>
+    );
+  }
+  // Raw <img> intentional: receipt URLs span arbitrary upload hosts and blob
+  // previews (outside next/image remotePatterns), and need onError fallback.
+  return <img src={src} alt={alt} loading="lazy" onError={() => setFailed(true)} className={className} />;
+}
 
 interface CardReceiptItem {
   id: string;
@@ -371,10 +412,11 @@ export function ReceiptsClientPage({
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-1.5">
                           {r.receiptImages.slice(0, 3).map((img, idx) => (
-                            <img
+                            <SafeReceiptImg
                               key={idx}
                               src={img}
                               alt="فیش"
+                              locale={locale}
                               className="w-9 h-9 rounded-lg object-cover border border-line shadow-xs"
                             />
                           ))}
@@ -617,9 +659,10 @@ export function ReceiptsClientPage({
                   </label>
                   <div className="rounded-2xl overflow-hidden border border-line bg-black/5 aspect-4/3 relative flex items-center justify-center">
                     {selectedCardReceipt.receiptImages[activeImageIndex] ? (
-                      <img
+                      <SafeReceiptImg
                         src={selectedCardReceipt.receiptImages[activeImageIndex]}
                         alt="رسید"
+                        locale={locale}
                         className="w-full h-full object-contain"
                       />
                     ) : (
@@ -637,7 +680,7 @@ export function ReceiptsClientPage({
                             activeImageIndex === idx ? 'border-brand scale-105' : 'border-line opacity-70'
                           }`}
                         >
-                          <img src={img} alt="" className="w-full h-full object-cover" />
+                          <SafeReceiptImg src={img} alt="" locale={locale} className="w-full h-full object-cover" />
                         </button>
                       ))}
                     </div>

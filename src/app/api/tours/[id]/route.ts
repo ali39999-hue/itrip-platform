@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTourById } from '@/services/tours-service';
 import { prisma } from '@/lib/prisma';
+import { DELETED_STATIC_KIND_TOUR } from '@/domains/content/ContentDomainService';
 import type { Tour } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -97,9 +98,17 @@ export async function GET(
         };
     }
 
-    // Static seed fallback for ids that were never mirrored into the DB
+    // Static seed fallback for ids that were never mirrored into the DB —
+    // but never for ids the CMS explicitly deleted (tombstone): a deleted
+    // tour must stay deleted instead of resurrecting its static twin.
     if (!tour) {
-      tour = getTourById(id) || null;
+      const tombstoned = await prisma.deletedStaticRef.findFirst({
+        where: { kind: DELETED_STATIC_KIND_TOUR, refId: id },
+        select: { id: true },
+      }).catch(() => null);
+      if (!tombstoned) {
+        tour = getTourById(id) || null;
+      }
     }
 
     if (!tour) {

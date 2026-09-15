@@ -47,7 +47,7 @@ export default function EcardoDemoCheckoutPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center" aria-busy="true" aria-live="polite">
+        <div className="min-h-dvh flex items-center justify-center" aria-busy="true" aria-live="polite">
           <Loader2 className="animate-spin text-brand" size={32} />
         </div>
       }
@@ -102,7 +102,7 @@ function DemoCheckoutContent() {
   const CurrencyIcon = preview?.success ? CURRENCY_ICONS[preview.payment.currency] || CreditCard : CreditCard;
 
   return (
-    <div className="min-h-screen bg-[#0b1020] text-white flex flex-col" dir={locale === 'fa' ? 'rtl' : 'ltr'}>
+    <div className="min-h-dvh bg-[#0b1020] text-white flex flex-col" dir={locale === 'fa' ? 'rtl' : 'ltr'}>
       {/* Demo-mode ribbon */}
       <div className="w-full bg-amber-400 text-slate-900 text-center text-[11px] sm:text-xs font-black py-1.5 px-3">
         {lt(locale, {

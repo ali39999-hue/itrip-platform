@@ -16,7 +16,7 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
 
   if (isAdmin) {
     return (
-      <main className="flex-1 min-h-screen bg-soft">
+      <main className="flex-1 min-h-dvh bg-soft">
         {children}
         <Toaster position="top-center" richColors closeButton />
       </main>

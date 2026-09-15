@@ -88,6 +88,35 @@ describe('UnifiedCartDrawer Component (Miracuves / Lulan Pattern)', () => {
     expect(screen.getByText(/تخفیف پکیج همزمان پرواز \+ هتل \(۵٪\)/)).toBeDefined();
   });
 
+  it('renders nothing when closed', () => {
+    const { container } = renderWithIntl(<UnifiedCartDrawer open={false} onClose={vi.fn()} />);
+    expect(container.innerHTML).toBe('');
+  });
+
+  it('locks body scroll while open and restores it on close', () => {
+    document.body.style.overflow = '';
+    const { unmount } = renderWithIntl(<UnifiedCartDrawer open={true} onClose={vi.fn()} />);
+    expect(document.body.style.overflow).toBe('hidden');
+    unmount();
+    expect(document.body.style.overflow).toBe('');
+  });
+
+  it('closes on Escape (focus-trap managed)', () => {
+    const onClose = vi.fn();
+    renderWithIntl(<UnifiedCartDrawer open={true} onClose={onClose} />);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('renders above sheets/dialogs with an enter animation', () => {
+    const { container } = renderWithIntl(<UnifiedCartDrawer open={true} onClose={vi.fn()} />);
+    const overlay = container.querySelector('[role="dialog"]') as HTMLElement | null;
+    expect(overlay?.className).toContain('z-[200]');
+    const panel = overlay?.firstElementChild as HTMLElement | null;
+    expect(panel?.className).toContain('animate-in');
+    expect(panel?.className).toContain('slide-in-from-bottom');
+  });
+
   it('removes item when delete button is clicked', () => {
     useBookingStore.setState({
       cart: [

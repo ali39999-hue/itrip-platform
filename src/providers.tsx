@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { getSessionUser } from '@/actions/auth';
 import { initAnalytics } from '@/lib/analytics';
+import { BehaviorTracker } from '@/components/analytics/BehaviorTracker';
 
 /**
  * Restores the client auth store from the server session on mount. A valid
@@ -13,8 +14,6 @@ import { initAnalytics } from '@/lib/analytics';
  */
 export function SessionBootstrap() {
   useEffect(() => {
-    const { user } = useAuthStore.getState();
-    if (user && user.phone) return;
     getSessionUser()
       .then((res) => {
         if (res.success && res.user) {
@@ -25,6 +24,12 @@ export function SessionBootstrap() {
               phone: res.user.phone,
             },
           });
+        } else {
+          // If server session is gone, clear phantom staff/admin state so UI doesn't claim active access
+          const currentUser = useAuthStore.getState().user;
+          if (currentUser && ['admin', 'ADMIN', 'SUPER_ADMIN', 'OPS', 'FINANCE'].includes(currentUser.role)) {
+            useAuthStore.getState().logout();
+          }
         }
       })
       .catch(() => null);
@@ -42,6 +47,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <>
       <SessionBootstrap />
+      <BehaviorTracker />
       {children}
     </>
   );

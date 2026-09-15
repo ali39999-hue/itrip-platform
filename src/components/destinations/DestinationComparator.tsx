@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
+import { formatMoney } from '@/lib/money';
 import { useRouter } from '@/i18n/routing';
 import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES, COUNTRY_ORDER, countryName, type CountryId } from '@/lib/countries';
@@ -519,7 +520,7 @@ export function DestinationComparator({
                     <span>{lt(locale, { fa: 'برآورد هزینه روزانه:', en: 'Daily Budget:', ar: 'الميزانية اليومية:', zh: '预计每日预算：', ru: 'Дневной бюджет:' })}</span>
                   </span>
                   <span className="font-mono font-black text-price text-end">
-                    {num(dest.dailyBudgetToman, locale)} <span className="text-[10px] font-normal">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'том.' })}</span>
+                    {formatMoney(dest.dailyBudgetToman, COUNTRIES[country]?.currency || COUNTRIES[dest.countryId]?.currency || 'IRR', locale)}
                   </span>
                 </div>
 
@@ -530,7 +531,7 @@ export function DestinationComparator({
                     <span>{lt(locale, { fa: 'میانگین هر شب هتل:', en: 'Avg. Hotel Night:', ar: 'متوسط الفندق:', zh: '每晚酒店均价：', ru: 'Отель за сутки:' })}</span>
                   </span>
                   <span className="font-mono font-black text-end">
-                    {num(dest.avgHotelPerNightToman, locale)} <span className="text-[10px] font-normal">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'том.' })}</span>
+                    {formatMoney(dest.avgHotelPerNightToman, COUNTRIES[country]?.currency || COUNTRIES[dest.countryId]?.currency || 'IRR', locale)}
                   </span>
                 </div>
 

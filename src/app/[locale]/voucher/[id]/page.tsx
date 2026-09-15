@@ -22,7 +22,7 @@ export default async function VoucherPage({ params }: VoucherPageProps) {
   const dir = isRtl ? 'rtl' : 'ltr';
 
   return (
-    <div dir={dir} className="min-h-screen bg-neutral-100 p-4 sm:p-8 print:p-0 print:bg-white text-neutral-900 font-sans">
+    <div dir={dir} className="min-h-dvh bg-neutral-100 p-4 sm:p-8 print:p-0 print:bg-white text-neutral-900 font-sans">
       {/* Top action bar - hidden on print */}
       <div className="max-w-4xl mx-auto mb-6 flex items-center justify-between print:hidden">
         <div className="flex items-center gap-2">

@@ -12,7 +12,7 @@ export default function CityPassPage() {
   const locale = useLocale();
 
   return (
-    <div className="bg-paper min-h-screen">
+    <div className="bg-paper min-h-dvh">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-mint/40 via-soft to-paper pt-16 md:pt-20 pb-16">
         <div className="max-w-[1180px] mx-auto px-6">

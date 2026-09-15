@@ -125,7 +125,7 @@ export default function TrainsPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-soft">
+    <div className="flex flex-col min-h-dvh bg-soft">
       {/* Hero / Search Section */}
       <section className="relative w-full h-[50vh] min-h-[460px] flex items-center justify-center overflow-hidden img-overlay-strong">
         <Image

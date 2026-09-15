@@ -4,6 +4,8 @@ import { searchHotels, detectCountryId } from '@/services/hotels-service';
 import { searchFlights } from '@/services/flights-service';
 import { COUNTRIES, type CountryId } from '@/lib/countries';
 import { VISA_SERVICES, ESIM_PACKAGES, TRANSFERS } from '@/lib/data';
+import { LOCALE_FONT_VAR } from '@/lib/fonts';
+import { formatMoney } from '@/lib/money';
 
 describe('Country Switching & Dynamic Ecosystem Synchronization Suite', () => {
   beforeEach(() => {
@@ -113,5 +115,35 @@ describe('Country Switching & Dynamic Ecosystem Synchronization Suite', () => {
       );
       expect(transferExists, `Airport transfer must exist for ${cId}`).toBe(true);
     }
+  });
+
+  it('LOCALE_FONT_VAR defines authentic, complete font stacks for all 5 supported locales', () => {
+    const requiredLocales = ['fa', 'ar', 'en', 'ru', 'zh'];
+    for (const loc of requiredLocales) {
+      expect(LOCALE_FONT_VAR[loc]).toBeDefined();
+      expect(LOCALE_FONT_VAR[loc].sans.length).toBeGreaterThan(0);
+      expect(LOCALE_FONT_VAR[loc].heading.length).toBeGreaterThan(0);
+    }
+
+    // Persian uses IranYekan
+    expect(LOCALE_FONT_VAR.fa.sans).toContain('IRANYekanX');
+    // Arabic uses authentic Arabic font stack
+    expect(LOCALE_FONT_VAR.ar.sans).toContain('Segoe UI');
+    // English & Russian use modern system font stack
+    expect(LOCALE_FONT_VAR.en.sans).toContain('-apple-system');
+    expect(LOCALE_FONT_VAR.ru.sans).toContain('-apple-system');
+    // Chinese uses Chinese font stack
+    expect(LOCALE_FONT_VAR.zh.sans).toContain('PingFang SC');
+  });
+
+  it('formatMoney formats currency correctly for all 7 target countries', () => {
+    const sampleToman = 10000000; // 10M Toman
+    expect(formatMoney(sampleToman, 'IRR', 'fa')).toContain('تومان');
+    expect(formatMoney(sampleToman, 'TRY', 'en')).toContain('Lira');
+    expect(formatMoney(sampleToman, 'AED', 'en')).toContain('Dirham');
+    expect(formatMoney(sampleToman, 'GEL', 'en')).toContain('Lari');
+    expect(formatMoney(sampleToman, 'RUB', 'en')).toContain('Ruble');
+    expect(formatMoney(sampleToman, 'OMR', 'en')).toContain('Omani Rial');
+    expect(formatMoney(sampleToman, 'CNY', 'zh')).toContain('元');
   });
 });

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Customer360Data } from '@/domains/identity/Customer360Service';
+import { UserBehaviorTab } from '@/components/behavior/UserBehaviorTab';
 import {
   ErpPageHeader,
   ErpStatCard,
@@ -36,6 +37,7 @@ import {
   MessageSquare,
   Send,
   Loader2,
+  MapPin,
 } from 'lucide-react';
 
 interface Props {
@@ -43,7 +45,7 @@ interface Props {
   canViewPii: boolean;
 }
 
-type TabKey = 'identity' | 'travelers' | 'trips' | 'financials' | 'exceptions' | 'notes';
+type TabKey = 'identity' | 'travelers' | 'trips' | 'financials' | 'exceptions' | 'notes' | 'behavior';
 
 function formatRials(amountRials: number, loc = 'fa') {
   return formatMoney(amountRials / 10, 'IRR', loc);
@@ -191,6 +193,7 @@ export function Customer360WorkspaceClient({ customerData, canViewPii }: Props) 
           { key: 'financials', label: lt(locale, { fa: 'کیف پول و مالی', en: 'Wallet & Ledger' }), icon: Wallet },
           { key: 'exceptions', label: lt(locale, { fa: `استثنائات (${exceptions.length})`, en: `Exceptions (${exceptions.length})` }), icon: ShieldAlert },
           { key: 'notes', label: lt(locale, { fa: `یادداشت‌های CRM (${notesList.length})`, en: `CRM Notes (${notesList.length})` }), icon: MessageSquare },
+          { key: 'behavior', label: lt(locale, { fa: 'رفتار و هیت‌مپ', en: 'Behavior & Heatmap' }), icon: MapPin },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.key;
@@ -644,6 +647,9 @@ export function Customer360WorkspaceClient({ customerData, canViewPii }: Props) 
           </ErpSectionCard>
         </div>
       )}
+
+      {/* Tab 7: Behavior & Heatmap */}
+      {activeTab === 'behavior' && <UserBehaviorTab userId={user.id} />}
     </div>
   );
 }

@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLocale } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { ERPDataGrid, ColumnDef } from '@/components/admin/ERPDataGrid';
 import { ErpHint, ErpModal, ErpPageHeader, erpFieldCls, erpLabelCls, erpPrimaryBtnCls, erpGhostBtnCls } from '@/components/admin/erp-ui';
 import { LeaderDashboardRow } from '@/domains/referral/ReferralDomainService';
-import { settleLeaderRewardAction, createReferralCodeAction } from '@/actions/admin';
+import { settleLeaderRewardAction, createReferralCodeAction, updateReferralCodeAction } from '@/actions/admin';
+import { getAdminUsers, type AdminUserListItem } from '@/actions/admin-users';
+import { TIER_PRESETS, REFERRAL_CONFIG } from '@/lib/referral/config';
 import { lt } from '@/lib/lt';
 import { formatMoney } from '@/lib/money';
 import {
@@ -20,8 +22,275 @@ import {
   Plus,
   X,
   Loader2,
+  Sliders,
+  Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+function buildTierConfigJson(params: {
+  discountPercent: number;
+  capIrr: number | null;
+  maxUses: number | null;
+  presetKey: string;
+}): string | undefined {
+  const config: Record<string, unknown> = {};
+
+  const discRate = params.discountPercent / 100;
+  if (discRate !== REFERRAL_CONFIG.referralDiscountPercent) {
+    config.discountPercent = discRate;
+  }
+  if (params.capIrr !== REFERRAL_CONFIG.maxDiscountCapIrr) {
+    config.maxDiscountCapIrr = params.capIrr;
+  }
+  if (params.maxUses !== null) {
+    config.maxUses = params.maxUses;
+  }
+  const preset = TIER_PRESETS.find((p) => p.key === params.presetKey);
+  if (preset && preset.key !== 'standard') {
+    config.tiers = preset.tiers;
+  }
+
+  return Object.keys(config).length > 0 ? JSON.stringify(config) : undefined;
+}
+
+function ReferralVariableFields({
+  discountPercent,
+  setDiscountPercent,
+  capType,
+  setCapType,
+  customCapIrr,
+  setCustomCapIrr,
+  maxUsesType,
+  setMaxUsesType,
+  customMaxUses,
+  setCustomMaxUses,
+  tierPresetKey,
+  setTierPresetKey,
+  locale,
+}: {
+  discountPercent: number;
+  setDiscountPercent: (v: number) => void;
+  capType: 'standard' | 'double' | 'uncapped' | 'custom';
+  setCapType: (v: 'standard' | 'double' | 'uncapped' | 'custom') => void;
+  customCapIrr: string;
+  setCustomCapIrr: (v: string) => void;
+  maxUsesType: 'unlimited' | '5' | '10' | '20' | '50' | 'custom';
+  setMaxUsesType: (v: 'unlimited' | '5' | '10' | '20' | '50' | 'custom') => void;
+  customMaxUses: string;
+  setCustomMaxUses: (v: string) => void;
+  tierPresetKey: string;
+  setTierPresetKey: (v: string) => void;
+  locale: string;
+}) {
+  return (
+    <div className="space-y-4 pt-3 border-t border-line/70">
+      {/* 1. Passenger Discount % */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className={erpLabelCls}>
+            {lt(locale, {
+              fa: 'درصد تخفیف مسافر (روی قیمت پایه)',
+              en: 'Passenger Discount % (Base Price)',
+              ar: 'نسبة خصم المسافر (السعر الأساسي)',
+              zh: '旅客折扣百分比（基础价）',
+              ru: 'Скидка для пассажира % (Базовая цена)',
+            })}
+          </label>
+          <span className="font-mono font-black text-xs text-brand-dark bg-mint/50 px-2.5 py-0.5 rounded-lg border border-brand/20">
+            {discountPercent}٪
+          </span>
+        </div>
+        <div className="grid grid-cols-5 gap-1.5 mb-1.5">
+          {[5, 10, 15, 20].map((pct) => (
+            <button
+              key={pct}
+              type="button"
+              onClick={() => setDiscountPercent(pct)}
+              className={`py-1.5 px-2 rounded-xl text-xs font-bold font-mono transition border ${
+                discountPercent === pct
+                  ? 'bg-brand text-surface border-brand shadow-xs'
+                  : 'bg-soft/70 hover:bg-line/50 text-sub border-line'
+              }`}
+            >
+              {pct}٪
+            </button>
+          ))}
+          <div className="relative">
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={discountPercent}
+              onChange={(e) => {
+                const val = Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0));
+                setDiscountPercent(val);
+              }}
+              placeholder="دلخواه"
+              className="w-full h-full text-center rounded-xl border border-line bg-surface text-xs font-mono font-bold text-ink focus:outline-none focus:border-brand"
+            />
+          </div>
+        </div>
+        <p className="text-[11px] text-sub">
+          {lt(locale, {
+            fa: 'تخفیف به صورت مستقیم روی هزینه خدمات پایه در فاکتور مسافر کسر می‌گردد.',
+            en: 'Discount is applied directly to base trip cost on passenger invoice.',
+            ar: 'يتم تطبيق الخصم مباشرة على السعر الأساسي للرحلة.',
+            zh: '折扣直接应用于旅客账单的基础行程费用。',
+            ru: 'Скидка применяется напрямую к базовой стоимости поездки.',
+          })}
+        </p>
+      </div>
+
+      {/* 2. Max Discount Cap */}
+      <div>
+        <label className={erpLabelCls}>
+          {lt(locale, {
+            fa: 'سقف ریالی تخفیف هر رزرو',
+            en: 'Max Discount Cap (Per Booking)',
+            ar: 'الحد الأقصى للخصم (لكل حجز)',
+            zh: '每单最高折扣上限',
+            ru: 'Максимальный лимит скидки',
+          })}
+        </label>
+        <div className="grid grid-cols-4 gap-1.5 mb-1.5">
+          {[
+            { key: 'standard', labelFa: '۵۰ م.ر (استاندارد)', labelEn: '50M IRR' },
+            { key: 'double', labelFa: '۱۰۰ م.ر', labelEn: '100M IRR' },
+            { key: 'uncapped', labelFa: 'بدون سقف', labelEn: 'No Cap' },
+            { key: 'custom', labelFa: 'دلخواه', labelEn: 'Custom' },
+          ].map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => setCapType(opt.key as any)}
+              className={`py-1.5 px-1 text-center rounded-xl text-[11px] font-bold transition border ${
+                capType === opt.key
+                  ? 'bg-brand text-surface border-brand shadow-xs'
+                  : 'bg-soft/70 hover:bg-line/50 text-sub border-line'
+              }`}
+            >
+              {locale === 'fa' ? opt.labelFa : opt.labelEn}
+            </button>
+          ))}
+        </div>
+        {capType === 'custom' && (
+          <div className="mt-2">
+            <input
+              type="number"
+              min="0"
+              step="1000000"
+              value={customCapIrr}
+              onChange={(e) => setCustomCapIrr(e.target.value)}
+              placeholder="مبلغ سقف به ریال (مثلاً ۷۵۰۰۰۰۰۰)"
+              className={`${erpFieldCls} font-mono`}
+              dir="ltr"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* 3. Max Uses / Capacity (برای چه تعداد باشه) */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className={erpLabelCls}>
+            {lt(locale, {
+              fa: 'سقف تعداد استفاده (ظرفیت کد معرف)',
+              en: 'Usage Limit / Capacity',
+              ar: 'حد الاستخدام / السعة',
+              zh: '使用次数上限 / 名额',
+              ru: 'Лимит использований / вместимость',
+            })}
+          </label>
+          <span className="font-mono text-xs text-sub">
+            {maxUsesType === 'unlimited' ? 'نامحدود' : `${maxUsesType === 'custom' ? customMaxUses || '—' : maxUsesType} رزرو`}
+          </span>
+        </div>
+        <div className="grid grid-cols-6 gap-1.5 mb-1.5">
+          {[
+            { key: 'unlimited', labelFa: 'نامحدود', labelEn: 'Unlimited' },
+            { key: '5', labelFa: '۵ بار', labelEn: '5' },
+            { key: '10', labelFa: '۱۰ بار', labelEn: '10' },
+            { key: '20', labelFa: '۲۰ بار', labelEn: '20' },
+            { key: '50', labelFa: '۵۰ بار', labelEn: '50' },
+            { key: 'custom', labelFa: 'دلخواه', labelEn: 'Custom' },
+          ].map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => setMaxUsesType(opt.key as any)}
+              className={`py-1.5 px-1 text-center rounded-xl text-[11px] font-bold transition border ${
+                maxUsesType === opt.key
+                  ? 'bg-brand text-surface border-brand shadow-xs'
+                  : 'bg-soft/70 hover:bg-line/50 text-sub border-line'
+              }`}
+            >
+              {locale === 'fa' ? opt.labelFa : opt.labelEn}
+            </button>
+          ))}
+        </div>
+        {maxUsesType === 'custom' && (
+          <div className="mt-2">
+            <input
+              type="number"
+              min="1"
+              value={customMaxUses}
+              onChange={(e) => setCustomMaxUses(e.target.value)}
+              placeholder="حداکثر تعداد مجاز (مثلاً ۱۵)"
+              className={`${erpFieldCls} font-mono`}
+              dir="ltr"
+            />
+          </div>
+        )}
+        <p className="text-[11px] text-sub">
+          {lt(locale, {
+            fa: 'پس از تکمیل این تعداد رزرو، کد به حالت «تکمیل ظرفیت» درآمده و تخفیف جدیدی اعمال نمی‌گردد.',
+            en: 'Once this limit is reached, the code is exhausted and no new discounts are applied.',
+            ar: 'عند اكتمال هذا العدد، ينتهي الرمز ولا يتم تطبيق أي خصم جديد.',
+            zh: '名额满后推荐码失效，新预订不再享受折扣。',
+            ru: 'После исчерпания лимита код считается заверشённым.',
+          })}
+        </p>
+      </div>
+
+      {/* 4. Leader Reward Tier Preset */}
+      <div>
+        <label className={erpLabelCls}>
+          {lt(locale, {
+            fa: 'الگوی پله‌های پاداش سرگروه',
+            en: 'Leader Reward Tier Preset',
+            ar: 'نمط مكافأة القائد',
+            zh: '领队奖励梯队预设',
+            ru: 'Шаблон уровней лидера',
+          })}
+        </label>
+        <div className="space-y-1.5">
+          {TIER_PRESETS.map((preset) => (
+            <label
+              key={preset.key}
+              className={`flex items-center justify-between p-2.5 rounded-xl border text-xs cursor-pointer transition ${
+                tierPresetKey === preset.key
+                  ? 'bg-mint/40 border-brand/40 text-brand-dark font-bold'
+                  : 'bg-soft/40 border-line hover:bg-soft text-sub'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name={`tierPreset_${preset.key}`}
+                  value={preset.key}
+                  checked={tierPresetKey === preset.key}
+                  onChange={() => setTierPresetKey(preset.key)}
+                  className="text-brand focus:ring-brand"
+                />
+                <span>{locale === 'fa' ? preset.labelFa : preset.labelEn}</span>
+              </div>
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface ReferralsClientPageProps {
   initialData: LeaderDashboardRow[];
@@ -32,10 +301,122 @@ export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
   const router = useRouter();
   const [data, setData] = useState<LeaderDashboardRow[]>(initialData);
   const [selectedLeader, setSelectedLeader] = useState<LeaderDashboardRow | null>(null);
+
+  // Create Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createCode, setCreateCode] = useState('');
   const [createLeaderId, setCreateLeaderId] = useState('');
+  const [leaderSearch, setLeaderSearch] = useState('');
+  const [leaderResults, setLeaderResults] = useState<AdminUserListItem[]>([]);
+  const [leaderSearching, setLeaderSearching] = useState(false);
+  const [pickedLeader, setPickedLeader] = useState<AdminUserListItem | null>(null);
+  const [showCreateAdvanced, setShowCreateAdvanced] = useState(false);
+  const [createDiscountPercent, setCreateDiscountPercent] = useState<number>(5);
+  const [createCapType, setCreateCapType] = useState<'standard' | 'double' | 'uncapped' | 'custom'>('standard');
+  const [createCustomCapIrr, setCreateCustomCapIrr] = useState<string>('');
+  const [createMaxUsesType, setCreateMaxUsesType] = useState<'unlimited' | '5' | '10' | '20' | '50' | 'custom'>('unlimited');
+  const [createCustomMaxUses, setCreateCustomMaxUses] = useState<string>('');
+  const [createTierPresetKey, setCreateTierPresetKey] = useState<string>('standard');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Edit / Config Modal State
+  const [editingLeader, setEditingLeader] = useState<LeaderDashboardRow | null>(null);
+  const [editIsActive, setEditIsActive] = useState(true);
+  const [editDiscountPercent, setEditDiscountPercent] = useState<number>(5);
+  const [editCapType, setEditCapType] = useState<'standard' | 'double' | 'uncapped' | 'custom'>('standard');
+  const [editCustomCapIrr, setEditCustomCapIrr] = useState<string>('');
+  const [editMaxUsesType, setEditMaxUsesType] = useState<'unlimited' | '5' | '10' | '20' | '50' | 'custom'>('unlimited');
+  const [editCustomMaxUses, setEditCustomMaxUses] = useState<string>('');
+  const [editTierPresetKey, setEditTierPresetKey] = useState<string>('standard');
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const openCreateModal = () => {
+    setCreateCode('');
+    setCreateLeaderId('');
+    setLeaderSearch('');
+    setLeaderResults([]);
+    setPickedLeader(null);
+    setShowCreateAdvanced(false);
+    setCreateDiscountPercent(5);
+    setCreateCapType('standard');
+    setCreateCustomCapIrr('');
+    setCreateMaxUsesType('unlimited');
+    setCreateCustomMaxUses('');
+    setCreateTierPresetKey('standard');
+    setShowCreateModal(true);
+  };
+
+  const openEditModal = (row: LeaderDashboardRow) => {
+    setEditingLeader(row);
+    setEditIsActive(row.isActive);
+
+    const discPct = Math.round(row.discountPercent * 100);
+    setEditDiscountPercent(discPct);
+
+    if (row.maxDiscountCapIrr === null) {
+      setEditCapType('uncapped');
+      setEditCustomCapIrr('');
+    } else if (row.maxDiscountCapIrr === 50_000_000) {
+      setEditCapType('standard');
+      setEditCustomCapIrr('');
+    } else if (row.maxDiscountCapIrr === 100_000_000) {
+      setEditCapType('double');
+      setEditCustomCapIrr('');
+    } else {
+      setEditCapType('custom');
+      setEditCustomCapIrr(row.maxDiscountCapIrr.toString());
+    }
+
+    if (row.maxUses === null) {
+      setEditMaxUsesType('unlimited');
+      setEditCustomMaxUses('');
+    } else if (['5', '10', '20', '50'].includes(row.maxUses.toString())) {
+      setEditMaxUsesType(row.maxUses.toString() as '5' | '10' | '20' | '50');
+      setEditCustomMaxUses('');
+    } else {
+      setEditMaxUsesType('custom');
+      setEditCustomMaxUses(row.maxUses.toString());
+    }
+
+    let presetKey = 'standard';
+    if (row.customTierConfig) {
+      try {
+        const parsed = JSON.parse(row.customTierConfig);
+        if (Array.isArray(parsed.tiers) && parsed.tiers.length > 0) {
+          const match = TIER_PRESETS.find((p) => JSON.stringify(p.tiers) === JSON.stringify(parsed.tiers));
+          if (match) presetKey = match.key;
+        }
+      } catch {
+        // noop
+      }
+    }
+    setEditTierPresetKey(presetKey);
+  };
+
+  // Debounced leader search (name / email / phone).
+  useEffect(() => {
+    if (!showCreateModal) return;
+    const q = leaderSearch.trim();
+    if (q.length < 2) {
+      setLeaderResults([]);
+      return;
+    }
+    setLeaderSearching(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await getAdminUsers({ search: q, limit: 6 });
+        setLeaderResults(res.success ? res.users : []);
+      } catch {
+        setLeaderResults([]);
+      } finally {
+        setLeaderSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [leaderSearch, showCreateModal]);
+
+  const pickedDisplayName = (u: AdminUserListItem) =>
+    u.name || u.phone || u.email || u.id;
   const [settlingId, setSettlingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
@@ -47,6 +428,7 @@ export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
       if (e.key !== 'Escape') return;
       setShowCreateModal(false);
       setSelectedLeader(null);
+      setEditingLeader(null);
       setConfirmingId(null);
     };
     window.addEventListener('keydown', onKey);
@@ -86,22 +468,60 @@ export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
 
   const handleCreateCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!createCode.trim() || !createLeaderId.trim()) {
-      toast.error('کد و آیدی کاربر الزامی هستند');
+    // Picker selection wins; otherwise accept a pasted User ID directly
+    // (the server validates existence with a clear message).
+    const leaderId = pickedLeader?.id || createLeaderId.trim();
+    if (!createCode.trim() || !leaderId) {
+      toast.error('کد معرف و انتخاب سرگروه الزامی هستند');
       return;
     }
 
+    let resolvedCapIrr: number | null = 50_000_000;
+    if (createCapType === 'uncapped') resolvedCapIrr = null;
+    else if (createCapType === 'double') resolvedCapIrr = 100_000_000;
+    else if (createCapType === 'custom') {
+      const num = parseInt(createCustomCapIrr, 10);
+      resolvedCapIrr = !isNaN(num) && num >= 0 ? num : null;
+    }
+
+    let resolvedMaxUses: number | null = null;
+    if (createMaxUsesType !== 'unlimited') {
+      const num = createMaxUsesType === 'custom' ? parseInt(createCustomMaxUses, 10) : parseInt(createMaxUsesType, 10);
+      if (!isNaN(num) && num > 0) resolvedMaxUses = num;
+    }
+
+    const jsonConfig = showCreateAdvanced
+      ? buildTierConfigJson({
+          discountPercent: createDiscountPercent,
+          capIrr: resolvedCapIrr,
+          maxUses: resolvedMaxUses,
+          presetKey: createTierPresetKey,
+        })
+      : undefined;
+
     setIsSubmitting(true);
     try {
-      const res = await createReferralCodeAction({
+      const payload: { code: string; leaderId: string; customTierConfig?: string } = {
         code: createCode.trim(),
-        leaderId: createLeaderId.trim(),
-      });
+        leaderId,
+      };
+      if (jsonConfig) {
+        payload.customTierConfig = jsonConfig;
+      }
+
+      const res = await createReferralCodeAction(payload);
       if (res.success) {
-        toast.success('کد معرف سرگروه با موفقیت ایجاد شد');
+        toast.success(
+          (res.resolvedUnmatched ?? 0) > 0
+            ? `کد معرف ایجاد شد؛ ${res.resolvedUnmatched} رزرو قبلی به آن لینک شد`
+            : 'کد معرف سرگروه با موفقیت ایجاد شد'
+        );
         setShowCreateModal(false);
         setCreateCode('');
         setCreateLeaderId('');
+        setLeaderSearch('');
+        setLeaderResults([]);
+        setPickedLeader(null);
         router.refresh();
       } else {
         toast.error(res.error || 'خطا در ایجاد کد');
@@ -113,6 +533,67 @@ export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
     }
   };
 
+  const handleUpdateCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLeader) return;
+
+    let resolvedCapIrr: number | null = 50_000_000;
+    if (editCapType === 'uncapped') resolvedCapIrr = null;
+    else if (editCapType === 'double') resolvedCapIrr = 100_000_000;
+    else if (editCapType === 'custom') {
+      const num = parseInt(editCustomCapIrr, 10);
+      resolvedCapIrr = !isNaN(num) && num >= 0 ? num : null;
+    }
+
+    let resolvedMaxUses: number | null = null;
+    if (editMaxUsesType !== 'unlimited') {
+      const num = editMaxUsesType === 'custom' ? parseInt(editCustomMaxUses, 10) : parseInt(editMaxUsesType, 10);
+      if (!isNaN(num) && num > 0) resolvedMaxUses = num;
+    }
+
+    const jsonConfig = buildTierConfigJson({
+      discountPercent: editDiscountPercent,
+      capIrr: resolvedCapIrr,
+      maxUses: resolvedMaxUses,
+      presetKey: editTierPresetKey,
+    });
+
+    setIsUpdating(true);
+    try {
+      const res = await updateReferralCodeAction({
+        id: editingLeader.id,
+        isActive: editIsActive,
+        customTierConfig: jsonConfig || null,
+      });
+
+      if (res.success) {
+        toast.success('متغیرهای کد معرف با موفقیت به‌روزرسانی شد');
+        setData((prev) =>
+          prev.map((r) =>
+            r.id === editingLeader.id
+              ? {
+                  ...r,
+                  isActive: editIsActive,
+                  discountPercent: editDiscountPercent / 100,
+                  maxDiscountCapIrr: resolvedCapIrr,
+                  maxUses: resolvedMaxUses,
+                  customTierConfig: jsonConfig || null,
+                }
+              : r
+          )
+        );
+        setEditingLeader(null);
+        router.refresh();
+      } else {
+        toast.error(res.error || 'خطا در به‌روزرسانی کد');
+      }
+    } catch {
+      toast.error('خطای ارتباط با سرور');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const columns: ColumnDef<LeaderDashboardRow>[] = [
     {
       key: 'code',
@@ -120,9 +601,22 @@ export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
       sortable: true,
       csvAccessor: (r) => r.code,
       render: (r) => (
-        <span className="font-mono font-black text-brand-dark bg-mint/50 px-2.5 py-1 rounded-lg text-xs border border-brand/20">
-          {r.code}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span
+            className={`font-mono font-black px-2.5 py-1 rounded-lg text-xs border ${
+              r.isActive
+                ? 'text-brand-dark bg-mint/50 border-brand/20'
+                : 'text-zinc-400 bg-soft border-line line-through'
+            }`}
+          >
+            {r.code}
+          </span>
+          {!r.isActive && (
+            <span className="text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded">
+              غیرفعال
+            </span>
+          )}
+        </div>
       ),
     },
     {
@@ -136,6 +630,57 @@ export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
           <div className="text-[11px] text-sub font-mono">{r.leaderPhone}</div>
         </div>
       ),
+    },
+    {
+      key: 'discountConfig',
+      header: lt(locale, { fa: 'تخفیف مسافر', en: 'Discount', ar: 'الخصم', zh: '折扣', ru: 'Скидка' }),
+      sortable: true,
+      csvAccessor: (r) => `${Math.round(r.discountPercent * 100)}%`,
+      render: (r) => {
+        const pct = Math.round(r.discountPercent * 100);
+        return (
+          <div className="text-xs">
+            <span className="font-bold text-brand-dark font-mono bg-mint/40 px-2 py-0.5 rounded-md inline-block">
+              {pct}٪ تخفیف
+            </span>
+            <div className="text-[10px] text-sub mt-0.5 font-mono">
+              {r.maxDiscountCapIrr !== null
+                ? `سقف ${Math.round(r.maxDiscountCapIrr / 10_000_000).toLocaleString(numFmt)} م.ت`
+                : 'بدون سقف'}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'usageQuota',
+      header: lt(locale, { fa: 'ظرفیت و استفاده', en: 'Capacity & Uses', ar: 'السعة والاستخدام', zh: '名额与使用', ru: 'Лимит и использование' }),
+      sortable: true,
+      csvAccessor: (r) => (r.maxUses !== null ? `${r.usedCount}/${r.maxUses}` : `${r.usedCount}/∞`),
+      render: (r) => {
+        if (r.maxUses !== null) {
+          const isFull = r.usedCount >= r.maxUses;
+          return (
+            <div className="text-xs">
+              <span
+                className={`font-bold font-mono px-2 py-0.5 rounded-md inline-flex items-center gap-1 ${
+                  isFull ? 'bg-destructive/10 text-destructive' : 'bg-soft text-ink'
+                }`}
+              >
+                <span>
+                  {r.usedCount.toLocaleString(numFmt)} / {r.maxUses.toLocaleString(numFmt)}
+                </span>
+                {isFull && <span className="text-[10px] font-sans">(تکمیل)</span>}
+              </span>
+            </div>
+          );
+        }
+        return (
+          <span className="text-xs font-mono text-sub">
+            {r.usedCount.toLocaleString(numFmt)} استفاده (نامحدود)
+          </span>
+        );
+      },
     },
     {
       key: 'confirmedPax',
@@ -268,17 +813,28 @@ export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
     },
     {
       key: 'actions',
-      header: lt(locale, { fa: 'مسافران', en: 'Travelers', ar: 'المسافرون', zh: '旅客', ru: 'Пассажиры' }),
+      header: lt(locale, { fa: 'عملیات', en: 'Actions', ar: 'العمليات', zh: '操作', ru: 'Действия' }),
       render: (r) => (
-        <button
-          type="button"
-          onClick={() => setSelectedLeader(r)}
-          className="min-h-9 px-2 rounded-lg border border-line hover:bg-soft text-sub hover:text-ink transition flex items-center gap-1 text-xs font-bold"
-          title="مشاهده لیست مسافران"
-        >
-          <Eye size={14} />
-          <span>{r.travelers.length}</span>
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setSelectedLeader(r)}
+            className="min-h-9 px-2 rounded-lg border border-line hover:bg-soft text-sub hover:text-ink transition flex items-center gap-1 text-xs font-bold"
+            title="مشاهده لیست مسافران"
+          >
+            <Eye size={14} />
+            <span>{r.travelers.length}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => openEditModal(r)}
+            className="min-h-9 px-2.5 rounded-lg border border-line hover:bg-brand/10 hover:border-brand/40 text-brand-dark transition flex items-center gap-1 text-xs font-bold"
+            title="تنظیم متغیرها (تخفیف، ظرفیت، پاداش)"
+          >
+            <Sliders size={13} />
+            <span>تنظیمات</span>
+          </button>
+        </div>
       ),
     },
   ];
@@ -316,7 +872,7 @@ export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
         }
         icon={<Users size={20} aria-hidden="true" />}
         actions={
-          <button type="button" onClick={() => setShowCreateModal(true)} className={erpPrimaryBtnCls}>
+          <button type="button" onClick={openCreateModal} className={erpPrimaryBtnCls}>
             <Plus size={15} aria-hidden="true" />
             <span>{lt(locale, { fa: 'تعریف کد معرف جدید', en: 'Create Referral Code', ar: 'إنشاء رمز إحالة', zh: '创建推荐码', ru: 'Создать промокод' })}</span>
           </button>
@@ -436,18 +992,217 @@ export function ReferralsClientPage({ initialData }: ReferralsClientPageProps) {
               />
             </div>
             <div>
-              <label className={erpLabelCls} htmlFor="ref-leader">شناسه کاربر سرگروه (User ID)</label>
-              <input
-                id="ref-leader"
-                type="text"
-                required
-                placeholder="usr_12345"
-                value={createLeaderId}
-                onChange={(e) => setCreateLeaderId(e.target.value)}
-                className={`${erpFieldCls} font-mono`}
-                dir="ltr"
-              />
+              <label className={erpLabelCls} htmlFor="ref-leader-search">سرگروه (جستجو با نام یا موبایل)</label>
+              {pickedLeader ? (
+                <div className="flex items-center justify-between gap-2 rounded-xl border border-brand/40 bg-mint/30 px-3 py-2">
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-black text-ink truncate">{pickedDisplayName(pickedLeader)}</div>
+                    <div className="text-[11px] text-sub font-mono" dir="ltr">{pickedLeader.id}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPickedLeader(null);
+                      setLeaderSearch('');
+                    }}
+                    aria-label="حذف انتخاب سرگروه"
+                    className="min-w-[44px] min-h-[44px] grid place-items-center rounded-lg text-sub hover:text-ink hover:bg-soft transition shrink-0"
+                  >
+                    <X size={16} aria-hidden="true" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    id="ref-leader-search"
+                    type="text"
+                    autoComplete="off"
+                    placeholder="مثلاً علی رضایی یا 0912… (حداقل ۲ حرف)"
+                    value={leaderSearch}
+                    onChange={(e) => {
+                      setLeaderSearch(e.target.value);
+                      setCreateLeaderId(e.target.value);
+                    }}
+                    className={erpFieldCls}
+                  />
+                  {leaderSearching && (
+                    <p className="mt-1.5 text-[11px] font-bold text-sub flex items-center gap-1.5">
+                      <Loader2 size={12} className="animate-spin" aria-hidden="true" />
+                      در حال جستجو…
+                    </p>
+                  )}
+                  {!leaderSearching && leaderResults.length > 0 && (
+                    <ul className="mt-1.5 max-h-44 overflow-y-auto rounded-xl border border-line bg-surface shadow-elev-2 divide-y divide-line/60" role="listbox" aria-label="نتایج جستجوی سرگروه">
+                      {leaderResults.map((u) => (
+                        <li key={u.id}>
+                          <button
+                            type="button"
+                            role="option"
+                            aria-selected="false"
+                            onClick={() => {
+                              setPickedLeader(u);
+                              setCreateLeaderId(u.id);
+                              setLeaderResults([]);
+                            }}
+                            className="w-full min-h-[44px] px-3 py-2 flex items-center justify-between gap-2 text-start hover:bg-soft transition"
+                          >
+                            <span className="min-w-0">
+                              <span className="block text-[13px] font-black text-ink truncate">{pickedDisplayName(u)}</span>
+                              <span className="block text-[11px] text-sub font-mono" dir="ltr">{u.id}</span>
+                            </span>
+                            <CheckCircle2 size={16} className="text-brand-dark shrink-0" aria-hidden="true" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {!leaderSearching && leaderSearch.trim().length >= 2 && leaderResults.length === 0 && (
+                    <p className="mt-1.5 text-[11px] font-bold text-sub">
+                      کاربری یافت نشد — می‌توانی User ID را مستقیم بچسبانی؛ در صورت نامعتبر بودن، سرور خطای واضح می‌دهد.
+                    </p>
+                  )}
+                </>
+              )}
             </div>
+
+            {/* Advanced Variables Toggle */}
+            <div className="pt-2 border-t border-line/60">
+              <button
+                type="button"
+                onClick={() => setShowCreateAdvanced(!showCreateAdvanced)}
+                className="w-full flex items-center justify-between text-xs font-bold text-brand-dark py-1.5 hover:underline"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Sliders size={13} />
+                  <span>
+                    {lt(locale, {
+                      fa: 'تنظیم متغیرهای تخفیف، ظرفیت و پاداش (پیشرفته)',
+                      en: 'Configure discount, capacity & reward variables (advanced)',
+                      ar: 'إعداد متغيرات الخصم والسعة والمكافأة (متقدم)',
+                      zh: '配置折扣、名额及奖励变量（高级）',
+                      ru: 'Настроить переменные скидки, лимита и вознаграждения (расширенно)',
+                    })}
+                  </span>
+                </span>
+                <span>{showCreateAdvanced ? '− بستن' : '+ تنظیم'}</span>
+              </button>
+            </div>
+
+            {showCreateAdvanced && (
+              <ReferralVariableFields
+                discountPercent={createDiscountPercent}
+                setDiscountPercent={setCreateDiscountPercent}
+                capType={createCapType}
+                setCapType={setCreateCapType}
+                customCapIrr={createCustomCapIrr}
+                setCustomCapIrr={setCreateCustomCapIrr}
+                maxUsesType={createMaxUsesType}
+                setMaxUsesType={setCreateMaxUsesType}
+                customMaxUses={createCustomMaxUses}
+                setCustomMaxUses={setCreateCustomMaxUses}
+                tierPresetKey={createTierPresetKey}
+                setTierPresetKey={setCreateTierPresetKey}
+                locale={locale}
+              />
+            )}
+          </form>
+        </ErpModal>
+      )}
+
+      {/* Modal: Edit / Configure Referral Code */}
+      {editingLeader && (
+        <ErpModal
+          title={lt(locale, {
+            fa: `تنظیم متغیرهای کد معرف: ${editingLeader.code}`,
+            en: `Configure Referral Code: ${editingLeader.code}`,
+            ar: `ضبط متغيرات رمز الإحالة: ${editingLeader.code}`,
+            zh: `设置推荐码变量：${editingLeader.code}`,
+            ru: `Настройка реферального кода: ${editingLeader.code}`,
+          })}
+          onClose={() => setEditingLeader(null)}
+          footer={
+            <>
+              <button type="button" onClick={() => setEditingLeader(null)} className={erpGhostBtnCls}>
+                {lt(locale, { fa: 'انصراف', en: 'Cancel', ar: 'إلغاء', zh: '取消', ru: 'Отмена' })}
+              </button>
+              <button type="submit" form="erp-referral-edit-form" disabled={isUpdating} className={erpPrimaryBtnCls}>
+                {isUpdating && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
+                <span>{lt(locale, { fa: 'ذخیره تغییرات', en: 'Save Changes', ar: 'حفظ التغييرات', zh: '保存更改', ru: 'Сохранить' })}</span>
+              </button>
+            </>
+          }
+        >
+          <form id="erp-referral-edit-form" onSubmit={handleUpdateCode} className="space-y-4">
+            {/* Header info */}
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-soft/60 border border-line">
+              <div>
+                <div className="text-[11px] text-sub font-bold">
+                  {lt(locale, { fa: 'سرگروه', en: 'Leader', ar: 'القائد', zh: '领队', ru: 'Лидер' })}
+                </div>
+                <div className="font-bold text-ink text-sm">{editingLeader.leaderName}</div>
+                <div className="text-[11px] text-sub font-mono">{editingLeader.leaderPhone}</div>
+              </div>
+              <div className="text-end">
+                <div className="text-[11px] text-sub font-bold">
+                  {lt(locale, { fa: 'کد معرف', en: 'Code', ar: 'الرمز', zh: '代码', ru: 'Код' })}
+                </div>
+                <div className="font-mono font-black text-brand-dark bg-mint/50 px-2.5 py-1 rounded-lg text-sm border border-brand/20">
+                  {editingLeader.code}
+                </div>
+              </div>
+            </div>
+
+            {/* Active / Inactive switch */}
+            <div className="flex items-center justify-between p-3 rounded-2xl border border-line bg-surface">
+              <div>
+                <div className="font-bold text-xs text-ink">
+                  {lt(locale, { fa: 'وضعیت فعال بودن کد', en: 'Code Active Status', ar: 'حالة تفعيل الرمز', zh: '代码启用状态', ru: 'Статус активности кода' })}
+                </div>
+                <div className="text-[11px] text-sub">
+                  {editIsActive
+                    ? lt(locale, { fa: 'کد فعال است و مسافران می‌توانند تخفیف دریافت کنند', en: 'Code is active and discounts apply', ar: 'الرمز نشط ويتم تطبيق الخصم', zh: '代码有效并可享受折扣', ru: 'Код активен и скидка применяется' })
+                    : lt(locale, { fa: 'کد غیرفعال است و تخفیفی اعمال نمی‌شود', en: 'Code is inactive — no discounts apply', ar: 'الرمز غير نشط — لا يتم تطبيق الخصم', zh: '代码已停用，不享受折扣', ru: 'Код неактивен — скидка не применяется' })}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditIsActive(!editIsActive)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  editIsActive
+                    ? 'bg-emerald-500/15 text-emerald-600 border border-emerald-500/30'
+                    : 'bg-destructive/15 text-destructive border border-destructive/30'
+                }`}
+              >
+                {editIsActive ? (
+                  <>
+                    <Check size={14} />
+                    <span>{lt(locale, { fa: 'فعال', en: 'Active', ar: 'نشط', zh: '已启用', ru: 'Активен' })}</span>
+                  </>
+                ) : (
+                  <>
+                    <X size={14} />
+                    <span>{lt(locale, { fa: 'غیرفعال', en: 'Inactive', ar: 'معطل', zh: '已停用', ru: 'Неактивен' })}</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Configurable variables */}
+            <ReferralVariableFields
+              discountPercent={editDiscountPercent}
+              setDiscountPercent={setEditDiscountPercent}
+              capType={editCapType}
+              setCapType={setEditCapType}
+              customCapIrr={editCustomCapIrr}
+              setCustomCapIrr={setEditCustomCapIrr}
+              maxUsesType={editMaxUsesType}
+              setMaxUsesType={setEditMaxUsesType}
+              customMaxUses={editCustomMaxUses}
+              setCustomMaxUses={setEditCustomMaxUses}
+              tierPresetKey={editTierPresetKey}
+              setTierPresetKey={setEditTierPresetKey}
+              locale={locale}
+            />
           </form>
         </ErpModal>
       )}

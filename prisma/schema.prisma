@@ -47,6 +47,8 @@ model User {
   referralCodes           ReferralCode[]
   assistantConversations  AssistantConversation[]
   pushSubscriptions       PushSubscription[]
+  behaviorEvents          BehaviorEvent[]
+  supportTickets          SupportTicket[]
 }
 
 // Firuzo AI assistant (دستیار هوشمند) — persisted chat threads per user
@@ -1246,6 +1248,25 @@ model TourItineraryDay {
   @@index([tourId])
 }
 
+// Tombstone for CMS-deleted static catalog entries.
+//
+// The public catalog serves static seed copies (tours-service DETAILED_TOURS,
+// country signature experiences, fallback guides) whenever no DB row exists
+// for an id. Without this record, deleting a seeded tour in the CMS would
+// resurrect its static twin on the next read (the reported "deletes don't
+// work" bug). A tombstone suppresses ONLY the static fallback — an existing
+// DB row (e.g. restored by seed) always wins and renders normally.
+model DeletedStaticRef {
+  id        String   @id @default(cuid())
+  kind      String   // 'tour' | 'experience' | 'guide'
+  refId     String   // static id, e.g. 't3'
+  reason    String?  // e.g. 'cms_delete'
+  createdAt DateTime @default(now())
+
+  @@unique([kind, refId])
+  @@index([kind])
+}
+
 model SignatureExperience {
   id          String   @id @default(cuid())
   countryId   String   // iran, turkey, uae, georgia, russia, oman, china
@@ -1448,6 +1469,39 @@ model FlightRouteDemand {
   @@index([enabled, priority])
 }
 
+// ==================== 6. Behavior Analytics & Heatmap (ERP) ====================
+// Privacy-safe first-party product analytics backing the ERP heatmap.
+// - No PII: route is normalized, props are scalar + scrubbed, selectors carry
+//   tag/aria only (never text content).
+// - Respects DNT client-side; server clamps batch size + rate-limits.
+// - Source of truth for ERP heatmap; PostHog remains an optional mirror.
+model BehaviorEvent {
+  id          String   @id @default(cuid())
+  userId      String?
+  anonymousId String
+  sessionId   String
+  type        String   // PAGE_VIEW | CLICK | SCROLL_DEPTH | FUNNEL
+  route       String   // normalized path, e.g. /fa/flights/search (max 200)
+  locale      String?  // fa | en | ar | zh | ru
+  xPct        Float?   // click X normalized 0..100
+  yPct        Float?   // click Y normalized 0..100
+  scrollPct   Int?     // 25 | 50 | 75 | 100
+  selector    String?  // tag[data-attr] truncated, max 120
+  viewportW   Int?
+  viewportH   Int?
+  device      String?  // mobile | tablet | desktop
+  props       String?  // JSON scalar-only sanitized payload
+  createdAt   DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([route, createdAt])
+  @@index([sessionId, createdAt])
+  @@index([type, createdAt])
+  @@index([createdAt])
+}
+
 // Competitor price probe (best-price-guarantee support) — lowest observed
 // bookable adult fare per competitor for a route+departure. Gated by
 // COMPETITOR_PROBE_ENABLED and low-rate by design
@@ -1468,6 +1522,45 @@ model CompetitorPriceSnapshot {
 
   @@unique([competitor, routeKey, departureDate])
   @@index([routeKey, departureDate])
+}
+
+// ==================== 7. Customer Support & Ticketing (CRM-001) ====================
+model SupportTicket {
+  id           String          @id @default(cuid())
+  ticketNumber String          @unique
+  userId       String?
+  name         String
+  email        String?
+  phone        String?
+  subject      String
+  category     String          // FLIGHTS, HOTELS, TOURS, REFUNDS, FINANCIAL, GENERAL
+  priority     String          @default("MEDIUM")
+  status       String          @default("OPEN")
+  bookingRef   String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  user         User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  messages     TicketMessage[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([category])
+  @@index([ticketNumber])
+}
+
+model TicketMessage {
+  id         String        @id @default(cuid())
+  ticketId   String
+  authorId   String?
+  authorName String
+  senderType String        // CUSTOMER, STAFF, SYSTEM
+  message    String        @db.Text
+  createdAt  DateTime      @default(now())
+
+  ticket     SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
 }
 
 

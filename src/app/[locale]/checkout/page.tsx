@@ -63,6 +63,7 @@ export default function CheckoutPage() {
   const [addInsurance, setAddInsurance] = useState(false);
   const [referralCode, setReferralCode] = useState('');
   const [referralDiscountAmount, setReferralDiscountAmount] = useState(0);
+  const [referralServerStatus, setReferralServerStatus] = useState<'VALID' | 'UNMATCHED' | 'SELF_REFERRAL' | 'INACTIVE' | null>(null);
   const [draftBookingId, setDraftBookingId] = useState<string | null>(null);
   const [serverWallet, setServerWallet] = useState<number | null>(null);
   const [method, setMethod] = useState<PaymentMethodType>('gateway_ecardo');
@@ -271,7 +272,7 @@ export default function CheckoutPage() {
   // Wait for the persisted store before deciding — avoids a false empty state.
   if (!hydrated) {
     return (
-      <div className="min-h-screen bg-paper py-12 px-4">
+      <div className="min-h-dvh bg-paper py-12 px-4">
         <div className="max-w-4xl mx-auto space-y-4" aria-busy="true" aria-live="polite">
           <div className="h-10 w-64 rounded-xl bg-soft animate-pulse" />
           <div className="h-72 rounded-3xl bg-soft animate-pulse" />
@@ -284,7 +285,7 @@ export default function CheckoutPage() {
   // No fabricated orders: without a real booking context there is nothing to check out.
   if (!bookingContext) {
     return (
-      <div className="min-h-screen bg-paper py-16 md:py-24 px-4">
+      <div className="min-h-dvh bg-paper py-16 md:py-24 px-4">
         <div className="max-w-md mx-auto text-center bg-surface border border-line rounded-3xl p-10 shadow-sm">
           <div className="w-16 h-16 rounded-full bg-mint grid place-items-center mx-auto mb-5 text-2xl" aria-hidden>
             🧳
@@ -318,7 +319,7 @@ export default function CheckoutPage() {
   // redirected to sign-in with all data gone.
   if (!authUser) {
     return (
-      <div className="min-h-screen bg-paper py-16 md:py-24 px-4">
+      <div className="min-h-dvh bg-paper py-16 md:py-24 px-4">
         <div className="max-w-md mx-auto text-center bg-surface border border-line rounded-3xl p-10 shadow-sm">
           <div className="w-16 h-16 rounded-full bg-mint grid place-items-center mx-auto mb-5 text-2xl" aria-hidden>
             🔐
@@ -596,7 +597,7 @@ export default function CheckoutPage() {
           draftError === 'Unauthorized'
             ? lt(locale, { fa: 'برای ادامه وارد حساب خود شوید.', en: 'Please sign in to continue.', ar: 'يرجى تسجيل الدخول للمتابعة.', zh: '请先登录后继续。', ru: 'Войдите, чтобы продолжить.' })
             : draftError
-              ? lt(locale, { fa: 'خطا در ثبت سبد خرید: ', en: 'Cart booking failed: ', ar: 'فشل حجز السلة: ', zh: '购物车预订失败：', ru: 'Ошибка броینگ سبد خرید: ' }) + draftError
+              ? lt(locale, { fa: 'خطا در ثبت سبد خرید: ', en: 'Cart booking failed: ', ar: 'فشل حجز السلة: ', zh: '购物车预订失败：', ru: 'Ошибка бронирования корзины: ' }) + draftError
               : lt(locale, { fa: 'خطا در ثبت رزرو. دوباره تلاش کنید.', en: 'Could not create the booking draft. Please retry.', ar: 'تعذر إنشاء الحجز. حاول مجدداً.', zh: '创建预订失败，请重试。', ru: 'Не удалось создать бронирование. Повторите попытку.' })
         );
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -643,8 +644,19 @@ export default function CheckoutPage() {
 
       if ('bookingId' in draft && draft.bookingId) {
         setDraftBookingId(draft.bookingId);
-        if (typeof draft.discountAmount === 'number' && draft.discountAmount > 0) {
+        // Server is authoritative for the referral benefit (cap, stacking,
+        // promo-wins, self/inactive): always overwrite, including explicit
+        // zero — otherwise a stale client estimate stays displayed.
+        if (typeof draft.referralDiscountAmount === 'number') {
+          setReferralDiscountAmount(draft.referralDiscountAmount);
+        } else if (typeof draft.discountAmount === 'number') {
           setReferralDiscountAmount(draft.discountAmount);
+        }
+        if (referralCode.trim() && typeof draft.referralStatus === 'string') {
+          const s = draft.referralStatus as typeof referralServerStatus;
+          if (s === 'VALID' || s === 'UNMATCHED' || s === 'SELF_REFERRAL' || s === 'INACTIVE') {
+            setReferralServerStatus(s);
+          }
         }
         if (isDomesticTour) {
           toast.success(
@@ -827,7 +839,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-paper pt-8 pb-36 md:py-12 lg:pb-12 px-4 md:px-8">
+    <div className="min-h-dvh bg-paper pt-8 pb-36 md:py-12 lg:pb-12 px-4 md:px-8">
       <div className="max-w-5xl mx-auto">
         {/* Stepper */}
         {phase !== 'success' && <CheckoutStepper phase={phase} />}
@@ -886,7 +898,11 @@ export default function CheckoutPage() {
 
               <ReferralInputSection
                 referralCode={referralCode}
-                setReferralCode={setReferralCode}
+                setReferralCode={(code) => {
+                  setReferralCode(code);
+                  // Fresh input invalidates the last server verdict.
+                  setReferralServerStatus(null);
+                }}
                 onValidationChange={(isValid, discountPercent) => {
                   if (isValid) {
                     setReferralDiscountAmount(Math.round(baseAmount * discountPercent));
@@ -894,6 +910,7 @@ export default function CheckoutPage() {
                     setReferralDiscountAmount(0);
                   }
                 }}
+                syncStatus={referralServerStatus}
               />
 
               <div className="pt-2">

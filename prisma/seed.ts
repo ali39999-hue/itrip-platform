@@ -469,6 +469,12 @@ async function main() {
         });
       }
     }
+
+    // The canonical seed restores this tour id — any CMS tombstone for it
+    // is stale (the DB row below is authoritative again).
+    await prisma.deletedStaticRef.deleteMany({
+      where: { kind: 'tour', refId: tour.id },
+    }).catch(() => {});
   }
 
   // 7. Seed Signature Experiences

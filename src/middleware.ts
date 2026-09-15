@@ -5,6 +5,13 @@ import createMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 import { validateCsrfRequest } from './lib/security/csrf-protection';
 import { isSafeRedirectUrl } from './lib/security/url-validator';
+import {
+  NEXT_LOCALE_COOKIE,
+  countryToLocale,
+  detectCountryFromHeaders,
+  getFirstVisitLocale,
+  isSupportedLocale,
+} from './lib/locale-detection';
 
 // Create the next-intl middleware
 const intlMiddleware = createMiddleware(routing);
@@ -72,9 +79,18 @@ export async function middleware(request: NextRequest) {
     return withCorrelation(NextResponse.next());
   }
 
+  // Preferred locale for prefix-less paths: explicit NEXT_LOCALE cookie
+  // first, then IP/CDN country, then the legacy 'fa' fallback. A locale
+  // prefix already in the URL always wins (handled by next-intl below).
+  const cookieLocale = request.cookies.get(NEXT_LOCALE_COOKIE)?.value;
+  const ipCountry = detectCountryFromHeaders((name) => request.headers.get(name));
+  const preferredLocale = isSupportedLocale(cookieLocale)
+    ? cookieLocale
+    : (countryToLocale(ipCountry) ?? 'fa');
+
   // Extract valid locale if present
   const localeMatch = pathname.match(/^\/(fa|en|ar|zh|ru)(\/|$)/);
-  const locale = localeMatch ? localeMatch[1] : 'fa';
+  const locale = localeMatch ? localeMatch[1] : preferredLocale;
 
   // 2. Handle /login, /signin or /[locale]/(login|signin|auth/signin) aliases -> redirect to /[locale]/auth (SEC-104 open redirect check)
   if (
@@ -91,14 +107,24 @@ export async function middleware(request: NextRequest) {
     return withCorrelation(NextResponse.redirect(authUrl));
   }
 
+  // 2b. Handle /erp or /[locale]/erp aliases -> redirect to /[locale]/admin
+  const erpMatch = pathname.match(/^\/(?:(fa|en|ar|zh|ru)\/)?erp(?:\/(.*))?$/);
+  if (erpMatch) {
+    const targetLocale = erpMatch[1] || locale;
+    const subPath = erpMatch[2] ? `/${erpMatch[2]}` : '';
+    return withCorrelation(NextResponse.redirect(new URL(`/${targetLocale}/admin${subPath}`, request.url)));
+  }
+
   // 3. Handle /admin paths (with or without locale prefix)
   const isAdminPath = pathname.match(/^\/(?:(?:fa|en|ar|zh|ru)\/)?admin(?:\/|$)/);
-  
+
   if (isAdminPath) {
     const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
     if (!secret) {
       // No secret configured — block admin access entirely
-      return withCorrelation(NextResponse.redirect(new URL('/' + locale + '/auth', request.url)));
+      const authUrl = new URL('/' + locale + '/auth', request.url);
+      authUrl.searchParams.set('callbackUrl', pathname);
+      return withCorrelation(NextResponse.redirect(authUrl));
     }
 
     // Get next-auth token safely without throwing.
@@ -150,6 +176,8 @@ export async function middleware(request: NextRequest) {
       // Check if logged in user has sufficient canonical permissions for admin sub-routes (IAM-107)
       if (token) {
         const userPerms = (token.permissions as string[]) || [];
+        const userRole = (token.role as string) || '';
+        const isSuperOrAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN';
         const normalizedPath = pathname.replace(/^\/(fa|en|ar|zh|ru)/, '');
         const matchingRoute = Object.keys(ROUTE_REQUIRED_PERMISSIONS)
           .sort((a, b) => b.length - a.length)
@@ -159,19 +187,44 @@ export async function middleware(request: NextRequest) {
           const requiredPerms = ROUTE_REQUIRED_PERMISSIONS[matchingRoute];
           // Canonical relational check: user must possess at least one of the route's required
           // permissions. `'*'` is only ever minted server-side for SUPER_ADMIN (src/auth.ts).
-          const hasAccess = userPerms.includes('*') || requiredPerms.some((p) => userPerms.includes(p));
+          const hasAccess = isSuperOrAdmin || userPerms.includes('*') || requiredPerms.some((p) => userPerms.includes(p));
           if (!hasAccess) {
             return withCorrelation(NextResponse.redirect(new URL('/' + locale + '/account', request.url)));
           }
         }
       } else {
-        // Unauthenticated user trying to access admin — redirect to auth
-        return withCorrelation(NextResponse.redirect(new URL('/' + locale + '/auth', request.url)));
+        // Unauthenticated user trying to access admin — redirect to auth with callbackUrl
+        const authUrl = new URL('/' + locale + '/auth', request.url);
+        authUrl.searchParams.set('callbackUrl', pathname);
+        return withCorrelation(NextResponse.redirect(authUrl));
       }
     } catch {
       // Fail closed: an unreadable token never grants admin access.
-      return withCorrelation(NextResponse.redirect(new URL('/' + locale + '/auth', request.url)));
+      const authUrl = new URL('/' + locale + '/auth', request.url);
+      authUrl.searchParams.set('callbackUrl', pathname);
+      return withCorrelation(NextResponse.redirect(authUrl));
     }
+  }
+
+  // 3b. First-visit IP locale: prefix-less page navigation with no stored
+  // choice redirects to the IP-detected locale (and stores it, so next-intl
+  // and later visits honor the same choice). Explicit prefixes, stored
+  // cookies, and unknown countries fall through to next-intl unchanged.
+  const hasLocalePrefix = localeMatch !== null;
+  const hasLocaleCookie = isSupportedLocale(cookieLocale);
+  const firstVisitLocale = getFirstVisitLocale({ cookieLocale, country: ipCountry });
+  // GET/HEAD only: never reroute mutations (form posts, server actions).
+  const isNavigational = request.method === 'GET' || request.method === 'HEAD';
+  if (isNavigational && !hasLocalePrefix && !hasLocaleCookie && firstVisitLocale && ipCountry) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/${firstVisitLocale}${pathname === '/' ? '' : pathname}`;
+    const redirect = NextResponse.redirect(url);
+    redirect.cookies.set(NEXT_LOCALE_COOKIE, firstVisitLocale, {
+      path: '/',
+      maxAge: 31536000,
+      sameSite: 'lax',
+    });
+    return withCorrelation(redirect);
   }
 
   // 4. Delegate to next-intl middleware for routing/redirects (if not an API route)

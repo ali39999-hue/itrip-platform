@@ -6,11 +6,18 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useAuthStore } from '@/stores/auth-store';
 import {
   Phone, Mail, MessageSquare, Send, CheckCircle2, Headphones,
-  ChevronDown, Clock, Zap
+  ChevronDown, Clock, Zap, MessageSquareQuote, ShieldAlert, RefreshCw, AlertCircle
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { lt } from '@/lib/lt';
 import { getSupportPageConfigAction } from '@/actions/account-panel';
+import {
+  createSupportTicketAction,
+  getUserTicketsAction,
+  getTicketDetailsAction,
+  addTicketReplyAction,
+} from '@/actions/tickets';
+import type { SupportTicketRecord, TicketSummaryItem } from '@/domains/tickets/TicketDomainService';
 
 interface SupportCfg {
   phone: string;
@@ -35,6 +42,18 @@ export default function SupportPage() {
   const authUser = useAuthStore((s) => s.user);
 
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [createdTicket, setCreatedTicket] = useState<SupportTicketRecord | null>(null);
+
+  // User Tickets History & Thread
+  const [myTickets, setMyTickets] = useState<TicketSummaryItem[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicketRecord | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [isReplying, setIsReplying] = useState(false);
+  const [activeTab, setActiveTab] = useState<'NEW_TICKET' | 'MY_TICKETS'>('NEW_TICKET');
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [category, setCategory] = useState('flights');
@@ -43,6 +62,17 @@ export default function SupportPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   // CMS-driven contact channels (support.page key) — shipped defaults until loaded
   const [cfg, setCfg] = useState<SupportCfg>(FALLBACK_SUPPORT);
+
+  useEffect(() => {
+    getUserTicketsAction().then((res) => {
+      if (res.success && res.tickets) {
+        setMyTickets(res.tickets);
+        if (res.tickets.length > 0 && !submitted) {
+          // Keep default as NEW_TICKET but let user switch
+        }
+      }
+    });
+  }, [authUser, submitted]);
 
   useEffect(() => {
     let cancelled = false;
@@ -109,14 +139,71 @@ export default function SupportPage() {
     },
   ];
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name || !email || !message) return;
-    setSubmitted(true);
+    if (!name.trim() || !message.trim()) return;
+    setIsSubmitting(true);
+    setSubmitError('');
+
+    const categoryMap: Record<string, 'FLIGHTS' | 'HOTELS' | 'TOURS' | 'REFUNDS' | 'FINANCIAL' | 'GENERAL'> = {
+      flights: 'FLIGHTS',
+      hotels: 'HOTELS',
+      wallet: 'FINANCIAL',
+      visa: 'GENERAL',
+      esim: 'GENERAL',
+      refunds: 'REFUNDS',
+    };
+
+    const res = await createSupportTicketAction({
+      name: name.trim(),
+      email: email.trim() || undefined,
+      phone: authUser?.phone || undefined,
+      subject: `درخواست پشتیبانی (${categoryMap[category] || 'GENERAL'}): ${name}`,
+      category: categoryMap[category] || 'GENERAL',
+      bookingRef: reference.trim() || undefined,
+      message: message.trim(),
+    });
+
+    setIsSubmitting(false);
+    if (res.success && res.ticket) {
+      setCreatedTicket(res.ticket);
+      setSubmitted(true);
+      getUserTicketsAction().then((r) => {
+        if (r.success && r.tickets) setMyTickets(r.tickets);
+      });
+    } else {
+      setSubmitError(res.error || 'خطا در ثبت تیکت پشتیبانی');
+    }
+  }
+
+  async function handleOpenTicket(ticketId: string) {
+    setLoadingDetails(true);
+    const res = await getTicketDetailsAction(ticketId);
+    setLoadingDetails(false);
+    if (res.success && res.ticket) {
+      setSelectedTicket(res.ticket);
+    }
+  }
+
+  async function handleSendReply() {
+    if (!selectedTicket || !replyText.trim()) return;
+    setIsReplying(true);
+    const res = await addTicketReplyAction(selectedTicket.id, replyText.trim());
+    setIsReplying(false);
+    if (res.success) {
+      setReplyText('');
+      const updated = await getTicketDetailsAction(selectedTicket.id);
+      if (updated.success && updated.ticket) {
+        setSelectedTicket(updated.ticket);
+      }
+      getUserTicketsAction().then((r) => {
+        if (r.success && r.tickets) setMyTickets(r.tickets);
+      });
+    }
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-soft pb-24">
+    <div className="flex flex-col min-h-dvh bg-soft pb-24">
       {/* Mobile Action-First Header & Compact Hero */}
       <section className="relative w-full py-8 md:py-16 flex items-center justify-center overflow-hidden mb-6 md:mb-10 bg-gradient-to-b from-deep to-brand-dark text-surface">
         <div className="relative z-10 w-full max-w-4xl px-4 flex flex-col items-center text-center">
@@ -260,143 +347,415 @@ export default function SupportPage() {
             </div>
           </div>
 
-          {/* Ticket Form */}
+          {/* Ticket & Conversations Container */}
           <div className="lg:col-span-2 bg-surface rounded-3xl p-6 sm:p-8 border border-line shadow-xs">
-            <h2 className="font-black text-xl sm:text-2xl text-ink mb-1">{t('contactForm')}</h2>
-            <p className="text-xs font-bold text-sub mb-6">{lt(locale, { fa: 'پیام خود را ثبت کنید؛ کارشناسان ما ظرف کمتر از ۲ ساعت رسیدگی خواهند کرد.', en: 'Submit your ticket below and our team will follow up promptly.', ar: 'سجّل رسالتك وسنرد عليك في أسرع وقت.', zh: '提交工单后我们将尽快跟进处理。', ru: 'Оставьте заявку, и мы ответим в течение 2 часов.' })}</p>
+            {/* Header Tabs */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4 mb-6">
+              <div>
+                <h2 className="font-black text-xl sm:text-2xl text-ink mb-1">{t('contactForm')}</h2>
+                <p className="text-xs font-bold text-sub">
+                  {lt(locale, {
+                    fa: 'ثبت و پیگیری مستقیم درخواست‌ها و مکاتبات پشتیبانی ۲۴ ساعته',
+                    en: 'Submit and track 24/7 support requests and live agent messages',
+                    ar: 'تسجيل ومتابعة طلبات الدعم ورسائل الموظفين',
+                    zh: '提交并跟踪全天候工单与在线客服回复',
+                    ru: 'Создание и отслеживание обращений в службу поддержки',
+                  })}
+                </p>
+              </div>
 
-            {submitted ? (
-              <div className="p-8 text-center bg-mint/40 rounded-2xl border border-brand/30 flex flex-col items-center">
-                <CheckCircle2 size={42} className="text-brand-dark mb-3" />
-                <h3 className="font-black text-lg text-ink mb-1">{lt(locale, { fa: 'تیکت شما با موفقیت ثبت شد', en: 'Ticket Submitted Successfully', ar: 'تم استلام رسالتك', zh: '工单已提交成功', ru: 'Обращение успешно создано' })}</h3>
-                <p className="text-xs font-bold text-sub mb-5">{lt(locale, { fa: 'شماره پیگیری به ایمیل شما ارسال گردید و در کمتر از ۲ ساعت با شما در تماس خواهیم بود.', en: 'Tracking reference sent to your email. We will reach out shortly.', ar: 'تم إرسال رقم التتبع لبريدك وسنتواصل معك قريباً.', zh: '工单号已发送至您的邮箱，专员将在2小时内联系您。', ru: 'Номер заявки отправлен на почту. Мы скоро свяжемся с вами.' })}</p>
+              <div className="flex items-center gap-1.5 p-1 bg-soft rounded-2xl border border-line">
                 <button
                   type="button"
                   onClick={() => {
-                    setSubmitted(false);
-                    setName('');
-                    setEmail('');
-                    setReference('');
-                    setMessage('');
+                    setActiveTab('NEW_TICKET');
+                    setSelectedTicket(null);
                   }}
-                  className="px-6 py-2.5 rounded-xl bg-brand text-surface text-xs font-black transition active:scale-95"
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition ${
+                    activeTab === 'NEW_TICKET'
+                      ? 'bg-surface text-brand-dark shadow-xs'
+                      : 'text-sub hover:text-ink'
+                  }`}
                 >
-                  {lt(locale, { fa: 'ثبت درخواست جدید', en: 'Send Another Message', ar: 'إرسال رسالة جديدة', zh: '提交新工单', ru: 'Отправить ещё' })}
+                  {lt(locale, { fa: 'ثبت تیکت جدید', en: 'New Ticket', ar: 'تذكرة جديدة', zh: '新建工单', ru: 'Новая заявка' })}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('MY_TICKETS')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
+                    activeTab === 'MY_TICKETS'
+                      ? 'bg-surface text-brand-dark shadow-xs'
+                      : 'text-sub hover:text-ink'
+                  }`}
+                >
+                  <span>{lt(locale, { fa: 'پیگیری تیکت‌های من', en: 'My Tickets', ar: 'تذاكري', zh: '我的工单', ru: 'Мои заявки' })}</span>
+                  {myTickets.length > 0 && (
+                    <span className="w-5 h-5 rounded-full bg-brand text-surface text-[10px] grid place-items-center font-bold">
+                      {myTickets.length}
+                    </span>
+                  )}
                 </button>
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {reference && (
-                  <div className="p-3.5 rounded-2xl bg-mint/40 border border-brand/30 flex items-center gap-2.5 text-xs font-bold text-brand-dark mb-4 animate-in fade-in duration-200">
-                    <CheckCircle2 size={16} className="text-brand-dark shrink-0" />
-                    <span>
+            </div>
+
+            {/* TAB 1: NEW TICKET */}
+            {activeTab === 'NEW_TICKET' && (
+              <>
+                {submitted && createdTicket ? (
+                  <div className="p-8 text-center bg-mint/40 rounded-2xl border border-brand/30 flex flex-col items-center animate-in fade-in duration-200">
+                    <CheckCircle2 size={46} className="text-brand-dark mb-3" />
+                    <h3 className="font-black text-xl text-ink mb-1">
+                      {lt(locale, { fa: 'تیکت شما با موفقیت در سیستم ثبت شد', en: 'Ticket Submitted Successfully', ar: 'تم استلام تذكرتك بنجاح', zh: '工单已成功提交', ru: 'Обращение успешно зарегистрировано' })}
+                    </h3>
+                    <p className="text-xs font-bold text-sub mb-4">
                       {lt(locale, {
-                        fa: `سفارش مسافرتی #${reference} به این درخواست متصل شد (کارشناس به سوابق پرواز/هتل دسترسی دارد).`,
-                        en: `Travel booking #${reference} linked to this ticket (concierge has direct access to itinerary).`,
-                        ar: `تم ربط الحجز #${reference} بهذا الطلب.`,
-                        zh: `已关联旅行订单 #${reference}（客服可直接查阅行程）。`,
-                        ru: `Бронирование #${reference} привязано к заявке.`,
+                        fa: 'کد پیگیری رسمی تیکت شما صادر گردید. کارشناسان پشتیبانی ظرف حداکثر ۲ ساعت بررسی و پاسخ خواهند داد.',
+                        en: 'Your official support ticket number has been generated. Our team will follow up within 2 hours.',
+                        ar: 'تم إصدار رقم التذكرة الرسمي وسيتم الرد خلال ساعتين.',
+                        zh: '官方工单跟踪号已生成，专员将在2小时内跟进并回复。',
+                        ru: 'Официальный номер обращения создан. Мы ответим в течение 2 часов.',
                       })}
-                    </span>
+                    </p>
+
+                    <div className="p-3 px-6 rounded-2xl bg-surface border border-brand/40 shadow-xs mb-6 flex flex-col items-center">
+                      <span className="text-[11px] font-bold text-sub mb-0.5">
+                        {lt(locale, { fa: 'شماره رهگیری تیکت:', en: 'Ticket Number:', ar: 'رقم التتبع:', zh: '工单编号：', ru: 'Номер обращения:' })}
+                      </span>
+                      <span className="font-mono text-xl font-black text-brand-dark tracking-wider" dir="ltr">
+                        {createdTicket.ticketNumber}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedTicket(createdTicket);
+                          setActiveTab('MY_TICKETS');
+                        }}
+                        className="h-11 px-6 rounded-xl bg-brand hover:bg-brand-dark text-surface text-xs font-black transition active:scale-95 flex items-center gap-2 shadow-xs"
+                      >
+                        <MessageSquareQuote size={16} />
+                        <span>{lt(locale, { fa: 'مشاهده گفتگو و ارسال پیام تکمیلی', en: 'View Conversation & Reply', ar: 'عرض المحادثة والرد', zh: '查看对话并补充信息', ru: 'Просмотр беседы и ответ' })}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSubmitted(false);
+                          setCreatedTicket(null);
+                          setName(authUser ? (locale === 'fa' ? `${authUser.firstNameFa || ''} ${authUser.lastNameFa || ''}`.trim() : `${authUser.firstNameEn || ''} ${authUser.lastNameEn || ''}`.trim()) : '');
+                          setMessage('');
+                          setReference('');
+                        }}
+                        className="h-11 px-6 rounded-xl bg-surface hover:bg-soft border border-line text-ink text-xs font-black transition active:scale-95"
+                      >
+                        {lt(locale, { fa: 'ثبت تیکت جدید دیگر', en: 'Submit Another Ticket', ar: 'إرسال تذكرة أخرى', zh: '提交新工单', ru: 'Создать ещё' })}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {submitError && (
+                      <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+                        <AlertCircle size={16} className="shrink-0" />
+                        <span>{submitError}</span>
+                      </div>
+                    )}
+
+                    {reference && (
+                      <div className="p-3.5 rounded-2xl bg-mint/40 border border-brand/30 flex items-center gap-2.5 text-xs font-bold text-brand-dark mb-4 animate-in fade-in duration-200">
+                        <CheckCircle2 size={16} className="text-brand-dark shrink-0" />
+                        <span>
+                          {lt(locale, {
+                            fa: `سفارش مسافرتی #${reference} به این درخواست متصل شد (کارشناس به سوابق پرواز/هتل دسترسی دارد).`,
+                            en: `Travel booking #${reference} linked to this ticket (concierge has direct access to itinerary).`,
+                            ar: `تم ربط الحجز #${reference} بهذا الطلب.`,
+                            zh: `已关联旅行订单 #${reference}（客服可直接查阅行程）。`,
+                            ru: `Бронирование #${reference} привязано к заявке.`,
+                          })}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="support-name" className="block text-xs font-bold text-sub mb-1">
+                          {lt(locale, { fa: 'نام و نام خانوادگی', en: 'Full Name', ar: 'الاسم الكامل', zh: '姓名', ru: 'ФИО' })}
+                        </label>
+                        <Input
+                          id="support-name"
+                          type="text"
+                          required
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder={lt(locale, { fa: 'علی رضایی', en: 'John Doe', ar: 'علي رضائي', zh: '阿里·雷扎伊', ru: 'Али Резаи' })}
+                          className="font-bold text-sm h-11 rounded-xl"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="support-email" className="block text-xs font-bold text-sub mb-1">
+                          {t('email')}
+                        </label>
+                        <Input
+                          id="support-email"
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="name@example.com"
+                          className="font-bold text-sm font-mono h-11 rounded-xl"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="support-category" className="block text-xs font-bold text-sub mb-1">
+                          {lt(locale, { fa: 'دسته‌بندی موضوع', en: 'Subject Category', ar: 'التصنيف', zh: '问题类型', ru: 'Категория вопроса' })}
+                        </label>
+                        <select
+                          id="support-category"
+                          value={category}
+                          onChange={(e) => setCategory(e.target.value)}
+                          className="w-full h-11 rounded-xl border border-line px-3 text-xs font-bold bg-surface text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                        >
+                          <option value="flights">
+                            {lt(locale, { fa: 'پرواز و استرداد بلیط', en: 'Flights & Ticket Refunds', ar: 'الطيران واسترداد التذاكر', zh: '机票与退订', ru: 'Рейсы и возврат билетов' })}
+                          </option>
+                          <option value="hotels">
+                            {lt(locale, { fa: 'هتل و واچر اقامتگاه', en: 'Hotels & Accommodation Voucher', ar: 'الفنادق وقسائم الإقامة', zh: '酒店与住宿凭证', ru: 'Отели и ваучеры' })}
+                          </option>
+                          <option value="wallet">
+                            {lt(locale, { fa: 'کیف پول و درگاه پرداخت', en: 'Wallet & Payment Gateways', ar: 'المحفظة وبوابات الدفع', zh: '钱包与支付网关', ru: 'Кошелек и оплаتا' })}
+                          </option>
+                          <option value="visa">
+                            {lt(locale, { fa: 'ویزا و خدمات ورود', en: 'Visa & Entry Services', ar: 'التأشيرات وخدمات الدخول', zh: '签证与入境服务', ru: 'Визы и въезд' })}
+                          </option>
+                          <option value="esim">
+                            {lt(locale, { fa: 'سیم‌کارت بین‌المللی eSIM', en: 'International eSIM', ar: 'شريحة eSIM الدولية', zh: '国际 eSIM 卡', ru: 'Международная eSIM' })}
+                          </option>
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="support-reference" className="block text-xs font-bold text-sub mb-1">
+                          {lt(locale, { fa: 'کد پیگیری یا شماره رزرو (اختیاری)', en: 'Booking PNR (Optional)', ar: 'رقم الحجز (اختياري)', zh: '预订参考号（选填）', ru: 'Код PNR (опционально)' })}
+                        </label>
+                        <Input
+                          id="support-reference"
+                          type="text"
+                          value={reference}
+                          onChange={(e) => setReference(e.target.value)}
+                          placeholder="e.g. #THR-8842"
+                          className="font-mono text-sm h-11 rounded-xl"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label htmlFor="support-message" className="block text-xs font-bold text-sub mb-1">
+                        {lt(locale, { fa: 'متن پیام یا شرح مشکل', en: 'Message Details', ar: 'تفاصيل الرسالة', zh: '问题详情', ru: 'Описание проблемы' })}
+                      </label>
+                      <textarea
+                        id="support-message"
+                        required
+                        rows={4}
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        placeholder={lt(locale, { fa: 'جزییات درخواست، شماره پرواز یا سوال خود را اینجا یادداشت کنید...', en: 'Describe your question or issue in detail...', ar: 'اكتب تفاصيل استفسارك هنا...', zh: '请详细描述您的问题...', ru: 'Подробно опишите ваш вопрос...' })}
+                        className="w-full p-3.5 rounded-xl border border-line text-xs sm:text-sm font-bold bg-surface text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full sm:w-auto h-11 px-8 rounded-xl bg-brand hover:bg-brand-dark text-surface font-black text-xs transition active:scale-95 flex items-center justify-center gap-2 shadow-xs disabled:opacity-50 cursor-pointer"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <RefreshCw size={15} className="animate-spin" />
+                          <span>{lt(locale, { fa: 'در حال ثبت در پایگاه داده...', en: 'Submitting Ticket...', ar: 'جارٍ التسجيل...', zh: '正在提交...', ru: 'Регистрация...' })}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send size={15} />
+                          <span>{t('submit')}</span>
+                        </>
+                      )}
+                    </button>
+                  </form>
+                )}
+              </>
+            )}
+
+            {/* TAB 2: MY TICKETS & LIVE CONVERSATION */}
+            {activeTab === 'MY_TICKETS' && (
+              <div className="space-y-4">
+                {selectedTicket ? (
+                  /* Conversation Thread View */
+                  <div className="space-y-4 animate-in fade-in duration-150">
+                    <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-soft rounded-2xl border border-line">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-mono text-sm font-black text-brand-dark" dir="ltr">
+                            {selectedTicket.ticketNumber}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-brand/10 text-brand-dark">
+                            {selectedTicket.category}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">
+                            {selectedTicket.status}
+                          </span>
+                        </div>
+                        <h4 className="font-black text-sm text-ink">{selectedTicket.subject}</h4>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTicket(null)}
+                        className="px-3 py-1.5 rounded-xl bg-surface border border-line text-xs font-bold text-sub hover:text-ink transition"
+                      >
+                        {lt(locale, { fa: 'بازگشت به لیست', en: 'Back to List', ar: 'رجوع للقائمة', zh: '返回列表', ru: 'Назад к списку' })}
+                      </button>
+                    </div>
+
+                    {/* Messages Bubble Stream */}
+                    <div className="p-4 bg-soft/50 rounded-2xl border border-line space-y-3 max-h-[420px] overflow-y-auto">
+                      {selectedTicket.messages.map((m) => {
+                        const isStaff = m.senderType === 'STAFF';
+                        const isSys = m.senderType === 'SYSTEM';
+
+                        if (isSys) {
+                          return (
+                            <div key={m.id} className="text-center text-[10px] text-sub font-mono py-1">
+                              {m.message}
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div
+                            key={m.id}
+                            className={`flex flex-col ${isStaff ? 'items-start' : 'items-end'}`}
+                          >
+                            <div
+                              className={`max-w-[85%] sm:max-w-[75%] p-3.5 rounded-2xl text-xs sm:text-sm font-medium ${
+                                isStaff
+                                  ? 'bg-surface text-ink border border-line shadow-xs rounded-se-xs'
+                                  : 'bg-brand text-surface shadow-xs rounded-ss-xs'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-3 text-[10px] font-bold opacity-80 mb-1 border-b border-current/15 pb-1">
+                                <span>{m.authorName}</span>
+                                <span dir="ltr">{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                              </div>
+                              <p className="whitespace-pre-wrap leading-relaxed">{m.message}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Reply Input Form */}
+                    <div className="space-y-2">
+                      <textarea
+                        rows={3}
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        placeholder={lt(locale, {
+                          fa: 'پاسخ یا پیام جدید خود را برای پشتیبانی بنویسید...',
+                          en: 'Type your reply message to support...',
+                          ar: 'اكتب ردك هنا...',
+                          zh: '输入您对客服的回复...',
+                          ru: 'Напишите ваш ответ в поддержку...',
+                        })}
+                        className="w-full p-3 rounded-xl border border-line text-xs sm:text-sm bg-surface text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSendReply}
+                        disabled={isReplying || !replyText.trim()}
+                        className="h-10 px-6 rounded-xl bg-brand hover:bg-brand-dark text-surface text-xs font-black transition active:scale-95 flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                      >
+                        {isReplying ? (
+                          <RefreshCw size={14} className="animate-spin" />
+                        ) : (
+                          <Send size={14} />
+                        )}
+                        <span>{lt(locale, { fa: 'ارسال پاسخ', en: 'Send Reply', ar: 'إرسال الرد', zh: '发送回复', ru: 'Отправить ответ' })}</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Tickets List */
+                  <div className="space-y-3">
+                    {loadingDetails ? (
+                      <div className="p-8 text-center text-sub text-xs">
+                        <RefreshCw size={20} className="animate-spin mx-auto mb-2 text-brand" />
+                        <span>{lt(locale, { fa: 'در حال بارگذاری گفتگو...', en: 'Loading conversation...', ar: 'جارٍ التحميل...', zh: '加载中...', ru: 'Загрузка...' })}</span>
+                      </div>
+                    ) : myTickets.length === 0 ? (
+                      <div className="p-8 text-center bg-soft rounded-2xl border border-line flex flex-col items-center">
+                        <MessageSquareQuote size={36} className="text-sub/50 mb-2" />
+                        <h4 className="font-black text-sm text-ink mb-1">
+                          {lt(locale, { fa: 'تیکتی یافت نشد', en: 'No Tickets Found', ar: 'لا توجد تذاكر', zh: '未找到工单', ru: 'Заявок не найдено' })}
+                        </h4>
+                        <p className="text-xs font-bold text-sub mb-4">
+                          {lt(locale, {
+                            fa: 'تاکنون تیکت پشتیبانی با این مشخصات ثبت نکرده‌اید.',
+                            en: 'You have not submitted any support tickets yet.',
+                            ar: 'لم تسجل أي تذكرة حتى الآن.',
+                            zh: '您尚未提交过任何客服工单。',
+                            ru: 'Вы пока не создавали обращений.',
+                          })}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('NEW_TICKET')}
+                          className="px-4 py-2 rounded-xl bg-brand text-surface text-xs font-black transition"
+                        >
+                          {lt(locale, { fa: 'ثبت اولین تیکت', en: 'Create First Ticket', ar: 'تسجيل أول تذكرة', zh: '创建第一个工单', ru: 'Создать первое обращение' })}
+                        </button>
+                      </div>
+                    ) : (
+                      myTickets.map((t) => (
+                        <div
+                          key={t.id}
+                          onClick={() => handleOpenTicket(t.id)}
+                          className="p-4 bg-surface hover:bg-soft rounded-2xl border border-line transition cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-xs font-black text-brand-dark" dir="ltr">
+                                {t.ticketNumber}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-brand/10 text-brand-dark">
+                                {t.category}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">
+                                {t.status}
+                              </span>
+                            </div>
+                            <h4 className="font-black text-sm text-ink">{t.subject}</h4>
+                            <p className="text-xs text-sub truncate max-w-lg">{t.lastMessageSnippet}</p>
+                          </div>
+
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span className="text-[11px] font-bold text-sub" dir="ltr">
+                              {new Date(t.updatedAt).toLocaleDateString()}
+                            </span>
+                            <button
+                              type="button"
+                              className="px-3.5 py-1.5 rounded-xl bg-brand/10 hover:bg-brand text-brand-dark hover:text-surface text-xs font-black transition"
+                            >
+                              {lt(locale, { fa: 'مشاهده گفتگو', en: 'View Chat', ar: 'عرض المحادثة', zh: '查看对话', ru: 'Открыть чат' })}
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 )}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="support-name" className="block text-xs font-bold text-sub mb-1">
-                      {lt(locale, { fa: 'نام و نام خانوادگی', en: 'Full Name', ar: 'الاسم الكامل', zh: '姓名', ru: 'ФИО' })}
-                    </label>
-                    <Input
-                      id="support-name"
-                      type="text"
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder={lt(locale, { fa: 'علی رضایی', en: 'John Doe', ar: 'علي رضائي', zh: '阿里·雷扎伊', ru: 'Али Резаи' })}
-                      className="font-bold text-sm h-11 rounded-xl"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="support-email" className="block text-xs font-bold text-sub mb-1">
-                      {t('email')}
-                    </label>
-                    <Input
-                      id="support-email"
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="name@example.com"
-                      className="font-bold text-sm font-mono h-11 rounded-xl"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="support-category" className="block text-xs font-bold text-sub mb-1">
-                      {lt(locale, { fa: 'دسته‌بندی موضوع', en: 'Subject Category', ar: 'التصنيف', zh: '问题类型', ru: 'Категория вопроса' })}
-                    </label>
-                    <select
-                      id="support-category"
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value)}
-                      className="w-full h-11 rounded-xl border border-line px-3 text-xs font-bold bg-surface text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                    >
-                      <option value="flights">
-                        {lt(locale, { fa: 'پرواز و استرداد بلیط', en: 'Flights & Ticket Refunds', ar: 'الطيران واسترداد التذاكر', zh: '机票与退订', ru: 'Рейсы и возврат билетов' })}
-                      </option>
-                      <option value="hotels">
-                        {lt(locale, { fa: 'هتل و واچر اقامتگاه', en: 'Hotels & Accommodation Voucher', ar: 'الفنادق وقسائم الإقامة', zh: '酒店与住宿凭证', ru: 'Отели и ваучеры' })}
-                      </option>
-                      <option value="wallet">
-                        {lt(locale, { fa: 'کیف پول و درگاه پرداخت', en: 'Wallet & Payment Gateways', ar: 'المحفظة وبوابات الدفع', zh: '钱包与支付网关', ru: 'Кошелек и оплата' })}
-                      </option>
-                      <option value="visa">
-                        {lt(locale, { fa: 'ویزا و خدمات ورود', en: 'Visa & Entry Services', ar: 'التأشيرات وخدمات الدخول', zh: '签证与入境服务', ru: 'Визы и въезд' })}
-                      </option>
-                      <option value="esim">
-                        {lt(locale, { fa: 'سیم‌کارت بین‌المللی eSIM', en: 'International eSIM', ar: 'شريحة eSIM الدولية', zh: '国际 eSIM 卡', ru: 'Международная eSIM' })}
-                      </option>
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="support-reference" className="block text-xs font-bold text-sub mb-1">
-                      {lt(locale, { fa: 'کد پیگیری یا شماره رزرو (اختیاری)', en: 'Booking PNR (Optional)', ar: 'رقم الحجز (اختياري)', zh: '预订参考号（选填）', ru: 'Код PNR (опционально)' })}
-                    </label>
-                    <Input
-                      id="support-reference"
-                      type="text"
-                      value={reference}
-                      onChange={(e) => setReference(e.target.value)}
-                      placeholder="e.g. #THR-8842"
-                      className="font-mono text-sm h-11 rounded-xl"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="support-message" className="block text-xs font-bold text-sub mb-1">
-                    {lt(locale, { fa: 'متن پیام یا شرح مشکل', en: 'Message Details', ar: 'تفاصيل الرسالة', zh: '问题详情', ru: 'Описание проблемы' })}
-                  </label>
-                  <textarea
-                    id="support-message"
-                    required
-                    rows={4}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder={lt(locale, { fa: 'جزییات درخواست، شماره پرواز یا سوال خود را اینجا یادداشت کنید...', en: 'Describe your question or issue in detail...', ar: 'اكتب تفاصيل استفسارك هنا...', zh: '请详细描述您的问题...', ru: 'Подробно опишите ваш вопрос...' })}
-                    className="w-full p-3.5 rounded-xl border border-line text-xs sm:text-sm font-bold bg-surface text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full sm:w-auto h-11 px-8 rounded-xl bg-brand hover:bg-brand-dark text-surface font-black text-xs transition active:scale-95 flex items-center justify-center gap-2 shadow-xs"
-                >
-                  <Send size={15} />
-                  <span>{t('submit')}</span>
-                </button>
-              </form>
+              </div>
             )}
           </div>
         </div>

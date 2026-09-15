@@ -15,7 +15,7 @@ import { acquireIdempotencyLock, completeIdempotency } from '@/lib/security/idem
 import { toPlain } from '@/lib/serialize';
 
 export async function createBookingDraft(data: unknown): Promise<
-  | { success: true; bookingId: string; reference: string; totalAmount: number; discountAmount?: number; currency: string; status: string; referralStatus?: string; error?: undefined }
+  | { success: true; bookingId: string; reference: string; totalAmount: number; discountAmount?: number; referralDiscountAmount?: number; appliedDiscountType?: string; currency: string; status: string; referralStatus?: string; error?: undefined }
   | { success: false; error: string; bookingId?: undefined }
 > {
   try {
@@ -34,7 +34,7 @@ export async function createBookingDraft(data: unknown): Promise<
     const idemScope = `user:${userId}`;
     if (parsed.idempotencyKey) {
       const lock = acquireIdempotencyLock<{
-        bookingId: string; reference: string; totalAmount: number; discountAmount?: number; currency: string; status: string; referralStatus?: string;
+        bookingId: string; reference: string; totalAmount: number; discountAmount?: number; referralDiscountAmount?: number; appliedDiscountType?: string; currency: string; status: string; referralStatus?: string;
       }>(parsed.idempotencyKey, idemScope, parsed);
       if (!lock.acquired) {
         if (lock.status === 'COMPLETED') {
@@ -71,6 +71,8 @@ export async function createBookingDraft(data: unknown): Promise<
       reference: result.reference,
       totalAmount: result.totalAmount,
       discountAmount: result.discountAmount,
+      referralDiscountAmount: result.referralDiscountAmount,
+      appliedDiscountType: result.appliedDiscountType,
       currency: result.currency,
       status: result.status,
       referralStatus: result.referralStatus,
@@ -101,6 +103,9 @@ export async function validateReferralCodeAction(code: string) {
       valid: res.valid,
       status: res.status,
       discountPercent: res.discountPercent,
+      discountCapIrr: res.discountCapIrr,
+      maxUses: res.maxUses,
+      usedCount: res.usedCount,
       leaderName: res.leaderName,
       reason: res.reason,
     };
