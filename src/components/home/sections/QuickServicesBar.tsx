@@ -48,13 +48,13 @@ export function QuickServicesBar() {
       icon: Compass,
       color: 'bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-md shadow-purple-500/25',
     },
-    {
-      id: 'trains',
-      title: lt(locale, { fa: 'قطار', en: 'Trains', ar: 'القطارات', zh: '火车票', ru: 'Поезда' }),
-      href: '/trains',
-      icon: TrainFront,
-      color: 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25',
-    },
+    // {
+    //   id: 'trains',
+    //   title: lt(locale, { fa: 'قطار', en: 'Trains', ar: 'القطارات', zh: '火车票', ru: 'Поезда' }),
+    //   href: '/trains',
+    //   icon: TrainFront,
+    //   color: 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25',
+    // },
     {
       id: 'bus',
       title: lt(locale, { fa: 'اتوبوس', en: 'Buses', ar: 'الحافلات', zh: '巴士客运', ru: 'Автобусы' }),
@@ -76,13 +76,13 @@ export function QuickServicesBar() {
       icon: ShieldCheck,
       color: 'bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-md shadow-teal-500/25',
     },
-    {
-      id: 'esim',
-      title: lt(locale, { fa: 'سیم‌کارت eSIM', en: 'eSIM', ar: 'eSIM', zh: 'eSIM卡', ru: 'eSIM' }),
-      href: '/esim',
-      icon: Wifi,
-      color: 'bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/25',
-    },
+    // {
+    //   id: 'esim',
+    //   title: lt(locale, { fa: 'سیم‌کارت eSIM', en: 'eSIM', ar: 'eSIM', zh: 'eSIM卡', ru: 'eSIM' }),
+    //   href: '/esim',
+    //   icon: Wifi,
+    //   color: 'bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/25',
+    // },
     {
       id: 'transfers',
       title: lt(locale, { fa: 'ترانسفر فرودگاهی', en: 'Transfers', ar: 'التوصيل', zh: '接送机', ru: 'Трансфер' }),
