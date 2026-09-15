@@ -6,7 +6,6 @@
     "node": "22.x"
   },
   "scripts": {
-    "prepare": "husky",
     "dev": "next dev",
     "prebuild": "node scripts/auto-setup.mjs",
     "build": "next build",
@@ -53,7 +52,6 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.4.0",
-    "floating-ui-react": "^0.26.28",
     "geist": "^1.7.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.33.0",
