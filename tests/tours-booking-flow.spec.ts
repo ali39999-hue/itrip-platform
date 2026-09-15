@@ -27,6 +27,8 @@ test.describe('Tours Booking & Checkout Journey', () => {
     const scanBtn = page.locator('button:has-text("اسکن هوشمند پاسپورت")').first();
     await expect(scanBtn).toBeVisible({ timeout: 10000 });
     await scanBtn.click();
+    const scanFileInput = page.locator('input[type="file"]').first();
+    await scanFileInput.setInputFiles('tests/fixtures/passport-sample.png');
     await page.waitForTimeout(2200);
 
     // 6. Submit passenger details to create draft
@@ -64,6 +66,8 @@ test.describe('Tours Booking & Checkout Journey', () => {
     const scanBtn = page.locator('button:has-text("اسکن هوشمند پاسپورت")').first();
     await expect(scanBtn).toBeVisible({ timeout: 10000 });
     await scanBtn.click();
+    const scanFileInput = page.locator('input[type="file"]').first();
+    await scanFileInput.setInputFiles('tests/fixtures/passport-sample.png');
     await page.waitForTimeout(2200);
 
     // 6. Submit and verify payment phase is reached

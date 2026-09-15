@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
@@ -117,25 +117,34 @@ export default function MyTripsPage() {
   const [copiedRef, setCopiedRef] = useState<string | null>(null);
   const [importModalOpen, setImportModalOpen] = useState(false);
 
-  const loadData = async () => {
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const res = await getMyBookings();
+      if (!mountedRef.current) return;
       if (res.success && res.bookings) {
         setDbBookings(res.bookings as unknown as BookingRecordSummary[]);
       } else if (res.error === 'Unauthorized') {
         setUnauthorized(true);
       }
     } catch (e) {
-      console.error('Failed to load trips:', e);
+      if (mountedRef.current) console.error('Failed to load trips:', e);
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   // Terminal/cancellation states never count as upcoming.
   const TERMINAL = new Set(['CANCELLED', 'REFUNDED', 'CANCEL_REQUESTED', 'CANCELLING', 'REFUND_INITIATED', 'FAILED', 'EXPIRED']);

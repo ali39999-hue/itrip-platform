@@ -104,4 +104,78 @@ export class CommissionService {
       clawbackAmount: clawback,
     };
   }
+
+  /**
+   * Posts commission clawback ledger entry directly to General Ledger (FIN-016).
+   * Debits Partner Commission Payable (2040) -> Credits Partner Commission Expense (5010)
+   */
+  static async postCommissionClawback(params: {
+    groupId: string;
+    partnerId: string;
+    clawbackAmount: Money;
+    referenceId: string;
+    memo?: string;
+  }, tx?: Prisma.TransactionClient): Promise<void> {
+    const { GeneralLedgerService } = await import('@/domains/ledger/GeneralLedgerService');
+    const currency = params.clawbackAmount.currency;
+    const amount = params.clawbackAmount.toDecimal();
+
+    const runner = async (client: Prisma.TransactionClient) => {
+      // Create or get the partner payable account
+      const partnerAccount = await client.account.upsert({
+        where: {
+          ownerType_ownerId_currency: {
+            ownerType: 'PARTNER_PAYABLE',
+            ownerId: params.partnerId,
+            currency,
+          },
+        },
+        update: {},
+        create: {
+          ownerType: 'PARTNER_PAYABLE',
+          ownerId: params.partnerId,
+          currency,
+        },
+      });
+
+      // Platform commission expense offset account
+      const platformExpenseAccount = await client.account.upsert({
+        where: {
+          ownerType_ownerId_currency: {
+            ownerType: 'COMMISSION_EXPENSE',
+            ownerId: '#platform',
+            currency,
+          },
+        },
+        update: {},
+        create: {
+          ownerType: 'COMMISSION_EXPENSE',
+          ownerId: '#platform',
+          currency,
+        },
+      });
+
+      // Post balanced reversal entry: DEBIT Partner Payable -> CREDIT Commission Expense
+      await GeneralLedgerService.postBalancedEntry(
+        {
+          groupId: params.groupId,
+          referenceType: 'COMMISSION_CLAWBACK',
+          referenceId: params.referenceId,
+          currency,
+          memo: params.memo || `Commission clawback for ref ${params.referenceId}`,
+          legs: [
+            { account: partnerAccount, direction: 'DEBIT', amount },
+            { account: platformExpenseAccount, direction: 'CREDIT', amount },
+          ],
+        },
+        client
+      );
+    };
+
+    if (tx) {
+      await runner(tx);
+    } else {
+      await prisma.$transaction(runner);
+    }
+  }
 }

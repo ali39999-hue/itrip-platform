@@ -190,11 +190,25 @@ export interface Booking {
   id: string;
   reference: string;
   type: ServiceType | 'visa' | 'esim' | 'insurance' | 'city-pass' | 'snapp' | 'interpreter' | 'travelogue';
-  status: 'pending_payment' | 'confirmed' | 'cancelled' | 'refunded';
+  status:
+    | 'DRAFT'
+    | 'HELD'
+    | 'PENDING_PAYMENT'
+    | 'PAYMENT_CONFIRMED'
+    | 'CONFIRMED'
+    | 'CANCELLED'
+    | 'COMPLETED'
+    | 'REFUNDED'
+    | 'EXPIRED'
+    | 'FAILED'
+    | 'pending_payment'
+    | 'confirmed'
+    | 'cancelled'
+    | 'refunded';
   title: string;
   subtitle: string;
   amount: number;
-  currency: 'IRR' | 'USDT' | 'AED';
+  currency: 'IRR' | 'TOMAN' | 'USDT' | 'AED';
   createdAt: string;
   travelDate: string;
   passengers: BookingPassenger[];

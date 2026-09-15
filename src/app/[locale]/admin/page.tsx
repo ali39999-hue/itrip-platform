@@ -71,13 +71,13 @@ export default async function AdminDashboard() {
     .sort((x, y) => y.at.localeCompare(x.at))
     .slice(0, 8);
 
-  const totalRevenue = allBookings
+  const totalRevenue = (allBookings as Array<{ status: string; totalAmount: number }> || [])
     .filter((b) => b.status === 'CONFIRMED')
-    .reduce((acc, curr) => acc + Number(curr.totalAmount), 0);
+    .reduce((acc, curr) => acc + Number(curr.totalAmount || 0), 0);
 
-  const totalRefunds = ledgerEntries
+  const totalRefunds = (ledgerEntries as Array<{ referenceType: string; direction: string; amount: number }> || [])
     .filter((e) => e.referenceType === 'REFUND' && e.direction === 'CREDIT')
-    .reduce((acc, curr) => acc + Number(curr.amount), 0);
+    .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
 
   const numFmt = locale === 'fa' ? 'fa-IR' : 'en-US';
   const today = new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());

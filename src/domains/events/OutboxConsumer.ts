@@ -418,7 +418,7 @@ export class OutboxConsumer {
       where: {
         status: 'DEAD_LETTER',
         retryCount: { lt: maxRetryCount },
-        updatedAt: { lt: cutoff },
+        ...(olderThanMs > 0 ? { updatedAt: { lt: cutoff } } : {}),
         NOT: { lastError: { startsWith: 'UNKNOWN_EVENT_TYPE' } },
         ...(opts?.eventTypePrefix ? { eventType: { startsWith: opts.eventTypePrefix } } : {}),
       },

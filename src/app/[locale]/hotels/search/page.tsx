@@ -444,6 +444,63 @@ function HotelsSearchInner() {
           )}
         </div>
 
+        {/* ================= STICKY MOBILE FILTER, SORT & MAP PILL (FLYTODAY STYLE) ================= */}
+        {/* Gracefully auto-hides when hotel comparison bar is active to avoid sticky collisions */}
+        <div
+          className={`lg:hidden fixed bottom-[calc(70px+env(safe-area-inset-bottom,0px))] inset-x-0 z-40 flex justify-center pointer-events-none px-4 transition-all duration-200 ${
+            cmp.size > 0 ? 'opacity-0 pointer-events-none translate-y-4' : 'opacity-100'
+          }`}
+        >
+          <div className="pointer-events-auto bg-ink/90 dark:bg-surface/95 backdrop-blur-md text-surface dark:text-ink px-3 py-1 rounded-full shadow-elev-3 flex items-center gap-2.5 border border-surface/20 dark:border-line">
+            <button
+              type="button"
+              onClick={() => setMobileFilterOpen(true)}
+              className="flex items-center gap-1.5 text-xs font-black min-h-[44px] px-2 rounded-full hover:bg-surface/20 transition active:scale-95 cursor-pointer"
+            >
+              <SlidersHorizontal size={14} />
+              <span>{lt(locale, { fa: 'فیلترها', en: 'Filters', ar: 'الفلاتر', zh: '筛选', ru: 'Фильтры' })}</span>
+              {activeFiltersCount > 0 && (
+                <span className="w-4 h-4 rounded-full bg-brand text-surface text-[10px] grid place-items-center font-bold">
+                  {num(activeFiltersCount, locale)}
+                </span>
+              )}
+            </button>
+            <span className="w-px h-4 bg-surface/30 dark:bg-line" />
+            <button
+              type="button"
+              onClick={() => {
+                const sortOrder: Array<'rec' | 'cheap' | 'score' | 'stars'> = ['rec', 'cheap', 'score', 'stars'];
+                const nextIdx = (sortOrder.indexOf(sort) + 1) % sortOrder.length;
+                setSort(sortOrder[nextIdx]);
+              }}
+              className="flex items-center gap-1.5 text-xs font-black min-h-[44px] px-2 rounded-full hover:bg-surface/20 transition active:scale-95 cursor-pointer"
+            >
+              <span className="text-[11px] opacity-75">{lt(locale, { fa: 'مرتب‌سازی:', en: 'Sort:', ar: 'الترتيب:', zh: '排序：', ru: 'Сортировка:' })}</span>
+              <span className="text-mint-bright dark:text-brand font-bold">
+                {sort === 'rec'
+                  ? lt(locale, { fa: 'پیشنهادی', en: 'Recommended', ar: 'الموصى به', zh: '推荐', ru: 'Рекомендуемые' })
+                  : sort === 'cheap'
+                    ? lt(locale, { fa: 'ارزان‌ترین', en: 'Cheapest', ar: 'الأرخص', zh: '最低价', ru: 'Дешевые' })
+                    : sort === 'score'
+                      ? lt(locale, { fa: 'بیشترین امتیاز', en: 'Top Rated', ar: 'الأعلى تقييماً', zh: '评分最高', ru: 'Высокий рейтинг' })
+                      : lt(locale, { fa: 'ستاره هتل', en: 'Stars', ar: 'النجوم', zh: '星级', ru: 'Звёзды' })}
+              </span>
+            </button>
+            <span className="w-px h-4 bg-surface/30 dark:bg-line" />
+            <button
+              type="button"
+              onClick={() => setShowMap((prev) => !prev)}
+              className="flex items-center gap-1.5 text-xs font-black min-h-[44px] px-2 rounded-full hover:bg-surface/20 transition active:scale-95 text-mint-bright cursor-pointer"
+            >
+              <span>
+                {showMap
+                  ? lt(locale, { fa: 'لیست', en: 'List', ar: 'قائمة', zh: '列表', ru: 'Список' })
+                  : lt(locale, { fa: 'نقشه', en: 'Map', ar: 'خريطة', zh: '地图', ru: 'Карта' })}
+              </span>
+            </button>
+          </div>
+        </div>
+
         {/* Mobile Filter Sheet Modal */}
         <HotelFilterSheet
           isOpen={mobileFilterOpen}
@@ -477,37 +534,6 @@ function HotelsSearchInner() {
           onToggleCmp={toggleCmp}
           onCompareAction={() => setCompareModalOpen(true)}
         />
-
-        {/* Sticky Mobile Filter & Sort Pill (FlyToday Style) */}
-        <div className="lg:hidden fixed bottom-[calc(70px+env(safe-area-inset-bottom))] inset-x-0 z-40 flex justify-center pointer-events-none px-4">
-          <div className="pointer-events-auto bg-ink/90 dark:bg-surface/95 backdrop-blur-md text-surface dark:text-ink px-4 py-1 rounded-full shadow-elev-3 flex items-center gap-3 border border-surface/20 dark:border-line">
-            <button
-              type="button"
-              onClick={() => setMobileFilterOpen(true)}
-              className="flex items-center gap-1.5 text-xs font-black min-h-[44px] px-2 rounded-full hover:bg-surface/20 transition active:scale-95 cursor-pointer"
-            >
-              <SlidersHorizontal size={14} />
-              <span>{lt(locale, { fa: 'فیلترها', en: 'Filters', ar: 'تصفية', zh: '筛选', ru: 'Фильтры' })}</span>
-              {activeFiltersCount > 0 && (
-                <span className="w-4 h-4 rounded-full bg-brand text-surface text-[10px] grid place-items-center font-bold">
-                  {num(activeFiltersCount, locale)}
-                </span>
-              )}
-            </button>
-            <span className="w-px h-4 bg-surface/30 dark:bg-line" />
-            <button
-              type="button"
-              onClick={() => setShowMap((prev) => !prev)}
-              className="flex items-center gap-1.5 text-xs font-black min-h-[44px] px-2 rounded-full hover:bg-surface/20 transition active:scale-95 text-mint-bright"
-            >
-              <span>
-                {showMap
-                  ? lt(locale, { fa: 'لیست اقامتگاه‌ها', en: 'List View', ar: 'عرض القائمة', zh: '列表视图', ru: 'Список' })
-                  : lt(locale, { fa: 'مشاهده روی نقشه', en: 'Map View', ar: 'عرض الخريطة', zh: '查看地图', ru: 'На карте' })}
-              </span>
-            </button>
-          </div>
-        </div>
 
         {/* Side-by-Side Comparison Modal */}
         <HotelCompareModal

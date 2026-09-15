@@ -65,10 +65,10 @@ export function SearchWidget({ initialTab = 'flights' }: SearchWidgetProps) {
         </div>
       )}
 
-      <div className="rounded-3xl p-4 md:p-6 shadow-elev-3 transition-all border border-line/80 bg-surface/95 backdrop-blur-xl">
+      <div className="rounded-2xl sm:rounded-3xl p-3 sm:p-5 md:p-6 shadow-elev-3 transition-all border border-line/80 bg-surface/95 backdrop-blur-xl">
         <SearchModeTabs activeTab={tab} onTabChange={setTab} />
 
-        <form onSubmit={submit} className="relative z-10 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+        <form onSubmit={submit} className="relative z-10 grid grid-cols-1 sm:grid-cols-12 gap-2.5 sm:gap-3 items-center">
           {tab === 'plan' && (
             <PlanSearchForm
               query={query}

@@ -30,9 +30,10 @@ export function ContactDock() {
 
   // Checkout, payment and product detail pages have sticky bottom reservation CTAs on mobile (< lg);
   // on mobile, the dock raises slightly above them. On desktop (lg+), it always anchors cleanly to bottom-6 end-6.
-  // Search pages (/hotels/search, /flights/search, etc.) are never excluded.
+  // Search pages (/hotels/search, /flights/search, etc.) have a sticky filter pill above BottomNav.
+  const isSearch = pathname.includes('/search');
   const isExcluded =
-    !pathname.includes('/search') &&
+    !isSearch &&
     (pathname.includes('/checkout') ||
       pathname.includes('/payment-status') ||
       /^\/([a-z]{2}\/)?(hotels|tours)\/(?!search)[^/]+$/.test(pathname));
@@ -113,7 +114,9 @@ export function ContactDock() {
         className={`fixed z-[120] ${
           isExcluded
             ? 'bottom-[calc(120px+env(safe-area-inset-bottom))] lg:bottom-6'
-            : 'bottom-[calc(78px+env(safe-area-inset-bottom))] lg:bottom-6'
+            : isSearch
+              ? 'bottom-[calc(130px+env(safe-area-inset-bottom))] lg:bottom-6'
+              : 'bottom-[calc(78px+env(safe-area-inset-bottom))] lg:bottom-6'
         } end-4 lg:end-6 max-lg:transition-all max-lg:duration-200 ${
           pastFold
             ? 'max-lg:opacity-100 max-lg:visible'

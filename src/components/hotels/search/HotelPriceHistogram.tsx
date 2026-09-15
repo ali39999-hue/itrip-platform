@@ -120,9 +120,9 @@ export function HotelPriceHistogram({
           aria-label={lt(locale, { fa: 'سقف قیمت هر شب', en: 'Maximum price per night', ar: 'أقصى سعر لكل ليلة', zh: '每晚最高价格', ru: 'Максимальная цена за ночь' })}
         />
 
-        {/* Min & Max Labels */}
-        <div className="flex items-center justify-between text-[11.5px] font-black text-sub pt-0.5">
-          <span>
+        {/* Min & Max Labels aligned with LTR track */}
+        <div className="flex items-center justify-between text-[11.5px] font-black text-sub pt-0.5" dir="ltr">
+          <span className="shrink-0 whitespace-nowrap">
             {minPrice > 0
               ? lt(locale, {
                   fa: `از ${num(minPrice, locale)} م`,
@@ -133,7 +133,7 @@ export function HotelPriceHistogram({
                 })
               : lt(locale, { fa: 'از ۱ میلیون', en: 'From 1M', ar: 'من 1 مليون', zh: '1M 起', ru: 'От 1M' })}
           </span>
-          <span className="text-brand font-black px-2 py-0.5 rounded-md bg-brand/10">
+          <span className="text-brand font-black px-2 py-0.5 rounded-md bg-brand/10 shrink-0 whitespace-nowrap">
             {maxPrice >= 20
               ? lt(locale, { fa: 'بدون سقف قیمت', en: 'No maximum limit', ar: 'بلا سقف للسعر', zh: '不限上限', ru: 'Без ограничения' })
               : lt(locale, {

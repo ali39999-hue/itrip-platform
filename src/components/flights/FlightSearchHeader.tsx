@@ -328,7 +328,7 @@ export function FlightSearchHeader({
             {lt(locale, { fa: 'مسیر انتخابی:', en: 'Route:', ar: 'المسار:', zh: '航线：', ru: 'Маршрут:' })}{' '}
             <b className="text-brand-dark">
               {from || lt(locale, { fa: 'همه مبدأها', en: 'All origins', ar: 'جميع المطارات', zh: '全部出发地', ru: 'Все города' })}{' '}
-              ➔{' '}
+              <span className="inline-block rtl:rotate-180">➔</span>{' '}
               {to || lt(locale, { fa: 'همه مقصدها', en: 'All destinations', ar: 'جميع الوجهات', zh: '全部目的地', ru: 'Все направления' })}
             </b>
           </span>

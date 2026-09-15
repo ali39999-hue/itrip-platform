@@ -204,7 +204,7 @@ export function PromotionalBanners({ override: _override }: { override?: PromoBa
     <section aria-label="Firuzo Exclusive Tour" className="w-full max-w-[1440px] mx-auto px-3 sm:px-4 md:px-6 2xl:px-8">
       {/* Heading row */}
       <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 mb-4 sm:mb-5 md:mb-6">
-        <h2 className="text-[20px] sm:text-[22px] md:text-[28px] font-black tracking-tight text-ink text-start leading-none">
+        <h2 className="text-[19px] sm:text-[22px] md:text-[28px] font-black tracking-tight text-ink text-start leading-none min-w-0 break-words">
           {heading}
         </h2>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0b3d3c] text-[#7af7f5] border border-[#0ea5a3]/30 px-3 py-1.5 text-[11px] sm:text-xs font-black tracking-wide shadow-sm whitespace-nowrap">
@@ -225,13 +225,13 @@ export function PromotionalBanners({ override: _override }: { override?: PromoBa
 
         <div className="relative flex flex-col lg:flex-row">
           {/* Text side */}
-          <div className="flex-1 flex flex-col justify-center px-5 py-6 sm:p-7 md:p-8 lg:p-10 lg:pe-10 lg:ps-12 xl:p-12 order-1 min-w-0">
+          <div className="flex-1 flex flex-col justify-center px-4 py-5 sm:p-7 md:p-8 lg:p-7 lg:pe-7 lg:ps-8 xl:p-10 order-1 min-w-0">
             <div className="text-start">
               <p className="text-white/90 text-[15px] sm:text-lg md:text-[22px] font-bold leading-none mb-1 sm:mb-1.5 tracking-tight">
                 {eyebrow}
               </p>
               <p
-                className="text-[34px] sm:text-[40px] md:text-[52px] lg:text-[56px] font-black leading-none tracking-tight pb-1"
+                className="text-[26px] sm:text-[38px] md:text-[50px] lg:text-[56px] font-black leading-tight tracking-tight pb-1 break-words"
                 style={{
                   color: '#4af2f0',
                   textShadow: '0 0 28px rgba(74,242,240,0.55), 0 0 8px rgba(74,242,240,0.35)',
@@ -242,20 +242,20 @@ export function PromotionalBanners({ override: _override }: { override?: PromoBa
               </p>
             </div>
 
-            <p className="mt-3.5 sm:mt-4 md:mt-5 text-white/80 text-[13px] sm:text-[13.5px] md:text-[14.5px] font-medium leading-[1.85] sm:leading-[1.9] text-start max-w-[560px]">
+            <p className="mt-3 sm:mt-4 md:mt-5 text-white/80 text-[13px] sm:text-[13.5px] md:text-[14.5px] font-medium leading-[1.8] sm:leading-[1.9] text-start max-w-[560px]">
               {description}
             </p>
 
             {/* Features */}
-            <div className="mt-6 sm:mt-7 md:mt-8 grid grid-cols-2 sm:grid-cols-4 gap-0 rounded-2xl sm:rounded-none border border-white/10 sm:border-0 overflow-hidden sm:overflow-visible divide-x divide-y divide-white/10 sm:divide-y-0 sm:divide-white/12 rtl:divide-x-reverse">
+            <div className="mt-5 sm:mt-7 md:mt-8 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
               {features.map((f) => {
                 const Icon = f.icon;
                 return (
-                  <div key={f.label + f.label2} className="flex flex-col items-center text-center px-3 py-4 sm:px-3 sm:py-0 gap-2 bg-white/[0.03] sm:bg-transparent">
-                    <span className="inline-flex items-center justify-center w-9 h-9 sm:w-8 sm:h-8 rounded-xl bg-white/8 border border-white/10 text-[#7af7f5] shrink-0">
-                      <Icon size={16} strokeWidth={1.9} aria-hidden="true" />
+                  <div key={f.label + f.label2} className="flex flex-col items-center text-center p-2.5 sm:p-2 gap-1.5 sm:gap-2 rounded-xl bg-white/[0.04] sm:bg-white/[0.03] border border-white/10">
+                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-white/8 border border-white/10 text-[#7af7f5] shrink-0">
+                      <Icon size={15} strokeWidth={1.9} aria-hidden="true" />
                     </span>
-                    <span className="text-[11.5px] sm:text-xs font-bold leading-4 text-white/85">
+                    <span className="text-[11px] sm:text-xs font-bold leading-4 text-white/85">
                       <span className="block">{f.label}</span>
                       <span className="block text-white/70 font-medium">{f.label2}</span>
                     </span>
@@ -265,14 +265,14 @@ export function PromotionalBanners({ override: _override }: { override?: PromoBa
             </div>
 
             {/* CTA */}
-            <div className="mt-6 sm:mt-7 md:mt-8 flex justify-stretch sm:justify-start">
+            <div className="mt-5 sm:mt-7 md:mt-8 flex justify-stretch sm:justify-start">
               <Link
                 href={deal.href}
                 aria-label={cta}
-                className="group inline-flex w-full sm:w-auto items-center justify-center sm:justify-start gap-3 rounded-full bg-[#7af7f5] hover:bg-[#9afaf8] active:bg-[#6ee7e5] text-[#052524] ps-6 pe-1.5 py-1.5 text-[15px] sm:text-sm font-black shadow-[0_8px_24px_rgba(74,242,240,0.35)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b3d3c] min-h-[48px] sm:min-h-0 touch-manipulation cursor-pointer"
+                className="group inline-flex w-full sm:w-auto items-center justify-center sm:justify-start gap-3 rounded-full bg-[#7af7f5] hover:bg-[#9afaf8] active:bg-[#6ee7e5] text-[#052524] ps-5 pe-1.5 py-1.5 text-sm font-black shadow-[0_8px_24px_rgba(74,242,240,0.35)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b3d3c] min-h-[44px] touch-manipulation cursor-pointer"
               >
                 <span className="flex-1 sm:flex-none text-center sm:text-start">{cta}</span>
-                <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#052524] text-white group-hover:bg-black group-active:bg-black transition-colors shrink-0">
+                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#052524] text-white group-hover:bg-black group-active:bg-black transition-colors shrink-0">
                   {isRtl ? <ArrowLeft size={16} aria-hidden="true" /> : <ArrowRight size={16} aria-hidden="true" />}
                 </span>
               </Link>

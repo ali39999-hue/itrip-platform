@@ -320,7 +320,7 @@ export const INSURANCE_PLANS: InsurancePlan[] = [
     type: 'standard',
     subtitle: 'مناسب برای سفرهای کوتاه',
     subtitleEn: 'Ideal for short vacations',
-    price: 350000, 
+    price: 1900000,
     priceLabel: 'پایه',
     coverageEur: 10000, 
     features: [

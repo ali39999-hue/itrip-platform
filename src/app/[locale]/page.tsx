@@ -92,18 +92,11 @@ export default async function HomePage() {
         </div>
       )}
 
-      {/* On Mobile: Quick Access Service Icons Grid right at top (Snapp/Alibaba Super-App Pattern) */}
-      <div className="md:hidden">
-        <QuickServicesBar />
-      </div>
-
-      {/* 1. Hero & Unified Flight/Hotel/Tour Search Engine */}
+      {/* 1. Hero & Unified Flight/Hotel/Tour Search Engine (Immediate above-the-fold search on all viewports) */}
       <HeroSection override={hero ?? undefined} />
 
-      {/* On Desktop: Sleek Quick Access Service Bar below Hero */}
-      <div className="hidden md:block">
-        <QuickServicesBar />
-      </div>
+      {/* 2. Quick Access Service Bar below Hero (Consistent hierarchy per iTrip UI/UX Review V2) */}
+      <QuickServicesBar />
 
       <div className="flex flex-col gap-8 md:gap-14 pt-4 md:pt-8 pb-16">
         {/* 3. High-Impact Promotional Banners */}

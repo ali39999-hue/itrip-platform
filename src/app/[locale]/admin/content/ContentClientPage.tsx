@@ -833,7 +833,7 @@ function AdminContentPageInner({
             {activeTab === 'experiences' && (
               <button type="button" onClick={openCreateExp} className={erpPrimaryBtnCls}>
                 <Plus size={15} aria-hidden="true" />
-                <span>افزودن ماجراجویی</span>
+                <span>افزودن تجربه اصیل</span>
               </button>
             )}
             {activeTab === 'travelogues' && (
@@ -999,8 +999,8 @@ function AdminContentPageInner({
               {experiences.length === 0 ? (
                 <div className="p-12 text-center text-sub bg-surface rounded-3xl border border-line flex flex-col items-center gap-3">
                   <Landmark size={36} className="text-line" />
-                  <p className="text-sm font-black text-ink">هنوز ماجراجویی سفارشی در دیتابیس ثبت نشده است.</p>
-                  <p className="text-xs text-sub">می‌توانید با دکمه «افزودن ماجراجویی»، ماجراجویی‌های گردشگری منحصربه‌فرد ثبت کنید.</p>
+                  <p className="text-sm font-black text-ink">هنوز تجربه اصیلی در دیتابیس ثبت نشده است.</p>
+                  <p className="text-xs text-sub">می‌توانید با دکمه «افزودن تجربه اصیل»، تجربه‌های گردشگری منحصربه‌فرد ثبت کنید.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -20,6 +20,14 @@ export default defineConfig({
       name: 'mobile-chromium',
       use: { ...devices['Pixel 5'] },
     },
+    {
+      name: 'tablet',
+      use: { ...devices['iPad Pro 11'] },
+    },
+    {
+      name: 'mobile-safari',
+      use: { ...devices['iPhone 14'] },
+    },
   ],
   webServer: {
     command: process.env.CI ? 'npm start' : 'npm run dev',

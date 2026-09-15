@@ -75,7 +75,7 @@ export function BentoFlightCard({
   return (
       <article
         aria-label={`${airlineName} ${flight.flightNo}, ${originCity} to ${destCity}, ${flight.departureTime} - ${flight.arrivalTime}, ${formatAmount(priceInToman)}`}
-        className="relative bg-white dark:bg-surface rounded-2xl border border-slate-200/90 dark:border-line/80 shadow-[0_2px_12px_rgba(5,63,62,0.06)] hover:shadow-lg hover:border-brand/40 transition-all group overflow-hidden active:scale-[0.99] duration-100"
+        className="@container/flight-card relative bg-white dark:bg-surface rounded-2xl border border-slate-200/90 dark:border-line/80 shadow-[0_2px_12px_rgba(5,63,62,0.06)] hover:shadow-lg hover:border-brand/40 transition-all group overflow-hidden active:scale-[0.99] duration-100"
       >
         {/* ========================================================================= */}
         {/* 1. MOBILE COMPACT TICKET VIEW (< MD) — FLYTODAY MOBILE STANDARD          */}
@@ -125,7 +125,7 @@ export function BentoFlightCard({
               <span className="text-xs font-black text-slate-800 dark:text-ink mt-1">
                 {originCity}
               </span>
-              <span className="text-[10px] font-bold text-slate-400 dark:text-sub font-mono">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-sub font-mono" dir="ltr">
                 {originIata}
               </span>
             </div>
@@ -160,7 +160,7 @@ export function BentoFlightCard({
               <span className="text-xs font-black text-slate-800 dark:text-ink mt-1">
                 {destCity}
               </span>
-              <span className="text-[10px] font-bold text-slate-400 dark:text-sub font-mono">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-sub font-mono" dir="ltr">
                 {destIata}
               </span>
               {overnight && (
@@ -171,12 +171,8 @@ export function BentoFlightCard({
             </div>
           </div>
 
-          {/* Mobile Bottom Section (FlyToday layout): meta chips wrap on their
-              own row; price + CTA get a dedicated row so the CTA is never
-              squeezed out of the card edge. Price sits at the inline-start
-              (راست در RTL), CTA at the inline-end. */}
+          {/* Mobile Auxiliary Actions Row: Baggage, Details, Compare & Refund Rules */}
           <div className="pt-2.5 border-t border-slate-100 dark:border-line/70 flex flex-col gap-2">
-            {/* Meta chips: baggage, details, compare, refund */}
             <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-sub flex-wrap">
               <span className="flex items-center gap-1 font-bold text-[11px]">
                 <Briefcase size={12} className="text-brand dark:text-mint-bright" />
@@ -226,9 +222,12 @@ export function BentoFlightCard({
 
             {/* Price + CTA row — single line, never wrapped or clipped */}
             <div className="flex items-center justify-between gap-3">
-              <div dir="ltr" className="min-w-0 text-start">
-                <span className="text-xl font-black tracking-tight text-[#9C6209] dark:text-amber-400 leading-none tabular-nums font-mono whitespace-nowrap">
-                  {formatAmount(priceInToman)}
+              <div className="min-w-0 flex flex-col text-start">
+                <span className="text-[10px] text-sub block font-bold leading-none mb-1">
+                  {t('perPassenger')}
+                </span>
+                <span className="text-xl sm:text-2xl font-black text-[#9C6209] dark:text-amber-400 font-mono tabular-nums leading-none whitespace-nowrap">
+                  <bdi>{formatAmount(priceInToman)}</bdi>
                 </span>
               </div>
               <button
@@ -296,7 +295,7 @@ export function BentoFlightCard({
               <div className="text-xs md:text-sm font-extrabold text-neutral-800 dark:text-ink mt-1.5">
                 {originCity}
               </div>
-              <div className="text-[11px] font-bold text-neutral-400 dark:text-sub font-mono mt-0.5">
+              <div className="text-[11px] font-bold text-neutral-400 dark:text-sub font-mono mt-0.5" dir="ltr">
                 {originIata}
               </div>
             </div>
@@ -340,7 +339,7 @@ export function BentoFlightCard({
               <div className="text-xs md:text-sm font-extrabold text-neutral-800 dark:text-ink mt-1.5">
                 {destCity}
               </div>
-              <div className="text-[11px] font-bold text-neutral-400 dark:text-sub font-mono mt-0.5">
+              <div className="text-[11px] font-bold text-neutral-400 dark:text-sub font-mono mt-0.5" dir="ltr">
                 {destIata}
               </div>
               {overnight && (
@@ -352,7 +351,7 @@ export function BentoFlightCard({
           </div>
 
           {/* Bottom row: مقایسه (start) — جزئیات پرواز (میانی) — بار مجاز (end) */}
-          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-line/70 flex items-center justify-between gap-2 text-xs text-neutral-500">
+          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-line/70 flex items-center justify-between gap-2 text-xs text-neutral-500 flex-wrap">
             {/* Compare checkbox */}
             <label className="flex items-center gap-2 cursor-pointer select-none text-neutral-500 hover:text-neutral-800 dark:text-sub dark:hover:text-ink transition-colors">
               <input
@@ -479,7 +478,7 @@ export function BentoFlightCard({
         </div>
 
         {/* ================= PRICE STUB (در RTL: سمت چپ — کنارهٔ بلیط) ================= */}
-        <div className="relative w-full md:w-64 shrink-0 p-5 md:p-6 flex flex-col justify-between items-center text-center border-t md:border-t-0 md:border-s md:border-dashed border-line/80 bg-soft/40">
+        <div className="relative w-full md:w-56 lg:w-64 shrink-0 p-4 md:p-5 lg:p-6 flex flex-col justify-between items-center text-center border-t md:border-t-0 md:border-s md:border-dashed border-line/80 bg-soft/40">
           {/* Ticket notch cutouts — centered on the dashed divider */}
           <span
             aria-hidden="true"
@@ -513,19 +512,19 @@ export function BentoFlightCard({
                     en: 'Cheapest',
                     ar: 'الأرخص',
                     zh: '最实惠',
-                    ru: 'Самый деشёвый',
+                    ru: 'Самый дешёвый',
                   })}
                 </span>
               </span>
             ) : null}
           </div>
 
-          {/* Price display with large crisp numbers */}
+          {/* Price display with large crisp numbers and BiDi isolation */}
           <div className="my-auto py-2">
-            <div className="flex items-baseline justify-center gap-1.5" dir="ltr">
-              <span className="text-[23px] md:text-[26px] font-black tracking-tight text-ink leading-none tabular-nums font-mono">
+            <div className="flex items-baseline justify-center gap-1.5">
+              <bdi className="text-[22px] lg:text-[26px] font-black tracking-tight text-ink leading-none tabular-nums font-mono">
                 {formatAmount(priceInToman)}
-              </span>
+              </bdi>
             </div>
             <span className="text-[11.5px] font-medium text-sub mt-1.5 block">
               {t('perPassenger')}

@@ -78,8 +78,8 @@ export function HotelSearchForm({
 
   return (
     <>
-      {/* 1. Destination / Hotel Name (Aligned with screenshot & Iranian OTA standards) */}
-      <div className="col-span-1 sm:col-span-6 lg:col-span-3">
+      {/* 1. Destination / Hotel Name (Aligned with Iranian OTA standards) */}
+      <div className="col-span-1 sm:col-span-6 lg:col-span-3 relative z-20 focus-within:z-30">
         <CityAutocomplete
           value={dest}
           onChange={(val) => {
@@ -104,8 +104,37 @@ export function HotelSearchForm({
         />
       </div>
 
-      {/* 2. Check-in Date */}
-      <div className="col-span-1 sm:col-span-6 lg:col-span-2">
+      {/* Mobile Dates (< sm): 2-Column Side-by-Side High-Density */}
+      <div className="col-span-1 sm:hidden grid grid-cols-2 gap-2">
+        <JalaliDatePicker
+          value={date1}
+          onChange={(d) => setDate1(d || '')}
+          label={t('dateCheckIn')}
+          id="search-date-checkin-mobile"
+          format={dateFormat}
+          className="!min-h-[50px] !rounded-xl !py-1.5 !px-3"
+        />
+        <div className="relative">
+          <JalaliDatePicker
+            value={date2}
+            onChange={(d) => setDate2(d || '')}
+            label={t('dateCheckOut')}
+            id="search-date-checkout-mobile"
+            format={dateFormat}
+            className={`!min-h-[50px] !rounded-xl !py-1.5 !px-3 ${nights > 0 ? '!pe-12' : ''}`}
+          />
+          {nights > 0 && (
+            <div className="absolute end-1.5 top-1/2 -translate-y-1/2 z-20 pointer-events-none">
+              <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full bg-mint/90 border border-brand/30 text-brand-dark text-[10px] font-black shadow-xs">
+                {num(nights, locale)} شب
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Desktop Check-in Date (sm+) */}
+      <div className="hidden sm:block sm:col-span-6 lg:col-span-2 relative z-10 focus-within:z-30">
         <JalaliDatePicker
           value={date1}
           onChange={(d) => setDate1(d || '')}
@@ -115,8 +144,8 @@ export function HotelSearchForm({
         />
       </div>
 
-      {/* 3. Check-out Date with Duration Badge */}
-      <div className="col-span-1 sm:col-span-6 lg:col-span-2 relative">
+      {/* Desktop Check-out Date with Duration Badge (sm+) */}
+      <div className="hidden sm:block sm:col-span-6 lg:col-span-2 relative z-10 focus-within:z-30">
         <JalaliDatePicker
           value={date2}
           onChange={(d) => setDate2(d || '')}
@@ -141,7 +170,7 @@ export function HotelSearchForm({
       </div>
 
       {/* 4. Travelers and Rooms */}
-      <div className="col-span-1 sm:col-span-6 lg:col-span-3 relative">
+      <div className={`col-span-1 sm:col-span-6 lg:col-span-3 relative ${guestOpen ? 'z-40' : 'focus-within:z-30'}`}>
         <TravelerPicker
           open={guestOpen}
           setOpen={setGuestOpen}
@@ -157,7 +186,7 @@ export function HotelSearchForm({
       {/* 5. Submit Button (Amber/Golden style as in screenshot) */}
       <button
         type="submit"
-        className="col-span-1 sm:col-span-12 lg:col-span-2 min-h-[58px] px-6 rounded-2xl md:rounded-full bg-amber-500 hover:bg-amber-600 text-ink text-[15px] font-black shadow-elev-1 hover:shadow-elev-2 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+        className="col-span-1 sm:col-span-12 lg:col-span-2 min-h-[50px] sm:min-h-[58px] px-6 rounded-xl sm:rounded-2xl md:rounded-full bg-amber-500 hover:bg-amber-600 text-ink text-[15px] font-black shadow-elev-1 hover:shadow-elev-2 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
       >
         <Search size={18} className="stroke-[2.5]" />
         <span>{t('btnHotels')}</span>

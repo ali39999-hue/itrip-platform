@@ -153,12 +153,12 @@ export function useHotelFilters({
           setFacets(json.data.facets);
         }
       }
+      setLoading(false);
     } catch (err: unknown) {
       if ((err as Error).name !== 'AbortError') {
         console.error('Failed to fetch live hotels:', err);
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [

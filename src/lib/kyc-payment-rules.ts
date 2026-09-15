@@ -2,8 +2,18 @@
  * KYC-Based Payment Tier & Service Allocation Rules.
  * 
  * Maps user identity verification status to permissible payment instruments,
- * transaction caps, and credit/installment (BNPL) eligibility.
+ * multi-currency transaction caps, and credit/installment (BNPL) eligibility.
+ * 
+ * Architecture invariants:
+ * 1. Role !== Identity: Administrative role NEVER automatically confers customer KYC
+ *    Level 2 unless an explicit, documented staff exemption policy is passed.
+ * 2. Multi-Currency limits: Transactions in any currency (USD, EUR, AED, CNY, TRY, IRR)
+ *    are evaluated against the tier limit converted through the authoritative FX snapshot.
+ * 3. Guest payment safety: Unverified guests are strictly restricted from high limits,
+ *    BNPL, wallet withdrawals, and international cards.
  */
+
+import { CURRENCY_TO_TOMAN } from './money';
 
 export type KycTierLevel = 'level_0_unverified' | 'level_1_basic' | 'level_2_verified' | 'international';
 
@@ -24,12 +34,20 @@ export interface KycPaymentProfile {
   upgradeMessageEn?: string;
 }
 
-export function evaluateUserKycTier(user: {
-  kycApproved?: boolean;
-  nationalId?: string | null;
-  passportNo?: string | null;
-  role?: string;
-} | null | undefined): KycPaymentProfile {
+export interface KycEvaluationOptions {
+  /** Documented compliance policy flag for internal staff test accounts */
+  staffKycExemption?: boolean;
+}
+
+export function evaluateUserKycTier(
+  user: {
+    kycApproved?: boolean;
+    nationalId?: string | null;
+    passportNo?: string | null;
+    role?: string;
+  } | null | undefined,
+  options?: KycEvaluationOptions
+): KycPaymentProfile {
   if (!user) {
     return {
       tier: 'level_0_unverified',
@@ -51,10 +69,13 @@ export function evaluateUserKycTier(user: {
 
   const hasPassport = Boolean(user.passportNo && user.passportNo.trim().length >= 6);
   const hasNationalId = Boolean(user.nationalId && user.nationalId.trim().length === 10);
-  const isApproved = Boolean(user.kycApproved || user.role === 'admin');
+  const isApproved = Boolean(user.kycApproved);
 
-  // Admin or verified with both ID and Passport = Level 2 (Full Verified)
-  if (user.role === 'admin' || (isApproved && hasNationalId && hasPassport)) {
+  // Documented staff exemption: only if explicitly enabled in policy options
+  const isStaffExempt = Boolean(options?.staffKycExemption && user.role === 'admin');
+
+  // Level 2 (Full Verified): Requires verified National ID + Passport, OR documented staff exemption
+  if (isStaffExempt || (isApproved && hasNationalId && hasPassport)) {
     return {
       tier: 'level_2_verified',
       tierNameFa: 'سطح ۲ طلایی (احراز هویت کامل)',
@@ -71,7 +92,7 @@ export function evaluateUserKycTier(user: {
     };
   }
 
-  // International passport verified
+  // International passport verified (foreign nationals)
   if (isApproved && hasPassport && !hasNationalId) {
     return {
       tier: 'international',
@@ -124,5 +145,63 @@ export function evaluateUserKycTier(user: {
     requiresKycAction: true,
     upgradeMessageFa: 'جهت فعال‌سازی خدمات پیشرفته بانکی و کیف پول، احراز هویت اولیه را انجام دهید.',
     upgradeMessageEn: 'Complete basic identity verification to activate wallet and advanced financial services.',
+  };
+}
+
+export interface KycLimitEvaluationResult {
+  allowed: boolean;
+  tier: KycTierLevel;
+  requestedAmount: number;
+  currency: string;
+  equivalentToman: number;
+  limitToman: number;
+  limitInRequestedCurrency: number;
+  reason?: string;
+}
+
+/**
+ * Currency-aware KYC limit evaluation (Section 12 of Production Convergence).
+ * Evaluates transaction value in any currency against the user's KYC tier cap.
+ */
+export function evaluateTransactionKycLimit(params: {
+  amount: number;
+  currency: string;
+  userKycTier: KycPaymentProfile;
+  fxRateToToman?: number;
+}): KycLimitEvaluationResult {
+  const { amount, currency, userKycTier, fxRateToToman } = params;
+  const upperCurr = (currency || 'IRR').toUpperCase();
+
+  // Resolve FX conversion rate to Toman
+  let rate = fxRateToToman;
+  if (!rate || rate <= 0) {
+    if (upperCurr === 'TOMAN' || upperCurr === 'IRT') {
+      rate = 1;
+    } else if (upperCurr === 'IRR') {
+      rate = 0.1; // 10 Rials = 1 Toman
+    } else if (upperCurr in CURRENCY_TO_TOMAN) {
+      rate = CURRENCY_TO_TOMAN[upperCurr as keyof typeof CURRENCY_TO_TOMAN] || 60000;
+    } else {
+      rate = 60000; // fallback default
+    }
+  }
+
+  const equivalentToman = Math.round(amount * rate);
+  const limitToman = userKycTier.dailyLimitToman;
+  const limitInRequestedCurrency = Math.floor(limitToman / rate);
+
+  const allowed = equivalentToman <= limitToman;
+
+  return {
+    allowed,
+    tier: userKycTier.tier,
+    requestedAmount: amount,
+    currency: upperCurr,
+    equivalentToman,
+    limitToman,
+    limitInRequestedCurrency,
+    reason: allowed
+      ? undefined
+      : `مبلغ تراکنش معادل ${equivalentToman.toLocaleString('fa-IR')} تومان است که از سقف مجاز سطح ${userKycTier.tierNameFa} (${limitToman.toLocaleString('fa-IR')} تومان) فراتر است.`,
   };
 }

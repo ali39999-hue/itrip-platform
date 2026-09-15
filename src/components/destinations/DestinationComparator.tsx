@@ -436,7 +436,7 @@ export function DestinationComparator({
               aria-label={`انتخاب مقصد شماره ${idx + 1} برای مقایسه`}
               value={curId}
               onChange={(e) => handleSelectDest(idx, e.target.value)}
-              className="h-9 px-2.5 rounded-xl bg-surface border border-line text-xs font-bold text-ink cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-xs"
+              className="h-9 px-2.5 rounded-xl bg-surface border border-line text-xs font-bold text-ink cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-xs max-w-[130px] sm:max-w-[200px] truncate"
             >
               {COUNTRY_ORDER.map((cId) => {
                 const cObj = COUNTRIES[cId];

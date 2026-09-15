@@ -86,7 +86,7 @@ export function HotelCard({
   return (
     <article
       aria-label={`${locale === 'fa' ? hotel.name : hotel.nameEn}, ${hotel.stars} stars, ${locale === 'fa' ? hotel.city : hotel.cityEn}`}
-      className="bg-white dark:bg-surface border border-slate-200/90 dark:border-line rounded-2xl p-3.5 sm:p-5 hover:border-brand/40 transition-all shadow-[0_2px_12px_rgba(5,63,62,0.06)] hover:shadow-md group active:scale-[0.99] duration-100"
+      className="@container/card bg-white dark:bg-surface border border-slate-200/90 dark:border-line rounded-2xl p-3.5 sm:p-5 hover:border-brand/40 transition-all shadow-[0_2px_12px_rgba(5,63,62,0.06)] hover:shadow-md group active:scale-[0.99] duration-100"
     >
       {/* ========================================================================= */}
       {/* 1. MOBILE COMPACT VIEW (< MD) — FLYTODAY MOBILE STANDARD                  */}
@@ -95,7 +95,7 @@ export function HotelCard({
         {/* Top: Image Thumbnail + Main Info in a 2-Column Row */}
         <div className="flex items-start gap-3">
           {/* Thumbnail with free cancel & fav */}
-          <div className="relative w-28 h-32 rounded-xl overflow-hidden shrink-0 bg-soft">
+          <div className="relative w-24 h-28 sm:w-28 sm:h-32 rounded-xl overflow-hidden shrink-0 bg-soft">
             <Image
               src={imgSrc}
               alt={hotel.name}
@@ -124,7 +124,7 @@ export function HotelCard({
           </div>
 
           {/* Details Column */}
-          <div className="flex-1 min-w-0 flex flex-col justify-between h-32">
+          <div className="flex-1 min-w-0 flex flex-col justify-between h-28 sm:h-32">
             <div>
               {/* Stars & City */}
               <div className="flex items-center gap-1 mb-0.5">
@@ -164,7 +164,6 @@ export function HotelCard({
             {/* Rating Score Badge */}
             <div className="flex items-center justify-between mt-auto">
               <div
-                dir="ltr"
                 className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-mint text-brand-dark font-black text-xs border border-brand/20"
               >
                 <span>{num(hotel.rating, locale)}</span>
@@ -183,10 +182,10 @@ export function HotelCard({
             <span className="text-[10px] text-sub block font-bold leading-none mb-0.5">
               {t('perNightFrom')}
             </span>
-            <div className="flex items-baseline gap-1" dir="ltr">
-              <span className="text-lg font-black text-[#9C6209] dark:text-amber-400 font-mono tabular-nums leading-none">
+            <div className="flex items-baseline gap-1">
+              <bdi className="text-lg sm:text-xl font-black text-[#9C6209] dark:text-amber-400 font-mono tabular-nums leading-none">
                 {formatAmount(priceToman)}
-              </span>
+              </bdi>
             </div>
           </div>
 
@@ -350,7 +349,7 @@ export function HotelCard({
                     ru: `Всего за ${num(nights, locale)} ноч.:`,
                   })}
                 </span>{' '}
-                <strong className="text-ink font-black font-price">{formatAmount(priceToman * nights)}</strong>
+                <strong className="text-ink font-black font-price"><bdi>{formatAmount(priceToman * nights)}</bdi></strong>
               </div>
             </div>
 
@@ -358,7 +357,7 @@ export function HotelCard({
               <div className="text-end">
                 <span className="text-[11px] text-sub block font-medium">{t('perNightFrom')}</span>
                 <div className="text-base sm:text-lg font-black text-brand-dark font-price num flex items-baseline gap-1">
-                  <span>{formatAmount(priceToman)}</span>
+                  <bdi>{formatAmount(priceToman)}</bdi>
                 </div>
               </div>
               <Link

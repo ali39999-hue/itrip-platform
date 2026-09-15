@@ -86,10 +86,21 @@ export function UnifiedCartDrawer({ open, onClose }: UnifiedCartDrawerProps) {
 
     setBookingContext({
       id: `cart_${Date.now().toString(36)}`,
-      type: primaryItem.type.toLowerCase() === 'flight' ? 'flights' : primaryItem.type.toLowerCase() === 'hotel' ? 'hotels' : 'tours',
-      title: cart.length === 1 ? primaryItem.title : `پکیج ترکیبی: ${itemTitles.slice(0, 60)}...`,
+      type: (() => {
+        const t = primaryItem.type.toLowerCase();
+        if (t === 'flight') return 'flights' as const;
+        if (t === 'hotel') return 'hotels' as const;
+        if (t === 'tour') return 'tours' as const;
+        if (t === 'transfer') return 'transfers' as const;
+        if (t === 'visa') return 'visa' as const;
+        if (t === 'esim') return 'esim' as const;
+        if (t === 'insurance') return 'insurance' as const;
+        return 'tours' as const;
+      })(),
+      title: cart.length === 1 ? primaryItem.title : `${lt(locale, { fa: 'پکیج ترکیبی:', en: 'Combo Package:', ar: 'حزمة مجمعة:', zh: '组合套票：', ru: 'Пакет:' })} ${itemTitles.length > 60 ? itemTitles.slice(0, 60) + '...' : itemTitles}`,
       subtitle: `${num(cart.length, locale)} ${lt(locale, { fa: 'آیتم در سبد خرید', en: 'items in cart', ar: 'عناصر في السلة', zh: '件商品', ru: 'товаров' })}`,
       amount: netAmount,
+      currency: currency as 'IRR' | 'TOMAN' | 'USDT' | 'AED' | 'USD' | 'CNY',
       travelDate: primaryItem.travelDate,
       adults: primaryItem.count,
       children: 0,
@@ -274,7 +285,7 @@ export function UnifiedCartDrawer({ open, onClose }: UnifiedCartDrawerProps) {
                           <span>
                             {num(item.count, locale)}{' '}
                             {item.type.toUpperCase() === 'HOTEL'
-                              ? `${item.nights || 1} شب`
+                              ? `${item.nights || 1} ${lt(locale, { fa: 'شب', en: 'nights', ar: 'ليلة', zh: '晚', ru: 'ноч.' })}`
                               : lt(locale, { fa: 'نفر', en: 'pax', ar: 'شخص', zh: '人', ru: 'чел.' })}
                           </span>
                         </div>
@@ -284,7 +295,7 @@ export function UnifiedCartDrawer({ open, onClose }: UnifiedCartDrawerProps) {
                     <button
                       type="button"
                       onClick={() => removeFromCart(item.id)}
-                      aria-label={`حذف ${item.title}`}
+                      aria-label={lt(locale, { fa: `حذف ${item.title}`, en: `Remove ${item.title}`, ar: `حذف ${item.title}`, zh: `移除 ${item.title}`, ru: `Удалить ${item.title}` })}
                       className="min-w-[44px] min-h-[44px] rounded-xl text-sub hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center justify-center transition cursor-pointer"
                     >
                       <Trash2 size={15} />

@@ -264,16 +264,21 @@ class SiteContentService {
 
   /** Lists every stored override. Invalid rows are returned as-is for admin visibility. */
   static async list(): Promise<SiteContentEntry[]> {
-    const rows = await prisma.siteContent.findMany({ orderBy: { key: 'asc' } });
-    return rows.map((row) => {
-      let payload: unknown = null;
-      try {
-        payload = JSON.parse(row.payload);
-      } catch {
-        payload = null;
-      }
-      return { key: row.key as SiteContentKey, payload, updatedBy: row.updatedBy, updatedAt: row.updatedAt };
-    });
+    try {
+      const rows = await prisma.siteContent.findMany({ orderBy: { key: 'asc' } });
+      return rows.map((row) => {
+        let payload: unknown = null;
+        try {
+          payload = JSON.parse(row.payload);
+        } catch {
+          payload = null;
+        }
+        return { key: row.key as SiteContentKey, payload, updatedBy: row.updatedBy, updatedAt: row.updatedAt };
+      });
+    } catch (err) {
+      console.warn('[SiteContentService.list] Database query notice:', err);
+      return [];
+    }
   }
 
   /** Returns the parsed payload stored for a key, or null when absent/invalid. */
@@ -299,7 +304,11 @@ class SiteContentService {
   }
 
   static async remove(key: SiteContentKey): Promise<void> {
-    await prisma.siteContent.deleteMany({ where: { key } });
+    try {
+      await prisma.siteContent.deleteMany({ where: { key } });
+    } catch (err) {
+      console.warn('[SiteContentService.remove] Database deletion notice:', err);
+    }
   }
 }
 

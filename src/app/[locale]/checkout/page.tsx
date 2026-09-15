@@ -12,7 +12,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useCountryStore } from '@/stores/country-store';
 import { countryName } from '@/lib/countries';
 import { normalizeBookingType, passengerSchema, domesticPassengerSchema, type Passenger } from '@/lib/validations';
-import { createBookingDraft, payBooking, getWallet, repriceBookingAction } from '@/actions/booking';
+import { createBookingDraft, createMultiItemBookingDraftAction, payBooking, getWallet, repriceBookingAction } from '@/actions/booking';
 import { getAdminPaymentModeAction, setAdminPaymentModeAction } from '@/actions/admin-payment-mode';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -53,6 +53,8 @@ export default function CheckoutPage() {
   const bookingContext = useBookingStore((s) => s.bookingContext);
   const setPassengers = useBookingStore((s) => s.setPassengers);
   const wallet = useBookingStore((s) => s.wallet);
+  const cart = useBookingStore((s) => s.cart);
+  const clearCart = useBookingStore((s) => s.clearCart);
   const authUser = useAuthStore((s) => s.user);
   const searchParams = useSearchParams();
 
@@ -559,6 +561,48 @@ export default function CheckoutPage() {
     setPassengers(allBps);
 
     try {
+      if (bookingContext?.meta?.isUnifiedCart === 'true' && cart.length > 0) {
+        const cartItems = cart.map((c) => ({
+          type: c.type,
+          itemId: c.id,
+          title: c.title,
+          count: c.count,
+          nights: c.nights,
+          unitPrice: c.unitPrice,
+          travelDate: c.travelDate || bookingContext.travelDate || new Date().toISOString().split('T')[0],
+          inventoryItemId: c.inventoryItemId,
+          details: c.details,
+        }));
+
+        const multiDraft = await createMultiItemBookingDraftAction({
+          items: cartItems,
+          currency: (bookingContext.currency || 'IRR') as string,
+          contactEmail: authUser?.email || 'guest@firuzo.com',
+          contactPhone,
+          passengers: allFormData,
+        });
+
+        if (multiDraft.success && multiDraft.bookingId) {
+          setDraftBookingId(multiDraft.bookingId);
+          if (multiDraft.pricing?.bundleDiscountAmount) {
+            setReferralDiscountAmount(multiDraft.pricing.bundleDiscountAmount);
+          }
+          setPhase('payment');
+          return;
+        }
+
+        const draftError = multiDraft.error;
+        setError(
+          draftError === 'Unauthorized'
+            ? lt(locale, { fa: 'برای ادامه وارد حساب خود شوید.', en: 'Please sign in to continue.', ar: 'يرجى تسجيل الدخول للمتابعة.', zh: '请先登录后继续。', ru: 'Войдите, чтобы продолжить.' })
+            : draftError
+              ? lt(locale, { fa: 'خطا در ثبت سبد خرید: ', en: 'Cart booking failed: ', ar: 'فشل حجز السلة: ', zh: '购物车预订失败：', ru: 'Ошибка броینگ سبد خرید: ' }) + draftError
+              : lt(locale, { fa: 'خطا در ثبت رزرو. دوباره تلاش کنید.', en: 'Could not create the booking draft. Please retry.', ar: 'تعذر إنشاء الحجز. حاول مجدداً.', zh: '创建预订失败，请重试。', ru: 'Не удалось создать бронирование. Повторите попытку.' })
+        );
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
       // Domestic tours run a 3-second national-ID verification pass: the CTA
       // shows a spinner while the draft is created in parallel, then the
       // success toast confirms and the flow advances to the payment step.
@@ -778,6 +822,7 @@ export default function CheckoutPage() {
     await minAnimation;
     setConfirmedRef(booking?.externalPnr || booking?.reference || '');
     setConfirmedTitle(itemTitle);
+    clearCart();
     setPhase('success');
   }
 

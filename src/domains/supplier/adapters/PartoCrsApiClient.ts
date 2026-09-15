@@ -349,6 +349,80 @@ export class PartoCrsApiClient {
     return payload.BaggageInfo ?? null;
   }
 
+  /**
+   * Phase 2: Live AirBook execution submitting verified passenger details (SUP-102)
+   */
+  async bookFlight(params: {
+    fareSourceCode: string;
+    clientUniqueId: string;
+    travelerInfo: Array<{
+      passengerType: 'ADULT' | 'CHILD' | 'INFANT';
+      gender: 'MALE' | 'FEMALE';
+      firstName: string;
+      lastName: string;
+      birthDate: string; // YYYY-MM-DD
+      nationalId?: string;
+      passportNumber?: string;
+      passportExpiry?: string;
+      passportCountry?: string;
+      nationality?: string;
+    }>;
+  }): Promise<{
+    uniqueId: string;
+    pnr: string;
+    status: string;
+    eTickets?: string[];
+  }> {
+    const mappedTravelers = params.travelerInfo.map((t) => ({
+      PassengerType: t.passengerType === 'INFANT' ? 3 : t.passengerType === 'CHILD' ? 2 : 1,
+      Gender: t.gender === 'FEMALE' ? 2 : 1,
+      PassengerName: {
+        PassengerTitle: t.gender === 'FEMALE' ? 'MS' : 'MR',
+        PassengerFirstName: t.firstName.trim().toUpperCase(),
+        PassengerLastName: t.lastName.trim().toUpperCase(),
+      },
+      DateOfBirth: t.birthDate,
+      NationalId: t.nationalId,
+      Passport: t.passportNumber
+        ? {
+            PassportNumber: t.passportNumber.trim().toUpperCase(),
+            ExpiryDate: t.passportExpiry,
+            Country: t.passportCountry || 'IR',
+          }
+        : undefined,
+      Nationality: t.nationality || 'IR',
+    }));
+
+    const payload = await this.call<{
+      UniqueId?: string;
+      AirReservation?: {
+        BookingReferenceId?: string;
+        ReservationStatus?: string;
+        ItineraryTickets?: Array<{ TicketNumber?: string }>;
+      };
+    }>(
+      '/api/Air/AirBook',
+      {
+        FareSourceCode: params.fareSourceCode,
+        ClientUniqueId: params.clientUniqueId,
+        TravelerInfo: mappedTravelers,
+      },
+      25000
+    );
+
+    const reservation = payload.AirReservation;
+    const pnr = reservation?.BookingReferenceId || payload.UniqueId || '';
+    const status = reservation?.ReservationStatus || 'CONFIRMED';
+    const eTickets = reservation?.ItineraryTickets?.map((t) => t.TicketNumber).filter(Boolean) as string[] | undefined;
+
+    return {
+      uniqueId: payload.UniqueId || pnr,
+      pnr,
+      status,
+      eTickets,
+    };
+  }
+
   async creditBalance(): Promise<number | null> {
     const payload = await this.call<Record<string, unknown>>('/api/Common/CreditBalance', {}, 8000);
     const raw = payload['CreditBalance'] ?? payload['Balance'] ?? payload['Credit'];

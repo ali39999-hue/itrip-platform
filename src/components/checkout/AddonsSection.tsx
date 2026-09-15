@@ -6,8 +6,10 @@ import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
 
-export const ESIM_PRICE = 2800000;
-export const INSURANCE_PRICE = 1900000;
+// Display prices in Toman (IRR / 10) matching baseAmount in bookingContext.
+// Server resolveAddonPrice maps these to 2,800,000 IRR and 1,900,000 IRR.
+export const ESIM_PRICE = 280000;
+export const INSURANCE_PRICE = 190000;
 
 interface AddonsSectionProps {
   addEsim: boolean;

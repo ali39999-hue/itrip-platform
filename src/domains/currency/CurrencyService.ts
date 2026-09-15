@@ -15,7 +15,7 @@ export interface WalletBalances {
   CNY?: number;
 }
 
-export type SupportedCurrency = 'IRR' | 'USDT' | 'AED' | 'USD' | 'CNY';
+export type SupportedCurrency = 'IRR' | 'TOMAN' | 'USDT' | 'AED' | 'USD' | 'CNY';
 
 export interface CurrencyRateProvider {
   getRateDecimal(from: SupportedCurrency, to: SupportedCurrency): Prisma.Decimal;

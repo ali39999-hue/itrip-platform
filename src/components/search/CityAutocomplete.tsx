@@ -125,7 +125,7 @@ export function CityAutocomplete({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full min-h-[58px] px-3.5 py-2 rounded-2xl bg-surface border border-line/80 hover:border-brand focus-within:border-brand focus-within:ring-2 focus-within:ring-brand flex items-center gap-2 transition ${className}`}
+      className={`relative w-full min-h-[50px] sm:min-h-[58px] px-3.5 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-surface border border-line/80 hover:border-brand focus-within:border-brand focus-within:ring-2 focus-within:ring-brand flex items-center gap-2 transition ${className}`}
     >
       <MapPin size={18} className="text-brand-dark shrink-0" aria-hidden="true" />
       <div className="w-full min-w-0 flex flex-col justify-center">

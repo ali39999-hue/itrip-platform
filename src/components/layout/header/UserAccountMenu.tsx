@@ -3,7 +3,8 @@
 import { useAuthStore } from '@/stores/auth-store';
 import { Link } from '@/i18n/routing';
 import { useTranslations, useLocale } from 'next-intl';
-import { UserRound, Headset, Sparkles } from 'lucide-react';
+import { UserRound, Headset, Sparkles, ShieldCheck } from 'lucide-react';
+import { lt } from '@/lib/lt';
 
 export function UserAccountMenu() {
   const locale = useLocale();
@@ -11,10 +12,23 @@ export function UserAccountMenu() {
   const t = useTranslations('Nav');
   const ct = useTranslations('Common');
 
+  const isAdminOrPersonnel = Boolean(
+    user?.role && ['admin', 'ADMIN', 'SUPER_ADMIN', 'OPS', 'FINANCE', 'OPERATOR'].includes(user.role)
+  );
+
   return (
     <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-      {/* ERP is reachable via the account page, nav dropdown and mobile drawer —
-          a standalone header badge overcrowds the bar when signed in. */}
+      {/* ERP Direct Link for Admins & Personnel */}
+      {isAdminOrPersonnel && (
+        <Link
+          href="/admin"
+          aria-label={lt(locale, { fa: 'سامانه مدیریت (ERP)', en: 'Admin ERP Panel', ar: 'لوحة الإدارة', zh: '管理后台', ru: 'Панель ERP' })}
+          className="min-h-[44px] px-3 py-1 rounded-full bg-amber-500/20 dark:bg-amber-400/15 border border-amber-500/40 text-amber-900 dark:text-amber-200 hover:bg-amber-500/30 text-[12px] font-black tracking-tight transition flex items-center gap-1.5 shrink-0 shadow-2xs"
+        >
+          <ShieldCheck size={14} className="text-amber-600 dark:text-amber-400" />
+          <span className="hidden min-[480px]:inline">{lt(locale, { fa: 'پنل ادمین', en: 'ERP Admin', ar: 'الإدارة', zh: '管理', ru: 'ERP' })}</span>
+        </Link>
+      )}
 
       {/* Support Icon Link */}
       <Link

@@ -584,7 +584,7 @@ export function PopularFlightsSection({ override }: { override?: PopularRouteOve
                 <span className="text-sm sm:text-base font-black text-ink group-hover:text-brand-dark transition-colors">
                   {locale === 'fa' ? r.fromFa : r.fromEn}
                 </span>
-                <span className="text-brand-dark font-black">➔</span>
+                <span className="text-brand-dark font-black inline-block rtl:rotate-180">➔</span>
                 <span className="text-sm sm:text-base font-black text-ink group-hover:text-brand-dark transition-colors">
                   {locale === 'fa' ? r.toFa : r.toEn}
                 </span>

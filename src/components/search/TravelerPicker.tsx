@@ -67,7 +67,7 @@ export function TravelerPicker({
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-label={guestSummary}
-        className="min-h-[44px] min-w-[44px] w-full min-h-[58px] px-3.5 py-2 rounded-2xl bg-surface border border-line/80 hover:border-brand focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none flex items-center gap-2.5 transition text-start"
+        className="w-full min-h-[50px] sm:min-h-[58px] px-3.5 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-surface border border-line/80 hover:border-brand focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none flex items-center gap-2.5 transition text-start"
       >
         <Users size={18} className="text-brand-dark shrink-0" aria-hidden="true" />
         <div className="flex-1 min-w-0 flex flex-col justify-center">

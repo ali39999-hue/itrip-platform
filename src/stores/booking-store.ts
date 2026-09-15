@@ -43,7 +43,7 @@ function genId(prefix: string) {
 export const useBookingStore = create<BookingState>()(
   persist(
     (set) => ({
-      wallet: process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
+      wallet: (process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_DEMO_MODE === 'true')
         ? { IRR: 150_000_000, USDT: 250, AED: 400 }
         : { IRR: 0, USDT: 0, AED: 0 },
       bookingContext: null,

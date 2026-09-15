@@ -69,14 +69,14 @@ export function FilterSheet({
         <div className="flex-1 overflow-y-auto p-4 space-y-6">{children}</div>
 
         {/* Sticky Apply Footer */}
-        <div className="p-4 border-t border-line bg-surface shadow-xs">
+        <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] border-t border-line bg-surface shadow-xs shrink-0">
           <button
             type="button"
             onClick={() => {
               onApply();
               onOpenChange(false);
             }}
-            className="w-full min-h-[48px] rounded-2xl bg-brand hover:bg-brand-dark text-white font-black text-sm active:scale-95 transition flex items-center justify-center gap-2 shadow-sm"
+            className="w-full min-h-[48px] rounded-2xl bg-brand hover:bg-brand-dark text-white font-black text-sm active:scale-95 transition flex items-center justify-center gap-2 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
           >
             <Check size={18} />
             <span>

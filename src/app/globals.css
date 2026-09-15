@@ -185,6 +185,30 @@
   min-height: 44px;
 }
 
+/* Fluid Typography & Layout (Utopia / Every-Layout standards - Core 4 & 5) */
+@utility text-fluid-h1 {
+  font-size: clamp(1.75rem, 1.25rem + 2.5vw, 3rem);
+  line-height: 1.15;
+}
+@utility text-fluid-h2 {
+  font-size: clamp(1.35rem, 1.1rem + 1.8vw, 2.25rem);
+  line-height: 1.2;
+}
+@utility text-fluid-h3 {
+  font-size: clamp(1.15rem, 1rem + 1vw, 1.6rem);
+  line-height: 1.25;
+}
+@utility py-fluid-section {
+  padding-block: clamp(2rem, 1.5rem + 2vw, 4.5rem);
+}
+@utility px-fluid-shell {
+  padding-inline: clamp(1rem, 0.75rem + 1.5vw, 2.5rem);
+}
+@utility container-card {
+  container-type: inline-size;
+  container-name: card;
+}
+
 /*
  * Scroll-hiding برای کاروسل‌های افقی. سراسر پروژه سه نام قدیمی استفاده شده
  * (scrollbar-none / hide-scrollbar / no-scrollbar) — هر سه این‌جا alias می‌شوند

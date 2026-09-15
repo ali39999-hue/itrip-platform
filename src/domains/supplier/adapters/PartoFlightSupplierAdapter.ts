@@ -149,8 +149,38 @@ export class PartoFlightSupplierAdapter implements FlightSupplierPort {
       };
     }
 
-    // Real AirBook mapping (TravelerInfo, ClientUniqueId, markup policy) lands in
-    // Phase 2 — intentionally fail-closed rather than issuing wrong bookings.
-    throw new Error('PARTO_BOOKING_NOT_WIRED: AirBook flow is Phase 2 — docs/PARTO_LIVE_INTEGRATION_PLAN.fa.md §3');
+    const fareSourceCode = PartoCrsApiClient.fareSourceCodeFromOfferId(cmd.offerId);
+    if (!fareSourceCode) {
+      throw new Error(`INVALID_OFFER_ID: Cannot extract FareSourceCode from offerId ${cmd.offerId}`);
+    }
+
+    // Execute real AirBook call with verified traveler data
+    const bookingResult = await client.bookFlight({
+      fareSourceCode,
+      clientUniqueId: cmd.holdToken || `parto_${Date.now()}`,
+      travelerInfo: cmd.passengers.map((p) => {
+        const extra = p as { type?: string; gender?: string; passportNumber?: string; passportCountry?: string; nationality?: string };
+        return {
+          passengerType: (extra.type === 'CHILD' ? 'CHILD' : extra.type === 'INFANT' ? 'INFANT' : 'ADULT') as 'ADULT' | 'CHILD' | 'INFANT',
+          gender: (extra.gender === 'FEMALE' ? 'FEMALE' : 'MALE') as 'MALE' | 'FEMALE',
+          firstName: p.firstName,
+          lastName: p.lastName,
+          birthDate: p.birthDate || '1990-01-01',
+          nationalId: p.nationalId,
+          passportNumber: p.passportNo || extra.passportNumber,
+          passportExpiry: p.passportExpiry,
+          passportCountry: extra.passportCountry || 'IR',
+          nationality: extra.nationality || 'IR',
+        };
+      }),
+    });
+
+    return {
+      success: true,
+      externalBookingId: bookingResult.uniqueId,
+      pnr: SupplierNormalizer.normalizePnr(bookingResult.pnr),
+      ticketNumbers: bookingResult.eTickets,
+      status: 'CONFIRMED',
+    };
   }
 }

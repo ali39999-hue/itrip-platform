@@ -43,8 +43,9 @@ export function FiruzoChatWidget() {
   const cardRef = useRef<HTMLDivElement>(null);
 
   // Same exclusion logic as ContactDock: product pages with sticky bottom CTAs
+  const isSearch = pathname.includes('/search');
   const isExcluded =
-    !pathname.includes('/search') &&
+    !isSearch &&
     (pathname.includes('/checkout') ||
       pathname.includes('/payment-status') ||
       /^\/([a-z]{2}\/)?(hotels|tours)\/(?!search)[^/]+$/.test(pathname));
@@ -202,7 +203,9 @@ export function FiruzoChatWidget() {
             'fixed z-[120] end-4 md:end-6 max-md:transition-all max-md:duration-200',
             isExcluded
               ? 'bottom-[calc(184px+env(safe-area-inset-bottom))] md:bottom-[84px]'
-              : 'bottom-[calc(142px+env(safe-area-inset-bottom))] md:bottom-[84px]',
+              : isSearch
+                ? 'bottom-[calc(190px+env(safe-area-inset-bottom))] md:bottom-[84px]'
+                : 'bottom-[calc(142px+env(safe-area-inset-bottom))] md:bottom-[84px]',
             fabVisible ? 'max-md:opacity-100 max-md:visible' : 'max-md:opacity-0 max-md:invisible max-md:translate-y-2',
           )}
         >

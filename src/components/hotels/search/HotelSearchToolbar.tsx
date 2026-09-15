@@ -64,7 +64,7 @@ export function HotelSearchToolbar({
       <button
         type="button"
         onClick={onOpenMobileFilters}
-        className="lg:hidden shrink-0 min-h-[36px] px-3.5 inline-flex items-center gap-1.5 rounded-xl border border-line text-sub bg-surface text-[12px] font-extrabold hover:border-mint-bright transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className="lg:hidden shrink-0 min-h-[44px] px-3.5 inline-flex items-center gap-1.5 rounded-xl border border-line text-sub bg-surface text-[12px] font-extrabold hover:border-mint-bright transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer active:scale-95"
       >
         <SlidersHorizontal size={14} /> {lt(locale, { fa: 'فیلترها', en: 'Filters', ar: 'الفلاتر', zh: '筛选', ru: 'Фильтры' })}
         {activeFiltersCount > 0 && (

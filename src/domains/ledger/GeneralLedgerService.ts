@@ -213,7 +213,7 @@ export class GeneralLedgerService {
   /**
    * Core posting kernel: Writes balanced double-entry pairs with strict Debit = Credit invariant (FIN-002, FIN-003, FIN-101, FIN-102)
    */
-  private static async postBalancedEntry(
+  static async postBalancedEntry(
     params: {
       groupId: string;
       referenceType: string;

@@ -37,7 +37,7 @@ export function HeroSection({ override }: { override?: HeroOverride } = {}) {
     HERO_IMAGES['turkey'];
 
   return (
-    <section className="relative w-full min-h-0 md:min-h-[600px] lg:min-h-[640px] flex items-center justify-center overflow-hidden pt-0 pb-0">
+    <section className="relative w-full min-h-0 md:min-h-[580px] lg:min-h-[620px] flex items-center justify-center overflow-hidden pt-0 pb-0">
       {/* Background image + overlays — فول‌عرض با حداقل حاشیه تا گوشه‌های گرد دیده شوند */}
       <div className="absolute inset-0 z-0 p-1.5 md:p-2">
         <div className={`relative w-full h-full rounded-2xl md:rounded-3xl overflow-hidden shadow-elev-1 ${imgError ? 'bg-gradient-to-br from-brand-dark to-brand' : 'bg-surface'}`}>
@@ -59,9 +59,9 @@ export function HeroSection({ override }: { override?: HeroOverride } = {}) {
       </div>
 
       {/* Hero content + immediate search */}
-      <div className="relative z-[70] w-full max-w-[1440px] px-2.5 sm:px-4 md:px-6 2xl:px-8 mx-auto flex flex-col items-center">
+      <div className="relative z-[70] w-full max-w-[1440px] px-2.5 sm:px-4 md:px-6 2xl:px-8 mx-auto flex flex-col items-center pt-3 pb-3 sm:pt-6 sm:pb-8 md:py-12">
         {/* Concise Mobile Heading & Editorial Desktop Typography */}
-        <h1 className="text-white dark:text-white hero-glow-text text-center mb-1.5 md:mb-2 max-w-4xl text-xl sm:text-3xl md:text-5xl lg:text-[48px] leading-[1.3] font-black drop-shadow-md tracking-tight">
+        <h1 className="text-white dark:text-white hero-glow-text text-center mb-2 md:mb-3 max-w-4xl text-lg sm:text-2xl md:text-5xl lg:text-[48px] leading-[1.25] sm:leading-[1.3] font-black drop-shadow-md tracking-tight">
           {cmsTitle ? (
             cmsTitle
           ) : (

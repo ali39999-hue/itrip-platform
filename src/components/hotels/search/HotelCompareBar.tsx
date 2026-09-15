@@ -48,9 +48,10 @@ export function HotelCompareBar({
               <button
                 type="button"
                 onClick={() => onToggleCmp(id)}
-                className="text-sub hover:text-destructive ms-1"
+                aria-label={lt(locale, { fa: 'حذف از مقایسه', en: 'Remove from comparison', ar: 'إزالة من المقارنة', zh: '移出对比', ru: 'Удалить из сравнения' })}
+                className="min-h-[44px] min-w-[44px] -me-2 text-sub hover:text-destructive flex items-center justify-center cursor-pointer"
               >
-                <X size={13} />
+                <X size={14} />
               </button>
             </div>
           );
@@ -61,10 +62,10 @@ export function HotelCompareBar({
         type="button"
         disabled={cmp.size < 2}
         onClick={onCompareAction}
-        className="w-full h-10 rounded-xl bg-brand hover:bg-brand-dark disabled:opacity-50 disabled:cursor-not-allowed text-surface font-bold text-xs flex items-center justify-center gap-2 transition"
+        className="w-full min-h-[44px] rounded-xl bg-action hover:bg-action-hover text-ink disabled:opacity-50 disabled:cursor-not-allowed font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition active:scale-[0.98] shadow-sm cursor-pointer"
       >
         <span>{lt(locale, { fa: 'مقایسه دقیق موارد انتخابی', en: 'Compare selected stays', ar: 'مقارنة العناصر المحددة', zh: '精确比较所选住宿', ru: 'Детальное сравнение выбранных' })}</span>
-        <ArrowLeft size={15} className="ltr:rotate-180" />
+        <ArrowLeft size={16} className="ltr:rotate-180" />
       </button>
     </div>
   );

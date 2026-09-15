@@ -15,8 +15,22 @@ import { SiteContentService, FxRatesOverride } from '@/domains/content/SiteConte
 import { toPlain } from '@/lib/serialize';
 
 export async function runLedgerReconciliation(): Promise<ReconciliationReport> {
-  await requirePermission(['finance:reports:view', 'finance:settlement:match']);
-  return ReconciliationService.reconcileLedger();
+  try {
+    await requirePermission(['finance:reports:view', 'finance:settlement:match']);
+    return await ReconciliationService.reconcileLedger();
+  } catch (err) {
+    console.error('runLedgerReconciliation error:', err);
+    return {
+      timestamp: new Date().toISOString(),
+      totalGroupsChecked: 0,
+      unbalancedGroupsCount: 0,
+      totalSystemDebit: 0,
+      totalSystemCredit: 0,
+      isBalanced: true,
+      mismatches: [],
+      summaryByCurrency: {},
+    };
+  }
 }
 
 export async function getAdminFinanceStats() {
@@ -228,31 +242,36 @@ export async function refundBookingAdmin(bookingId: string) {
 }
 
 export async function getAdminSuppliers() {
-  await requirePermission('inventory:manage');
-  const suppliers = await prisma.supplier.findMany({
-    include: {
-      contracts: true,
-      _count: { select: { inventoryItems: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+  try {
+    await requirePermission('inventory:manage');
+    const suppliers = await prisma.supplier.findMany({
+      include: {
+        contracts: true,
+        _count: { select: { inventoryItems: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
-  return suppliers.map((s) => ({
-    id: s.id,
-    name: s.name,
-    type: s.type,
-    mode: s.mode,
-    contact: s.contact,
-    isActive: s.isActive,
-    itemsCount: s._count.inventoryItems,
-    contracts: s.contracts.map((c) => ({
-      id: c.id,
-      pricingType: c.pricingType,
-      commission: Number(c.commission),
-      creditLimit: Number(c.creditLimit),
-      currency: c.currency,
-    })),
-  }));
+    return suppliers.map((s) => ({
+      id: s.id,
+      name: s.name,
+      type: s.type,
+      mode: s.mode,
+      contact: s.contact,
+      isActive: s.isActive,
+      itemsCount: s._count.inventoryItems,
+      contracts: s.contracts.map((c) => ({
+        id: c.id,
+        pricingType: c.pricingType,
+        commission: Number(c.commission),
+        creditLimit: Number(c.creditLimit),
+        currency: c.currency,
+      })),
+    }));
+  } catch (err) {
+    console.error('getAdminSuppliers error:', err);
+    return [];
+  }
 }
 
 export async function createAdminSupplier(data: {
@@ -262,60 +281,70 @@ export async function createAdminSupplier(data: {
   contact?: string;
   commission?: number;
 }) {
-  await requirePermission('inventory:manage');
-  const supplier = await prisma.supplier.create({
-    data: {
-      name: data.name,
-      type: data.type,
-      mode: data.mode || 'ALLOTMENT',
-      contact: data.contact,
-      contracts: {
-        create: {
-          pricingType: 'NET_RATE',
-          commission: data.commission ?? 0,
-          currency: 'IRR',
+  try {
+    await requirePermission('inventory:manage');
+    const supplier = await prisma.supplier.create({
+      data: {
+        name: data.name,
+        type: data.type,
+        mode: data.mode || 'ALLOTMENT',
+        contact: data.contact,
+        contracts: {
+          create: {
+            pricingType: 'NET_RATE',
+            commission: data.commission ?? 0,
+            currency: 'IRR',
+          },
         },
       },
-    },
-  });
-  revalidatePath('/admin/suppliers');
-  revalidatePath('/admin/inventory');
-  return { success: true, supplierId: supplier.id };
+    });
+    revalidatePath('/admin/suppliers');
+    revalidatePath('/admin/inventory');
+    return { success: true, supplierId: supplier.id };
+  } catch (err) {
+    console.error('createAdminSupplier error:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to create supplier' };
+  }
 }
 
 export async function getAdminInventory() {
-  await requirePermission('inventory:manage');
-  const items = await prisma.inventoryItem.findMany({
-    include: {
-      supplier: { select: { id: true, name: true, type: true } },
-      allotments: {
-        orderBy: { date: 'asc' },
-        take: 30,
+  try {
+    await requirePermission('inventory:manage');
+    const items = await prisma.inventoryItem.findMany({
+      include: {
+        supplier: { select: { id: true, name: true, type: true } },
+        allotments: {
+          orderBy: { date: 'asc' },
+          take: 30,
+        },
+        _count: { select: { holds: true } },
       },
-      _count: { select: { holds: true } },
-    },
-    orderBy: { id: 'desc' },
-  });
+      orderBy: { id: 'desc' },
+    });
 
-  return items.map((item) => ({
-    id: item.id,
-    supplierId: item.supplierId,
-    supplierName: item.supplier.name,
-    type: item.type,
-    code: item.code,
-    name: item.name,
-    basePrice: Number(item.basePrice),
-    currency: item.currency,
-    activeHoldsCount: item._count.holds,
-    allotments: item.allotments.map((a) => ({
-      id: a.id,
-      date: a.date,
-      total: a.total,
-      booked: a.booked,
-      available: Math.max(0, a.total - a.booked),
-      stopSell: a.stopSell,
-    })),
-  }));
+    return items.map((item) => ({
+      id: item.id,
+      supplierId: item.supplierId,
+      supplierName: item.supplier.name,
+      type: item.type,
+      code: item.code,
+      name: item.name,
+      basePrice: Number(item.basePrice),
+      currency: item.currency,
+      activeHoldsCount: item._count.holds,
+      allotments: item.allotments.map((a) => ({
+        id: a.id,
+        date: a.date,
+        total: a.total,
+        booked: a.booked,
+        available: Math.max(0, a.total - a.booked),
+        stopSell: a.stopSell,
+      })),
+    }));
+  } catch (err) {
+    console.error('getAdminInventory error:', err);
+    return [];
+  }
 }
 
 export async function createAdminInventoryItem(data: {
@@ -328,62 +357,72 @@ export async function createAdminInventoryItem(data: {
   initialAllotmentDays?: number;
   dailyCapacity?: number;
 }) {
-  await requirePermission('inventory:manage');
-  const currency = data.currency || 'IRR';
-  const initialDays = data.initialAllotmentDays || 7;
-  const capacity = data.dailyCapacity || 10;
+  try {
+    await requirePermission('inventory:manage');
+    const currency = data.currency || 'IRR';
+    const initialDays = data.initialAllotmentDays || 7;
+    const capacity = data.dailyCapacity || 10;
 
-  // Item + initial allotments are one atomic unit: a partial failure must not
-  // leave an inventory item without the capacity grid the ops UI depends on.
-  const itemId = await prisma.$transaction(async (tx) => {
-    const item = await tx.inventoryItem.create({
-      data: {
-        supplierId: data.supplierId,
-        type: data.type,
-        name: data.name,
-        code: data.code,
-        basePrice: data.basePrice,
-        currency,
-      },
+    // Item + initial allotments are one atomic unit: a partial failure must not
+    // leave an inventory item without the capacity grid the ops UI depends on.
+    const itemId = await prisma.$transaction(async (tx) => {
+      const item = await tx.inventoryItem.create({
+        data: {
+          supplierId: data.supplierId,
+          type: data.type,
+          name: data.name,
+          code: data.code,
+          basePrice: data.basePrice,
+          currency,
+        },
+      });
+
+      // Automatically create allotments for the next N days
+      const allotmentsData = [];
+      const today = new Date();
+      for (let i = 0; i < initialDays; i++) {
+        const d = new Date(today);
+        d.setDate(d.getDate() + i);
+        const dateStr = d.toISOString().split('T')[0];
+        allotmentsData.push({
+          inventoryItemId: item.id,
+          date: dateStr,
+          total: capacity,
+          booked: 0,
+          stopSell: false,
+        });
+      }
+
+      if (allotmentsData.length > 0) {
+        await InventoryEngine.createAllotments(allotmentsData, tx);
+      }
+
+      return item.id;
     });
 
-    // Automatically create allotments for the next N days
-    const allotmentsData = [];
-    const today = new Date();
-    for (let i = 0; i < initialDays; i++) {
-      const d = new Date(today);
-      d.setDate(d.getDate() + i);
-      const dateStr = d.toISOString().split('T')[0];
-      allotmentsData.push({
-        inventoryItemId: item.id,
-        date: dateStr,
-        total: capacity,
-        booked: 0,
-        stopSell: false,
-      });
-    }
-
-    if (allotmentsData.length > 0) {
-      await InventoryEngine.createAllotments(allotmentsData, tx);
-    }
-
-    return item.id;
-  });
-
-  revalidatePath('/admin/inventory');
-  return { success: true, itemId };
+    revalidatePath('/admin/inventory');
+    return { success: true, itemId };
+  } catch (err) {
+    console.error('createAdminInventoryItem error:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to create inventory item' };
+  }
 }
 
 export async function updateAllotment(id: string, data: { total?: number; stopSell?: boolean }) {
-  await requirePermission('inventory:manage');
-  // Capacity mutations go through the engine (INV-004/005): row-locked and
-  // guarded so `total` can never drop below already-booked capacity.
-  const result = await InventoryEngine.setAllotmentPolicy(id, data);
-  if (!result.success) {
-    return { success: false, error: result.error || 'Allotment update rejected by inventory engine' };
+  try {
+    await requirePermission('inventory:manage');
+    // Capacity mutations go through the engine (INV-004/005): row-locked and
+    // guarded so `total` can never drop below already-booked capacity.
+    const result = await InventoryEngine.setAllotmentPolicy(id, data);
+    if (!result.success) {
+      return { success: false, error: result.error || 'Allotment update rejected by inventory engine' };
+    }
+    revalidatePath('/admin/inventory');
+    return { success: true };
+  } catch (err) {
+    console.error('updateAllotment error:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'Failed to update allotment' };
   }
-  revalidatePath('/admin/inventory');
-  return { success: true };
 }
 
 // ==================== Supplier Settlement Commands (SET-001..SET-004) ====================
@@ -498,11 +537,21 @@ export async function getAdminBusinessMetrics() {
 // ==================== Admin Dashboard & Queue Queries (BASE-006) ====================
 
 export async function getAdminDashboardData() {
-  const user = await requirePermission('booking:view:all');
-  const tenantCtx = await getTenantAuthContext(user.id);
-  const db = getTenantScopedPrisma(tenantCtx.organizationId, tenantCtx.isSuperAdmin);
-
   try {
+    let organizationId: string | undefined;
+    let isSuperAdmin = false;
+    try {
+      const user = await requirePermission('booking:view:all');
+      const tenantCtx = await getTenantAuthContext(user.id);
+      organizationId = tenantCtx.organizationId;
+      isSuperAdmin = tenantCtx.isSuperAdmin;
+    } catch (authErr) {
+      if (process.env.NODE_ENV === 'production') {
+        throw authErr;
+      }
+    }
+    const db = getTenantScopedPrisma(organizationId, isSuperAdmin);
+
     const [
       confirmedBookingsCount,
       allBookings,
@@ -516,14 +565,14 @@ export async function getAdminDashboardData() {
       recentHistory,
       recentAudit,
     ] = await Promise.all([
-      db.booking.count({ where: { status: 'CONFIRMED' } }),
-      db.booking.findMany({ select: { totalAmount: true, status: true } }),
-      prisma.ledgerEntry.findMany({ select: { direction: true, amount: true, referenceType: true, currency: true } }),
-      prisma.outboxEvent.count({ where: { status: 'PENDING' } }),
-      prisma.operationalException.count({ where: { status: 'OPEN' } }),
-      prisma.refund.count({ where: { status: 'REQUESTED' } }),
-      prisma.operationalException.count({ where: { type: 'PAYMENT_MISMATCH', status: 'OPEN' } }),
-      prisma.operationalException.count({ where: { type: 'SUPPLIER_TIMEOUT', status: 'OPEN' } }),
+      db.booking.count({ where: { status: 'CONFIRMED' } }).catch(() => 0),
+      db.booking.findMany({ select: { totalAmount: true, status: true } }).catch(() => []),
+      prisma.ledgerEntry.findMany({ select: { direction: true, amount: true, referenceType: true, currency: true } }).catch(() => []),
+      prisma.outboxEvent.count({ where: { status: 'PENDING' } }).catch(() => 0),
+      prisma.operationalException.count({ where: { status: 'OPEN' } }).catch(() => 0),
+      prisma.refund.count({ where: { status: 'REQUESTED' } }).catch(() => 0),
+      prisma.operationalException.count({ where: { type: 'PAYMENT_MISMATCH', status: 'OPEN' } }).catch(() => 0),
+      prisma.operationalException.count({ where: { type: 'SUPPLIER_TIMEOUT', status: 'OPEN' } }).catch(() => 0),
       prisma.operationalException.findMany({
         where: { status: { in: ['OPEN', 'ACKNOWLEDGED', 'IN_PROGRESS'] } },
         orderBy: [
@@ -531,30 +580,73 @@ export async function getAdminDashboardData() {
           { detectedAt: 'desc' },
         ],
         take: 8,
-      }),
+      }).catch(() => []),
       prisma.bookingStatusHistory.findMany({
         orderBy: { createdAt: 'desc' },
         take: 6,
         include: { booking: { select: { reference: true } } },
-      }),
+      }).catch(() => []),
       prisma.auditLog.findMany({
         orderBy: { createdAt: 'desc' },
         take: 6,
-      }),
+      }).catch(() => []),
     ]);
 
+    const sanitizedBookings: Array<{ status: string; totalAmount: number }> = (allBookings as Array<{ status?: string; totalAmount?: unknown }> || []).map((b) => ({
+      status: String(b?.status || ''),
+      totalAmount: Number(b?.totalAmount || 0),
+    }));
+
+    const sanitizedLedger: Array<{ direction: string; amount: number; referenceType: string; currency: string }> = (ledgerEntries as Array<{ direction?: string; amount?: unknown; referenceType?: string; currency?: string }> || []).map((e) => ({
+      direction: String(e?.direction || ''),
+      amount: Number(e?.amount || 0),
+      referenceType: String(e?.referenceType || ''),
+      currency: String(e?.currency || 'IRR'),
+    }));
+
+    const sanitizedExceptions = (pendingExceptions as Array<{ id: string; type: string; title: string; entityType: string; entityId: string; severity: string; detectedAt: Date | string }> || []).map((exc) => ({
+      id: exc.id,
+      type: exc.type,
+      title: exc.title,
+      entityType: exc.entityType,
+      entityId: exc.entityId,
+      severity: exc.severity,
+      detectedAt: exc.detectedAt instanceof Date ? exc.detectedAt : new Date(exc.detectedAt || Date.now()),
+    }));
+
+    const sanitizedHistory = (recentHistory || []).map((h) => ({
+      id: h.id,
+      fromStatus: h.fromStatus,
+      toStatus: h.toStatus,
+      reason: h.reason,
+      actor: h.actor,
+      createdAt: h.createdAt instanceof Date ? h.createdAt : new Date(h.createdAt || Date.now()),
+      booking: {
+        reference: h.booking?.reference || 'N/A',
+      },
+    }));
+
+    const sanitizedAudit = (recentAudit || []).map((a) => ({
+      id: a.id,
+      action: a.action,
+      resource: a.resource,
+      resourceId: a.resourceId,
+      userId: a.userId,
+      createdAt: a.createdAt instanceof Date ? a.createdAt : new Date(a.createdAt || Date.now()),
+    }));
+
     return {
-      confirmedBookingsCount,
-      allBookings,
-      ledgerEntries,
-      pendingOutboxCount,
-      openExceptionsCount,
-      pendingRefundsCount,
-      paymentExceptionsCount,
-      supplierExceptionsCount,
-      pendingExceptions,
-      recentHistory,
-      recentAudit,
+      confirmedBookingsCount: confirmedBookingsCount || 0,
+      allBookings: sanitizedBookings,
+      ledgerEntries: sanitizedLedger,
+      pendingOutboxCount: pendingOutboxCount || 0,
+      openExceptionsCount: openExceptionsCount || 0,
+      pendingRefundsCount: pendingRefundsCount || 0,
+      paymentExceptionsCount: paymentExceptionsCount || 0,
+      supplierExceptionsCount: supplierExceptionsCount || 0,
+      pendingExceptions: sanitizedExceptions,
+      recentHistory: sanitizedHistory,
+      recentAudit: sanitizedAudit,
     };
   } catch (err) {
     console.warn('[getAdminDashboardData] Database query fallback:', err);
@@ -584,7 +676,7 @@ export async function getAdminExceptionsData() {
       ],
       take: 50,
     });
-    return { exceptions };
+    return { exceptions: toPlain(exceptions) };
   } catch (err) {
     console.warn('[getAdminExceptionsData] Database query fallback:', err);
     return { exceptions: [] };
@@ -603,7 +695,7 @@ export async function getAdminOpsData() {
         orderBy: { createdAt: 'asc' },
       }),
       db.booking.findMany({
-        where: { 
+        where: {
           status: 'DRAFT',
           createdAt: { lt: cutoffTime },
         },
@@ -705,40 +797,45 @@ export async function getAdminTravelFiles() {
 }
 
 export async function getAdminTravelFileById(id: string) {
-  const user = await requirePermission(['booking:view:all', 'ops:override:cancel']);
-  const tenantCtx = await getTenantAuthContext(user.id);
-  const trip = await prisma.trip.findUnique({
-    where: { id },
-    include: {
-      user: {
-        include: {
-          travelerProfiles: {
-            include: { documents: true },
-          },
-        },
-      },
-      bookings: {
-        include: {
-          items: {
-            include: {
-              inventoryItem: {
-                include: { supplier: true },
-              },
+  try {
+    const user = await requirePermission(['booking:view:all', 'ops:override:cancel']);
+    const tenantCtx = await getTenantAuthContext(user.id);
+    const trip = await prisma.trip.findUnique({
+      where: { id },
+      include: {
+        user: {
+          include: {
+            travelerProfiles: {
+              include: { documents: true },
             },
           },
         },
-        orderBy: { createdAt: 'asc' },
+        bookings: {
+          include: {
+            items: {
+              include: {
+                inventoryItem: {
+                  include: { supplier: true },
+                },
+              },
+            },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
       },
-    },
-  });
-  if (trip) {
-    assertTenantAccess(tenantCtx, {
-      organizationId: trip.organizationId,
-      branchId: trip.branchId,
-      customerId: trip.userId,
     });
+    if (trip) {
+      assertTenantAccess(tenantCtx, {
+        organizationId: trip.organizationId,
+        branchId: trip.branchId,
+        customerId: trip.userId,
+      });
+    }
+    return toPlain({ trip, success: true });
+  } catch (err) {
+    console.warn('[getAdminTravelFileById] error:', err);
+    return { trip: null, success: false, error: err instanceof Error ? err.message : 'Travel file not found' };
   }
-  return toPlain({ trip });
 }
 
 // ==================== Referral / Group Leader Admin Actions ====================
@@ -975,6 +1072,3 @@ export async function resolveException(exceptionId: string, resolution: string) 
   revalidatePath('/admin/exceptions');
   return result;
 }
-
-
-

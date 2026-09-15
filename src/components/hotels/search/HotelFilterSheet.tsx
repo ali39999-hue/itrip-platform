@@ -244,11 +244,11 @@ export function HotelFilterSheet({
           </div>
         </div>
 
-        <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-line flex items-center gap-3 bg-soft/50">
+        <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] border-t border-line flex items-center gap-3 bg-soft/50 shrink-0">
           <button
             type="button"
             onClick={onResetAll}
-            className="px-4 h-11 rounded-xl bg-surface border border-line text-sub font-bold text-xs hover:text-ink flex items-center gap-1.5 cursor-pointer"
+            className="min-h-[44px] px-4 h-11 rounded-xl bg-surface border border-line text-sub font-bold text-xs hover:text-ink flex items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-95 transition"
           >
             <RotateCcw size={14} />
             <span>{lt(locale, { fa: 'ریست', en: 'Reset', ar: 'إعادة تعيين', zh: '重置', ru: 'Сброс' })}</span>
@@ -256,7 +256,7 @@ export function HotelFilterSheet({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 h-11 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs transition cursor-pointer shadow-xs"
+            className="flex-1 min-h-[44px] h-11 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-xs transition cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand active:scale-[0.98]"
           >
             {lt(locale, { fa: 'مشاهده', en: 'Show', ar: 'عرض', zh: '查看', ru: 'Показать' })} ({num(resultsCount, locale)}{' '}
             {lt(locale, { fa: 'اقامتگاه', en: 'stays', ar: 'إقامة', zh: '家住宿', ru: 'вариантов' })})

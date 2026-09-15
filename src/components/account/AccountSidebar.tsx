@@ -191,7 +191,7 @@ export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps)
               </Link>
             );
           })}
-          {['admin', 'SUPER_ADMIN', 'OPS', 'FINANCE', 'OPERATOR'].includes(user?.role || '') && (
+          {['admin', 'ADMIN', 'SUPER_ADMIN', 'OPS', 'FINANCE', 'OPERATOR'].includes(user?.role || '') && (
             <Link
               href="/admin"
               className="flex items-center gap-1.5 min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-black whitespace-nowrap bg-mint text-brand-dark border border-brand/30 hover:bg-mint/80 transition active:scale-95 snap-start shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
@@ -248,7 +248,7 @@ export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps)
             );
           })}
 
-          {['admin', 'SUPER_ADMIN', 'OPS', 'FINANCE', 'OPERATOR'].includes(user?.role || '') && (
+          {['admin', 'ADMIN', 'SUPER_ADMIN', 'OPS', 'FINANCE', 'OPERATOR'].includes(user?.role || '') && (
             <Link
               href="/admin"
               className="flex items-center gap-3 px-4 py-3 font-bold text-[13.5px] rounded-2xl text-brand-dark bg-mint border border-brand/20 hover:bg-mint/80 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"

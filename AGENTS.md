@@ -12,6 +12,7 @@ This document outlines the architectural rules, coding standards, and operationa
 - **Authentication:** NextAuth v5 (Beta) with multi-channel credentials and SHA-256 HMAC OTP
 - **Internationalization:** `next-intl` with 5 supported locales: `fa` (default), `en`, `ar`, `zh`, `ru`
 - **State Management:** Zustand with client-side persistence and strict PII exclusion
+- **Master Ecosystem & Benchmarks:** See `MASTER_ECOSYSTEM_MATRIX.md` (113-item technology, standards, and domain benchmarks matrix. Strictly enforces zero-package collision policy; references Mantine/Primer/TREK/Lulan/ShopVerse as architectural references without redundant npm installations).
 
 ---
 
