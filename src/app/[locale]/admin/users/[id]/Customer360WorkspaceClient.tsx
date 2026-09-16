@@ -45,7 +45,7 @@ interface Props {
   canViewPii: boolean;
 }
 
-type TabKey = 'identity' | 'travelers' | 'trips' | 'financials' | 'exceptions' | 'notes' | 'behavior';
+type TabKey = 'identity' | 'travelers' | 'trips' | 'financials' | 'exceptions' | 'tickets' | 'notes' | 'behavior';
 
 function formatRials(amountRials: number, loc = 'fa') {
   return formatMoney(amountRials / 10, 'IRR', loc);
@@ -192,6 +192,7 @@ export function Customer360WorkspaceClient({ customerData, canViewPii }: Props) 
           { key: 'trips', label: lt(locale, { fa: `سفرها و رزروها (${bookings.length})`, en: `Trips & Bookings (${bookings.length})` }), icon: Plane },
           { key: 'financials', label: lt(locale, { fa: 'کیف پول و مالی', en: 'Wallet & Ledger' }), icon: Wallet },
           { key: 'exceptions', label: lt(locale, { fa: `استثنائات (${exceptions.length})`, en: `Exceptions (${exceptions.length})` }), icon: ShieldAlert },
+          { key: 'tickets', label: lt(locale, { fa: `تیکت‌های CRM (${customerData.tickets?.length || 0})`, en: `CRM Tickets (${customerData.tickets?.length || 0})` }), icon: MessageCircle },
           { key: 'notes', label: lt(locale, { fa: `یادداشت‌های CRM (${notesList.length})`, en: `CRM Notes (${notesList.length})` }), icon: MessageSquare },
           { key: 'behavior', label: lt(locale, { fa: 'رفتار و هیت‌مپ', en: 'Behavior & Heatmap' }), icon: MapPin },
         ].map((tab) => {
@@ -646,6 +647,69 @@ export function Customer360WorkspaceClient({ customerData, canViewPii }: Props) 
             )}
           </ErpSectionCard>
         </div>
+      )}
+
+      {/* Tab: Support & CRM Tickets */}
+      {activeTab === 'tickets' && (
+        <ErpSectionCard
+          title={lt(locale, { fa: 'تیکت‌های پشتیبانی و ارتباطات مشتری', en: 'Support & CRM Tickets' })}
+          subtitle={lt(locale, { fa: 'پیوند کامل پرونده با سیستم CRM، تیکتینگ و وضعیت رسیدگی', en: 'Linked support tickets, SLA status, and customer interactions' })}
+          icon={<MessageCircle size={16} />}
+        >
+          {(!customerData.tickets || customerData.tickets.length === 0) ? (
+            <ErpEmptyState
+              icon={<MessageCircle size={36} />}
+              title={lt(locale, { fa: 'تیکتی ثبت نشده است', en: 'No Support Tickets Found' })}
+              description={lt(locale, { fa: 'این مشتری تاکنون تیکت پشتیبانی باز یا بسته‌ای در سیستم ثبت نکرده است.', en: 'This customer has no open or closed tickets in the CRM system.' })}
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-start">
+                <thead>
+                  <tr className="border-b border-line text-sub text-[11px] font-bold">
+                    <th className="py-2.5 px-3 text-start">{lt(locale, { fa: 'شماره تیکت', en: 'Ticket #' })}</th>
+                    <th className="py-2.5 px-3 text-start">{lt(locale, { fa: 'موضوع', en: 'Subject' })}</th>
+                    <th className="py-2.5 px-3 text-start">{lt(locale, { fa: 'دسته‌بندی', en: 'Category' })}</th>
+                    <th className="py-2.5 px-3 text-start">{lt(locale, { fa: 'اولویت', en: 'Priority' })}</th>
+                    <th className="py-2.5 px-3 text-start">{lt(locale, { fa: 'وضعیت', en: 'Status' })}</th>
+                    <th className="py-2.5 px-3 text-start">{lt(locale, { fa: 'تاریخ ثبت', en: 'Created' })}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line/40">
+                  {customerData.tickets.map((t) => (
+                    <tr key={t.id} className="hover:bg-soft/40 transition">
+                      <td className="py-2.5 px-3 font-mono font-bold text-brand-dark">{t.ticketNumber}</td>
+                      <td className="py-2.5 px-3 font-bold text-ink">
+                        <div>{t.subject}</div>
+                        {t.lastMessageSnippet && (
+                          <div className="text-[11px] font-normal text-sub truncate max-w-xs">{t.lastMessageSnippet}</div>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-sub">{t.category}</td>
+                      <td className="py-2.5 px-3">
+                        <ErpBadge
+                          tone={t.priority === 'URGENT' || t.priority === 'HIGH' ? 'rose' : 'neutral'}
+                        >
+                          {t.priority}
+                        </ErpBadge>
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <ErpBadge
+                          tone={t.status === 'OPEN' ? 'gold' : t.status === 'RESOLVED' ? 'green' : 'neutral'}
+                        >
+                          {t.status}
+                        </ErpBadge>
+                      </td>
+                      <td className="py-2.5 px-3 text-sub font-mono">
+                        {new Date(t.createdAt).toLocaleDateString(locale === 'fa' ? 'fa-IR' : 'en-US')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </ErpSectionCard>
       )}
 
       {/* Tab 7: Behavior & Heatmap */}

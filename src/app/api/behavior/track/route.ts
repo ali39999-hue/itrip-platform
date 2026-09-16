@@ -52,6 +52,12 @@ export async function POST(req: NextRequest) {
       req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
       req.headers.get('x-real-ip') ||
       'unknown';
+
+    // Respect Do Not Track (DNT) and Global Privacy Control (Sec-GPC) headers (§18)
+    const dnt = req.headers.get('dnt') === '1' || req.headers.get('sec-gpc') === '1';
+    if (dnt) {
+      return NextResponse.json({ ok: true, stored: 0, dnt: true });
+    }
     let json: unknown;
     try {
       json = await req.json();

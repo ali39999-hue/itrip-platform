@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import QRCode from 'qrcode';
+import crypto from 'crypto';
 
 export interface TravelerVoucherItem {
   fullName: string;
@@ -17,6 +18,8 @@ export interface BookingVoucherData {
   pnr?: string;
   status: string;
   paymentStatus: string;
+  isValid: boolean;
+  isRevoked?: boolean;
   confirmedAt?: string;
   customer: {
     name: string;
@@ -46,7 +49,48 @@ export interface BookingVoucherData {
   };
   qrCodeDataUrl: string;
   verificationUrl: string;
+  verificationToken: string;
+  tokenExpiresAt: string;
   issuedAt: string;
+}
+
+export interface VoucherVerificationPayload {
+  ref: string;
+  bookingId: string;
+  pnr?: string | null;
+  exp: number;
+}
+
+export function signVoucherToken(ref: string, bookingId: string, pnr?: string): { token: string; expiresAt: string } {
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'firuzo_voucher_secret_key_32_chars';
+  const exp = Math.floor(Date.now() / 1000) + 30 * 24 * 3600; // 30-day token
+  const payloadStr = JSON.stringify({ ref, bookingId, pnr: pnr || null, exp });
+  const b64Payload = Buffer.from(payloadStr).toString('base64url');
+  const signature = crypto.createHmac('sha256', secret).update(b64Payload).digest('base64url');
+  return {
+    token: `${b64Payload}.${signature}`,
+    expiresAt: new Date(exp * 1000).toISOString(),
+  };
+}
+
+export function verifyVoucherToken(token: string): { valid: boolean; payload?: VoucherVerificationPayload; error?: string } {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 2) return { valid: false, error: 'invalid_format' };
+    const [b64Payload, sig] = parts;
+    const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'firuzo_voucher_secret_key_32_chars';
+    const expectedSig = crypto.createHmac('sha256', secret).update(b64Payload).digest('base64url');
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) {
+      return { valid: false, error: 'invalid_signature' };
+    }
+    const payload = JSON.parse(Buffer.from(b64Payload, 'base64url').toString('utf8')) as VoucherVerificationPayload;
+    if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp) {
+      return { valid: false, error: 'expired' };
+    }
+    return { valid: true, payload };
+  } catch {
+    return { valid: false, error: 'malformed_token' };
+  }
 }
 
 export class VoucherService {
@@ -107,19 +151,33 @@ export class VoucherService {
     const origin = (typeof details.origin === 'string' && details.origin) || (typeof details.fromCity === 'string' && details.fromCity) || '';
     const destination = (typeof details.destination === 'string' && details.destination) || (typeof details.toCity === 'string' && details.toCity) || '';
 
-    // Generate Verification URL & QR Code
-    const verificationUrl = `https://firuzo.com/verify?ref=${encodeURIComponent(booking.reference)}${pnr ? `&pnr=${encodeURIComponent(pnr)}` : ''}`;
+    const isPaid = booking.paymentStatus === 'PAID' || booking.status === 'CONFIRMED';
+    const isConfirmed = booking.status === 'CONFIRMED' || booking.status === 'ISSUED' || booking.status === 'COMPLETED';
+    const isCancelled = booking.status === 'CANCELLED' || booking.status === 'REFUNDED';
+    const isFailed = booking.status === 'FAILED';
+
+    const isValid = isConfirmed && isPaid;
+    const isRevoked = isCancelled;
+
+    // Cryptographically signed verification token (VOUCH-SEC / §28)
+    const { token: verificationToken, expiresAt: tokenExpiresAt } = signVoucherToken(
+      booking.reference,
+      booking.id,
+      pnr
+    );
+
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://itrip-platform.vercel.app';
+    const verificationUrl = `${siteUrl}/verify?token=${encodeURIComponent(verificationToken)}`;
+
     const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, {
       errorCorrectionLevel: 'M',
       margin: 2,
       width: 200,
       color: {
-        dark: '#004D4A',
+        dark: isValid ? '#004D4A' : '#7F1D1D',
         light: '#FFFFFF',
       },
     });
-
-    const isPaid = booking.paymentStatus === 'PAID' || booking.status === 'CONFIRMED';
 
     let supplierName = (typeof details.supplier === 'string' && details.supplier) || 'Official Partner';
     if (booking.supplierId) {
@@ -142,8 +200,10 @@ export class VoucherService {
       bookingId: booking.id,
       bookingReference: booking.reference,
       pnr,
-      status: booking.status,
+      status: isCancelled ? 'REVOKED' : isFailed ? 'INVALID' : booking.status,
       paymentStatus: booking.paymentStatus,
+      isValid,
+      isRevoked,
       confirmedAt: booking.updatedAt?.toISOString() || booking.createdAt.toISOString(),
       customer: {
         name: booking.customer?.name || 'Traveler',
@@ -173,6 +233,8 @@ export class VoucherService {
       },
       qrCodeDataUrl,
       verificationUrl,
+      verificationToken,
+      tokenExpiresAt,
       issuedAt: new Date().toISOString(),
     };
   }

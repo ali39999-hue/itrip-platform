@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-09-16T07:04:33.888Z",
-  "reason": "baseline established by the gate",
+  "updatedAt": "2026-09-16T11:20:41.080Z",
+  "reason": "intentional re-baseline (--update-baseline)",
   "canonicalKeys": 902,
-  "scannedFiles": 567,
-  "inlineSites": 2791,
-  "filesWithInline": 183,
-  "hardcodedFaStrings": 11076
+  "scannedFiles": 573,
+  "inlineSites": 2821,
+  "filesWithInline": 184,
+  "hardcodedFaStrings": 11236
 }

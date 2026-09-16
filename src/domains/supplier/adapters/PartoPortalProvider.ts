@@ -166,11 +166,13 @@ export class PartoPortalProvider {
   }
 
   /**
-   * Round-trip search (FlightType=TwoWay). The journey fare lives on the
-   * outbound leg's FareSourceCode; when the JSON engine answers with a
-   * multi-segment itinerary, one row per leg is returned (journey price is
-   * repeated on both legs — never sum them). The HTML fallback does not parse
-   * round-trip layouts yet; calibrate with
+   * Round-trip search (FlightType=RoundTrip — the value the portal's own
+   * Search.js sets when the RoundTrip button is clicked; "TwoWay" is rejected
+   * server-side and bounces SearchProcess back to /Flight/Search). The journey
+   * fare lives on the outbound leg's FareSourceCode; when the JSON engine
+   * answers with a multi-segment itinerary, one row per leg is returned
+   * (journey price is repeated on both legs — never sum them). The HTML
+   * fallback does not parse round-trip layouts yet; calibrate with
    * `node scripts/parto-portal-capture.mjs probe THR MHD 2026-10-01 2026-10-08`.
    */
   async searchRoundTrip(params: {
@@ -208,7 +210,16 @@ export class PartoPortalProvider {
       if (res.status === 302 || res.status === 401) return 'EXPIRED';
       if (!res.ok) return 'ERROR';
       const body = await res.text().catch(() => '');
-      if (body.toLowerCase().includes('/authenticate')) return 'EXPIRED';
+      // Authenticated pages embed the signout form (/Authenticate/Signout) — only the
+      // login view itself proves expiry (captcha + Signin fields, or a ReturnUrl bounce).
+      const lower = body.toLowerCase();
+      if (
+        lower.includes('mathcaptchaanswer') ||
+        lower.includes('signin_officeid') ||
+        /authenticate\?returnurl/i.test(lower)
+      ) {
+        return 'EXPIRED';
+      }
       return 'OK';
     } catch {
       return 'ERROR';
@@ -338,7 +349,7 @@ export class PartoPortalProvider {
     return { offers, rawHtml: resultsHtml, searchId, jsonMode: false };
   }
 
-  /** The documented B2B search form (OneWay / TwoWay). Field names from parto_page.js captures. */
+  /** The documented B2B search form (OneWay / RoundTrip). Field names from parto_page.js captures. */
   private buildSearchFormBody(
     params: { origin: string; destination: string; departureDate: string; returnDate?: string; adults?: number; children?: number; infants?: number },
     token: string
@@ -356,7 +367,7 @@ export class PartoPortalProvider {
       'CabinType': '1',
       'VendorPreferenceCodes': '',
       'VendorExcludeCodes': '',
-      'FlightType': params.returnDate ? 'TwoWay' : 'OneWay',
+      'FlightType': params.returnDate ? 'RoundTrip' : 'OneWay',
       '__RequestVerificationToken': token,
       'DirectFlight': 'false',
     });

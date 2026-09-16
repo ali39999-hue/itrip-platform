@@ -30,7 +30,15 @@ export type CapabilityCategory =
   | 'identity'
   | 'corporate'
   | 'tax'
-  | 'trip';
+  | 'trip'
+  | 'crm'
+  | 'analytics'
+  | 'voucher'
+  | 'manifest'
+  | 'kyc'
+  | 'erp'
+  | 'mobile'
+  | 'support';
 
 export type CapabilityKey =
   | 'payment.shetab'
@@ -64,7 +72,17 @@ export type CapabilityKey =
   | 'corporate'
   | 'taxInvoice'
   | 'travelHandbook'
-  | 'dutyOfCare';
+  | 'dutyOfCare'
+  | 'crm.tickets'
+  | 'analytics.behavior'
+  | 'analytics.privacy'
+  | 'voucher.verification'
+  | 'voucher.offline'
+  | 'manifest.export'
+  | 'kyc.compliance'
+  | 'erp.operations'
+  | 'mobile.pwa'
+  | 'support.concierge';
 
 export interface CapabilityDescriptor {
   key: CapabilityKey;
@@ -205,6 +223,36 @@ function resolveDynamicStatus(key: CapabilityKey): CapabilityStatus {
 
     case 'dutyOfCare':
       return 'BETA';
+
+    case 'crm.tickets':
+      return 'LIVE';
+
+    case 'analytics.behavior':
+      return 'LIVE';
+
+    case 'analytics.privacy':
+      return 'LIVE';
+
+    case 'voucher.verification':
+      return 'LIVE';
+
+    case 'voucher.offline':
+      return 'LIVE';
+
+    case 'manifest.export':
+      return 'LIVE';
+
+    case 'kyc.compliance':
+      return 'LIVE';
+
+    case 'erp.operations':
+      return 'LIVE';
+
+    case 'mobile.pwa':
+      return 'LIVE';
+
+    case 'support.concierge':
+      return 'LIVE';
 
     default:
       return 'DISABLED';
@@ -563,6 +611,116 @@ export const CAPABILITY_DEFINITIONS: Record<CapabilityKey, Omit<CapabilityDescri
     },
     badgeLabel: { fa: 'بتا', en: 'Beta' },
     evidencePath: 'src/lib/duty-of-care.ts',
+  },
+  'crm.tickets': {
+    key: 'crm.tickets',
+    category: 'crm',
+    name: { fa: 'سیستم تیکتینگ و پشتیبانی CRM', en: 'CRM & Support Ticketing' },
+    description: {
+      fa: 'ثبت و پیگیری تیکت‌های پشتیبانی رابطه‌ای با محاسبه SLA، اولویت‌بندی و پیوند به پرونده سفر',
+      en: 'Relational support ticketing with SLA calculation, priority management, and travel file linkage',
+    },
+    badgeLabel: { fa: 'فعال', en: 'Live' },
+    evidencePath: 'src/domains/tickets/TicketDomainService.ts',
+  },
+  'analytics.behavior': {
+    key: 'analytics.behavior',
+    category: 'analytics',
+    name: { fa: 'رفتارنگاری کاربر و هیت‌مپ', en: 'User Behavior & Heatmaps' },
+    description: {
+      fa: 'ثبت بدون وقفه رخدادهای پیمایش و کلیک با رعایت حریم خصوصی و هماهنگ با هیت‌مپ ERP',
+      en: 'Non-blocking first-party event tracking respecting user privacy and feeding ERP heatmaps',
+    },
+    badgeLabel: { fa: 'فعال', en: 'Live' },
+    evidencePath: 'src/lib/behavior.ts',
+  },
+  'analytics.privacy': {
+    key: 'analytics.privacy',
+    category: 'analytics',
+    name: { fa: 'سیاست حفظ حریم خصوصی آنالیتیکس', en: 'Analytics Privacy Policy' },
+    description: {
+      fa: 'پشتیبانی از هدر DNT، انصراف کاربر و پالایش خودکار داده‌های خام پس از ۹۰ روز',
+      en: 'DNT header support, user opt-out, and automated 90-day retention pruning',
+    },
+    badgeLabel: { fa: 'فعال', en: 'Live' },
+    evidencePath: 'src/lib/behavior.ts',
+  },
+  'voucher.verification': {
+    key: 'voucher.verification',
+    category: 'voucher',
+    name: { fa: 'تایید اصالت امن واچر الکترونیکی', en: 'Verifiable E-Voucher Security' },
+    description: {
+      fa: 'تولید واچر دیجیتال با امضای رمزنگاری‌شده HMAC-SHA256 و بارکد امن بدون افشای PII',
+      en: 'Cryptographically signed HMAC-SHA256 voucher verification with secure QR code without PII exposure',
+    },
+    badgeLabel: { fa: 'فعال', en: 'Live' },
+    evidencePath: 'src/domains/booking/VoucherService.ts',
+  },
+  'voucher.offline': {
+    key: 'voucher.offline',
+    category: 'voucher',
+    name: { fa: 'واچر آفلاین PWA فرودگاهی', en: 'Airport Offline PWA Voucher' },
+    description: {
+      fa: 'دسترسی آفلاین به اطلاعات واچر در فرودگاه با ذخیره‌سازی ماسک‌شده بدون اینترنت',
+      en: 'Offline access to masked voucher data at airports without internet connection',
+    },
+    badgeLabel: { fa: 'فعال', en: 'Live' },
+    evidencePath: 'src/lib/offline-voucher.ts',
+  },
+  'manifest.export': {
+    key: 'manifest.export',
+    category: 'manifest',
+    name: { fa: 'خروجی مانیفست مسافران آژانس', en: 'Agency Passenger Manifest Export' },
+    description: {
+      fa: 'خروجی رسمی CSV/JSON مانیفست مسافران با کنترل دسترسی سطوح سازمانی و ثبت لاگ حسابرسی',
+      en: 'Official CSV/JSON manifest export with organization-scoped RBAC and mandatory audit logging',
+    },
+    badgeLabel: { fa: 'فعال', en: 'Live' },
+    evidencePath: 'src/domains/booking/PassengerManifestService.ts',
+  },
+  'kyc.compliance': {
+    key: 'kyc.compliance',
+    category: 'kyc',
+    name: { fa: 'تفکیک نقش سازمانی از احراز هویت فردی', en: 'KYC Identity vs Role Decoupling' },
+    description: {
+      fa: 'اعمال سقف‌های تراکنش چندارزی و تفکیک قطعی نقش اداری از سطح احراز هویت مسافر',
+      en: 'Multi-currency transaction limits and strict decoupling of administrative roles from customer KYC',
+    },
+    badgeLabel: { fa: 'فعال', en: 'Live' },
+    evidencePath: 'src/lib/kyc-payment-rules.ts',
+  },
+  'erp.operations': {
+    key: 'erp.operations',
+    category: 'erp',
+    name: { fa: 'میز کار عملیات یکپارچه ERP', en: 'Unified ERP Operations Workbench' },
+    description: {
+      fa: 'مدیریت رخدادها، استردادها، تیکت‌ها، تسویه‌حساب و مانیفست در پنل اپراتور آژانس',
+      en: 'Operational management of incidents, refunds, tickets, settlements and manifests in agency ERP',
+    },
+    badgeLabel: { fa: 'فعال', en: 'Live' },
+    evidencePath: 'src/domains/erp/TravelFileDomainService.ts',
+  },
+  'mobile.pwa': {
+    key: 'mobile.pwa',
+    category: 'mobile',
+    name: { fa: 'تجربه اپلیکیشن پیشرونده وب (PWA)', en: 'Progressive Web App (PWA)' },
+    description: {
+      fa: 'رابط کاربری واکنش‌گرا و بهینه‌سازی شده برای گوشی‌های هوشمند از ۳۲۰ تا ۷۶۸ پیکسل',
+      en: 'Responsive mobile-first interface optimized for viewports from 320px to 768px with service workers',
+    },
+    badgeLabel: { fa: 'فعال', en: 'Live' },
+    evidencePath: 'public/manifest.json',
+  },
+  'support.concierge': {
+    key: 'support.concierge',
+    category: 'support',
+    name: { fa: 'مرکز خدمات پشتیبانی و هوش مصنوعی', en: '24/7 Concierge Support Hub' },
+    description: {
+      fa: 'ترکیب پاسخگویی هوشمند فیروزوچت و ثبت تیکت‌های پشتیبانی رسمی CRM',
+      en: 'Combination of intelligent FiruzoChat assistant and formal relational CRM support ticketing',
+    },
+    badgeLabel: { fa: 'فعال', en: 'Live' },
+    evidencePath: 'src/app/api/assistant/chat/route.ts',
   },
 };
 

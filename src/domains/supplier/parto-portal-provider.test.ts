@@ -292,7 +292,7 @@ describe('Parto portal provider — round-trip & keep-alive upgrade (plan §7)',
     expect(rows[0].fareReference).toBe('FSC-RT-1');
   });
 
-  it('searchRoundTrip posts the TwoWay form with the return date', async () => {
+  it('searchRoundTrip posts the RoundTrip form with the return date', async () => {
     const calls: Array<{ url: string; body: string }> = [];
     const fetchMock = vi.fn().mockImplementation((url: unknown, init?: { body?: unknown }) => {
       calls.push({ url: String(url), body: typeof init?.body === 'string' ? init.body : '' });
@@ -326,7 +326,7 @@ describe('Parto portal provider — round-trip & keep-alive upgrade (plan §7)',
 
     expect(outcome.offers).toHaveLength(2);
     const postBody = new URLSearchParams(calls[1].body);
-    expect(postBody.get('FlightType')).toBe('TwoWay');
+    expect(postBody.get('FlightType')).toBe('RoundTrip');
     expect(postBody.get('DepartureDateTime')).toBe('2026-10-01');
     expect(postBody.get('DepartureDateTimeR')).toBe('2026-10-08');
     expect(postBody.get('AdultCount')).toBe('1');
@@ -344,6 +344,30 @@ describe('Parto portal provider — round-trip & keep-alive upgrade (plan §7)',
     );
     const provider = new PartoPortalProvider({ cookie: 'sid=abc' });
     await expect(provider.heartbeat()).resolves.toBe('OK');
+
+    // Authenticated pages embed the /Authenticate/Signout form — that is NOT expiry.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: { getSetCookie: () => [] },
+        text: () => Promise.resolve('<html><body><form action="/Authenticate/Signout"></form>داشبورد</body></html>'),
+      })
+    );
+    await expect(provider.heartbeat()).resolves.toBe('OK');
+
+    // The login view itself (math captcha) proves the session is gone.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: { getSetCookie: () => [] },
+        text: () => Promise.resolve('<html><body><input name="MathCaptchaAnswer" /></body></html>'),
+      })
+    );
+    await expect(provider.heartbeat()).resolves.toBe('EXPIRED');
 
     vi.stubGlobal(
       'fetch',

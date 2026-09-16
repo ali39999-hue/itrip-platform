@@ -1,4 +1,5 @@
 import { sanitizeProps } from '@/lib/analytics';
+import { prisma } from '@/lib/prisma';
 
 /**
  * Privacy-safe helpers for first-party behavior analytics (ERP heatmap).
@@ -6,7 +7,25 @@ import { sanitizeProps } from '@/lib/analytics';
  *   ids collapsed, length clamped. Never stores raw query strings (PII risk).
  * - Selectors carry tag + safe attrs only, never text content.
  * - Props reuse the funnel sanitizeProps allowlist semantics.
+ * - Enforces strict 90-day retention and automated data pruning (§18).
  */
+
+export const BEHAVIOR_RETENTION_DAYS = 90;
+
+export async function pruneOldBehaviorEvents(days = BEHAVIOR_RETENTION_DAYS): Promise<number> {
+  const cutoff = new Date(Date.now() - days * 24 * 3600 * 1000);
+  try {
+    const deleted = await prisma.behaviorEvent.deleteMany({
+      where: {
+        createdAt: { lt: cutoff },
+      },
+    });
+    return deleted.count;
+  } catch (err) {
+    console.error('Failed to prune old behavior events:', err);
+    return 0;
+  }
+}
 
 export const BEHAVIOR_TYPES = ['PAGE_VIEW', 'CLICK', 'SCROLL_DEPTH', 'FUNNEL'] as const;
 export type BehaviorType = (typeof BEHAVIOR_TYPES)[number];

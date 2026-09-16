@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import { requirePermission } from '@/domains/identity/permission-service';
 import { PassengerManifestService } from '@/domains/booking/PassengerManifestService';
 import { TravelFileDomainService } from '@/domains/erp/TravelFileDomainService';
 
 /**
- * Enterprise Agency Manifest Export API (ERP-008, MAN-002)
+ * Enterprise Agency Manifest Export API (ERP-008, MAN-002, SEC-026)
  * Produces UTF-8 BOM CSV compatible with Excel, Google Sheets, and agency manifest readers.
+ * Enforces strict operator authentication, tenant-scoped access, and mandatory audit logging.
  *
  * Query params:
  * - date: YYYY-MM-DD (for daily departure manifest)
@@ -14,7 +16,7 @@ import { TravelFileDomainService } from '@/domains/erp/TravelFileDomainService';
  */
 export async function GET(request: NextRequest) {
   try {
-    await requirePermission(['booking:view:all', 'ops:override:cancel']);
+    const operator = await requirePermission(['booking:view:all', 'ops:override:cancel']);
 
     const searchParams = request.nextUrl.searchParams;
     const tripId = searchParams.get('tripId');
@@ -44,6 +46,16 @@ export async function GET(request: NextRequest) {
       ).join('\n');
       csvContent = '﻿' + header + rows;
     }
+
+    // Record mandatory audit event for PII passenger manifest export (§26)
+    await prisma.auditLog.create({
+      data: {
+        userId: operator.id,
+        resource: 'PassengerManifest',
+        resourceId: tripId || `date_${date}`,
+        action: 'MANIFEST_EXPORTED',
+      },
+    }).catch(() => null);
 
     return new NextResponse(csvContent, {
       status: 200,

@@ -353,7 +353,7 @@ export function FlightPriceCalendar({
 
                   {/* Cheapest Badge (Alibaba style green badge) */}
                   {item.isCheapest && !item.isSelected && (
-                    <span className="absolute -top-2 start-1/2 ltr:-translate-x-1/2 rtl:translate-x-1/2 px-1.5 py-px rounded-full bg-emerald-600 text-surface text-[8.5px] font-black shadow-xs whitespace-nowrap">
+                    <span className="absolute -top-2 start-1/2 ltr:-translate-x-1/2 rtl:translate-x-1/2 px-1.5 py-0.5 rounded-full bg-emerald-800 text-white text-[9.5px] font-black shadow-xs whitespace-nowrap">
                       {lt(locale, { fa: 'ارزان‌ترین', en: 'Cheapest', ar: 'الأرخص', zh: '最低', ru: 'Эконом' })}
                     </span>
                   )}

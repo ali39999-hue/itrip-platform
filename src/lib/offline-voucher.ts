@@ -39,8 +39,15 @@ export function saveVoucherOffline(voucher: Omit<OfflineVoucherItem, 'savedAt'>)
     const list: OfflineVoucherItem[] = raw ? JSON.parse(raw) : [];
 
     const existingIdx = list.findIndex((v) => v.reference === voucher.reference);
+    const sanitizedPassengers = voucher.passengers?.map((p) => ({
+      ...p,
+      nationalId: p.nationalId ? `***${p.nationalId.slice(-4)}` : undefined,
+      passportNo: p.passportNo ? `***${p.passportNo.slice(-4)}` : undefined,
+    })) || [];
+
     const entry: OfflineVoucherItem = {
       ...voucher,
+      passengers: sanitizedPassengers,
       savedAt: new Date().toISOString(),
     };
 

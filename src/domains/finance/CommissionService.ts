@@ -22,6 +22,7 @@ export class CommissionService {
   }> {
     const currency = params.currency || 'IRR';
     const amount = new Money(params.bookingAmount.toString(), currency);
+    const decimals = currency === 'IRR' ? 0 : 2;
 
     // Look up active commission rules for this target and product
     const rule = await prisma.commissionRule.findFirst({
@@ -37,7 +38,7 @@ export class CommissionService {
     if (!rule) {
       // Default baseline commission: 3% for agencies, 1% for affiliates
       const defaultRate = params.targetType === 'AGENCY' ? 0.03 : 0.01;
-      const commissionAmount = amount.mul(defaultRate).round(0);
+      const commissionAmount = amount.mul(defaultRate).round(decimals);
       return {
         commissionAmount,
         appliedRate: defaultRate,
@@ -45,10 +46,11 @@ export class CommissionService {
       };
     }
 
-    const rate = Number(rule.ratePercentage);
+    const rawRate = Number(rule.ratePercentage);
+    const rate = rawRate > 1 ? rawRate / 100 : rawRate;
     const fixed = Number(rule.fixedFee);
-    const variablePart = amount.mul(rate).round(0);
-    const totalCommission = variablePart.add(fixed);
+    const variablePart = amount.mul(rate).round(decimals);
+    const totalCommission = variablePart.add(new Money(fixed.toString(), currency));
 
     return {
       ruleId: rule.id,
@@ -97,7 +99,8 @@ export class CommissionService {
     adjustedCommission: Money;
     clawbackAmount: Money;
   } {
-    const clawback = params.originalCommission.mul(params.refundRatio).round(0);
+    const decimals = params.originalCommission.currency === 'IRR' ? 0 : 2;
+    const clawback = params.originalCommission.mul(params.refundRatio).round(decimals);
     const adjusted = params.originalCommission.sub(clawback);
     return {
       adjustedCommission: adjusted,

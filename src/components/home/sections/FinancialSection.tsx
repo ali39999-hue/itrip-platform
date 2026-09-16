@@ -34,20 +34,20 @@ export function FinancialSection() {
             <span>{lt(locale, { fa: 'کیف پول چندارزی فیروزو', en: 'Firuzo Multi-Currency Wallet', ar: 'محفظة فيروزو متعددة العملات', zh: 'Firuzo 多币种钱包', ru: 'Мультивалютный кошелек Firuzo' })}</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-ink leading-tight">
-            {lt(locale, { fa: 'پرداخت بدون دغدغه با ریال، تتر و کارت‌های بین‌المللی', en: 'Hassle-free payment with IRR, USDT & Intl Cards', ar: 'دفع بدون متاعب بالريال وتيثر والبطاقات الدولية', zh: '使用里亚尔、USDT和国际信用卡轻松支付', ru: 'Удобная оплата в IRR, USDT и международными картами' })}
+            {lt(locale, { fa: 'پرداخت مطمئن با ریال، شتاب و کیف پول اختصاصی', en: 'Reliable payment with IRR, Shetab & Wallet', ar: 'دفع موثوق بالريال وشتاب والمحفظة', zh: '使用里亚尔、Shetab和专属钱包安全支付', ru: 'Надежная оплаتا в IRR, картами Shetab и кошельком' })}
           </h2>
           <p className="text-sm md:text-base text-sub leading-relaxed max-w-xl">
-            {lt(locale, { fa: 'با شارژ کیف پول خود به ریال یا تتر، تمامی خدمات سفر اعم از هتل، پرواز، اسنپ محلی و سیم‌کارت را بدون نیاز به کارت‌های ارزی و در لحظه خریداری کنید.', en: 'By topping up your wallet in IRR or USDT, buy all travel services including hotels, flights, local rides, and eSIMs instantly without needing foreign cards.', ar: 'من خلال شحن محفظتك بالريال أو تيثر، يمكنك شراء جميع خدمات السفر.', zh: '通过使用里亚尔或USDT充值钱包，即时购买所有旅行服务。', ru: 'Пополнив свой кошелек в IRR или USDT, мгновенно оплачивайте все туристические услуги.' })}
+            {lt(locale, { fa: 'با شارژ کیف پول اعتباری خود به ریال، تمامی خدمات سفر اعم از هتل، پرواز، ترانسفر محلی و سیم‌کارت را با اطمینان کامل و قیمت شفاف خریداری کنید.', en: 'By topping up your wallet in IRR, book all travel services including hotels, flights, local transfers, and eSIMs with complete certainty and transparent pricing.', ar: 'من خلال شحن محفظتك، يمكنك شراء جميع خدمات السفر بأسعار شفافة.', zh: '通过充值钱包，以透明价格放心订购所有旅行服务。', ru: 'Пополнив свой кошелек, бронируйте все туристические услуги по прозрачным ценам.' })}
           </p>
-          
+
           <ul className="grid sm:grid-cols-2 gap-4 pt-2">
             <li className="flex items-center gap-2.5 text-[13px] font-bold text-ink">
               <span className="w-7 h-7 rounded-lg bg-mint text-brand-dark grid place-items-center"><Zap size={14} aria-hidden="true" /></span>
-              {lt(locale, { fa: 'شارژ و صدور آنی بلیت و واچر', en: 'Instant Top-up & Voucher Issue', ar: 'شحن وتسوية فورية', zh: '即时充值与出票', ru: 'Мгновенное пополнение и ваучер' })}
+              {lt(locale, { fa: 'شارژ سریع و صدور واچر معتبر', en: 'Fast Top-up & Verified Voucher Issue', ar: 'شحن سريع وإصدار واچر معتمد', zh: '快速充值与出具认证凭证', ru: 'Быстрое пополнение и ваучер' })}
             </li>
             <li className="flex items-center gap-2.5 text-[13px] font-bold text-ink">
               <span className="w-7 h-7 rounded-lg bg-brand/10 text-brand-dark grid place-items-center"><Wallet size={14} aria-hidden="true" /></span>
-              {lt(locale, { fa: 'پشتیبانی همزمان از شتاب و تتر (TRC20)', en: 'Supports Shetab & USDT (TRC20)', ar: 'دعم شتاب والتيثر', zh: '支持Shetab银行卡和USDT', ru: 'Поддержка Shetab и USDT' })}
+              {lt(locale, { fa: 'پشتیبانی از شبکه بانکی و کارت به کارت', en: 'Supports Banking Network & Card Transfer', ar: 'دعم الشبكة المصرفية والتحويل المباشر', zh: '支持银行网络与卡对卡转账', ru: 'Поддержка банковских карт и переводов' })}
             </li>
             <li className="flex items-center gap-2.5 text-[13px] font-bold text-ink">
               <span className="w-7 h-7 rounded-lg bg-action/10 text-action grid place-items-center"><ShieldCheck size={14} aria-hidden="true" /></span>
@@ -55,7 +55,7 @@ export function FinancialSection() {
             </li>
             <li className="flex items-center gap-2.5 text-[13px] font-bold text-ink">
               <span className="w-7 h-7 rounded-lg bg-success/10 text-success grid place-items-center"><RefreshCw size={14} aria-hidden="true" /></span>
-              {lt(locale, { fa: 'بازگشت آنی وجه در کنسلی پرواز و هتل', en: 'Instant Refund on Cancellation', ar: 'استرداد فوري للأموال عند الإلغاء', zh: '取消订单即时退款到钱包', ru: 'Мгновенный возврат при отмене' })}
+              {lt(locale, { fa: 'بازگشت وجه به کیف پول طبق قوانین کنسلی', en: 'Wallet Refund per Cancellation Rules', ar: 'استرداد الرصيد وفقاً لسياسات الإلغاء', zh: '按退改规则退还至钱包', ru: 'Возврат средств по правилам отмены' })}
             </li>
           </ul>
 

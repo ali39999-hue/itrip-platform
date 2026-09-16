@@ -57,18 +57,18 @@ export const DEFAULT_FAQ: FaqItemOverride[] = [
   },
   {
     q: {
-      fa: 'آیا امکان پرداخت با رمزارز تتر (USDT) یا کارت‌های شتاب وجود دارد؟',
-      en: 'Can I pay using USDT Cryptocurrency or Shetab Bank Cards?',
-      ar: 'هل يمكن الدفع بواسطة عملة تيثر (USDT) أو بطاقات شتاب؟',
-      zh: '平台支持通过 USDT 加密货币或 Shetab 银行卡支付吗？',
-      ru: 'Можно ли оплачивать криптовалютой USDT или картами Shetab?',
+      fa: 'روش‌های پرداخت فعال در پلتفرم فیروزو چیست؟',
+      en: 'What payment methods are currently active on Firuzo?',
+      ar: 'ما هي طرق الدفع المتاحة على منصة فيروزو؟',
+      zh: 'Firuzo 平台当前支持哪些支付方式？',
+      ru: 'Какие способы оплаты поддерживаются на платформе Firuzo?',
     },
     a: {
-      fa: 'بله، پلتفرم فیروزو از درگاه شاپرک (تمام کارت‌های عضو شتاب بانکی ایران) و شبکه امن تتر (TRC-20) بدون واسطه پشتیبانی می‌کند. همچنین مسافران خارجی می‌توانند از طریق کارت‌های اعتباری بین‌المللی پرداخت خود را نهایی کنند.',
-      en: 'Yes, Firuzo natively supports Shetab debit cards (Shaparak gateway), Tether TRC-20 cryptocurrency, and international payment methods without middlemen.',
-      ar: 'نعم، تدعم منصة فيروزو بطاقات شتاب الإيرانية، وعملة USDT عبر شبكة TRC-20، والبطاقات الائتمانية الدولية.',
-      zh: '是的，Firuzo 原生支持 Shetab 银行借记卡、TRC-20 网络 USDT 及国际信用卡直连结算。',
-      ru: 'Да, Firuzo поддерживает карты Shetab, переводы в USDT TRC-20 и международные кредитные карты.',
+      fa: 'در حال حاضر پرداخت ریالی از طریق کارت به کارت، کیف پول اعتباری چندارزی فیروزو و درگاه پرداخت تجاری eCardo فعال است. روش‌های پرداخت رمزارز و کارت‌های بین‌المللی نیز در فازهای آتی فعال خواهند شد.',
+      en: 'Currently, payments via Card-to-Card, Firuzo Multi-Currency Wallet, and eCardo gateway rail are operational. Cryptocurrency and international card methods are scheduled for upcoming integration phases.',
+      ar: 'حالياً تتوفر خيارات الدفع بالتحويل المباشر، ومحفظة فيروزو، وبوابة eCardo المعتمدة، مع خطة لربط خيارات العملات المشفرة لاحقاً.',
+      zh: '当前支持卡对卡转账、Firuzo 多币种钱包以及合作支付网关 eCardo。加密货币与国际信用卡将在后续阶段开放。',
+      ru: 'В настоящее время доступны переводы с карты на карту, мультивалютный кошелек Firuzo и шлюз eCardo. Криптовалюта и международные карты планируются в следующих фазах.',
     },
   },
 ];
@@ -123,7 +123,7 @@ export function FaqSection({ override }: { override?: FaqItemOverride[] }) {
               </button>
 
               {isOpen && (
-                <div className="px-4 sm:px-5 pb-5 pt-1 text-xs sm:text-[13px] font-medium text-sub leading-relaxed border-t border-line/50 bg-soft/30 animate-in fade-in duration-200">
+                <div className="px-4 sm:px-5 pb-5 pt-1 text-xs sm:text-[13px] font-medium text-ink/80 dark:text-ink/90 leading-relaxed border-t border-line/50 bg-soft/30 animate-in fade-in duration-200">
                   <p className="m-0">{item.a}</p>
                 </div>
               )}

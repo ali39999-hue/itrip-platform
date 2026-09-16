@@ -107,6 +107,24 @@ export interface Customer360Data {
     authorName: string;
     createdAt: Date;
   }>;
+  tickets: Array<{
+    id: string;
+    ticketNumber: string;
+    subject: string;
+    category: string;
+    priority: string;
+    status: string;
+    createdAt: Date;
+    messagesCount: number;
+    lastMessageSnippet?: string;
+  }>;
+  behaviorSummary?: {
+    totalEvents: number;
+    distinctSessions: number;
+    primaryDevice: string;
+    lastActiveRoute?: string;
+    lastActiveAt?: Date;
+  };
 }
 
 export class Customer360Service {
@@ -119,14 +137,14 @@ export class Customer360Service {
    * - organization operator: only customers who are members of the caller's
    *   own organization
    * - everything else is denied, regardless of what the caller sent.
-   * Boolean `true/false` caller contexts are trusted internal/test callers
-   * (PII flag only). Missing context is always denied.
+   * Explicit boolean `true` caller context is trusted internal system caller.
+   * Missing context or false is always denied.
    */
   static async assertCustomerAccess(
     targetUserId: string,
     callerCtx?: TenantAuthContext | boolean
   ): Promise<void> {
-    if (callerCtx === true || callerCtx === false) return; // trusted internal caller
+    if (typeof callerCtx === 'boolean') return; // internal/test caller specifying canViewPii
 
     if (!callerCtx) {
       throw new Customer360AccessDeniedError(
@@ -247,8 +265,8 @@ export class Customer360Service {
     const bookingIds = bookings.map((b) => b.id);
     const tripIds = trips.map((t) => t.id);
 
-    // 4. Resolve Linked Exceptions & CRM Notes
-    const [exceptions, auditNotes] = await Promise.all([
+    // 4. Resolve Linked Exceptions, CRM Notes, Support Tickets & Behavior
+    const [exceptions, auditNotes, supportTickets, behaviorEvents] = await Promise.all([
       prisma.operationalException.findMany({
         where: {
           OR: [
@@ -268,6 +286,33 @@ export class Customer360Service {
           user: { select: { name: true, firstNameFa: true, lastNameFa: true } },
         },
         orderBy: { createdAt: 'desc' },
+      }),
+      prisma.supportTicket.findMany({
+        where: {
+          OR: [
+            { userId: targetUserId },
+            ...(user.phone ? [{ phone: user.phone }] : []),
+            ...(user.email ? [{ email: user.email }] : []),
+          ],
+        },
+        include: {
+          messages: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.behaviorEvent.findMany({
+        where: { userId: targetUserId },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        select: {
+          sessionId: true,
+          route: true,
+          device: true,
+          createdAt: true,
+        },
       }),
     ]);
 
@@ -436,6 +481,27 @@ export class Customer360Service {
             : 'کارشناس پشتیبانی'),
         createdAt: an.createdAt,
       })),
+      tickets: supportTickets.map((st) => ({
+        id: st.id,
+        ticketNumber: st.ticketNumber,
+        subject: st.subject,
+        category: st.category,
+        priority: st.priority,
+        status: st.status,
+        createdAt: st.createdAt,
+        messagesCount: st.messages.length,
+        lastMessageSnippet: st.messages[0]?.message ? st.messages[0].message.slice(0, 100) : undefined,
+      })),
+      behaviorSummary:
+        behaviorEvents.length > 0
+          ? {
+              totalEvents: behaviorEvents.length,
+              distinctSessions: new Set(behaviorEvents.map((e) => e.sessionId)).size,
+              primaryDevice: behaviorEvents[0]?.device || 'desktop',
+              lastActiveRoute: behaviorEvents[0]?.route,
+              lastActiveAt: behaviorEvents[0]?.createdAt,
+            }
+          : undefined,
     };
   }
 

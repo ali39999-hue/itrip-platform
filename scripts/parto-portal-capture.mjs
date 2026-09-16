@@ -182,10 +182,10 @@ async function runSearch(origin, destination, date, returnDate, { wantJson = fal
         const el = document.querySelector(`[name="${name}"]`);
         if (el) el.value = value;
       };
-      const flightTypeBtn = document.querySelector(roundTrip ? '#TwoWay' : '#OneWay');
+      const flightTypeBtn = document.querySelector(roundTrip ? '#RoundTrip' : '#OneWay');
       if (flightTypeBtn) flightTypeBtn.click();
       const flightType = document.querySelector('#FlightType') || document.querySelector('[name="FlightType"]');
-      if (flightType) flightType.value = roundTrip ? 'TwoWay' : 'OneWay';
+      if (flightType) flightType.value = roundTrip ? 'RoundTrip' : 'OneWay';
       setVal('OriginLocationCode', org);
       setVal('DestinationLocationCode', dst);
       const depEl = document.querySelector('#DepartureDateTime');

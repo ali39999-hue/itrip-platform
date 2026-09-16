@@ -3,6 +3,18 @@ import { createLogger } from '@/lib/observability/logger';
 
 const logger = createLogger('ticket-domain-service');
 
+interface RelationalSupportTicketDelegate {
+  supportTicket?: {
+    create: (args: { data: Record<string, unknown> }) => Promise<unknown>;
+    update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<unknown>;
+  };
+  ticketMessage?: {
+    create: (args: { data: Record<string, unknown> }) => Promise<unknown>;
+  };
+}
+
+const dynamicPrisma = prisma as unknown as RelationalSupportTicketDelegate;
+
 export type TicketCategory =
   | 'FLIGHTS'
   | 'HOTELS'
@@ -30,6 +42,88 @@ export interface TicketMessageRecord {
   createdAt: string;
 }
 
+export interface TicketSlaStatus {
+  policyName: string;
+  responseDueAt: string;
+  resolutionDueAt: string;
+  firstResponseAt?: string | null;
+  resolvedAt?: string | null;
+  isFirstResponseBreached: boolean;
+  isResolutionBreached: boolean;
+}
+
+export const ALLOWED_ATTACHMENT_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'application/pdf',
+]);
+export const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+
+export function validateTicketAttachment(file: {
+  name: string;
+  size: number;
+  mimeType: string;
+}): { valid: boolean; error?: string } {
+  if (file.size > MAX_ATTACHMENT_SIZE_BYTES) {
+    return { valid: false, error: 'حجم فایل نباید بیش از ۱۰ مگابایت باشد.' };
+  }
+  if (!ALLOWED_ATTACHMENT_MIME_TYPES.has(file.mimeType.toLowerCase())) {
+    return { valid: false, error: 'نوع فایل مجاز نیست. فقط تصاویر (JPEG, PNG, WebP) و PDF پذیرفته می‌شوند.' };
+  }
+  if (/[\\\/]|\.\./.test(file.name)) {
+    return { valid: false, error: 'نام فایل نامعتبر است.' };
+  }
+  return { valid: true };
+}
+
+export function computeTicketSla(
+  createdAtStr: string,
+  priority: TicketPriority,
+  messages: TicketMessageRecord[],
+  status: TicketStatus
+): TicketSlaStatus {
+  const created = new Date(createdAtStr).getTime();
+  const slaHours =
+    priority === 'URGENT'
+      ? { resp: 1, res: 4 }
+      : priority === 'HIGH'
+        ? { resp: 2, res: 12 }
+        : priority === 'LOW'
+          ? { resp: 8, res: 48 }
+          : { resp: 4, res: 24 };
+
+  const responseDue = new Date(created + slaHours.resp * 3600 * 1000);
+  const resolutionDue = new Date(created + slaHours.res * 3600 * 1000);
+
+  const firstStaffMsg = messages.find((m) => m.senderType === 'STAFF');
+  const firstResponseAt = firstStaffMsg ? firstStaffMsg.createdAt : null;
+
+  const resolvedMsg =
+    status === 'RESOLVED' || status === 'CLOSED'
+      ? messages[messages.length - 1]?.createdAt || new Date().toISOString()
+      : null;
+
+  const now = Date.now();
+  const isFirstResponseBreached = firstResponseAt
+    ? new Date(firstResponseAt).getTime() > responseDue.getTime()
+    : now > responseDue.getTime();
+
+  const isResolutionBreached = resolvedMsg
+    ? new Date(resolvedMsg).getTime() > resolutionDue.getTime()
+    : status !== 'RESOLVED' && status !== 'CLOSED' && now > resolutionDue.getTime();
+
+  return {
+    policyName: `SLA_${priority}`,
+    responseDueAt: responseDue.toISOString(),
+    resolutionDueAt: resolutionDue.toISOString(),
+    firstResponseAt,
+    resolvedAt: resolvedMsg,
+    isFirstResponseBreached,
+    isResolutionBreached,
+  };
+}
+
 export interface SupportTicketRecord {
   id: string;
   ticketNumber: string;
@@ -45,6 +139,7 @@ export interface SupportTicketRecord {
   createdAt: string;
   updatedAt: string;
   messages: TicketMessageRecord[];
+  sla?: TicketSlaStatus;
 }
 
 export interface TicketSummaryItem {
@@ -63,6 +158,7 @@ export interface TicketSummaryItem {
   updatedAt: string;
   lastMessageSnippet: string;
   messageCount: number;
+  sla?: TicketSlaStatus;
 }
 
 const MANIFEST_KEY = 'tickets:manifest';
@@ -156,6 +252,8 @@ export class TicketDomainService {
       createdAt: now,
     };
 
+    const sla = computeTicketSla(now, input.priority || 'MEDIUM', [initialMessage], 'OPEN');
+
     const ticket: SupportTicketRecord = {
       id,
       ticketNumber,
@@ -171,9 +269,10 @@ export class TicketDomainService {
       createdAt: now,
       updatedAt: now,
       messages: [initialMessage],
+      sla,
     };
 
-    // 1. Save full ticket record
+    // 1. Save full ticket record to siteContent (manifest cache)
     await prisma.siteContent.create({
       data: {
         key: `ticket:${id}`,
@@ -181,6 +280,39 @@ export class TicketDomainService {
         updatedBy: input.userId || 'guest',
       },
     });
+
+    // 1.5. Dual-write to relational PostgreSQL SupportTicket & TicketMessage tables (CRM-001)
+    try {
+      if (dynamicPrisma.supportTicket) {
+        await dynamicPrisma.supportTicket.create({
+          data: {
+            id: ticket.id,
+            ticketNumber: ticket.ticketNumber,
+            userId: ticket.userId,
+            name: ticket.name,
+            email: ticket.email,
+            phone: ticket.phone,
+            subject: ticket.subject,
+            category: ticket.category,
+            priority: ticket.priority,
+            status: ticket.status,
+            bookingRef: ticket.bookingRef,
+            messages: {
+              create: {
+                id: initialMessage.id,
+                authorId: initialMessage.authorId,
+                authorName: initialMessage.authorName,
+                senderType: initialMessage.senderType,
+                message: initialMessage.message,
+                createdAt: new Date(initialMessage.createdAt),
+              },
+            },
+          },
+        }).catch(() => null);
+      }
+    } catch {
+      // Best-effort relational write
+    }
 
     // 2. Update manifest index
     const manifest = await this.getManifest();
@@ -200,6 +332,7 @@ export class TicketDomainService {
       updatedAt: ticket.updatedAt,
       lastMessageSnippet: ticket.messages[0].message.slice(0, 100),
       messageCount: 1,
+      sla,
     };
     manifest.unshift(summary);
     await this.saveManifest(manifest, input.userId || 'guest');
@@ -263,7 +396,10 @@ export class TicketDomainService {
       ticket.status = ticket.status === 'CLOSED' || ticket.status === 'RESOLVED' ? 'OPEN' : 'IN_PROGRESS';
     }
 
-    // 1. Save ticket
+    // Recompute operational SLA
+    ticket.sla = computeTicketSla(ticket.createdAt, ticket.priority, ticket.messages, ticket.status);
+
+    // 1. Save ticket to cache/manifest
     await prisma.siteContent.update({
       where: { key: `ticket:${ticket.id}` },
       data: {
@@ -271,6 +407,32 @@ export class TicketDomainService {
         updatedBy: input.authorId || 'system',
       },
     });
+
+    // 1.5. Dual-write to relational PostgreSQL SupportTicket & TicketMessage tables (CRM-001)
+    try {
+      if (dynamicPrisma.ticketMessage) {
+        await dynamicPrisma.ticketMessage.create({
+          data: {
+            id: newMessage.id,
+            ticketId: ticket.id,
+            authorId: newMessage.authorId,
+            authorName: newMessage.authorName,
+            senderType: newMessage.senderType,
+            message: newMessage.message,
+            createdAt: new Date(newMessage.createdAt),
+          },
+        }).catch(() => null);
+      }
+      if (dynamicPrisma.supportTicket) {
+        await dynamicPrisma.supportTicket.update({
+          where: { id: ticket.id },
+          data: {
+            status: ticket.status,
+            updatedAt: new Date(now),
+          },
+        }).catch(() => null);
+      }
+    } catch {}
 
     // 2. Update manifest
     const manifest = await this.getManifest();
@@ -280,6 +442,7 @@ export class TicketDomainService {
       manifest[idx].status = ticket.status;
       manifest[idx].lastMessageSnippet = newMessage.message.slice(0, 100);
       manifest[idx].messageCount = ticket.messages.length;
+      manifest[idx].sla = ticket.sla;
       // Bring updated ticket to top
       const item = manifest.splice(idx, 1)[0];
       manifest.unshift(item);
@@ -341,6 +504,9 @@ export class TicketDomainService {
       });
     }
 
+    // Recompute operational SLA
+    ticket.sla = computeTicketSla(ticket.createdAt, ticket.priority, ticket.messages, ticket.status);
+
     await prisma.siteContent.update({
       where: { key: `ticket:${ticket.id}` },
       data: {
@@ -349,12 +515,27 @@ export class TicketDomainService {
       },
     });
 
+    // Dual-write to relational PostgreSQL SupportTicket (CRM-001)
+    try {
+      if (dynamicPrisma.supportTicket) {
+        await dynamicPrisma.supportTicket.update({
+          where: { id: ticket.id },
+          data: {
+            status: ticket.status,
+            priority: ticket.priority,
+            updatedAt: new Date(now),
+          },
+        }).catch(() => null);
+      }
+    } catch {}
+
     const manifest = await this.getManifest();
     const idx = manifest.findIndex((m) => m.id === ticket.id);
     if (idx !== -1) {
       manifest[idx].updatedAt = now;
       if (updates.status) manifest[idx].status = updates.status;
       if (updates.priority) manifest[idx].priority = updates.priority;
+      manifest[idx].sla = ticket.sla;
       await this.saveManifest(manifest, staffId);
     }
 

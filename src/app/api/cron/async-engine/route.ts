@@ -16,6 +16,7 @@ import { HoldExpirationWorker } from '@/workers/hold-expiration-worker';
 import { BookingDomainService } from '@/domains/booking/BookingDomainService';
 import { ReconciliationService } from '@/domains/ledger/ReconciliationService';
 import { WorkerLeaseService } from '@/domains/events/WorkerLeaseService';
+import { pruneOldBehaviorEvents } from '@/lib/behavior';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -45,6 +46,7 @@ export async function GET(request: NextRequest) {
     // Exception Center / human remediation.
     const dlqRequeued = await OutboxConsumer.requeueDeadLetters(3).catch(() => 0);
     const ledger = await ReconciliationService.reconcileLedger().catch(() => null);
+    const prunedBehaviorEvents = await pruneOldBehaviorEvents().catch(() => 0);
 
     return NextResponse.json({
       success: true,
@@ -55,6 +57,7 @@ export async function GET(request: NextRequest) {
       expiredBookings,
       recoveredLeases,
       dlqRequeued,
+      prunedBehaviorEvents,
       ledgerBalanced: ledger ? ledger.isBalanced : null,
     });
   } catch (error: unknown) {
