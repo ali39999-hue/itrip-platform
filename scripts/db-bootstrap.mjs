@@ -108,6 +108,12 @@ async function bootstrap() {
     await prisma.$executeRawUnsafe(`
       DO $$
       BEGIN
+        -- 0. Ensure User.username exists
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'User' OR table_name = 'user') THEN
+          ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "username" TEXT;
+          CREATE UNIQUE INDEX IF NOT EXISTS "User_username_key" ON "User"("username");
+        END IF;
+
         -- 1. Ensure DeletedStaticRef exists
         CREATE TABLE IF NOT EXISTS "DeletedStaticRef" (
           "id" TEXT NOT NULL,
@@ -177,6 +183,60 @@ async function bootstrap() {
         CREATE INDEX IF NOT EXISTS "SystemErrorLog_level_idx" ON "SystemErrorLog"("level");
         CREATE INDEX IF NOT EXISTS "SystemErrorLog_source_idx" ON "SystemErrorLog"("source");
         CREATE INDEX IF NOT EXISTS "SystemErrorLog_lastSeenAt_idx" ON "SystemErrorLog"("lastSeenAt");
+
+        -- 5. Ensure BehaviorEvent exists
+        CREATE TABLE IF NOT EXISTS "BehaviorEvent" (
+          "id" TEXT NOT NULL,
+          "userId" TEXT,
+          "anonymousId" TEXT NOT NULL,
+          "sessionId" TEXT NOT NULL,
+          "type" TEXT NOT NULL,
+          "route" TEXT NOT NULL,
+          "locale" TEXT,
+          "xPct" DOUBLE PRECISION,
+          "yPct" DOUBLE PRECISION,
+          "scrollPct" INTEGER,
+          "selector" TEXT,
+          "viewportW" INTEGER,
+          "viewportH" INTEGER,
+          "device" TEXT,
+          "props" TEXT,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "BehaviorEvent_pkey" PRIMARY KEY ("id")
+        );
+        CREATE INDEX IF NOT EXISTS "BehaviorEvent_userId_createdAt_idx" ON "BehaviorEvent"("userId", "createdAt");
+        CREATE INDEX IF NOT EXISTS "BehaviorEvent_route_createdAt_idx" ON "BehaviorEvent"("route", "createdAt");
+
+        -- 6. Ensure SupportTicket and TicketMessage exist
+        CREATE TABLE IF NOT EXISTS "SupportTicket" (
+          "id" TEXT NOT NULL,
+          "ticketNumber" TEXT NOT NULL,
+          "userId" TEXT,
+          "name" TEXT NOT NULL,
+          "email" TEXT,
+          "phone" TEXT,
+          "subject" TEXT NOT NULL,
+          "category" TEXT NOT NULL,
+          "priority" TEXT NOT NULL DEFAULT 'MEDIUM',
+          "status" TEXT NOT NULL DEFAULT 'OPEN',
+          "bookingRef" TEXT,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "SupportTicket_pkey" PRIMARY KEY ("id")
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS "SupportTicket_ticketNumber_key" ON "SupportTicket"("ticketNumber");
+
+        CREATE TABLE IF NOT EXISTS "TicketMessage" (
+          "id" TEXT NOT NULL,
+          "ticketId" TEXT NOT NULL,
+          "authorId" TEXT,
+          "authorName" TEXT NOT NULL,
+          "senderType" TEXT NOT NULL,
+          "message" TEXT NOT NULL,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "TicketMessage_pkey" PRIMARY KEY ("id")
+        );
+        CREATE INDEX IF NOT EXISTS "TicketMessage_ticketId_createdAt_idx" ON "TicketMessage"("ticketId", "createdAt");
       END $$;
     `);
     console.log('  ✓ Schema self-healing DDL executed.');

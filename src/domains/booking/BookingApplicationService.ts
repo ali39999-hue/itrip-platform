@@ -16,6 +16,7 @@ import { getFlightPriceById, getLiveFlightPriceById } from '@/services/flights-s
 import { encryptSensitive } from '@/lib/security/crypto-vault';
 import { businessMetrics } from '@/lib/observability/business-metrics';
 import { ReferralDomainService } from '../referral/ReferralDomainService';
+import { ensureDatabaseSchemaHealed } from '@/lib/db-schema-guard';
 import crypto from 'crypto';
 
 export interface PassengerPii {
@@ -243,8 +244,26 @@ export class BookingApplicationService {
     const finalTotalAmount = pricing.sellPrice;
     const currency = 'IRR';
 
-    // 3. User verification
-    let user = await prisma.user.findUnique({ where: { id: cmd.actorId } });
+    // 3. User verification with automatic schema healing and safe column selection
+    await ensureDatabaseSchemaHealed().catch(() => {});
+    let user = await prisma.user.findUnique({
+      where: { id: cmd.actorId },
+      select: {
+        id: true,
+        phone: true,
+        email: true,
+        name: true,
+        role: true,
+      },
+    }).catch(async (findErr) => {
+      console.warn('[BookingApplicationService] User findUnique fallback triggered:', findErr?.message);
+      await ensureDatabaseSchemaHealed().catch(() => {});
+      return prisma.user.findUnique({
+        where: { id: cmd.actorId },
+        select: { id: true, phone: true, email: true, name: true },
+      });
+    });
+
     if (!user) {
       user = await prisma.user.create({
         data: {

@@ -11,6 +11,7 @@ import { RateLimiter } from '@/lib/security/rate-limiter';
 import { decryptSensitive } from '@/lib/security/crypto-vault';
 import { hasErpRole } from '@/domains/identity/permission-service';
 import { ProductionTelegramProvider, TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
+import { ensureDatabaseSchemaHealed } from '@/lib/db-schema-guard';
 
 export type AuthChannel = 'phone' | 'email' | 'telegram' | 'whatsapp' | 'wechat' | 'bale';
 
@@ -162,6 +163,8 @@ export async function registerWithEmail(data: unknown): Promise<{
   if (!rateCheck.allowed) {
     return { success: false, error: 'RATE_LIMITED' };
   }
+
+  await ensureDatabaseSchemaHealed().catch(() => {});
 
   let created;
   try {

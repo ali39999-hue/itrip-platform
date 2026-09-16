@@ -13,6 +13,7 @@ import { NextResponse } from 'next/server';
 import { createConnection } from 'node:net';
 import { prisma } from '@/lib/prisma';
 import { ReconciliationService } from '@/domains/ledger/ReconciliationService';
+import { ensureDatabaseSchemaHealed } from '@/lib/db-schema-guard';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -60,6 +61,7 @@ export async function GET() {
   // 1. PostgreSQL Database Connectivity (OBS-106: max 2000ms timeout)
   const startDb = Date.now();
   try {
+    await withTimeout(ensureDatabaseSchemaHealed().catch(() => {}), DB_CHECK_TIMEOUT_MS, 'Database schema healing');
     await withTimeout(prisma.$queryRaw`SELECT 1`, DB_CHECK_TIMEOUT_MS, 'Database query');
     checks.database = {
       status: 'healthy',

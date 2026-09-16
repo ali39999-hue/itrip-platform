@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { ensureDatabaseSchemaHealed } from '@/lib/db-schema-guard';
 
 export const DELETED_STATIC_KIND_TOUR = 'tour' as const;
 
@@ -18,61 +19,10 @@ export function mergeStaticTours<T extends { id: string }>(
   return staticTours.filter((t) => !db.has(t.id) && !tomb.has(t.id));
 }
 
-let isSchemaHealed = false;
+export let isSchemaHealed = false;
 export async function ensureContentSchemaHealed(): Promise<void> {
-  if (isSchemaHealed) return;
-  try {
-    await prisma.$executeRawUnsafe(`
-      DO $$
-      BEGIN
-        CREATE TABLE IF NOT EXISTS "DeletedStaticRef" (
-          "id" TEXT NOT NULL,
-          "kind" TEXT NOT NULL,
-          "refId" TEXT NOT NULL,
-          "reason" TEXT,
-          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          CONSTRAINT "DeletedStaticRef_pkey" PRIMARY KEY ("id")
-        );
-        CREATE UNIQUE INDEX IF NOT EXISTS "DeletedStaticRef_kind_refId_key" ON "DeletedStaticRef"("kind", "refId");
-        CREATE INDEX IF NOT EXISTS "DeletedStaticRef_kind_idx" ON "DeletedStaticRef"("kind");
-
-        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'Tour' OR table_name = 'tour') THEN
-          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "currency" TEXT NOT NULL DEFAULT 'TOMAN';
-          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "childPrice" DECIMAL(18, 4);
-          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "originalPrice" DECIMAL(18, 4);
-          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "discountPercent" INTEGER;
-          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "cityEn" TEXT;
-          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "country" TEXT NOT NULL DEFAULT 'ایران';
-          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "countryEn" TEXT DEFAULT 'Iran';
-          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "durationDays" INTEGER NOT NULL DEFAULT 3;
-          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "durationNights" INTEGER NOT NULL DEFAULT 2;
-          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "hotelName" TEXT;
-          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "hotelStars" INTEGER DEFAULT 5;
-          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "transportType" TEXT;
-          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "transportTypeEn" TEXT;
-          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "groupSize" TEXT;
-          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "groupSizeEn" TEXT;
-          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "isPublished" BOOLEAN NOT NULL DEFAULT true;
-        END IF;
-
-        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'TourDepartureDate' OR table_name = 'tourdeparturedate') THEN
-          ALTER TABLE "TourDepartureDate" ADD COLUMN IF NOT EXISTS "currency" TEXT NOT NULL DEFAULT 'TOMAN';
-          ALTER TABLE "TourDepartureDate" ADD COLUMN IF NOT EXISTS "childPrice" DECIMAL(18, 4);
-          ALTER TABLE "TourDepartureDate" ADD COLUMN IF NOT EXISTS "availableSeats" INTEGER NOT NULL DEFAULT 10;
-          ALTER TABLE "TourDepartureDate" ADD COLUMN IF NOT EXISTS "guaranteed" BOOLEAN NOT NULL DEFAULT true;
-        END IF;
-      END $$;
-    `);
-    isSchemaHealed = true;
-  } catch (err) {
-    try {
-      await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "Tour" ADD COLUMN IF NOT EXISTS "currency" TEXT NOT NULL DEFAULT 'TOMAN';`);
-      await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "TourDepartureDate" ADD COLUMN IF NOT EXISTS "currency" TEXT NOT NULL DEFAULT 'TOMAN';`);
-      isSchemaHealed = true;
-    } catch (fallbackErr) {
-      console.warn('[ensureContentSchemaHealed] Schema self-healing notice:', err, fallbackErr);
-    }
-  }
+  await ensureDatabaseSchemaHealed();
+  isSchemaHealed = true;
 }
 
 export class ContentDomainService {

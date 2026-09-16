@@ -13,12 +13,14 @@ import { ERP_STAFF_ROLES } from '@/domains/identity/permissions';
 import { decryptSensitive } from '@/lib/security/crypto-vault';
 import { acquireIdempotencyLock, completeIdempotency } from '@/lib/security/idempotency';
 import { toPlain } from '@/lib/serialize';
+import { ensureDatabaseSchemaHealed } from '@/lib/db-schema-guard';
 
 export async function createBookingDraft(data: unknown): Promise<
   | { success: true; bookingId: string; reference: string; totalAmount: number; discountAmount?: number; referralDiscountAmount?: number; appliedDiscountType?: string; currency: string; status: string; referralStatus?: string; error?: undefined }
   | { success: false; error: string; bookingId?: undefined }
 > {
   try {
+    await ensureDatabaseSchemaHealed().catch(() => {});
     const session = await safeAuth();
     if (!session || !session.user) {
       return { success: false, error: 'Unauthorized' };
@@ -804,6 +806,7 @@ export async function createMultiItemBookingDraftAction(params: {
   passengers?: Array<Record<string, unknown>>;
 }) {
   try {
+    await ensureDatabaseSchemaHealed().catch(() => {});
     const session = await safeAuth();
     if (!session || !session.user) {
       return { success: false, error: 'Unauthorized' };
