@@ -147,7 +147,7 @@ export function trackFunnel(
 }
 
 /**
- * Capture an unhandled exception or client error into PostHog.
+ * Capture an unhandled exception or client error into PostHog and internal System Error Hub.
  * Scrubs error message and stack trace if any PII appears, never throws.
  */
 export function captureError(
@@ -156,13 +156,36 @@ export function captureError(
 ): void {
   try {
     const message = err instanceof Error ? err.message : String(err);
-    const stack = err instanceof Error && err.stack ? err.stack.slice(0, 300) : undefined;
+    const stack = err instanceof Error && err.stack ? err.stack.slice(0, 1500) : undefined;
     const clean = sanitizeProps({
       ...context,
-      errorMessage: message.slice(0, 150),
-      ...(stack ? { errorStack: stack } : {}),
+      errorMessage: message.slice(0, 300),
+      ...(stack ? { errorStack: stack.slice(0, 1000) } : {}),
     });
     trackEvent('client_error', clean);
+
+    // Transmit to internal diagnostic telemetry hub
+    if (typeof window !== 'undefined') {
+      const payload = JSON.stringify({
+        message,
+        stackTrace: stack,
+        source: (context.source as string) || 'CLIENT_REACT',
+        level: (context.level as string) || 'ERROR',
+        endpoint: window.location.pathname,
+        metadata: clean,
+      });
+
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        navigator.sendBeacon('/api/telemetry/errors', new Blob([payload], { type: 'application/json' }));
+      } else {
+        fetch('/api/telemetry/errors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          keepalive: true,
+        }).catch(() => {});
+      }
+    }
   } catch {
     // Intentionally silent.
   }

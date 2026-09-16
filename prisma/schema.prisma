@@ -1005,6 +1005,36 @@ model AuditLog {
   @@index([organizationId])
 }
 
+// System-wide Error, Exception & Diagnostics Logging Hub (OBS-005)
+model SystemErrorLog {
+  id           String    @id @default(cuid())
+  fingerprint  String
+  level        String    @default("ERROR") // CRITICAL, ERROR, WARN, INFO
+  source       String    @default("SERVER") // SERVER_ACTION, API_ROUTE, DB_PRISMA, CLIENT_REACT, MIDDLEWARE
+  message      String    @db.Text
+  stackTrace   String?   @db.Text
+  endpoint     String?
+  method       String?
+  statusCode   Int?
+  occurrences  Int       @default(1)
+  status       String    @default("UNRESOLVED") // UNRESOLVED, INVESTIGATING, RESOLVED, IGNORED
+  userId       String?
+  userRole     String?
+  ipAddress    String?
+  userAgent    String?
+  metadata     String?   @db.Text
+  firstSeenAt  DateTime  @default(now())
+  lastSeenAt   DateTime  @default(now())
+  resolvedAt   DateTime?
+  resolvedById String?
+
+  @@index([fingerprint])
+  @@index([status])
+  @@index([level])
+  @@index([source])
+  @@index([lastSeenAt])
+}
+
 model OutboxEvent {
   id            String    @id @default(cuid())
   eventType     String    // e.g., "BOOKING_PAID", "BOOKING_CONFIRMED", "REFUND_REQUESTED", "AUTH_OTP_REQUESTED", "VOUCHER_ISSUED", "NOTIFICATION_SENT"

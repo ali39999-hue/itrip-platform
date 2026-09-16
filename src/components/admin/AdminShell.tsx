@@ -12,7 +12,7 @@ import {
   PlaneTakeoff, ExternalLink, ShieldCheck, UserCheck, Activity,
   Building2, Boxes, PanelLeftClose, PanelLeftOpen, FolderKanban, Users, Menu, X,
   ChevronLeft, Keyboard, ReceiptText, HandCoins, Building, ListChecks, Compass,
-  MessageSquareQuote, Settings,
+  MessageSquareQuote, Settings, Terminal,
 } from 'lucide-react';
 import { lt, LText } from '@/lib/lt';
 import { cn } from '@/lib/utils';
@@ -74,7 +74,8 @@ const NAV_GROUPS: NavGroup[] = [
     id: 'settings',
     title: { fa: 'سیستم و تنظیمات', en: 'System & Settings', ar: 'النظام والإعدادات', zh: '系统与设置', ru: 'Система и настройки' },
     items: [
-      { href: '/admin/settings', label: { fa: 'تنظیمات سامانه و پیامک', en: 'Platform & SMS Settings', ar: 'إعدادات النظام والرسائل', zh: '系统与短信设置', ru: 'Настройки и SMS' }, icon: Settings, perm: 'user:manage' },
+      { href: '/admin/logs', label: { fa: 'لاگ‌ها و خطاهای سیستم', en: 'System Error Logs', ar: 'سجلات وأخطاء النظام', zh: '系统错误日志', ru: 'Логи и ошибки' }, icon: Terminal, perm: 'audit:view' },
+      { href: '/admin/settings', label: { fa: 'تنظیمات سامانه و پیامک', en: 'Platform & SMS Settings', ar: 'إعدادات النظام والرسائل', zh: '系统与短信设置', ru: 'Настройки و SMS' }, icon: Settings, perm: 'user:manage' },
     ],
   },
 ];

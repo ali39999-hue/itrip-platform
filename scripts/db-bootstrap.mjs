@@ -147,6 +147,36 @@ async function bootstrap() {
           ALTER TABLE "TourDepartureDate" ADD COLUMN IF NOT EXISTS "availableSeats" INTEGER NOT NULL DEFAULT 10;
           ALTER TABLE "TourDepartureDate" ADD COLUMN IF NOT EXISTS "guaranteed" BOOLEAN NOT NULL DEFAULT true;
         END IF;
+
+        -- 4. Ensure SystemErrorLog exists (OBS-005)
+        CREATE TABLE IF NOT EXISTS "SystemErrorLog" (
+          "id" TEXT NOT NULL,
+          "fingerprint" TEXT NOT NULL,
+          "level" TEXT NOT NULL DEFAULT 'ERROR',
+          "source" TEXT NOT NULL DEFAULT 'SERVER',
+          "message" TEXT NOT NULL,
+          "stackTrace" TEXT,
+          "endpoint" TEXT,
+          "method" TEXT,
+          "statusCode" INTEGER,
+          "occurrences" INTEGER NOT NULL DEFAULT 1,
+          "status" TEXT NOT NULL DEFAULT 'UNRESOLVED',
+          "userId" TEXT,
+          "userRole" TEXT,
+          "ipAddress" TEXT,
+          "userAgent" TEXT,
+          "metadata" TEXT,
+          "firstSeenAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "lastSeenAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "resolvedAt" TIMESTAMP(3),
+          "resolvedById" TEXT,
+          CONSTRAINT "SystemErrorLog_pkey" PRIMARY KEY ("id")
+        );
+        CREATE INDEX IF NOT EXISTS "SystemErrorLog_fingerprint_idx" ON "SystemErrorLog"("fingerprint");
+        CREATE INDEX IF NOT EXISTS "SystemErrorLog_status_idx" ON "SystemErrorLog"("status");
+        CREATE INDEX IF NOT EXISTS "SystemErrorLog_level_idx" ON "SystemErrorLog"("level");
+        CREATE INDEX IF NOT EXISTS "SystemErrorLog_source_idx" ON "SystemErrorLog"("source");
+        CREATE INDEX IF NOT EXISTS "SystemErrorLog_lastSeenAt_idx" ON "SystemErrorLog"("lastSeenAt");
       END $$;
     `);
     console.log('  ✓ Schema self-healing DDL executed.');
