@@ -102,6 +102,58 @@ const DEFAULT_ADMIN_PHONES = [
 async function bootstrap() {
   console.log('\n--- [db-bootstrap] Starting automated idempotent database bootstrap ---');
 
+  // 0. Schema Self-Healing DDL (Ensure missing columns / tables exist in Neon)
+  console.log('• Checking and applying schema self-healing DDL...');
+  try {
+    await prisma.$executeRawUnsafe(`
+      DO $$
+      BEGIN
+        -- 1. Ensure DeletedStaticRef exists
+        CREATE TABLE IF NOT EXISTS "DeletedStaticRef" (
+          "id" TEXT NOT NULL,
+          "kind" TEXT NOT NULL,
+          "refId" TEXT NOT NULL,
+          "reason" TEXT,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "DeletedStaticRef_pkey" PRIMARY KEY ("id")
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS "DeletedStaticRef_kind_refId_key" ON "DeletedStaticRef"("kind", "refId");
+        CREATE INDEX IF NOT EXISTS "DeletedStaticRef_kind_idx" ON "DeletedStaticRef"("kind");
+
+        -- 2. Ensure Tour columns exist
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'Tour') THEN
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "currency" TEXT NOT NULL DEFAULT 'TOMAN';
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "childPrice" DECIMAL(18, 4);
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "originalPrice" DECIMAL(18, 4);
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "discountPercent" INTEGER;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "cityEn" TEXT;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "country" TEXT NOT NULL DEFAULT 'ایران';
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "countryEn" TEXT DEFAULT 'Iran';
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "durationDays" INTEGER NOT NULL DEFAULT 3;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "durationNights" INTEGER NOT NULL DEFAULT 2;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "hotelName" TEXT;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "hotelStars" INTEGER DEFAULT 5;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "transportType" TEXT;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "transportTypeEn" TEXT;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "groupSize" TEXT;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "groupSizeEn" TEXT;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "isPublished" BOOLEAN NOT NULL DEFAULT true;
+        END IF;
+
+        -- 3. Ensure TourDepartureDate columns exist
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'TourDepartureDate') THEN
+          ALTER TABLE "TourDepartureDate" ADD COLUMN IF NOT EXISTS "currency" TEXT NOT NULL DEFAULT 'TOMAN';
+          ALTER TABLE "TourDepartureDate" ADD COLUMN IF NOT EXISTS "childPrice" DECIMAL(18, 4);
+          ALTER TABLE "TourDepartureDate" ADD COLUMN IF NOT EXISTS "availableSeats" INTEGER NOT NULL DEFAULT 10;
+          ALTER TABLE "TourDepartureDate" ADD COLUMN IF NOT EXISTS "guaranteed" BOOLEAN NOT NULL DEFAULT true;
+        END IF;
+      END $$;
+    `);
+    console.log('  ✓ Schema self-healing DDL executed.');
+  } catch (ddlErr) {
+    console.warn('  ℹ Schema DDL notice:', ddlErr.message);
+  }
+
   // 1. Resolve Admin Password
   const adminPassword = process.env.ADMIN_PASSWORD?.trim() || 'Admin@Firuzo2026!';
   const adminPasswordHash = await bcrypt.hash(adminPassword, 10);

@@ -18,6 +18,63 @@ export function mergeStaticTours<T extends { id: string }>(
   return staticTours.filter((t) => !db.has(t.id) && !tomb.has(t.id));
 }
 
+let isSchemaHealed = false;
+export async function ensureContentSchemaHealed(): Promise<void> {
+  if (isSchemaHealed) return;
+  try {
+    await prisma.$executeRawUnsafe(`
+      DO $$
+      BEGIN
+        CREATE TABLE IF NOT EXISTS "DeletedStaticRef" (
+          "id" TEXT NOT NULL,
+          "kind" TEXT NOT NULL,
+          "refId" TEXT NOT NULL,
+          "reason" TEXT,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT "DeletedStaticRef_pkey" PRIMARY KEY ("id")
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS "DeletedStaticRef_kind_refId_key" ON "DeletedStaticRef"("kind", "refId");
+        CREATE INDEX IF NOT EXISTS "DeletedStaticRef_kind_idx" ON "DeletedStaticRef"("kind");
+
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'Tour' OR table_name = 'tour') THEN
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "currency" TEXT NOT NULL DEFAULT 'TOMAN';
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "childPrice" DECIMAL(18, 4);
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "originalPrice" DECIMAL(18, 4);
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "discountPercent" INTEGER;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "cityEn" TEXT;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "country" TEXT NOT NULL DEFAULT 'ایران';
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "countryEn" TEXT DEFAULT 'Iran';
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "durationDays" INTEGER NOT NULL DEFAULT 3;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "durationNights" INTEGER NOT NULL DEFAULT 2;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "hotelName" TEXT;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "hotelStars" INTEGER DEFAULT 5;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "transportType" TEXT;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "transportTypeEn" TEXT;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "groupSize" TEXT;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "groupSizeEn" TEXT;
+          ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "isPublished" BOOLEAN NOT NULL DEFAULT true;
+        END IF;
+
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'TourDepartureDate' OR table_name = 'tourdeparturedate') THEN
+          ALTER TABLE "TourDepartureDate" ADD COLUMN IF NOT EXISTS "currency" TEXT NOT NULL DEFAULT 'TOMAN';
+          ALTER TABLE "TourDepartureDate" ADD COLUMN IF NOT EXISTS "childPrice" DECIMAL(18, 4);
+          ALTER TABLE "TourDepartureDate" ADD COLUMN IF NOT EXISTS "availableSeats" INTEGER NOT NULL DEFAULT 10;
+          ALTER TABLE "TourDepartureDate" ADD COLUMN IF NOT EXISTS "guaranteed" BOOLEAN NOT NULL DEFAULT true;
+        END IF;
+      END $$;
+    `);
+    isSchemaHealed = true;
+  } catch (err) {
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "Tour" ADD COLUMN IF NOT EXISTS "currency" TEXT NOT NULL DEFAULT 'TOMAN';`);
+      await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "TourDepartureDate" ADD COLUMN IF NOT EXISTS "currency" TEXT NOT NULL DEFAULT 'TOMAN';`);
+      isSchemaHealed = true;
+    } catch (fallbackErr) {
+      console.warn('[ensureContentSchemaHealed] Schema self-healing notice:', err, fallbackErr);
+    }
+  }
+}
+
 export class ContentDomainService {
   /** Ids the CMS explicitly deleted (suppresses static fallbacks only). */
   static async getDeletedStaticIds(kind: string): Promise<string[]> {
@@ -83,6 +140,7 @@ export class ContentDomainService {
 
   // 1. Tours
   static async getTours() {
+    await ensureContentSchemaHealed();
     let dbTours: Record<string, unknown>[] = [];
     try {
       const tours = await prisma.tour.findMany({
@@ -190,106 +248,128 @@ export class ContentDomainService {
     if (!data.title?.trim()) throw new Error('Title is required');
     if (!data.city?.trim()) throw new Error('City is required');
 
-    const created = await prisma.tour.create({
-      data: {
-        title: data.title.trim(),
-        titleEn: data.titleEn?.trim() || data.title.trim(),
-        city: data.city.trim(),
-        cityEn: data.cityEn?.trim() || data.city.trim(),
-        country: data.country || 'ایران',
-        countryEn: data.countryEn || 'Iran',
-        durationDays: data.durationDays || 3,
-        durationNights: data.durationNights ?? Math.max(1, (data.durationDays || 3) - 1),
-        currency: data.currency || 'TOMAN',
-        price: new Prisma.Decimal(data.price || 0),
-        childPrice: data.childPrice ? new Prisma.Decimal(data.childPrice) : null,
-        originalPrice: data.originalPrice ? new Prisma.Decimal(data.originalPrice) : null,
-        discountPercent: data.discountPercent ?? (
-          data.originalPrice && data.price && data.originalPrice > data.price
-            ? Math.round(((data.originalPrice - data.price) / data.originalPrice) * 100)
-            : null
-        ),
-        category: data.category || 'cultural',
-        heroImage: data.heroImage || null,
-        gallery: data.gallery || [],
-        summary: data.summary || '',
-        summaryEn: data.summaryEn || '',
-        description: data.description || '',
-        descriptionEn: data.descriptionEn || '',
-        highlights: data.highlights || [],
-        includes: data.includes || ['پرواز رفت و برگشت', 'هتل ۵ ستاره', 'بیمه', 'ترانسفر'],
-        excludes: data.excludes || ['خریدهای شخصی'],
-        hotelName: data.hotelName || 'هتل ۵ ستاره لوکس',
-        hotelStars: data.hotelStars || 5,
-        transportType: data.transportType || 'پرواز + ترانسفر',
-        transportTypeEn: data.transportTypeEn || 'Flights + transfers',
-        groupSize: data.groupSize || 'حداکثر ۱۲ نفر',
-        guideLanguages: data.guideLanguages || ['فارسی', 'English'],
-        departureDates: {
-          create: (
-            (data.departureDates && data.departureDates.length > 0)
-              ? data.departureDates
-              : [7, 14, 21].map((offset) => {
-                  const now = new Date();
-                  const start = new Date(now.getTime() + offset * 86400000);
-                  const end = new Date(now.getTime() + (offset + (data.durationDays || 3)) * 86400000);
-                  return {
-                    startDate: start.toISOString().split('T')[0],
-                    endDate: end.toISOString().split('T')[0],
-                    currency: data.currency || 'TOMAN',
-                    price: data.price || 0,
-                    childPrice: data.childPrice ?? null,
-                    availableSeats: 10,
-                    guaranteed: true,
-                  };
-                })
-          ).map((d) => ({
-            startDate: d.startDate,
-            endDate: d.endDate,
-            currency: d.currency || data.currency || 'TOMAN',
-            price: new Prisma.Decimal(d.price),
-            childPrice: d.childPrice != null ? new Prisma.Decimal(d.childPrice) : (data.childPrice != null ? new Prisma.Decimal(data.childPrice) : null),
-            availableSeats: d.availableSeats || 10,
-            guaranteed: d.guaranteed ?? true,
-          })),
-        },
-        itineraryDays: {
-          create: (
-            (data.itineraryDays && data.itineraryDays.length > 0)
-              ? data.itineraryDays
-              : Array.from({ length: data.durationDays || 3 }, (_, idx) => ({
-                  day: idx + 1,
-                  title: `روز ${idx + 1} - گشت شهری و اقامت`,
-                  titleEn: `Day ${idx + 1} City Tour`,
-                  description: `برنامه بازدید اختصاصی از جاذبه‌های برگزیده در ${data.city.trim()}`,
-                  activities: ['گشت شهری', 'اقامت در هتل'],
-                  breakfast: true,
-                  lunch: false,
-                  dinner: false,
-                  accommodation: data.hotelName || 'هتل ۵ ستاره لوکس',
-                }))
-          ).map((day) => ({
-            day: day.day,
-            title: day.title,
-            titleEn: day.titleEn || day.title,
-            description: day.description,
-            activities: day.activities || [],
-            breakfast: day.breakfast ?? false,
-            lunch: day.lunch ?? false,
-            dinner: day.dinner ?? false,
-            accommodation: day.accommodation || '',
-          })),
-        },
+    await ensureContentSchemaHealed();
+
+    const tourPayload = {
+      title: data.title.trim(),
+      titleEn: data.titleEn?.trim() || data.title.trim(),
+      city: data.city.trim(),
+      cityEn: data.cityEn?.trim() || data.city.trim(),
+      country: data.country || 'ایران',
+      countryEn: data.countryEn || 'Iran',
+      durationDays: data.durationDays || 3,
+      durationNights: data.durationNights ?? Math.max(1, (data.durationDays || 3) - 1),
+      currency: data.currency || 'TOMAN',
+      price: new Prisma.Decimal(data.price || 0),
+      childPrice: data.childPrice ? new Prisma.Decimal(data.childPrice) : null,
+      originalPrice: data.originalPrice ? new Prisma.Decimal(data.originalPrice) : null,
+      discountPercent: data.discountPercent ?? (
+        data.originalPrice && data.price && data.originalPrice > data.price
+          ? Math.round(((data.originalPrice - data.price) / data.originalPrice) * 100)
+          : null
+      ),
+      category: data.category || 'cultural',
+      heroImage: data.heroImage || null,
+      gallery: data.gallery || [],
+      summary: data.summary || '',
+      summaryEn: data.summaryEn || '',
+      description: data.description || '',
+      descriptionEn: data.descriptionEn || '',
+      highlights: data.highlights || [],
+      includes: data.includes || ['پرواز رفت و برگشت', 'هتل ۵ ستاره', 'بیمه', 'ترانسفر'],
+      excludes: data.excludes || ['خریدهای شخصی'],
+      hotelName: data.hotelName || 'هتل ۵ ستاره لوکس',
+      hotelStars: data.hotelStars || 5,
+      transportType: data.transportType || 'پرواز + ترانسفر',
+      transportTypeEn: data.transportTypeEn || 'Flights + transfers',
+      groupSize: data.groupSize || 'حداکثر ۱۲ نفر',
+      guideLanguages: data.guideLanguages || ['فارسی', 'English'],
+      departureDates: {
+        create: (
+          (data.departureDates && data.departureDates.length > 0)
+            ? data.departureDates
+            : [7, 14, 21].map((offset) => {
+                const now = new Date();
+                const start = new Date(now.getTime() + offset * 86400000);
+                const end = new Date(now.getTime() + (offset + (data.durationDays || 3)) * 86400000);
+                return {
+                  startDate: start.toISOString().split('T')[0],
+                  endDate: end.toISOString().split('T')[0],
+                  currency: data.currency || 'TOMAN',
+                  price: data.price || 0,
+                  childPrice: data.childPrice ?? null,
+                  availableSeats: 10,
+                  guaranteed: true,
+                };
+              })
+        ).map((d) => ({
+          startDate: d.startDate,
+          endDate: d.endDate,
+          currency: d.currency || data.currency || 'TOMAN',
+          price: new Prisma.Decimal(d.price),
+          childPrice: d.childPrice != null ? new Prisma.Decimal(d.childPrice) : (data.childPrice != null ? new Prisma.Decimal(data.childPrice) : null),
+          availableSeats: d.availableSeats || 10,
+          guaranteed: d.guaranteed ?? true,
+        })),
       },
-      include: {
-        departureDates: { orderBy: { startDate: 'asc' } },
-        itineraryDays: { orderBy: { day: 'asc' } },
+      itineraryDays: {
+        create: (
+          (data.itineraryDays && data.itineraryDays.length > 0)
+            ? data.itineraryDays
+            : Array.from({ length: data.durationDays || 3 }, (_, idx) => ({
+                day: idx + 1,
+                title: `روز ${idx + 1} - گشت شهری و اقامت`,
+                titleEn: `Day ${idx + 1} City Tour`,
+                description: `برنامه بازدید اختصاصی از جاذبه‌های برگزیده در ${data.city.trim()}`,
+                activities: ['گشت شهری', 'اقامت در هتل'],
+                breakfast: true,
+                lunch: false,
+                dinner: false,
+                accommodation: data.hotelName || 'هتل ۵ ستاره لوکس',
+              }))
+        ).map((day) => ({
+          day: day.day,
+          title: day.title,
+          titleEn: day.titleEn || day.title,
+          description: day.description,
+          activities: day.activities || [],
+          breakfast: day.breakfast ?? false,
+          lunch: day.lunch ?? false,
+          dinner: day.dinner ?? false,
+          accommodation: day.accommodation || '',
+        })),
       },
-    });
-    return ContentDomainService.serializeTour(created);
+    };
+
+    try {
+      const created = await prisma.tour.create({
+        data: tourPayload,
+        include: {
+          departureDates: { orderBy: { startDate: 'asc' } },
+          itineraryDays: { orderBy: { day: 'asc' } },
+        },
+      });
+      return ContentDomainService.serializeTour(created);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      if (errMsg.includes('does not exist') || errMsg.includes('Tour.currency') || errMsg.includes('column')) {
+        isSchemaHealed = false;
+        await ensureContentSchemaHealed();
+        const retry = await prisma.tour.create({
+          data: tourPayload,
+          include: {
+            departureDates: { orderBy: { startDate: 'asc' } },
+            itineraryDays: { orderBy: { day: 'asc' } },
+          },
+        });
+        return ContentDomainService.serializeTour(retry);
+      }
+      throw err;
+    }
   }
 
   static async ensureTourInDb(id: string): Promise<boolean> {
+    await ensureContentSchemaHealed();
     try {
       const existing = await prisma.tour.findUnique({ where: { id } });
       if (existing) return true;
@@ -357,7 +437,12 @@ export class ContentDomainService {
         },
       });
       return true;
-    } catch (err) {
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      if (errMsg.includes('does not exist') || errMsg.includes('Tour.currency') || errMsg.includes('column')) {
+        isSchemaHealed = false;
+        await ensureContentSchemaHealed();
+      }
       console.warn(`[ensureTourInDb] Warning auto-cloning tour ${id}:`, err);
       return false;
     }
@@ -385,16 +470,35 @@ export class ContentDomainService {
   }
 
   static async toggleTourPublish(id: string, isPublished: boolean) {
+    await ensureContentSchemaHealed();
     await ContentDomainService.ensureTourInDb(id);
-    const updated = await prisma.tour.update({
-      where: { id },
-      data: { isPublished },
-      include: {
-        departureDates: { orderBy: { startDate: 'asc' } },
-        itineraryDays: { orderBy: { day: 'asc' } },
-      },
-    });
-    return ContentDomainService.serializeTour(updated);
+    try {
+      const updated = await prisma.tour.update({
+        where: { id },
+        data: { isPublished },
+        include: {
+          departureDates: { orderBy: { startDate: 'asc' } },
+          itineraryDays: { orderBy: { day: 'asc' } },
+        },
+      });
+      return ContentDomainService.serializeTour(updated);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      if (errMsg.includes('does not exist') || errMsg.includes('Tour.currency') || errMsg.includes('column')) {
+        isSchemaHealed = false;
+        await ensureContentSchemaHealed();
+        const retry = await prisma.tour.update({
+          where: { id },
+          data: { isPublished },
+          include: {
+            departureDates: { orderBy: { startDate: 'asc' } },
+            itineraryDays: { orderBy: { day: 'asc' } },
+          },
+        });
+        return ContentDomainService.serializeTour(retry);
+      }
+      throw err;
+    }
   }
 
   /** Partial edit of an existing tour; only provided fields change. */
@@ -432,6 +536,7 @@ export class ContentDomainService {
     if (data.city !== undefined && !data.city.trim()) throw new Error('City cannot be empty');
     if (data.durationDays !== undefined && data.durationDays < 1) throw new Error('Duration must be at least 1 day');
 
+    await ensureContentSchemaHealed();
     await ContentDomainService.ensureTourInDb(id);
 
     // Auto-sync departure dates prices and currency so checkout & booking widget reflect the updated CMS price
@@ -451,57 +556,76 @@ export class ContentDomainService {
       }).catch(() => {});
     }
 
-    const updated = await prisma.tour.update({
-      where: { id },
-      data: {
-        ...(data.title !== undefined && { title: data.title.trim() }),
-        ...(data.titleEn !== undefined && { titleEn: data.titleEn.trim() || data.title?.trim() || '' }),
-        ...(data.city !== undefined && { city: data.city.trim() }),
-        ...(data.country !== undefined && { country: data.country.trim() }),
-        ...(data.durationDays !== undefined && {
-          durationDays: data.durationDays,
-          durationNights: Math.max(1, data.durationDays - 1),
-        }),
-        ...(data.currency !== undefined && { currency: data.currency }),
-        ...(data.price !== undefined && { price: new Prisma.Decimal(data.price) }),
-        ...(data.childPrice !== undefined && {
-          childPrice: data.childPrice != null ? new Prisma.Decimal(data.childPrice) : null,
-        }),
-        ...(data.originalPrice !== undefined && {
-          originalPrice: data.originalPrice != null ? new Prisma.Decimal(data.originalPrice) : null,
-        }),
-        ...(data.discountPercent !== undefined && {
-          discountPercent: data.discountPercent != null ? data.discountPercent : null,
-        }),
-        ...(data.originalPrice === null && data.discountPercent === undefined && {
-          discountPercent: null,
-        }),
-        ...(data.category !== undefined && { category: data.category }),
-        ...(data.heroImage !== undefined && { heroImage: data.heroImage || null }),
-        ...(data.gallery !== undefined && { gallery: data.gallery }),
-        ...(data.summary !== undefined && { summary: data.summary }),
-        ...(data.summaryEn !== undefined && { summaryEn: data.summaryEn }),
-        ...(data.description !== undefined && { description: data.description }),
-        ...(data.descriptionEn !== undefined && { descriptionEn: data.descriptionEn }),
-        ...(data.hotelName !== undefined && { hotelName: data.hotelName || null }),
-        ...(data.hotelStars !== undefined && { hotelStars: data.hotelStars }),
-        ...(data.transportType !== undefined && { transportType: data.transportType || null }),
-        ...(data.transportTypeEn !== undefined && { transportTypeEn: data.transportTypeEn || null }),
-        ...(data.groupSize !== undefined && { groupSize: data.groupSize }),
-        ...(data.groupSizeEn !== undefined && { groupSizeEn: data.groupSizeEn }),
-        ...(data.guideLanguages !== undefined && { guideLanguages: data.guideLanguages }),
-        ...(data.highlights !== undefined && { highlights: data.highlights }),
-        ...(data.includes !== undefined && { includes: data.includes }),
-        ...(data.excludes !== undefined && { excludes: data.excludes }),
-        ...(data.isPublished !== undefined && { isPublished: data.isPublished }),
-      },
-      include: {
-        departureDates: { orderBy: { startDate: 'asc' } },
-        itineraryDays: { orderBy: { day: 'asc' } },
-      },
-    });
+    const updatePayload = {
+      ...(data.title !== undefined && { title: data.title.trim() }),
+      ...(data.titleEn !== undefined && { titleEn: data.titleEn.trim() || data.title?.trim() || '' }),
+      ...(data.city !== undefined && { city: data.city.trim() }),
+      ...(data.country !== undefined && { country: data.country.trim() }),
+      ...(data.durationDays !== undefined && {
+        durationDays: data.durationDays,
+        durationNights: Math.max(1, data.durationDays - 1),
+      }),
+      ...(data.currency !== undefined && { currency: data.currency }),
+      ...(data.price !== undefined && { price: new Prisma.Decimal(data.price) }),
+      ...(data.childPrice !== undefined && {
+        childPrice: data.childPrice != null ? new Prisma.Decimal(data.childPrice) : null,
+      }),
+      ...(data.originalPrice !== undefined && {
+        originalPrice: data.originalPrice != null ? new Prisma.Decimal(data.originalPrice) : null,
+      }),
+      ...(data.discountPercent !== undefined && {
+        discountPercent: data.discountPercent != null ? data.discountPercent : null,
+      }),
+      ...(data.originalPrice === null && data.discountPercent === undefined && {
+        discountPercent: null,
+      }),
+      ...(data.category !== undefined && { category: data.category }),
+      ...(data.heroImage !== undefined && { heroImage: data.heroImage || null }),
+      ...(data.gallery !== undefined && { gallery: data.gallery }),
+      ...(data.summary !== undefined && { summary: data.summary }),
+      ...(data.summaryEn !== undefined && { summaryEn: data.summaryEn }),
+      ...(data.description !== undefined && { description: data.description }),
+      ...(data.descriptionEn !== undefined && { descriptionEn: data.descriptionEn }),
+      ...(data.hotelName !== undefined && { hotelName: data.hotelName || null }),
+      ...(data.hotelStars !== undefined && { hotelStars: data.hotelStars }),
+      ...(data.transportType !== undefined && { transportType: data.transportType || null }),
+      ...(data.transportTypeEn !== undefined && { transportTypeEn: data.transportTypeEn || null }),
+      ...(data.groupSize !== undefined && { groupSize: data.groupSize }),
+      ...(data.groupSizeEn !== undefined && { groupSizeEn: data.groupSizeEn }),
+      ...(data.guideLanguages !== undefined && { guideLanguages: data.guideLanguages }),
+      ...(data.highlights !== undefined && { highlights: data.highlights }),
+      ...(data.includes !== undefined && { includes: data.includes }),
+      ...(data.excludes !== undefined && { excludes: data.excludes }),
+      ...(data.isPublished !== undefined && { isPublished: data.isPublished }),
+    };
 
-    return ContentDomainService.serializeTour(updated);
+    try {
+      const updated = await prisma.tour.update({
+        where: { id },
+        data: updatePayload,
+        include: {
+          departureDates: { orderBy: { startDate: 'asc' } },
+          itineraryDays: { orderBy: { day: 'asc' } },
+        },
+      });
+      return ContentDomainService.serializeTour(updated);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      if (errMsg.includes('does not exist') || errMsg.includes('Tour.currency') || errMsg.includes('column')) {
+        isSchemaHealed = false;
+        await ensureContentSchemaHealed();
+        const retry = await prisma.tour.update({
+          where: { id },
+          data: updatePayload,
+          include: {
+            departureDates: { orderBy: { startDate: 'asc' } },
+            itineraryDays: { orderBy: { day: 'asc' } },
+          },
+        });
+        return ContentDomainService.serializeTour(retry);
+      }
+      throw err;
+    }
   }
 
   // 2. Experiences

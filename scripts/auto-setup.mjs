@@ -51,16 +51,16 @@ if (process.env.DATABASE_URL) {
   try {
     execSync('npx prisma migrate deploy', { stdio: 'inherit' });
     console.log('  ✓ Database migrations applied cleanly.');
-
-    console.log('• Running production database bootstrap (RBAC roles, Super Admin, CMS seed)...');
-    try {
-      execSync('node scripts/db-bootstrap.mjs', { stdio: 'inherit' });
-      console.log('  ✓ Production database bootstrap completed successfully.');
-    } catch (bootstrapErr) {
-      console.warn('  ⚠️ Database bootstrap warning:', bootstrapErr.message);
-    }
   } catch (err) {
     console.warn('  ℹ Note: Database migration during build phase skipped or deferred (database may be unreachable during static build step):', err.message);
+  }
+
+  console.log('• Running production database bootstrap (RBAC roles, Super Admin, CMS seed, DDL self-healing)...');
+  try {
+    execSync('node scripts/db-bootstrap.mjs', { stdio: 'inherit' });
+    console.log('  ✓ Production database bootstrap completed successfully.');
+  } catch (bootstrapErr) {
+    console.warn('  ⚠️ Database bootstrap warning:', bootstrapErr.message);
   }
 } else {
   console.log('• No DATABASE_URL set yet. Skipping migration step (runtime fallback active).');
