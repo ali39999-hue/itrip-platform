@@ -17,8 +17,8 @@ jobs:
   full-release-certification:
     runs-on: ubuntu-latest
     env:
-      DEMO_MODE: "true"
-      NEXT_PUBLIC_DEMO_MODE: "true"
+      DEMO_MODE: "false"
+      NEXT_PUBLIC_DEMO_MODE: "false"
       GATEWAY_MODE: internal_wallet
     services:
       postgres:
