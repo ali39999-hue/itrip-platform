@@ -159,16 +159,21 @@ export function ReferralInputSection({
               zh: '例如 KOOH123',
               ru: 'Например, KOOH123',
             })}
-            className="w-full h-11 px-3 pe-8 rounded-xl border border-line bg-paper/50 text-[13px] font-mono font-bold uppercase tracking-wider text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="w-full h-11 ps-3 pe-12 rounded-xl border border-line bg-paper/50 text-[13px] font-mono font-bold uppercase tracking-wider text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           />
           {referralCode && !disabled && (
+            /* AGENTS.md §1.3: the clear control must expose a 44x44 hit area. The
+               visual glyph stays small (24px circle) inside a full-height touch
+               target so the input row does not grow. */
             <button
               type="button"
               onClick={handleRemoveCode}
               aria-label={lt(locale, { fa: 'پاک کردن کد', en: 'Clear code', ar: 'مسح الرمز', zh: '清除代码', ru: 'Очистить код' })}
-              className="absolute end-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full text-sub hover:text-destructive hover:bg-destructive/10 grid place-items-center transition cursor-pointer"
+              className="absolute end-0 top-0 h-11 w-11 grid place-items-center text-sub hover:text-destructive transition cursor-pointer rounded-e-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
-              <X size={14} />
+              <span className="w-6 h-6 rounded-full grid place-items-center hover:bg-destructive/10">
+                <X size={14} aria-hidden="true" />
+              </span>
             </button>
           )}
         </div>

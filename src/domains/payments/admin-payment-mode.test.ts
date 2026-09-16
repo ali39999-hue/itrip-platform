@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import {
   isUserAdmin,
@@ -11,6 +12,37 @@ import { EcardoGatewayAdapter } from './adapters/EcardoGatewayAdapter';
 import { Money } from '@/lib/finance';
 
 describe('Admin Payment Mode & Security Architecture', () => {
+  // SEC: admin identity is a real DB user holding the relational SUPER_ADMIN role.
+  // The suite previously asserted that the hardcoded id `clr_admin_123` was an
+  // admin by itself — exactly the static bypass that was removed.
+  const suffix = `paymode_${Date.now().toString(36)}_${randomBytes(3).toString('hex')}`;
+  let adminId = '';
+  let roleId = '';
+
+  beforeAll(async () => {
+    const role = await prisma.role.upsert({
+      where: { name: 'SUPER_ADMIN' },
+      update: {},
+      create: { name: 'SUPER_ADMIN', permissions: '[]', description: 'SUPER_ADMIN Role' },
+    });
+    roleId = role.id;
+
+    const admin = await prisma.user.create({
+      data: { email: `paymode_admin_${suffix}@firuzo.com`, name: 'PayMode Admin', role: 'CUSTOMER', isActive: true },
+    });
+    adminId = admin.id;
+    await prisma.userRole.create({ data: { userId: adminId, roleId } });
+  });
+
+  afterAll(async () => {
+    try {
+      await prisma.userRole.deleteMany({ where: { userId: adminId } });
+      await prisma.user.deleteMany({ where: { id: adminId } });
+    } catch {
+      // best-effort cleanup
+    }
+  });
+
   beforeEach(async () => {
     // Clean up test key in SiteContent
     await prisma.siteContent.deleteMany({
@@ -24,8 +56,12 @@ describe('Admin Payment Mode & Security Architecture', () => {
       expect(await isUserAdmin('')).toBe(false);
     });
 
-    it('recognizes clr_admin_123 as admin', async () => {
-      expect(await isUserAdmin('clr_admin_123')).toBe(true);
+    it('recognizes a live user holding the relational SUPER_ADMIN role', async () => {
+      expect(await isUserAdmin(adminId)).toBe(true);
+    });
+
+    it('no longer recognizes the retired static id (bypass removed)', async () => {
+      expect(await isUserAdmin('clr_admin_123')).toBe(false);
     });
 
     it('rejects a normal customer without admin roles', async () => {
@@ -45,39 +81,38 @@ describe('Admin Payment Mode & Security Architecture', () => {
 
   describe('System Payment Mode & SiteContent persistence', () => {
     it('sets and reads system payment mode in SiteContent', async () => {
-      await setSystemPaymentMode('demo', 'clr_admin_123');
+      await setSystemPaymentMode('demo', adminId);
       expect(await getSystemPaymentMode()).toBe('demo');
 
-      await setSystemPaymentMode('real', 'clr_admin_123');
+      await setSystemPaymentMode('real', adminId);
       expect(await getSystemPaymentMode()).toBe('real');
     });
   });
 
   describe('resolveEffectivePaymentMode resolution priority', () => {
     it('non-admin user gets system mode even if cookie override is attempted', async () => {
-      await setSystemPaymentMode('real', 'clr_admin_123');
+      await setSystemPaymentMode('real', adminId);
 
-      const nonAdminId = 'cust_regular_non_admin';
       const resolved = await resolveEffectivePaymentMode({
-        userId: nonAdminId,
+        userId: `cust_regular_non_admin_${suffix}`,
         cookieOverride: 'demo',
       });
 
-      // Since cust_regular_non_admin is not an admin, cookie override is ignored
+      // Not an admin (no DB row, no relational ERP role) -> cookie override ignored
       expect(resolved).toBe('real');
     });
 
     it('admin user can use cookie override to switch between real and demo on the fly', async () => {
-      await setSystemPaymentMode('real', 'clr_admin_123');
+      await setSystemPaymentMode('real', adminId);
 
       const resolvedDemo = await resolveEffectivePaymentMode({
-        userId: 'clr_admin_123',
+        userId: adminId,
         cookieOverride: 'demo',
       });
       expect(resolvedDemo).toBe('demo');
 
       const resolvedReal = await resolveEffectivePaymentMode({
-        userId: 'clr_admin_123',
+        userId: adminId,
         cookieOverride: 'real',
       });
       expect(resolvedReal).toBe('real');

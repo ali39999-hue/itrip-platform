@@ -46,6 +46,9 @@ jobs:
       - name: Code Hygiene & ESLint
         run: npm run lint
 
+      - name: UI/UX AGENTS.md Audit (GATE-001)
+        run: npm run gate:uiux
+
       - name: Strict TypeScript Compilation
         run: npm run typecheck
 

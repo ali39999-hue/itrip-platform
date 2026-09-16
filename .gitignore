@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+# machine-readable test artifacts (regenerated every run; evidence lives in docs/baseline/quality-report.json)
+/results/
 
 # temporary files
 .tmp*

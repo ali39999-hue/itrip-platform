@@ -120,3 +120,13 @@ for (const [rule, list] of Object.entries(byRule)) {
   console.log(`\n## ${rule} (${list.length})`);
   for (const it of list) console.log(`${it.file}:${it.line}  ${it.detail}`);
 }
+
+// GATE-001: this scanner used to always exit 0, so `node scripts/uiux-audit.mjs src`
+// could never block a merge no matter how many AGENTS.md violations it found.
+// It is now a real gate: a non-zero exit fails CI.
+if (issues.length > 0) {
+  console.error(`\n[gate:uiux] FAILED — ${issues.length} AGENTS.md UI/UX violation(s) across ${files.length} files.`);
+  process.exit(1);
+}
+console.log(`\n[gate:uiux] PASSED — 0 violations across ${files.length} files.`);
+process.exit(0);

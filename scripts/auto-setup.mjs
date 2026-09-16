@@ -45,12 +45,20 @@ try {
   console.warn('  ⚠️ Prisma generate encountered a warning:', err.message);
 }
 
-// 4. Automated Database Migrations
+// 4. Automated Database Migrations & Bootstrap
 if (process.env.DATABASE_URL) {
   console.log('• DATABASE_URL detected. Checking and applying database migrations...');
   try {
     execSync('npx prisma migrate deploy', { stdio: 'inherit' });
     console.log('  ✓ Database migrations applied cleanly.');
+
+    console.log('• Running production database bootstrap (RBAC roles, Super Admin, CMS seed)...');
+    try {
+      execSync('node scripts/db-bootstrap.mjs', { stdio: 'inherit' });
+      console.log('  ✓ Production database bootstrap completed successfully.');
+    } catch (bootstrapErr) {
+      console.warn('  ⚠️ Database bootstrap warning:', bootstrapErr.message);
+    }
   } catch (err) {
     console.warn('  ℹ Note: Database migration during build phase skipped or deferred (database may be unreachable during static build step):', err.message);
   }

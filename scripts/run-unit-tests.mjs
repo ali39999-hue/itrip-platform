@@ -44,7 +44,18 @@ if (isLocalDevDb) {
   }
 }
 
-const vitest = spawnSync('npx', ['vitest', 'run', ...process.argv.slice(2)], {
+const hasReporterArg = process.argv.slice(2).some((a) => a.startsWith('--reporter'));
+const artifactDir = path.join(root, 'results');
+fs.mkdirSync(artifactDir, { recursive: true });
+const jsonOut = path.join(artifactDir, 'unit.json');
+// Always emit a machine-readable artifact alongside the human output, so the
+// quality report (scripts/generate-quality-report.mjs) reflects a REAL run
+// instead of a hand-copied number in a markdown file.
+const reporterArgs = hasReporterArg
+  ? []
+  : ['--reporter=default', '--reporter=json', `--outputFile.json=${jsonOut}`];
+
+const vitest = spawnSync('npx', ['vitest', 'run', ...process.argv.slice(2), ...reporterArgs], {
   stdio: 'inherit',
   shell: true,
   cwd: root,

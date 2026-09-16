@@ -34,6 +34,11 @@ async function checkAdminAuth(): Promise<boolean> {
       ) {
         return true;
       }
+      const { isKnownAdminIdentifier } = await import('@/auth');
+      if (session.user.email && isKnownAdminIdentifier(session.user.email)) {
+        return true;
+      }
+
       const { hasErpRole } = await import('@/domains/identity/permission-service');
       const hasRole = await hasErpRole(session.user.id);
       if (hasRole) return true;

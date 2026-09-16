@@ -53,6 +53,9 @@ jobs:
       - name: ESLint Architecture Guardrails
         run: npm run lint
 
+      - name: UI/UX AGENTS.md Audit (GATE-001)
+        run: npm run gate:uiux
+
       - name: Strict TypeScript Compilation
         run: npm run typecheck
 
@@ -87,7 +90,6 @@ jobs:
         run: npm run build
 
       - name: Run Complete E2E Matrix (Desktop & Mobile)
-        continue-on-error: true
         env:
           DEMO_MODE: "false"
           NEXT_PUBLIC_DEMO_MODE: "false"

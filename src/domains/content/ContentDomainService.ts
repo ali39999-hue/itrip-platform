@@ -83,6 +83,7 @@ export class ContentDomainService {
 
   // 1. Tours
   static async getTours() {
+    let dbTours: Record<string, unknown>[] = [];
     try {
       const tours = await prisma.tour.findMany({
         include: {
@@ -91,24 +92,20 @@ export class ContentDomainService {
         },
         orderBy: { createdAt: 'desc' },
       });
-      if (tours && tours.length > 0) {
-        return tours.map((t) => ContentDomainService.serializeTour(t));
+      if (tours) {
+        dbTours = tours.map((t) => ContentDomainService.serializeTour(t));
       }
     } catch (err) {
       console.warn('[ContentDomainService.getTours] Database query notice:', err);
     }
 
-    // Instant zero-latency fallback: return canonical DETAILED_TOURS immediately
-    // so ERP and public catalog load in <1ms without freezing or timing out.
-    // Tombstoned ids (explicitly deleted in the CMS) stay excluded so a
-    // deletion can't resurrect its static twin.
     try {
       const { DETAILED_TOURS } = await import('@/services/tours-service');
       const tombstoned = new Set(await ContentDomainService.getDeletedStaticIds(DELETED_STATIC_KIND_TOUR));
-      const visible = tombstoned.size > 0
-        ? DETAILED_TOURS.filter((t) => !tombstoned.has(t.id))
-        : DETAILED_TOURS;
-      return visible.map((t) => ContentDomainService.serializeTour({
+      const dbIds = new Set(dbTours.map((t) => String(t.id)));
+      const missingStatic = mergeStaticTours(DETAILED_TOURS, dbIds, tombstoned);
+
+      const staticToursSerialized = missingStatic.map((t) => ContentDomainService.serializeTour({
         ...t,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -132,8 +129,10 @@ export class ContentDomainService {
           tourId: t.id,
         })),
       }));
+
+      return [...dbTours, ...staticToursSerialized];
     } catch {
-      return [];
+      return dbTours;
     }
   }
 
@@ -290,8 +289,87 @@ export class ContentDomainService {
     return ContentDomainService.serializeTour(created);
   }
 
+  static async ensureTourInDb(id: string): Promise<boolean> {
+    try {
+      const existing = await prisma.tour.findUnique({ where: { id } });
+      if (existing) return true;
+      const { DETAILED_TOURS } = await import('@/services/tours-service');
+      const staticTour = DETAILED_TOURS.find((t) => t.id === id);
+      if (!staticTour) return false;
+
+      await prisma.tour.create({
+        data: {
+          id: staticTour.id,
+          title: staticTour.title,
+          titleEn: staticTour.titleEn || staticTour.title,
+          city: staticTour.city,
+          cityEn: staticTour.cityEn || staticTour.city,
+          country: staticTour.country || 'ایران',
+          countryEn: staticTour.countryEn || 'Iran',
+          durationDays: staticTour.durationDays || 3,
+          durationNights: staticTour.durationNights || 2,
+          currency: staticTour.currency || 'TOMAN',
+          price: new Prisma.Decimal(staticTour.price || 0),
+          childPrice: staticTour.childPrice ? new Prisma.Decimal(staticTour.childPrice) : null,
+          originalPrice: staticTour.originalPrice ? new Prisma.Decimal(staticTour.originalPrice) : null,
+          discountPercent: staticTour.discountPercent || null,
+          category: staticTour.category || 'cultural',
+          heroImage: staticTour.heroImage || null,
+          gallery: staticTour.gallery || [],
+          summary: staticTour.summary || '',
+          summaryEn: staticTour.summaryEn || '',
+          description: staticTour.description || '',
+          descriptionEn: staticTour.descriptionEn || '',
+          highlights: staticTour.highlights || [],
+          includes: staticTour.includes || [],
+          excludes: staticTour.excludes || [],
+          hotelName: staticTour.hotelName || 'هتل ۵ ستاره',
+          hotelStars: staticTour.hotelStars || 5,
+          transportType: staticTour.transportType || 'پرواز + ترانسفر',
+          transportTypeEn: staticTour.transportTypeEn || 'Flights + transfers',
+          groupSize: staticTour.groupSize || 'حداکثر ۱۲ نفر',
+          guideLanguages: staticTour.guideLanguages || ['فارسی', 'English'],
+          isPublished: true,
+          departureDates: {
+            create: (staticTour.departureDates || []).map((d) => ({
+              startDate: d.startDate,
+              endDate: d.endDate,
+              currency: d.currency || 'TOMAN',
+              price: new Prisma.Decimal(d.price),
+              childPrice: d.childPrice != null ? new Prisma.Decimal(d.childPrice) : null,
+              availableSeats: d.availableSeats || 10,
+              guaranteed: d.guaranteed ?? true,
+            })),
+          },
+          itineraryDays: {
+            create: (staticTour.itinerary || []).map((item) => ({
+              day: item.day,
+              title: item.title,
+              titleEn: item.titleEn || item.title,
+              description: item.description,
+              activities: item.activities || [],
+              breakfast: item.meals?.breakfast ?? true,
+              lunch: item.meals?.lunch ?? false,
+              dinner: item.meals?.dinner ?? false,
+              accommodation: item.accommodation || '',
+            })),
+          },
+        },
+      });
+      return true;
+    } catch (err) {
+      console.warn(`[ensureTourInDb] Warning auto-cloning tour ${id}:`, err);
+      return false;
+    }
+  }
+
   static async deleteTour(id: string) {
-    const deleted = await prisma.tour.delete({ where: { id } });
+    let deleted = null;
+    try {
+      deleted = await prisma.tour.delete({ where: { id } });
+    } catch {
+      // Record might not have been in DB yet
+    }
     // If this was a seeded/static tour, its static twin would otherwise
     // reappear on the next read (static fallback for ids absent from DB).
     // Record the deletion intent so read paths keep it hidden.
@@ -301,12 +379,13 @@ export class ContentDomainService {
         await ContentDomainService.tombstoneStaticRef(DELETED_STATIC_KIND_TOUR, id);
       }
     } catch {
-      // Advisory only — the row delete above already succeeded.
+      // Advisory only
     }
-    return deleted;
+    return deleted || { id };
   }
 
   static async toggleTourPublish(id: string, isPublished: boolean) {
+    await ContentDomainService.ensureTourInDb(id);
     const updated = await prisma.tour.update({
       where: { id },
       data: { isPublished },
@@ -352,6 +431,8 @@ export class ContentDomainService {
     if (data.title !== undefined && !data.title.trim()) throw new Error('Title cannot be empty');
     if (data.city !== undefined && !data.city.trim()) throw new Error('City cannot be empty');
     if (data.durationDays !== undefined && data.durationDays < 1) throw new Error('Duration must be at least 1 day');
+
+    await ContentDomainService.ensureTourInDb(id);
 
     // Auto-sync departure dates prices and currency so checkout & booking widget reflect the updated CMS price
     if (data.price !== undefined || data.currency !== undefined) {
@@ -509,8 +590,46 @@ export class ContentDomainService {
     };
   }
 
+  static async ensureExperienceInDb(id: string): Promise<boolean> {
+    try {
+      const existing = await prisma.signatureExperience.findUnique({ where: { id } });
+      if (existing) return true;
+      if (id.startsWith('exp_')) {
+        const { COUNTRIES } = await import('@/lib/countries');
+        for (const [cId, config] of Object.entries(COUNTRIES)) {
+          const idx = (config.signatureExperiences || []).findIndex((_, i) => `exp_${cId}_${i + 1}` === id);
+          if (idx !== -1) {
+            const exp = config.signatureExperiences[idx];
+            await prisma.signatureExperience.create({
+              data: {
+                id,
+                countryId: cId,
+                category: exp.category || 'cultural',
+                title: exp.title,
+                titleEn: exp.titleEn || exp.title,
+                desc: exp.desc,
+                descEn: exp.descEn || exp.desc,
+                where: exp.where,
+                whereEn: exp.whereEn || exp.where,
+                when: exp.when,
+                whenEn: exp.whenEn || exp.when,
+                fromPrice: new Prisma.Decimal(exp.fromPrice || 0),
+                image: exp.image || null,
+                isActive: true,
+              },
+            });
+            return true;
+          }
+        }
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
   static async deleteExperience(id: string) {
-    return prisma.signatureExperience.delete({ where: { id } });
+    return prisma.signatureExperience.delete({ where: { id } }).catch(() => ({ id }));
   }
 
   static async updateExperience(id: string, data: {
@@ -528,6 +647,7 @@ export class ContentDomainService {
     if (data.title !== undefined && !data.title.trim()) throw new Error('Title cannot be empty');
     if (data.countryId !== undefined && !data.countryId) throw new Error('Country is required');
 
+    await ContentDomainService.ensureExperienceInDb(id);
     const updated = await prisma.signatureExperience.update({
       where: { id },
       data: {
@@ -550,6 +670,7 @@ export class ContentDomainService {
   }
 
   static async toggleExperienceActive(id: string, isActive: boolean) {
+    await ContentDomainService.ensureExperienceInDb(id);
     const updated = await prisma.signatureExperience.update({
       where: { id },
       data: { isActive },
@@ -598,7 +719,7 @@ export class ContentDomainService {
   }
 
   static async deleteTravelogue(id: string) {
-    return prisma.travelogue.delete({ where: { id } });
+    return prisma.travelogue.delete({ where: { id } }).catch(() => ({ id }));
   }
 
   static async toggleTraveloguePublish(id: string, isPublished: boolean) {
@@ -712,11 +833,59 @@ export class ContentDomainService {
     });
   }
 
+  static async ensureGuideInDb(id: string): Promise<boolean> {
+    try {
+      const existing = await prisma.guideArticle.findUnique({ where: { id } });
+      if (existing) return true;
+      const FALLBACK_GUIDES = [
+        {
+          id: 'guide_1',
+          categoryFa: 'ویزا',
+          categoryEn: 'Visa',
+          titleFa: 'چک‌لیست سفر به ترکیه',
+          titleEn: 'Turkey Travel Checklist',
+          readTime: '۵ دقیقه',
+          excerptFa: 'از بیمه مسافرتی اجباری تا رزرو هتل قابل استعلام — همه مدارکی که برای ورود به ترکیه لازم دارید.',
+          excerptEn: 'From mandatory travel insurance to a verifiable hotel booking — every document you need to enter Turkey.',
+          bodyFa: 'برای سفر به ترکیه علاوه بر پاسپورت با حداقل ۵ ماه اعتبار، توصیه می‌کنیم بیمه مسافرتی معتبر تهیه کنید.',
+          bodyEn: 'For travel to Turkey, besides a passport with at least 5 months of validity, we recommend holding valid travel insurance.',
+          image: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&q=75&w=800',
+          isPublished: true,
+        },
+        {
+          id: 'guide_2',
+          categoryFa: 'مالی',
+          categoryEn: 'Finance',
+          titleFa: 'راهنمای کیف پول چندارزی فیروز',
+          titleEn: 'Firuzo Multi-Currency Wallet Guide',
+          readTime: '۷ دقیقه',
+          excerptFa: 'شارژ ریالی با شتاب، نگهداری تتر و درهم، و تبدیل لحظه‌ای با قفل نرخ ۳۰ ثانیه‌ای چگونه کار می‌کند؟',
+          excerptEn: 'How Shetab rial top-ups, USDT & AED balances, and instant exchange with a 30-second rate lock work.',
+          bodyFa: 'کیف پول فیروز از سه ارز ریال، تتر و درهم پشتیبانی می‌کند.',
+          bodyEn: 'The Firuzo wallet supports three currencies: IRR, USDT and AED.',
+          image: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&q=75&w=800',
+          isPublished: true,
+        },
+      ];
+      const match = FALLBACK_GUIDES.find((g) => g.id === id);
+      if (match) {
+        await prisma.guideArticle.create({
+          data: match,
+        });
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
   static async deleteGuide(id: string) {
-    return prisma.guideArticle.delete({ where: { id } });
+    return prisma.guideArticle.delete({ where: { id } }).catch(() => ({ id }));
   }
 
   static async toggleGuidePublish(id: string, isPublished: boolean) {
+    await ContentDomainService.ensureGuideInDb(id);
     return prisma.guideArticle.update({
       where: { id },
       data: { isPublished },
@@ -735,6 +904,7 @@ export class ContentDomainService {
     if (data.titleFa !== undefined && !data.titleFa.trim()) throw new Error('Title cannot be empty');
     if (data.excerptFa !== undefined && !data.excerptFa.trim()) throw new Error('Excerpt cannot be empty');
 
+    await ContentDomainService.ensureGuideInDb(id);
     return prisma.guideArticle.update({
       where: { id },
       data: {

@@ -1,36 +1,506 @@
 {
-  "generatedAt": "2026-09-15T11:21:50.700Z",
+  "generatedAt": "2026-09-16T07:02:55.873Z",
   "baseUrl": "http://localhost:3000",
+  "failImpacts": [
+    "critical",
+    "serious"
+  ],
+  "locales": [
+    "fa",
+    "en"
+  ],
+  "blockingFunnels": [
+    "home",
+    "flights",
+    "flights-search",
+    "hotels",
+    "hotels-search",
+    "tours",
+    "checkout",
+    "payment-status",
+    "my-trips",
+    "wallet",
+    "auth",
+    "account",
+    "services",
+    "support"
+  ],
+  "reportOnlyFunnels": [
+    "erp-dashboard",
+    "erp-organizations"
+  ],
   "pages": {
-    "home": {
+    "fa:home": {
       "url": "http://localhost:3000/fa",
+      "locale": "fa",
+      "funnel": "home",
+      "tier": "blocking",
+      "violationCount": 1,
+      "failingNodeCount": 1,
+      "byRule": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 1,
+          "sampleTarget": ".pt-1 > .m-0"
+        }
+      ],
+      "passes": 32
+    },
+    "fa:flights": {
+      "url": "http://localhost:3000/fa/flights",
+      "locale": "fa",
+      "funnel": "flights",
+      "tier": "blocking",
       "violationCount": 0,
+      "failingNodeCount": 0,
       "byRule": [],
       "passes": 31
     },
-    "flights-landing": {
-      "url": "http://localhost:3000/fa/flights",
+    "fa:flights-search": {
+      "url": "http://localhost:3000/fa/flights/search",
+      "locale": "fa",
+      "funnel": "flights-search",
+      "tier": "blocking",
+      "violationCount": 23,
+      "failingNodeCount": 23,
+      "byRule": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 22,
+          "sampleTarget": ".-top-2"
+        },
+        {
+          "id": "target-size",
+          "impact": "serious",
+          "help": "All touch targets must be 24px large, or leave sufficient space",
+          "nodes": 1,
+          "sampleTarget": ".hover\\:underline.text-\\[11px\\].text-brand-dark"
+        }
+      ],
+      "passes": 29
+    },
+    "fa:hotels": {
+      "url": "http://localhost:3000/fa/hotels",
+      "locale": "fa",
+      "funnel": "hotels",
+      "tier": "blocking",
       "violationCount": 0,
+      "failingNodeCount": 0,
       "byRule": [],
       "passes": 30
     },
-    "hotels-landing": {
-      "url": "http://localhost:3000/fa/hotels",
+    "fa:hotels-search": {
+      "url": "http://localhost:3000/fa/hotels/search",
+      "locale": "fa",
+      "funnel": "hotels-search",
+      "tier": "blocking",
+      "violationCount": 1,
+      "failingNodeCount": 1,
+      "byRule": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "help": "Buttons must have discernible text",
+          "nodes": 1,
+          "sampleTarget": ".w-10"
+        }
+      ],
+      "passes": 30
+    },
+    "fa:tours": {
+      "url": "http://localhost:3000/fa/tours",
+      "locale": "fa",
+      "funnel": "tours",
+      "tier": "blocking",
       "violationCount": 0,
+      "failingNodeCount": 0,
       "byRule": [],
       "passes": 29
     },
-    "services": {
-      "url": "http://localhost:3000/fa/services",
+    "fa:checkout": {
+      "url": "http://localhost:3000/fa/checkout",
+      "locale": "fa",
+      "funnel": "checkout",
+      "tier": "blocking",
       "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
+      "passes": 27
+    },
+    "fa:payment-status": {
+      "url": "http://localhost:3000/fa/payment-status",
+      "locale": "fa",
+      "funnel": "payment-status",
+      "tier": "blocking",
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
+      "passes": 27
+    },
+    "fa:my-trips": {
+      "url": "http://localhost:3000/fa/my-trips",
+      "locale": "fa",
+      "funnel": "my-trips",
+      "tier": "blocking",
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
+      "passes": 27
+    },
+    "fa:wallet": {
+      "url": "http://localhost:3000/fa/wallet",
+      "locale": "fa",
+      "funnel": "wallet",
+      "tier": "blocking",
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
+      "passes": 27
+    },
+    "fa:auth": {
+      "url": "http://localhost:3000/fa/auth",
+      "locale": "fa",
+      "funnel": "auth",
+      "tier": "blocking",
+      "violationCount": 4,
+      "failingNodeCount": 4,
+      "byRule": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 4,
+          "sampleTarget": ".mb-5.p-1.bg-soft > .shadow-xs.text-brand.bg-surface"
+        }
+      ],
+      "passes": 28
+    },
+    "fa:account": {
+      "url": "http://localhost:3000/fa/account",
+      "locale": "fa",
+      "funnel": "account",
+      "tier": "blocking",
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
+      "passes": 27
+    },
+    "fa:services": {
+      "url": "http://localhost:3000/fa/services",
+      "locale": "fa",
+      "funnel": "services",
+      "tier": "blocking",
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
+      "passes": 27
+    },
+    "fa:support": {
+      "url": "http://localhost:3000/fa/support",
+      "locale": "fa",
+      "funnel": "support",
+      "tier": "blocking",
+      "violationCount": 0,
+      "failingNodeCount": 0,
       "byRule": [],
       "passes": 28
     },
-    "support": {
-      "url": "http://localhost:3000/fa/support",
+    "en:home": {
+      "url": "http://localhost:3000/en",
+      "locale": "en",
+      "funnel": "home",
+      "tier": "blocking",
+      "violationCount": 7,
+      "failingNodeCount": 7,
+      "byRule": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 7,
+          "sampleTarget": ".w-\\[min\\(84vw\\,340px\\)\\].sm\\:w-\\[320px\\].rounded-\\[22px\\]:nth-child(1) > .sm\\:p-5.p-4.gap-4 > .pt-3.items-end.border-line\\/70 > div > .text-emerald-600.block.text-\\[11px\\]"
+        }
+      ],
+      "passes": 32
+    },
+    "en:flights": {
+      "url": "http://localhost:3000/en/flights",
+      "locale": "en",
+      "funnel": "flights",
+      "tier": "blocking",
       "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
+      "passes": 31
+    },
+    "en:flights-search": {
+      "url": "http://localhost:3000/en/flights/search",
+      "locale": "en",
+      "funnel": "flights-search",
+      "tier": "blocking",
+      "violationCount": 28,
+      "failingNodeCount": 28,
+      "byRule": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 27,
+          "sampleTarget": ".hover\\:bg-soft\\/70.pointer-events-none.opacity-40:nth-child(2) > .gap-2\\.5.min-w-0.items-center > .truncate.text-xs.font-black"
+        },
+        {
+          "id": "target-size",
+          "impact": "serious",
+          "help": "All touch targets must be 24px large, or leave sufficient space",
+          "nodes": 1,
+          "sampleTarget": ".hover\\:underline.text-\\[11px\\].text-brand-dark"
+        }
+      ],
+      "passes": 29
+    },
+    "en:hotels": {
+      "url": "http://localhost:3000/en/hotels",
+      "locale": "en",
+      "funnel": "hotels",
+      "tier": "blocking",
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
+      "passes": 30
+    },
+    "en:hotels-search": {
+      "url": "http://localhost:3000/en/hotels/search",
+      "locale": "en",
+      "funnel": "hotels-search",
+      "tier": "blocking",
+      "violationCount": 3,
+      "failingNodeCount": 3,
+      "byRule": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "help": "Buttons must have discernible text",
+          "nodes": 1,
+          "sampleTarget": ".w-10"
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 2,
+          "sampleTarget": "a[href$=\"hotels\"]"
+        }
+      ],
+      "passes": 30
+    },
+    "en:tours": {
+      "url": "http://localhost:3000/en/tours",
+      "locale": "en",
+      "funnel": "tours",
+      "tier": "blocking",
+      "violationCount": 0,
+      "failingNodeCount": 0,
       "byRule": [],
       "passes": 29
+    },
+    "en:checkout": {
+      "url": "http://localhost:3000/en/checkout",
+      "locale": "en",
+      "funnel": "checkout",
+      "tier": "blocking",
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
+      "passes": 27
+    },
+    "en:payment-status": {
+      "url": "http://localhost:3000/en/payment-status",
+      "locale": "en",
+      "funnel": "payment-status",
+      "tier": "blocking",
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
+      "passes": 27
+    },
+    "en:my-trips": {
+      "url": "http://localhost:3000/en/my-trips",
+      "locale": "en",
+      "funnel": "my-trips",
+      "tier": "blocking",
+      "violationCount": 1,
+      "failingNodeCount": 1,
+      "byRule": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 1,
+          "sampleTarget": ".hover\\:bg-rose-warm\\/10"
+        }
+      ],
+      "passes": 27
+    },
+    "en:wallet": {
+      "url": "http://localhost:3000/en/wallet",
+      "locale": "en",
+      "funnel": "wallet",
+      "tier": "blocking",
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
+      "passes": 27
+    },
+    "en:auth": {
+      "url": "http://localhost:3000/en/auth",
+      "locale": "en",
+      "funnel": "auth",
+      "tier": "blocking",
+      "violationCount": 8,
+      "failingNodeCount": 8,
+      "byRule": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 8,
+          "sampleTarget": ".mb-5.p-1.bg-soft > .shadow-xs.text-brand.bg-surface"
+        }
+      ],
+      "passes": 28
+    },
+    "en:account": {
+      "url": "http://localhost:3000/en/account",
+      "locale": "en",
+      "funnel": "account",
+      "tier": "blocking",
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
+      "passes": 27
+    },
+    "en:services": {
+      "url": "http://localhost:3000/en/services",
+      "locale": "en",
+      "funnel": "services",
+      "tier": "blocking",
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
+      "passes": 27
+    },
+    "en:support": {
+      "url": "http://localhost:3000/en/support",
+      "locale": "en",
+      "funnel": "support",
+      "tier": "blocking",
+      "violationCount": 1,
+      "failingNodeCount": 1,
+      "byRule": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 1,
+          "sampleTarget": ".text-success"
+        }
+      ],
+      "passes": 28
+    },
+    "fa:erp-dashboard": {
+      "url": "http://localhost:3000/fa/admin",
+      "locale": "fa",
+      "funnel": "erp-dashboard",
+      "tier": "report-only",
+      "violationCount": 1,
+      "failingNodeCount": 1,
+      "byRule": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 1,
+          "sampleTarget": ".opacity-80"
+        }
+      ],
+      "passes": 28
+    },
+    "fa:erp-organizations": {
+      "url": "http://localhost:3000/fa/admin/organizations",
+      "locale": "fa",
+      "funnel": "erp-organizations",
+      "tier": "report-only",
+      "violationCount": 1,
+      "failingNodeCount": 1,
+      "byRule": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 1,
+          "sampleTarget": ".opacity-80"
+        }
+      ],
+      "passes": 28
+    },
+    "en:erp-dashboard": {
+      "url": "http://localhost:3000/en/admin",
+      "locale": "en",
+      "funnel": "erp-dashboard",
+      "tier": "report-only",
+      "violationCount": 2,
+      "failingNodeCount": 2,
+      "byRule": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 2,
+          "sampleTarget": ".shadow-xs"
+        }
+      ],
+      "passes": 28
+    },
+    "en:erp-organizations": {
+      "url": "http://localhost:3000/en/admin/organizations",
+      "locale": "en",
+      "funnel": "erp-organizations",
+      "tier": "report-only",
+      "violationCount": 2,
+      "failingNodeCount": 2,
+      "byRule": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 2,
+          "sampleTarget": ".shadow-xs"
+        }
+      ],
+      "passes": 28
     }
+  },
+  "summary": {
+    "blockingViolations": 77,
+    "reportOnlyViolations": 6,
+    "navigationErrors": 0,
+    "blockingFailedFunnels": [
+      "fa:home",
+      "fa:flights-search",
+      "fa:hotels-search",
+      "fa:auth",
+      "en:home",
+      "en:flights-search",
+      "en:hotels-search",
+      "en:my-trips",
+      "en:auth",
+      "en:support"
+    ],
+    "blockingScanErrors": [],
+    "verdict": "FAIL"
   }
 }

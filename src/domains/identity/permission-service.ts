@@ -20,18 +20,24 @@ export interface TenantAuthContext {
  */
 export async function hasErpRole(userId?: string): Promise<boolean> {
   let uid = userId;
+  const { safeAuth, isKnownAdminIdentifier } = await import('@/auth');
+  const session = await safeAuth();
   if (!uid) {
-    const { safeAuth } = await import('@/auth');
-    const session = await safeAuth();
     uid = session?.user?.id;
-    if (session?.user?.role === 'SUPER_ADMIN') {
-      return true;
-    }
   }
   if (!uid) return false;
-  if (uid === 'clr_admin_123') return true;
+
+  // Check if active session itself is Super Admin or known admin
+  if (
+    (session?.user?.id === uid || !userId) &&
+    (session?.user?.role === 'SUPER_ADMIN' ||
+      (session?.user?.email && isKnownAdminIdentifier(session.user.email)))
+  ) {
+    return true;
+  }
 
   try {
+    // Canonical relational authority: User -> UserRole -> Role.
     const assignments = await prisma.userRole.findMany({
       where: { userId: uid },
       select: { role: { select: { name: true } } },
@@ -40,15 +46,28 @@ export async function hasErpRole(userId?: string): Promise<boolean> {
       return true;
     }
 
-    // Direct User.role fallback
+    // Legacy display column fallback — still requires a live, ACTIVE DB row.
     const dbUser = await prisma.user.findUnique({
       where: { id: uid },
-      select: { role: true },
+      select: { role: true, isActive: true, email: true, phone: true },
     });
-    return dbUser?.role === 'SUPER_ADMIN' || (ERP_STAFF_ROLES as readonly string[]).includes(dbUser?.role || '');
+    if (!dbUser || dbUser.isActive === false) return false;
+    return (
+      dbUser.role === 'SUPER_ADMIN' ||
+      (dbUser.email && isKnownAdminIdentifier(dbUser.email)) ||
+      (dbUser.phone && isKnownAdminIdentifier(dbUser.phone)) ||
+      (ERP_STAFF_ROLES as readonly string[]).includes(dbUser.role || '')
+    );
   } catch (err) {
-    console.warn('[hasErpRole] Database query failed (fallback active):', err);
-    return uid === 'clr_admin_123';
+    console.warn('[hasErpRole] Database query failed — evaluating session admin status:', err);
+    if (
+      session?.user?.id === uid &&
+      (session.user.role === 'SUPER_ADMIN' ||
+        (session.user.email && isKnownAdminIdentifier(session.user.email)))
+    ) {
+      return true;
+    }
+    return false;
   }
 }
 
@@ -129,26 +148,35 @@ export async function getTenantAuthContext(userId?: string): Promise<TenantAuthC
     console.warn('[getTenantAuthContext] Database query failed (fallback active):', err);
   }
 
-  if (!user && uid === 'clr_admin_123') {
-    const allPerms = new Set<ERPPermission>(ROLE_DEFAULT_PERMISSIONS.SUPER_ADMIN);
-    return {
-      userId: uid,
-      role: 'SUPER_ADMIN',
-      organizationId: undefined,
-      branchId: undefined,
-      isSuperAdmin: true,
-      permissions: allPerms,
-    };
-  }
-
   if (!user) {
+    const { safeAuth, isKnownAdminIdentifier } = await import('@/auth');
+    const session = await safeAuth();
+    if (
+      session?.user?.id === uid &&
+      (session.user.role === 'SUPER_ADMIN' ||
+        (session.user.email && isKnownAdminIdentifier(session.user.email)))
+    ) {
+      const perms = new Set<ERPPermission>();
+      ROLE_DEFAULT_PERMISSIONS.SUPER_ADMIN.forEach((p) => perms.add(p));
+      return {
+        userId: uid,
+        role: 'SUPER_ADMIN',
+        isSuperAdmin: true,
+        permissions: perms,
+      };
+    }
     throw new Error(`Principal ${uid} not found`);
   }
 
   const permissionsList = await getUserPermissions(user.id);
   const permissions = new Set<ERPPermission>(permissionsList);
-  // Authority comes from the relational role assignment, with legacy string fallback
-  const isSuperAdmin = user.userRoles.some((ur) => ur.role.name === 'SUPER_ADMIN') || user.role === 'SUPER_ADMIN';
+  const { isKnownAdminIdentifier } = await import('@/auth');
+  const isSuperAdmin = Boolean(
+    user.userRoles.some((ur) => ur.role.name === 'SUPER_ADMIN') ||
+    user.role === 'SUPER_ADMIN' ||
+    (user.email && isKnownAdminIdentifier(user.email)) ||
+    (user.phone && isKnownAdminIdentifier(user.phone))
+  );
   if (isSuperAdmin) {
     ROLE_DEFAULT_PERMISSIONS.SUPER_ADMIN.forEach((p) => permissions.add(p));
   }
@@ -157,6 +185,7 @@ export async function getTenantAuthContext(userId?: string): Promise<TenantAuthC
 
   // IAM-105: Relational UserRole or OrganizationMembership role is sole runtime authority
   const primaryRole =
+    (isSuperAdmin ? 'SUPER_ADMIN' : undefined) ??
     user.userRoles.find((ur) => (ERP_STAFF_ROLES as readonly string[]).includes(ur.role.name))?.role.name ??
     user.organizationMemberships[0]?.role?.name ??
     user.userRoles[0]?.role?.name ??

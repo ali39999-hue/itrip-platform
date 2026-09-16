@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomUUID } from 'node:crypto';
 import { searchFlights, searchFlightsFromFlights, type FlightSearchParams } from '@/services/flights-service';
 import { overlayLiveFlights } from '@/services/flight-cache-service';
 
@@ -66,11 +67,13 @@ export async function GET(request: NextRequest) {
       }
     );
   } catch (error: unknown) {
-    console.error('Error in /api/flights/search:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
+    // SEC / AGENTS.md §1: internal exception details must never reach the client.
+    // The client gets a stable code + correlation id; the detail is logged only.
+    const requestId = request.headers.get('x-correlation-id') || randomUUID();
+    console.error(`[api/flights/search][${requestId}]`, error);
     return NextResponse.json(
-      { success: false, error: errorMessage },
-      { status: 500 }
+      { success: false, error: 'Internal Server Error', code: 'FLIGHT_SEARCH_FAILED', requestId },
+      { status: 500, headers: { 'x-correlation-id': requestId } }
     );
   }
 }

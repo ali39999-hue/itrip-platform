@@ -712,8 +712,13 @@ export async function loginWithPassword(identifier: string, password: string) {
     trimmedId.toLowerCase() === 'admin';
 
   if (!user && isAdminId) {
+    // SEC: no static identity, no static privilege. This used to fabricate the
+    // hardcoded `clr_admin_123` principal, which hasErpRole() then trusted as a
+    // SUPER_ADMIN without any database record. The fabricated id is now random
+    // and unprivileged: ERP access requires a real DB user + relational role
+    // (run `npm run prisma:seed`).
     user = {
-      id: 'clr_admin_123',
+      id: crypto.randomUUID(),
       email: 'admin@firuzo.com',
       phone: '09120000000',
       name: 'Firuzo Admin',

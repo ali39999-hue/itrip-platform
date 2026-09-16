@@ -118,6 +118,101 @@ export function auditLocaleCompleteness(messagesDir = MESSAGES_DIR) {
   return report;
 }
 
+// ---------------------------------------------------------------------------
+// I18N-103: honest localization metrics.
+//
+// Key parity (above) proves the CATALOG is complete — it proves nothing about
+// whether the UI actually reads from it. This repo has far more inline
+// `lt(locale, {...})` sites than catalog keys, so "100% i18n" was an overclaim.
+// These metrics are baselined and the gate FAILS when inline localization grows,
+// so the debt can only go down deliberately.
+// ---------------------------------------------------------------------------
+const SRC_DIR = path.join(ROOT, 'src');
+const BASE_FILE = path.join(ROOT, 'docs', 'baseline', 'i18n-metrics.json');
+const UPDATE_BASELINE = process.argv.includes('--update-baseline');
+
+function walkSource(dir, out = []) {
+  for (const name of fs.readdirSync(dir)) {
+    const p = path.join(dir, name);
+    const st = fs.statSync(p);
+    if (st.isDirectory()) {
+      if (!['node_modules', '.next', '__tests__'].includes(name)) walkSource(p, out);
+    } else if (/\.(ts|tsx)$/.test(name) && !/\.(test|spec)\./.test(name)) {
+      out.push(p);
+    }
+  }
+  return out;
+}
+
+/** Inline localized objects: `lt(locale, { fa: …, en: … })`. */
+const INLINE_LT_RE = /lt\(\s*(?:locale|Locale)\s*,\s*\{/g;
+/** Raw Persian string literals living outside the message catalog. */
+const HARDCODED_FA_RE = /(['"`])(?=[^'"`]*[\u0600-\u06FF])[^'"`]{2,}?\1/g;
+
+export function measureLocalizationDebt() {
+  const files = walkSource(SRC_DIR);
+  let inlineSites = 0;
+  let filesWithInline = 0;
+  let hardcodedFaStrings = 0;
+
+  for (const file of files) {
+    const src = fs.readFileSync(file, 'utf8');
+    const inline = src.match(INLINE_LT_RE)?.length || 0;
+    if (inline > 0) {
+      inlineSites += inline;
+      filesWithInline += 1;
+    }
+    hardcodedFaStrings += src.match(HARDCODED_FA_RE)?.length || 0;
+  }
+
+  return { scannedFiles: files.length, inlineSites, filesWithInline, hardcodedFaStrings };
+}
+
+function printAndCheckDebt(report) {
+  const debt = measureLocalizationDebt();
+  console.log('\n--- Localization honesty metrics (I18N-103) ---');
+  console.log(`inline lt() call sites : ${debt.inlineSites} across ${debt.filesWithInline} of ${debt.scannedFiles} source files`);
+  console.log(`hardcoded FA literals  : ${debt.hardcodedFaStrings}`);
+  console.log('NOTE: catalog key parity above does NOT mean the UI is fully localized.');
+
+  let baseline = null;
+  try {
+    baseline = JSON.parse(fs.readFileSync(BASE_FILE, 'utf8'));
+  } catch {
+    baseline = null;
+  }
+
+  if (!baseline || UPDATE_BASELINE) {
+    fs.mkdirSync(path.dirname(BASE_FILE), { recursive: true });
+    fs.writeFileSync(
+      BASE_FILE,
+      JSON.stringify(
+        {
+          updatedAt: new Date().toISOString(),
+          reason: baseline ? 'intentional re-baseline (--update-baseline)' : 'baseline established by the gate',
+          canonicalKeys: report.totalDistinctKeys,
+          ...debt,
+        },
+        null,
+        2,
+      ),
+    );
+    console.log(`baseline ${baseline ? 'updated' : 'created'}: ${path.relative(ROOT, BASE_FILE)}`);
+    return { debt, regressed: false };
+  }
+
+  const delta = debt.inlineSites - baseline.inlineSites;
+  console.log(`baseline inline sites  : ${baseline.inlineSites} (${baseline.updatedAt})`);
+  console.log(`delta                  : ${delta >= 0 ? '+' : ''}${delta}`);
+  if (delta > 0) {
+    console.error(
+      `\n[gate:i18n] FAILED — inline localization grew by ${delta} call site(s). ` +
+        'Move the copy into messages/*.json (all 5 locales), or re-baseline intentionally with --update-baseline.',
+    );
+  }
+  return { debt, regressed: delta > 0 };
+}
+
 // Direct CLI execution
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   console.log('====================================================');
@@ -134,14 +229,18 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       console.log(` - [${locale}]: ${info.keyCount} keys | Missing: ${info.missingCount} | Empty: ${info.emptyCount} | ${status}`);
     }
 
+    const debtResult = report.hasErrors ? { regressed: false } : printAndCheckDebt(report);
+
     if (report.hasErrors) {
       console.error('\nI18N Completeness Gate FAILED with errors:');
       report.errors.forEach((err) => console.error('  ' + err));
       process.exit(1);
-    } else {
-      console.log('\n✓ I18N Completeness Gate PASSED: 100% parity across all 5 locales (fa, en, ar, zh, ru).');
-      process.exit(0);
     }
+    if (debtResult.regressed) process.exit(1);
+
+    console.log('\n✓ I18N key parity PASSED: 100% parity across all 5 locales (fa, en, ar, zh, ru).');
+    console.log('  Scope: catalog parity + no new inline-localization debt — see the metrics above.');
+    process.exit(0);
   } catch (err) {
     console.error('\nCRITICAL ERROR in I18N Completeness Gate:', err.message);
     process.exit(1);

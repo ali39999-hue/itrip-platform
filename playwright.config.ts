@@ -32,7 +32,10 @@ export default defineConfig({
   webServer: {
     command: process.env.CI ? 'npm start' : 'npm run dev',
     url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
+    // CI starts the production server explicitly so the accessibility gate
+    // (which needs a live server) and the E2E suites share one instance instead
+    // of racing for port 3000.
+    reuseExistingServer: true,
     timeout: 120000,
   },
 });

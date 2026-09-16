@@ -59,6 +59,9 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
+      - name: UI/UX AGENTS.md Audit (GATE-001)
+        run: npm run gate:uiux
+
       - name: Strict TypeScript Compilation
         run: npm run typecheck
 
@@ -83,6 +86,51 @@ jobs:
           NEXT_PUBLIC_DEMO_MODE: "false"
         run: npm run build
 
+      # ---------------------------------------------------------------------
+      # Runtime gates. These REQUIRE a server, which is why they were missing
+      # from CI before: they are now wired honestly (server started here, and
+      # playwright.config reuses it instead of fighting over port 3000).
+      # ---------------------------------------------------------------------
+      - name: Install Playwright (chromium)
+        run: npx playwright install --with-deps chromium
+
+      - name: Start production server for runtime gates
+        run: |
+          nohup npm start > /tmp/next-start.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:3000/api/health/live > /dev/null; then
+              echo "server ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "server did not become ready in time"
+          cat /tmp/next-start.log
+          exit 1
+
+      - name: Accessibility Gate (A11Y-002) — blocking
+        run: npm run gate:a11y
+
+      - name: Responsive journey gate 320→768 (RESP-001) — blocking
+        run: npx playwright test tests/responsive-journeys.spec.ts --project=chromium
+
+      - name: Generate machine-readable quality report
+        if: always()
+        env:
+          QUALITY_BUILD_STATUS: pass
+        run: npm run gate:quality
+
+      - name: Upload quality evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-evidence
+          path: |
+            docs/baseline/quality-report.json
+            docs/baseline/a11y-baseline.json
+            results/unit.json
+          retention-days: 14
+
       - name: CI-012 Guard — Production Build Must Fail With DEMO_MODE Enabled
         env:
           DEMO_MODE: "true"
@@ -97,7 +145,8 @@ jobs:
   e2e-gate:
     runs-on: ubuntu-latest
     needs: audit-and-verify
-    continue-on-error: true
+    # CI-013: this job is no longer allowed to fail silently. `continue-on-error`
+    # meant a broken user journey could merge as long as the unit tests passed.
     env:
       DEMO_MODE: "false"
       NEXT_PUBLIC_DEMO_MODE: "false"

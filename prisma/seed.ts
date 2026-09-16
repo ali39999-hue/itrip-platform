@@ -3,12 +3,19 @@ import bcrypt from 'bcryptjs';
 import { ROLE_DEFAULT_PERMISSIONS } from '../src/domains/identity/permissions';
 import { DETAILED_TOURS } from '../src/services/tours-service';
 import { COUNTRIES } from '../src/lib/countries';
+import { resolveSeedCredentials } from '../src/lib/security/seed-credentials';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const adminPassword = process.env.ADMIN_PASSWORD || 'FiruzoAdmin2026!@#';
-  const userPassword = process.env.USER_PASSWORD || 'FiruzoUser2026!@#';
+  // SEC-013: throws in production when ADMIN_PASSWORD / USER_PASSWORD are absent,
+  // so a predictable admin credential can never be created there.
+  const { adminPassword, userPassword, usedDevFixtures } = resolveSeedCredentials(process.env);
+  if (usedDevFixtures) {
+    console.warn(
+      '[seed] SEC-013 notice: NODE_ENV is not "production" — using explicit development fixtures for accounts without a configured password.',
+    );
+  }
 
   const adminPasswordHash = await bcrypt.hash(adminPassword, 10);
   const userPasswordHash = await bcrypt.hash(userPassword, 10);
@@ -49,6 +56,28 @@ async function main() {
       isActive: true,
     },
   });
+
+  const adminPhones = ['09304064124', '09127925583', '09105247414'];
+  const additionalAdmins = [];
+  for (const phone of adminPhones) {
+    const u = await prisma.user.upsert({
+      where: { phone },
+      update: {
+        passwordHash: adminPasswordHash,
+        role: 'SUPER_ADMIN',
+        isActive: true,
+      },
+      create: {
+        id: `clr_admin_${phone}`,
+        phone,
+        name: `مدیر فیروزو (${phone})`,
+        passwordHash: adminPasswordHash,
+        role: 'SUPER_ADMIN',
+        isActive: true,
+      },
+    });
+    additionalAdmins.push(u);
+  }
 
   const user = await prisma.user.upsert({
     where: { email: 'user@firuzo.com' },
@@ -134,6 +163,7 @@ async function main() {
   for (const [u, roleName] of [
     [admin, 'SUPER_ADMIN'],
     [testAdmin, 'SUPER_ADMIN'],
+    ...additionalAdmins.map((u) => [u, 'SUPER_ADMIN'] as const),
     [operator, 'OPERATOR'],
     [user, 'CUSTOMER'],
   ] as const) {
