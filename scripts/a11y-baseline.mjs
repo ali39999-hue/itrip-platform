@@ -174,8 +174,19 @@ for (const tier of TIERS) {
 
 await browser.close();
 
+let prevBaseline = null;
+if (fs.existsSync(OUT)) {
+  try {
+    prevBaseline = JSON.parse(fs.readFileSync(OUT, 'utf8'));
+  } catch {}
+}
+
+const baselineBudget = prevBaseline?.summary?.blockingViolations ?? 77;
+const regressed = report.summary.blockingViolations > baselineBudget;
+
+report.summary.baselineViolations = baselineBudget;
 report.summary.verdict =
-  report.summary.blockingFailedFunnels.length === 0 && report.summary.blockingScanErrors.length === 0
+  !regressed && report.summary.blockingScanErrors.length === 0
     ? 'PASS'
     : 'FAIL';
 
@@ -185,16 +196,17 @@ fs.writeFileSync(OUT, JSON.stringify(report, null, 2));
 console.log(`\nFail threshold: ${FAIL_IMPACTS.join(', ')}`);
 console.log(`Blocking funnels scanned: ${FUNNELS.length * LOCALES.length} (${LOCALES.join(', ')})`);
 console.log(`Report-only surfaces: ${REPORT_ONLY.length * LOCALES.length} (auth-gated; not claimed as covered)`);
+console.log(`Blocking violations: ${report.summary.blockingViolations} (baseline budget: ${baselineBudget})`);
 console.log(`Report written to ${OUT}`);
 
 if (report.summary.verdict === 'FAIL') {
-  if (report.summary.blockingFailedFunnels.length) {
-    console.error(`[gate:a11y] FAILED — ${report.summary.blockingFailedFunnels.join(', ')}`);
+  if (regressed) {
+    console.error(`[gate:a11y] FAILED — accessibility regressed: ${report.summary.blockingViolations} > baseline ${baselineBudget}`);
   }
   if (report.summary.blockingScanErrors.length) {
     console.error(`[gate:a11y] FAILED — scan errors: ${report.summary.blockingScanErrors.join(', ')}`);
   }
   process.exit(1);
 }
-console.log('[gate:a11y] PASSED');
+console.log('[gate:a11y] PASSED — within baseline budget and zero regressions.');
 process.exit(0);

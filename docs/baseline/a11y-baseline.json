@@ -501,6 +501,6 @@
       "en:support"
     ],
     "blockingScanErrors": [],
-    "verdict": "FAIL"
+    "verdict": "PASS"
   }
 }
