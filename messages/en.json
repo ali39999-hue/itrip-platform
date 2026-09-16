@@ -57,7 +57,9 @@
     "newsletterDesc": "Get last-minute flights & golden hotel deals.",
     "newsletterPlaceholder": "Enter your email...",
     "newsletterCta": "Subscribe",
-    "newsletterDone": "Subscribed!"
+    "newsletterDone": "Subscribed!",
+    "systemStatus": "Firuzo Platform is operational",
+    "systemVersion": "Platform Version: v{version}"
   },
   "Nav": {
     "home": "Home",

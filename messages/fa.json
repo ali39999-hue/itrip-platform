@@ -57,7 +57,9 @@
     "newsletterDesc": "از آخرین پروازهای لحظه‌آخری و تخفیف‌های طلایی هتل‌ها باخبر شوید.",
     "newsletterPlaceholder": "ایمیل خود را وارد کنید...",
     "newsletterCta": "عضویت در خبرنامه",
-    "newsletterDone": "عضو شدید!"
+    "newsletterDone": "عضو شدید!",
+    "systemStatus": "سامانه فیروزو فعال است",
+    "systemVersion": "نسخه سامانه: v{version}"
   },
   "Nav": {
     "home": "خانه",

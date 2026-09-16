@@ -8,6 +8,7 @@ import { Logo } from './Logo';
 import { ShamseDivider } from '@/components/ui/Shamse';
 import { LocaleSwitcher } from './header/LocaleSwitcher';
 import { lt } from '@/lib/lt';
+import { APP_VERSION } from '@/lib/version';
 
 export function Footer() {
   const t = useTranslations('Footer');
@@ -217,6 +218,27 @@ export function Footer() {
           <p className="text-[12px] text-mint-bright/80 font-bold">
             {t('rights').replace(/\b(202\d|۱۴۰\d)\b/, currentDisplayYear)}
           </p>
+        </div>
+      </div>
+
+      {/* Platform Version & Status Bar */}
+      <div className="bg-[#07131e] text-surface border-t border-white/10 py-2.5">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-10 flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2" aria-hidden="true">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-mint opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-mint" />
+            </span>
+            <span className="text-[12px] font-bold text-mint-bright/90">
+              {t('systemStatus')}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-surface/10 border border-white/15 text-mint-bright font-mono text-[11px] sm:text-[12px] font-bold tracking-wide shadow-xs">
+              {t('systemVersion', { version: APP_VERSION })}
+            </span>
+          </div>
         </div>
       </div>
     </footer>

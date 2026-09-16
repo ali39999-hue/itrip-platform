@@ -47,7 +47,7 @@ if (isLocalDevDb) {
 const hasReporterArg = process.argv.slice(2).some((a) => a.startsWith('--reporter'));
 const artifactDir = path.join(root, 'results');
 fs.mkdirSync(artifactDir, { recursive: true });
-const jsonOut = path.join(artifactDir, 'unit.json');
+const jsonOut = path.relative(root, path.join(artifactDir, 'unit.json')).replace(/\\/g, '/');
 // Always emit a machine-readable artifact alongside the human output, so the
 // quality report (scripts/generate-quality-report.mjs) reflects a REAL run
 // instead of a hand-copied number in a markdown file.

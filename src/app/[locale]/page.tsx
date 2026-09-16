@@ -9,8 +9,7 @@ import {
   AppDownloadSection,
   WhyFiruzoSection,
   FaqSection,
-  TrustMarquee,
-  SupportSection
+  TrustMarquee
 } from '@/components/home/sections';
 import { lt } from '@/lib/lt';
 import { getLocale } from 'next-intl/server';
@@ -22,7 +21,6 @@ import {
   type PopularRouteOverride,
   type FaqItemOverride,
   type AnnouncementOverride,
-  type SupportOverride,
 } from '@/domains/content/SiteContentService';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
@@ -62,13 +60,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 // when the admin has not customized (or has reset) the corresponding key.
 export default async function HomePage() {
   const locale = await getLocale();
-  const [hero, promos, routes, faq, announcement, support] = await Promise.all([
+  const [hero, promos, routes, faq, announcement] = await Promise.all([
     SiteContentService.get<HeroOverride>('home.hero'),
     SiteContentService.get<PromoBannerOverride[]>('home.promos'),
     SiteContentService.get<PopularRouteOverride[]>('home.routes'),
     SiteContentService.get<FaqItemOverride[]>('home.faq'),
     SiteContentService.get<AnnouncementOverride>('site.announcement'),
-    SiteContentService.get<SupportOverride>('home.support'),
   ]);
 
   const activeAnnouncement = announcement?.active ? announcement : null;
@@ -130,11 +127,10 @@ export default async function HomePage() {
       </div>
 
       <div className="bg-surface border-t border-line/60">
-        {/* 11. Trust Marquee & 24/7 Concierge Support */}
+        {/* 11. Trust Marquee */}
         <div className="opacity-90">
           <TrustMarquee />
         </div>
-        <SupportSection override={support ?? undefined} />
       </div>
     </div>
   );

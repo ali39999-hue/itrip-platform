@@ -90,3 +90,4 @@ login_preview*.png
 # Supplier portal capture bundles (local parser calibration artifacts)
 api_hunt/
 
+.zcode/

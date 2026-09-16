@@ -57,7 +57,9 @@
     "newsletterDesc": "获取最后特价机票与酒店黄金优惠。",
     "newsletterPlaceholder": "输入您的邮箱...",
     "newsletterCta": "订阅",
-    "newsletterDone": "已订阅！"
+    "newsletterDone": "已订阅！",
+    "systemStatus": "Firuzo 平台运行正常",
+    "systemVersion": "系统版本: v{version}"
   },
   "Nav": {
     "home": "首页",

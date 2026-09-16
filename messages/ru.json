@@ -57,7 +57,9 @@
     "newsletterDesc": "Узнавайте первыми о горящих билетах и золотых скидках на отели.",
     "newsletterPlaceholder": "Введите ваш email...",
     "newsletterCta": "Подписаться",
-    "newsletterDone": "Вы подписаны!"
+    "newsletterDone": "Вы подписаны!",
+    "systemStatus": "Платформа Firuzo активна",
+    "systemVersion": "Версия системы: v{version}"
   },
   "Nav": {
     "home": "Главная",

@@ -57,7 +57,9 @@
     "newsletterDesc": "كن أول من يعرف عن رحلات اللحظة الأخيرة وعروض الفنادق الذهبية.",
     "newsletterPlaceholder": "أدخل بريدك الإلكتروني...",
     "newsletterCta": "اشترك",
-    "newsletterDone": "تم الاشتراك!"
+    "newsletterDone": "تم الاشتراك!",
+    "systemStatus": "منصة فيروزو تعمل بنجاح",
+    "systemVersion": "إصدار المنصة: v{version}"
   },
   "Nav": {
     "home": "الرئيسية",
