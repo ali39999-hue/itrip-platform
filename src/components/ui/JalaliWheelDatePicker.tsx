@@ -404,9 +404,9 @@ export function JalaliWheelDatePicker({
               type="button"
               onClick={handleClear}
               aria-label={lt(locale, { fa: 'پاک کردن تاریخ', en: 'Clear date', ar: 'مسح التاريخ', zh: '清空日期', ru: 'Очистить' })}
-              className="w-6 h-6 rounded-full text-sub hover:text-ink hover:bg-soft flex items-center justify-center transition cursor-pointer"
+              className="min-w-[44px] min-h-[44px] rounded-full text-sub hover:text-ink hover:bg-soft flex items-center justify-center transition cursor-pointer"
             >
-              <X size={13} />
+              <X size={14} />
             </button>
           )}
           <ChevronDown size={16} className="text-sub/70" />
@@ -458,7 +458,7 @@ export function JalaliWheelDatePicker({
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label={lt(locale, { fa: 'بستن', en: 'Close', ar: 'إغلاق', zh: '关闭', ru: 'Закрыть' })}
-                className="min-w-[40px] min-h-[40px] w-8 h-8 rounded-full bg-soft hover:bg-line/60 text-sub flex items-center justify-center transition cursor-pointer"
+                className="min-w-[44px] min-h-[44px] rounded-full bg-soft hover:bg-line/60 text-sub flex items-center justify-center transition cursor-pointer"
               >
                 <X size={16} />
               </button>
