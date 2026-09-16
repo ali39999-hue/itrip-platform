@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Controller, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { type Passenger } from '@/lib/validations';
 import { Input } from '@/components/ui/input';
-import { JalaliDatePicker } from '@/components/ui/DatePicker';
+import { JalaliWheelDatePicker } from '@/components/ui/JalaliWheelDatePicker';
 import { CheckCircle2, BookmarkPlus, ScanLine, Loader2, ChevronDown } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
@@ -326,7 +326,8 @@ export function PassengerSection({
             name="birthDate"
             control={control}
             render={({ field }) => (
-              <JalaliDatePicker
+              <JalaliWheelDatePicker
+                id="birthDate"
                 value={field.value}
                 onChange={(val) => field.onChange(val || '')}
                 error={Boolean(errors.birthDate)}
@@ -336,18 +337,18 @@ export function PassengerSection({
           <span className="text-[10.5px] text-sub mt-1 block">
             {hidePassport
               ? lt(locale, {
-                fa: 'از تقویم شمسی مطابق کارت ملی انتخاب نمایید',
-                en: 'Pick from the Jalali (Shamsi) calendar matching your national ID',
-                ar: 'اختر من التقويم الهجري المطابق لبطاقة الهوية',
-                zh: '请从与身份证一致的波斯历中选择',
-                ru: 'Выберите в солнечной хиджре согласно удостоверению',
+                fa: 'از انتخابگر چرخان شمسی مطابق کارت ملی یا شناسنامه انتخاب نمایید',
+                en: 'Pick from the Jalali wheel picker matching your national ID',
+                ar: 'اختر من التقويم الدوار المطابق لبطاقة الهوية',
+                zh: '从波斯历滚轮选择器中选择（须与身份证一致）',
+                ru: 'Выберите в селекторе-колесе согласно удостоверению',
               })
               : lt(locale, {
-              fa: 'از تقویم انتخاب نمایید (مطابق کارت ملی یا گذرنامه)',
-              en: 'Select from calendar matching passport/ID',
-              ar: 'اختر من التقويم (مطابق لجواز السفر أو الهوية)',
-              zh: '从日历中选择（须与证件一致）',
-              ru: 'Выберите в календаре (в соответствии с паспортом)',
+              fa: 'از انتخابگر چرخان شمسی مطابق شناسنامه، کارت ملی یا گذرنامه انتخاب نمایید',
+              en: 'Pick from the Jalali wheel picker matching passport/ID',
+              ar: 'اختر من التقويم الدوار المطابق لجواز السفر أو الهوية',
+              zh: '从波斯历滚轮选择器中选择（须与证件一致）',
+              ru: 'Выберите в селекторе-колесе (в соответствии с паспортом/удостоверением)',
             })}
           </span>
           {errors.birthDate && (

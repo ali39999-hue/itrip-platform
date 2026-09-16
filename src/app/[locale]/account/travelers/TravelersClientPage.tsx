@@ -27,6 +27,7 @@ import {
   Loader2,
   X,
 } from 'lucide-react';
+import { JalaliWheelDatePicker, formatJalaliDisplay } from '@/components/ui/JalaliWheelDatePicker';
 
 export function TravelersClientPage() {
   const locale = useLocale();
@@ -366,8 +367,8 @@ export function TravelersClientPage() {
                         <div className="flex items-center gap-2 text-sub">
                           <Calendar size={14} className="text-brand shrink-0" />
                           <span>تاریخ تولد:</span>
-                          <span className="font-mono font-bold text-ink">
-                            {profile.dateOfBirth || 'ثبت نشده'}
+                          <span className="font-bold text-ink text-xs">
+                            {profile.dateOfBirth ? `${formatJalaliDisplay(profile.dateOfBirth, locale)} (${profile.dateOfBirth})` : 'ثبت نشده'}
                           </span>
                         </div>
                       </div>
@@ -547,13 +548,11 @@ export function TravelersClientPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-black text-ink mb-1.5">تاریخ تولد (YYYY-MM-DD)</label>
-                  <input
-                    type="text"
-                    placeholder="1995-05-12"
+                  <label className="block text-xs font-black text-ink mb-1.5">تاریخ تولد</label>
+                  <JalaliWheelDatePicker
                     value={formData.dateOfBirth}
-                    onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-2xl bg-soft border border-line text-sm font-mono text-ink focus:outline-none focus:border-brand"
+                    onChange={(val) => setFormData({ ...formData, dateOfBirth: val || '' })}
+                    placeholder="انتخاب تاریخ تولد"
                   />
                 </div>
                 <div>

@@ -1,10 +1,11 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import type { BookingPassenger } from '@/lib/types';
 import type { BookingSummary } from '@/domains/booking/BookingDomainService';
 import type { WalletBalances } from '@/domains/currency/CurrencyService';
+import type { CheckoutPhase } from '@/components/checkout/CheckoutStepper';
 
 export interface CartItem {
   id: string;
@@ -19,7 +20,33 @@ export interface CartItem {
   travelDate: string;
   inventoryItemId?: string;
   details?: Record<string, unknown>;
+  /** Cart lifecycle: UNPAID from the moment the item is added until the linked
+   *  booking is paid (the item is removed from the cart only on payment). */
+  status?: 'UNPAID' | 'PAID';
+  /** Draft booking this cart line was converted into (set at checkout). */
+  bookingId?: string;
+  /** Checkout phase to land on when the user resumes this item from the cart. */
+  resumePhase?: CheckoutPhase;
 }
+
+// Cookie-backed storage so the unpaid cart survives across visits and is
+// visible site-wide (first-party cookie, 30 days). Passengers form data is
+// excluded from persistence (see partialize) to stay under the 4KB cookie cap.
+const cookieStorage = {
+  getItem: (name: string) => {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+    return match ? decodeURIComponent(match[1]!) : null;
+  },
+  setItem: (name: string, value: string) => {
+    if (typeof document === 'undefined') return;
+    document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+  },
+  removeItem: (name: string) => {
+    if (typeof document === 'undefined') return;
+    document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`;
+  },
+};
 
 interface BookingState {
   wallet: WalletBalances;
@@ -30,6 +57,7 @@ interface BookingState {
   setBookingContext: (item: BookingSummary | null) => void;
   setPassengers: (p: BookingPassenger[]) => void;
   addToCart: (item: Omit<CartItem, 'id'> & { id?: string }) => void;
+  updateCartItem: (id: string, patch: Partial<CartItem>) => void;
   removeFromCart: (id: string) => void;
   clearCart: () => void;
 }
@@ -55,16 +83,29 @@ export const useBookingStore = create<BookingState>()(
       addToCart: (item) =>
         set((state) => {
           const id = item.id || genId('cart');
-          // If already exists with same item ID and type, increment count
-          const existingIdx = state.cart.findIndex((c) => c.id === id || (c.type === item.type && c.title === item.title));
+          const existingIdx = state.cart.findIndex(
+            (c) => (item.id && c.id === item.id) || (c.type === item.type && c.title === item.title)
+          );
           if (existingIdx >= 0) {
             const copy = [...state.cart];
             const found = copy[existingIdx]!;
-            copy[existingIdx] = { ...found, count: found.count + item.count };
+            copy[existingIdx] = {
+              ...found,
+              ...item,
+              id: found.id,
+              count: found.count + item.count,
+              status: item.status ?? found.status ?? 'UNPAID',
+              bookingId: item.bookingId ?? found.bookingId,
+              resumePhase: item.resumePhase ?? found.resumePhase,
+            };
             return { cart: copy };
           }
-          return { cart: [...state.cart, { ...item, id }] };
+          return { cart: [...state.cart, { ...item, id, status: item.status ?? 'UNPAID' }] };
         }),
+      updateCartItem: (id, patch) =>
+        set((state) => ({
+          cart: state.cart.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+        })),
       removeFromCart: (id) =>
         set((state) => ({
           cart: state.cart.filter((c) => c.id !== id),
@@ -74,6 +115,7 @@ export const useBookingStore = create<BookingState>()(
     {
       name: 'firuzo-booking-storage',
       version: 2,
+      storage: createJSONStorage(() => cookieStorage),
       migrate: (persisted) => {
         const legacy = (persisted ?? {}) as Record<string, unknown>;
         return {
@@ -84,7 +126,6 @@ export const useBookingStore = create<BookingState>()(
       },
       partialize: (state) => ({
         bookingContext: state.bookingContext,
-        passengers: state.passengers,
         cart: state.cart,
       }),
     }

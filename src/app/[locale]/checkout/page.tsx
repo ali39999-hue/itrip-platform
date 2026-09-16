@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
@@ -12,7 +12,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useCountryStore } from '@/stores/country-store';
 import { countryName } from '@/lib/countries';
 import { normalizeBookingType, passengerSchema, domesticPassengerSchema, type Passenger } from '@/lib/validations';
-import { createBookingDraft, createMultiItemBookingDraftAction, payBooking, getWallet, repriceBookingAction } from '@/actions/booking';
+import { createBookingDraft, createMultiItemBookingDraftAction, payBooking, getWallet, repriceBookingAction, getBookingById } from '@/actions/booking';
 import { getAdminPaymentModeAction, setAdminPaymentModeAction } from '@/actions/admin-payment-mode';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -54,6 +54,8 @@ export default function CheckoutPage() {
   const setPassengers = useBookingStore((s) => s.setPassengers);
   const wallet = useBookingStore((s) => s.wallet);
   const cart = useBookingStore((s) => s.cart);
+  const updateCartItem = useBookingStore((s) => s.updateCartItem);
+  const removeFromCart = useBookingStore((s) => s.removeFromCart);
   const clearCart = useBookingStore((s) => s.clearCart);
   const authUser = useAuthStore((s) => s.user);
   const searchParams = useSearchParams();
@@ -244,6 +246,43 @@ export default function CheckoutPage() {
       setReferralCode(ref.toUpperCase());
     }
   }, [searchParams]);
+
+  // Cart resume: ?phase=payment&booking=<id> is set by the unified cart's
+  // "continue payment" when a draft already exists for a cart line. Only a
+  // still-payable booking (HELD / PENDING_PAYMENT) may skip the passenger step;
+  // expired or confirmed drafts fall back to the normal flow.
+  const resumeAppliedRef = useRef(false);
+  useEffect(() => {
+    if (!hydrated || resumeAppliedRef.current) return;
+    resumeAppliedRef.current = true;
+    const phaseParam = searchParams?.get('phase');
+    const bookingParam = searchParams?.get('booking');
+    if (phaseParam !== 'payment' || !bookingParam) return;
+    getBookingById(bookingParam)
+      .then((res) => {
+        const status = res.success && res.booking ? String(res.booking.status) : '';
+        if (status === 'HELD' || status === 'PENDING_PAYMENT' || status === 'DRAFT') {
+          setDraftBookingId(bookingParam);
+          setPhase('payment');
+        }
+      })
+      .catch(() => undefined);
+  }, [hydrated, searchParams]);
+
+  // Marks the cart lines that were converted into this draft so the unified
+  // cart can resume the user at the payment step and drop them only once paid.
+  const linkCartItemsToDraft = (bookingId: string) => {
+    const contextId = bookingContext?.id;
+    useBookingStore.getState().cart.forEach((c) => {
+      const belongs = contextId
+        ? c.details?.tourId === contextId || c.id === contextId
+        : false;
+      const isUnified = bookingContext?.meta?.isUnifiedCart === 'true';
+      if (isUnified || belongs) {
+        updateCartItem(c.id, { bookingId, resumePhase: 'payment', status: 'UNPAID' });
+      }
+    });
+  };
 
   useEffect(() => {
     if (phase !== 'issuing') return;
@@ -585,6 +624,7 @@ export default function CheckoutPage() {
 
         if (multiDraft.success && multiDraft.bookingId) {
           setDraftBookingId(multiDraft.bookingId);
+          linkCartItemsToDraft(multiDraft.bookingId);
           if (multiDraft.pricing?.bundleDiscountAmount) {
             setReferralDiscountAmount(multiDraft.pricing.bundleDiscountAmount);
           }
@@ -644,6 +684,7 @@ export default function CheckoutPage() {
 
       if ('bookingId' in draft && draft.bookingId) {
         setDraftBookingId(draft.bookingId);
+        linkCartItemsToDraft(draft.bookingId);
         // Server is authoritative for the referral benefit (cap, stacking,
         // promo-wins, self/inactive): always overwrite, including explicit
         // zero — otherwise a stale client estimate stays displayed.
@@ -834,7 +875,16 @@ export default function CheckoutPage() {
     await minAnimation;
     setConfirmedRef(booking?.externalPnr || booking?.reference || '');
     setConfirmedTitle(itemTitle);
-    clearCart();
+    // Paid lines leave the cart; unpaid lines linked to other drafts stay put.
+    const paidItemIds = useBookingStore
+      .getState()
+      .cart.filter((c) => c.bookingId && c.bookingId === draftBookingId)
+      .map((c) => c.id);
+    if (paidItemIds.length > 0) {
+      paidItemIds.forEach((id) => removeFromCart(id));
+    } else {
+      clearCart();
+    }
     setPhase('success');
   }
 

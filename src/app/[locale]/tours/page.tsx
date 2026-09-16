@@ -32,6 +32,7 @@ function ToursContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
+  const addToCart = useBookingStore((s) => s.addToCart);
   const { country, setCountry } = useCountryStore();
   const c = COUNTRIES[country] || COUNTRIES.iran;
   const countryParam = searchParams.get('country');
@@ -146,13 +147,32 @@ function ToursContent() {
   }, [allTours, category, cityParam, countryParam, country, searchQuery, sort]);
 
   function book(tour: Tour) {
+    const tourTitle = locale === 'fa' ? tour.title : (tour.titleEn || tour.title);
+    const travelDate = daysFromNow(14);
+
+    // Quick-book also parks the tour in the cart as an UNPAID line so it can
+    // be resumed from the unified cart later.
+    addToCart({
+      id: `tour_${tour.id}_base`,
+      type: 'TOUR',
+      title: tourTitle,
+      subtitle: `${tour.durationDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дн.' })} • ${tour.city}`,
+      count: 1,
+      unitPrice: tour.price,
+      currency: tour.currency || 'TOMAN',
+      travelDate,
+      status: 'UNPAID',
+      resumePhase: 'passengers',
+      details: { tourId: tour.id, adults: 1, children: 0, city: tour.city },
+    });
+
     setBookingContext({
       type: 'tours',
       id: tour.id,
-      title: locale === 'fa' ? tour.title : tour.titleEn,
-      subtitle: `${tour.durationDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дن.' })} • ${tour.city}`,
+      title: tourTitle,
+      subtitle: `${tour.durationDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дн.' })} • ${tour.city}`,
       amount: tour.price,
-      travelDate: daysFromNow(14),
+      travelDate,
       adults: 1,
       children: 0,
     });

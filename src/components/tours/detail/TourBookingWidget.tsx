@@ -62,19 +62,45 @@ export function TourBookingWidget({
     const tourTitle = locale === 'fa' ? tour.title : (tour.titleEn || tour.title);
     const passengerSummary = `${num(adults, locale)} ${lt(locale, { fa: 'بزرگسال', en: 'adults', ar: 'بالغ', zh: '成人', ru: 'взрослых' })}${children > 0 ? ` + ${num(children, locale)} ${lt(locale, { fa: 'کودک', en: 'children', ar: 'أطفال', zh: '儿童', ru: 'детей' })}` : ''}`;
 
+    const departureDate = activeDate?.startDate || new Date().toISOString().slice(0, 10);
+
+    // The tour enters the cart as an UNPAID line (cookie-persisted) so the user
+    // can keep browsing and resume exactly where they left off later.
+    addToCart({
+      id: `tour_${tour.id}_${activeDate?.id || 'base'}`,
+      type: 'TOUR',
+      title: tourTitle,
+      subtitle: `${tour.durationDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дн.' })} • ${tour.city} • ${passengerSummary}`,
+      count: 1,
+      unitPrice: totalPrice,
+      currency,
+      travelDate: departureDate,
+      status: 'UNPAID',
+      resumePhase: 'passengers',
+      details: {
+        tourId: tour.id,
+        adults,
+        children,
+        departureDate,
+        returnDate: activeDate?.endDate || '',
+        city: tour.city,
+        selectedDateId: activeDate?.id || '',
+      },
+    });
+
     setBookingContext({
       type: 'tours',
       id: tour.id,
       title: tourTitle,
-      subtitle: `${tour.durationDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дن.' })} • ${tour.city} • ${passengerSummary}`,
+      subtitle: `${tour.durationDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дн.' })} • ${tour.city} • ${passengerSummary}`,
       amount: totalPrice,
-      travelDate: activeDate?.startDate || new Date().toISOString().slice(0, 10),
+      travelDate: departureDate,
       adults,
       children,
       meta: {
         adults: String(adults),
         children: String(children),
-        departureDate: activeDate?.startDate || '',
+        departureDate,
         returnDate: activeDate?.endDate || '',
         city: tour.city,
       },

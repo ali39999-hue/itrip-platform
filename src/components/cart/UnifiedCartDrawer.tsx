@@ -101,6 +101,11 @@ export function UnifiedCartDrawer({ open, onClose }: UnifiedCartDrawerProps) {
   const handleProceedToCheckout = () => {
     if (cart.length === 0) return;
 
+    // Resume support: if a cart line was already converted into a draft booking
+    // at checkout, "continue payment" lands the user back on the payment step
+    // instead of restarting the passenger form.
+    const resumable = [...cart].reverse().find((i) => i.bookingId && i.resumePhase === 'payment');
+
     // Synthesize unified booking context for checkout
     const primaryItem = cart[0]!;
     const itemTitles = cart.map((i) => i.title).join(' + ');
@@ -133,6 +138,10 @@ export function UnifiedCartDrawer({ open, onClose }: UnifiedCartDrawerProps) {
     });
 
     onClose();
+    if (resumable?.bookingId) {
+      router.push(`/checkout?phase=${resumable.resumePhase}&booking=${resumable.bookingId}`);
+      return;
+    }
     router.push('/checkout');
   };
 
@@ -280,10 +289,17 @@ export function UnifiedCartDrawer({ open, onClose }: UnifiedCartDrawerProps) {
                         <Icon size={18} />
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-soft text-sub border border-line uppercase">
                             {item.type}
                           </span>
+                          {item.status !== 'PAID' && (
+                            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                              {item.bookingId
+                                ? lt(locale, { fa: 'در انتظار پرداخت', en: 'Awaiting payment', ar: 'في انتظار الدفع', zh: '待支付', ru: 'Ожидает оплаты' })
+                                : lt(locale, { fa: 'پرداخت نشده', en: 'Unpaid', ar: 'غير مدفوع', zh: '未支付', ru: 'Не оплачено' })}
+                            </span>
+                          )}
                           {item.supplier && (
                             <span className="text-[10.5px] font-bold text-sub flex items-center gap-1">
                               <Building2 size={11} /> {item.supplier}
