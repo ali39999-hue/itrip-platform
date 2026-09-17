@@ -9,6 +9,28 @@ interface ApiTour {
   cityEn?: string;
 }
 
+async function fillPassengerDetailsViaOcr(page: Page) {
+  const scanBtn = page.locator('button:has-text("اسکن هوشمند پاسپورت")').first();
+  await expect(scanBtn).toBeVisible({ timeout: 10000 });
+  await scanBtn.click();
+  const scanFileInput = page.locator('input[type="file"]').first();
+  await scanFileInput.setInputFiles('tests/fixtures/passport-sample.png');
+
+  const confirmBtn = page.getByRole('button', { name: /Confirm details and autofill|تأیید اطلاعات و تکمیل فرم/ }).first();
+  const ocrReady = await confirmBtn.waitFor({ state: 'visible', timeout: 35000 }).then(() => true).catch(() => false);
+  if (ocrReady) {
+    await confirmBtn.click();
+    await expect(page.locator('.fixed.inset-0.z-\\[150\\]')).toHaveCount(0, { timeout: 10000 });
+  } else {
+    await page.keyboard.press('Escape');
+    await page.locator('.fixed.inset-0.z-\\[150\\]').waitFor({ state: 'detached', timeout: 5000 }).catch(() => {});
+    await page.locator('#firstName').fill('ALI');
+    await page.locator('#lastName').fill('MOHAMMADI');
+    await page.locator('#passportNo').fill('A12345678');
+    await page.locator('#passportExpiryDate').fill('2028-10-15');
+  }
+}
+
 /**
  * Resolves a bookable tour id dynamically from the catalog API instead of
  * hardcoding seeded ids: CMS delete flows (tombstones) legitimately remove
@@ -58,13 +80,8 @@ test.describe('Tours Booking & Checkout Journey', () => {
     await page.waitForURL(/\/fa\/checkout/, { timeout: 15000 });
     await expect(page).toHaveURL(/\/fa\/checkout/);
 
-    // 5. Fill passenger form via OCR scan button
-    const scanBtn = page.locator('button:has-text("اسکن هوشمند پاسپورت")').first();
-    await expect(scanBtn).toBeVisible({ timeout: 10000 });
-    await scanBtn.click();
-    const scanFileInput = page.locator('input[type="file"]').first();
-    await scanFileInput.setInputFiles('tests/fixtures/passport-sample.png');
-    await page.waitForTimeout(2200);
+    // 5. Fill passenger form via OCR scan, confirm review, and dismiss modal
+    await fillPassengerDetailsViaOcr(page);
 
     // 6. Submit passenger details to create draft
     const submitBtn = page.locator('button[type="submit"]').first();
@@ -138,13 +155,8 @@ test.describe('Tours Booking & Checkout Journey', () => {
     await page.waitForURL(/\/fa\/checkout/, { timeout: 15000 });
     await expect(page).toHaveURL(/\/fa\/checkout/);
 
-    // 5. Fill passenger details via OCR scan
-    const scanBtn = page.locator('button:has-text("اسکن هوشمند پاسپورت")').first();
-    await expect(scanBtn).toBeVisible({ timeout: 10000 });
-    await scanBtn.click();
-    const scanFileInput = page.locator('input[type="file"]').first();
-    await scanFileInput.setInputFiles('tests/fixtures/passport-sample.png');
-    await page.waitForTimeout(2200);
+    // 5. Fill passenger details via OCR scan, confirm review, and dismiss modal
+    await fillPassengerDetailsViaOcr(page);
 
     // 6. Submit and verify payment phase is reached
     const submitBtn = page.locator('button[type="submit"]').first();

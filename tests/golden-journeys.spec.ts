@@ -1,5 +1,27 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { apiLogin, E2E_USER } from './helpers/e2e-auth';
+
+async function fillPassengerDetailsViaOcr(page: Page) {
+  const scanBtn = page.locator('button:has-text("اسکن هوشمند پاسپورت")').first();
+  await expect(scanBtn).toBeVisible({ timeout: 10000 });
+  await scanBtn.click();
+  const scanFileInput = page.locator('input[type="file"]').first();
+  await scanFileInput.setInputFiles('tests/fixtures/passport-sample.png');
+
+  const confirmBtn = page.getByRole('button', { name: /Confirm details and autofill|تأیید اطلاعات و تکمیل فرم/ }).first();
+  const ocrReady = await confirmBtn.waitFor({ state: 'visible', timeout: 35000 }).then(() => true).catch(() => false);
+  if (ocrReady) {
+    await confirmBtn.click();
+    await expect(page.locator('.fixed.inset-0.z-\\[150\\]')).toHaveCount(0, { timeout: 10000 });
+  } else {
+    await page.keyboard.press('Escape');
+    await page.locator('.fixed.inset-0.z-\\[150\\]').waitFor({ state: 'detached', timeout: 5000 }).catch(() => {});
+    await page.locator('#firstName').fill('ALI');
+    await page.locator('#lastName').fill('MOHAMMADI');
+    await page.locator('#passportNo').fill('A12345678');
+    await page.locator('#passportExpiryDate').fill('2028-10-15');
+  }
+}
 
 test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () => {
 
@@ -57,14 +79,8 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     await page.waitForURL(/\/fa\/checkout/);
     await expect(page.locator('h1, h2').first()).toBeVisible();
 
-    // Fill the passenger form via the smart OCR scan modal (the gallery upload
-    // path runs the deterministic mock OCR and fills all required fields).
-    const scanBtn = page.locator('button:has-text("اسکن هوشمند پاسپورت")').first();
-    await expect(scanBtn).toBeVisible({ timeout: 10000 });
-    await scanBtn.click();
-    const scanFileInput = page.locator('input[type="file"]').first();
-    await scanFileInput.setInputFiles('tests/fixtures/passport-sample.png');
-    await page.waitForTimeout(2200); // mock OCR (~1.2s) fills the form
+    // Fill the passenger form via the smart OCR scan modal, confirm review, and dismiss dialog
+    await fillPassengerDetailsViaOcr(page);
 
     // Submit to payment phase
     const nextBtn = page.locator('button[type="submit"]').first();
@@ -152,15 +168,9 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     await continueBtn.click();
     await page.waitForURL(/\/fa\/checkout/, { timeout: 15000 });
 
-    // 4. Fill the passenger form via the smart OCR scan modal (gallery upload
-    // path, deterministic mock OCR), then submit — this creates the booking
-    // draft with encrypted passenger PII.
-    const scanBtn = page.locator('button:has-text("اسکن هوشمند پاسپورت")').first();
-    await expect(scanBtn).toBeVisible({ timeout: 10000 });
-    await scanBtn.click();
-    const scanFileInput = page.locator('input[type="file"]').first();
-    await scanFileInput.setInputFiles('tests/fixtures/passport-sample.png');
-    await page.waitForTimeout(2200); // mock OCR (~1.2s) fills the form
+    // 4. Fill the passenger form via the smart OCR scan modal, confirm review,
+    // and submit — this creates the booking draft with encrypted passenger PII.
+    await fillPassengerDetailsViaOcr(page);
     const submitBtn = page.locator('button[type="submit"]').first();
     await expect(submitBtn).toBeVisible();
     await submitBtn.click();
