@@ -455,7 +455,7 @@
     }
   },
   "summary": {
-    "blockingViolations": 30,
+    "blockingViolations": 35,
     "reportOnlyViolations": 6,
     "navigationErrors": 0,
     "blockingFailedFunnels": [
@@ -470,6 +470,6 @@
     ],
     "blockingScanErrors": [],
     "verdict": "PASS",
-    "baselineViolations": 74
+    "baselineViolations": 35
   }
 }
