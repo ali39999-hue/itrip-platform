@@ -80,8 +80,10 @@ export function validateCsrfRequest(
   }
 
   // Determine expected origin from Host / X-Forwarded-Host / NEXT_PUBLIC_SITE_URL
-  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || url.host;
-  const protocol = request.headers.get('x-forwarded-proto') || url.protocol.replace(':', '') || 'http';
+  const rawHost = request.headers.get('x-forwarded-host') || request.headers.get('host') || url.host;
+  const host = rawHost.split(',')[0].trim();
+  const rawProto = request.headers.get('x-forwarded-proto') || url.protocol.replace(':', '') || 'http';
+  const protocol = rawProto.split(',')[0].trim();
   const expectedOrigin = `${protocol}://${host}`.toLowerCase();
 
   const allowedOrigins = new Set(
@@ -89,9 +91,21 @@ export function validateCsrfRequest(
   );
   allowedOrigins.add(expectedOrigin);
 
+  if (process.env.ALLOWED_ORIGINS) {
+    process.env.ALLOWED_ORIGINS.split(',').forEach((o) => {
+      const extracted = extractOrigin(o.trim());
+      if (extracted) allowedOrigins.add(extracted);
+    });
+  }
+
   if (process.env.NEXT_PUBLIC_SITE_URL) {
     const siteUrlOrigin = extractOrigin(process.env.NEXT_PUBLIC_SITE_URL);
     if (siteUrlOrigin) allowedOrigins.add(siteUrlOrigin);
+  }
+
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    const appUrlOrigin = extractOrigin(process.env.NEXT_PUBLIC_APP_URL);
+    if (appUrlOrigin) allowedOrigins.add(appUrlOrigin);
   }
 
   // Allow local dev origins

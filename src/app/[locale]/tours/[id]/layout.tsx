@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
-import { getTourById } from '@/services/tours-service';
-import { prisma } from '@/lib/prisma';
+import { ContentDomainService } from '@/domains/content/ContentDomainService';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,22 +22,18 @@ export async function generateMetadata({
   const { id, locale } = await params;
   let tour: TourMeta | undefined;
 
-  const dbTour = await prisma.tour.findUnique({ where: { id } }).catch(() => null);
-  if (dbTour) {
-    if (dbTour.isPublished) {
-      tour = {
-        title: dbTour.title,
-        titleEn: dbTour.titleEn,
-        durationDays: dbTour.durationDays,
-        city: dbTour.city,
-        summary: dbTour.summary || undefined,
-        summaryEn: dbTour.summaryEn,
-        heroImage: dbTour.heroImage || undefined,
-        gallery: Array.isArray(dbTour.gallery) ? (dbTour.gallery as string[]) : undefined,
-      };
-    }
-  } else {
-    tour = getTourById(id);
+  const resolvedTour = await ContentDomainService.getTourById(id);
+  if (resolvedTour) {
+    tour = {
+      title: String(resolvedTour.title || ''),
+      titleEn: resolvedTour.titleEn ? String(resolvedTour.titleEn) : null,
+      durationDays: typeof resolvedTour.durationDays === 'number' ? resolvedTour.durationDays : undefined,
+      city: resolvedTour.city ? String(resolvedTour.city) : undefined,
+      summary: resolvedTour.summary ? String(resolvedTour.summary) : undefined,
+      summaryEn: resolvedTour.summaryEn ? String(resolvedTour.summaryEn) : null,
+      heroImage: resolvedTour.heroImage ? String(resolvedTour.heroImage) : undefined,
+      gallery: Array.isArray(resolvedTour.gallery) ? (resolvedTour.gallery as string[]) : undefined,
+    };
   }
 
   if (!tour) {

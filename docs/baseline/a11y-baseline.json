@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T07:02:55.873Z",
+  "generatedAt": "2026-09-17T15:01:48.838Z",
   "baseUrl": "http://localhost:3000",
   "failImpacts": [
     "critical",
@@ -35,17 +35,9 @@
       "locale": "fa",
       "funnel": "home",
       "tier": "blocking",
-      "violationCount": 1,
-      "failingNodeCount": 1,
-      "byRule": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "help": "Elements must meet minimum color contrast ratio thresholds",
-          "nodes": 1,
-          "sampleTarget": ".pt-1 > .m-0"
-        }
-      ],
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
       "passes": 32
     },
     "fa:flights": {
@@ -63,16 +55,9 @@
       "locale": "fa",
       "funnel": "flights-search",
       "tier": "blocking",
-      "violationCount": 23,
-      "failingNodeCount": 23,
+      "violationCount": 1,
+      "failingNodeCount": 1,
       "byRule": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "help": "Elements must meet minimum color contrast ratio thresholds",
-          "nodes": 22,
-          "sampleTarget": ".-top-2"
-        },
         {
           "id": "target-size",
           "impact": "serious",
@@ -98,17 +83,9 @@
       "locale": "fa",
       "funnel": "hotels-search",
       "tier": "blocking",
-      "violationCount": 1,
-      "failingNodeCount": 1,
-      "byRule": [
-        {
-          "id": "button-name",
-          "impact": "critical",
-          "help": "Buttons must have discernible text",
-          "nodes": 1,
-          "sampleTarget": ".w-10"
-        }
-      ],
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
       "passes": 30
     },
     "fa:tours": {
@@ -242,14 +219,14 @@
       "locale": "en",
       "funnel": "flights-search",
       "tier": "blocking",
-      "violationCount": 28,
-      "failingNodeCount": 28,
+      "violationCount": 6,
+      "failingNodeCount": 6,
       "byRule": [
         {
           "id": "color-contrast",
           "impact": "serious",
           "help": "Elements must meet minimum color contrast ratio thresholds",
-          "nodes": 27,
+          "nodes": 5,
           "sampleTarget": ".hover\\:bg-soft\\/70.pointer-events-none.opacity-40:nth-child(2) > .gap-2\\.5.min-w-0.items-center > .truncate.text-xs.font-black"
         },
         {
@@ -277,16 +254,9 @@
       "locale": "en",
       "funnel": "hotels-search",
       "tier": "blocking",
-      "violationCount": 3,
-      "failingNodeCount": 3,
+      "violationCount": 2,
+      "failingNodeCount": 2,
       "byRule": [
-        {
-          "id": "button-name",
-          "impact": "critical",
-          "help": "Buttons must have discernible text",
-          "nodes": 1,
-          "sampleTarget": ".w-10"
-        },
         {
           "id": "color-contrast",
           "impact": "serious",
@@ -485,13 +455,11 @@
     }
   },
   "summary": {
-    "blockingViolations": 77,
+    "blockingViolations": 30,
     "reportOnlyViolations": 6,
     "navigationErrors": 0,
     "blockingFailedFunnels": [
-      "fa:home",
       "fa:flights-search",
-      "fa:hotels-search",
       "fa:auth",
       "en:home",
       "en:flights-search",
@@ -501,6 +469,7 @@
       "en:support"
     ],
     "blockingScanErrors": [],
-    "verdict": "PASS"
+    "verdict": "PASS",
+    "baselineViolations": 74
   }
 }

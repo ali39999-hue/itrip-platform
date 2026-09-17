@@ -5,7 +5,7 @@ import { useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { ERPDataGrid, ColumnDef } from '@/components/admin/ERPDataGrid';
 import { ErpHint, ErpModal, ErpPageHeader, erpFieldCls, erpLabelCls, erpPrimaryBtnCls, erpGhostBtnCls } from '@/components/admin/erp-ui';
-import { LeaderDashboardRow } from '@/domains/referral/ReferralDomainService';
+import type { LeaderDashboardRow } from '@/domains/referral/ReferralDomainService';
 import { settleLeaderRewardAction, createReferralCodeAction, updateReferralCodeAction } from '@/actions/admin';
 import { getAdminUsers, type AdminUserListItem } from '@/actions/admin-users';
 import { TIER_PRESETS, REFERRAL_CONFIG } from '@/lib/referral/config';

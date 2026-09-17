@@ -11,6 +11,16 @@ export const metadata: Metadata = {
   description: 'مانیتورینگ و عیب‌یابی لحظه‌ای خطاهای فنی، کرش‌های سرور و کلاینت',
 };
 
+function safeParseMetadata(raw: string | null): Record<string, unknown> | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return typeof parsed === 'object' && parsed !== null ? parsed : { value: parsed };
+  } catch {
+    return { raw };
+  }
+}
+
 export default async function SystemLogsPage() {
   await requirePermission(['audit:view', 'ops:override:cancel', 'booking:view:all']);
   const locale = await getLocale();
@@ -36,7 +46,7 @@ export default async function SystemLogsPage() {
     userRole: log.userRole,
     ipAddress: log.ipAddress,
     userAgent: log.userAgent,
-    metadata: log.metadata ? JSON.parse(log.metadata) : null,
+    metadata: safeParseMetadata(log.metadata),
     firstSeenAt: log.firstSeenAt.toISOString(),
     lastSeenAt: log.lastSeenAt.toISOString(),
     resolvedAt: log.resolvedAt ? log.resolvedAt.toISOString() : null,

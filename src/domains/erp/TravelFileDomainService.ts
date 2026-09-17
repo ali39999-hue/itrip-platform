@@ -68,8 +68,9 @@ export class TravelFileDomainService {
 
     if (!booking?.tripId) return;
 
-    await client.trip.update({
-      where: { id: booking.tripId },
+    // Late/replayed booking confirmations must not regress a dossier or reopen it.
+    await client.trip.updateMany({
+      where: { id: booking.tripId, status: 'PLANNING' },
       data: { status: 'BOOKED' },
     });
   }

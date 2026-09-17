@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-09-16T11:20:41.080Z",
+  "updatedAt": "2026-09-17T15:49:43.833Z",
   "reason": "intentional re-baseline (--update-baseline)",
-  "canonicalKeys": 902,
-  "scannedFiles": 573,
-  "inlineSites": 2821,
-  "filesWithInline": 184,
-  "hardcodedFaStrings": 11236
+  "canonicalKeys": 904,
+  "scannedFiles": 582,
+  "inlineSites": 2855,
+  "filesWithInline": 187,
+  "hardcodedFaStrings": 11301
 }

@@ -15,17 +15,19 @@ export interface LText {
 }
 
 export function lt(locale: string, text: LText): string {
-  switch (locale) {
+  if (!text) return '';
+  const lang = (locale || '').toLowerCase().split(/[-_]/)[0];
+  switch (lang) {
     case 'fa':
-      return text.fa || text.en;
+      return text.fa || text.en || '';
     case 'ar':
       // I18N-103: RTL fallback: If Arabic is missing, fall back to Persian (RTL) before English
-      return text.ar ?? text.fa ?? text.en;
+      return text.ar || text.fa || text.en || '';
     case 'zh':
-      return text.zh ?? text.en;
+      return text.zh ?? text.en ?? text.fa ?? '';
     case 'ru':
-      return text.ru ?? text.en;
+      return text.ru ?? text.en ?? text.fa ?? '';
     default:
-      return text.en;
+      return text.en || text.fa || '';
   }
 }

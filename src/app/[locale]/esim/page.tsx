@@ -481,8 +481,9 @@ export default function EsimPage() {
 
       {/* Device Compatibility Modal */}
       {compatibilityModal && (
-        <div className="fixed inset-0 z-[200] bg-deep/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-surface rounded-3xl p-6 border border-line shadow-elev-3 space-y-4 max-h-[85vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[200] bg-deep/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-surface rounded-t-3xl sm:rounded-3xl p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-6 border-t sm:border border-line shadow-elev-3 space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto" />
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <div className="flex items-center gap-2">
                 <Smartphone size={20} className="text-brand-dark" />

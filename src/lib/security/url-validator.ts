@@ -6,9 +6,13 @@
  * 2. Whitelisted trusted domains and their verified subdomains
  */
 
+import { getAppBaseUrl } from '@/lib/runtime-url';
+
 export const DEFAULT_TRUSTED_DOMAINS = [
   'itrip.ir',
   'firuzo.online',
+  'firuzo.com',
+  'vercel.app',
   'localhost',
   '127.0.0.1',
 ];
@@ -59,12 +63,28 @@ export function isSafeRedirectUrl(
       ...(customTrustedDomains || []),
     ];
 
-    if (process.env.NEXT_PUBLIC_SITE_URL) {
-      try {
-        const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL);
-        trusted.push(siteUrl.hostname);
-      } catch {
-        // ignore malformed site URL
+    // Automatically trust the currently resolved runtime base URL hostname
+    try {
+      const currentHost = new URL(getAppBaseUrl()).hostname;
+      if (currentHost) trusted.push(currentHost);
+    } catch {}
+
+    const candidateEnvs = [
+      process.env.NEXT_PUBLIC_SITE_URL,
+      process.env.NEXT_PUBLIC_APP_URL,
+      process.env.NEXTAUTH_URL,
+      process.env.VERCEL_PROJECT_PRODUCTION_URL,
+      process.env.VERCEL_URL,
+    ];
+
+    for (const envVal of candidateEnvs) {
+      if (envVal) {
+        try {
+          const u = new URL(envVal.includes('://') ? envVal : `https://${envVal}`);
+          trusted.push(u.hostname);
+        } catch {
+          // ignore malformed URL
+        }
       }
     }
 

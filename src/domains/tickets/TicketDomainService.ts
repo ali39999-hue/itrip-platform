@@ -284,11 +284,20 @@ export class TicketDomainService {
     // 1.5. Dual-write to relational PostgreSQL SupportTicket & TicketMessage tables (CRM-001)
     try {
       if (dynamicPrisma.supportTicket) {
+        let validUserId: string | null = null;
+        if (ticket.userId) {
+          const userExists = await prisma.user.findUnique({
+            where: { id: ticket.userId },
+            select: { id: true },
+          }).catch(() => null);
+          if (userExists) validUserId = userExists.id;
+        }
+
         await dynamicPrisma.supportTicket.create({
           data: {
             id: ticket.id,
             ticketNumber: ticket.ticketNumber,
-            userId: ticket.userId,
+            userId: validUserId,
             name: ticket.name,
             email: ticket.email,
             phone: ticket.phone,
@@ -300,7 +309,7 @@ export class TicketDomainService {
             messages: {
               create: {
                 id: initialMessage.id,
-                authorId: initialMessage.authorId,
+                authorId: validUserId ? initialMessage.authorId : null,
                 authorName: initialMessage.authorName,
                 senderType: initialMessage.senderType,
                 message: initialMessage.message,

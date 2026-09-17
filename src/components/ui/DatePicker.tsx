@@ -43,8 +43,8 @@ export function JalaliDatePicker({
   const locale = useLocale();
   const isFa = locale === 'fa';
 
-  // Convert incoming string (YYYY-MM-DD) to DateObject if needed
-  const dateObj = value ? new Date(value) : undefined;
+  // Convert incoming string (YYYY-MM-DD) to DateObject in local time without UTC rollback
+  const dateObj = value ? new Date(value.includes('T') ? value : `${value}T00:00:00`) : undefined;
 
   const defaultPlaceholder = locale === 'fa'
     ? 'انتخاب تاریخ'
@@ -95,7 +95,7 @@ export function JalaliDatePicker({
           minDate={minDate}
           maxDate={maxDate}
           containerClassName="w-full"
-          inputClass="w-full bg-transparent border-0 outline-0 p-0 text-[13px] font-bold text-ink cursor-pointer placeholder:text-sub focus:ring-0 leading-tight"
+          inputClass="w-full bg-transparent border-0 outline-0 p-0 text-base md:text-[13px] font-bold text-ink cursor-pointer placeholder:text-sub focus:ring-0 leading-tight"
           placeholder={placeholder || defaultPlaceholder}
           format={format || (isFa ? 'YYYY/MM/DD' : 'YYYY-MM-DD')}
         />

@@ -144,6 +144,60 @@ export class ContentDomainService {
     }
   }
 
+  static async getTourById(id: string): Promise<Record<string, unknown> | null> {
+    await ensureContentSchemaHealed();
+    try {
+      const dbTour = await prisma.tour.findUnique({
+        where: { id },
+        include: {
+          departureDates: { orderBy: { startDate: 'asc' } },
+          itineraryDays: { orderBy: { day: 'asc' } },
+        },
+      });
+      if (dbTour && dbTour.isPublished) {
+        return ContentDomainService.serializeTour(dbTour);
+      }
+    } catch (err) {
+      console.warn('[ContentDomainService.getTourById] Database query notice:', err);
+    }
+
+    try {
+      const tombstoned = new Set(await ContentDomainService.getDeletedStaticIds(DELETED_STATIC_KIND_TOUR));
+      if (tombstoned.has(id)) return null;
+
+      const { getTourById: getStaticTour } = await import('@/services/tours-service');
+      const staticTour = getStaticTour(id);
+      if (staticTour) {
+        return ContentDomainService.serializeTour({
+          ...staticTour,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          isPublished: true,
+          hotelName: staticTour.hotelName || null,
+          hotelStars: staticTour.hotelStars || 5,
+          transportType: staticTour.transportType || null,
+          transportTypeEn: staticTour.transportTypeEn || null,
+          departureDates: staticTour.departureDates || [],
+          itineraryDays: (staticTour.itinerary || []).map((item) => ({
+            id: `itin_${item.day}`,
+            day: item.day,
+            title: item.title,
+            titleEn: item.titleEn,
+            description: item.description,
+            activities: item.activities || [],
+            breakfast: item.meals?.breakfast ?? true,
+            lunch: item.meals?.lunch ?? false,
+            dinner: item.meals?.dinner ?? false,
+            accommodation: item.accommodation || null,
+            tourId: staticTour.id,
+          })),
+        });
+      }
+    } catch {}
+
+    return null;
+  }
+
   static async createTour(data: {
     title: string;
     titleEn?: string;

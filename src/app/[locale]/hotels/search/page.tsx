@@ -8,6 +8,7 @@ import { useLocale } from 'next-intl';
 import { SlidersHorizontal } from 'lucide-react';
 import type { Hotel } from '@/lib/types';
 import { lt } from '@/lib/lt';
+import { useScrollDirection } from '@/hooks/useScrollDirection';
 import { num } from '@/lib/format';
 import {
   HotelSearchHeader,
@@ -154,6 +155,8 @@ function HotelsSearchInner() {
 
   const [showMap, setShowMap] = useState(false);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const scrollDir = useScrollDirection();
+  const pillHidden = scrollDir === 'down' && !mobileFilterOpen;
   const [compareModalOpen, setCompareModalOpen] = useState(false);
 
   const nights = Math.max(
@@ -172,7 +175,7 @@ function HotelsSearchInner() {
         : [1, 'ellipsis', currentPage - 1, currentPage, currentPage + 1, 'ellipsis-end', totalPages];
 
   return (
-    <div className="min-h-dvh bg-soft/40 py-6 px-4 md:px-8">
+    <div className="min-h-dvh bg-soft/40 pt-6 pb-[calc(90px+env(safe-area-inset-bottom,0px))] lg:pb-6 px-4 md:px-8">
       <div className="max-w-[1400px] mx-auto space-y-6">
         <HotelSearchHeader
           query={query}
@@ -467,7 +470,7 @@ function HotelsSearchInner() {
         {/* Gracefully auto-hides when hotel comparison bar is active to avoid sticky collisions */}
         <div
           className={`lg:hidden fixed bottom-[calc(70px+env(safe-area-inset-bottom,0px))] inset-x-0 z-40 flex justify-center pointer-events-none px-4 transition-all duration-200 ${
-            cmp.size > 0 ? 'opacity-0 pointer-events-none translate-y-4' : 'opacity-100'
+            cmp.size > 0 || pillHidden ? 'invisible opacity-0 pointer-events-none translate-y-4' : 'visible opacity-100'
           }`}
         >
           <div className="pointer-events-auto bg-ink/90 dark:bg-surface/95 backdrop-blur-md text-surface dark:text-ink px-3 py-1 rounded-full shadow-elev-3 flex items-center gap-2.5 border border-surface/20 dark:border-line">

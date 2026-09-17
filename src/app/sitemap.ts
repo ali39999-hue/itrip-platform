@@ -1,9 +1,10 @@
 import { MetadataRoute } from 'next';
 import { HOTELS } from '@/lib/data';
+import { getAppBaseUrl } from '@/lib/runtime-url';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const locales = ['fa', 'en', 'ar', 'zh', 'ru'];
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://firuzo.com';
+  const siteUrl = getAppBaseUrl();
 
   const staticRoutes = [
     '',

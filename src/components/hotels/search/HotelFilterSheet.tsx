@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useId } from 'react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   X,
@@ -48,6 +49,14 @@ export function HotelFilterSheet({
 }: HotelFilterSheetProps) {
   const locale = useLocale();
   const t = useTranslations('HotelsSearch');
+  const titleId = useId();
+  const dialogRef = useFocusTrap<HTMLDivElement>(isOpen, { onEscape: onClose });
+  useEffect(() => {
+    if (!isOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previous; };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -71,10 +80,10 @@ export function HotelFilterSheet({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-deep/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-lg max-h-[88vh] bg-surface rounded-t-3xl sm:rounded-3xl border border-line shadow-elev-3 flex flex-col overflow-hidden">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="w-full max-w-lg max-h-[88vh] bg-surface rounded-t-3xl sm:rounded-3xl border border-line shadow-elev-3 flex flex-col overflow-hidden">
         <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto mt-3 mb-1 shrink-0" aria-hidden="true" />
         <div className="px-5 py-4 border-b border-line flex items-center justify-between">
-          <h3 className="text-base font-bold text-ink">
+          <h3 id={titleId} className="text-base font-bold text-ink">
             {lt(locale, { fa: 'فیلترهای پیشرفته اقامتگاه', en: 'Advanced Hotel Filters', ar: 'فلاتر متقدمة', zh: '高级住宿筛选', ru: 'Расширенные фильтры' })}
           </h3>
           <button

@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { maskTravelerData, hasPiiViewPermission } from '@/lib/security/pii-masking';
 import crypto from 'crypto';
+import { ExceptionCenterService } from './ExceptionCenterService';
 
 export type TimelineDomain = 'LIFECYCLE' | 'PAYMENT' | 'REFUND' | 'INVENTORY' | 'AUDIT' | 'SUPPLIER';
 export type TimelineSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
@@ -214,24 +215,10 @@ export class TravelFileService {
     });
 
     // Compute SLA countdowns
-    const now = Date.now();
     const exceptions: TravelFileExceptionView[] = rawExceptions.map((exc) => {
-      let slaRemainingMinutes: number | null = null;
-      let slaStatus: TravelFileExceptionView['slaStatus'] = 'NO_SLA';
-
-      if (exc.slaDueAt) {
-        const diffMs = exc.slaDueAt.getTime() - now;
-        slaRemainingMinutes = Math.round(diffMs / (60 * 1000));
-        if (exc.status === 'RESOLVED' || exc.status === 'CLOSED') {
-          slaStatus = 'ON_TRACK';
-        } else if (slaRemainingMinutes <= 0) {
-          slaStatus = 'BREACHED';
-        } else if (slaRemainingMinutes <= 60) {
-          slaStatus = 'APPROACHING_BREACH';
-        } else {
-          slaStatus = 'ON_TRACK';
-        }
-      }
+      const countdown = ExceptionCenterService.getSlaCountdown(exc);
+      const slaRemainingMinutes = countdown.remainingMinutes;
+      const slaStatus = countdown.status;
 
       return {
         id: exc.id,

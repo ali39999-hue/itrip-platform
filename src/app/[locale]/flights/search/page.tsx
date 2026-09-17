@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { useBookingStore } from '@/stores/booking-store';
 import { useCountryStore } from '@/stores/country-store';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
+import { useScrollDirection } from '@/hooks/useScrollDirection';
 import { daysFromNow } from '@/lib/utils';
 import { dualDate } from '@/lib/jalali';
 import { num } from '@/lib/format';
@@ -118,6 +119,10 @@ function FlightSearchInner() {
 
   const [sort, setSort] = useState<SortId>('price');
   const [sheet, setSheet] = useState(false);
+  // روی موبایل، پیل شناورِ فیلتر/مرتب‌سازی هنگام اسکرول به پایین مخفی می‌شود
+  // تا روی قیمت و CTA کارت‌ها نیفتد و با اسکرول به بالا برمی‌گردد.
+  const scrollDir = useScrollDirection();
+  const pillHidden = scrollDir === 'down' && !sheet;
   const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [editFrom, setEditFrom] = useState(from);
   const [editTo, setEditTo] = useState(to);
@@ -940,9 +945,12 @@ function FlightSearchInner() {
         </aside>
 
         {/* ================= MAIN CONTENT ================= */}
-        <div className="flex-grow flex flex-col gap-4 min-w-0 w-full">
-          {/* Search summary - Mobile only */}
-          <div className="md:hidden sticky top-16 z-30 bg-surface/95 backdrop-blur-xl rounded-2xl p-3 flex items-center justify-between gap-3 shadow-xs border border-line/80">
+        {/* pb در موبایل فضای «پیل شناور فیلتر/مرتب‌سازی» را رزرو می‌کند تا آخرین
+            کارت لیست همیشه قابل اسکرول و خواندن باشد (بدون پوشیده‌شدن دائمی). */}
+        <div className="flex-grow flex flex-col gap-4 min-w-0 w-full pb-[calc(66px+env(safe-area-inset-bottom,0px))] lg:pb-0">
+          {/* Search summary - Mobile only. پس‌زمینه کاملاً مات است: نیمه‌شفاف +
+              backdrop-blur باعث می‌شد متن کارت از پشت نوار بیرون بزند (تداخل متن روی متن). */}
+          <div className="md:hidden sticky top-16 z-30 bg-surface rounded-2xl p-3 flex items-center justify-between gap-3 shadow-xs border border-line/80">
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
               <div className="flex items-center gap-1.5 min-w-0">
                 <span className="text-sm sm:text-lg font-black text-ink truncate">{from || t('allOrigins')}</span>
@@ -1325,7 +1333,7 @@ function FlightSearchInner() {
       {/* Gracefully auto-hides when flight comparison bar is active to avoid sticky collisions */}
       <div
         className={`lg:hidden fixed bottom-[calc(70px+env(safe-area-inset-bottom))] inset-x-0 z-40 flex justify-center pointer-events-none px-4 transition-all duration-200 ${
-          cmp.size > 0 ? 'opacity-0 pointer-events-none translate-y-4' : 'opacity-100'
+          cmp.size > 0 || pillHidden ? 'invisible opacity-0 pointer-events-none translate-y-4' : 'visible opacity-100'
         }`}
       >
         <div className="pointer-events-auto bg-ink/90 dark:bg-surface/95 backdrop-blur-md text-surface dark:text-ink px-4 py-1 rounded-full shadow-elev-3 flex items-center gap-3 border border-surface/20 dark:border-line">

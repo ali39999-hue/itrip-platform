@@ -75,8 +75,9 @@ export function ImportTicketModal({
     'رزرو شماره PNR: W5-94812. پرواز هواپیمایی ماهان W5-1152 تاریخ 2026-09-20 ساعت 08:30 از فرودگاه تهران (THR) به استانبول (IST). مسافر: علی رضایی. صندلی 14A.';
 
   return (
-    <div className="fixed inset-0 z-[220] bg-deep/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-surface rounded-3xl border border-line shadow-elev-3 overflow-hidden">
+    <div className="fixed inset-0 z-[220] bg-deep/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+      <div className="w-full max-w-lg bg-surface rounded-t-3xl sm:rounded-3xl border-t sm:border border-line shadow-elev-3 overflow-hidden pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-0">
+        <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto mt-3" />
         {/* Header */}
         <div className="p-5 border-b border-line flex items-center justify-between bg-soft/40">
           <div className="flex items-center gap-2.5">

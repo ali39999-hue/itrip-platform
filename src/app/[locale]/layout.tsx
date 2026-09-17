@@ -6,6 +6,7 @@ import {getMessages, getTranslations, setRequestLocale} from 'next-intl/server';
 import {routing} from '@/i18n/routing';
 import {notFound} from 'next/navigation';
 import {Providers} from '@/providers';
+import {getAppBaseUrl} from '@/lib/runtime-url';
 
 const iranYekan = localFont({
   src: [
@@ -123,7 +124,7 @@ export async function generateMetadata({
   const brand = await getTranslations({ locale, namespace: 'Logo' });
 
   return {
-    metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+    metadataBase: new URL(getAppBaseUrl()),
     title: {
       default: t('title'),
       template: `%s | ${brand('name')}`,

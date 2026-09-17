@@ -100,7 +100,7 @@ export function StickyCTA({
               <button
                 type="button"
                 onClick={onPriceDetailsClick}
-                className="inline-flex items-center gap-0.5 text-[10.5px] font-bold text-brand hover:text-brand-dark active:underline text-start"
+                className="relative inline-flex items-center gap-0.5 text-[10.5px] font-bold text-brand hover:text-brand-dark active:underline text-start min-h-[24px] after:content-[''] after:absolute after:-inset-y-2.5 after:-inset-x-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded"
               >
                 <span>{priceLabel} (جزئیات)</span>
                 <ChevronUp size={12} aria-hidden="true" />

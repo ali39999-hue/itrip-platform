@@ -330,6 +330,7 @@ export class BookingApplicationService {
           totalAmount: finalTotalAmount,
           currency,
           travelDate: cmd.travelDate || null,
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 min TTL reservation window
           holdToken,
           policySnapshot,
           // Legacy stateHistory omitted intentionally (BOOK-103)

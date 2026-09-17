@@ -24,9 +24,9 @@ export const prisma =
         : ["error", "warn"],
   });
 
-if (process.env.NODE_ENV !== "production" || process.env.VERCEL === "1") {
-  globalForPrisma.prisma = prisma;
-}
+// Always cache the client on globalThis across all environments (Vercel, Docker, VPS, Dev)
+// to prevent multiple PrismaClient instances and connection exhaustion.
+globalForPrisma.prisma = prisma;
 
 /**
  * Returns a Prisma client instance with automatic tenant isolation applied via $extends (IAM-002)

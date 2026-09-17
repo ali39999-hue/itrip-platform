@@ -22,6 +22,11 @@ export const useCountryStore = create<CountryState>()(
         country: state.country,
       }),
       migrate: (persistedState: unknown) => {
+        const state = persistedState as Partial<CountryState> | undefined;
+        const validCountries: CountryId[] = ['iran', 'russia', 'turkey', 'uae', 'georgia', 'oman', 'china'];
+        if (!state?.country || !validCountries.includes(state.country)) {
+          return { country: 'iran' as CountryId } as CountryState;
+        }
         return persistedState as CountryState;
       },
     }

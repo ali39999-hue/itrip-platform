@@ -110,9 +110,21 @@ export class CmsPublishingService {
       throw new Error(`Cannot modify archived content item '${id}'`);
     }
 
+    if (!params.authorId || !params.authorId.trim()) {
+      throw new Error('authorId is required to update content');
+    }
+
+    const translations = { ...item.translations, ...params.translations };
+    if (
+      (item.status === 'in_review' || item.status === 'published' || item.scheduledPublishAt) &&
+      !validateContentTranslation(translations, 'fa').hasBaseLocale
+    ) {
+      throw new Error('Cannot update: base locale translation is incomplete');
+    }
+
     const now = new Date();
     if (params.translations) {
-      item.translations = { ...item.translations, ...params.translations };
+      item.translations = translations;
     }
     if (params.metadata) {
       item.metadata = { ...item.metadata, ...params.metadata };
@@ -182,6 +194,7 @@ export class CmsPublishingService {
     const prevStatus = item.status;
     item.status = 'draft';
     item.reviewerId = reviewerId;
+    item.scheduledPublishAt = undefined;
     item.updatedAt = now;
 
     item.auditTrail.push({
@@ -221,6 +234,7 @@ export class CmsPublishingService {
     item.status = 'published';
     item.publisherId = publisherId;
     item.publishedAt = now;
+    item.scheduledPublishAt = undefined;
     item.updatedAt = now;
 
     item.auditTrail.push({
@@ -244,6 +258,15 @@ export class CmsPublishingService {
     if (item.status === 'archived') {
       throw new Error('Cannot schedule archived content');
     }
+    if (item.status !== 'draft' && item.status !== 'in_review') {
+      throw new Error(`Cannot schedule: current status is '${item.status}'`);
+    }
+    if (!publisherId || !publisherId.trim()) {
+      throw new Error('publisherId is required to schedule content');
+    }
+    if (!(scheduledAt instanceof Date) || !Number.isFinite(scheduledAt.getTime())) {
+      throw new Error('Scheduled publication time must be a valid date');
+    }
     if (scheduledAt.getTime() <= Date.now()) {
       throw new Error('Scheduled publication time must be in the future');
     }
@@ -254,7 +277,7 @@ export class CmsPublishingService {
     }
 
     const now = new Date();
-    item.scheduledPublishAt = scheduledAt;
+    item.scheduledPublishAt = new Date(scheduledAt.getTime());
     item.publisherId = publisherId;
     item.updatedAt = now;
 
@@ -274,6 +297,9 @@ export class CmsPublishingService {
    * Process scheduled publications whose scheduledPublishAt <= now
    */
   static processScheduledPublications(now: Date = new Date()): CmsContentItem[] {
+    if (!(now instanceof Date) || !Number.isFinite(now.getTime())) {
+      throw new Error('Scheduler time must be a valid date');
+    }
     const published: CmsContentItem[] = [];
 
     for (const item of this.store.values()) {
@@ -282,15 +308,21 @@ export class CmsPublishingService {
         item.scheduledPublishAt.getTime() <= now.getTime() &&
         (item.status === 'in_review' || item.status === 'draft')
       ) {
+        // Recheck at execution time: callers currently receive live item references.
+        if (!validateContentTranslation(item.translations, 'fa').hasBaseLocale) {
+          continue;
+        }
         const publisherId = item.publisherId || 'system_scheduler';
+        const prevStatus = item.status;
         item.status = 'published';
+        item.publisherId = publisherId;
         item.publishedAt = now;
         item.scheduledPublishAt = undefined;
         item.updatedAt = now;
 
         item.auditTrail.push({
           id: `trans_${Date.now().toString(36)}_auto_pub`,
-          fromStatus: 'draft',
+          fromStatus: prevStatus,
           toStatus: 'published',
           actorId: publisherId,
           timestamp: now,
@@ -318,6 +350,7 @@ export class CmsPublishingService {
     const prevStatus = item.status;
     item.status = 'archived';
     item.archivedAt = now;
+    item.scheduledPublishAt = undefined;
     item.updatedAt = now;
 
     item.auditTrail.push({
@@ -345,6 +378,7 @@ export class CmsPublishingService {
     const now = new Date();
     item.status = 'draft';
     item.archivedAt = undefined;
+    item.scheduledPublishAt = undefined;
     item.updatedAt = now;
 
     item.auditTrail.push({

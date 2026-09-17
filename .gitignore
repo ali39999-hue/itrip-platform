@@ -91,3 +91,8 @@ login_preview*.png
 api_hunt/
 
 .zcode/
+.claude/
+
+# Graphify knowledge graph artifacts
+graphify-out/
+.graphify*

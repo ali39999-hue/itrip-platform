@@ -85,7 +85,7 @@ export class ExceptionCenterService {
 
     const diffMs = exception.slaDueAt.getTime() - Date.now();
     const remainingMinutes = Math.round(diffMs / (60 * 1000));
-    const isBreached = remainingMinutes <= 0;
+    const isBreached = diffMs <= 0;
 
     let status: 'ON_TRACK' | 'APPROACHING_BREACH' | 'BREACHED' = 'ON_TRACK';
     if (isBreached) {
@@ -201,7 +201,7 @@ export class ExceptionCenterService {
         exc.slaDueAt &&
         exc.status !== 'RESOLVED' &&
         exc.status !== 'CLOSED' &&
-        exc.slaDueAt.getTime() < now
+        exc.slaDueAt.getTime() <= now
       ) {
         breachedSlaCount++;
       }

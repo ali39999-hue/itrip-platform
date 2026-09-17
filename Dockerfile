@@ -1,7 +1,7 @@
 # Production & Development Multi-Stage Dockerfile for Firuzo / iTrip Platform
-# Optimized for minimal footprint, maximum security, and high reliability
+# Optimized for minimal footprint, maximum security, and high reliability across any host/VPS
 
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
@@ -60,6 +60,13 @@ COPY --from=builder /app/package-lock.json ./package-lock.json
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+
+# If standalone build was produced, copy static assets into standalone bundle
+RUN if [ -d "/app/.next/standalone" ]; then \
+      mkdir -p /app/.next/standalone/.next && \
+      cp -r /app/.next/static /app/.next/standalone/.next/ 2>/dev/null || true && \
+      cp -r /app/public /app/.next/standalone/ 2>/dev/null || true; \
+    fi
 
 RUN chmod +x /app/docker-entrypoint.sh && \
     chown -R nextjs:nodejs /app

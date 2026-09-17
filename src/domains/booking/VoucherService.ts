@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import QRCode from 'qrcode';
 import crypto from 'crypto';
+import { getAppBaseUrl } from '@/lib/runtime-url';
 
 export interface TravelerVoucherItem {
   fullName: string;
@@ -166,7 +167,7 @@ export class VoucherService {
       pnr
     );
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://itrip-platform.vercel.app';
+    const siteUrl = getAppBaseUrl();
     const verificationUrl = `${siteUrl}/verify?token=${encodeURIComponent(verificationToken)}`;
 
     const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, {
@@ -237,5 +238,24 @@ export class VoucherService {
       tokenExpiresAt,
       issuedAt: new Date().toISOString(),
     };
+  }
+
+  /**
+   * Safe lookup for public verification page (BASE-006)
+   */
+  static async getBookingForVerification(queryRef?: string, queryId?: string) {
+    if (!queryRef && !queryId) return null;
+    return prisma.booking.findFirst({
+      where: {
+        OR: [
+          ...(queryRef ? [{ reference: queryRef }] : []),
+          ...(queryId ? [{ id: queryId }] : []),
+        ],
+      },
+      include: {
+        customer: { select: { name: true } },
+        items: true,
+      },
+    });
   }
 }

@@ -213,7 +213,7 @@ export function ExceptionCenterClient({
           <div className="font-bold text-ink">{row.title}</div>
           <div className="text-[11px] text-sub font-mono flex items-center gap-1.5">
             <span>{row.entityType}:</span>
-            {row.entityType === 'BOOKING' || row.entityType === 'TRIP' ? (
+            {row.entityType === 'TRIP' ? (
               <Link
                 href={`/admin/travel-files/${row.entityId}`}
                 target="_blank"

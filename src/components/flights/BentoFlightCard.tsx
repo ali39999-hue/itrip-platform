@@ -125,7 +125,7 @@ export function BentoFlightCard({
               <span className="text-xs font-black text-slate-800 dark:text-ink mt-1">
                 {originCity}
               </span>
-              <span className="text-[10px] font-bold text-slate-400 dark:text-sub font-mono" dir="ltr">
+              <span className="text-[10px] font-bold text-sub font-mono" dir="ltr">
                 {originIata}
               </span>
             </div>
@@ -160,7 +160,7 @@ export function BentoFlightCard({
               <span className="text-xs font-black text-slate-800 dark:text-ink mt-1">
                 {destCity}
               </span>
-              <span className="text-[10px] font-bold text-slate-400 dark:text-sub font-mono" dir="ltr">
+              <span className="text-[10px] font-bold text-sub font-mono" dir="ltr">
                 {destIata}
               </span>
               {overnight && (
@@ -183,7 +183,7 @@ export function BentoFlightCard({
                 onClick={() => setOpen(!open)}
                 aria-expanded={open}
                 aria-label={t('flightDetails')}
-                className="min-h-[44px] text-[11px] font-bold text-slate-500 hover:text-amber-600 flex items-center gap-0.5 px-1 active:scale-95 transition"
+                className="min-h-[44px] text-[11px] font-bold text-sub hover:text-brand-dark flex items-center gap-0.5 px-1 active:scale-95 transition"
               >
                 <span>{t('flightDetails')}</span>
                 <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -244,11 +244,11 @@ export function BentoFlightCard({
         {open && (
           <div className="animate-in fade-in slide-in-from-top-1 duration-150 p-3 bg-soft border border-line rounded-xl grid grid-cols-2 gap-2 text-xs">
             <div>
-              <b className="block text-[10px] text-neutral-400 dark:text-sub font-bold">{lt(locale, { fa: 'شماره پرواز', en: 'Flight No', ar: 'رقم الرحلة', zh: '航班号', ru: 'Номер' })}:</b>
+              <b className="block text-[10px] text-sub font-bold">{lt(locale, { fa: 'شماره پرواز', en: 'Flight No', ar: 'رقم الرحلة', zh: '航班号', ru: 'Номер' })}:</b>
               <span className="font-mono font-bold text-ink">{flight.flightNo}</span>
             </div>
             <div>
-              <b className="block text-[10px] text-neutral-400 dark:text-sub font-bold">{t('baggageIncluded')}:</b>
+              <b className="block text-[10px] text-sub font-bold">{t('baggageIncluded')}:</b>
               <span className="font-bold text-ink">{flight.baggage}</span>
             </div>
           </div>
@@ -295,7 +295,7 @@ export function BentoFlightCard({
               <div className="text-xs md:text-sm font-extrabold text-neutral-800 dark:text-ink mt-1.5">
                 {originCity}
               </div>
-              <div className="text-[11px] font-bold text-neutral-400 dark:text-sub font-mono mt-0.5" dir="ltr">
+              <div className="text-[11px] font-bold text-sub font-mono mt-0.5" dir="ltr">
                 {originIata}
               </div>
             </div>
@@ -339,7 +339,7 @@ export function BentoFlightCard({
               <div className="text-xs md:text-sm font-extrabold text-neutral-800 dark:text-ink mt-1.5">
                 {destCity}
               </div>
-              <div className="text-[11px] font-bold text-neutral-400 dark:text-sub font-mono mt-0.5" dir="ltr">
+              <div className="text-[11px] font-bold text-sub font-mono mt-0.5" dir="ltr">
                 {destIata}
               </div>
               {overnight && (
@@ -382,7 +382,7 @@ export function BentoFlightCard({
               type="button"
               onClick={() => setOpen(!open)}
               aria-expanded={open}
-              className="flex items-center gap-1 font-bold text-neutral-700 hover:text-amber-600 dark:text-sub dark:hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500 rounded"
+              className="flex items-center gap-1 font-bold text-sub hover:text-brand-dark transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500 rounded"
             >
               <span>{t('flightDetails')}</span>
               <ChevronDown
@@ -430,7 +430,7 @@ export function BentoFlightCard({
           {open && (
             <div className="animate-in fade-in slide-in-from-top-2 duration-200 mt-3 p-4 bg-slate-50 dark:bg-soft/70 border border-slate-200 dark:border-line rounded-xl grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
               <div>
-                <b className="block text-[10.5px] text-neutral-400 dark:text-sub font-bold mb-0.5">
+                <b className="block text-[10.5px] text-sub font-bold mb-0.5">
                   {lt(locale, { fa: 'شماره پرواز', en: 'Flight No', ar: 'رقم الرحلة', zh: '航班号', ru: 'Номер рейса' })}
                 </b>
                 <span dir="ltr" className="font-mono font-bold text-neutral-900 dark:text-ink">
@@ -438,7 +438,7 @@ export function BentoFlightCard({
                 </span>
               </div>
               <div>
-                <b className="block text-[10.5px] text-neutral-400 dark:text-sub font-bold mb-0.5">
+                <b className="block text-[10.5px] text-sub font-bold mb-0.5">
                   {lt(locale, { fa: 'مدل هواپیما', en: 'Aircraft', ar: 'طراز الطائرة', zh: '机型', ru: 'Тип ВС' })}
                 </b>
                 <span className="font-bold text-neutral-900 dark:text-ink">
@@ -446,7 +446,7 @@ export function BentoFlightCard({
                 </span>
               </div>
               <div>
-                <b className="block text-[10.5px] text-neutral-400 dark:text-sub font-bold mb-0.5">
+                <b className="block text-[10.5px] text-sub font-bold mb-0.5">
                   {lt(locale, { fa: 'کلاس پروازی', en: 'Cabin Class', ar: 'درجة السفر', zh: '舱位等级', ru: 'Класс' })}
                 </b>
                 <span className="font-bold text-neutral-900 dark:text-ink">
@@ -456,7 +456,7 @@ export function BentoFlightCard({
                 </span>
               </div>
               <div>
-                <b className="block text-[10.5px] text-neutral-400 dark:text-sub font-bold mb-0.5">
+                <b className="block text-[10.5px] text-sub font-bold mb-0.5">
                   {t('baggageIncluded')}
                 </b>
                 <span className="font-bold text-neutral-900 dark:text-ink flex items-center gap-1">
@@ -465,7 +465,7 @@ export function BentoFlightCard({
                 </span>
               </div>
               <div>
-                <b className="block text-[10.5px] text-neutral-400 dark:text-sub font-bold mb-0.5">
+                <b className="block text-[10.5px] text-sub font-bold mb-0.5">
                   {lt(locale, { fa: 'صندلی باقی‌مانده', en: 'Seats Left', ar: 'مقاعد متبقية', zh: '剩余座位', ru: 'Осталось мест' })}
                 </b>
                 <span className="font-bold text-neutral-900 dark:text-ink flex items-center gap-1">
@@ -505,7 +505,7 @@ export function BentoFlightCard({
                 <BellDot size={15} className="shrink-0" />
               </span>
             ) : isCheapest || priceInToman < 2_600_000 ? (
-              <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-bold text-success bg-mint border border-success/30">
+              <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-bold text-brand-dark bg-mint border border-success/30">
                 <span>
                   {lt(locale, {
                     fa: 'ارزان‌ترین',

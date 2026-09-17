@@ -18,7 +18,8 @@ import { AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useHydration } from '@/hooks/useHydration';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
-import { calculateCountryPricing, formatMoney } from '@/lib/money';
+import { formatMoney } from '@/lib/money';
+import { CheckoutApplicationService } from '@/domains/booking/CheckoutApplicationService';
 
 import { CheckoutStepper, type CheckoutPhase } from '@/components/checkout/CheckoutStepper';
 import { PassengerSection } from '@/components/checkout/PassengerSection';
@@ -250,7 +251,7 @@ export default function CheckoutPage() {
   // Cart resume: ?phase=payment&booking=<id> is set by the unified cart's
   // "continue payment" when a draft already exists for a cart line. Only a
   // still-payable booking (HELD / PENDING_PAYMENT) may skip the passenger step;
-  // expired or confirmed drafts fall back to the normal flow.
+  // expired or confirmed drafts fall back to the normal flow (§15 / §70).
   const resumeAppliedRef = useRef(false);
   useEffect(() => {
     if (!hydrated || resumeAppliedRef.current) return;
@@ -260,14 +261,38 @@ export default function CheckoutPage() {
     if (phaseParam !== 'payment' || !bookingParam) return;
     getBookingById(bookingParam)
       .then((res) => {
-        const status = res.success && res.booking ? String(res.booking.status) : '';
+        if (!res.success || ('isExpired' in res && Boolean(res.isExpired)) || res.booking?.status === 'EXPIRED') {
+          toast.error(
+            lt(locale, {
+              fa: 'زمان اعتبار این رزرو موقت به پایان رسیده است؛ لطفاً تاریخ و مشخصات مسافران را مجدداً انتخاب کنید.',
+              en: 'Your reservation hold has expired; please re-select your travel date and passengers.',
+              ar: 'انتهت صلاحية الحجز المؤقت، يرجى إعادة اختيار التاريخ والمسافرين.',
+              zh: '预订保留时间已过期，请重新选择日期和出行人信息。',
+              ru: 'Срок временной брони истек, пожалуйста, выберите дату заново.',
+            })
+          );
+          // Unlink stale expired booking from cart items
+          useBookingStore.getState().cart.forEach((c) => {
+            if (c.bookingId === bookingParam) {
+              updateCartItem(c.id, { bookingId: undefined, resumePhase: 'passengers', status: 'UNPAID' });
+            }
+          });
+          setDraftBookingId(null);
+          setPhase('passengers');
+          return;
+        }
+
+        const status = res.booking ? String(res.booking.status) : '';
         if (status === 'HELD' || status === 'PENDING_PAYMENT' || status === 'DRAFT') {
           setDraftBookingId(bookingParam);
           setPhase('payment');
+        } else {
+          setDraftBookingId(null);
+          setPhase('passengers');
         }
       })
       .catch(() => undefined);
-  }, [hydrated, searchParams]);
+  }, [hydrated, searchParams, locale, updateCartItem]);
 
   // Marks the cart lines that were converted into this draft so the unified
   // cart can resume the user at the payment step and drop them only once paid.
@@ -404,16 +429,15 @@ export default function CheckoutPage() {
       : (wallet.USD ?? wallet.USDT ?? wallet.IRR))
     ?? 0;
 
-  const subtotalBeforeFees = Math.max(
-    0,
-    baseAmount + (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0) - referralDiscountAmount
-  );
-  const countryPricing = calculateCountryPricing({
-    subtotal: subtotalBeforeFees,
-    countryId: country,
-    gateway: method,
+  const checkoutBreakdown = CheckoutApplicationService.calculateBreakdown({
+    baseAmount,
+    addEsim,
+    addInsurance,
+    referralDiscountAmount,
+    country,
+    paymentMethod: method,
   });
-  const totalPayable = countryPricing.totalPayable;
+  const totalPayable = checkoutBreakdown.totalPayable;
 
   function handleApplyScanResult(result: PassportScanResult) {
     setValue('firstName', result.firstName, { shouldValidate: true });
@@ -585,7 +609,11 @@ export default function CheckoutPage() {
       }).catch(() => {});
     }
 
-    const allFormData = finalPassengers.slice(0, totalTravelers);
+    const allFormData = CheckoutApplicationService.normalizePassengerManifest(
+      finalPassengers,
+      totalTravelers,
+      isDomesticTour
+    ).passengers;
 
     const allBps: import('@/lib/types').BookingPassenger[] = allFormData.map((p) => ({
       firstNameFa: p.firstName,
@@ -1186,9 +1214,10 @@ export default function CheckoutPage() {
           <div
             role="dialog"
             aria-modal="true"
-            className="fixed inset-0 z-[250] bg-ink/65 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
+            className="fixed inset-0 z-[250] bg-ink/65 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in"
           >
-            <div className="bg-surface rounded-3xl p-6 sm:p-8 max-w-md w-full border border-line shadow-2xl space-y-5 text-center">
+            <div className="bg-surface rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-8 max-w-md w-full border-t sm:border border-line shadow-2xl space-y-5 text-center max-h-[90vh] overflow-y-auto">
+              <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto" />
               <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-600 mx-auto grid place-items-center">
                 <AlertTriangle size={28} />
               </div>

@@ -59,9 +59,16 @@ export function FiruzoChatWidget() {
     function onScroll() {
       setPastFold(window.scrollY > 80);
     }
+    function onOpenEvent() {
+      setOpen(true);
+    }
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    window.addEventListener('firuzo:open-chat', onOpenEvent);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('firuzo:open-chat', onOpenEvent);
+    };
   }, []);
 
   // Click outside on desktop closes the floating card

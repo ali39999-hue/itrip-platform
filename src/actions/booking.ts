@@ -443,6 +443,36 @@ export async function getBookingById(id: string) {
       return { success: false, error: 'Forbidden: Access denied to booking', booking: null };
     }
 
+    // Explicit Reservation Expiry Check (RES-101 / §15 / §70)
+    // If a hold or draft booking has exceeded its expiresAt timestamp, transition to EXPIRED
+    // and fail closed so expired reservations can never resume as valid.
+    const isPastDeadline = Boolean(booking.expiresAt && booking.expiresAt.getTime() < Date.now());
+    const isUnpaidHold = ['HELD', 'PENDING_PAYMENT', 'DRAFT'].includes(booking.status);
+
+    if (isPastDeadline && isUnpaidHold) {
+      await prisma.booking.update({
+        where: { id: booking.id },
+        data: { status: 'EXPIRED' },
+      }).catch(() => null);
+
+      return {
+        success: false,
+        isExpired: true,
+        error: 'BOOKING_EXPIRED: زمان اعتبار رزرو موقت به پایان رسیده است.',
+        booking: {
+          ...booking,
+          status: 'EXPIRED',
+          totalAmount: Number(booking.totalAmount),
+          items: booking.items.map((it) => ({
+            ...it,
+            sellPrice: Number(it.sellPrice),
+            taxAmount: Number(it.taxAmount),
+            feeAmount: Number(it.feeAmount),
+          })),
+        },
+      };
+    }
+
     // Owner/tenant-authorized read: passenger PII in the details snapshot is
     // decrypted server-side so the raw ciphertext never reaches the client.
     // Decimals are strictly converted to plain numbers for RSC boundary compliance.

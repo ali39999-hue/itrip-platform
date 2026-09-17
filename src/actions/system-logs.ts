@@ -48,6 +48,16 @@ async function checkDiagnosticsAuth(): Promise<{ isAuthed: boolean; userId?: str
   }
 }
 
+function safeParseLogMetadata(raw: string | null): Record<string, unknown> | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return typeof parsed === 'object' && parsed !== null ? parsed : { value: parsed };
+  } catch {
+    return { raw };
+  }
+}
+
 export async function getSystemLogsAction(filter: ErrorLogFilter = {}) {
   try {
     const { isAuthed } = await checkDiagnosticsAuth();
@@ -77,7 +87,7 @@ export async function getSystemLogsAction(filter: ErrorLogFilter = {}) {
       userRole: log.userRole,
       ipAddress: log.ipAddress,
       userAgent: log.userAgent,
-      metadata: log.metadata ? JSON.parse(log.metadata) : null,
+      metadata: safeParseLogMetadata(log.metadata),
       firstSeenAt: log.firstSeenAt.toISOString(),
       lastSeenAt: log.lastSeenAt.toISOString(),
       resolvedAt: log.resolvedAt ? log.resolvedAt.toISOString() : null,

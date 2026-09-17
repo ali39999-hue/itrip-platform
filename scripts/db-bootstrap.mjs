@@ -184,7 +184,7 @@ async function bootstrap() {
         CREATE INDEX IF NOT EXISTS "SystemErrorLog_source_idx" ON "SystemErrorLog"("source");
         CREATE INDEX IF NOT EXISTS "SystemErrorLog_lastSeenAt_idx" ON "SystemErrorLog"("lastSeenAt");
 
-        -- 5. Ensure BehaviorEvent exists
+        -- 5. Ensure BehaviorEvent exists (Analytics & Heatmap)
         CREATE TABLE IF NOT EXISTS "BehaviorEvent" (
           "id" TEXT NOT NULL,
           "userId" TEXT,
@@ -206,8 +206,11 @@ async function bootstrap() {
         );
         CREATE INDEX IF NOT EXISTS "BehaviorEvent_userId_createdAt_idx" ON "BehaviorEvent"("userId", "createdAt");
         CREATE INDEX IF NOT EXISTS "BehaviorEvent_route_createdAt_idx" ON "BehaviorEvent"("route", "createdAt");
+        CREATE INDEX IF NOT EXISTS "BehaviorEvent_sessionId_createdAt_idx" ON "BehaviorEvent"("sessionId", "createdAt");
+        CREATE INDEX IF NOT EXISTS "BehaviorEvent_type_createdAt_idx" ON "BehaviorEvent"("type", "createdAt");
+        CREATE INDEX IF NOT EXISTS "BehaviorEvent_createdAt_idx" ON "BehaviorEvent"("createdAt");
 
-        -- 6. Ensure SupportTicket and TicketMessage exist
+        -- 6. Ensure SupportTicket and TicketMessage exist (CRM-001)
         CREATE TABLE IF NOT EXISTS "SupportTicket" (
           "id" TEXT NOT NULL,
           "ticketNumber" TEXT NOT NULL,
@@ -225,14 +228,19 @@ async function bootstrap() {
           CONSTRAINT "SupportTicket_pkey" PRIMARY KEY ("id")
         );
         CREATE UNIQUE INDEX IF NOT EXISTS "SupportTicket_ticketNumber_key" ON "SupportTicket"("ticketNumber");
+        CREATE INDEX IF NOT EXISTS "SupportTicket_userId_idx" ON "SupportTicket"("userId");
+        CREATE INDEX IF NOT EXISTS "SupportTicket_status_idx" ON "SupportTicket"("status");
+        CREATE INDEX IF NOT EXISTS "SupportTicket_category_idx" ON "SupportTicket"("category");
+        CREATE INDEX IF NOT EXISTS "SupportTicket_ticketNumber_idx" ON "SupportTicket"("ticketNumber");
 
         CREATE TABLE IF NOT EXISTS "TicketMessage" (
           "id" TEXT NOT NULL,
           "ticketId" TEXT NOT NULL,
           "authorId" TEXT,
           "authorName" TEXT NOT NULL,
-          "senderType" TEXT NOT NULL,
+          "senderType" TEXT NOT NULL DEFAULT 'CUSTOMER',
           "message" TEXT NOT NULL,
+          "attachments" TEXT,
           "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
           CONSTRAINT "TicketMessage_pkey" PRIMARY KEY ("id")
         );

@@ -56,8 +56,17 @@ export class ExceptionRemediationService {
       throw new Error(`رزرو با شناسه ${exception.entityId} یافت نشد.`);
     }
 
-    // Idempotent repeat: a retry request already recorded for this exception.
-    if (exception.status === 'IN_PROGRESS') {
+    // Assignment also sets IN_PROGRESS; only an action-specific audit record
+    // proves that this exception has already requested a ticketing retry.
+    const previousRetry = await prisma.auditLog.findFirst({
+      where: {
+        resource: 'OperationalException',
+        resourceId: exceptionId,
+        action: 'EXCEPTION_TICKETING_RETRY_REQUESTED',
+      },
+      select: { id: true },
+    });
+    if (previousRetry) {
       return {
         success: true,
         message: 'درخواست صدور مجدد بلیت قبلاً ثبت شده و در انتظار تایید تامین‌کننده است.',
@@ -69,7 +78,7 @@ export class ExceptionRemediationService {
 
     await prisma.$transaction(async (tx) => {
       // Queue the booking for issuing — never claim an issued ticket here.
-      if (booking.ticketStatus === 'NOT_ISSUED') {
+      if (booking.ticketStatus === 'NOT_ISSUED' || booking.ticketStatus === 'FAILED') {
         await tx.booking.update({
           where: { id: booking.id },
           data: { ticketStatus: 'ISSUING' },

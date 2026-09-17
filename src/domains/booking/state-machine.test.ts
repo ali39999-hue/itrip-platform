@@ -41,6 +41,39 @@ describe('Unit Tests: Booking State Machine Full Coverage', () => {
       expect(BookingStateMachine.canTransition(state, 'DRAFT')).toBe(false);
     }
   });
+
+  it('validates ticket lifecycle transitions including retry and voiding', () => {
+    expect(BookingStateMachine.canTransitionTicket('NOT_ISSUED', 'ISSUING')).toBe(true);
+    expect(BookingStateMachine.canTransitionTicket('ISSUING', 'ISSUED')).toBe(true);
+    expect(BookingStateMachine.canTransitionTicket('ISSUING', 'NOT_ISSUED')).toBe(true);
+    expect(BookingStateMachine.canTransitionTicket('ISSUING', 'VOIDED')).toBe(true);
+    expect(BookingStateMachine.canTransitionTicket('ISSUED', 'VOIDED')).toBe(true);
+    expect(BookingStateMachine.canTransitionTicket('ISSUED', 'REFUND_PENDING')).toBe(true);
+    expect(BookingStateMachine.canTransitionTicket('REFUND_PENDING', 'REFUNDED')).toBe(true);
+    expect(BookingStateMachine.canTransitionTicket('REFUNDED', 'ISSUING')).toBe(false);
+  });
+
+  it('enforces multi-dimensional consistency across booking, payment, fulfillment, and tickets', () => {
+    // DRAFT with CAPTURED payment is invalid
+    expect(BookingStateMachine.isConsistent({
+      status: 'DRAFT',
+      paymentStatus: 'CAPTURED',
+    }).consistent).toBe(false);
+
+    // CONFIRMED without CAPTURED or AUTHORIZED payment is invalid
+    expect(BookingStateMachine.isConsistent({
+      status: 'CONFIRMED',
+      paymentStatus: 'INITIATED',
+    }).consistent).toBe(false);
+
+    // Valid confirmed booking
+    expect(BookingStateMachine.isConsistent({
+      status: 'CONFIRMED',
+      paymentStatus: 'CAPTURED',
+      fulfillmentStatus: 'CONFIRMED',
+      ticketStatus: 'ISSUED',
+    }).consistent).toBe(true);
+  });
 });
 
 describe('Unit Tests: Pricing Engine Calculations', () => {

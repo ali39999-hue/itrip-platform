@@ -82,6 +82,8 @@ export const VALID_FULFILLMENT_TRANSITIONS: StateTransitionRule<FulfillmentStatu
 export const VALID_TICKET_TRANSITIONS: StateTransitionRule<TicketStatus>[] = [
   { from: ['NOT_ISSUED'], to: 'ISSUING', description: 'Queued to GDS/Airline issuing robot' },
   { from: ['ISSUING'], to: 'ISSUED', description: 'Ticket e-ticket number generated' },
+  { from: ['ISSUING'], to: 'NOT_ISSUED', description: 'Issuing failed or timed out — requeued for retry' },
+  { from: ['ISSUING'], to: 'VOIDED', description: 'Issuing failed terminally and voided' },
   { from: ['ISSUED'], to: 'VOIDED', description: 'Voided within 24hr ticketing window' },
   { from: ['ISSUED'], to: 'REFUND_PENDING', description: 'Refund requested on ticket' },
   { from: ['REFUND_PENDING'], to: 'REFUNDED', description: 'Airline coupon marked refunded' },

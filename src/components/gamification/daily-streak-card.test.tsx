@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { DailyStreakCard } from "./daily-streak-card";
 
 describe("DailyStreakCard", () => {
@@ -14,7 +14,7 @@ describe("DailyStreakCard", () => {
     expect(screen.getByText("روز ۷")).toBeDefined();
   });
 
-  it("handles claiming daily reward", () => {
+  it("handles claiming daily reward", async () => {
     const onClaimMock = vi.fn();
 
     render(
@@ -28,7 +28,9 @@ describe("DailyStreakCard", () => {
     const claimBtn = screen.getByRole("button", { name: /دریافت سکه‌های امروز/ });
     expect(claimBtn).toBeDefined();
 
-    fireEvent.click(claimBtn);
+    await act(async () => {
+      fireEvent.click(claimBtn);
+    });
 
     expect(onClaimMock).toHaveBeenCalledTimes(1);
     expect(screen.getByText("پاداش امروز دریافت شده است")).toBeDefined();

@@ -9,11 +9,11 @@ import {
 } from '@/components/admin/erp-ui';
 import { BriefcaseBusiness, Wallet as WalletIcon, ArrowDownRight, Percent, LayoutDashboard, TicketX, Undo2, TicketCheck, Siren, Unplug, Sparkles, Rocket, ArrowUpLeft, PartyPopper } from 'lucide-react';
 import { getLocale } from 'next-intl/server';
-import { Link } from '@/i18n/routing';
+import { Link, redirect } from '@/i18n/routing';
 import { lt } from '@/lib/lt';
 import { safeAuth } from '@/auth';
 import { hasErpRole } from '@/domains/identity/permission-service';
-import { redirect } from 'next/navigation';
+import { Prisma } from '@prisma/client';
 import { cn } from '@/lib/utils';
 
 export default async function AdminDashboard() {
@@ -23,7 +23,7 @@ export default async function AdminDashboard() {
   // Relational RBAC gate (IAM-001): the legacy role string never grants access.
   const authorized = session ? await hasErpRole(session.user.id) : false;
   if (!session || !authorized) {
-    redirect('/' + locale + '/auth');
+    redirect({ href: '/auth', locale });
   }
 
   // Live Database Queries via Action Layer (BASE-006)
@@ -71,20 +71,22 @@ export default async function AdminDashboard() {
     .sort((x, y) => y.at.localeCompare(x.at))
     .slice(0, 8);
 
-  const totalRevenue = (allBookings as Array<{ status: string; totalAmount: number }> || [])
+  const totalRevenue = (allBookings as Array<{ status: string; totalAmount: unknown }> || [])
     .filter((b) => b.status === 'CONFIRMED')
-    .reduce((acc, curr) => acc + Number(curr.totalAmount || 0), 0);
+    .reduce((acc, curr) => acc.add(new Prisma.Decimal(curr.totalAmount?.toString() || '0')), new Prisma.Decimal(0))
+    .toNumber();
 
-  const totalRefunds = (ledgerEntries as Array<{ referenceType: string; direction: string; amount: number }> || [])
+  const totalRefunds = (ledgerEntries as Array<{ referenceType: string; direction: string; amount: unknown }> || [])
     .filter((e) => e.referenceType === 'REFUND' && e.direction === 'CREDIT')
-    .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+    .reduce((acc, curr) => acc.add(new Prisma.Decimal(curr.amount?.toString() || '0')), new Prisma.Decimal(0))
+    .toNumber();
 
   const numFmt = locale === 'fa' ? 'fa-IR' : 'en-US';
   const today = new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
   const needsAttention = openExceptionsCount + pendingOutboxCount + paymentExceptionsCount;
 
   // Friendly time-aware greeting in the operator's working timezone.
-  const firstName = (session.user.name || '').trim().split(/\s+/)[0] || '';
+  const firstName = (session?.user?.name || '').trim().split(/\s+/)[0] || '';
   const tehranHour = Number(
     new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: 'Asia/Tehran' }).format(new Date()),
   );

@@ -59,15 +59,27 @@ const baseAllowedOrigins = [
   '*.firuzo.online',
   'firuzo.online',
   'call.firuzo.online',
-  ...(isDev ? ['*.trycloudflare.com'] : []),
+  '*.itrip.ir',
+  'itrip.ir',
+  '*.trycloudflare.com',
+  '*.ngrok-free.app',
+  '*.ngrok.io',
+  '*.railway.app',
+  '*.up.railway.app',
+  '*.onrender.com',
+  '*.fly.dev',
   ...autoDetectedHosts,
   ...envAllowed,
 ];
 
+const customPort = process.env.PORT || '3000';
+
 const allAllowedOrigins = Array.from(
   new Set([
     ...baseAllowedOrigins,
-    ...(isDev ? getLocalNetworkOrigins() : []),
+    `localhost:${customPort}`,
+    `127.0.0.1:${customPort}`,
+    ...getLocalNetworkOrigins(),
   ])
 );
 
@@ -91,6 +103,9 @@ if (!isDev && process.env.DEMO_MODE === 'true') {
 }
 
 const nextConfig: NextConfig = {
+  output: process.env.NEXT_OUTPUT_STANDALONE === 'false' ? undefined : 'standalone',
+  poweredByHeader: false,
+  reactStrictMode: true,
   serverExternalPackages: ['@prisma/client', 'bcryptjs'],
   // Build-time type checking stays enabled: `npm run typecheck` must pass
   // before any build (the old ignoreBuildErrors gate is intentionally gone).

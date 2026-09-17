@@ -477,8 +477,9 @@ export function TravelersClientPage() {
 
       {/* Traveler Add/Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-surface rounded-3xl max-w-lg w-full p-6 sm:p-8 border border-line shadow-2xl relative max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-surface rounded-t-3xl sm:rounded-3xl max-w-lg w-full p-6 sm:p-8 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-8 border-t sm:border border-line shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto mb-3" />
             <button
               onClick={() => setIsModalOpen(false)}
               className="absolute top-5 end-5 text-sub hover:text-ink w-8 h-8 rounded-full flex items-center justify-center hover:bg-soft"
@@ -624,8 +625,9 @@ export function TravelersClientPage() {
 
       {/* Add Document Modal */}
       {isDocModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-surface rounded-3xl max-w-md w-full p-6 sm:p-8 border border-line shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-surface rounded-t-3xl sm:rounded-3xl max-w-md w-full p-6 sm:p-8 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-8 border-t sm:border border-line shadow-2xl relative">
+            <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto mb-3" />
             <button
               onClick={() => setIsDocModalOpen(false)}
               className="absolute top-5 end-5 text-sub hover:text-ink w-8 h-8 rounded-full flex items-center justify-center hover:bg-soft"

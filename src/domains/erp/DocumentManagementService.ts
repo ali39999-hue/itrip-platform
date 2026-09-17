@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { hasPiiViewPermission } from '@/lib/security/pii-masking';
+import { encryptSensitive, decryptSensitive } from '@/lib/security/crypto-vault';
 
 export interface EncryptedDocumentPayload {
   algorithm: 'aes-256-gcm';
@@ -219,7 +220,7 @@ export class DocumentManagementService {
     operatorId: string;
   }): Promise<StoredDocumentResult> {
     // Encrypt sensitive document number using AES-256-GCM
-    const encryptedDocNumber = `enc:v1:${this.encrypt(params.documentNumber).iv}:${this.encrypt(params.documentNumber).authTag}:${Buffer.from(this.encrypt(params.documentNumber).ciphertext, 'base64').toString('hex')}`;
+    const encryptedDocNumber = encryptSensitive(params.documentNumber);
 
     const doc = await prisma.travelDocument.create({
       data: {
@@ -335,7 +336,7 @@ export class DocumentManagementService {
     return {
       documentId: doc.id,
       type: doc.type,
-      documentNumber: doc.documentNumber,
+      documentNumber: decryptSensitive(doc.documentNumber),
       holderName: doc.holderName,
       contentBuffer: fileBuffer,
       contentType,

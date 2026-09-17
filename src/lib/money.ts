@@ -34,8 +34,9 @@ export const CURRENCY_FA: Record<string, string> = Object.fromEntries(
 );
 
 export function toLocalCurrency(amountToman: number, currency: string): number {
+  if (!Number.isFinite(amountToman) || amountToman <= 0) return 0;
   const rate = CURRENCY_TO_TOMAN[currency] ?? 1;
-  const v = amountToman / rate;
+  const v = amountToman / (rate <= 0 ? 1 : rate);
   return currency === 'IRR' ? Math.round(v) : Math.round(v * 100) / 100;
 }
 

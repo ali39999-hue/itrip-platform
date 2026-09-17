@@ -76,8 +76,8 @@ export function DigitalTravelHandbook({
   const phrases = PHRASES_BY_DEST[destId.toLowerCase()] || PHRASES_BY_DEST.turkey;
 
   return (
-    <div className="fixed inset-0 z-[220] bg-deep/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl max-h-[90vh] bg-surface rounded-3xl border border-line shadow-elev-3 flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-[220] bg-deep/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+      <div className="w-full max-w-2xl max-h-[90vh] bg-surface rounded-t-3xl sm:rounded-3xl border-t sm:border border-line shadow-elev-3 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-brand-dark to-brand p-6 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">

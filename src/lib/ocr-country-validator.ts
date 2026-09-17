@@ -75,35 +75,38 @@ export function calculateIcaoCheckDigit(input: string): number {
   return sum % 10;
 }
 
-/**
- * Converts 2-digit YYMMDD into YYYY-MM-DD.
- * If isExpiry is true, 00-69 is 2000-2069.
- * If isExpiry is false (DOB), 00-26 is 2000-2026, 27-99 is 1927-1999.
- */
-export function parseMrzDate(yymmdd: string, isExpiry: boolean = false): string {
-  if (yymmdd.length !== 6) return '';
-  const yy = parseInt(yymmdd.substring(0, 2), 10);
-  const mm = yymmdd.substring(2, 4);
-  const dd = yymmdd.substring(4, 6);
-
-  let year = 2000 + yy;
-  if (!isExpiry && yy > 26) {
-    year = 1900 + yy;
-  }
-  return `${year}-${mm}-${dd}`;
+/** Parse an ISO calendar date without accepting JavaScript's date rollover. */
+function parseCalendarDate(value: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value
+    ? date : null;
 }
 
 /**
- * Checks if an expiration date has at least 6 months remaining from today.
+ * Converts YYMMDD into a real calendar date. Birth dates use the most recent
+ * non-future occurrence (MRZ does not encode the century); expiry uses 2000-2099.
  */
-export function checkHasSixMonthsValidity(expiryDateStr: string): boolean {
-  if (!expiryDateStr) return false;
-  const expiry = new Date(expiryDateStr);
-  if (isNaN(expiry.getTime())) return false;
+export function parseMrzDate(yymmdd: string, isExpiry: boolean = false): string {
+  if (!/^\d{6}$/.test(yymmdd)) return '';
+  const yy = Number(yymmdd.slice(0, 2));
+  const suffix = `-${yymmdd.slice(2, 4)}-${yymmdd.slice(4, 6)}`;
+  const today = new Date().toISOString().slice(0, 10);
+  let year = isExpiry ? 2000 + yy : Math.floor(Number(today.slice(0, 4)) / 100) * 100 + yy;
+  if (!isExpiry && `${year}${suffix}` > today) year -= 100;
+  const value = `${year}${suffix}`;
+  return parseCalendarDate(value) ? value : '';
+}
 
-  const sixMonthsFromNow = new Date();
-  sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6);
-  return expiry.getTime() >= sixMonthsFromNow.getTime();
+/** Checks six calendar months from today, clamping to the target month's end. */
+export function checkHasSixMonthsValidity(expiryDateStr: string): boolean {
+  const expiry = parseCalendarDate(expiryDateStr);
+  if (!expiry) return false;
+  const today = new Date();
+  const targetMonth = today.getUTCMonth() + 6;
+  const lastDay = new Date(Date.UTC(today.getUTCFullYear(), targetMonth + 1, 0)).getUTCDate();
+  const threshold = Date.UTC(today.getUTCFullYear(), targetMonth, Math.min(today.getUTCDate(), lastDay));
+  return expiry.getTime() >= threshold;
 }
 
 /**
@@ -115,7 +118,7 @@ export function parseIcaoMrzTd3(line1Raw: string, line2Raw: string): MrzParseRes
 
   const errors: string[] = [];
 
-  if (line1.length < 44 || line2.length < 44) {
+  if (line1.length !== 44 || line2.length !== 44) {
     errors.push('MRZ lines must be 44 characters each (ICAO Doc 9303 TD3).');
     return {
       valid: false,
@@ -135,6 +138,10 @@ export function parseIcaoMrzTd3(line1Raw: string, line2Raw: string): MrzParseRes
       compositeCheckValid: false,
       errors,
     };
+  }
+
+  if (!/^[A-Z0-9<]+$/.test(line1) || !/^[A-Z0-9<]+$/.test(line2)) {
+    errors.push('MRZ contains characters outside the ICAO alphabet.');
   }
 
   // Line 1:
@@ -181,6 +188,7 @@ export function parseIcaoMrzTd3(line1Raw: string, line2Raw: string): MrzParseRes
   if (!birthDateCheckValid) {
     errors.push('Date of birth check digit mismatch.');
   }
+  if (!birthDate) errors.push('Date of birth is not a valid calendar date.');
 
   const sexChar = line2[20];
   const gender: 'MALE' | 'FEMALE' | 'OTHER' = sexChar === 'M' ? 'MALE' : sexChar === 'F' ? 'FEMALE' : 'OTHER';
@@ -194,6 +202,7 @@ export function parseIcaoMrzTd3(line1Raw: string, line2Raw: string): MrzParseRes
   if (!expiryDateCheckValid) {
     errors.push('Passport expiry check digit mismatch.');
   }
+  if (!expiryDate) errors.push('Passport expiry is not a valid calendar date.');
 
   const hasSixMonthsValidity = checkHasSixMonthsValidity(expiryDate);
   if (!hasSixMonthsValidity) {
@@ -202,6 +211,10 @@ export function parseIcaoMrzTd3(line1Raw: string, line2Raw: string): MrzParseRes
 
   const personalNoRaw = line2.substring(28, 42);
   const personalNumber = personalNoRaw.replace(/</g, '');
+  const personalCheckChar = line2[42];
+  const personalCheckValid = (personalCheckChar === '<' && !personalNumber)
+    || (/^\d$/.test(personalCheckChar || '') && Number(personalCheckChar) === calculateIcaoCheckDigit(personalNoRaw));
+  if (!personalCheckValid) errors.push('Personal number check digit mismatch.');
 
   // Composite check digit over: [0..9] + [13..19] + [21..42]
   const compositeString = line2.substring(0, 10) + line2.substring(13, 20) + line2.substring(21, 43);
@@ -213,7 +226,7 @@ export function parseIcaoMrzTd3(line1Raw: string, line2Raw: string): MrzParseRes
     errors.push('MRZ composite check digit mismatch.');
   }
 
-  const valid = passportNoCheckValid && birthDateCheckValid && expiryDateCheckValid && hasSixMonthsValidity;
+  const valid = errors.length === 0;
 
   return {
     valid,

@@ -459,17 +459,18 @@ export function HotelFilterSidebar({
         <button
           type="button"
           role="switch"
+          aria-label={lt(locale, { fa: 'فقط کنسلی رایگان', en: 'Free Cancellation Only', ar: 'إلغاء مجاني فقط', zh: '仅限免费取消', ru: 'Только с бесплатной отменой' })}
           aria-checked={Boolean(freeCancel)}
           onClick={onToggleFreeCancel}
-          className={`w-10 h-6 rounded-full transition-colors relative cursor-pointer p-0.5 shrink-0 ${
-            freeCancel ? 'bg-emerald-500' : 'bg-line'
-          }`}
+          className="min-w-[44px] min-h-[44px] grid place-items-center rounded-full shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
-          <span
-            className={`block w-5 h-5 rounded-full bg-surface shadow-xs transition-transform duration-200 ${
-              freeCancel ? (locale === 'fa' || locale === 'ar' ? '-translate-x-4' : 'translate-x-4') : 'translate-x-0'
-            }`}
-          />
+          <span aria-hidden="true" className={`block w-10 h-6 rounded-full p-0.5 transition-colors ${freeCancel ? 'bg-emerald-500' : 'bg-line'}`}>
+            <span
+              className={`block w-5 h-5 rounded-full bg-surface shadow-xs transition-transform duration-200 ${
+                freeCancel ? (locale === 'fa' || locale === 'ar' ? '-translate-x-4' : 'translate-x-4') : 'translate-x-0'
+              }`}
+            />
+          </span>
         </button>
       </div>
     </aside>

@@ -160,7 +160,7 @@ export function CityAutocomplete({
             aria-controls={`${id}-listbox`}
             aria-haspopup="listbox"
             aria-autocomplete="list"
-            className="w-full bg-transparent border-0 outline-0 p-0 text-[13px] font-bold text-ink placeholder:text-sub/50 focus:ring-0 leading-tight pe-5"
+            className="w-full bg-transparent border-0 outline-0 p-0 text-base md:text-[13px] font-bold text-ink placeholder:text-sub/50 focus:ring-0 leading-tight pe-5"
           />
           {value && (
             <button
@@ -337,7 +337,7 @@ export function CityAutocomplete({
                 value={mobileSearchQuery}
                 onChange={(e) => setMobileSearchQuery(e.target.value)}
                 placeholder={placeholder}
-                className="w-full bg-transparent border-0 outline-none p-0 text-sm font-bold text-ink placeholder:text-sub"
+                className="w-full bg-transparent border-0 outline-none p-0 text-base font-bold text-ink placeholder:text-sub"
               />
               {mobileSearchQuery && (
                 <button

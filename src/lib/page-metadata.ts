@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { lt, type LText } from './lt';
-
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+import { getAppBaseUrl } from './runtime-url';
 
 export interface PageMetaDefinition {
   title: LText;
@@ -17,9 +16,10 @@ export interface PageMetaDefinition {
  * metadata themselves).
  */
 export function buildPageMetadata(locale: string, def: PageMetaDefinition): Metadata {
+  const siteUrl = getAppBaseUrl();
   const title = lt(locale, def.title);
   const description = lt(locale, def.description);
-  const canonical = def.path ? `${SITE}/${locale}${def.path}` : undefined;
+  const canonical = def.path ? `${siteUrl}/${locale}${def.path}` : undefined;
 
   return {
     // absolute bypasses the root layout template (which already appends the

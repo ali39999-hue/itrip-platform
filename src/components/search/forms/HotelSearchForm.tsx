@@ -104,8 +104,8 @@ export function HotelSearchForm({
         />
       </div>
 
-      {/* Mobile Dates (< sm): 2-Column Side-by-Side High-Density */}
-      <div className="col-span-1 sm:hidden grid grid-cols-2 gap-2">
+      {/* Long localized dates need full-width rows below sm to remain readable at 16px. */}
+      <div className="col-span-1 sm:hidden grid grid-cols-1 gap-2">
         <JalaliDatePicker
           value={date1}
           onChange={(d) => setDate1(d || '')}
@@ -126,7 +126,13 @@ export function HotelSearchForm({
           {nights > 0 && (
             <div className="absolute end-1.5 top-1/2 -translate-y-1/2 z-20 pointer-events-none">
               <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full bg-mint/90 border border-brand/30 text-brand-dark text-[10px] font-black shadow-xs">
-                {num(nights, locale)} شب
+                {lt(locale, {
+                  fa: `${num(nights, locale)} شب`,
+                  en: `${num(nights, locale)} nights`,
+                  ar: `${num(nights, locale)} ليالٍ`,
+                  zh: `${num(nights, locale)} 晚`,
+                  ru: `${num(nights, locale)} ноч.`,
+                })}
               </span>
             </div>
           )}

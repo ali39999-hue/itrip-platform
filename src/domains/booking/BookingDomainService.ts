@@ -138,12 +138,16 @@ export class BookingDomainService {
    * asserted through the state machine; never touches confirmed/paid bookings.
    */
   static async expireStaleBookings(maxAgeMinutes: number = 30, take: number = 200): Promise<number> {
+    const now = new Date();
     const cutoff = new Date(Date.now() - maxAgeMinutes * 60 * 1000);
 
     const stale = await prisma.booking.findMany({
       where: {
         status: { in: ['HELD', 'PENDING_PAYMENT'] },
-        createdAt: { lt: cutoff },
+        OR: [
+          { createdAt: { lt: cutoff } },
+          { expiresAt: { lt: now } },
+        ],
       },
       select: { id: true, status: true },
       take,

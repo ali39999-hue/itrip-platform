@@ -355,9 +355,9 @@ export default function GuidePage() {
 
       {/* Modal for Article Reading */}
       {openId && selectedArticle && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setOpenId(null)}>
-          <div 
-            className="bg-surface rounded-3xl shadow-elev-3 w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-line"
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm" onClick={() => setOpenId(null)}>
+          <div
+            className="bg-surface rounded-t-3xl sm:rounded-3xl shadow-elev-3 w-full max-w-2xl animate-in fade-in slide-in-from-bottom sm:slide-in-from-none sm:zoom-in-95 duration-200 border-t sm:border border-line max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {selectedArticle.image && (
