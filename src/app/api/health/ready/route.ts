@@ -18,7 +18,7 @@ import { ensureDatabaseSchemaHealed } from '@/lib/db-schema-guard';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const DB_CHECK_TIMEOUT_MS = 2000;
+const DB_CHECK_TIMEOUT_MS = Number(process.env.DB_CHECK_TIMEOUT_MS) || 5000;
 const REDIS_CHECK_TIMEOUT_MS = 1500;
 const LEDGER_CHECK_TTL_MS = 5 * 60 * 1000;
 
