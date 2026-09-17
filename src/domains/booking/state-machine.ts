@@ -1,44 +1,35 @@
-export type BookingStatus =
-  | 'DRAFT'
-  | 'HELD'
-  | 'PENDING_PAYMENT'
-  | 'PAYMENT_CONFIRMED'
-  | 'CONFIRMING_SUPPLIER'
-  | 'CONFIRMED'
-  | 'CANCEL_REQUESTED'
-  | 'CANCELLING'
-  | 'CANCELLED'
-  | 'REFUND_INITIATED'
-  | 'REFUNDED'
-  | 'EXPIRED'
-  | 'FAILED';
+export {
+  BOOKING_STATUS_VALUES,
+  PAYMENT_STATUS_VALUES,
+  FULFILLMENT_STATUS_VALUES,
+  TICKET_STATUS_VALUES,
+  isBookingStatus,
+  isPaymentStatus,
+  isFulfillmentStatus,
+  isTicketStatus,
+  assertBookingStatus,
+  assertPaymentStatus,
+  assertFulfillmentStatus,
+  assertTicketStatus,
+  validateBookingStatusBoundary,
+  canTransitionBooking,
+  canTransitionPayment,
+  canTransitionFulfillment,
+  canTransitionTicket,
+  type BookingStatus,
+  type PaymentStatus,
+  type FulfillmentStatus,
+  type TicketStatus,
+  type BrandedBookingStatus,
+  type BrandedPaymentStatus,
+  type BrandedFulfillmentStatus,
+  type BrandedTicketStatus,
+} from './status-contracts';
+
+import type { BookingStatus, PaymentStatus, FulfillmentStatus, TicketStatus } from './status-contracts';
 
 // Alias for backwards compatibility
 export type BookingState = BookingStatus;
-
-export type PaymentStatus =
-  | 'INITIATED'
-  | 'PENDING_CUSTOMER'
-  | 'AUTHORIZED'
-  | 'CAPTURED'
-  | 'FAILED'
-  | 'VOIDED'
-  | 'PARTIALLY_REFUNDED'
-  | 'REFUNDED';
-
-export type FulfillmentStatus =
-  | 'PENDING'
-  | 'IN_PROGRESS'
-  | 'CONFIRMED'
-  | 'FAILED';
-
-export type TicketStatus =
-  | 'NOT_ISSUED'
-  | 'ISSUING'
-  | 'ISSUED'
-  | 'VOIDED'
-  | 'REFUND_PENDING'
-  | 'REFUNDED';
 
 export interface StateTransitionRule<T extends string> {
   from: T[];

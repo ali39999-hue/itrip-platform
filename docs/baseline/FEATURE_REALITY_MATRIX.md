@@ -1,11 +1,11 @@
-# iTRIP / Firuzo Platform — Feature Reality Matrix (v1.8.0)
+# iTRIP / Firuzo Platform — Feature Reality Matrix (v1.8.3)
 
-**Version:** v1.8.0  
-**Commit:** `63b549f` (`63b549f4b42c914b91387ff6de495be0f523fda1` — fix(a11y): measure regression against baseline budget in a11y-baseline.mjs per specification)  
-**Branch:** main (Release tag `v1.8.0` -> `63b549f`, Live deployment: `cae058f`)  
-**Audit Date:** 2026-09-16  
-**Authoritative Baseline:** v1.8.0 / `63b549f`  
-**Supersedes:** `FEATURE_REALITY_MATRIX.md` (v1.7.9 / `c3e6074`) — Archived to `FEATURE_REALITY_MATRIX_v1.7.9_historical.md`  
+**Version:** v1.8.3  
+**Commit:** `6f936a0` (`6f936a0269f39395cf150ec6849c64201677a520` — sync(metrics): reconcile quality gates with automated reality)  
+**Branch:** main (Release tag `v1.8.2` -> `6f936a0`)  
+**Audit Date:** 2026-09-17  
+**Authoritative Baseline:** v1.8.3 / `6f936a0`  
+**Supersedes:** `FEATURE_REALITY_MATRIX.md` (v1.8.0 / `63b549f`)  
 
 > **Notice:** This document is the single authoritative source of truth for platform capabilities, feature reality, and deployment verification. Every status is evidence-backed by source code, Prisma schema models, automated unit/integration test suites, and live HTTP probes. Optimistic claims, unverified states, and outdated matrix baselines are strictly reconciled herein.
 
@@ -14,9 +14,9 @@
 ## 1. System Baseline Metrics
 
 - **Runtime & Framework:** Node.js 22.x · Next.js 16.3.4 (App Router) · React 19.2.8 · TypeScript 5 · Tailwind CSS v4
-- **Database & Persistence:** Prisma 5.22.0 · **78 Relational Models** · **33 Migrations** (PostgreSQL 16 canonical, zero SQLite drift)
-- **Unit & Domain Tests:** 137 test files / **906 verified tests** (100% passing across domain, observability, portability and UI suites)
-- **E2E Test Specifications:** 27 Playwright test suites in `tests/*.spec.ts` (golden journeys, mobile journeys, security, a11y)
+- **Database & Persistence:** Prisma 5.22.0 · **78 Relational Models** · **34 Migrations** (PostgreSQL 16 canonical, zero SQLite drift)
+- **Unit & Domain Tests:** 420 test files / **1,035 verified tests** (100% passing across domain, observability, portability and UI suites — source: `docs/baseline/quality-report.json`)
+- **E2E Test Specifications:** 33 Playwright test suites in `tests/*.spec.ts` (golden journeys, mobile journeys, security, a11y)
 - **Internationalization:** 5 supported languages (`fa`, `en`, `ar`, `zh`, `ru`) with 100% key parity enforced via `scripts/i18n-completeness-gate.mjs`
 - **Design System & Primitives:** Semantic tokens (`text-ink`, `text-sub`, `bg-surface`, `bg-brand`, `bg-action`), Shadcn primitives, glassmorphism, responsive 320px–1440px
 - **Capability Registry:** `src/lib/capabilities/index.ts` (43 tracked capabilities) controlling customer-facing claim states
@@ -93,13 +93,17 @@ Status legend:
 | 37 | **Telegram Auth Gateway** | `auth.telegram` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Telegram login widget callback | Hash & auth_date verification | BETA | **BETA** | `src/app/api/auth/telegram/callback/` |
 | 38 | **PWA Mobile Journey** | `mobile.pwa` | ✅ | — | ✅ | — | ✅ | ✅ | ✅ | Service worker, manifest, touch UX | 320px–768px touch-optimized | LIVE | **REAL** | `public/manifest.json`, `src/components/mobile/` |
 | 39 | **Universal Portability** | `runtime.portability` | ✅ | — | ✅ | — | ✅ | ✅ | ✅ | Dynamic host & proxy resolution | Zero hardcoded URLs, standalone ready | LIVE | **REAL** | `src/lib/runtime-url.ts` |
+| 40 | **Maker-Checker High-Value Gate** | `erp.makerChecker` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Two-step approval for refunds >= 50M IRR | Separation of duties (Maker != Checker) | LIVE | **REAL** | `src/domains/refund/RefundDomainService.ts` |
+| 41 | **4-Axis Status Contracts** | `security.contracts` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Branded types & DB boundary validation | Eliminates typo & invalid state transitions | LIVE | **REAL** | `src/domains/booking/status-contracts.ts` |
+| 42 | **Disaster Recovery Simulation** | `dr.simulation` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Automated DR integrity check & 5 Runbooks | RTO < 30m, RPO < 5m, zombie task unclaim | LIVE | **REAL** | `docs/runbooks/RUNBOOK_05_DISASTER_RECOVERY_DRILL.md` |
+| 43 | **Internal Monorepo Packages** | `monorepo.packages` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | @packages/{contracts,domain-types,money,test-fixtures} | Zero-conflict type-safe contracts | LIVE | **REAL** | `packages/` |
 
 ---
 
 ## 4. Test Metrics (Authoritative Single Source of Truth)
 
-- **Test Files Count:** **137 test files**
-- **Total Unit Test Specs:** **906 passing tests** (880 baseline + 19 universal portability + 7 tour reservation & lifecycle suites)
+- **Test Files Count:** **420 test files**
+- **Total Unit Test Specs:** **1,035 verified passing tests** (100% pass rate — source: `docs/baseline/quality-report.json`)
 - **Failure Count:** **0 failed**
 - **Skipped / Flaky Count:** **0 skipped, 0 flaky**
 - **Breakdown by Domain:**

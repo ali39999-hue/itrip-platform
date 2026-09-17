@@ -54,4 +54,30 @@ describe('Business Telemetry & Conversion Metrics Suite (OBS-005)', () => {
     expect(snapshot.counters.priceChangesDetected).toBe(1);
     expect(snapshot.counters.staleBookingsSwept).toBe(3);
   });
+
+  it('tracks supplier health, ledger balance invariant, and worker lag', async () => {
+    const { BusinessMetricsDashboardService } = await import('./BusinessMetricsDashboardService');
+    BusinessMetricsDashboardService.reset();
+
+    // 1. Record supplier calls
+    BusinessMetricsDashboardService.recordSupplierCall('PARTO_CRS', 120, true);
+    BusinessMetricsDashboardService.recordSupplierCall('PARTO_CRS', 140, true);
+    BusinessMetricsDashboardService.recordSupplierCall('PARTO_CRS', 300, false); // 1 error
+
+    // 2. Record worker lag
+    BusinessMetricsDashboardService.recordWorkerLag(15, 250);
+
+    const report = BusinessMetricsDashboardService.getDashboardSummary();
+
+    expect(report.supplierMetrics['PARTO_CRS']).toBeDefined();
+    expect(report.supplierMetrics['PARTO_CRS'].requests).toBe(3);
+    expect(report.supplierMetrics['PARTO_CRS'].errors).toBe(1);
+    expect(report.supplierMetrics['PARTO_CRS'].successRatePercent).toBe(66.67);
+
+    expect(report.ledgerMetrics.status).toBe('BALANCED');
+    expect(report.ledgerMetrics.imbalanceEventsDetected).toBe(0);
+
+    expect(report.workerMetrics.outboxQueueDepth).toBe(15);
+    expect(report.workerMetrics.maxLagMs).toBe(250);
+  });
 });

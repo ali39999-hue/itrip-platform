@@ -15,6 +15,22 @@ export class RefundAmountInvariantViolationError extends Error {
   }
 }
 
+export const MAKER_CHECKER_HIGH_VALUE_THRESHOLD = 50_000_000; // 50,000,000 IRR / ~5,000,000 Tomans
+
+export class MakerCheckerSelfApprovalError extends Error {
+  constructor(message: string = 'Maker and Checker cannot be the same operator for high-value operations') {
+    super(message);
+    this.name = 'MakerCheckerSelfApprovalError';
+  }
+}
+
+export class MakerCheckerRequirementError extends Error {
+  constructor(message: string = 'Refund amount exceeds high-value threshold and requires distinct Maker-Checker approvals') {
+    super(message);
+    this.name = 'MakerCheckerRequirementError';
+  }
+}
+
 export interface RequestRefundParams {
   bookingId: string;
   reason?: string;
@@ -239,6 +255,64 @@ export class RefundDomainService {
     };
 
     if (tx) return runner(tx);
+    return prisma.$transaction(runner);
+  }
+
+  /**
+   * ERP-010 / FIN-009: Maker-Checker two-step approval for high-value operations.
+   * Enforces that makerId (operator proposing refund) and checkerId (finance manager approving)
+   * are strictly distinct individuals, and records an immutable double-approval trail.
+   */
+  static async approveRefundWithMakerChecker(params: {
+    refundId: string;
+    makerId: string;
+    checkerId: string;
+    note?: string;
+    tx?: Prisma.TransactionClient;
+  }): Promise<{ success: boolean; status: RefundState; approvalsCount: number }> {
+    if (params.makerId === params.checkerId) {
+      throw new MakerCheckerSelfApprovalError();
+    }
+
+    const runner = async (client: Prisma.TransactionClient) => {
+      const refund = await client.refund.findUniqueOrThrow({
+        where: { id: params.refundId },
+      });
+
+      RefundStateMachine.assertTransition(refund.status as RefundState, 'APPROVED');
+
+      await client.refund.update({
+        where: { id: params.refundId },
+        data: {
+          status: 'APPROVED',
+          approvedBy: params.checkerId,
+        },
+      });
+
+      // Record Maker Proposed Approval
+      await client.refundApproval.create({
+        data: {
+          refundId: params.refundId,
+          approverId: params.makerId,
+          decision: 'MAKER_PROPOSED',
+          note: params.note ? `[MAKER] ${params.note}` : 'Refund proposed by Maker',
+        },
+      });
+
+      // Record Checker Approved Approval
+      await client.refundApproval.create({
+        data: {
+          refundId: params.refundId,
+          approverId: params.checkerId,
+          decision: 'CHECKER_APPROVED',
+          note: params.note ? `[CHECKER] ${params.note}` : 'Refund verified and approved by Checker',
+        },
+      });
+
+      return { success: true, status: 'APPROVED' as RefundState, approvalsCount: 2 };
+    };
+
+    if (params.tx) return runner(params.tx);
     return prisma.$transaction(runner);
   }
 

@@ -1,6 +1,6 @@
 # iTRIP / FIRUZO — SYSTEM ARCHITECTURE SPECIFICATION
 
-> 📘 **مرجع رسمی و به‌روز معماری:** [docs/ARCHITECTURE.fa.md](docs/ARCHITECTURE.fa.md) — این فایل به‌عنوان spec تاریخی هستهٔ تراکنشی (v3.0) حفظ شده و با v1.7.x به‌روزرسانی نشده است. برای ساختار فعلی، قانون لایه‌بندی، تأمین‌کنندگان و ADRها به سند مرجع رجوع کنید.
+> 📘 **مرجع رسمی و به‌روز معماری:** [docs/ARCHITECTURE.fa.md](docs/ARCHITECTURE.fa.md) — این فایل به‌عنوان spec تاریخی هستهٔ تراکنشی حفظ شده است. ساختار رسمی، معماری لایه‌ای، مدل‌های دامنه‌ای و ADRها در سند مرجع فوق هماهنگ با نسخه `1.8.2` مستند شده است.
 
 **Version:** 3.0 (Production Hardened)  
 **Architectural Style:** Modular Monolith with Outbox & Saga Orchestration  

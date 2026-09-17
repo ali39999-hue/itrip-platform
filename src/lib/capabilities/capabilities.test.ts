@@ -39,6 +39,10 @@ describe('Product Capability Registry (CAP-001)', () => {
 
     const manualRefund = getCapability('refund.manual');
     expect(manualRefund.status).toBe('LIVE');
+
+    const erpOps = getCapability('erp.operations');
+    expect(erpOps.status).toBe('LIVE');
+    expect(erpOps.evidencePath).toBe('src/domains/refund/RefundDomainService.ts');
   });
 
   it('correctly reports wallet as LIVE and real', () => {

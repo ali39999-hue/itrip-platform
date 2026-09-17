@@ -2,6 +2,7 @@ import { getAdminDashboardData } from '@/actions/admin';
 import { QuickActionsBar } from '@/components/admin/QuickActionsBar';
 import { ActionWidgets } from '@/components/admin/ActionWidgets';
 import { LiveActivityFeed } from '@/components/admin/LiveActivityFeed';
+import { SloTelemetryDashboard } from '@/components/admin/SloTelemetryDashboard';
 import {
   ErpBadge,
   ErpPageHeader,
@@ -296,6 +297,8 @@ export default async function AdminDashboard() {
           <ErpStatCard key={k.title} icon={k.icon} label={k.title} value={k.value} hint={k.hint} tone={k.tone} href={k.href} />
         ))}
       </div>
+
+      <SloTelemetryDashboard outboxQueueDepth={pendingOutboxCount} />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="min-h-[420px] xl:col-span-2">

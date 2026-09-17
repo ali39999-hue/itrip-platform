@@ -27,6 +27,8 @@ import {
   getSystemLogsAction,
   resolveSystemLogAction,
   resolveAllSystemLogsAction,
+  deleteSystemLogAction,
+  clearResolvedLogsAction,
   purgeOldSystemLogsAction,
   triggerTestSystemErrorAction,
 } from '@/actions/system-logs';
@@ -161,6 +163,37 @@ export function SystemLogsClientPage({
       const res = await resolveAllSystemLogsAction();
       if (res.success) {
         showBanner(`${res.count} خطا با موفقیت به عنوان حل‌شده علامت‌گذاری شدند.`);
+        fetchLogs(1);
+      }
+    });
+  };
+
+  const handleDeleteLog = (id: string) => {
+    if (!window.confirm('آیا از حذف قطعی این لاگ از پایگاه داده اطمینان دارید؟')) return;
+    startTransition(async () => {
+      const res = await deleteSystemLogAction(id);
+      if (res.success) {
+        showBanner('لاگ با موفقیت از پایگاه داده حذف شد.');
+        setLogs((prev) => prev.filter((l) => l.id !== id));
+        if (selectedLog?.id === id) {
+          setSelectedLog(null);
+        }
+        setStats((prev) => ({
+          ...prev,
+          unresolvedCount: Math.max(0, prev.unresolvedCount - 1),
+        }));
+      } else {
+        showBanner('خطا در حذف لاگ', 'error');
+      }
+    });
+  };
+
+  const handleClearResolved = () => {
+    if (!window.confirm('آیا مایلید تمام لاگ‌های علامت‌گذاری‌شده به عنوان حل‌شده، بدون معطلی از پایگاه داده حذف شوند؟')) return;
+    startTransition(async () => {
+      const res = await clearResolvedLogsAction();
+      if (res.success) {
+        showBanner(`${res.count} لاگ حل‌شده فوراً از دیتابیس پاک شدند.`);
         fetchLogs(1);
       }
     });
@@ -301,13 +334,24 @@ export function SystemLogsClientPage({
 
           <button
             type="button"
+            onClick={handleClearResolved}
+            disabled={isPending}
+            className="min-h-[44px] px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 font-bold text-xs flex items-center gap-1.5 transition active:scale-[0.98] border border-rose-500/20 cursor-pointer"
+            title="حذف فوری تمام لاگ‌های حل‌شده از دیتابیس"
+          >
+            <Trash2 size={15} />
+            پاکسازی حل‌شده‌ها
+          </button>
+
+          <button
+            type="button"
             onClick={handlePurgeOld}
             disabled={isPending}
             className="min-h-[44px] px-3 py-2 rounded-xl bg-surface hover:bg-muted text-muted-foreground font-bold text-xs flex items-center gap-1.5 transition active:scale-[0.98] border border-border cursor-pointer"
-            title="حذف لاگ‌های حل‌شده قدیمی‌تر از ۳۰ روز"
+            title="حذف لاگ‌های قدیمی‌تر از ۳۰ روز"
           >
             <Trash2 size={15} />
-            پاکسازی
+            پاکسازی ۳۰ روزه
           </button>
 
           <button
@@ -552,6 +596,18 @@ export function SystemLogsClientPage({
                       <Eye size={14} />
                       جزئیات
                     </button>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteLog(log.id);
+                      }}
+                      className="min-h-[38px] min-w-[38px] grid place-items-center rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs transition border border-rose-500/20 cursor-pointer"
+                      title="حذف قطعی این لاگ از دیتابیس"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
               );
@@ -724,14 +780,25 @@ export function SystemLogsClientPage({
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-border bg-muted/20 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setSelectedLog(null)}
-                className="px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground font-bold text-xs transition cursor-pointer"
-              >
-                بستن
-              </button>
+            <div className="p-4 border-t border-border bg-muted/20 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedLog(null)}
+                  className="px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground font-bold text-xs transition cursor-pointer"
+                >
+                  بستن
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteLog(selectedLog.id)}
+                  className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold text-xs transition flex items-center gap-1.5 border border-rose-500/20 cursor-pointer"
+                  title="حذف قطعی این لاگ از دیتابیس"
+                >
+                  <Trash2 size={14} />
+                  حذف لاگ
+                </button>
+              </div>
 
               {selectedLog.status !== 'RESOLVED' ? (
                 <button

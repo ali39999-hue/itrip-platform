@@ -25,6 +25,30 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@packages/contracts": [
+        "./packages/contracts/src/index.ts"
+      ],
+      "@packages/contracts/*": [
+        "./packages/contracts/src/*"
+      ],
+      "@packages/domain-types": [
+        "./packages/domain-types/src/index.ts"
+      ],
+      "@packages/domain-types/*": [
+        "./packages/domain-types/src/*"
+      ],
+      "@packages/money": [
+        "./packages/money/src/index.ts"
+      ],
+      "@packages/money/*": [
+        "./packages/money/src/*"
+      ],
+      "@packages/test-fixtures": [
+        "./packages/test-fixtures/src/index.ts"
+      ],
+      "@packages/test-fixtures/*": [
+        "./packages/test-fixtures/src/*"
       ]
     }
   },

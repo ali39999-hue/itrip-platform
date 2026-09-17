@@ -1,7 +1,10 @@
 {
   "name": "itrip-platform",
-  "version": "1.8.2",
+  "version": "1.8.3",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "engines": {
     "node": "22.x"
   },
@@ -18,6 +21,10 @@
     "gate:a11y": "node scripts/a11y-baseline.mjs",
     "gate:uiux": "node scripts/uiux-audit.mjs src",
     "gate:quality": "node scripts/generate-quality-report.mjs",
+    "gate:docs-metrics": "node scripts/sync-metrics-and-docs.mjs --check",
+    "docs:sync": "node scripts/sync-metrics-and-docs.mjs --write",
+    "benchmark:search": "node scripts/benchmark-search.mjs",
+    "dr:check": "node scripts/dr-simulation-check.mjs",
     "catalog:staleness": "node scripts/catalog-staleness.mjs",
     "security:scan": "node scripts/security-scan.mjs",
     "graph:nodes": "graphify god-nodes --graph src/graphify-out/graph.json",

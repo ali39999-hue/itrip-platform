@@ -146,4 +146,13 @@ for (const [k, v] of Object.entries(report.verification)) {
   console.log(`${k.padEnd(10)} ${v}`);
 }
 console.log(`\nverdict: ${report.verdict}\nwritten: ${path.relative(root, OUT)}`);
+
+// Auto-sync documentation and reality metrics whenever quality report is generated
+try {
+  const { syncMetricsAndDocs } = await import('./sync-metrics-and-docs.mjs');
+  syncMetricsAndDocs({ write: true });
+} catch (e) {
+  console.warn('[quality-gate] Could not auto-sync docs:', e?.message);
+}
+
 process.exit(report.verdict === 'PASS' ? 0 : 1);

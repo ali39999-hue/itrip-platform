@@ -66,7 +66,16 @@ if (process.env.DATABASE_URL) {
   console.log('• No DATABASE_URL set yet. Skipping migration step (runtime fallback active).');
 }
 
-// 4. Verification completed
+// 5. Automated Documentation & Quality Metrics Self-Update
+try {
+  console.log('• Checking and synchronizing documentation metrics with codebase reality...');
+  const { syncMetricsAndDocs } = await import('./sync-metrics-and-docs.mjs');
+  syncMetricsAndDocs({ write: true });
+} catch (docSyncErr) {
+  console.warn('  ⚠️ Note: Documentation self-sync deferred:', docSyncErr.message);
+}
+
+// 6. Verification completed
 console.log('============================================================');
 console.log(' ✓ Self-configuration completed. Proceeding to Next.js build.');
 console.log('============================================================\n');

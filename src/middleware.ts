@@ -5,6 +5,7 @@ import createMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 import { validateCsrfRequest } from './lib/security/csrf-protection';
 import { isSafeRedirectUrl } from './lib/security/url-validator';
+import { RateLimiter } from './lib/security/rate-limiter';
 import {
   NEXT_LOCALE_COOKIE,
   countryToLocale,
@@ -49,7 +50,7 @@ export async function middleware(request: NextRequest) {
     return response;
   };
 
-  // 1. Handle API routes: enforce CSRF on state mutations and attach correlation headers
+  // 1. Handle API routes: enforce CSRF on state mutations, rate limiting, and attach correlation headers
   if (pathname.startsWith('/api/')) {
     const csrfCheck = validateCsrfRequest(request);
     if (!csrfCheck.valid) {
@@ -60,7 +61,24 @@ export async function middleware(request: NextRequest) {
         )
       );
     }
-    return withCorrelation(NextResponse.next());
+
+    // Rate limit sensitive authentication routes against brute-force and OTP flooding
+    if (pathname.startsWith('/api/auth/')) {
+      const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+      const rateCheck = await RateLimiter.checkRateLimit(`ratelimit:auth:${clientIp}`, 30, 60);
+      if (!rateCheck.allowed) {
+        return withCorrelation(
+          NextResponse.json(
+            { success: false, error: 'Too many requests. Please slow down and try again.' },
+            { status: 429, headers: { 'Retry-After': '60' } }
+          )
+        );
+      }
+    }
+
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-correlation-id', correlationId);
+    return withCorrelation(NextResponse.next({ request: { headers: requestHeaders } }));
   }
 
   // 1b. Skip auth & i18n for _next, static files, fonts, and public assets

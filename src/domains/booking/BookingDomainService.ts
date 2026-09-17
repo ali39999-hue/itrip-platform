@@ -13,6 +13,7 @@ import { TaxEngine } from '@/lib/finance/tax-engine';
 import { calculatePricing, PricingResult } from '@/lib/pricing/engine';
 import { prisma } from '@/lib/prisma';
 import { BookingStateMachine, BookingState } from './state-machine';
+import { BookingStatus, assertBookingStatus, validateBookingStatusBoundary } from './status-contracts';
 
 export interface MoneyBreakdown {
   baseAmount: number;
@@ -201,6 +202,54 @@ export class BookingDomainService {
     }
 
     return expired;
+  }
+
+  /**
+   * BOOK-014: Authoritative state transition with contract enforcement
+   * Validates nextStatus against central status contracts, checks state machine transition legality,
+   * enforces database boundary invariants, and commits status history.
+   */
+  static async transitionStatus(params: {
+    bookingId: string;
+    nextStatus: BookingStatus;
+    actor: string;
+    reason?: string;
+    correlationId?: string;
+    tx?: Prisma.TransactionClient;
+  }): Promise<{ success: boolean; fromStatus: BookingStatus; toStatus: BookingStatus }> {
+    const validatedNext = assertBookingStatus(params.nextStatus);
+    validateBookingStatusBoundary({ status: validatedNext });
+
+    const runner = async (client: Prisma.TransactionClient) => {
+      const booking = await client.booking.findUniqueOrThrow({
+        where: { id: params.bookingId },
+        select: { id: true, status: true },
+      });
+
+      const currentStatus = assertBookingStatus(booking.status);
+      BookingStateMachine.assertTransition(currentStatus, validatedNext);
+
+      await client.booking.update({
+        where: { id: params.bookingId },
+        data: { status: validatedNext },
+      });
+
+      await client.bookingStatusHistory.create({
+        data: {
+          bookingId: params.bookingId,
+          fromStatus: currentStatus,
+          toStatus: validatedNext,
+          actor: params.actor,
+          reason: params.reason || `Transitioned to ${validatedNext}`,
+          correlationId: params.correlationId || `corr_${Date.now().toString(36)}`,
+        },
+      });
+
+      return { success: true, fromStatus: currentStatus, toStatus: validatedNext };
+    };
+
+    if (params.tx) return runner(params.tx);
+    return prisma.$transaction(runner);
   }
 
   /**

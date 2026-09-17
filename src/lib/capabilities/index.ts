@@ -692,13 +692,13 @@ export const CAPABILITY_DEFINITIONS: Record<CapabilityKey, Omit<CapabilityDescri
   'erp.operations': {
     key: 'erp.operations',
     category: 'erp',
-    name: { fa: 'میز کار عملیات یکپارچه ERP', en: 'Unified ERP Operations Workbench' },
+    name: { fa: 'میز کار عملیات یکپارچه ERP و تایید دو مرحله‌ای', en: 'Unified ERP Operations & Maker-Checker Workbench' },
     description: {
-      fa: 'مدیریت رخدادها، استردادها، تیکت‌ها، تسویه‌حساب و مانیفست در پنل اپراتور آژانس',
-      en: 'Operational management of incidents, refunds, tickets, settlements and manifests in agency ERP',
+      fa: 'مدیریت رخدادها، استردادها با تایید دو مرحله‌ای Maker-Checker، لینک به Runbookهای بحران و تسویه‌حساب در پنل ERP',
+      en: 'Operational management of incidents, refunds with Maker-Checker dual approvals, crisis runbook links and settlements in agency ERP',
     },
     badgeLabel: { fa: 'فعال', en: 'Live' },
-    evidencePath: 'src/domains/erp/TravelFileDomainService.ts',
+    evidencePath: 'src/domains/refund/RefundDomainService.ts',
   },
   'mobile.pwa': {
     key: 'mobile.pwa',

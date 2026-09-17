@@ -439,6 +439,49 @@ export class ErrorTrackerService {
   }
 
   /**
+   * Permanently deletes a single log by ID.
+   */
+  static async deleteLog(id: string): Promise<boolean> {
+    await ensureErrorLogSchema();
+    try {
+      await prisma.systemErrorLog.delete({ where: { id } });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Clears all resolved logs immediately from the database.
+   */
+  static async clearResolvedLogs(): Promise<number> {
+    await ensureErrorLogSchema();
+    try {
+      const result = await prisma.systemErrorLog.deleteMany({
+        where: { status: 'RESOLVED' },
+      });
+      return result.count;
+    } catch {
+      return 0;
+    }
+  }
+
+  /**
+   * Clears all system logs completely (admin wipe).
+   */
+  static async clearAllLogs(level?: ErrorSeverity): Promise<number> {
+    await ensureErrorLogSchema();
+    const where: Record<string, unknown> = {};
+    if (level) where.level = level;
+    try {
+      const result = await prisma.systemErrorLog.deleteMany({ where });
+      return result.count;
+    } catch {
+      return 0;
+    }
+  }
+
+  /**
    * Purges resolved or old logs past specified retention days.
    */
   static async purgeOldLogs(daysOlderThan = 30): Promise<number> {

@@ -105,4 +105,19 @@ describe('ERP lifecycle contracts (database-free)', () => {
       where: { id: 'trip-1', status: 'PLANNING' }, data: { status: 'BOOKED' },
     });
   });
+
+  it('ERP-011: maps operational exception types to standardized runbooks', () => {
+    expect(ExceptionCenterService.getRunbookPath('PAYMENT_MISMATCH')).toBe(
+      '/docs/runbooks/RUNBOOK_01_PAYMENT_GATEWAY_OUTAGE.md'
+    );
+    expect(ExceptionCenterService.getRunbookPath('TICKET_NOT_ISSUED')).toBe(
+      '/docs/runbooks/RUNBOOK_02_SUPPLIER_GDS_FAILURE.md'
+    );
+    expect(ExceptionCenterService.getRunbookPath('LEDGER_IMBALANCE')).toBe(
+      '/docs/runbooks/RUNBOOK_03_LEDGER_IMBALANCE_ALERT.md'
+    );
+    expect(ExceptionCenterService.getRunbookPath('REFUND_TIMEOUT')).toBe(
+      '/docs/runbooks/RUNBOOK_04_REFUND_ESCALATION_MAKER_CHECKER.md'
+    );
+  });
 });

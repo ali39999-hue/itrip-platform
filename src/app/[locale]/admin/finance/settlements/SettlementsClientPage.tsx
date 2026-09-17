@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import {
   HandCoins, Plus, RefreshCw, CheckCircle2,
-  Building2, Loader2, CreditCard, Wallet
+  Building2, Loader2, CreditCard, Wallet, Download
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
@@ -155,6 +155,31 @@ export function SettlementsClientPage({
   const totalOpen = batches.filter((b) => b.status === 'OPEN').reduce((s, b) => s + b.netSettlement, 0);
   const totalCompleted = batches.filter((b) => b.status === 'COMPLETED').reduce((s, b) => s + b.netSettlement, 0);
 
+  const handleExportCsv = () => {
+    const headers = ['BatchNumber', 'SupplierName', 'SupplierType', 'PeriodStart', 'PeriodEnd', 'NetPayable', 'Currency', 'Status', 'CreatedAt'];
+    const rows = filteredBatches.map((b) => [
+      `"${b.batchNumber}"`,
+      `"${b.supplierName || ''}"`,
+      `"${b.supplierType || ''}"`,
+      `"${b.periodStart.slice(0, 10)}"`,
+      `"${b.periodEnd.slice(0, 10)}"`,
+      b.netSettlement,
+      `"${b.currency}"`,
+      `"${b.status}"`,
+      `"${b.createdAt}"`,
+    ]);
+
+    const csvContent = '﻿' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `settlements_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-4">
       <ErpPageHeader
@@ -168,6 +193,10 @@ export function SettlementsClientPage({
         icon={<HandCoins size={20} aria-hidden="true" />}
         actions={
           <>
+            <button type="button" onClick={handleExportCsv} className={erpGhostBtnCls} title="خروجی فایل CSV حسابداری">
+              <Download size={13} aria-hidden="true" />
+              <span>{lt(locale, { fa: 'خروجی CSV', en: 'Export CSV', ar: 'تصدير CSV', zh: '导出CSV', ru: 'Экспорт CSV' })}</span>
+            </button>
             <button type="button" onClick={refreshBatches} className={erpGhostBtnCls}>
               <RefreshCw size={13} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
               <span>{lt(locale, { fa: 'به‌روزرسانی', en: 'Refresh' , ar: 'تحديث', zh: '刷新', ru: 'Обновить'})}</span>

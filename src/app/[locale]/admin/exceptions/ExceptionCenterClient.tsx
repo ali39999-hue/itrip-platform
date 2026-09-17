@@ -12,12 +12,14 @@ import {
   CheckCircle2,
   ExternalLink,
   Loader2,
+  BookOpen,
+  Trash2,
 } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { ERPDataGrid, ColumnDef } from '@/components/admin/ERPDataGrid';
 import { ErpAlert, ErpHint, ErpPageHeader, ErpTabs } from '@/components/admin/erp-ui';
-import { ExceptionStats } from '@/domains/erp/ExceptionCenterService';
-import { assignException, resolveException } from '@/actions/admin';
+import { ExceptionStats, ExceptionCenterService } from '@/domains/erp/ExceptionCenterService';
+import { assignException, resolveException, deleteExceptionAction, purgeResolvedExceptionsAction } from '@/actions/admin';
 import {
   retryTicketingRemediationAction,
   immediateRefundRemediationAction,
@@ -45,7 +47,7 @@ export interface ExceptionItem {
 }
 
 export function ExceptionCenterClient({
-  exceptions,
+  exceptions: initialExceptions,
   stats,
   locale,
 }: {
@@ -53,6 +55,12 @@ export function ExceptionCenterClient({
   stats: ExceptionStats;
   locale: string;
 }) {
+  const [exceptions, setExceptions] = useState<ExceptionItem[]>(initialExceptions);
+
+  useEffect(() => {
+    setExceptions(initialExceptions);
+  }, [initialExceptions]);
+
   const [selectedQueue, setSelectedQueue] = useState<string>('ALL');
   const [isPending, startTransition] = useTransition();
   const [resolvingId, setResolvingId] = useState<string | null>(null);
@@ -103,6 +111,36 @@ export function ExceptionCenterClient({
         setSelectedOwnerId('');
       } catch (err: unknown) {
         setFeedback(`${lt(locale, { fa: 'خطا در ارجاع:', en: 'Failed to assign:', ar: 'فشل التعيين:', zh: '指派失败：', ru: 'Не удалось назначить:' })} ${err instanceof Error ? err.message : String(err)}`);
+      }
+    });
+  };
+
+  const handleDeleteException = (id: string) => {
+    if (!window.confirm('آیا از حذف قطعی این رخداد خطا از دیتابیس اطمینان دارید؟')) return;
+    startTransition(async () => {
+      try {
+        const res = await deleteExceptionAction(id);
+        if (res.success) {
+          setExceptions((prev) => prev.filter((e) => e.id !== id));
+          setFeedback(lt(locale, { fa: 'رخداد خطا با موفقیت حذف شد.', en: 'Exception deleted successfully.' }));
+        }
+      } catch (err: unknown) {
+        setFeedback(err instanceof Error ? err.message : 'خطا در حذف');
+      }
+    });
+  };
+
+  const handlePurgeResolved = () => {
+    if (!window.confirm('آیا مایلید تمام رخدادهای حل‌شده از دیتابیس پاکسازی شوند؟')) return;
+    startTransition(async () => {
+      try {
+        const res = await purgeResolvedExceptionsAction();
+        if (res.success) {
+          setExceptions((prev) => prev.filter((e) => e.status !== 'RESOLVED' && e.status !== 'CLOSED'));
+          setFeedback(lt(locale, { fa: `${res.count} خطای حل‌شده با موفقیت پاکسازی شدند.`, en: `${res.count} resolved exceptions purged.` }));
+        }
+      } catch (err: unknown) {
+        setFeedback(err instanceof Error ? err.message : 'خطا در پاکسازی');
       }
     });
   };
@@ -417,6 +455,27 @@ export function ExceptionCenterClient({
             >
               حل دستی
             </button>
+
+            <a
+              href={ExceptionCenterService.getRunbookPath(row.type)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10.5px] font-bold flex items-center gap-1 transition"
+              title="دستورالعمل استاندارد رفع رخداد (Runbook)"
+            >
+              <BookOpen size={11} />
+              <span>Runbook</span>
+            </a>
+
+            <button
+              type="button"
+              onClick={() => handleDeleteException(row.id)}
+              disabled={isPending}
+              className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-[10.5px] font-black transition cursor-pointer"
+              title="حذف قطعی این رخداد خطا از پایگاه داده"
+            >
+              <Trash2 size={12} />
+            </button>
           </div>
         );
       },
@@ -452,6 +511,18 @@ export function ExceptionCenterClient({
           </span>
         }
         icon={<ShieldCheck size={20} />}
+        actions={
+          <button
+            type="button"
+            onClick={handlePurgeResolved}
+            disabled={isPending}
+            className="min-h-9 px-3 py-1.5 rounded-xl border border-border bg-surface hover:bg-muted text-xs font-bold text-sub flex items-center gap-1.5 transition active:scale-[0.98] cursor-pointer"
+            title="حذف کلیه خطاهای حل‌شده از پایگاه داده"
+          >
+            <Trash2 size={14} className="text-rose-600" />
+            <span>{lt(locale, { fa: 'پاکسازی حل‌شده‌ها', en: 'Purge Resolved' })}</span>
+          </button>
+        }
       />
 
       {feedback && (

@@ -1169,3 +1169,17 @@ export async function resolveException(exceptionId: string, resolution: string) 
   revalidatePath('/admin/exceptions');
   return result;
 }
+
+export async function deleteExceptionAction(exceptionId: string) {
+  await requirePermission(['ops:override:cancel', 'user:manage']);
+  const ok = await ExceptionCenterService.deleteException(exceptionId);
+  revalidatePath('/admin/exceptions');
+  return { success: ok };
+}
+
+export async function purgeResolvedExceptionsAction() {
+  await requirePermission(['ops:override:cancel', 'user:manage']);
+  const count = await ExceptionCenterService.purgeResolvedExceptions();
+  revalidatePath('/admin/exceptions');
+  return { success: true, count };
+}

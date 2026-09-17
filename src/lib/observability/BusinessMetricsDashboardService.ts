@@ -45,6 +45,15 @@ export interface BusinessMetricsDashboardReport {
     avgRefundLatencyMs: number;
     p95RefundLatencyMs: number;
   };
+  supplierMetrics: Record<string, { requests: number; errors: number; avgLatencyMs: number; successRatePercent: number }>;
+  ledgerMetrics: {
+    imbalanceEventsDetected: number;
+    status: 'BALANCED' | 'IMBALANCED';
+  };
+  workerMetrics: {
+    outboxQueueDepth: number;
+    maxLagMs: number;
+  };
 }
 
 class BusinessMetricsDashboardServiceClass {
@@ -66,6 +75,27 @@ class BusinessMetricsDashboardServiceClass {
 
   private refundLatencies: RefundLatencyEntry[] = [];
   private totalRefundAmount = 0;
+
+  private supplierRecords = new Map<string, { requests: number; errors: number; totalLatencyMs: number }>();
+  private ledgerImbalanceEvents = 0;
+  private workerState = { queueDepth: 0, maxLagMs: 0 };
+
+  recordSupplierCall(supplierCode: string, latencyMs: number, success: boolean): void {
+    const existing = this.supplierRecords.get(supplierCode) || { requests: 0, errors: 0, totalLatencyMs: 0 };
+    existing.requests++;
+    existing.totalLatencyMs += Math.max(0, latencyMs);
+    if (!success) existing.errors++;
+    this.supplierRecords.set(supplierCode, existing);
+  }
+
+  recordLedgerDiscrepancy(reason: string, delta: number): void {
+    this.ledgerImbalanceEvents++;
+    this.logger.error('CRITICAL: Ledger Imbalance Event Detected', { reason, delta });
+  }
+
+  recordWorkerLag(queueDepth: number, maxLagMs: number): void {
+    this.workerState = { queueDepth, maxLagMs };
+  }
 
   recordSearch(vertical: 'FLIGHT' | 'HOTEL' | 'TOUR', destination?: string): void {
     if (vertical === 'FLIGHT') this.searches.flight++;
@@ -177,6 +207,25 @@ class BusinessMetricsDashboardServiceClass {
         avgRefundLatencyMs,
         p95RefundLatencyMs,
       },
+      supplierMetrics: Object.fromEntries(
+        Array.from(this.supplierRecords.entries()).map(([code, rec]) => [
+          code,
+          {
+            requests: rec.requests,
+            errors: rec.errors,
+            avgLatencyMs: rec.requests > 0 ? Math.round(rec.totalLatencyMs / rec.requests) : 0,
+            successRatePercent: rec.requests > 0 ? Number((((rec.requests - rec.errors) / rec.requests) * 100).toFixed(2)) : 100,
+          },
+        ])
+      ),
+      ledgerMetrics: {
+        imbalanceEventsDetected: this.ledgerImbalanceEvents,
+        status: this.ledgerImbalanceEvents === 0 ? 'BALANCED' : 'IMBALANCED',
+      },
+      workerMetrics: {
+        outboxQueueDepth: this.workerState.queueDepth,
+        maxLagMs: this.workerState.maxLagMs,
+      },
     };
   }
 
@@ -190,6 +239,9 @@ class BusinessMetricsDashboardServiceClass {
     this.capturedVolume = 0;
     this.refundLatencies = [];
     this.totalRefundAmount = 0;
+    this.supplierRecords.clear();
+    this.ledgerImbalanceEvents = 0;
+    this.workerState = { queueDepth: 0, maxLagMs: 0 };
   }
 }
 

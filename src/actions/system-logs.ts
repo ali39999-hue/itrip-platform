@@ -142,6 +142,48 @@ export async function resolveAllSystemLogsAction(level?: ErrorSeverity, source?:
   }
 }
 
+export async function deleteSystemLogAction(id: string) {
+  try {
+    const { isAuthed } = await checkDiagnosticsAuth();
+    if (!isAuthed) return { success: false, error: 'Unauthorized' };
+
+    const ok = await ErrorTrackerService.deleteLog(id);
+    revalidatePath('/[locale]/admin/logs', 'page');
+    return { success: ok };
+  } catch (e: unknown) {
+    console.error('deleteSystemLogAction error:', e);
+    return { success: false, error: e instanceof Error ? e.message : 'Failed to delete log' };
+  }
+}
+
+export async function clearResolvedLogsAction() {
+  try {
+    const { isAuthed } = await checkDiagnosticsAuth();
+    if (!isAuthed) return { success: false, error: 'Unauthorized' };
+
+    const count = await ErrorTrackerService.clearResolvedLogs();
+    revalidatePath('/[locale]/admin/logs', 'page');
+    return { success: true, count };
+  } catch (e: unknown) {
+    console.error('clearResolvedLogsAction error:', e);
+    return { success: false, error: e instanceof Error ? e.message : 'Failed to clear resolved logs' };
+  }
+}
+
+export async function clearAllLogsAction(level?: ErrorSeverity) {
+  try {
+    const { isAuthed } = await checkDiagnosticsAuth();
+    if (!isAuthed) return { success: false, error: 'Unauthorized' };
+
+    const count = await ErrorTrackerService.clearAllLogs(level);
+    revalidatePath('/[locale]/admin/logs', 'page');
+    return { success: true, count };
+  } catch (e: unknown) {
+    console.error('clearAllLogsAction error:', e);
+    return { success: false, error: e instanceof Error ? e.message : 'Failed to clear all logs' };
+  }
+}
+
 export async function purgeOldSystemLogsAction(days = 30) {
   try {
     const { isAuthed } = await checkDiagnosticsAuth();

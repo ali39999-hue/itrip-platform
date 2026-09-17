@@ -66,4 +66,12 @@ const vitest = spawnSync('npx', ['vitest', 'run', ...process.argv.slice(2), ...r
     NEXT_PUBLIC_DEMO_MODE: process.env.NEXT_PUBLIC_DEMO_MODE || 'true',
   },
 });
+if (vitest.status === 0) {
+  try {
+    const { syncMetricsAndDocs } = await import('./sync-metrics-and-docs.mjs');
+    syncMetricsAndDocs({ write: true });
+  } catch (syncErr) {
+    // Non-blocking
+  }
+}
 process.exit(vitest.status ?? 1);

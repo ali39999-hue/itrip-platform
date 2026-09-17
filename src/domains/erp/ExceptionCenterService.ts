@@ -98,6 +98,32 @@ export class ExceptionCenterService {
   }
 
   /**
+   * ERP-011: Maps operational exception types directly to actionable standard runbooks
+   */
+  static getRunbookPath(exceptionType: string): string {
+    switch (exceptionType) {
+      case 'PAYMENT_MISMATCH':
+      case 'PAYMENT_FAILED':
+      case 'GATEWAY_TIMEOUT':
+        return '/docs/runbooks/RUNBOOK_01_PAYMENT_GATEWAY_OUTAGE.md';
+      case 'SUPPLIER_TIMEOUT':
+      case 'TICKET_NOT_ISSUED':
+      case 'SUPPLIER_OUTAGE':
+      case 'GDS_ERROR':
+        return '/docs/runbooks/RUNBOOK_02_SUPPLIER_GDS_FAILURE.md';
+      case 'LEDGER_IMBALANCE':
+      case 'DISCREPANCY_DETECTED':
+        return '/docs/runbooks/RUNBOOK_03_LEDGER_IMBALANCE_ALERT.md';
+      case 'REFUND_TIMEOUT':
+      case 'REFUND_SLA_BREACH':
+      case 'HIGH_VALUE_REFUND':
+        return '/docs/runbooks/RUNBOOK_04_REFUND_ESCALATION_MAKER_CHECKER.md';
+      default:
+        return '/docs/runbooks/RUNBOOK_01_PAYMENT_GATEWAY_OUTAGE.md';
+    }
+  }
+
+  /**
    * Lists operational exceptions matching optional queue, severity, and status filters
    */
   static async getExceptions(filter?: ExceptionFilter) {
@@ -329,5 +355,31 @@ export class ExceptionCenterService {
     });
 
     return updated;
+  }
+
+  /**
+   * Permanently deletes an operational exception by ID (e.g. invalid, duplicate, or test issues).
+   */
+  static async deleteException(id: string): Promise<boolean> {
+    try {
+      await prisma.operationalException.delete({ where: { id } });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Purges all resolved or closed exceptions from the system.
+   */
+  static async purgeResolvedExceptions(): Promise<number> {
+    try {
+      const result = await prisma.operationalException.deleteMany({
+        where: { status: { in: ['RESOLVED', 'CLOSED'] } },
+      });
+      return result.count;
+    } catch {
+      return 0;
+    }
   }
 }

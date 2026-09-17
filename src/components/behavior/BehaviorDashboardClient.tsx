@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useLocale } from 'next-intl';
-import { MousePointerClick, Eye, Users, Route, Loader2, TrendingUp } from 'lucide-react';
+import { MousePointerClick, Eye, Users, Route, Loader2, TrendingUp, Sparkles } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
 import {
@@ -13,7 +13,11 @@ import {
   ErpBadge,
 } from '@/components/admin/erp-ui';
 import { HeatGrid } from '@/components/behavior/HeatGrid';
-import { getBehaviorOverviewAction, getRouteHeatmapAction } from '@/actions/behavior';
+import {
+  getBehaviorOverviewAction,
+  getRouteHeatmapAction,
+  seedSampleBehaviorEventsAction,
+} from '@/actions/behavior';
 import type {
   BehaviorOverview,
   RouteHeatmap,
@@ -33,6 +37,39 @@ export function BehaviorDashboardClient() {
   const [selectedRoute, setSelectedRoute] = useState<string>('');
   const [heat, setHeat] = useState<RouteHeatmap | null>(null);
   const [heatLoading, setHeatLoading] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+
+  const fetchOverview = () => {
+    setLoading(true);
+    getBehaviorOverviewAction(days)
+      .then((res) => {
+        if (res.success) {
+          const data = res.data as unknown as BehaviorOverview;
+          setOverview(data);
+          if (!selectedRoute && data.topRoutes.length > 0 && data.topRoutes[0]) {
+            setSelectedRoute(data.topRoutes[0].route);
+          }
+        } else {
+          setOverview(null);
+        }
+      })
+      .catch(() => setOverview(null))
+      .finally(() => setLoading(false));
+  };
+
+  const handleSeedData = async () => {
+    setSeeding(true);
+    try {
+      const res = await seedSampleBehaviorEventsAction();
+      if (res.success) {
+        fetchOverview();
+      }
+    } catch {
+      // Error handling
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -131,9 +168,20 @@ export function BehaviorDashboardClient() {
           icon={<Route size={32} className="text-line" />}
           title={lt(locale, { fa: 'هنوز داده‌ای ثبت نشده', en: 'No behavior data yet' })}
           description={lt(locale, {
-            fa: 'ترکر از همین نسخه روی همه صفحات فعال است؛ بعد از چند بازدید واقعی، هیت‌مپ اینجا جان می‌گیرد.',
-            en: 'The tracker is live from this release — the heatmap fills after real visits.',
+            fa: 'ترکر رفتار در تمام صفحات سایت فعال شد؛ برای مشاهده فوری نحوه کارکرد هیت‌مپ، می‌توانید داده‌های تستی تزریق کنید.',
+            en: 'Behavior tracker is active across all routes. You can generate sample clicks to test the heatmap immediately.',
           })}
+          action={
+            <button
+              type="button"
+              disabled={seeding}
+              onClick={handleSeedData}
+              className="mt-2 min-h-11 inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-xs font-black text-white hover:bg-brand-dark transition active:scale-[0.98] disabled:opacity-50"
+            >
+              {seeding ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+              <span>{lt(locale, { fa: 'تولید داده‌های نمونه هیت‌مپ', en: 'Generate Sample Heatmap Data' })}</span>
+            </button>
+          }
         />
       ) : (
         <>

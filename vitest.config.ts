@@ -31,6 +31,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@packages/contracts': path.resolve(__dirname, './packages/contracts/src/index.ts'),
+      '@packages/domain-types': path.resolve(__dirname, './packages/domain-types/src/index.ts'),
+      '@packages/money': path.resolve(__dirname, './packages/money/src/index.ts'),
+      '@packages/test-fixtures': path.resolve(__dirname, './packages/test-fixtures/src/index.ts'),
       // Server-action/domain tests transitively pull in next-auth, whose ESM
       // internals import 'next/server' (extensionless) while other files use
       // 'next/server.js' — alias every spelling so suites can load the auth

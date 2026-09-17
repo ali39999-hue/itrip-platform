@@ -106,6 +106,7 @@ import { LOCALE_FONT_VAR } from '@/lib/fonts';
 import { LocaleHtmlSync } from '@/components/layout/LocaleHtmlSync';
 import { AppChrome } from '@/components/layout/AppChrome';
 import { PwaBoot } from '@/components/pwa/PwaBoot';
+import { BehaviorTracker } from '@/components/analytics/BehaviorTracker';
 import { Analytics } from '@vercel/analytics/next';
 import Script from 'next/script';
 import { lt } from '@/lib/lt';
@@ -241,6 +242,7 @@ export default async function RootLayout({
             </AppChrome>
           </Providers>
           <PwaBoot />
+          <BehaviorTracker />
         </NextIntlClientProvider>
         <Analytics />
         {process.env.NEXT_PUBLIC_GA_ID && (

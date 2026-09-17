@@ -1,10 +1,10 @@
-# iTrip / Firuzo Platform v1.7.9
+# iTrip / Firuzo Platform v1.8.3
 
 > **Next-Generation International & Local Travel Booking Engine with AI Trip Planner & Multi-Currency Settlement**  
 > Built with Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, next-intl (5 Languages), Zustand, and Playwright E2E.
 
-[![Playwright Tests](https://img.shields.io/badge/Playwright-21%20E2E%20Specs%20%C3%97%202%20Browsers-brightgreen)](https://playwright.dev/)
-[![Vitest](https://img.shields.io/badge/Vitest-782%20Unit%20Tests%20Passed-brightgreen)](https://vitest.dev/)
+[![Playwright Tests](https://img.shields.io/badge/Playwright-33%20E2E%20Suites-brightgreen)](https://playwright.dev/)
+[![Vitest](https://img.shields.io/badge/Vitest-1035%20Unit%20Tests%20Passed-brightgreen)](https://vitest.dev/)
 [![Next.js](https://img.shields.io/badge/Next.js-16.3-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2-blue)](https://react.dev/)
 [![PWA Ready](https://img.shields.io/badge/PWA-Offline%20Ready-teal)](public/manifest.json)
@@ -52,7 +52,7 @@ graph TD
 
 | Domain Subsystem | Status | Implementation Details |
 | :--- | :---: | :--- |
-| **Database & Migrations** | `PRODUCTION-READY` | PostgreSQL 16 canonical, 15 Prisma migrations applied, strict indexes & foreign keys. |
+| **Database & Migrations** | `PRODUCTION-READY` | PostgreSQL 16 canonical, 34 Prisma migrations applied, strict indexes & foreign keys. |
 | **Inventory Concurrency** | `PRODUCTION-READY` | PostgreSQL row-locking (`FOR UPDATE`) & atomic conditional updates. Oversell = 0 guaranteed. |
 | **Financial Kernel & Money** | `PRODUCTION-READY` | Zero JavaScript floating-point arithmetic. 100% `Prisma.Decimal` Money kernel. |
 | **12-Stage Pricing Pipeline** | `PRODUCTION-READY` | Server-side authoritative calculations generating immutable `PriceSnapshot` audit records. |
