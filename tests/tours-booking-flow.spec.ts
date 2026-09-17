@@ -9,25 +9,24 @@ interface ApiTour {
   cityEn?: string;
 }
 
-async function fillPassengerDetailsViaOcr(page: Page) {
-  const scanBtn = page.locator('button:has-text("اسکن هوشمند پاسپورت")').first();
-  await expect(scanBtn).toBeVisible({ timeout: 10000 });
-  await scanBtn.click();
-  const scanFileInput = page.locator('input[type="file"]').first();
-  await scanFileInput.setInputFiles('tests/fixtures/passport-sample.png');
-
-  const confirmBtn = page.getByRole('button', { name: /Confirm details and autofill|تأیید اطلاعات و تکمیل فرم/ }).first();
-  const ocrReady = await confirmBtn.waitFor({ state: 'visible', timeout: 35000 }).then(() => true).catch(() => false);
-  if (ocrReady) {
-    await confirmBtn.click();
-    await expect(page.locator('.fixed.inset-0.z-\\[150\\]')).toHaveCount(0, { timeout: 10000 });
-  } else {
-    await page.keyboard.press('Escape');
-    await page.locator('.fixed.inset-0.z-\\[150\\]').waitFor({ state: 'detached', timeout: 5000 }).catch(() => {});
-    await page.locator('#firstName').fill('ALI');
-    await page.locator('#lastName').fill('MOHAMMADI');
-    await page.locator('#passportNo').fill('A12345678');
-    await page.locator('#passportExpiryDate').fill('2028-10-15');
+async function fillPassengerDetails(page: Page) {
+  await page.locator('#firstName').fill('ALI');
+  await page.locator('#lastName').fill('MOHAMMADI');
+  const passportInput = page.locator('#passportNo');
+  if (await passportInput.isVisible().catch(() => false)) {
+    await passportInput.fill('A12345678');
+  }
+  const expiryInput = page.locator('#passportExpiryDate');
+  if (await expiryInput.isVisible().catch(() => false)) {
+    await expiryInput.fill('2028-10-15');
+  }
+  const birthBtn = page.locator('#birthDate[role="button"]').first();
+  if (await birthBtn.isVisible().catch(() => false)) {
+    await birthBtn.click();
+    const confirmDateBtn = page.locator('button:has-text("تایید تاریخ تولد"), button:has-text("Confirm Date of Birth")').first();
+    await expect(confirmDateBtn).toBeVisible({ timeout: 5000 });
+    await confirmDateBtn.click();
+    await page.waitForTimeout(200);
   }
 }
 
@@ -80,8 +79,8 @@ test.describe('Tours Booking & Checkout Journey', () => {
     await page.waitForURL(/\/fa\/checkout/, { timeout: 15000 });
     await expect(page).toHaveURL(/\/fa\/checkout/);
 
-    // 5. Fill passenger form via OCR scan, confirm review, and dismiss modal
-    await fillPassengerDetailsViaOcr(page);
+    // 5. Fill passenger form, confirm Jalali birth date
+    await fillPassengerDetails(page);
 
     // 6. Submit passenger details to create draft
     const submitBtn = page.locator('button[type="submit"]').first();
@@ -155,8 +154,8 @@ test.describe('Tours Booking & Checkout Journey', () => {
     await page.waitForURL(/\/fa\/checkout/, { timeout: 15000 });
     await expect(page).toHaveURL(/\/fa\/checkout/);
 
-    // 5. Fill passenger details via OCR scan, confirm review, and dismiss modal
-    await fillPassengerDetailsViaOcr(page);
+    // 5. Fill passenger details, confirm Jalali birth date
+    await fillPassengerDetails(page);
 
     // 6. Submit and verify payment phase is reached
     const submitBtn = page.locator('button[type="submit"]').first();

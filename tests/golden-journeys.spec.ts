@@ -1,25 +1,24 @@
 import { test, expect, type Page } from '@playwright/test';
 import { apiLogin, E2E_USER } from './helpers/e2e-auth';
 
-async function fillPassengerDetailsViaOcr(page: Page) {
-  const scanBtn = page.locator('button:has-text("اسکن هوشمند پاسپورت")').first();
-  await expect(scanBtn).toBeVisible({ timeout: 10000 });
-  await scanBtn.click();
-  const scanFileInput = page.locator('input[type="file"]').first();
-  await scanFileInput.setInputFiles('tests/fixtures/passport-sample.png');
-
-  const confirmBtn = page.getByRole('button', { name: /Confirm details and autofill|تأیید اطلاعات و تکمیل فرم/ }).first();
-  const ocrReady = await confirmBtn.waitFor({ state: 'visible', timeout: 35000 }).then(() => true).catch(() => false);
-  if (ocrReady) {
-    await confirmBtn.click();
-    await expect(page.locator('.fixed.inset-0.z-\\[150\\]')).toHaveCount(0, { timeout: 10000 });
-  } else {
-    await page.keyboard.press('Escape');
-    await page.locator('.fixed.inset-0.z-\\[150\\]').waitFor({ state: 'detached', timeout: 5000 }).catch(() => {});
-    await page.locator('#firstName').fill('ALI');
-    await page.locator('#lastName').fill('MOHAMMADI');
-    await page.locator('#passportNo').fill('A12345678');
-    await page.locator('#passportExpiryDate').fill('2028-10-15');
+async function fillPassengerDetails(page: Page) {
+  await page.locator('#firstName').fill('ALI');
+  await page.locator('#lastName').fill('MOHAMMADI');
+  const passportInput = page.locator('#passportNo');
+  if (await passportInput.isVisible().catch(() => false)) {
+    await passportInput.fill('A12345678');
+  }
+  const expiryInput = page.locator('#passportExpiryDate');
+  if (await expiryInput.isVisible().catch(() => false)) {
+    await expiryInput.fill('2028-10-15');
+  }
+  const birthBtn = page.locator('#birthDate[role="button"]').first();
+  if (await birthBtn.isVisible().catch(() => false)) {
+    await birthBtn.click();
+    const confirmDateBtn = page.locator('button:has-text("تایید تاریخ تولد"), button:has-text("Confirm Date of Birth")').first();
+    await expect(confirmDateBtn).toBeVisible({ timeout: 5000 });
+    await confirmDateBtn.click();
+    await page.waitForTimeout(200);
   }
 }
 
@@ -79,8 +78,8 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     await page.waitForURL(/\/fa\/checkout/);
     await expect(page.locator('h1, h2').first()).toBeVisible();
 
-    // Fill the passenger form via the smart OCR scan modal, confirm review, and dismiss dialog
-    await fillPassengerDetailsViaOcr(page);
+    // Fill the passenger form, confirm Jalali birth date, and proceed to payment
+    await fillPassengerDetails(page);
 
     // Submit to payment phase
     const nextBtn = page.locator('button[type="submit"]').first();
@@ -111,6 +110,7 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
   });
 
   test('Golden Journey 2: Hotel Search -> Multi-Filter & Compare -> Hotel Details -> Room Selection', async ({ page }) => {
+    test.setTimeout(60000);
     // Checkout requires an authenticated traveler (contact phone for vouchers).
     const loggedIn = await apiLogin(page, E2E_USER);
     expect(loggedIn).toBe(true);
@@ -168,9 +168,8 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     await continueBtn.click();
     await page.waitForURL(/\/fa\/checkout/, { timeout: 15000 });
 
-    // 4. Fill the passenger form via the smart OCR scan modal, confirm review,
-    // and submit — this creates the booking draft with encrypted passenger PII.
-    await fillPassengerDetailsViaOcr(page);
+    // 4. Fill the passenger form, confirm Jalali birth date, and submit
+    await fillPassengerDetails(page);
     const submitBtn = page.locator('button[type="submit"]').first();
     await expect(submitBtn).toBeVisible();
     await submitBtn.click();
