@@ -103,7 +103,7 @@ if (!isDev && process.env.DEMO_MODE === 'true') {
 }
 
 const nextConfig: NextConfig = {
-  output: process.env.NEXT_OUTPUT_STANDALONE === 'false' ? undefined : 'standalone',
+  output: !process.env.VERCEL && process.env.NEXT_OUTPUT_STANDALONE === 'true' ? 'standalone' : undefined,
   poweredByHeader: false,
   reactStrictMode: true,
   serverExternalPackages: ['@prisma/client', 'bcryptjs'],
