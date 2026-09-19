@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { Input } from '@/components/ui/input';
+import { IbanInput } from '@/components/ui/iban-input';
 import { ErpBadge, ErpPageHeader } from '@/components/admin/erp-ui';
 import {
   saveSmsSettingsAction,
@@ -565,11 +566,10 @@ export function AdminSettingsClientPage({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-sub mb-1">شماره شبا (اختیاری)</label>
-                      <Input
+                      {/* Live mod-97 validation + bank detection (vibefarsi pattern). */}
+                      <IbanInput
                         value={newCard.iban}
-                        onChange={(e) => setNewCard({ ...newCard, iban: e.target.value })}
-                        placeholder="IR..."
-                        className="font-mono text-xs h-10 rounded-xl"
+                        onChange={(iban) => setNewCard({ ...newCard, iban })}
                       />
                     </div>
                     <div>

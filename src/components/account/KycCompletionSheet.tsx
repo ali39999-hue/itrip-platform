@@ -15,6 +15,7 @@ import {
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
 import { validateNationalId } from '@/lib/iranian-commerce';
+import { NationalIdInput } from '@/components/ui/national-id-input';
 import {
   normalizeNationalId,
   isIdentityStepValid,
@@ -374,17 +375,12 @@ export function KycCompletionSheet({ open, onClose, initial, onCompleted }: KycC
                       {lt(locale, { fa: 'کد ملی (۱۰ رقم)', en: 'National ID (10 digits)', ar: 'الرقم الوطني (10 أرقام)', zh: '身份证号（10位）', ru: 'Нац. ID (10 цифр)' })}
                       <span className="text-rose-500"> *</span>
                     </label>
-                    <input
+                    {/* 3-6-1 card grouping + live checksum verdict (vibefarsi pattern,
+                        checksum from @/lib/iranian-commerce). */}
+                    <NationalIdInput
                       id="kyc-national-id"
-                      type="text"
-                      dir="ltr"
-                      inputMode="numeric"
-                      autoComplete="off"
-                      maxLength={10}
                       value={draft.nationalId}
-                      placeholder="0012345678"
-                      onChange={(e) => setDraft({ ...draft, nationalId: normalizeNationalId(e.target.value).slice(0, 10) })}
-                      className={`${inputBase} font-mono tracking-widest`}
+                      onChange={(digits) => setDraft({ ...draft, nationalId: digits })}
                     />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

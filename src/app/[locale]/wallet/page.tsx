@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { AmountInput } from '@/components/ui/amount-input';
 import { getWallet, requestWalletTopUp, exchangeWalletCurrency } from '@/actions/booking';
 import {
   Wallet as WalletIcon,
@@ -496,13 +497,26 @@ export default function WalletPage() {
                       ru: `Сумма (${depositCurrency})`,
                     })}
                   </label>
-                  <Input
-                    type="number"
-                    value={depositAmount}
-                    onChange={(e) => setDepositAmount(e.target.value)}
-                    placeholder="5,000,000"
-                    className="font-bold text-lg font-mono"
-                  />
+                  {depositCurrency === 'IRR' ? (
+                    /* IRR rail: Persian digits + thousands separator while typing,
+                       amount spelled out underneath (mistake prevention). */
+                    <AmountInput
+                      id="wallet-deposit-amount"
+                      value={depositAmount === '' ? null : Number(depositAmount)}
+                      onChange={(v) => setDepositAmount(v === null ? '' : String(v))}
+                      unit={lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '托曼', ru: 'томан' })}
+                      placeholder="۵٬۰۰۰٬۰۰۰"
+                      className="font-bold text-lg"
+                    />
+                  ) : (
+                    <Input
+                      type="number"
+                      value={depositAmount}
+                      onChange={(e) => setDepositAmount(e.target.value)}
+                      placeholder="5,000,000"
+                      className="font-bold text-lg font-mono"
+                    />
+                  )}
                 </div>
 
                 <div className="grid grid-cols-3 gap-2">

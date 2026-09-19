@@ -5,16 +5,27 @@ import { InvoiceDomainService, getStatutorySellerInfo, STATUTORY_SELLER_INFO } f
 
 describe('InvoiceDomainService - Statutory Invoicing Suite', () => {
   const suffix = `inv_${Date.now().toString(36)}_${randomBytes(3).toString('hex')}`;
+  // Test DB keeps rows across runs — a purely random 7-digit tail can collide
+  // with a leftover user. Derive phones from the run-unique suffix + a per-user
+  // tag so the two accounts never share a number (within or across runs).
+  const phoneBase = Date.now().toString().slice(-6);
+  const uniquePhone = (tag: string) => `+98912${phoneBase}${tag}`;
   let userAId = '';
   let userBId = '';
   let bookingId = '';
   let invoiceId = '';
 
   beforeAll(async () => {
+    // Self-heal the shared itrip_test DB: a crashed earlier run leaves rows
+    // behind (afterAll never ran), and a phone/email unique hit then fails
+    // beforeAll. Remove any test-scheme leftovers before creating fresh ones.
+    await prisma.user.deleteMany({
+      where: { OR: [{ email: { startsWith: 'inva_' } }, { email: { startsWith: 'invb_' } }] },
+    });
     const userA = await prisma.user.create({
       data: {
         email: `inva_${suffix}@firuzo.com`,
-        phone: `+98912${Math.floor(1000000 + Math.random() * 9000000)}`,
+        phone: uniquePhone('1'),
         name: 'بهرام راد',
         firstNameFa: 'بهرام',
         lastNameFa: 'راد',
@@ -26,7 +37,7 @@ describe('InvoiceDomainService - Statutory Invoicing Suite', () => {
     const userB = await prisma.user.create({
       data: {
         email: `invb_${suffix}@firuzo.com`,
-        phone: `+98912${Math.floor(1000000 + Math.random() * 9000000)}`,
+        phone: uniquePhone('2'),
         name: 'کاربر غیرمجاز',
       },
     });

@@ -14,8 +14,11 @@ test.describe('Wallet Top-Up Journey', () => {
     await page.goto('/fa/wallet', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 15000 });
 
-    // 3. Ensure deposit form is visible
-    const amountInput = page.locator('input[placeholder*="مبلغ"], input[type="number"]').first();
+    // 3. Ensure deposit form is visible. The IRR rail uses the AmountInput
+    // (inputmode=numeric; Persian digits + thousands separators as you type,
+    // amount spelled out underneath) — .fill() feeds Latin digits which the
+    // field normalizes. Non-IRR rails keep a plain number input.
+    const amountInput = page.locator('input[inputmode="numeric"], input[placeholder*="مبلغ"], input[type="number"]').first();
     await expect(amountInput).toBeVisible({ timeout: 10000 });
     await amountInput.fill('1000000');
 
