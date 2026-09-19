@@ -167,4 +167,50 @@ describe('Tour Reservation Lifecycle & Unpaid Booking Cart Invariants (§13–§
     const tamperedVerification = verifyVoucherToken(tampered);
     expect(tamperedVerification.valid).toBe(false);
   });
+
+  it('5. Invariant: EXPIRED or CANCELLED booking cannot be paid via confirmPayment', async () => {
+    // 5a. Expired booking
+    const expiredBooking = await prisma.booking.create({
+      data: {
+        reference: `FZ-EXP-PAY-${suffix}`,
+        customerId: testUserId,
+        totalAmount: 10_000_000,
+        currency: 'IRR',
+        status: 'EXPIRED',
+        paymentStatus: 'INITIATED',
+      },
+    });
+    createdBookingIds.push(expiredBooking.id);
+
+    await expect(
+      BookingApplicationService.confirmPayment({
+        bookingId: expiredBooking.id,
+        actorId: testUserId,
+        paymentMethod: 'wallet_irr',
+        idempotencyKey: `idem_exp_${suffix}`,
+      })
+    ).rejects.toThrow(/not payable in its current state: EXPIRED/i);
+
+    // 5b. Cancelled booking
+    const cancelledBooking = await prisma.booking.create({
+      data: {
+        reference: `FZ-CANC-PAY-${suffix}`,
+        customerId: testUserId,
+        totalAmount: 10_000_000,
+        currency: 'IRR',
+        status: 'CANCELLED',
+        paymentStatus: 'INITIATED',
+      },
+    });
+    createdBookingIds.push(cancelledBooking.id);
+
+    await expect(
+      BookingApplicationService.confirmPayment({
+        bookingId: cancelledBooking.id,
+        actorId: testUserId,
+        paymentMethod: 'wallet_irr',
+        idempotencyKey: `idem_canc_${suffix}`,
+      })
+    ).rejects.toThrow(/not payable in its current state: CANCELLED/i);
+  });
 });

@@ -162,7 +162,7 @@ export function SpecialOffersSection() {
                   <div className="flex items-end justify-between gap-3 pt-3 border-t border-line/70">
                     <div>
                       <span className="text-[11px] text-sub font-bold block">{t('offersStarts')}</span>
-                      <span className="text-[11px] text-emerald-600 font-bold block">{lt(locale, { fa: 'مشاهده برنامه و رزرو', en: 'View Itinerary', ar: 'عرض البرنامج والحجز', zh: '查看行程与预订', ru: 'Программа и бронь' })}</span>
+                      <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold block">{lt(locale, { fa: 'مشاهده برنامه و رزرو', en: 'View Itinerary', ar: 'عرض البرنامج والحجز', zh: '查看行程与预订', ru: 'Программа и бронь' })}</span>
                     </div>
                     <span className="text-[17px] font-black text-brand-dark font-price num text-end leading-tight">
                       {formatMoney(offer.fromPrice, c.currency, locale)}

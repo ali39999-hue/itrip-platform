@@ -499,7 +499,7 @@ function FlightSearchInner() {
                 <button
                   type="button"
                   onClick={() => setPrice([priceBounds.min, priceBounds.max])}
-                  className="text-[11px] text-brand-dark font-bold hover:underline cursor-pointer"
+                  className="inline-flex min-h-[24px] min-w-[24px] items-center justify-center px-2 py-1 text-[11px] text-brand-dark font-bold hover:underline cursor-pointer"
                 >
                   {lt(locale, { fa: 'ریست', en: 'Reset', ar: 'إعادة ضبط', zh: '重置', ru: 'Сброс' })}
                 </button>
@@ -624,7 +624,7 @@ function FlightSearchInner() {
                   key={label}
                   className={`flex items-center justify-between p-2 rounded-xl border transition ${
                     checked ? 'bg-mint/40 border-brand/40 text-brand-dark shadow-2xs' : 'border-line/60 bg-surface hover:bg-soft/70 text-ink'
-                  } ${count === 0 ? 'opacity-40 pointer-events-none' : 'cursor-pointer'}`}
+                  } ${count === 0 ? 'opacity-70 pointer-events-none text-ink' : 'cursor-pointer'}`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span

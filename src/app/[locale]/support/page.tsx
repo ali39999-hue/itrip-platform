@@ -339,7 +339,7 @@ export default function SupportPage() {
               <div>
                 <h3 className="font-black text-base text-ink mb-1">{t('liveChat')}</h3>
                 <p className="text-xs font-bold text-sub mb-2">{lt(locale, { fa: 'گفتگوی آنلاین با کارشناسان پشتیبانی', en: 'Chat instantly with dedicated experts', ar: 'دردش مع خبرائنا مباشرة', zh: '与在线客服即时沟通', ru: 'Мгновенный чат с экспертами' })}</p>
-                <span className="inline-flex items-center gap-1.5 text-xs font-black text-success">
+                <span className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-300">
                   <span className="w-2 h-2 rounded-full bg-success animate-ping" />
                   {lt(locale, { fa: 'آنلاین — آماده پاسخگویی', en: 'Online — Ready to assist', ar: 'متصلون الآن', zh: '在线 — 随时待命', ru: 'Онлайн' })}
                 </span>

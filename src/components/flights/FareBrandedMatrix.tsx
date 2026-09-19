@@ -200,20 +200,21 @@ export function FareBrandedMatrix({
               </div>
 
               <div className="pt-5 mt-4 border-t border-line/60">
-                <button
-                  type="button"
-                  tabIndex={-1}
+                {/* Decorative affordance only: the outer role="radio" card owns the
+                    interaction. A real <button> here would nest an interactive
+                    control inside another (axe nested-interactive). */}
+                <span
                   aria-hidden="true"
                   className={`w-full min-h-[44px] rounded-xl font-black text-xs transition flex items-center justify-center gap-1.5 ${
                     isSelected
-                      ? 'bg-brand text-surface shadow-xs'
+                      ? 'bg-brand text-ink shadow-xs'
                       : 'bg-soft hover:bg-line text-ink'
                   }`}
                 >
                   {isSelected
                     ? lt(locale, { fa: 'انتخاب شده', en: 'Selected', ar: 'محدد', zh: '已选择', ru: 'Выбрано' })
                     : lt(locale, { fa: 'انتخاب این کلاس نرخی', en: 'Select this fare', ar: 'اختر هذه الباقة', zh: '选择此等级', ru: 'Выбрать этот тариф' })}
-                </button>
+                </span>
               </div>
             </div>
           );

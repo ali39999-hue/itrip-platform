@@ -103,12 +103,20 @@ function getUnitTestMetrics() {
     try {
       const raw = fs.readFileSync(unitJsonPath, 'utf8');
       const passMatch = raw.match(/"numPassedTests":\s*(\d+)/);
-      const suiteMatch = raw.match(/"numTotalTestSuites":\s*(\d+)/);
       if (passMatch) {
+        // numTotalTestSuites counts describe() blocks, NOT test files. The
+        // vitest JSON reporter emits one entry per FILE in testResults.
+        let fileCount = 0;
+        const m = raw.match(/"testResults":\s*\[/);
+        if (m) {
+          const tail = raw.slice(m.index);
+          // Each testResults entry begins with "assertionResults"; count them.
+          fileCount = (tail.match(/"assertionResults":\s*\[/g) || []).length;
+        }
         return {
           passed: parseInt(passMatch[1], 10),
           total: parseInt(passMatch[1], 10),
-          files: suiteMatch ? parseInt(suiteMatch[1], 10) : 420,
+          files: fileCount || 0,
         };
       }
     } catch {
@@ -284,7 +292,7 @@ export function syncMetricsAndDocs(options = {}) {
     }
     // Section 1 "Live Deployment State" bullet.
     matrix = matrix.replace(
-      /- \*\*Live Deployment State:\*\* `https:\/\/itrip-platform\.vercel\.app\/` running verified version `[\d.]+` on commit `[0-9a-f]+` \(deployed [^)]*\), probed live via [^\n]*/,
+      /- \*\*Live Deployment State:\*\* `https:\/\/itrip-platform\.vercel\.app\/` running verified version `[\d.]+` on commit `[0-9a-f]+` \([^)]*\), probed live via [^\n]*/,
       `- **Live Deployment State:** \`https://itrip-platform.vercel.app/\` running verified version \`${provenance.liveVersion}\` on commit \`${provenance.liveCommit}\` (${provenance.verdict}), probed live via \`/api/version\`, \`/api/health/live\`, \`/api/capabilities\` — ${provenance.note}`
     );
     // Section 2 provenance table rows.

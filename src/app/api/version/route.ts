@@ -1,17 +1,21 @@
 import { NextResponse } from 'next/server';
-import { APP_VERSION, COMMIT_SHA } from '@/lib/version';
+import { getCanonicalReleaseIdentity } from '@/lib/version';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET() {
+  const identity = getCanonicalReleaseIdentity();
+
   return NextResponse.json({
     name: 'itrip-platform',
     brand: 'Firuzo (فیروزو)',
-    version: APP_VERSION,
-    commitSha: COMMIT_SHA,
-    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
+    version: identity.version,
+    commitSha: identity.commitSha,
+    buildId: identity.buildId,
+    environment: identity.environment,
+    deploymentId: identity.deploymentId,
     runtime: 'Node.js ' + process.version,
-    timestamp: new Date().toISOString(),
+    timestamp: identity.timestamp,
   });
 }

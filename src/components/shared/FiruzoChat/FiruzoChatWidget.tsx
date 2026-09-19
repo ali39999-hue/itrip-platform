@@ -227,7 +227,7 @@ export function FiruzoChatWidget() {
               ru: 'Чат с ИИ-помощником Firuzo',
             })}
             aria-expanded={open}
-            className="relative min-h-[48px] w-[48px] md:w-auto md:h-12 md:px-4 rounded-full bg-brand hover:bg-brand-2 text-surface border border-brand-dark/30 backdrop-blur-md shadow-elev-2 hover:shadow-elev-3 transition-all inline-flex items-center justify-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark active:scale-[0.98]"
+            className="relative min-h-[48px] w-[48px] md:w-auto md:h-12 md:px-4 rounded-full bg-brand-dark hover:bg-deep text-surface border border-deep/40 backdrop-blur-md shadow-elev-2 hover:shadow-elev-3 transition-all inline-flex items-center justify-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark active:scale-[0.98]"
           >
             <FiruzoMascotHead size={30} />
             <span className="max-md:hidden text-xs font-black text-surface">

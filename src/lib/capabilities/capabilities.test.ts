@@ -16,11 +16,19 @@ describe('Product Capability Registry (CAP-001)', () => {
     for (const key of keys) {
       const cap = all[key as keyof typeof all];
       expect(cap.key).toBe(key);
-      expect(cap.name.fa).toBeTruthy();
-      expect(cap.name.en).toBeTruthy();
-      expect(cap.description.fa).toBeTruthy();
+      // Inline copy is OPTIONAL: entries without it (e.g. services.cip /
+      // services.insurance) are enriched server-side from messages/*.json →
+      // capabilityRegistry (I18N-103). What must always hold: either inline
+      // copy or an evidence path backing the feature.
       expect(cap.evidencePath).toBeTruthy();
       expect(['LIVE', 'BETA', 'SIMULATED', 'MOCK', 'DISABLED', 'COMING_SOON']).toContain(cap.status);
+      if (cap.name) {
+        expect(cap.name.fa).toBeTruthy();
+        expect(cap.name.en).toBeTruthy();
+      }
+      if (cap.description) {
+        expect(cap.description.fa).toBeTruthy();
+      }
     }
   });
 

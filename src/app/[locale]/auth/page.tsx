@@ -51,7 +51,7 @@ export default function AuthPage() {
   // Channel badges derive from real provider configuration — a channel whose
   // provider is unconfigured must never claim LIVE (honest SIM labeling).
   // While capabilities are still fetching, badges render invisibly (no wrong flash).
-  const SIM_BADGE_CLS = 'text-[10px] font-black text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 rounded-full';
+  const SIM_BADGE_CLS = 'text-[10px] font-black text-amber-900 dark:text-amber-200 bg-amber-100 dark:bg-amber-400/10 px-1.5 rounded-full';
   const SIM_BADGE_TEXT = lt(locale, { fa: 'شبیه‌سازی', en: 'SIM', ar: 'محاكاة', zh: '模拟', ru: 'СИМ' });
   const channelBadge = (live: boolean | undefined, liveText: string, liveCls: string) => {
     if (capabilities === null) return { text: '', cls: 'invisible' };
@@ -59,12 +59,12 @@ export default function AuthPage() {
       ? { text: liveText, cls: liveCls }
       : { text: SIM_BADGE_TEXT, cls: SIM_BADGE_CLS };
   };
-  const smsBadge = channelBadge(capabilities?.smsLive, 'LIVE', 'text-[8.5px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 rounded-full');
-  const emailBadge = channelBadge(capabilities?.emailLive, 'LIVE', 'text-[8.5px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 rounded-full');
-  const telegramBadge = channelBadge(capabilities?.telegramBot, 'BETA', 'text-[8.5px] font-black text-sky-600 bg-sky-500/10 px-1.5 rounded-full');
-  const baleBadge = channelBadge(capabilities?.baleLive, 'BETA', 'text-[8.5px] font-black text-teal-600 bg-teal-500/10 px-1.5 rounded-full');
-  const whatsappBadge = channelBadge(capabilities?.whatsappLive, 'BETA', 'text-[8.5px] font-black text-emerald-600 bg-emerald-500/10 px-1.5 rounded-full');
-  const wechatBadge = channelBadge(capabilities?.wechatQr, 'BETA', 'text-[8.5px] font-black text-emerald-600 bg-emerald-500/10 px-1.5 rounded-full');
+  const smsBadge = channelBadge(capabilities?.smsLive, 'LIVE', 'text-[8.5px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-1.5 rounded-full');
+  const emailBadge = channelBadge(capabilities?.emailLive, 'LIVE', 'text-[8.5px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-1.5 rounded-full');
+  const telegramBadge = channelBadge(capabilities?.telegramBot, 'BETA', 'text-[8.5px] font-black text-sky-700 dark:text-sky-300 bg-sky-500/10 px-1.5 rounded-full');
+  const baleBadge = channelBadge(capabilities?.baleLive, 'BETA', 'text-[8.5px] font-black text-teal-700 dark:text-teal-300 bg-teal-500/10 px-1.5 rounded-full');
+  const whatsappBadge = channelBadge(capabilities?.whatsappLive, 'BETA', 'text-[8.5px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-1.5 rounded-full');
+  const wechatBadge = channelBadge(capabilities?.wechatQr, 'BETA', 'text-[8.5px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-1.5 rounded-full');
 
   // Return the visitor to where they came from (checkout, my-trips, wallet…).
   // Only accept safe internal paths. Supports both callbackUrl and redirect parameters.
@@ -451,14 +451,14 @@ export default function AuthPage() {
               <button
                 type="button"
                 onClick={() => { setAuthMode('otp'); setError(''); }}
-                className={`flex-1 min-h-[44px] py-2 rounded-xl text-center transition ${authMode === 'otp' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
+                className={`flex-1 min-h-[44px] py-2 rounded-xl text-center transition ${authMode === 'otp' ? 'bg-surface text-brand-dark shadow-xs' : 'text-sub hover:text-ink'}`}
               >
                 {lt(locale, { fa: 'ورود با کد یک‌بار مصرف', en: 'One-Time Code (OTP)', ar: 'رمز لمرة واحدة', zh: '短信/邮箱验证码', ru: 'Одноразовый код' })}
               </button>
               <button
                 type="button"
                 onClick={() => { setAuthMode('password'); setError(''); }}
-                className={`flex-1 min-h-[44px] py-2 rounded-xl text-center transition ${authMode === 'password' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
+                className={`flex-1 min-h-[44px] py-2 rounded-xl text-center transition ${authMode === 'password' ? 'bg-surface text-brand-dark shadow-xs' : 'text-sub hover:text-ink'}`}
               >
                 {lt(locale, { fa: 'ورود با کلمه عبور (ERP)', en: 'Password Login (ERP)', ar: 'كلمة المرور (ERP)', zh: '密码登录 (ERP)', ru: 'Пароль (ERP)' })}
               </button>
@@ -499,7 +499,7 @@ export default function AuthPage() {
                   <button
                     type="button"
                     onClick={() => { setChannel('phone'); setIdentifier(''); resetEmailFlow(); }}
-                    className={`min-h-[44px] py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'phone' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
+                    className={`min-h-[44px] py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'phone' ? 'bg-surface text-brand-dark shadow-xs' : 'text-sub hover:text-ink'}`}
                     title="SMS / Phone"
                   >
                     <Phone size={16} />
@@ -509,7 +509,7 @@ export default function AuthPage() {
                   <button
                     type="button"
                     onClick={() => { setChannel('email'); setIdentifier(''); resetEmailFlow(); }}
-                    className={`min-h-[44px] py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'email' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
+                    className={`min-h-[44px] py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'email' ? 'bg-surface text-brand-dark shadow-xs' : 'text-sub hover:text-ink'}`}
                     title="Email"
                   >
                     <Mail size={16} />
@@ -961,7 +961,7 @@ export default function AuthPage() {
                 </button>
 
                 <div className="pt-2 text-center text-xs text-sub">
-                  <span className="opacity-80">
+                  <span>
                     {lt(locale, {
                       fa: 'حساب پیش‌فرض مدیر: admin@firuzo.com',
                       en: 'Default Admin: admin@firuzo.com',

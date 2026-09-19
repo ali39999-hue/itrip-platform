@@ -443,7 +443,7 @@ export function HotelSearchHeader({
         <div className="pt-5 flex justify-between items-end gap-4 mb-3">
           <div>
             <div className="flex items-center gap-2 text-xs font-bold text-sub mb-1">
-              <Link href="/hotels" className="hover:underline text-brand">
+              <Link href="/hotels" className="hover:underline text-brand-dark">
                 {lt(locale, { fa: 'رزرو هتل', en: 'Hotels', ar: 'حجز الفنادق', zh: '预订酒店', ru: 'Бронирование отелей' })}
               </Link>
               <span>/</span>

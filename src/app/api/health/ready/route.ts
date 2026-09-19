@@ -14,6 +14,7 @@ import { createConnection } from 'node:net';
 import { prisma } from '@/lib/prisma';
 import { ReconciliationService } from '@/domains/ledger/ReconciliationService';
 import { ensureDatabaseSchemaHealed } from '@/lib/db-schema-guard';
+import { getCanonicalReleaseIdentity } from '@/lib/version';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -196,9 +197,13 @@ export async function GET() {
   }
 
   const statusCode = overallHealthy ? 200 : 503;
+  const identity = getCanonicalReleaseIdentity();
   return NextResponse.json(
     {
       status: overallHealthy ? 'ready' : 'not_ready',
+      version: identity.version,
+      commitSha: identity.commitSha,
+      environment: identity.environment,
       timestamp: new Date().toISOString(),
       checks,
     },

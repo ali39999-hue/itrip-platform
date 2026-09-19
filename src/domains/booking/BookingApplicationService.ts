@@ -633,7 +633,7 @@ export class BookingApplicationService {
       branchId: booking.branchId,
     });
 
-    if (['CONFIRMED', 'CANCELLED', 'REFUNDED', 'REFUND_INITIATED', 'CANCEL_REQUESTED', 'CANCELLING'].includes(booking.status)) {
+    if (['CONFIRMED', 'CANCELLED', 'REFUNDED', 'REFUND_INITIATED', 'CANCEL_REQUESTED', 'CANCELLING', 'EXPIRED', 'FAILED'].includes(booking.status)) {
       throw new Error(`Booking is not payable in its current state: ${booking.status}`);
     }
 

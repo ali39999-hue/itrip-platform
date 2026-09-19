@@ -263,6 +263,9 @@
   /* Brand — فیروزه‌ای Firuzo */
   --color-brand: #00a9a5;
   --color-brand-2: #049290;
+  /* لیبل روی سطح برند: روشن (#f7ffff روی #046e6b = ۵.۹:۱)؛ در دارک تیره می‌چرخد
+     (الگوی shadcn: مقدار در :root/.dark، ارجاع اینجا) */
+  --color-brand-foreground: var(--brand-foreground);
   /* توکن‌های حالت‌پذیر با indirection — تا dark mode واقعاً flip کند
      (الگوی shadcn: مقدار در :root/.dark، ارجاع اینجا) */
   --color-brand-dark: var(--brand-dark);
@@ -334,6 +337,7 @@
 
   /* FIRUZO light values (دارک در بلاک .dark پایین) */
   --brand-dark: #046e6b;
+  --brand-foreground: #f7ffff;
   --deep: #053f3e;
   --mint: #e4f6f5;
   --ink: #14201f;
@@ -345,8 +349,8 @@
   --line: #dce5e4;
   --price: #9c6209;
   --gold-soft: #fef6e7;
-  --rose-warm: #d8442f;
-  --success: #1e8e5a;
+  --rose-warm: #c93a26;
+  --success: #167a4c;
 
   --card: #ffffff;
   --card-foreground: #14201f;
@@ -415,6 +419,7 @@
 
   /* FIRUZO dark system — سطح و متن‌های نِیوترال با همان شخصیت فیروزه‌ای */
   --brand-dark: #7fd6d2;
+  --brand-foreground: #04292a;
   --deep: #022423;
   --mint: #05302f;
   --ink: #eaf4f3;
@@ -483,6 +488,7 @@
    mint-bright می‌چرخد و لیبل تیرهٔ قاعدهٔ بالا رویش می‌نشیند. */
 a.bg-brand, button.bg-brand, [role="button"].bg-brand, label.bg-brand {
   background-color: var(--color-brand-dark);
+  color: #f7ffff;
 }
 
 @layer base {

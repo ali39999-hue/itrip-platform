@@ -48,9 +48,9 @@
     "support24Title": "全天候支持",
     "support24Desc": "全天候即时响应",
     "trustTitle": "服务正品保障",
-    "trustDesc": "直接与供应商确认预订",
+    "trustDesc": "确认预订，自动出票与实时状态追踪",
     "payTitle": "多币种支付",
-    "payDesc": "银联、Visa、USDT 与万事达",
+    "payDesc": "Shetab卡与多币种钱包（Visa与数字货币即将推出）",
     "smartTitle": "智能个性化",
     "smartDesc": "依您的喜好智能规划",
     "newsletterTitle": "优惠订阅",
@@ -140,7 +140,11 @@
   },
   "Metadata": {
     "title": "Firuzo | 一站式智能旅行平台",
-    "description": "机票、酒店、旅游、接送、签证与多币种钱包——一个智能平台搞定全部旅行需求。"
+    "description": "机票、酒店、旅游、接送、签证与多币种钱包——一个智能平台搞定全部旅行需求。",
+    "cart": {
+      "title": "旅行购物车 | Firuzo",
+      "description": "在结算前查看并管理您选择的机票、酒店、旅游、CIP贵宾室与保险。"
+    }
   },
   "Logo": {
     "name": "Firuzo",
@@ -1034,6 +1038,48 @@
       "hoursOnline": "在线支持：24/7",
       "callCta": "立即致电",
       "supportCta": "帮助中心"
+    }
+  },
+  "CapabilityRegistry": {
+    "cip": {
+      "name": {
+        "fa": "تشریفات اختصاصی فرودگاهی (CIP)",
+        "en": "Airport CIP Lounge",
+        "ar": "الصالة المميزة في المطار",
+        "zh": "机场贵宾服务",
+        "ru": "VIP-зал аэропорта (CIP)"
+      },
+      "description": {
+        "fa": "رزرو آنلاین جایگاه تشریفات CIP فرودگاه‌های امام، مشهد، شیراز، کیش و دبی با گیت‌های اختصاصی گذرنامه، ترانسفر باند و بوفه سلف‌سرویس",
+        "en": "Online booking for airport executive CIP lounges with fast-track passport, tarmac transfer and day suites",
+        "ar": "حجز الصالات المميزة عبر الإنترنت مع بوابة جوازات سريعة ونقل وبوفيه",
+        "zh": "在线预订机场贵宾休息室，含快速通关、摆渡车与自助餐台",
+        "ru": "Онлайн-бронирование VIP-залов с ускоренным паспортным контролем и трансфером"
+      },
+      "badgeLabel": {
+        "fa": "فعال",
+        "en": "Live"
+      }
+    },
+    "insurance": {
+      "name": {
+        "fa": "مقایسه‌گر بیمه مسافرتی بین‌المللی",
+        "en": "Travel Insurance Comparator",
+        "ar": "مقارنة تأمين السفر الدولي",
+        "zh": "国际旅行保险比较",
+        "ru": "Сравнение туристических страховок"
+      },
+      "description": {
+        "fa": "مقایسه آنلاین و صدور آنی بیمه‌نامه مسافرتی از شرکت‌های کوثر، رازی، ایران، سامان و پاسارگاد با پوشش شرکت‌های کمک‌رسان سوئیس اسیست و رمد",
+        "en": "Real-time comparison and instant issuance for travel insurance policies compliant with Schengen embassies",
+        "ar": "مقارنة وإصدار فوري لوثيقة السفر من شركات التأمين الكبرى مع تغطية المساعدة الدولية",
+        "zh": "实时比较并即时签发符合申根使馆要求的旅行保险",
+        "ru": "Сравнение и мгновенное оформление полисов, соответствующих требованиям посольств Шенгена"
+      },
+      "badgeLabel": {
+        "fa": "فعال",
+        "en": "Live"
+      }
     }
   }
 }

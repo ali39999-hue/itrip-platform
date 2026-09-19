@@ -94,7 +94,7 @@ if (!commitSha) {
   try {
     commitSha = execSync('git rev-parse --short HEAD').toString().trim();
   } catch {
-    commitSha = 'cf45237';
+    commitSha = 'dev';
   }
 }
 const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || packageJson.version;
@@ -201,6 +201,16 @@ const nextConfig: NextConfig = {
         source: '/planner',
         destination: '/fa/plan',
         permanent: true,
+      },
+      {
+        source: '/:locale/payment',
+        destination: '/:locale/checkout',
+        permanent: false,
+      },
+      {
+        source: '/payment',
+        destination: '/fa/checkout',
+        permanent: false,
       },
       {
         source: '/:locale/auth/login',

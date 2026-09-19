@@ -267,7 +267,7 @@ export function FlightPriceCalendar({
           <button
             type="button"
             onClick={() => setModalOpen(true)}
-            className="min-h-[44px] text-[11.5px] font-black text-brand hover:text-brand-dark flex items-center gap-1.5 px-2.5 py-2.5 rounded-lg hover:bg-soft transition cursor-pointer"
+            className="min-h-[44px] text-[11.5px] font-black text-brand-dark hover:text-deep flex items-center gap-1.5 px-2.5 py-2.5 rounded-lg hover:bg-soft transition cursor-pointer"
           >
             <Calendar size={13} />
             <span>
@@ -323,7 +323,7 @@ export function FlightPriceCalendar({
                 >
                   {/* Top: Day Name (e.g. سه‌شنبه) */}
                   <div className="flex items-center justify-center">
-                    <span className={`text-[10.5px] sm:text-[11.5px] font-black whitespace-nowrap ${item.isSelected ? 'text-surface' : item.isWeekend ? 'text-rose-500' : 'text-sub'}`}>
+                    <span className={`text-[10.5px] sm:text-[11.5px] font-black whitespace-nowrap ${item.isSelected ? 'text-surface' : item.isWeekend ? 'text-rose-600 dark:text-rose-400' : 'text-sub'}`}>
                       {item.dayName}
                     </span>
                   </div>
@@ -439,7 +439,7 @@ export function FlightPriceCalendar({
                       : 'bg-surface hover:bg-soft border-line text-ink'
                   }`}
                 >
-                  <span className={`text-[10.5px] font-bold ${item.isSelected ? 'text-surface/80' : item.isWeekend ? 'text-rose-500' : 'text-sub'}`}>
+                  <span className={`text-[10.5px] font-bold ${item.isSelected ? 'text-surface/80' : item.isWeekend ? 'text-rose-600 dark:text-rose-400' : 'text-sub'}`}>
                     {item.dayName}
                   </span>
                   <span className={`text-xs font-black font-price num ${item.isSelected ? 'text-surface' : 'text-ink'}`}>

@@ -89,11 +89,14 @@ try {
 const browser = await chromium.launch();
 const context = await browser.newContext();
 
+const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+
 const report = {
   generatedAt: new Date().toISOString(),
-  // QR-003: provenance of the scanned build — the quality report rejects
+  // QR-003: stamp the measured commit so the quality gate refuses to trust
   // artifacts that were not produced for the commit under test.
   commit: measuredCommit(),
+  version: pkg.version || '1.8.4',
   baseUrl: BASE,
   failImpacts: FAIL_IMPACTS,
   locales: LOCALES,

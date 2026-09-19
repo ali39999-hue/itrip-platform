@@ -1,11 +1,11 @@
 # iTRIP / Firuzo Platform — Feature Reality Matrix (v1.8.4)
 
-**Version:** v1.8.4  
-**Commit:** `c59d7b9a3e67` (`feat: add Alert and UnifiedCartDrawer components with tests`)  
-**Branch:** main (Release tag `v1.8.4` -> `c59d7b9a3e67`)  
+**Latest Release Tag:** `v1.8.4` (`de150f55ab67`)  
+**Current Main Branch HEAD:** `f6c16800a600` (`feat(tours): require authentication for tour add-to-cart with pending restoration and alert upon login`)  
+**Current Live Deployment:** `1.8.4` on commit `f6c16800a60059f0142b47d9367a9023e5aa28ff`  
 **Audit Date:** 2026-09-19  
-**Authoritative Baseline:** v1.8.4 / `6f936a0`  
-**Supersedes:** `FEATURE_REALITY_MATRIX.md` (v1.8.0 / `63b549f`)  
+**Authoritative Baseline:** v1.8.4 / `de150f5` (Release) / `f6c1680` (Main & Live)  
+**Supersedes:** `FEATURE_REALITY_MATRIX.md` (v1.8.3 / `c496370`)  
 
 > **Notice:** This document is the single authoritative source of truth for platform capabilities, feature reality, and deployment verification. Every status is evidence-backed by source code, Prisma schema models, automated unit/integration test suites, and live HTTP probes. Optimistic claims, unverified states, and outdated matrix baselines are strictly reconciled herein.
 
@@ -15,32 +15,33 @@
 
 - **Runtime & Framework:** Node.js 22.x · Next.js 16.3.4 (App Router) · React 19.2.8 · TypeScript 5 · Tailwind CSS v4
 - **Database & Persistence:** Prisma 5.22.0 · **78 Relational Models** · **34 Migrations** (PostgreSQL 16 canonical, zero SQLite drift)
-- **Unit & Domain Tests:** 457 test files / **1,097 verified tests** (100% passing across domain, observability, portability and UI suites — source: `docs/baseline/quality-report.json`)
+- **Unit & Domain Tests:** 463 test files / **1,112 verified tests** (100% passing across domain, observability, portability and UI suites — source: `docs/baseline/quality-report.json`)
 - **E2E Test Specifications:** 33 Playwright test suites in `tests/*.spec.ts` (golden journeys, mobile journeys, security, a11y)
 - **Internationalization:** 5 supported languages (`fa`, `en`, `ar`, `zh`, `ru`) with 100% key parity enforced via `scripts/i18n-completeness-gate.mjs`
 - **Design System & Primitives:** Semantic tokens (`text-ink`, `text-sub`, `bg-surface`, `bg-brand`, `bg-action`), Shadcn primitives, glassmorphism, responsive 320px–1440px
-- **Capability Registry:** `src/lib/capabilities/index.ts` (43 tracked capabilities) controlling customer-facing claim states
-- **Live Deployment State:** `https://itrip-platform.vercel.app/` running verified version `1.8.3` on commit `c496370a8a14` (DRIFT), probed live via `/api/version`, `/api/health/live`, `/api/capabilities` — measured by scripts/verify-release-consistency.mjs at 2026-09-18T19:54:43.078Z
+- **Capability Registry:** `src/lib/capabilities/index.ts` (45 tracked capabilities) controlling customer-facing claim states
+- **Live Deployment State:** `https://itrip-platform.vercel.app/` running verified version `1.8.4` on commit `f6c16800a600` (ALIGNED), probed live via `/api/version`, `/api/health/live`, `/api/capabilities` — measured by scripts/verify-release-consistency.mjs at 2026-09-19T13:58:27.561Z
 
 ---
 
-## 2. Release & Deployment Provenance Audit
+## 2. Release, Main & Deployment Provenance Audit
 
-| Artifact / Environment | Target / Expected | Observed Reality | Status | Evidence / Notes |
-|---|---|---|---|---|
-| **Git Release Tag** | `v1.8.0` | `refs/tags/v1.8.0` -> `63b549f` | **ALIGNED** | Tag points to commit `63b549f4b42c914b91387ff6de495be0f523fda1` |
-| **Release Commit** | `63b549f` | `63b549f4b42c914b91387ff6de495be0f523fda1` | **ALIGNED** | Primary v1.8.0 release train commit |
-| **Local Repository HEAD** | `c59d7b9a3e67` | `c59d7b9a3e67` | **ALIGNED** | Measured via `git rev-parse HEAD` |
-| **Live Vercel Deployment** | `c59d7b9a3e67` | `c59d7b9a3e67` | **ALIGNED** | Measured via `/api/version` — measured by scripts/verify-release-consistency.mjs at 2026-09-19T12:15:38.589Z |
-| **package.json Version** | `1.8.3` | `1.8.3` | **ALIGNED** | Line 3 of `package.json` |
-| **src/lib/version.ts** | `1.8.4` | `1.8.4` | **ALIGNED** | `NEXT_PUBLIC_APP_VERSION` default in `src/lib/version.ts` |
-| **Live /api/version** | `1.8.4` | `1.8.3` (commit `c59d7b9a3e67`) | **ALIGNED** | Production runtime reported version `1.8.3` |
-| **Live /api/health/live** | 200 OK | 200 OK (`status: live`) | **HEALTHY** | Node.js v22.23.2 alive, memory: 80MB |
-| **Live /api/capabilities**| 200 OK | 200 OK (v1.8.3 registry) | **HEALTHY** | Capability registry served by the same runtime |
+| Scope | Entity | Target / Expected | Observed Reality | Status | Evidence / Notes |
+|---|---|---|---|---|---|
+| **LATEST RELEASE** | **Git Release Tag** | `v1.8.4` | `refs/tags/v1.8.4` -> `de150f5` | **ALIGNED** | Tag points to commit `de150f55ab673c61a8818186b31b98a840af8fee` |
+| **LATEST RELEASE** | **Release Commit** | `de150f5` | `de150f55ab673c61a8818186b31b98a840af8fee` | **ALIGNED** | Primary v1.8.4 release train commit |
+| **CURRENT MAIN** | **Local / Origin HEAD** | `f6c1680` | `f6c16800a60059f0142b47d9367a9023e5aa28ff` | **ALIGNED** | 1 commit ahead of v1.8.4 tag; measured via `git rev-parse HEAD` |
+| **CURRENT MAIN** | **package.json Version** | `1.8.4` | `1.8.4` | **ALIGNED** | Line 3 of `package.json` |
+| **CURRENT MAIN** | **src/lib/version.ts** | `1.8.4` | `1.8.4` | **ALIGNED** | `NEXT_PUBLIC_APP_VERSION` default in `src/lib/version.ts` |
+| **CURRENT LIVE** | **Live Deployment Artifact** | `f6c1680` | `f6c16800a60059f0142b47d9367a9023e5aa28ff` | **ALIGNED** | Vercel deployed from `main` @ `f6c1680` |
+| **CURRENT LIVE** | **Live /api/version** | `1.8.4` | `1.8.4` (commit `f6c16800a600...`) | **ALIGNED** | Production runtime reported version `1.8.4` |
+| **CURRENT LIVE** | **Live /api/health/live** | 200 OK | 200 OK (`status: live`) | **HEALTHY** | Node.js v22.23.2 alive, memory: ~80MB |
+| **CURRENT LIVE** | **Live /api/health/ready** | 200 OK | 200 OK (`status: ready`) | **HEALTHY** | Database healthy, eCardo gateway production mode |
+| **CURRENT LIVE** | **Live /api/capabilities**| 200 OK | 200 OK (v1.8.4 registry) | **HEALTHY** | Capability registry served by the same runtime |
 
 ---
 
-## 3. Comprehensive Feature Reality Matrix (v1.8.3)
+## 3. Comprehensive Feature Reality Matrix (v1.8.4)
 
 Status legend:
 - **REAL:** Verified end-to-end (Database, Backend, API, Frontend, Automated Tests) without simulation.
@@ -97,6 +98,8 @@ Status legend:
 | 41 | **4-Axis Status Contracts** | `security.contracts` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Branded types & DB boundary validation | Eliminates typo & invalid state transitions | LIVE | **REAL** | `src/domains/booking/status-contracts.ts` |
 | 42 | **Disaster Recovery Simulation** | `dr.simulation` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Automated DR integrity check & 5 Runbooks | RTO < 30m, RPO < 5m, zombie task unclaim | LIVE | **REAL** | `docs/runbooks/RUNBOOK_05_DISASTER_RECOVERY_DRILL.md` |
 | 43 | **Internal Monorepo Packages** | `monorepo.packages` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | @packages/{contracts,domain-types,money,test-fixtures} | Zero-conflict type-safe contracts | LIVE | **REAL** | `packages/` |
+| 44 | **Airport Executive CIP Lounge** | `services.cip` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Official Airport Authority & Varan CIP | Fast-track immigration, apron escort, day suites | LIVE (`/cip`) | **REAL** | `src/services/cip-service.ts`, `src/app/[locale]/cip/page.tsx` |
+| 45 | **Travel Insurance Comparator** | `services.insurance` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Multi-Insurer (Saman, Iran, Kowsar, Razi) & Swiss Assist / Remed | Actuarial age-rating, instant issuance, Schengen compliant | LIVE (`/insurance`) | **REAL** | `src/services/insurance-service.ts`, `src/app/[locale]/insurance/page.tsx` |
 
 ---
 

@@ -1,24 +1,52 @@
 /**
- * Application version and commit provenance (BASE-106)
- * Exports canonical version, commit SHA, and provenance helper for runtime transparency.
+ * Canonical Release Identity (BASE-106 / REL-001)
+ *
+ * Single Source of Truth for APP_VERSION, GIT_COMMIT, BUILD_ID, ENVIRONMENT, DEPLOYMENT_ID.
+ * Consumed identically by:
+ *   - /api/version
+ *   - /api/health/live
+ *   - /api/health/ready
+ *   - Frontend Footer (APP_VERSION)
+ *   - Telemetry & Error Logging (REL-002)
+ *   - Quality Report & Reality Matrix
  */
 
 export const NEXT_PUBLIC_APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || '1.8.4';
-export const NEXT_PUBLIC_COMMIT_SHA = process.env.NEXT_PUBLIC_COMMIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA || 'dev';
+export const NEXT_PUBLIC_COMMIT_SHA =
+  process.env.NEXT_PUBLIC_COMMIT_SHA ||
+  process.env.VERCEL_GIT_COMMIT_SHA ||
+  process.env.GITHUB_SHA ||
+  'dev';
+
 export const APP_VERSION = NEXT_PUBLIC_APP_VERSION;
 export const COMMIT_SHA = NEXT_PUBLIC_COMMIT_SHA;
+export const GIT_COMMIT = COMMIT_SHA;
+export const BUILD_ID = process.env.NEXT_PUBLIC_BUILD_ID || process.env.VERCEL_DEPLOYMENT_ID || 'local';
+export const ENVIRONMENT = process.env.VERCEL_ENV || process.env.NODE_ENV || 'development';
+export const DEPLOYMENT_ID = process.env.VERCEL_DEPLOYMENT_ID || 'local';
 
-export interface AppVersionInfo {
+export interface CanonicalReleaseIdentity {
   version: string;
   commitSha: string;
+  buildId: string;
   environment: string;
-  buildTimestamp?: string;
+  deploymentId: string;
+  timestamp?: string;
 }
 
-export function getAppVersion(): AppVersionInfo {
+export type AppVersionInfo = CanonicalReleaseIdentity;
+
+export function getCanonicalReleaseIdentity(): CanonicalReleaseIdentity {
   return {
     version: APP_VERSION,
     commitSha: COMMIT_SHA,
-    environment: process.env.NODE_ENV || 'development',
+    buildId: BUILD_ID,
+    environment: ENVIRONMENT,
+    deploymentId: DEPLOYMENT_ID,
+    timestamp: new Date().toISOString(),
   };
+}
+
+export function getAppVersion(): CanonicalReleaseIdentity {
+  return getCanonicalReleaseIdentity();
 }

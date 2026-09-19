@@ -268,7 +268,7 @@ export function AccountSidebar({ activeSection = 'trips' }: AccountSidebarProps)
               logout();
               router.push('/');
             }}
-            className="w-full flex items-center justify-center gap-2 text-rose-warm hover:bg-rose-warm/10 px-4 py-2.5 rounded-2xl transition-colors font-bold text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="w-full flex items-center justify-center gap-2 text-rose-warm dark:text-rose-warm text-[13px] font-bold hover:bg-rose-warm/10 hover:text-rose-700 dark:hover:text-rose-300 px-4 py-2.5 rounded-2xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             <LogOut size={16} />
             {lt(locale, { fa: 'خروج از حساب', en: 'Sign Out', ar: 'تسجيل الخروج', zh: '退出登录', ru: 'Выйти' })}

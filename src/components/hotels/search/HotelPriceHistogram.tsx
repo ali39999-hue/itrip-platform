@@ -133,7 +133,7 @@ export function HotelPriceHistogram({
                 })
               : lt(locale, { fa: 'از ۱ میلیون', en: 'From 1M', ar: 'من 1 مليون', zh: '1M 起', ru: 'От 1M' })}
           </span>
-          <span className="text-brand font-black px-2 py-0.5 rounded-md bg-brand/10 shrink-0 whitespace-nowrap">
+          <span className="text-brand-dark font-black px-2 py-0.5 rounded-md bg-mint shrink-0 whitespace-nowrap">
             {maxPrice >= 20
               ? lt(locale, { fa: 'بدون سقف قیمت', en: 'No maximum limit', ar: 'بلا سقف للسعر', zh: '不限上限', ru: 'Без ограничения' })
               : lt(locale, {

@@ -72,6 +72,12 @@ function gateFromRecordFile(gateName, rel) {
   if (record.commit === 'unknown' || !record.commit) {
     return { status: 'STALE', source: `${rel} has no commit provenance — refusing to trust it` };
   }
+  if (record.version && record.version !== (pkg.version ?? '')) {
+    return {
+      status: 'STALE',
+      source: `${rel} stamped for version ${record.version} — expected ${pkg.version}`,
+    };
+  }
   return {
     status: record.status === 'PASS' ? 'PASS' : 'FAIL',
     recordedAt: record.recordedAt ?? null,
@@ -107,6 +113,9 @@ function artifactProvenance(artifact, label) {
   if (artifact.commit !== commit || !artifact.commit || artifact.commit === 'unknown') {
     return { ok: false, status: 'STALE' };
   }
+  if (artifact.version && artifact.version !== (pkg.version ?? '')) {
+    return { ok: false, status: 'STALE' };
+  }
   return { ok: true, status: label };
 }
 
@@ -122,7 +131,7 @@ const unit = unitProv.ok
       total: unitArtifact.numTotalTests ?? null,
       passed: unitArtifact.numPassedTests ?? null,
       failed: unitArtifact.numFailedTests ?? null,
-      files: unitArtifact.numTotalTestSuites ?? null,
+      files: Array.isArray(unitArtifact.testResults) ? unitArtifact.testResults.length : (unitArtifact.numTotalTestSuites ?? null),
       artifactCommit: unitArtifact.commit,
       source: 'results/unit.json (npm run test:unit)',
     }

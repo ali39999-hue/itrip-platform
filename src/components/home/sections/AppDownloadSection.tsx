@@ -70,7 +70,7 @@ export function AppDownloadSection() {
             >
               <Download size={16} className="text-[#045956]" aria-hidden="true" />
               <div className="text-start leading-tight">
-                <span className="text-[10px] text-[#032f2e]/60 block">{lt(locale, { fa: 'دریافت از', en: 'Download from', ar: 'تحميل من', zh: '下载平台', ru: 'Скачать из' })}</span>
+                <span className="text-[10px] text-[#032f2e]/70 block">{lt(locale, { fa: 'دریافت از', en: 'Download from', ar: 'تحميل من', zh: '下载平台', ru: 'Скачать из' })}</span>
                 <span className="font-bold">{lt(locale, { fa: 'کافه‌بازار', en: 'Cafe Bazaar', ar: 'بازار', zh: 'Bazaar', ru: 'Bazaar' })}</span>
               </div>
             </a>
@@ -83,7 +83,7 @@ export function AppDownloadSection() {
             >
               <Download size={16} className="text-[#045956]" aria-hidden="true" />
               <div className="text-start leading-tight">
-                <span className="text-[10px] text-[#032f2e]/60 block">{lt(locale, { fa: 'دریافت از', en: 'Download from', ar: 'تحميل من', zh: '下载平台', ru: 'Скачать из' })}</span>
+                <span className="text-[10px] text-[#032f2e]/70 block">{lt(locale, { fa: 'دریافت از', en: 'Download from', ar: 'تحميل من', zh: '下载平台', ru: 'Скачать из' })}</span>
                 <span className="font-bold">{lt(locale, { fa: 'مایکت', en: 'Myket', ar: 'مايكت', zh: 'Myket', ru: 'Myket' })}</span>
               </div>
             </a>

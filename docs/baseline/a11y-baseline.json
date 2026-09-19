@@ -1,6 +1,7 @@
 {
-  "generatedAt": "2026-09-19T12:18:25.162Z",
-  "commit": "c59d7b9a3e67f4cf0797b44a20e27ee6619ec865",
+  "generatedAt": "2026-09-19T17:27:51.596Z",
+  "commit": "f6c16800a60059f0142b47d9367a9023e5aa28ff",
+  "version": "1.8.4",
   "baseUrl": "http://localhost:3000",
   "failImpacts": [
     "critical",
@@ -39,24 +40,16 @@
       "violationCount": 0,
       "failingNodeCount": 0,
       "byRule": [],
-      "passes": 32
+      "passes": 27
     },
     "fa:flights": {
       "url": "http://localhost:3000/fa/flights",
       "locale": "fa",
       "funnel": "flights",
       "tier": "blocking",
-      "violationCount": 3,
-      "failingNodeCount": 3,
-      "byRule": [
-        {
-          "id": "nested-interactive",
-          "impact": "serious",
-          "help": "Interactive controls must not be nested",
-          "nodes": 3,
-          "sampleTarget": ".p-5.border-2.hover\\:border-brand\\/40:nth-child(1)"
-        }
-      ],
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
       "passes": 32
     },
     "fa:flights-search": {
@@ -64,17 +57,9 @@
       "locale": "fa",
       "funnel": "flights-search",
       "tier": "blocking",
-      "violationCount": 1,
-      "failingNodeCount": 1,
-      "byRule": [
-        {
-          "id": "target-size",
-          "impact": "serious",
-          "help": "All touch targets must be 24px large, or leave sufficient space",
-          "nodes": 1,
-          "sampleTarget": ".hover\\:underline.text-\\[11px\\].text-brand-dark"
-        }
-      ],
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
       "passes": 29
     },
     "fa:hotels": {
@@ -152,17 +137,9 @@
       "locale": "fa",
       "funnel": "auth",
       "tier": "blocking",
-      "violationCount": 4,
-      "failingNodeCount": 4,
-      "byRule": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "help": "Elements must meet minimum color contrast ratio thresholds",
-          "nodes": 4,
-          "sampleTarget": ".mb-5.p-1.bg-soft > .text-brand.shadow-xs.bg-surface"
-        }
-      ],
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
       "passes": 28
     },
     "fa:account": {
@@ -200,17 +177,9 @@
       "locale": "en",
       "funnel": "home",
       "tier": "blocking",
-      "violationCount": 7,
-      "failingNodeCount": 7,
-      "byRule": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "help": "Elements must meet minimum color contrast ratio thresholds",
-          "nodes": 7,
-          "sampleTarget": ".w-\\[min\\(84vw\\,340px\\)\\].sm\\:w-\\[320px\\].rounded-\\[22px\\]:nth-child(1) > .sm\\:p-5.p-4.gap-4 > .pt-3.items-end.border-line\\/70 > div > .text-emerald-600.block.text-\\[11px\\]"
-        }
-      ],
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
       "passes": 32
     },
     "en:flights": {
@@ -218,17 +187,9 @@
       "locale": "en",
       "funnel": "flights",
       "tier": "blocking",
-      "violationCount": 3,
-      "failingNodeCount": 3,
-      "byRule": [
-        {
-          "id": "nested-interactive",
-          "impact": "serious",
-          "help": "Interactive controls must not be nested",
-          "nodes": 3,
-          "sampleTarget": ".p-5.border-2.hover\\:border-brand\\/40:nth-child(1)"
-        }
-      ],
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
       "passes": 32
     },
     "en:flights-search": {
@@ -236,24 +197,9 @@
       "locale": "en",
       "funnel": "flights-search",
       "tier": "blocking",
-      "violationCount": 5,
-      "failingNodeCount": 5,
-      "byRule": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "help": "Elements must meet minimum color contrast ratio thresholds",
-          "nodes": 4,
-          "sampleTarget": ".hover\\:bg-soft\\/70.pointer-events-none.opacity-40:nth-child(2) > .gap-2\\.5.min-w-0.items-center > .truncate.text-xs.font-black"
-        },
-        {
-          "id": "target-size",
-          "impact": "serious",
-          "help": "All touch targets must be 24px large, or leave sufficient space",
-          "nodes": 1,
-          "sampleTarget": ".hover\\:underline.text-\\[11px\\].text-brand-dark"
-        }
-      ],
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
       "passes": 29
     },
     "en:hotels": {
@@ -271,17 +217,9 @@
       "locale": "en",
       "funnel": "hotels-search",
       "tier": "blocking",
-      "violationCount": 2,
-      "failingNodeCount": 2,
-      "byRule": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "help": "Elements must meet minimum color contrast ratio thresholds",
-          "nodes": 2,
-          "sampleTarget": "a[href$=\"hotels\"]"
-        }
-      ],
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
       "passes": 30
     },
     "en:tours": {
@@ -319,17 +257,9 @@
       "locale": "en",
       "funnel": "my-trips",
       "tier": "blocking",
-      "violationCount": 1,
-      "failingNodeCount": 1,
-      "byRule": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "help": "Elements must meet minimum color contrast ratio thresholds",
-          "nodes": 1,
-          "sampleTarget": ".hover\\:bg-rose-warm\\/10"
-        }
-      ],
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
       "passes": 27
     },
     "en:wallet": {
@@ -347,17 +277,9 @@
       "locale": "en",
       "funnel": "auth",
       "tier": "blocking",
-      "violationCount": 5,
-      "failingNodeCount": 5,
-      "byRule": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "help": "Elements must meet minimum color contrast ratio thresholds",
-          "nodes": 5,
-          "sampleTarget": ".mb-5.p-1.bg-soft > .text-brand.shadow-xs.bg-surface"
-        }
-      ],
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
       "passes": 28
     },
     "en:account": {
@@ -385,17 +307,9 @@
       "locale": "en",
       "funnel": "support",
       "tier": "blocking",
-      "violationCount": 1,
-      "failingNodeCount": 1,
-      "byRule": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "help": "Elements must meet minimum color contrast ratio thresholds",
-          "nodes": 1,
-          "sampleTarget": ".text-success"
-        }
-      ],
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
       "passes": 28
     },
     "fa:erp-dashboard": {
@@ -403,17 +317,9 @@
       "locale": "fa",
       "funnel": "erp-dashboard",
       "tier": "report-only",
-      "violationCount": 1,
-      "failingNodeCount": 1,
-      "byRule": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "help": "Elements must meet minimum color contrast ratio thresholds",
-          "nodes": 1,
-          "sampleTarget": ".opacity-80"
-        }
-      ],
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
       "passes": 28
     },
     "fa:erp-organizations": {
@@ -421,17 +327,9 @@
       "locale": "fa",
       "funnel": "erp-organizations",
       "tier": "report-only",
-      "violationCount": 1,
-      "failingNodeCount": 1,
-      "byRule": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "help": "Elements must meet minimum color contrast ratio thresholds",
-          "nodes": 1,
-          "sampleTarget": ".opacity-80"
-        }
-      ],
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
       "passes": 28
     },
     "en:erp-dashboard": {
@@ -439,17 +337,9 @@
       "locale": "en",
       "funnel": "erp-dashboard",
       "tier": "report-only",
-      "violationCount": 2,
-      "failingNodeCount": 2,
-      "byRule": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "help": "Elements must meet minimum color contrast ratio thresholds",
-          "nodes": 2,
-          "sampleTarget": ".text-brand.shadow-xs.bg-surface"
-        }
-      ],
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
       "passes": 28
     },
     "en:erp-organizations": {
@@ -457,38 +347,19 @@
       "locale": "en",
       "funnel": "erp-organizations",
       "tier": "report-only",
-      "violationCount": 2,
-      "failingNodeCount": 2,
-      "byRule": [
-        {
-          "id": "color-contrast",
-          "impact": "serious",
-          "help": "Elements must meet minimum color contrast ratio thresholds",
-          "nodes": 2,
-          "sampleTarget": ".text-brand.shadow-xs.bg-surface"
-        }
-      ],
+      "violationCount": 0,
+      "failingNodeCount": 0,
+      "byRule": [],
       "passes": 28
     }
   },
   "summary": {
-    "blockingViolations": 32,
-    "reportOnlyViolations": 6,
+    "blockingViolations": 0,
+    "reportOnlyViolations": 0,
     "navigationErrors": 0,
-    "blockingFailedFunnels": [
-      "fa:flights",
-      "fa:flights-search",
-      "fa:auth",
-      "en:home",
-      "en:flights",
-      "en:flights-search",
-      "en:hotels-search",
-      "en:my-trips",
-      "en:auth",
-      "en:support"
-    ],
+    "blockingFailedFunnels": [],
     "blockingScanErrors": [],
     "verdict": "PASS",
-    "baselineViolations": 33
+    "baselineViolations": 3
   }
 }

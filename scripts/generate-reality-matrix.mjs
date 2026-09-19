@@ -14,9 +14,9 @@ const __dirname = path.dirname(__filename);
 const root = path.resolve(__dirname, '..');
 
 function getGitInfo() {
-  let commit = '63b549f';
-  let fullSha = '63b549f4b42c914b91387ff6de495be0f523fda1';
-  let branch = 'main';
+  let commit = 'unknown';
+  let fullSha = 'unknown';
+  let branch = 'unknown';
   try {
     commit = execSync('git rev-parse --short HEAD', { cwd: root }).toString().trim();
     fullSha = execSync('git rev-parse HEAD', { cwd: root }).toString().trim();
@@ -61,7 +61,7 @@ const git = getGitInfo();
 const prisma = getPrismaStats();
 const tests = getTestStats();
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
-const version = pkg.version || '1.8.0';
+const version = pkg.version || 'unknown';
 
 console.log(`✓ Reality Matrix baseline verified at v${version} (${git.commit}).`);
 console.log(`• Models: ${prisma.modelCount} | Migrations: ${prisma.migrationCount} | Test Files: ${tests.testFileCount}`);

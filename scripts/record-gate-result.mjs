@@ -36,10 +36,13 @@ function git(cmd) {
   }
 }
 
+const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+
 const record = {
   gate,
   status: status === 'pass' ? 'PASS' : 'FAIL',
   recordedAt: new Date().toISOString(),
+  version: pkg.version || 'unknown',
   commit: process.env.GITHUB_SHA || git('git rev-parse HEAD') || 'unknown',
   branch: process.env.GITHUB_REF_NAME || git('git rev-parse --abbrev-ref HEAD') || '',
   note: noteParts.join(' ').replace(/^--\s*/, '') || null,

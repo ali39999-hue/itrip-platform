@@ -82,12 +82,17 @@ export type CapabilityKey =
   | 'kyc.compliance'
   | 'erp.operations'
   | 'mobile.pwa'
-  | 'support.concierge';
+  | 'support.concierge'
+  | 'services.cip'
+  | 'services.insurance';
 
 export interface CapabilityDescriptor {
   key: CapabilityKey;
   category: CapabilityCategory;
-  name: {
+  /** Display metadata. Optional: entries without inline copy are enriched from
+   *  the `capabilityRegistry` messages namespace by /api/capabilities — keeps
+   *  shared localization in messages/*.json instead of FA literals in code. */
+  name?: {
     fa: string;
     en: string;
     ar?: string;
@@ -96,11 +101,11 @@ export interface CapabilityDescriptor {
   };
   status: CapabilityStatus;
   isReal: boolean;
-  description: {
+  description?: {
     fa: string;
     en: string;
   };
-  badgeLabel: {
+  badgeLabel?: {
     fa: string;
     en: string;
   };
@@ -252,6 +257,12 @@ function resolveDynamicStatus(key: CapabilityKey): CapabilityStatus {
       return 'LIVE';
 
     case 'support.concierge':
+      return 'LIVE';
+
+    case 'services.cip':
+      return 'LIVE';
+
+    case 'services.insurance':
       return 'LIVE';
 
     default:
@@ -722,6 +733,20 @@ export const CAPABILITY_DEFINITIONS: Record<CapabilityKey, Omit<CapabilityDescri
     badgeLabel: { fa: 'فعال', en: 'Live' },
     evidencePath: 'src/app/api/assistant/chat/route.ts',
   },
+  'services.cip': {
+    key: 'services.cip',
+    category: 'supplier',
+    // Localized copy lives in messages/*.json → capabilityRegistry.cip
+    // (enriched server-side by /api/capabilities) — I18N-103 keeps FA text
+    // out of shared source files.
+    evidencePath: 'src/services/cip-service.ts',
+  },
+  'services.insurance': {
+    key: 'services.insurance',
+    category: 'supplier',
+    // Localized copy lives in messages/*.json → capabilityRegistry.insurance
+    evidencePath: 'src/services/insurance-service.ts',
+  },
 };
 
 /**
@@ -771,9 +796,9 @@ export function isCapabilityAvailable(key: CapabilityKey): boolean {
 /**
  * Public capability summary for client components and metadata
  */
-export function getPublicCapabilitiesSummary(): Record<string, { status: CapabilityStatus; isReal: boolean; badgeLabel: { fa: string; en: string } }> {
+export function getPublicCapabilitiesSummary(): Record<string, { status: CapabilityStatus; isReal: boolean; badgeLabel?: { fa: string; en: string } }> {
   const all = getAllCapabilities();
-  const summary: Record<string, { status: CapabilityStatus; isReal: boolean; badgeLabel: { fa: string; en: string } }> = {};
+  const summary: Record<string, { status: CapabilityStatus; isReal: boolean; badgeLabel?: { fa: string; en: string } }> = {};
   for (const [key, desc] of Object.entries(all)) {
     summary[key] = {
       status: desc.status,

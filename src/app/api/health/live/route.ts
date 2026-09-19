@@ -6,19 +6,22 @@
  */
 
 import { NextResponse } from 'next/server';
-import { APP_VERSION, COMMIT_SHA } from '@/lib/version';
+import { getCanonicalReleaseIdentity } from '@/lib/version';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET() {
+  const identity = getCanonicalReleaseIdentity();
   const mem = process.memoryUsage();
   return NextResponse.json({
     status: 'live',
-    version: APP_VERSION,
-    commitSha: COMMIT_SHA,
-    environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
-    timestamp: new Date().toISOString(),
+    version: identity.version,
+    commitSha: identity.commitSha,
+    buildId: identity.buildId,
+    environment: identity.environment,
+    deploymentId: identity.deploymentId,
+    timestamp: identity.timestamp,
     uptimeSeconds: Math.round(process.uptime()),
     process: {
       pid: process.pid,
