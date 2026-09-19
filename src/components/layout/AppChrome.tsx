@@ -8,8 +8,10 @@ import { ContactDock } from '@/components/shared/ContactDock';
 import { FiruzoChatWidget } from '@/components/shared/FiruzoChat/FiruzoChatWidget';
 import { ToursPromoModal } from '@/components/tours/ToursPromoModal';
 import { Toaster } from 'sonner';
+import { usePendingCartRestoration } from '@/hooks/usePendingCartRestoration';
 
 export function AppChrome({ children }: { children: React.ReactNode }) {
+  usePendingCartRestoration();
   const pathname = usePathname() || '';
   const isAdmin = /^\/([a-z]{2}\/)?admin(\/|$)/i.test(pathname);
   const isCheckout = /^\/([a-z]{2}\/)?(checkout|payment-status|book|demo\/ecardo-checkout)(\/|$)/i.test(pathname);

@@ -3,14 +3,17 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { useRouter, Link } from '@/i18n/routing';
+import { useRouter, usePathname, Link } from '@/i18n/routing';
 import type { Tour } from '@/lib/types';
 import { useBookingStore } from '@/stores/booking-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES, COUNTRY_ORDER, countryName } from '@/lib/countries';
 import { daysFromNow } from '@/lib/utils';
 import { CountryExperiencesSection } from '@/components/shared/CountryExperiences';
-import { MapPin, Star, ArrowLeft, ArrowRight, CalendarDays, SlidersHorizontal, Tent, Search, X, Check, Eye, Loader2 } from 'lucide-react';
+import { MapPin, Star, ArrowLeft, ArrowRight, CalendarDays, SlidersHorizontal, Tent, Search, X, Check, Eye, Loader2, ShoppingCart } from 'lucide-react';
+import { toast } from 'sonner';
+import { PENDING_TOUR_CART_KEY } from '@/hooks/usePendingCartRestoration';
 import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
 import { getCurrencyLabel } from '@/lib/currencies';
@@ -30,6 +33,8 @@ function ToursContent() {
   const t = useTranslations('Tours');
   const locale = useLocale();
   const router = useRouter();
+  const pathname = usePathname();
+  const user = useAuthStore((s) => s.user);
   const searchParams = useSearchParams();
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
   const addToCart = useBookingStore((s) => s.addToCart);
@@ -146,25 +151,75 @@ function ToursContent() {
     return list;
   }, [allTours, category, cityParam, countryParam, country, searchQuery, sort]);
 
-  function book(tour: Tour) {
+  function handleAddToCart(tour: Tour) {
     const tourTitle = locale === 'fa' ? tour.title : (tour.titleEn || tour.title);
     const travelDate = daysFromNow(14);
-
-    // Quick-book also parks the tour in the cart as an UNPAID line so it can
-    // be resumed from the unified cart later.
-    addToCart({
+    const cartItem = {
       id: `tour_${tour.id}_base`,
-      type: 'TOUR',
+      type: 'TOUR' as const,
       title: tourTitle,
       subtitle: `${tour.durationDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дн.' })} • ${tour.city}`,
       count: 1,
       unitPrice: tour.price,
       currency: tour.currency || 'TOMAN',
       travelDate,
-      status: 'UNPAID',
-      resumePhase: 'passengers',
+      status: 'UNPAID' as const,
+      resumePhase: 'passengers' as const,
       details: { tourId: tour.id, adults: 1, children: 0, city: tour.city },
-    });
+    };
+
+    if (!user) {
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.setItem(PENDING_TOUR_CART_KEY, JSON.stringify(cartItem));
+        } catch (e) {
+          console.error('Failed to save pending tour cart item:', e);
+        }
+      }
+      toast.error(
+        lt(locale, {
+          fa: 'برای افزودن به سبد خرید، لطفاً ابتدا وارد حساب کاربری خود شوید.',
+          en: 'Please sign in to add items to your cart.',
+          ar: 'يرجى تسجيل الدخول أولاً لإضافة عناصر إلى السلة.',
+          zh: '请先登录后再将商品加入购物车。',
+          ru: 'Пожалуйста, сначала войдите в систему, чтобы добавить тур в корзину.',
+        })
+      );
+      router.push(`/auth?callbackUrl=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
+    addToCart(cartItem);
+    toast.success(
+      lt(locale, {
+        fa: 'تور به سبد خرید اضافه شد',
+        en: 'Tour added to cart',
+        ar: 'تمت إضافة الجولة إلى السلة',
+        zh: '已加入购物车',
+        ru: 'Тур добавлен в корзину',
+      })
+    );
+  }
+
+  function book(tour: Tour) {
+    const tourTitle = locale === 'fa' ? tour.title : (tour.titleEn || tour.title);
+    const travelDate = daysFromNow(14);
+
+    if (user) {
+      addToCart({
+        id: `tour_${tour.id}_base`,
+        type: 'TOUR',
+        title: tourTitle,
+        subtitle: `${tour.durationDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дн.' })} • ${tour.city}`,
+        count: 1,
+        unitPrice: tour.price,
+        currency: tour.currency || 'TOMAN',
+        travelDate,
+        status: 'UNPAID',
+        resumePhase: 'passengers',
+        details: { tourId: tour.id, adults: 1, children: 0, city: tour.city },
+      });
+    }
 
     setBookingContext({
       type: 'tours',
@@ -394,6 +449,15 @@ function ToursContent() {
                         {lt(locale, { fa: 'جزئیات', en: 'Details', ar: 'التفاصيل', zh: '详情', ru: 'Инфо' })}
                       </Link>
                       <button
+                        type="button"
+                        onClick={() => handleAddToCart(tour)}
+                        title={lt(locale, { fa: 'افزودن به سبد خرید', en: 'Add to Cart', ar: 'أضف إلى السلة', zh: '加入购物车', ru: 'В корзину' })}
+                        aria-label={`${lt(locale, { fa: 'افزودن به سبد خرید', en: 'Add to Cart', ar: 'أضف إلى السلة', zh: '加入购物车', ru: 'В корзину' })} - ${locale === 'fa' ? tour.title : (tour.titleEn || tour.title)}`}
+                        className="h-11 w-11 rounded-xl border border-line bg-surface hover:bg-soft text-ink grid place-items-center transition cursor-pointer shadow-xs active:scale-95"
+                      >
+                        <ShoppingCart size={16} aria-hidden="true" />
+                      </button>
+                      <button
                         onClick={() => book(tour)}
                         aria-label={`${t('bookTour')} - ${locale === 'fa' ? tour.title : tour.titleEn}`}
                         className="h-11 bg-action hover:bg-action-hover text-ink px-4 rounded-xl font-black text-xs transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand flex items-center gap-1 cursor-pointer"
@@ -480,6 +544,17 @@ function ToursContent() {
                 >
                   {lt(locale, { fa: 'مشاهده صفحه و روزشمار کامل', en: 'View Full Tour Page', ar: 'عرض صفحة الجولة والجدول الكامل', zh: '查看完整行程与细节', ru: 'Полное описание тура' })}
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedTourPreview) handleAddToCart(selectedTourPreview);
+                  }}
+                  title={lt(locale, { fa: 'افزودن به سبد خرید', en: 'Add to Cart', ar: 'أضف إلى السلة', zh: '加入购物车', ru: 'В корзину' })}
+                  aria-label={lt(locale, { fa: 'افزودن به سبد خرید', en: 'Add to Cart', ar: 'أضف إلى السلة', zh: '加入购物车', ru: 'В корزیну' })}
+                  className="h-11 w-11 rounded-xl border border-line bg-surface hover:bg-soft text-ink grid place-items-center transition cursor-pointer shadow-xs active:scale-95 shrink-0"
+                >
+                  <ShoppingCart size={16} aria-hidden="true" />
+                </button>
                 <button
                   type="button"
                   onClick={() => {

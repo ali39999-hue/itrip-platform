@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useRouter } from '@/i18n/routing';
+import { useRouter, usePathname } from '@/i18n/routing';
 import { useLocale } from 'next-intl';
 import type { Tour } from '@/lib/types';
 import { useBookingStore } from '@/stores/booking-store';
+import { useAuthStore } from '@/stores/auth-store';
+import { PENDING_TOUR_CART_KEY } from '@/hooks/usePendingCartRestoration';
 import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
 import { getCurrencyLabel } from '@/lib/currencies';
@@ -38,7 +40,9 @@ export function TourBookingWidget({
   onSelectDateId,
 }: TourBookingWidgetProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const locale = useLocale();
+  const user = useAuthStore((s) => s.user);
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
   const addToCart = useBookingStore((s) => s.addToCart);
 
@@ -115,8 +119,8 @@ export function TourBookingWidget({
     if (isSoldOut) return;
     const travelers = adults + children;
     const tourTitle = locale === 'fa' ? tour.title : (tour.titleEn || tour.title);
-    addToCart({
-      type: 'TOUR',
+    const cartItem = {
+      type: 'TOUR' as const,
       title: tourTitle,
       subtitle: `${tour.city} • ${activeDate?.startDate || ''}`,
       count: travelers,
@@ -129,7 +133,30 @@ export function TourBookingWidget({
         adults,
         children,
       },
-    });
+    };
+
+    if (!user) {
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.setItem(PENDING_TOUR_CART_KEY, JSON.stringify(cartItem));
+        } catch (e) {
+          console.error('Failed to save pending tour cart item:', e);
+        }
+      }
+      toast.error(
+        lt(locale, {
+          fa: 'برای افزودن به سبد خرید، لطفاً ابتدا وارد حساب کاربری خود شوید.',
+          en: 'Please sign in to add items to your cart.',
+          ar: 'يرجى تسجيل الدخول أولاً لإضافة عناصر إلى السلة.',
+          zh: '请先登录后再将商品加入购物车。',
+          ru: 'Пожалуйста, сначала войдите в систему, чтобы добавить тур в корзину.',
+        })
+      );
+      router.push(`/auth?callbackUrl=${encodeURIComponent(pathname)}`);
+      return;
+    }
+
+    addToCart(cartItem);
     toast.success(
       lt(locale, {
         fa: 'تور به سبد خرید اضافه شد',
@@ -383,6 +410,17 @@ export function TourBookingWidget({
 
         {/* Buttons */}
         <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            disabled={isSoldOut}
+            onClick={handleAddToCart}
+            className="min-h-[44px] min-w-[44px] rounded-xl border border-line bg-surface text-ink flex items-center justify-center cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-xs active:scale-95"
+            title={lt(locale, { fa: 'افزودن به سبد خرید', en: 'Add to Cart', ar: 'أضف إلى السلة', zh: '加入购物车', ru: 'В корзину' })}
+            aria-label={lt(locale, { fa: 'افزودن به سبد خرید', en: 'Add to Cart', ar: 'أضف إلى السلة', zh: '加入购物车', ru: 'В корзину' })}
+          >
+            <ShoppingCart size={16} aria-hidden="true" />
+          </button>
+
           <button
             type="button"
             onClick={() => setAutoBuyOpen(true)}
