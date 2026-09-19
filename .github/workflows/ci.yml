@@ -125,6 +125,19 @@ jobs:
       - name: Responsive journey gate 320→768 (RESP-001) — blocking
         run: npx playwright test tests/responsive-journeys.spec.ts --project=chromium
 
+      - name: E2E evidence for quality report (golden journeys, desktop chromium)
+        # QR-001 deadlock fix: this job OWNS results/e2e.json because the
+        # fail-closed quality report below refuses not-run/missing records.
+        # The e2e-gate job keeps running golden journeys (desktop + mobile) as
+        # an independent gate AFTER this job passes.
+        run: |
+          if npx playwright test tests/golden-journeys.spec.ts --project=chromium; then
+            node scripts/record-gate-result.mjs e2e pass -- "audit-job golden journeys (desktop chromium)"
+          else
+            node scripts/record-gate-result.mjs e2e fail -- "audit-job golden journeys (desktop chromium)"
+            exit 1
+          fi
+
       - name: Generate machine-readable quality report
         # QR-002: no injected pass. Build/e2e statuses must come from evidence
         # files written after REAL runs (record-gate-result), never env vars.
