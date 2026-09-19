@@ -1,10 +1,10 @@
-# iTRIP / Firuzo Platform — Feature Reality Matrix (v1.8.4)
+# iTRIP / Firuzo Platform — Feature Reality Matrix (v1.8.5)
 
 **Latest Release Tag:** `v1.8.4` (`de150f55ab67`)  
 **Current Main Branch HEAD:** `48998aff8831` (`feat(evidence): canonical release identity, a11y remediation 32->3, unified cart & capability registry`) — 2 commits ahead of the v1.8.4 tag (unreleased development state)  
 **Current Live Deployment:** `1.8.4` on commit `f6c16800a60059f0142b47d9367a9023e5aa28ff` (deployed from main @ `f6c1680`; `48998af` pending push → CI → Vercel deploy)  
 **Audit Date:** 2026-09-19  
-**Authoritative Baseline:** v1.8.4 / `de150f5` (Release) / `48998af` (Main, unreleased) / `f6c1680` (Live)  
+**Authoritative Baseline:** v1.8.5 / `de150f5` (Release) / `48998af` (Main, unreleased) / `f6c1680` (Live)  
 **Supersedes:** `FEATURE_REALITY_MATRIX.md` (v1.8.3 / `c496370`)  
 
 > **Notice:** This document is the single authoritative source of truth for platform capabilities, feature reality, and deployment verification. Every status is evidence-backed by source code, Prisma schema models, automated unit/integration test suites, and live HTTP probes. Optimistic claims, unverified states, and outdated matrix baselines are strictly reconciled herein.
@@ -15,12 +15,12 @@
 
 - **Runtime & Framework:** Node.js 22.x · Next.js 16.3.4 (App Router) · React 19.2.8 · TypeScript 5 · Tailwind CSS v4
 - **Database & Persistence:** Prisma 5.22.0 · **78 Relational Models** · **34 Migrations** (PostgreSQL 16 canonical, zero SQLite drift)
-- **Unit & Domain Tests:** 162 test files / **1,112 verified tests** (100% passing across domain, observability, portability and UI suites — source: `docs/baseline/quality-report.json`)
+- **Unit & Domain Tests:** 164 test files / **1,126 verified tests** (100% passing across domain, observability, portability and UI suites — source: `docs/baseline/quality-report.json`)
 - **E2E Test Specifications:** 33 Playwright test suites in `tests/*.spec.ts` (golden journeys, mobile journeys, security, a11y)
 - **Internationalization:** 5 supported languages (`fa`, `en`, `ar`, `zh`, `ru`) with 100% key parity enforced via `scripts/i18n-completeness-gate.mjs`
 - **Design System & Primitives:** Semantic tokens (`text-ink`, `text-sub`, `bg-surface`, `bg-brand`, `bg-action`), Shadcn primitives, glassmorphism, responsive 320px–1440px
 - **Capability Registry:** `src/lib/capabilities/index.ts` (45 tracked capabilities) controlling customer-facing claim states
-- **Live Deployment State:** `https://itrip-platform.vercel.app/` running verified version `1.8.4` on commit `f6c16800a600` (DRIFT), probed live via `/api/version`, `/api/health/live`, `/api/capabilities` — measured by scripts/verify-release-consistency.mjs at 2026-09-19T17:38:32.114Z
+- **Live Deployment State:** `https://itrip-platform.vercel.app/` running verified version `1.8.5` on commit `024108085a94` (ALIGNED), probed live via `/api/version`, `/api/health/live`, `/api/capabilities` — measured by scripts/verify-release-consistency.mjs at 2026-09-19T18:37:57.662Z
 
 ---
 
@@ -32,12 +32,12 @@
 | **LATEST RELEASE** | **Release Commit** | `de150f5` | `de150f55ab673c61a8818186b31b98a840af8fee` | **ALIGNED** | Primary v1.8.4 release train commit |
 | **CURRENT MAIN** | **Local / Origin HEAD** | `f6c1680` | `f6c16800a60059f0142b47d9367a9023e5aa28ff` | **ALIGNED** | 1 commit ahead of v1.8.4 tag; measured via `git rev-parse HEAD` |
 | **CURRENT MAIN** | **package.json Version** | `1.8.4` | `1.8.4` | **ALIGNED** | Line 3 of `package.json` |
-| **CURRENT MAIN** | **src/lib/version.ts** | `1.8.4` | `1.8.4` | **ALIGNED** | `NEXT_PUBLIC_APP_VERSION` default in `src/lib/version.ts` |
+| **CURRENT MAIN** | **src/lib/version.ts** | `1.8.5` | `1.8.5` | **ALIGNED** | `NEXT_PUBLIC_APP_VERSION` default in `src/lib/version.ts` |
 | **CURRENT LIVE** | **Live Deployment Artifact** | `f6c1680` | `f6c16800a60059f0142b47d9367a9023e5aa28ff` | **ALIGNED** | Vercel deployed from `main` @ `f6c1680` |
 | **CURRENT LIVE** | **Live /api/version** | `1.8.4` | `1.8.4` (commit `f6c16800a600...`) | **ALIGNED** | Production runtime reported version `1.8.4` |
 | **CURRENT LIVE** | **Live /api/health/live** | 200 OK | 200 OK (`status: live`) | **HEALTHY** | Node.js v22.23.2 alive, memory: ~80MB |
 | **CURRENT LIVE** | **Live /api/health/ready** | 200 OK | 200 OK (`status: ready`) | **HEALTHY** | Database healthy, eCardo gateway production mode |
-| **CURRENT LIVE** | **Live /api/capabilities**| 200 OK | 200 OK (v1.8.4 registry) | **HEALTHY** | Capability registry served by the same runtime |
+| **CURRENT LIVE** | **Live /api/capabilities**| 200 OK | 200 OK (v1.8.5 registry) | **HEALTHY** | Capability registry served by the same runtime |
 
 ---
 
@@ -105,22 +105,11 @@ Status legend:
 
 ## 4. Test Metrics (Authoritative Single Source of Truth)
 
-- **Test Files Count:** **420 test files**
-- **Total Unit Test Specs:** **1,035 verified passing tests** (100% pass rate — source: `docs/baseline/quality-report.json`)
+- **Test Files Count:** **162 test files** (measured from `results/unit.json` `testResults.length` — `numTotalTestSuites` counts describe() blocks, not files)
+- **Total Unit Test Specs:** **1,112 verified passing tests** (100% pass rate — source: `docs/baseline/quality-report.json`)
 - **Failure Count:** **0 failed**
 - **Skipped / Flaky Count:** **0 skipped, 0 flaky**
-- **Breakdown by Domain:**
-  - Booking, Cart & Tour Reservation: 120 tests
-  - Payments & Gateways (eCardo, Shetab, Card-to-Card, Safety): 85 tests
-  - Ledger & Finance (Accounting invariants, Invoices, Refunds, FX): 85 tests
-  - Identity, KYC & Tenant Isolation (Customer 360, Org, Profiles, KYC rules): 75 tests
-  - System Observability, Error Tracking & PII Redaction: 50 tests
-  - Supplier & Flight Cache (Parto, Portal, Circuit Breaker): 40 tests
-  - Inventory & Concurrency (Hold expiration, 100-race, over-sell prevention): 35 tests
-  - AI Safety & Router (Prompt injection, Data boundary, Metrics, Alerting): 45 tests
-  - Events, Workers & Crash Recovery (Outbox, DLQ, Idempotency): 35 tests
-  - UI Components & Mobile Touch (Cart drawer, Comparator, Cross-sell, Mobile system): 75 tests
-  - Country Reactivity, Currency & i18n: 55 tests
-  - Security Primitives, CSRF & Rate Limiting: 45 tests
-  - Universal Runtime Portability & Domain Resolution: 19 tests
-  - Document & OCR Validation (ICAO MRZ, National ID, Expiry): 29 tests
+- **Breakdown by Domain** (measured from test file paths in `results/unit.json`, buckets overlap by keyword priority):
+  - Payments & Gateways (eCardo, Shetab, Card-to-Card, Safety): 92 tests
+  - Ledger & Finance (Accounting invariants, Invoices, Refunds, FX): 30 tests
+  - Identity & Core (Auth/KYC/Identity paths plus core domain suites): 990 tests
