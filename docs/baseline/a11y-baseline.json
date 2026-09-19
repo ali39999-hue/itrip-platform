@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-19T17:27:51.596Z",
-  "commit": "f6c16800a60059f0142b47d9367a9023e5aa28ff",
+  "generatedAt": "2026-09-19T17:40:51.584Z",
+  "commit": "48998aff88315fee0c983e8a45a1b67423f1beaa",
   "version": "1.8.4",
   "baseUrl": "http://localhost:3000",
   "failImpacts": [
@@ -360,6 +360,6 @@
     "blockingFailedFunnels": [],
     "blockingScanErrors": [],
     "verdict": "PASS",
-    "baselineViolations": 3
+    "baselineViolations": 0
   }
 }
