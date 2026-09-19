@@ -54,6 +54,8 @@ describe('UnifiedCartDrawer Component (Miracuves / Lulan Pattern)', () => {
 
     expect(screen.getByText(/پرواز تهران به استانبول/)).toBeDefined();
     expect(screen.getByText(/Mahan Air/)).toBeDefined();
+    expect(screen.getByText(/هنوز خریدت رو تکمیل نکردی/)).toBeDefined();
+    expect(screen.getByRole('alert')).toBeDefined();
     expect(screen.getByText(/ادامه به تسویه‌حساب و مشخصات مسافران/)).toBeDefined();
   });
 

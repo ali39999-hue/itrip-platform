@@ -25,7 +25,9 @@ import {
   ArrowRight,
   Clock,
   Building2,
+  AlertCircle,
 } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 interface UnifiedCartDrawerProps {
   open: boolean;
@@ -212,11 +214,40 @@ export function UnifiedCartDrawer({ open, onClose }: UnifiedCartDrawerProps) {
             >
               <X size={18} />
             </button>
+            </div>
           </div>
-        </div>
 
-        {/* Cart Items List */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 divide-y divide-line/60">
+          {/* Uncompleted Purchase Reminder Alert */}
+          {cart.length > 0 && (
+            <div className="px-4 sm:px-5 py-3 bg-amber-500/5 border-b border-amber-500/15">
+              <Alert variant="warning" className="border-amber-400/40 bg-amber-50/90 dark:bg-amber-950/40">
+                <AlertCircle className="size-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <AlertTitle className="text-amber-900 dark:text-amber-200">
+                    {lt(locale, {
+                      fa: 'هنوز خریدت رو تکمیل نکردی!',
+                      en: "You haven't completed your purchase yet!",
+                      ar: 'لم تكمل عملية الشراء بعد!',
+                      zh: '您尚未完成购买！',
+                      ru: 'Вы еще не завершили покупку!',
+                    })}
+                  </AlertTitle>
+                  <AlertDescription className="text-amber-800/90 dark:text-amber-300/90 text-xs">
+                    {lt(locale, {
+                      fa: 'خدمات انتخابی شما در سبد رزرو قطعی نیستند؛ برای تثبیت ظرفیت و صدور نهایی، تسویه‌حساب را تکمیل کنید.',
+                      en: 'Items in your cart are not finalized; complete checkout to guarantee availability and issuance.',
+                      ar: 'الخدمات المحددة في السلة غير مؤكدة بشكل نهائي؛ يرجى إتمام الدفع لتأكيد الحجز.',
+                      zh: '您所选的项目尚未最终锁定；请前往结算以完成预订及出票。',
+                      ru: 'Выбранные услуги в корзине не закреплены окончательно; завершите оплату для гарантии бронирования.',
+                    })}
+                  </AlertDescription>
+                </div>
+              </Alert>
+            </div>
+          )}
+
+          {/* Cart Items List */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 divide-y divide-line/60">
           {cart.length === 0 ? (
             <div className="py-16 text-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-soft text-sub flex items-center justify-center mx-auto">
