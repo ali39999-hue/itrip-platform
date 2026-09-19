@@ -165,7 +165,7 @@ export function PlannerWizard({
       {canBack ? (
         <button 
           onClick={() => setStep((s) => Math.max(0, s - 1))} 
-          className="text-xs font-bold text-sub hover:text-brand-dark inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg px-2 py-1 transition"
+          className="min-h-[44px] text-xs font-bold text-sub hover:text-brand-dark inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg px-3 transition"
         >
           <ArrowRight size={14} className="rtl:block ltr:hidden" />
           <ArrowLeft size={14} className="ltr:block rtl:hidden" /> 
@@ -174,7 +174,7 @@ export function PlannerWizard({
       ) : <div />}
       <button 
         onClick={() => setStep((s) => s + 1)} 
-        className="text-xs font-bold text-sub hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg px-2 py-1 transition"
+        className="min-h-[44px] text-xs font-bold text-sub hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg px-3 transition"
       >
         {t('skip')}
       </button>
@@ -530,7 +530,7 @@ export function PlannerWizard({
                     <div className="pt-3 border-t border-line/60">
                       <span className="block text-xs font-bold text-sub">{t('perPerson')}</span>
                       <span className="text-sm font-black text-price font-price">
-                        تا {num(BUDGET_CAP[b], locale)} <span className="text-[10px]">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'Toman' })}</span>
+                        {lt(locale, { fa: 'تا', en: 'Up to', ar: 'حتى', zh: '最高', ru: 'до' })} {num(BUDGET_CAP[b], locale)} <span className="text-[10px]">{lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'Toman' })}</span>
                       </span>
                     </div>
                   </button>

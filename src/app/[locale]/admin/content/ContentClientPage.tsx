@@ -1411,7 +1411,7 @@ function AdminContentPageInner({
                             onChange={(e) => handlePriceChange(e.target.value)}
                             required
                             placeholder="مثال: ۸۵,۰۰۰,۰۰۰"
-                            className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold font-mono dir-ltr text-right"
+                            className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold font-mono dir-ltr text-end"
                           />
                           {parsedPrice > 0 && (
                             <div className="mt-1.5 space-y-1">
@@ -1440,7 +1440,7 @@ function AdminContentPageInner({
                               setTourChildPriceStr(e.target.value === '' ? '' : formatNumberWithCommas(raw));
                             }}
                             placeholder="اختیاری (برای حذف مقدار را خالی کنید)"
-                            className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold font-mono dir-ltr text-right"
+                            className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold font-mono dir-ltr text-end"
                           />
                           {parsedChildPrice > 0 && (
                             <div className="mt-1.5 space-y-1">
@@ -1527,7 +1527,7 @@ function AdminContentPageInner({
                                 value={tourDiscountPercent}
                                 onChange={(e) => handleDiscountPercentChange(e.target.value)}
                                 placeholder="مثال: ۱۵ یا ۲۰"
-                                className="w-full h-10 px-3 rounded-xl bg-surface border border-line text-xs font-bold font-mono dir-ltr text-right"
+                                className="w-full h-10 px-3 rounded-xl bg-surface border border-line text-xs font-bold font-mono dir-ltr text-end"
                               />
                             </div>
                           ) : (
@@ -1541,7 +1541,7 @@ function AdminContentPageInner({
                                 value={tourDiscountAmountStr}
                                 onChange={(e) => handleDiscountAmountChange(e.target.value)}
                                 placeholder="مثال: ۱۰,۰۰۰,۰۰۰"
-                                className="w-full h-10 px-3 rounded-xl bg-surface border border-line text-xs font-bold font-mono dir-ltr text-right"
+                                className="w-full h-10 px-3 rounded-xl bg-surface border border-line text-xs font-bold font-mono dir-ltr text-end"
                               />
                             </div>
                           )}
@@ -1556,7 +1556,7 @@ function AdminContentPageInner({
                               value={tourOriginalPriceStr}
                               onChange={(e) => handleOriginalPriceChange(e.target.value)}
                               placeholder="مثال: ۱۰۰,۰۰۰,۰۰۰"
-                              className="w-full h-10 px-3 rounded-xl bg-surface border border-line text-xs font-bold font-mono dir-ltr text-right"
+                              className="w-full h-10 px-3 rounded-xl bg-surface border border-line text-xs font-bold font-mono dir-ltr text-end"
                             />
                           </div>
                         </div>
@@ -1658,7 +1658,7 @@ function AdminContentPageInner({
                           value={tourHeroImage}
                           onChange={(e) => setTourHeroImage(e.target.value)}
                           placeholder="https://images.unsplash.com/photo-..."
-                          className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold font-mono dir-ltr text-left"
+                          className="w-full h-10 px-3 rounded-xl bg-soft border border-line text-xs font-bold font-mono dir-ltr text-start"
                         />
                         {tourHeroImage && (
                           <div className="mt-2 relative w-full h-32 rounded-xl overflow-hidden border border-line bg-soft">

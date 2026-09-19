@@ -371,7 +371,7 @@ export default function SupportPage() {
                     setActiveTab('NEW_TICKET');
                     setSelectedTicket(null);
                   }}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition ${
+                  className={`min-h-[44px] px-3.5 rounded-xl text-xs font-black transition ${
                     activeTab === 'NEW_TICKET'
                       ? 'bg-surface text-brand-dark shadow-xs'
                       : 'text-sub hover:text-ink'
@@ -382,7 +382,7 @@ export default function SupportPage() {
                 <button
                   type="button"
                   onClick={() => setActiveTab('MY_TICKETS')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
+                  className={`min-h-[44px] px-3.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
                     activeTab === 'MY_TICKETS'
                       ? 'bg-surface text-brand-dark shadow-xs'
                       : 'text-sub hover:text-ink'
@@ -457,7 +457,7 @@ export default function SupportPage() {
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-4">
                     {submitError && (
-                      <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+                      <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
                         <AlertCircle size={16} className="shrink-0" />
                         <span>{submitError}</span>
                       </div>
@@ -526,7 +526,7 @@ export default function SupportPage() {
                             {lt(locale, { fa: 'هتل و واچر اقامتگاه', en: 'Hotels & Accommodation Voucher', ar: 'الفنادق وقسائم الإقامة', zh: '酒店与住宿凭证', ru: 'Отели и ваучеры' })}
                           </option>
                           <option value="wallet">
-                            {lt(locale, { fa: 'کیف پول و درگاه پرداخت', en: 'Wallet & Payment Gateways', ar: 'المحفظة وبوابات الدفع', zh: '钱包与支付网关', ru: 'Кошелек и оплаتا' })}
+                            {lt(locale, { fa: 'کیف پول و درگاه پرداخت', en: 'Wallet & Payment Gateways', ar: 'المحفظة وبوابات الدفع', zh: '钱包与支付网关', ru: 'Кошелек и оплата' })}
                           </option>
                           <option value="visa">
                             {lt(locale, { fa: 'ویزا و خدمات ورود', en: 'Visa & Entry Services', ar: 'التأشيرات وخدمات الدخول', zh: '签证与入境服务', ru: 'Визы и въезд' })}
@@ -603,7 +603,7 @@ export default function SupportPage() {
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-brand/10 text-brand-dark">
                             {selectedTicket.category}
                           </span>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300">
                             {selectedTicket.status}
                           </span>
                         </div>
@@ -720,8 +720,11 @@ export default function SupportPage() {
                       myTickets.map((t) => (
                         <div
                           key={t.id}
+                          role="button"
+                          tabIndex={0}
                           onClick={() => handleOpenTicket(t.id)}
-                          className="p-4 bg-surface hover:bg-soft rounded-2xl border border-line transition cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleOpenTicket(t.id); } }}
+                          className="p-4 bg-surface hover:bg-soft rounded-2xl border border-line transition cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                         >
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
@@ -731,7 +734,7 @@ export default function SupportPage() {
                               <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-brand/10 text-brand-dark">
                                 {t.category}
                               </span>
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300">
                                 {t.status}
                               </span>
                             </div>
@@ -745,7 +748,7 @@ export default function SupportPage() {
                             </span>
                             <button
                               type="button"
-                              className="px-3.5 py-1.5 rounded-xl bg-brand/10 hover:bg-brand text-brand-dark hover:text-surface text-xs font-black transition"
+                              className="min-h-[44px] px-3.5 rounded-xl bg-brand/10 hover:bg-brand text-brand-dark hover:text-surface text-xs font-black transition"
                             >
                               {lt(locale, { fa: 'مشاهده گفتگو', en: 'View Chat', ar: 'عرض المحادثة', zh: '查看对话', ru: 'Открыть чат' })}
                             </button>

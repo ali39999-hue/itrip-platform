@@ -254,7 +254,7 @@ export function AiPlannerHookSection() {
                 setSelectedWho(sample.who as WhoType);
                 setSelectedBudget(sample.budget as BudgetType);
               }}
-              className="px-3.5 py-1.5 rounded-full bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 hover:border-teal-400/50 text-xs font-medium text-slate-200 transition-all shadow-xs hover:text-white flex items-center gap-1.5"
+              className="min-h-[44px] px-3.5 py-2 rounded-full bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 hover:border-teal-400/50 text-xs font-medium text-slate-200 transition-all shadow-xs hover:text-white flex items-center gap-1.5"
             >
               <span>{sample.title}</span>
             </button>
@@ -293,7 +293,7 @@ export function AiPlannerHookSection() {
                     }`}
                   >
                     <span className="text-base block mb-0.5">{d.flag}</span>
-                    <span className="block truncate">{d.name}</span>
+                    <span className="block truncate" title={d.name}>{d.name}</span>
                   </button>
                 ))}
               </div>
@@ -311,7 +311,7 @@ export function AiPlannerHookSection() {
                       key={d}
                       type="button"
                       onClick={() => setSelectedDays(d)}
-                      className={`flex-1 py-1.5 rounded-lg text-xs font-black transition-all border ${
+                      className={`flex-1 min-h-[44px] py-2 rounded-lg text-xs font-black transition-all border ${
                         selectedDays === d
                           ? 'bg-amber-500/20 border-amber-400 text-amber-300'
                           : 'bg-slate-800/60 border-slate-700 text-slate-300 hover:border-slate-600'
@@ -366,7 +366,7 @@ export function AiPlannerHookSection() {
                     key={b.id}
                     type="button"
                     onClick={() => setSelectedBudget(b.id as BudgetType)}
-                    className={`py-1.5 rounded-lg text-xs font-black transition-all border ${
+                    className={`min-h-[44px] py-2 rounded-lg text-xs font-black transition-all border ${
                       selectedBudget === b.id
                         ? 'bg-amber-500/20 border-amber-400 text-amber-300'
                         : 'bg-slate-800/60 border-slate-700 text-slate-300 hover:border-slate-600'

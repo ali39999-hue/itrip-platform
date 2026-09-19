@@ -26,6 +26,7 @@ import {
   Clock,
   Building2,
   AlertCircle,
+  Crown,
 } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
@@ -41,6 +42,7 @@ const ITEM_ICONS: Record<string, React.ElementType> = {
   TRANSFER: CarTaxiFront,
   ESIM: Wifi,
   INSURANCE: ShieldCheck,
+  CIP: Crown,
 };
 
 export function UnifiedCartDrawer({ open, onClose }: UnifiedCartDrawerProps) {

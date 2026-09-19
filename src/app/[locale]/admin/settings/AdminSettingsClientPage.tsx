@@ -603,8 +603,42 @@ export function AdminSettingsClientPage({
               </div>
             )}
 
-            {/* Cards Table */}
-            <div className="overflow-x-auto">
+            {/* Cards Table — کارت موبایل + جدول دسکتاپ */}
+            {/* کارت موبایل */}
+            <div className="md:hidden space-y-2.5">
+              {bankCards.map((c) => (
+                <div key={c.id} className="p-4 rounded-2xl border border-line bg-surface space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-black text-ink truncate">{c.bankName}</div>
+                      <div className="text-[11px] text-sub truncate">{c.accountHolder}</div>
+                    </div>
+                    <button type="button" onClick={() => handleToggleCardActive(c.id, c.isActive)} className="cursor-pointer shrink-0">
+                      <ErpBadge tone={c.isActive ? 'green' : 'neutral'}>
+                        {c.isActive ? 'فعال و قابل پرداخت' : 'غیرفعال'}
+                      </ErpBadge>
+                    </button>
+                  </div>
+                  <div className="font-mono font-black text-brand-dark text-sm select-all" dir="ltr">
+                    {c.cardNumber.replace(/(\d{4})/g, '$1 ').trim()}
+                  </div>
+                  <div className="font-mono text-[11px] text-sub truncate select-all" dir="ltr">{c.iban || '—'}</div>
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <span className="text-[11px] font-bold text-sub">{c.receiptsCount} رسید ثبت‌شده</span>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCard(c.id)}
+                      className="inline-flex items-center gap-1 min-h-[36px] px-2.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
+                      title="حذف یا غیرفعال‌سازی"
+                    >
+                      <Trash2 size={15} />
+                      <span className="text-xs font-black">حذف</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-start text-xs">
                 <thead>
                   <tr className="border-b border-line text-sub font-black">
@@ -748,8 +782,40 @@ export function AdminSettingsClientPage({
               </div>
             )}
 
-            {/* Wallets Table */}
-            <div className="overflow-x-auto">
+            {/* Wallets Table — کارت موبایل + جدول دسکتاپ */}
+            <div className="md:hidden space-y-2.5">
+              {cryptoWallets.map((w) => (
+                <div key={w.id} className="p-4 rounded-2xl border border-line bg-surface space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-black text-ink">{w.currency} ({w.network})</div>
+                      <div className="text-[11px] text-sub">{w.networkLabel}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const next = !w.isActive;
+                        setCryptoWallets(cryptoWallets.map((it) => (it.id === w.id ? { ...it, isActive: next } : it)));
+                        await toggleDestinationCryptoWalletActiveAction(w.id, next);
+                      }}
+                      className="cursor-pointer shrink-0"
+                    >
+                      <ErpBadge tone={w.isActive ? 'green' : 'neutral'}>
+                        {w.isActive ? 'فعال' : 'غیرفعال'}
+                      </ErpBadge>
+                    </button>
+                  </div>
+                  <div className="font-mono text-xs font-bold text-brand-dark select-all break-all" dir="ltr">
+                    {w.walletAddress}
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold text-sub">{w.receiptsCount} تراکنش</span>
+                    <span className="text-[11px] text-sub font-bold">پیش‌فرض سیستم</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-start text-xs">
                 <thead>
                   <tr className="border-b border-line text-sub font-black">

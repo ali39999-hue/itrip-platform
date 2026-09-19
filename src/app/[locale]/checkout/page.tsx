@@ -23,16 +23,27 @@ import { CheckoutApplicationService } from '@/domains/booking/CheckoutApplicatio
 
 import { CheckoutStepper, type CheckoutPhase } from '@/components/checkout/CheckoutStepper';
 import { PassengerSection } from '@/components/checkout/PassengerSection';
-import { AddonsSection, ESIM_PRICE, INSURANCE_PRICE } from '@/components/checkout/AddonsSection';
+import { AddonsSection } from '@/components/checkout/AddonsSection';
 import { ReferralInputSection } from '@/components/checkout/ReferralInputSection';
 import { PriceBreakdownTable } from '@/components/checkout/PriceBreakdownTable';
 import { SoftLockTimer } from '@/components/checkout/SoftLockTimer';
 import { TravelRulesAdvisoryCard } from '@/components/travel/TravelRulesAdvisoryCard';
 import { HierarchicalCrossSell } from '@/components/checkout/HierarchicalCrossSell';
 import { PaymentGatewaySelector, type PaymentMethodType, type EcardoInstrument } from '@/components/checkout/PaymentGatewaySelector';
-import { CardTransferPaymentView } from '@/components/checkout/CardTransferPaymentView';
-import { CryptoPaymentView } from '@/components/checkout/CryptoPaymentView';
-import { IssuingModal } from '@/components/checkout/IssuingModal';
+import dynamic from 'next/dynamic';
+
+const CardTransferPaymentView = dynamic(
+  () => import('@/components/checkout/CardTransferPaymentView').then((m) => m.CardTransferPaymentView),
+  { ssr: false }
+);
+const CryptoPaymentView = dynamic(
+  () => import('@/components/checkout/CryptoPaymentView').then((m) => m.CryptoPaymentView),
+  { ssr: false }
+);
+const IssuingModal = dynamic(
+  () => import('@/components/checkout/IssuingModal').then((m) => m.IssuingModal),
+  { ssr: false }
+);
 import { SuccessConfirmation } from '@/components/checkout/SuccessConfirmation';
 import { StickyMobileBar } from '@/components/checkout/StickyMobileBar';
 import { trackFunnel } from '@/lib/analytics';
@@ -1087,11 +1098,12 @@ export default function CheckoutPage() {
                 />
               ) : (
                 <>
+                  {/* کفایت موجودی با جمع کامل breakdown (مالیات + کارمزد + تخفیف) سنجیده شود، نه فقط baseAmount */}
                   <PaymentGatewaySelector
                     method={method}
                     setMethod={setMethod}
                     walletBalance={walletBalance}
-                    totalPayable={baseAmount + (addEsim ? ESIM_PRICE : 0) + (addInsurance ? INSURANCE_PRICE : 0)}
+                    totalPayable={totalPayable}
                     selectedInstrument={selectedInstrument}
                     setSelectedInstrument={setSelectedInstrument}
                     isAdmin={isAdminUser}

@@ -1,6 +1,6 @@
 import type { CountryId } from '@/lib/countries';
 
-export type ServiceType = 'flights' | 'hotels' | 'tours' | 'transfers' | 'trains';
+export type ServiceType = 'flights' | 'hotels' | 'tours' | 'transfers' | 'trains' | 'cip';
 
 export interface Flight {
   id: string;
@@ -240,6 +240,42 @@ export interface KycProfile {
   passportExpiry?: string;
 }
 
+export type TravelInsuranceZone =
+  | 'ZONE_TURKEY_NEIGHBORS'
+  | 'ZONE_GULF_MIDDLE_EAST'
+  | 'ZONE_SCHENGEN_EUROPE'
+  | 'ZONE_WORLD_EXCL_US_CA'
+  | 'ZONE_WORLD_ALL';
+
+export type InsuranceAgeBracket = '0-12' | '13-65' | '66-70' | '71-75' | '76-80' | '81+';
+
+export type InsuranceCoverageLimitEur = 10000 | 30000 | 50000;
+
+export interface InsuranceCompanyInfo {
+  id: string;
+  code: string;
+  nameFa: string;
+  nameEn: string;
+  logo: string;
+  solvencyLevel: 1 | 2;
+  rating: number;
+  reviewsCount: number;
+  instantIssuance: boolean;
+  schengenApproved: boolean;
+}
+
+export interface AssistancePartnerInfo {
+  id: string;
+  code: string;
+  nameFa: string;
+  nameEn: string;
+  logo: string;
+  country: string;
+  supportPhone24h: string;
+  farsiSupport: boolean;
+  directHospitalSettlement: boolean;
+}
+
 export interface InsurancePlan {
   id: string;
   name: string;
@@ -251,4 +287,51 @@ export interface InsurancePlan {
   priceLabel: string;
   coverageEur: number;
   features: { text: string; textEn?: string; included: boolean }[];
+  company?: InsuranceCompanyInfo;
+  assistance?: AssistancePartnerInfo;
+  zone?: TravelInsuranceZone;
+  schengenCompliant?: boolean;
+  instantIssuance?: boolean;
+  topPerksFa?: string[];
+  topPerksEn?: string[];
 }
+
+export interface CipAirportOption {
+  id: string;
+  airportCode: string; // e.g. IKA, MHD, SYZ, TBZ, KIH, DXB
+  airportNameFa: string;
+  airportNameEn: string;
+  cityFa: string;
+  cityEn: string;
+  countryCode: string;
+  terminal: string;
+  basePriceAdult: number; // in Toman
+  basePriceGuest: number; // Accompanying guest / مشایعت‌کننده
+  petServicePrice: number;
+  wheelchairPrice: number;
+  suite6hPrice: number;
+  suite10hPrice: number;
+  suiteOvernightPrice: number;
+  descriptionFa: string;
+  descriptionEn: string;
+  featuresFa: string[];
+  featuresEn: string[];
+  image: string;
+  gallery?: string[];
+  rating: number;
+  reviewsCount: number;
+  isFlagship?: boolean;
+}
+
+export interface CipVehicleOption {
+  id: string;
+  nameFa: string;
+  nameEn: string;
+  category: 'sedan_economy' | 'sedan_luxury' | 'suv' | 'suv_luxury' | 'van' | 'vip';
+  capacity: number;
+  luggageCapacity: number;
+  priceTehran: number; // in Toman
+  priceSuburbs: number; // in Toman
+  image: string;
+}
+

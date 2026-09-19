@@ -134,6 +134,18 @@ export class BookingApplicationService {
       if (transfer) return transfer.price;
     }
 
+    // CIP Airport Lounges & Services (dynamic CMS override first)
+    if (type === 'CIP' || type === 'CIPS' || itemId?.startsWith('cip-')) {
+      try {
+        const { CipService } = await import('@/services/cip-service');
+        const airport = (await CipService.getAirportByCodeAsync(itemId || 'IKA')) || (await CipService.getAirportsAsync())[0];
+        if (airport) {
+          // basePriceAdult is in Toman; multiply by 10 to standard IRR
+          return airport.basePriceAdult * 10;
+        }
+      } catch {}
+    }
+
     // Visa: dynamic CMS override first, then static fallback
     if (type === 'VISA' || itemId?.startsWith('v-')) {
       try {
@@ -149,8 +161,20 @@ export class BookingApplicationService {
     const esim = ESIM_PACKAGES.find((e) => e.id === itemId);
     if (esim) return esim.price;
 
-    const insurance = INSURANCE_PLANS.find((i) => i.id === itemId);
-    if (insurance) return insurance.price;
+    // Travel Insurance: dynamic InsuranceService lookup (CMS-first) with graceful fallback
+    if (type === 'INSURANCE' || itemId?.startsWith('ins-')) {
+      try {
+        const { InsuranceService } = await import('@/services/insurance-service');
+        const plan = await InsuranceService.getPlanByIdAsync(itemId ?? '');
+        if (plan) {
+          return plan.finalPriceRials;
+        }
+      } catch {}
+      const insurance = INSURANCE_PLANS.find((i) => i.id === itemId);
+      if (insurance) return insurance.price;
+      // Resilient fallback for direct insurance context bookings
+      return 1900000;
+    }
 
     if (type === 'HOTEL') {
       const liveHotel = (await getHotelByIdAsync(itemId)) || getHotelById(itemId);

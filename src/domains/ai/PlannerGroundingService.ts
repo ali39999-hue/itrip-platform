@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import { resolveAuthSigningSecret } from '@/lib/security/secrets';
 
 export interface GroundedOffer {
   inventoryItemId: string;
@@ -42,7 +43,12 @@ export class PlannerGroundingService {
     price: number,
     capacity: number
   ): string {
-    const secret = process.env.AUTH_SECRET || 'planner-grounding-secret';
+    const secret = resolveAuthSigningSecret('planner-grounding');
+    if (!secret) {
+      // Fail closed (SEC-014): a grounding signature computed with a published
+      // fallback key proves nothing. Refuse to emit an unverifiable signature.
+      throw new Error('Planner grounding signature unavailable: AUTH_SECRET is not configured.');
+    }
     return crypto
       .createHmac('sha256', secret)
       .update(`${inventoryItemId}:${date}:${price}:${capacity}`)

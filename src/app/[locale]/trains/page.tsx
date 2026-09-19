@@ -99,6 +99,7 @@ export default function TrainsPage() {
   
   const [fromCity, setFromCity] = useState(lt(locale, { fa: 'تهران', en: 'Tehran', ar: 'طهران', zh: '德黑兰', ru: 'Тегеран' }));
   const [toCity, setToCity] = useState(lt(locale, { fa: 'مشهد', en: 'Mashhad', ar: 'مشهد', zh: '马什哈德', ru: 'Мешхед' }));
+  const [applied, setApplied] = useState({ from: '', to: '' });
   const [filterTrain, setFilterTrain] = useState(true);
   const [filterBus, setFilterBus] = useState(true);
 
@@ -108,10 +109,18 @@ export default function TrainsPage() {
   };
 
   const list = RAW_SERVICES.filter((s) => {
-    if (s.kind === 'train' && filterTrain) return true;
-    if (s.kind === 'bus' && filterBus) return true;
-    return false;
+    if (s.kind === 'train' && !filterTrain) return false;
+    if (s.kind === 'bus' && !filterBus) return false;
+    // جستجوی مبدا/مقصد فقط وقتی اعمال شده که کاربر دکمه جستجو را بزند
+    if (applied.from && !lt(locale, s.from).includes(applied.from.trim())) return false;
+    if (applied.to && !lt(locale, s.to).includes(applied.to.trim())) return false;
+    return true;
   });
+
+  function search(e?: React.FormEvent) {
+    e?.preventDefault();
+    setApplied({ from: fromCity, to: toCity });
+  }
 
   function reserve(service: ServiceItem) {
     setBookingContext({
@@ -145,7 +154,7 @@ export default function TrainsPage() {
           
           {/* Search Floating Card */}
           <div className="glass-panel shadow-elev-2 rounded-2xl p-4 sm:p-6 w-full max-w-4xl mx-auto">
-            <div className="flex flex-col md:flex-row items-center gap-3 relative">
+            <form className="flex flex-col md:flex-row items-center gap-3 relative" onSubmit={search}>
               <div className="relative w-full flex-1">
                 <MapPin size={18} className="absolute start-3.5 top-1/2 -translate-y-1/2 text-sub pointer-events-none z-10" />
                 <Input
@@ -186,12 +195,13 @@ export default function TrainsPage() {
               </div>
 
               <Button
+                type="submit"
                 aria-label={lt(locale, { fa: 'جستجوی بلیط', en: 'Search tickets', ar: 'البحث عن تذاكر', zh: '搜索车票', ru: 'Поиск билетов' })}
                 className="h-12 bg-action hover:bg-action-hover text-ink font-black text-sm rounded-xl px-8 w-full md:w-auto flex items-center justify-center gap-2 shadow-sm shrink-0"
               >
                 <Search size={18} /> {lt(locale, { fa: 'جستجو', en: 'Search', ar: 'بحث', zh: '搜索', ru: 'Поиск' })}
               </Button>
-            </div>
+            </form>
           </div>
         </div>
       </section>
@@ -244,7 +254,7 @@ export default function TrainsPage() {
               <button
                 type="button"
                 onClick={() => setFilterTrain(!filterTrain)}
-                className={`px-3 py-1.5 rounded-xl border flex items-center gap-1.5 transition ${
+                className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-1.5 transition ${
                   filterTrain ? 'bg-brand text-surface border-brand' : 'bg-surface text-sub border-line'
                 }`}
               >
@@ -254,7 +264,7 @@ export default function TrainsPage() {
               <button
                 type="button"
                 onClick={() => setFilterBus(!filterBus)}
-                className={`px-3 py-1.5 rounded-xl border flex items-center gap-1.5 transition ${
+                className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-1.5 transition ${
                   filterBus ? 'bg-brand text-surface border-brand' : 'bg-surface text-sub border-line'
                 }`}
               >
@@ -289,19 +299,19 @@ export default function TrainsPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-3 pt-3 border-t border-line/60">
-                  <div className="flex items-center gap-2">
-                    <CircleDot size={14} className="text-brand" aria-hidden="true" />
+                <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-line/60">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <CircleDot size={14} className="text-brand shrink-0" aria-hidden="true" />
                     <span className="font-mono font-black text-[16px] text-ink" dir="ltr">{s.dep}</span>
-                    <span className="text-xs font-bold text-sub">{lt(locale, s.from)}</span>
+                    <span className="text-xs font-bold text-sub truncate">{lt(locale, s.from)}</span>
                   </div>
-                  <span className="text-xs font-bold text-sub bg-soft px-2.5 py-1 rounded-full">
+                  <span className="text-xs font-bold text-sub bg-soft px-2.5 py-1 rounded-full shrink-0">
                     {lt(locale, s.duration)}
                   </span>
-                  <div className="flex items-center gap-2">
-                    <CircleDot size={14} className="text-brand-dark" aria-hidden="true" />
+                  <div className="flex items-center gap-2 min-w-0 justify-end">
+                    <span className="text-xs font-bold text-sub truncate">{lt(locale, s.to)}</span>
                     <span className="font-mono font-black text-[16px] text-ink" dir="ltr">{s.arr}</span>
-                    <span className="text-xs font-bold text-sub">{lt(locale, s.to)}</span>
+                    <CircleDot size={14} className="text-brand-dark shrink-0" aria-hidden="true" />
                   </div>
                 </div>
               </div>

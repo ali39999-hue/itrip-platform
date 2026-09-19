@@ -87,7 +87,7 @@ export function HotelCard({
   return (
     <article
       aria-label={`${locale === 'fa' ? hotel.name : hotel.nameEn}, ${hotel.stars} stars, ${locale === 'fa' ? hotel.city : hotel.cityEn}`}
-      className="@container/card bg-white dark:bg-surface border border-slate-200/90 dark:border-line rounded-2xl p-3.5 sm:p-5 hover:border-brand/40 transition-all shadow-[0_2px_12px_rgba(5,63,62,0.06)] hover:shadow-md group active:scale-[0.99] duration-100"
+      className="@container/card bg-surface border border-border/80 dark:border-line rounded-2xl p-3.5 sm:p-5 hover:border-brand/40 transition-all shadow-[0_2px_12px_rgba(5,63,62,0.06)] dark:shadow-none hover:shadow-md group active:scale-[0.98] duration-100"
     >
       {/* ========================================================================= */}
       {/* 1. MOBILE COMPACT VIEW (< MD) — FLYTODAY MOBILE STANDARD                  */}
@@ -143,7 +143,11 @@ export function HotelCard({
                 </span>
                 {hotel.propertyType && hotel.propertyType !== 'hotel' && (
                   <span className="px-1.5 py-0.5 rounded bg-soft text-brand-dark text-[9.5px] font-black border border-line">
-                    {hotel.propertyType === 'apartment' ? 'آپارتمان' : hotel.propertyType === 'boutique' ? 'سنتی' : 'ویلا'}
+                    {hotel.propertyType === 'apartment'
+                      ? lt(locale, { fa: 'هتل‌آپارتمان', en: 'Apartment Hotel', ar: 'شقق فندقية', zh: '公寓酒店', ru: 'Апарт-отель' })
+                      : hotel.propertyType === 'boutique'
+                      ? lt(locale, { fa: 'سنتی و بوم‌گردی', en: 'Boutique', ar: 'بوتيك', zh: '精品传统', ru: 'Бутик' })
+                      : lt(locale, { fa: 'ویلا و سوئیت', en: 'Villa', ar: 'فيلا', zh: '别墅', ru: 'Вилла' })}
                   </span>
                 )}
                 {hotel.source === 'live' && (
@@ -300,13 +304,13 @@ export function HotelCard({
                 <span>{distanceText}</span>
               </span>
               {hotel.amenities.includes('breakfast') && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-black border border-emerald-200">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-xs font-black border border-emerald-200 dark:border-emerald-900">
                   <Coffee size={12} className="text-emerald-700" aria-hidden="true" />
                   <span>{lt(locale, { fa: 'صبحانه بوفه رایگان', en: 'Free Breakfast', ar: 'إفطار مجاني', zh: '免费早餐', ru: 'Бесплатный завтрак' })}</span>
                 </span>
               )}
               {hotel.rating >= 8.5 && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-50 text-rose-700 text-xs font-black border border-rose-200">
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs font-black border border-rose-200 dark:border-rose-900">
                   <Flame size={12} className="text-rose-600" aria-hidden="true" />
                   <span>
                     {lt(locale, {

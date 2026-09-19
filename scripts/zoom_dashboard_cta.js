@@ -14,7 +14,7 @@ function readDotEnv(key) {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
   const csrfRes = await page.request.get('http://localhost:3000/api/auth/csrf');
   const { csrfToken } = await csrfRes.json();
-  const password = process.env.ADMIN_PASSWORD || readDotEnv('ADMIN_PASSWORD') || 'Admin@Firuzo2026!Secure';
+  const password = process.env.ADMIN_PASSWORD || readDotEnv('ADMIN_PASSWORD') || '';
   await page.request.post('http://localhost:3000/api/auth/callback/credentials', {
     form: { identifier: 'admin@firuzo.com', password, channel: 'credentials', csrfToken, json: 'true' },
   });

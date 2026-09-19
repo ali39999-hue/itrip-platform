@@ -23,10 +23,21 @@
  */
 import { chromium } from '@playwright/test';
 import { AxeBuilder } from '@axe-core/playwright';
+import { execSync } from 'node:child_process';
 import fs from 'fs';
 
 const BASE = process.argv[2] || 'http://localhost:3000';
 const OUT = process.argv[3] || 'docs/baseline/a11y-baseline.json';
+
+// npm scripts run from the repo root; CI sets GITHUB_SHA explicitly.
+function measuredCommit() {
+  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA;
+  try {
+    return execSync('git rev-parse HEAD', { cwd: process.cwd(), stdio: 'pipe' }).toString().trim();
+  } catch {
+    return 'unknown';
+  }
+}
 
 const LOCALES = ['fa', 'en'];
 
@@ -80,6 +91,9 @@ const context = await browser.newContext();
 
 const report = {
   generatedAt: new Date().toISOString(),
+  // QR-003: provenance of the scanned build — the quality report rejects
+  // artifacts that were not produced for the commit under test.
+  commit: measuredCommit(),
   baseUrl: BASE,
   failImpacts: FAIL_IMPACTS,
   locales: LOCALES,

@@ -9,7 +9,7 @@ import type { CheckoutPhase } from '@/components/checkout/CheckoutStepper';
 
 export interface CartItem {
   id: string;
-  type: 'FLIGHT' | 'HOTEL' | 'TOUR' | 'TRANSFER' | 'VISA' | 'ESIM' | 'INSURANCE';
+  type: 'FLIGHT' | 'HOTEL' | 'TOUR' | 'TRANSFER' | 'VISA' | 'ESIM' | 'INSURANCE' | 'CIP';
   title: string;
   subtitle?: string;
   supplier?: string;

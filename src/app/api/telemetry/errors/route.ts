@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { z } from 'zod';
 import { ErrorTrackerService, ErrorSeverity, ErrorSource } from '@/domains/observability/ErrorTrackerService';
+import { resolveAuthSigningSecret } from '@/lib/security/secrets';
 
 // In-memory rate limiting map for error ingestion: IP -> timestamps[]
 const rateLimitMap = new Map<string, number[]>();
@@ -73,14 +74,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Try to extract session details if logged in
+    // Try to extract session details if logged in. SEC-014: no published JWT
+    // fallback secret — when AUTH_SECRET is missing we simply skip session
+    // enrichment (fail closed) instead of verifying tokens with a public key.
     let userId: string | null = null;
     let userRole: string | null = null;
     try {
-      const token = await getToken({
-        req,
-        secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'firuzo-jwt-default-secret-key-32chars',
-      });
+      const authSecret = resolveAuthSigningSecret('jwt-session');
+      const token = authSecret ? await getToken({ req, secret: authSecret }) : null;
       if (token) {
         userId = token.sub ? String(token.sub) : null;
         userRole = token.role ? String(token.role) : null;

@@ -51,7 +51,7 @@ export default function AuthPage() {
   // Channel badges derive from real provider configuration — a channel whose
   // provider is unconfigured must never claim LIVE (honest SIM labeling).
   // While capabilities are still fetching, badges render invisibly (no wrong flash).
-  const SIM_BADGE_CLS = 'text-[8.5px] font-black text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 rounded-full';
+  const SIM_BADGE_CLS = 'text-[10px] font-black text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 rounded-full';
   const SIM_BADGE_TEXT = lt(locale, { fa: 'شبیه‌سازی', en: 'SIM', ar: 'محاكاة', zh: '模拟', ru: 'СИМ' });
   const channelBadge = (live: boolean | undefined, liveText: string, liveCls: string) => {
     if (capabilities === null) return { text: '', cls: 'invisible' };
@@ -451,14 +451,14 @@ export default function AuthPage() {
               <button
                 type="button"
                 onClick={() => { setAuthMode('otp'); setError(''); }}
-                className={`flex-1 py-2 rounded-xl text-center transition ${authMode === 'otp' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
+                className={`flex-1 min-h-[44px] py-2 rounded-xl text-center transition ${authMode === 'otp' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
               >
                 {lt(locale, { fa: 'ورود با کد یک‌بار مصرف', en: 'One-Time Code (OTP)', ar: 'رمز لمرة واحدة', zh: '短信/邮箱验证码', ru: 'Одноразовый код' })}
               </button>
               <button
                 type="button"
                 onClick={() => { setAuthMode('password'); setError(''); }}
-                className={`flex-1 py-2 rounded-xl text-center transition ${authMode === 'password' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
+                className={`flex-1 min-h-[44px] py-2 rounded-xl text-center transition ${authMode === 'password' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
               >
                 {lt(locale, { fa: 'ورود با کلمه عبور (ERP)', en: 'Password Login (ERP)', ar: 'كلمة المرور (ERP)', zh: '密码登录 (ERP)', ru: 'Пароль (ERP)' })}
               </button>
@@ -499,7 +499,7 @@ export default function AuthPage() {
                   <button
                     type="button"
                     onClick={() => { setChannel('phone'); setIdentifier(''); resetEmailFlow(); }}
-                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'phone' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
+                    className={`min-h-[44px] py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'phone' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
                     title="SMS / Phone"
                   >
                     <Phone size={16} />
@@ -509,7 +509,7 @@ export default function AuthPage() {
                   <button
                     type="button"
                     onClick={() => { setChannel('email'); setIdentifier(''); resetEmailFlow(); }}
-                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'email' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
+                    className={`min-h-[44px] py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'email' ? 'bg-surface text-brand shadow-xs' : 'text-sub hover:text-ink'}`}
                     title="Email"
                   >
                     <Mail size={16} />
@@ -519,7 +519,7 @@ export default function AuthPage() {
                   <button
                     type="button"
                     onClick={() => { setChannel('telegram'); setIdentifier(''); resetEmailFlow(); }}
-                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'telegram' ? 'bg-[#229ED9]/15 text-[#229ED9] shadow-xs' : 'text-sub hover:text-ink'}`}
+                    className={`min-h-[44px] py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'telegram' ? 'bg-[#229ED9]/15 text-[#229ED9] shadow-xs' : 'text-sub hover:text-ink'}`}
                     title="Telegram"
                   >
                     <Send size={16} />
@@ -529,7 +529,7 @@ export default function AuthPage() {
                   <button
                     type="button"
                     onClick={() => { setChannel('bale'); setIdentifier(''); resetEmailFlow(); }}
-                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'bale' ? 'bg-[#00A693]/15 text-[#00A693] shadow-xs' : 'text-sub hover:text-ink'}`}
+                    className={`min-h-[44px] py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'bale' ? 'bg-[#00A693]/15 text-[#00A693] shadow-xs' : 'text-sub hover:text-ink'}`}
                     title="Bale (پیام‌رسان بله)"
                   >
                     <MessageSquare size={16} />
@@ -539,7 +539,7 @@ export default function AuthPage() {
                   <button
                     type="button"
                     onClick={() => { setChannel('whatsapp'); setIdentifier(''); resetEmailFlow(); }}
-                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'whatsapp' ? 'bg-[#25D366]/15 text-[#25D366] shadow-xs' : 'text-sub hover:text-ink'}`}
+                    className={`min-h-[44px] py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'whatsapp' ? 'bg-[#25D366]/15 text-[#25D366] shadow-xs' : 'text-sub hover:text-ink'}`}
                     title="WhatsApp"
                   >
                     <MessageCircle size={16} />
@@ -549,7 +549,7 @@ export default function AuthPage() {
                   <button
                     type="button"
                     onClick={() => { setChannel('wechat'); setIdentifier(''); resetEmailFlow(); }}
-                    className={`py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'wechat' ? 'bg-[#07C160]/15 text-[#07C160] shadow-xs' : 'text-sub hover:text-ink'}`}
+                    className={`min-h-[44px] py-2 px-1 rounded-xl text-xs font-black flex flex-col items-center gap-0.5 transition ${channel === 'wechat' ? 'bg-[#07C160]/15 text-[#07C160] shadow-xs' : 'text-sub hover:text-ink'}`}
                     title="WeChat"
                   >
                     <QrCode size={16} />

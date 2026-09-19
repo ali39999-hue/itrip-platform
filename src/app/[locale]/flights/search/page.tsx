@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { useTranslations, useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
+import { JalaliDatePicker } from '@/components/ui/DatePicker';
 import { resolveCityQuery, localizedAirportLabel } from '@/lib/cities';
 import type { Flight } from '@/lib/types';
 import { toast } from 'sonner';
@@ -1263,7 +1264,7 @@ function FlightSearchInner() {
                 type="button"
                 onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                 disabled={currentPage === 1}
-                className="min-h-10 px-3 rounded-xl border border-line bg-surface text-sub text-[13px] font-black transition-colors hover:bg-soft disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                className="min-h-11 min-w-11 px-3 rounded-xl border border-line bg-surface text-sub text-[13px] font-black transition-colors hover:bg-soft disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
               >
                 {t('previousPage')}
               </button>
@@ -1429,6 +1430,7 @@ function FlightSearchInner() {
           aria-modal="true"
           aria-label={lt(locale, { fa: 'تغییر پارامترهای جستجوی پرواز', en: 'Edit flight search parameters', ar: 'تعديل معايير البحث عن الرحلات', zh: '修改航班搜索参数', ru: 'Изменить параметры поиска рейсов' })}
           className="fixed inset-0 z-[160] flex items-end justify-center bg-deep/60 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => setEditSheetOpen(false)}
         >
           <div className="w-full max-w-lg bg-surface rounded-t-3xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] border-t border-line shadow-2xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom-5 duration-200 space-y-4">
             <div className="w-10 h-1 rounded-full bg-line mx-auto mb-1" />
@@ -1492,12 +1494,12 @@ function FlightSearchInner() {
                 <label htmlFor="edit-flight-date" className="block text-xs font-bold text-sub mb-1">
                   {lt(locale, { fa: 'تاریخ پرواز', en: 'Flight Date', ar: 'تاريخ الرحلة', zh: '航班日期', ru: 'Дата рейса' })}
                 </label>
-                <input
-                  id="edit-flight-date"
-                  type="date"
+                <JalaliDatePicker
                   value={editDate}
-                  onChange={(e) => setEditDate(e.target.value)}
-                  className="w-full p-3 rounded-xl border border-line bg-soft text-xs font-bold font-mono"
+                  onChange={(d) => setEditDate(d || '')}
+                  label=""
+                  id="edit-flight-date"
+                  className="!min-h-[50px] !rounded-xl !py-1.5 !px-3"
                 />
               </div>
 

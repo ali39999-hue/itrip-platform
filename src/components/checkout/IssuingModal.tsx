@@ -37,7 +37,7 @@ export function IssuingModal({ countdown, issueStep }: IssuingModalProps) {
   ];
 
   return (
-    <div className="fixed inset-0 z-[120] bg-ink/70 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[200] bg-ink/70 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
       <div className="w-full max-w-md p-8 rounded-3xl bg-surface border border-line shadow-elev-3 text-center space-y-6">
         <div className="w-16 h-16 rounded-full bg-mint flex items-center justify-center mx-auto text-brand-dark animate-pulse">
           <Loader2 size={32} className="animate-spin" aria-hidden="true" />

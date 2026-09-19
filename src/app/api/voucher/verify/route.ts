@@ -7,7 +7,6 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const token = searchParams.get('token');
-  const ref = searchParams.get('ref');
 
   let verifiedPayload: { ref: string; bookingId: string; pnr?: string | null; exp: number } | null = null;
   let tokenError: string | null = null;
@@ -35,15 +34,20 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const queryRef = verifiedPayload?.ref || ref;
-  const queryId = verifiedPayload?.bookingId;
-
-  if (!queryRef && !queryId) {
+  // Verification must be anchored to a signed token (VERIFY-01). A bare `?ref=`
+  // used to skip signature verification entirely and return a booking's
+  // customer/date/status for any enumerable reference — an unauthenticated
+  // enumeration oracle. Without a valid token there is nothing trustworthy to
+  // report, so we fail closed.
+  if (!verifiedPayload) {
     return NextResponse.json(
-      { valid: false, state: 'MISSING_PARAMS', error: 'Token or booking reference is required' },
+      { valid: false, state: 'INVALID_SIGNATURE', error: 'A valid verification token is required' },
       { status: 400 }
     );
   }
+
+  const queryRef = verifiedPayload.ref;
+  const queryId = verifiedPayload.bookingId;
 
   const booking = await prisma.booking.findFirst({
     where: {
@@ -87,7 +91,7 @@ export async function GET(request: NextRequest) {
 
   const isConfirmed =
     (booking.status === 'CONFIRMED' || booking.status === 'ISSUED' || booking.status === 'COMPLETED') &&
-    booking.paymentStatus === 'PAID';
+    (booking.paymentStatus === 'CAPTURED' || booking.paymentStatus === 'PARTIALLY_REFUNDED');
 
   if (!isConfirmed) {
     return NextResponse.json({

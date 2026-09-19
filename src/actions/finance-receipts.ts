@@ -1,9 +1,9 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { safeAuth } from '@/auth';
 import { revalidatePath } from 'next/cache';
 import { LedgerInvariantValidator } from '@/domains/ledger/LedgerInvariantValidator';
+import { requirePermission } from '@/domains/identity/permission-service';
 
 export async function reviewCardReceiptAction(params: {
   receiptId: string;
@@ -11,15 +11,7 @@ export async function reviewCardReceiptAction(params: {
   adminNote?: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const session = await safeAuth();
-    if (!session || !session.user) {
-      return { success: false, error: 'Unauthorized' };
-    }
-
-    const userRole = session.user.role || 'CUSTOMER';
-    if (!['SUPER_ADMIN', 'FINANCE', 'OPS'].includes(userRole)) {
-      return { success: false, error: 'Forbidden: Admin or Finance role required' };
-    }
+    const admin = await requirePermission(['finance:post', 'payment:capture', 'finance:view']);
 
     const receipt = await prisma.cardTransferReceipt.findUnique({
       where: { id: params.receiptId },
@@ -34,6 +26,27 @@ export async function reviewCardReceiptAction(params: {
       return { success: false, error: `Receipt has already been reviewed (${receipt.status})` };
     }
 
+    // SHEET-01: block approval of a receipt whose booking has already reached a
+    // terminal/refunded state or whose payment was already captured. Otherwise a
+    // stale PENDING_REVIEW row could settle money that was never collected.
+    const TERMINAL_BOOKING_STATES = ['EXPIRED', 'CANCELLED', 'REFUND_INITIATED', 'REFUNDED', 'FAILED'] as const;
+    if ((TERMINAL_BOOKING_STATES as readonly string[]).includes(receipt.booking.status)) {
+      return {
+        success: false,
+        error: `Cannot approve: booking is already in a terminal state (${receipt.booking.status})`,
+      };
+    }
+    if (
+      receipt.booking.paymentStatus === 'CAPTURED' ||
+      receipt.booking.paymentStatus === 'REFUNDED' ||
+      receipt.booking.paymentStatus === 'PARTIALLY_REFUNDED'
+    ) {
+      return {
+        success: false,
+        error: `Cannot approve: booking payment is already settled (${receipt.booking.paymentStatus})`,
+      };
+    }
+
     const now = new Date();
 
     if (params.action === 'APPROVE') {
@@ -43,7 +56,7 @@ export async function reviewCardReceiptAction(params: {
           where: { id: params.receiptId },
           data: {
             status: 'APPROVED',
-            reviewerId: session.user.id,
+            reviewerId: admin.id,
             reviewedAt: now,
             adminNote: params.adminNote || 'Approved by Finance Operations',
           },
@@ -87,7 +100,7 @@ export async function reviewCardReceiptAction(params: {
         where: { id: params.receiptId },
         data: {
           status: 'REJECTED',
-          reviewerId: session.user.id,
+          reviewerId: admin.id,
           reviewedAt: now,
           adminNote: params.adminNote || 'Rejected due to invalid or unverified transfer details',
         },

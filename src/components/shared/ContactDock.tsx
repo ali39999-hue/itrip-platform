@@ -197,13 +197,17 @@ export function ContactDock() {
       {/* مودال تماس اضطراری با مترجم */}
       {open && (
         <div
-          className="fixed inset-0 z-[200] grid place-items-center p-4 bg-ink/60 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center sm:p-4 bg-ink/60 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={() => setOpen(false)}
         >
           <div
-            className="w-full max-w-md rounded-3xl bg-surface border border-line shadow-elev-3 overflow-hidden animate-in zoom-in-95 duration-200"
+            className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl bg-surface border border-line shadow-elev-3 overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* دستگیره درگ — فقط موبایل (قاعده bottom-sheet) */}
+            <div className="sm:hidden pt-3 pb-1 bg-gradient-to-b from-deep to-brand-dark">
+              <div className="w-10 h-1 rounded-full bg-surface/40 mx-auto" aria-hidden="true" />
+            </div>
             <div
               className={`relative p-6 text-center text-surface ${
                 phase === 'live'
@@ -214,7 +218,7 @@ export function ContactDock() {
               <button
                 onClick={() => setOpen(false)}
                 aria-label={ariaT('close')}
-                className="absolute top-4 start-4 w-8 h-8 rounded-full bg-surface/20 grid place-items-center hover:bg-surface/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand transition"
+                className="absolute top-3 start-3 min-w-[44px] min-h-[44px] rounded-full bg-surface/20 grid place-items-center hover:bg-surface/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand transition"
               >
                 <X size={15} />
               </button>
@@ -311,7 +315,7 @@ export function ContactDock() {
 
               {phase === 'live' && (
                 <div className="space-y-4">
-                  <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 leading-relaxed">
+                  <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-xs text-emerald-800 dark:text-emerald-300 leading-relaxed">
                     {lt(locale, {
                       fa: 'مکالمه شما با مترجم همراه برقرار است. صدای مترجم از طریق بلندگو پخش می‌شود.',
                       en: 'You are connected with your interpreter. Their voice is played through the speaker.',

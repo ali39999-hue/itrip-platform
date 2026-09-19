@@ -86,7 +86,7 @@ export function PassengerSection({
                 key={idx}
                 type="button"
                 onClick={() => onSelectPassengerTab && onSelectPassengerTab(idx)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer ${
+                className={`flex items-center gap-1.5 min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer ${
                   isCurrent
                     ? 'bg-brand text-surface shadow-xs'
                     : 'bg-surface text-ink hover:bg-mint/40'
@@ -138,7 +138,7 @@ export function PassengerSection({
                   }
                 }}
                 defaultValue=""
-                className="h-10 px-3 rounded-xl bg-mint/50 border border-brand/30 text-brand-dark text-[12.5px] font-black focus:outline-none focus:ring-2 focus:ring-brand cursor-pointer"
+                className="h-11 px-3 rounded-xl bg-mint/50 border border-brand/30 text-brand-dark text-[12.5px] font-black focus:outline-none focus:ring-2 focus:ring-brand cursor-pointer"
               >
                 <option value="" disabled>
                   {lt(locale, {
@@ -365,7 +365,7 @@ export function PassengerSection({
           <select
             id="gender"
             {...register('gender')}
-            className="w-full h-10 px-3 rounded-xl border border-line bg-surface text-ink text-[13px] font-bold focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand cursor-pointer"
+            className="w-full h-11 px-3 rounded-xl border border-line bg-surface text-ink text-[13px] font-bold focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand cursor-pointer"
           >
             <option value="MALE">{lt(locale, { fa: 'مرد (Male)', en: 'Male', ar: 'ذكر', zh: '男 (Male)', ru: 'Мужской (Male)' })}</option>
             <option value="FEMALE">{lt(locale, { fa: 'زن (Female)', en: 'Female', ar: 'أنثى', zh: '女 (Female)', ru: 'Женский (Female)' })}</option>

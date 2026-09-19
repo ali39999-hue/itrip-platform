@@ -20,19 +20,17 @@ export interface TenantAuthContext {
  */
 export async function hasErpRole(userId?: string): Promise<boolean> {
   let uid = userId;
-  const { safeAuth, isKnownAdminIdentifier } = await import('@/auth');
+  const { safeAuth } = await import('@/auth');
   const session = await safeAuth();
   if (!uid) {
     uid = session?.user?.id;
   }
   if (!uid) return false;
 
-  // Check if active session itself is Super Admin or known admin
-  if (
-    (session?.user?.id === uid || !userId) &&
-    (session?.user?.role === 'SUPER_ADMIN' ||
-      (session?.user?.email && isKnownAdminIdentifier(session.user.email)))
-  ) {
+  // AUTH-002: the session role is DB-derived (minted by `authorize()` from the
+  // relational chain). It is a valid short-circuit, but it can no longer be
+  // produced by an email/phone pattern match.
+  if (session?.user?.id === uid && session?.user?.role === 'SUPER_ADMIN') {
     return true;
   }
 
@@ -49,24 +47,17 @@ export async function hasErpRole(userId?: string): Promise<boolean> {
     // Legacy display column fallback — still requires a live, ACTIVE DB row.
     const dbUser = await prisma.user.findUnique({
       where: { id: uid },
-      select: { role: true, isActive: true, email: true, phone: true },
+      select: { role: true, isActive: true },
     });
     if (!dbUser || dbUser.isActive === false) return false;
     return (
-      dbUser.role === 'SUPER_ADMIN' ||
-      (dbUser.email && isKnownAdminIdentifier(dbUser.email)) ||
-      (dbUser.phone && isKnownAdminIdentifier(dbUser.phone)) ||
-      (ERP_STAFF_ROLES as readonly string[]).includes(dbUser.role || '')
+      dbUser.role === 'SUPER_ADMIN' || (ERP_STAFF_ROLES as readonly string[]).includes(dbUser.role || '')
     );
   } catch (err) {
-    console.warn('[hasErpRole] Database query failed — evaluating session admin status:', err);
-    if (
-      session?.user?.id === uid &&
-      (session.user.role === 'SUPER_ADMIN' ||
-        (session.user.email && isKnownAdminIdentifier(session.user.email)))
-    ) {
-      return true;
-    }
+    // Fail closed (AUTH-001): when the database cannot confirm the principal, no
+    // ERP privilege is granted. Previously the session's own claim was trusted
+    // here, which turned a DB outage into a privilege grant.
+    console.warn('[hasErpRole] Database query failed — denying ERP access (fail closed):', err);
     return false;
   }
 }
@@ -149,33 +140,17 @@ export async function getTenantAuthContext(userId?: string): Promise<TenantAuthC
   }
 
   if (!user) {
-    const { safeAuth, isKnownAdminIdentifier } = await import('@/auth');
-    const session = await safeAuth();
-    if (
-      session?.user?.id === uid &&
-      (session.user.role === 'SUPER_ADMIN' ||
-        (session.user.email && isKnownAdminIdentifier(session.user.email)))
-    ) {
-      const perms = new Set<ERPPermission>();
-      ROLE_DEFAULT_PERMISSIONS.SUPER_ADMIN.forEach((p) => perms.add(p));
-      return {
-        userId: uid,
-        role: 'SUPER_ADMIN',
-        isSuperAdmin: true,
-        permissions: perms,
-      };
-    }
+    // Fail closed (AUTH-002): a principal that does not exist in the database has
+    // no permissions. Privilege is never inferred from an identifier string.
     throw new Error(`Principal ${uid} not found`);
   }
 
   const permissionsList = await getUserPermissions(user.id);
   const permissions = new Set<ERPPermission>(permissionsList);
-  const { isKnownAdminIdentifier } = await import('@/auth');
+  // AUTH-002 / IAM-001: SUPER_ADMIN comes from the relational UserRole chain or
+  // the DB `User.role` column — never from a hardcoded/email-pattern match.
   const isSuperAdmin = Boolean(
-    user.userRoles.some((ur) => ur.role.name === 'SUPER_ADMIN') ||
-    user.role === 'SUPER_ADMIN' ||
-    (user.email && isKnownAdminIdentifier(user.email)) ||
-    (user.phone && isKnownAdminIdentifier(user.phone))
+    user.userRoles.some((ur) => ur.role.name === 'SUPER_ADMIN') || user.role === 'SUPER_ADMIN'
   );
   if (isSuperAdmin) {
     ROLE_DEFAULT_PERMISSIONS.SUPER_ADMIN.forEach((p) => permissions.add(p));

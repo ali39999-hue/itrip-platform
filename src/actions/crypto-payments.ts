@@ -8,7 +8,7 @@ import { Money } from '@/lib/finance';
 import { GeneralLedgerService } from '@/domains/ledger/GeneralLedgerService';
 import { InvoiceDomainService } from '@/domains/finance/InvoiceDomainService';
 import { verifyTronTransactionOnChain, DEFAULT_USDT_TO_IRR_RATE } from '@/lib/crypto/tron-verifier';
-import { requirePermission } from '@/domains/identity/permission-service';
+import { requirePermission, hasErpRole } from '@/domains/identity/permission-service';
 
 export interface CryptoWalletDto {
   id: string;
@@ -61,23 +61,25 @@ export async function getDestinationCryptoWallets(): Promise<{ success: boolean;
 }
 
 /**
- * Update a destination wallet address (for admin or user configuration)
+ * Update a destination wallet address (strictly protected via RBAC & audit logged)
  */
 export async function updateCryptoWalletAddress(walletId: string, newAddress: string) {
   try {
-    const session = await safeAuth();
-    if (!session || !session.user) {
-      return { success: false, error: 'احراز هویت الزامی است' };
-    }
-
-    const isStaff = session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN';
-    if (!isStaff) {
-      return { success: false, error: 'تنها مدیران مجاز به تغییر آدرس ولت هستند' };
-    }
+    const admin = await requirePermission(['finance:view', 'user:manage']);
 
     const updated = await prisma.destinationCryptoWallet.update({
       where: { id: walletId },
       data: { walletAddress: newAddress.trim() },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: admin.id,
+        action: 'DESTINATION_CRYPTO_WALLET_UPDATED',
+        resource: 'DestinationCryptoWallet',
+        resourceId: walletId,
+        newData: JSON.stringify({ newAddress: newAddress.trim() }),
+      },
     });
 
     revalidatePath('/checkout');
@@ -86,7 +88,7 @@ export async function updateCryptoWalletAddress(walletId: string, newAddress: st
     return { success: true, message: 'آدرس ولت با موفقیت به‌روزرسانی شد', wallet: updated };
   } catch (error) {
     console.error('Error updating wallet address:', error);
-    return { success: false, error: 'خطا در ویرایش آدرس ولت' };
+    return { success: false, error: 'خطا در ویرایش آدرس ولت یا عدم دسترسی' };
   }
 }
 
@@ -129,7 +131,7 @@ export async function getBookingCryptoContext(bookingId: string) {
     }
 
     const isCustomer = booking.customerId === session.user.id;
-    const isStaff = session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN';
+    const isStaff = await hasErpRole(session.user.id);
 
     if (!isCustomer && !isStaff) {
       return { success: false, error: 'عدم دسترسی به این سفارش' };
@@ -233,7 +235,8 @@ export async function submitCryptoPayment(input: SubmitCryptoPaymentInput) {
       return { success: false, error: 'سفارش مورد نظر یافت نشد' };
     }
 
-    if (booking.customerId !== session.user.id && session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
+    const isStaff = await hasErpRole(session.user.id);
+    if (booking.customerId !== session.user.id && !isStaff) {
       return { success: false, error: 'عدم دسترسی به این سفارش' };
     }
 
@@ -392,6 +395,22 @@ export async function reviewCryptoPayment(
     const now = new Date();
 
     if (decision === 'APPROVE') {
+      // SHEET-01: never let a stale PENDING_REVIEW crypto receipt resurrect a
+      // booking that is already terminal or whose payment was already settled.
+      const TERMINAL_BOOKING_STATES = ['EXPIRED', 'CANCELLED', 'REFUND_INITIATED', 'REFUNDED', 'FAILED'] as const;
+      if ((TERMINAL_BOOKING_STATES as readonly string[]).includes(booking.status)) {
+        return {
+          success: false,
+          error: `Cannot approve crypto payment: booking status is terminal (${booking.status})`,
+        };
+      }
+      if (booking.paymentStatus === 'CAPTURED' || booking.paymentStatus === 'REFUNDED' || booking.paymentStatus === 'PARTIALLY_REFUNDED') {
+        return {
+          success: false,
+          error: `Cannot approve crypto payment: booking payment is already settled (${booking.paymentStatus})`,
+        };
+      }
+
       await prisma.$transaction(async (tx) => {
         // 1. Update receipt
         await tx.cryptoPaymentReceipt.update({

@@ -118,14 +118,15 @@ test.describe('Tours Booking & Checkout Journey', () => {
     await expect(page.locator('label[for="nationalId"]')).toContainText(/کد ملی/);
 
     // 5. Fill domestic identity fields (10-digit national ID + Jalali birth date)
+    // Jalali birth date is a wheel-picker button since 0d798f4 — same flow as fillPassengerDetails
     await page.locator('#firstName').fill('ALI');
     await page.locator('#lastName').fill('MOHAMMADI');
     await page.locator('#nationalId').fill('0012345678');
-    const birthInput = page.getByPlaceholder('انتخاب تاریخ');
-    await birthInput.click();
-    await birthInput.fill('1370/01/01');
-    await page.keyboard.press('Enter');
-    await page.locator('#firstName').click(); // blur -> commit date value
+    const birthBtn = page.locator('#birthDate[role="button"]').first();
+    await birthBtn.click();
+    const confirmDateBtn = page.locator('button:has-text("تایید تاریخ تولد"), button:has-text("Confirm Date of Birth")').first();
+    await expect(confirmDateBtn).toBeVisible({ timeout: 5000 });
+    await confirmDateBtn.click();
 
     // 6. Submit and verify payment phase is reached
     await page.locator('button[type="submit"]').first().click();

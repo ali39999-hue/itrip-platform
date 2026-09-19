@@ -292,7 +292,30 @@ export function CorporateHubClientPage() {
                       هنوز رزروی با شناسه این سازمان ثبت نشده است.
                     </p>
                   ) : (
-                    <div className="overflow-x-auto">
+                    <>
+                    {/* کارت موبایل — جدول ۵ ستونه در ۳۹۰px له می‌شد */}
+                    <div className="md:hidden space-y-2.5">
+                      {corporateBookings.map((b) => (
+                        <div key={b.id} className="p-4 rounded-2xl border border-line bg-surface space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-mono font-black text-ink text-sm min-w-0 truncate" dir="ltr">{b.reference}</span>
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold text-[10px] shrink-0">
+                              {b.status}
+                            </span>
+                          </div>
+                          <div className="text-ink font-bold text-sm truncate">{b.title}</div>
+                          <div className="flex items-center justify-between gap-2 text-xs">
+                            <span className="font-mono font-bold text-ink">
+                              {b.currency === 'IRR' ? formatMoney(b.totalAmount / 10, 'IRR', locale) : `${num(b.totalAmount, locale)} ${b.currency}`}
+                            </span>
+                            <span className="text-sub font-mono">
+                              {new Intl.DateTimeFormat(locale === 'fa' ? 'fa-IR-u-ca-persian' : locale, { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(b.createdAt))}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="hidden md:block overflow-x-auto">
                       <table className="w-full text-xs text-start">
                         <thead>
                           <tr className="border-b border-line text-sub font-black">
@@ -324,6 +347,7 @@ export function CorporateHubClientPage() {
                         </tbody>
                       </table>
                     </div>
+                    </>
                   )}
                 </div>
               </div>

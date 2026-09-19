@@ -6,5 +6,13 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function daysFromNow(days: number) {
-  return new Date(Date.now() + days * 86400000).toISOString().slice(0, 10)
+  // تاریخ محلی (نه UTC) — در UTC+3:30 به‌روزرسانی UTC یک روز جابجا می‌شد
+  const d = new Date(Date.now() + days * 86400000)
+  return toLocalIso(d)
+}
+
+/** YYYY-MM-DD بر اساس اجزای محلی تاریخ؛ toISOString در ایران یک روز خطا داشت */
+export function toLocalIso(d: Date) {
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
 }

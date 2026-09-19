@@ -16,6 +16,16 @@ export function isDemoRuntime(): boolean {
 }
 
 /**
+ * Demo-behaviour gate — must be called fresh on every use, NEVER snapshotted
+ * at module scope (AUTH-005). A module-scope `const DEMO_MODE = ...` is frozen
+ * when the config loader mutates `process.env.DEMO_MODE` later, or when tests
+ * change env per-case — either failure direction is exploitable.
+ */
+export function isDemoMode(): boolean {
+  return process.env.DEMO_MODE === 'true' && process.env.NODE_ENV !== 'production';
+}
+
+/**
  * Validated once at boot from instrumentation.register().
  * Throws in production when:
  *  - DEMO_MODE / NEXT_PUBLIC_DEMO_MODE is enabled (no simulated success paths);

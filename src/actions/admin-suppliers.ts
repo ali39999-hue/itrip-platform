@@ -138,7 +138,7 @@ export async function testSupplierApiConnectionAction(data: {
         method: 'GET',
         signal: controller.signal,
         headers: {
-          'User-Agent': 'Firuzo-Supplier-Engine/1.8.3',
+          'User-Agent': 'Firuzo-Supplier-Engine/1.8.4',
           ...(data.apiKey ? { Authorization: `Bearer ${data.apiKey}`, 'X-API-Key': data.apiKey } : {}),
         },
       });

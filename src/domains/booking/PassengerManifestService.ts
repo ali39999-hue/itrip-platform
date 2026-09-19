@@ -18,15 +18,29 @@ export interface ManifestPassenger {
 
 export class PassengerManifestService {
   /**
-   * Generates a structured list of passengers from confirmed bookings on a date
+   * Generates a structured list of passengers from confirmed bookings on a date.
+   *
+   * MANIFEST-01: the query is tenant-scoped. A manifest is a PII export, so an
+   * operator may only materialize passengers for bookings owned by their own
+   * organization. A platform admin (isSuperAdmin) may read across tenants.
+   * When neither an organization scope nor platform-admin authority is present
+   * the service fails closed (returns an empty manifest) rather than leaking
+   * every tenant's passengers.
    */
   static async getManifestForDate(params: {
     travelDate: string; // YYYY-MM-DD
     serviceType?: string;
+    organizationId?: string;
+    isPlatformAdmin?: boolean;
   }): Promise<ManifestPassenger[]> {
+    if (!params.isPlatformAdmin && !params.organizationId) {
+      return [];
+    }
+
     const bookings = await prisma.booking.findMany({
       where: {
         travelDate: params.travelDate,
+        ...(params.isPlatformAdmin ? {} : { organizationId: params.organizationId }),
         status: { in: ['CONFIRMED', 'PAYMENT_CONFIRMED'] },
       },
       include: {

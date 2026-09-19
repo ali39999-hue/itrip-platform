@@ -50,6 +50,14 @@ for (const raw of candidateUrls) {
   } catch {}
 }
 
+const devTunnelOrigins = isDev
+  ? [
+      '*.trycloudflare.com',
+      '*.ngrok-free.app',
+      '*.ngrok.io',
+    ]
+  : [];
+
 const baseAllowedOrigins = [
   'localhost:3000',
   '127.0.0.1:3000',
@@ -61,9 +69,7 @@ const baseAllowedOrigins = [
   'call.firuzo.online',
   '*.itrip.ir',
   'itrip.ir',
-  '*.trycloudflare.com',
-  '*.ngrok-free.app',
-  '*.ngrok.io',
+  ...devTunnelOrigins,
   '*.railway.app',
   '*.up.railway.app',
   '*.onrender.com',
@@ -91,7 +97,7 @@ if (!commitSha) {
     commitSha = 'cf45237';
   }
 }
-const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || packageJson.version || '1.7.9';
+const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || packageJson.version;
 
 // CI-012 / BASE-008 — A production build with demo behaviour enabled is a
 // hard error: simulated success paths must never be able to ship. Demo builds
@@ -124,7 +130,7 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    unoptimized: true,
+    unoptimized: process.env.NEXT_IMAGE_UNOPTIMIZED === 'true',
     formats: ['image/avif', 'image/webp'],
     dangerouslyAllowLocalIP: isDev,
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384, 512, 800],

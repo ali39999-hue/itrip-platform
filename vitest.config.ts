@@ -1,9 +1,24 @@
 import { defineConfig } from 'vitest/config';
 import path from 'path';
+import fs from 'node:fs';
 
 // Unit/integration tests must never touch the development database.
 // Resolves to itrip_test database even when running `npx vitest` directly.
-const devDbUrl = process.env.DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:5432/itrip?schema=public';
+// Read .env for bare `npx vitest` invocations too — otherwise the historic
+// 'postgres:postgres' fallback wins and auth fails against the real local DB
+// (scripts/run-unit-tests.mjs already does this for `npm run test:unit`).
+const envFile = (() => {
+  try {
+    return fs.readFileSync(path.resolve(__dirname, '.env'), 'utf8');
+  } catch {
+    return '';
+  }
+})();
+const envLookup = (k: string) => {
+  const m = envFile.match(new RegExp('^' + k + '="?([^"\\r\\n]+)"?', 'm'));
+  return m ? m[1] : undefined;
+};
+const devDbUrl = process.env.DATABASE_URL || envLookup('DATABASE_URL') || 'postgresql://postgres:postgres@127.0.0.1:5432/itrip?schema=public';
 const resolvedTestDbUrl = process.env.TEST_DATABASE_URL || devDbUrl.replace(/\/itrip(\?|$)/, '/itrip_test$1');
 
 export default defineConfig({

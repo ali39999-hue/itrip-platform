@@ -13,7 +13,7 @@ import {
 } from '@/components/home/sections';
 import { lt } from '@/lib/lt';
 import { getLocale } from 'next-intl/server';
-import { DestinationComparator } from '@/components/destinations/DestinationComparator';
+import dynamic from 'next/dynamic';
 import {
   SiteContentService,
   type HeroOverride,
@@ -22,6 +22,14 @@ import {
   type FaqItemOverride,
   type AnnouncementOverride,
 } from '@/domains/content/SiteContentService';
+
+const DestinationComparator = dynamic(
+  () => import('@/components/destinations/DestinationComparator').then((m) => m.DestinationComparator),
+  {
+    loading: () => <div className="h-64 rounded-2xl bg-surface/40 animate-pulse my-8" />,
+    ssr: true,
+  }
+);
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

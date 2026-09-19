@@ -22,6 +22,8 @@ export interface CurrencyRateProvider {
 }
 
 export const DEFAULT_EXCHANGE_RATES_DECIMAL: Record<string, string> = {
+  'TOMAN_IRR': '10',
+  'IRR_TOMAN': '0.1',
   'IRR_USDT': '0.00000181818', // 1 / 550,000
   'USDT_IRR': '550000',
   'IRR_USD': '0.00000181818',  // 1 / 550,000

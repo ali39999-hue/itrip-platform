@@ -1,5 +1,6 @@
 {
-  "generatedAt": "2026-09-17T15:01:48.838Z",
+  "generatedAt": "2026-09-19T12:18:25.162Z",
+  "commit": "c59d7b9a3e67f4cf0797b44a20e27ee6619ec865",
   "baseUrl": "http://localhost:3000",
   "failImpacts": [
     "critical",
@@ -45,10 +46,18 @@
       "locale": "fa",
       "funnel": "flights",
       "tier": "blocking",
-      "violationCount": 0,
-      "failingNodeCount": 0,
-      "byRule": [],
-      "passes": 31
+      "violationCount": 3,
+      "failingNodeCount": 3,
+      "byRule": [
+        {
+          "id": "nested-interactive",
+          "impact": "serious",
+          "help": "Interactive controls must not be nested",
+          "nodes": 3,
+          "sampleTarget": ".p-5.border-2.hover\\:border-brand\\/40:nth-child(1)"
+        }
+      ],
+      "passes": 32
     },
     "fa:flights-search": {
       "url": "http://localhost:3000/fa/flights/search",
@@ -151,7 +160,7 @@
           "impact": "serious",
           "help": "Elements must meet minimum color contrast ratio thresholds",
           "nodes": 4,
-          "sampleTarget": ".mb-5.p-1.bg-soft > .shadow-xs.text-brand.bg-surface"
+          "sampleTarget": ".mb-5.p-1.bg-soft > .text-brand.shadow-xs.bg-surface"
         }
       ],
       "passes": 28
@@ -209,24 +218,32 @@
       "locale": "en",
       "funnel": "flights",
       "tier": "blocking",
-      "violationCount": 0,
-      "failingNodeCount": 0,
-      "byRule": [],
-      "passes": 31
+      "violationCount": 3,
+      "failingNodeCount": 3,
+      "byRule": [
+        {
+          "id": "nested-interactive",
+          "impact": "serious",
+          "help": "Interactive controls must not be nested",
+          "nodes": 3,
+          "sampleTarget": ".p-5.border-2.hover\\:border-brand\\/40:nth-child(1)"
+        }
+      ],
+      "passes": 32
     },
     "en:flights-search": {
       "url": "http://localhost:3000/en/flights/search",
       "locale": "en",
       "funnel": "flights-search",
       "tier": "blocking",
-      "violationCount": 6,
-      "failingNodeCount": 6,
+      "violationCount": 5,
+      "failingNodeCount": 5,
       "byRule": [
         {
           "id": "color-contrast",
           "impact": "serious",
           "help": "Elements must meet minimum color contrast ratio thresholds",
-          "nodes": 5,
+          "nodes": 4,
           "sampleTarget": ".hover\\:bg-soft\\/70.pointer-events-none.opacity-40:nth-child(2) > .gap-2\\.5.min-w-0.items-center > .truncate.text-xs.font-black"
         },
         {
@@ -330,15 +347,15 @@
       "locale": "en",
       "funnel": "auth",
       "tier": "blocking",
-      "violationCount": 8,
-      "failingNodeCount": 8,
+      "violationCount": 5,
+      "failingNodeCount": 5,
       "byRule": [
         {
           "id": "color-contrast",
           "impact": "serious",
           "help": "Elements must meet minimum color contrast ratio thresholds",
-          "nodes": 8,
-          "sampleTarget": ".mb-5.p-1.bg-soft > .shadow-xs.text-brand.bg-surface"
+          "nodes": 5,
+          "sampleTarget": ".mb-5.p-1.bg-soft > .text-brand.shadow-xs.bg-surface"
         }
       ],
       "passes": 28
@@ -430,7 +447,7 @@
           "impact": "serious",
           "help": "Elements must meet minimum color contrast ratio thresholds",
           "nodes": 2,
-          "sampleTarget": ".shadow-xs"
+          "sampleTarget": ".text-brand.shadow-xs.bg-surface"
         }
       ],
       "passes": 28
@@ -448,20 +465,22 @@
           "impact": "serious",
           "help": "Elements must meet minimum color contrast ratio thresholds",
           "nodes": 2,
-          "sampleTarget": ".shadow-xs"
+          "sampleTarget": ".text-brand.shadow-xs.bg-surface"
         }
       ],
       "passes": 28
     }
   },
   "summary": {
-    "blockingViolations": 35,
+    "blockingViolations": 32,
     "reportOnlyViolations": 6,
     "navigationErrors": 0,
     "blockingFailedFunnels": [
+      "fa:flights",
       "fa:flights-search",
       "fa:auth",
       "en:home",
+      "en:flights",
       "en:flights-search",
       "en:hotels-search",
       "en:my-trips",
@@ -470,6 +489,6 @@
     ],
     "blockingScanErrors": [],
     "verdict": "PASS",
-    "baselineViolations": 35
+    "baselineViolations": 33
   }
 }

@@ -11,6 +11,7 @@ import {
   FileCheck2,
   ShieldCheck,
   CarFront,
+  Crown,
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
@@ -87,6 +88,13 @@ export function QuickServicesBar() {
       href: '/transfers',
       icon: CarFront,
       color: 'bg-gradient-to-br from-orange-500 to-amber-600 text-white shadow-md shadow-orange-500/25',
+    },
+    {
+      id: 'cip',
+      title: lt(locale, { fa: 'تشریفات CIP', en: 'Airport CIP', ar: 'تشريفات CIP', zh: 'CIP贵宾厅', ru: 'CIP Сервис' }),
+      href: '/cip',
+      icon: Crown,
+      color: 'bg-gradient-to-br from-amber-600 via-yellow-500 to-amber-700 text-white shadow-md shadow-amber-500/30 ring-1 ring-amber-300/40',
     },
   ];
 

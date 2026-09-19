@@ -243,7 +243,7 @@ export function TourHero({ tour }: TourHeroProps) {
 
             {/* Mobile Slide Indicator Dots */}
             {images.length > 1 && (
-              <div className="absolute bottom-3 start-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10 bg-black/50 backdrop-blur-xs px-2.5 py-1 rounded-full">
+              <div className="absolute bottom-3 start-1/2 -translate-x-1/2 rtl:translate-x-1/2 flex items-center gap-1.5 z-10 bg-black/50 backdrop-blur-xs px-2.5 py-1 rounded-full">
                 {images.map((_, i) => (
                   <span
                     key={i}
@@ -285,7 +285,7 @@ export function TourHero({ tour }: TourHeroProps) {
             <button
               type="button"
               onClick={() => setLightboxIndex(null)}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-surface/10 hover:bg-surface/20 text-surface grid place-items-center transition cursor-pointer shrink-0"
+              className="w-9 h-9 sm:w-10 sm:h-10 min-w-[44px] min-h-[44px] rounded-full bg-surface/10 hover:bg-surface/20 text-surface grid place-items-center transition cursor-pointer shrink-0"
             >
               <X size={18} />
             </button>

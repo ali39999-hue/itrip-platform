@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { safeAuth } from '@/auth';
 import { toPlain } from '@/lib/serialize';
-import { ERP_STAFF_ROLES } from '@/domains/identity/permissions';
+import { hasErpRole } from '@/domains/identity/permission-service';
 
 export async function getUserTripsData() {
   const session = await safeAuth();
@@ -69,7 +69,7 @@ export async function findBookingByReference(reference: string, phoneOrEmail?: s
   // If the requester is not the booking's customer or staff, phoneOrEmail MUST be supplied and match.
   const session = await safeAuth();
   const isOwner = Boolean(session?.user?.id && booking.customerId === session.user.id);
-  const isStaff = Boolean(session?.user?.role && (ERP_STAFF_ROLES as readonly string[]).includes(session.user.role));
+  const isStaff = await hasErpRole(session?.user?.id);
 
   if (!isOwner && !isStaff) {
     if (!phoneOrEmail || !phoneOrEmail.trim()) {

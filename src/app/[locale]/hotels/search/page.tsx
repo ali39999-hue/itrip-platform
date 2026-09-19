@@ -221,14 +221,14 @@ function HotelsSearchInner() {
           <button
             type="button"
             onClick={resetAll}
-            className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${chips.length === 0 ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+            className={`min-h-[44px] px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${chips.length === 0 ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
           >
             {lt(locale, { fa: 'همه اقامتگاه‌ها', en: 'All Stays', ar: 'كل الإقامات', zh: '全部住宿', ru: 'Все отели' })}
           </button>
           <button
             type="button"
             onClick={() => toggleStar(5)}
-            className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${stars.has(5) ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+            className={`min-h-[44px] px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${stars.has(5) ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
           >
             {lt(locale, { fa: '۵ ستاره', en: '5-Star', ar: '5 نجوم', zh: '5星级', ru: '5 звезд' })}
           </button>
@@ -242,49 +242,49 @@ function HotelsSearchInner() {
                 if (!stars.has(5)) toggleStar(5);
               }
             }}
-            className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${stars.has(4) ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+            className={`min-h-[44px] px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${stars.has(4) ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
           >
             {lt(locale, { fa: '۴ و ۵ ستاره', en: '4+ Stars', ar: '4+ نجوم', zh: '4星及以上', ru: '4+ звезды' })}
           </button>
           <button
             type="button"
             onClick={toggleFreeCancel}
-            className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${freeCancel ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+            className={`min-h-[44px] px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${freeCancel ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
           >
             {lt(locale, { fa: 'کنسلی رایگان', en: 'Free Cancellation', ar: 'إلغاء مجاني', zh: '免费取消', ru: 'Бесплатная отмена' })}
           </button>
           <button
             type="button"
             onClick={() => toggleAmenity('breakfast')}
-            className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${amenities.has('breakfast') ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+            className={`min-h-[44px] px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${amenities.has('breakfast') ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
           >
             {lt(locale, { fa: 'صبحانه رایگان', en: 'Free Breakfast', ar: 'إفطار مجاني', zh: '免费早餐', ru: 'Бесплатный завтрак' })}
           </button>
           <button
             type="button"
             onClick={() => toggleAmenity('pool')}
-            className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${amenities.has('pool') ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+            className={`min-h-[44px] px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${amenities.has('pool') ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
           >
             {lt(locale, { fa: 'دارای استخر', en: 'Swimming Pool', ar: 'مسبح', zh: '有泳池', ru: 'С бассейном' })}
           </button>
           <button
             type="button"
             onClick={() => togglePropertyType('apartment')}
-            className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${propertyTypes.has('apartment') ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+            className={`min-h-[44px] px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${propertyTypes.has('apartment') ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
           >
             {lt(locale, { fa: 'هتل‌آپارتمان', en: 'Apartment Hotel', ar: 'شقق فندقية', zh: '公寓酒店', ru: 'Апарт-отель' })}
           </button>
           <button
             type="button"
             onClick={() => togglePropertyType('boutique')}
-            className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${propertyTypes.has('boutique') ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+            className={`min-h-[44px] px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${propertyTypes.has('boutique') ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
           >
             {lt(locale, { fa: 'سنتی و بوم‌گردی', en: 'Boutique & Traditional', ar: 'بوتيك وتقليدي', zh: '精品传统住宿', ru: 'Бутик' })}
           </button>
           <button
             type="button"
             onClick={() => setMinScore(minScore === 9 ? 0 : 9)}
-            className={`px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${minScore === 9 ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
+            className={`min-h-[44px] px-3 py-1.5 rounded-xl whitespace-nowrap shrink-0 transition cursor-pointer ${minScore === 9 ? 'bg-brand text-surface shadow-xs' : 'bg-soft text-sub hover:text-ink'}`}
           >
             {lt(locale, { fa: 'امتیاز ۹+ (فوق‌العاده)', en: 'Score 9+ (Superb)', ar: 'تقييم 9+ (استثنائي)', zh: '9分以上（极佳）', ru: 'Оценка 9+ (Супер)' })}
           </button>
@@ -376,7 +376,7 @@ function HotelsSearchInner() {
                       type="button"
                       onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                       disabled={currentPage === 1}
-                      className="min-h-10 px-3 rounded-xl border border-line bg-surface text-sub text-[13px] font-black transition-colors hover:bg-soft disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                      className="min-h-11 min-w-11 px-3 rounded-xl border border-line bg-surface text-sub text-[13px] font-black transition-colors hover:bg-soft disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                     >
                       {lt(locale, { fa: 'قبلی', en: 'Previous', ar: 'السابق', zh: '上一页', ru: 'Назад' })}
                     </button>
@@ -415,7 +415,7 @@ function HotelsSearchInner() {
                       type="button"
                       onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
                       disabled={currentPage === totalPages}
-                      className="min-h-10 px-3 rounded-xl border border-line bg-surface text-sub text-[13px] font-black transition-colors hover:bg-soft disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                      className="min-h-11 min-w-11 px-3 rounded-xl border border-line bg-surface text-sub text-[13px] font-black transition-colors hover:bg-soft disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                     >
                       {lt(locale, { fa: 'بعدی', en: 'Next', ar: 'التالي', zh: '下一页', ru: 'Далее' })}
                     </button>
@@ -453,7 +453,7 @@ function HotelsSearchInner() {
                   <button
                     type="button"
                     onClick={() => setShowMap(false)}
-                    className="px-3 py-1.5 rounded-xl bg-soft text-sub text-xs font-bold hover:text-ink cursor-pointer"
+                    className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl bg-soft text-sub text-xs font-bold hover:text-ink cursor-pointer"
                   >
                     {lt(locale, { fa: 'بستن نقشه', en: 'Close Map', ar: 'إغلاق الخريطة', zh: '关闭地图', ru: 'Закрыть карту' })}
                   </button>

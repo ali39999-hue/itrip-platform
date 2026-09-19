@@ -24,6 +24,8 @@ export const SITE_CONTENT_KEYS = [
   'support.page',
   'services.transfers',
   'services.visa',
+  'services.cip',
+  'services.insurance',
 ] as const;
 export type SiteContentKey = (typeof SITE_CONTENT_KEYS)[number];
 
@@ -214,6 +216,51 @@ export const visaServiceSchema = z
 
 export const visasSchema = z.array(visaServiceSchema).min(1).max(30);
 
+export const cipAirportSchema = z
+  .object({
+    id: z.string().trim().min(1).max(50),
+    airportCode: z.string().trim().min(3).max(4),
+    airportNameFa: z.string().trim().min(1).max(150),
+    airportNameEn: z.string().trim().min(1).max(150),
+    cityFa: z.string().trim().min(1).max(100),
+    cityEn: z.string().trim().min(1).max(100),
+    countryCode: z.string().trim().min(2).max(10),
+    terminal: z.string().trim().min(1).max(200),
+    basePriceAdult: z.number().int().min(100000).max(100_000_000),
+    basePriceGuest: z.number().int().min(0).max(50_000_000),
+    petServicePrice: z.number().int().min(0).max(50_000_000),
+    wheelchairPrice: z.number().int().min(0).max(50_000_000),
+    suite6hPrice: z.number().int().min(0).max(50_000_000),
+    suite10hPrice: z.number().int().min(0).max(50_000_000),
+    suiteOvernightPrice: z.number().int().min(0).max(50_000_000),
+    descriptionFa: z.string().trim().max(1000).optional(),
+    descriptionEn: z.string().trim().max(1000).optional(),
+    featuresFa: z.array(z.string().trim().max(200)).optional(),
+    featuresEn: z.array(z.string().trim().max(200)).optional(),
+    image: z.string().trim().url().max(500).optional().or(z.literal('')),
+    gallery: z.array(z.string().trim().url().max(500)).optional(),
+    rating: z.number().min(0).max(5).optional(),
+    reviewsCount: z.number().int().min(0).optional(),
+    isFlagship: z.boolean().optional(),
+  })
+  .strict();
+
+export const cipAirportsSchema = z.array(cipAirportSchema).min(1).max(30);
+
+export const insurancePlanContentSchema = z
+  .object({
+    id: z.string().trim().min(1).max(50),
+    companyId: z.string().trim().min(1).max(50),
+    assistanceId: z.string().trim().min(1).max(50),
+    coverageEur: z.union([z.literal(10000), z.literal(30000), z.literal(50000)]),
+    basePriceToman1to7Days: z.number().int().min(10000).max(50_000_000),
+    topPerksFa: z.array(z.string().trim().max(200)).optional(),
+    topPerksEn: z.array(z.string().trim().max(200)).optional(),
+  })
+  .strict();
+
+export const insurancePlansSchema = z.array(insurancePlanContentSchema).min(1).max(50);
+
 export const SITE_CONTENT_SCHEMAS: Record<SiteContentKey, z.ZodTypeAny> = {
   'home.hero': heroSchema,
   'home.promos': promosSchema,
@@ -228,6 +275,8 @@ export const SITE_CONTENT_SCHEMAS: Record<SiteContentKey, z.ZodTypeAny> = {
   'support.page': supportPageSchema,
   'services.transfers': transfersSchema,
   'services.visa': visasSchema,
+  'services.cip': cipAirportsSchema,
+  'services.insurance': insurancePlansSchema,
 };
 
 export type HeroOverride = z.infer<typeof heroSchema>;

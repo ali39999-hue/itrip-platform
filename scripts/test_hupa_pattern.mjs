@@ -1,11 +1,17 @@
+// SEC-014: credentials must come from the environment — never from source.
+if (!process.env.SMSWBS_USERNAME || !process.env.SMSWBS_PASSWORD) {
+  console.error('SMSWBS_USERNAME / SMSWBS_PASSWORD are not configured. Refusing to run this diagnostic with embedded credentials.');
+  process.exit(1);
+}
+
 async function testHupaPattern() {
   const url = 'https://sms.hupa.ir/class/sms/webservice/sendPattern.php';
   const start = Date.now();
   const payload = {
     fromNum: '3000505',
     toNum: '09105247414',
-    user: '09123764868',
-    pass: '@Hvd1367++',
+    user: process.env.SMSWBS_USERNAME,
+    pass: process.env.SMSWBS_PASSWORD,
     pattern_code: '1412',
     input_data: [
       { code: '123456' }

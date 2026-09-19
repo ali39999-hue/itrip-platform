@@ -275,21 +275,21 @@ export default function VisaPage() {
             <span className="text-xs font-black text-ink block mb-1">
               چک‌لیست مدارک الزامی قبل از ثبت درخواست:
             </span>
-            <label className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-sub">
+            <label className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-sub py-2">
               <input
                 type="checkbox"
                 checked={hasValidPassport}
                 onChange={(e) => setHasValidPassport(e.target.checked)}
-                className="w-4 h-4 rounded border-line text-brand focus:ring-brand"
+                className="w-5 h-5 rounded border-line text-brand focus:ring-brand"
               />
               <span>گذرنامه با حداقل ۶ ماه اعتبار از تاریخ آغاز سفر</span>
             </label>
-            <label className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-sub">
+            <label className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-sub py-2">
               <input
                 type="checkbox"
                 checked={hasPhoto}
                 onChange={(e) => setHasPhoto(e.target.checked)}
-                className="w-4 h-4 rounded border-line text-brand focus:ring-brand"
+                className="w-5 h-5 rounded border-line text-brand focus:ring-brand"
               />
               <span>عکس پرسنلی رنگی جدید تمام‌رخ با زمینه سفید (فایل اسکن‌شده)</span>
             </label>

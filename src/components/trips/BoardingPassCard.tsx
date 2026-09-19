@@ -62,30 +62,33 @@ export function BoardingPassCard({
   externalPnr,
   status,
   travelDate,
-  flightNo = 'W5-1152',
-  airline = 'هواپیمایی ماهان',
-  origin = 'THR',
-  originCity = 'تهران',
-  destination = 'IST',
-  destinationCity = 'استانبول',
-  departureTime = '08:30',
-  arrivalTime = '11:45',
-  terminal = 'T1',
-  gate = 'B14',
-  seat = 'Auto',
-  cabinClass = 'Economy',
-  baggage = '30kg',
-  hotelName = 'هتل اسپیناس پالاس',
-  city = 'تهران',
+  title,
+  flightNo,
+  airline,
+  origin,
+  originCity,
+  destination,
+  destinationCity,
+  departureTime,
+  arrivalTime,
+  terminal,
+  gate,
+  seat,
+  cabinClass,
+  baggage,
+  hotelName,
+  city,
   nights = 1,
-  roomType = 'اتاق دابل لوکس',
-  checkIn = '14:00',
-  checkOut = '12:00',
+  roomType,
+  checkIn,
+  checkOut,
   passengers = [],
   locale,
   onSaveOffline,
   className = '',
 }: BoardingPassProps) {
+  // هیچ داده‌ای از خودمان نسازیم — فیلد غایب «—» می‌گیرد، نه مقدار ساختگی
+  const NA = '—';
   const isFlight = serviceType.toUpperCase() === 'FLIGHT';
   const isConfirmed = status === 'CONFIRMED';
 
@@ -112,12 +115,22 @@ export function BoardingPassCard({
               {isConfirmed && (
                 <span className="inline-flex items-center gap-1 text-[11px] font-black bg-emerald-500/80 text-white px-2 py-0.5 rounded-md">
                   <CheckCircle2 size={12} />
-                  <span>تایید قطعی</span>
+                  <span>
+                    {lt(locale, {
+                      fa: 'تایید قطعی',
+                      en: 'Confirmed',
+                      ar: 'مؤكدة',
+                      zh: '已确认',
+                      ru: 'Подтверждено',
+                    })}
+                  </span>
                 </span>
               )}
             </div>
             <h3 className="text-lg sm:text-xl font-black mt-1">
-              {isFlight ? `${airline} — ${flightNo}` : hotelName}
+              {isFlight
+                ? [airline, flightNo].filter(Boolean).join(' — ') || title
+                : hotelName || title}
             </h3>
           </div>
         </div>
@@ -175,20 +188,20 @@ export function BoardingPassCard({
                 {/* Origin */}
                 <div className="text-start">
                   <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-ink block">
-                    {origin}
+                    {origin || NA}
                   </span>
                   <span className="text-xs sm:text-sm font-bold text-sub block mt-0.5">
-                    {originCity}
+                    {originCity || NA}
                   </span>
                   <span className="text-sm sm:text-base font-black text-brand-dark dark:text-brand font-mono block mt-1">
-                    {departureTime}
+                    {departureTime || NA}
                   </span>
                 </div>
 
                 {/* Plane Route Center Arc */}
                 <div className="flex-1 flex flex-col items-center px-4 max-w-[200px]">
                   <div className="flex items-center gap-1 text-xs text-sub font-mono mb-1">
-                    <span>{flightNo}</span>
+                    <span>{flightNo || NA}</span>
                   </div>
                   <div className="w-full flex items-center gap-1 relative">
                     <div className="h-[2px] flex-1 bg-line rounded-full" />
@@ -198,20 +211,20 @@ export function BoardingPassCard({
                     <div className="h-[2px] flex-1 bg-line rounded-full" />
                   </div>
                   <span className="text-[10px] text-sub font-bold mt-1">
-                    {cabinClass}
+                    {cabinClass || NA}
                   </span>
                 </div>
 
                 {/* Destination */}
                 <div className="text-end">
                   <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-ink block">
-                    {destination}
+                    {destination || NA}
                   </span>
                   <span className="text-xs sm:text-sm font-bold text-sub block mt-0.5">
-                    {destinationCity}
+                    {destinationCity || NA}
                   </span>
                   <span className="text-sm sm:text-base font-black text-brand-dark dark:text-brand font-mono block mt-1">
-                    {arrivalTime}
+                    {arrivalTime || NA}
                   </span>
                 </div>
               </div>
@@ -223,7 +236,7 @@ export function BoardingPassCard({
                     {lt(locale, { fa: 'تاریخ پرواز', en: 'Date', ar: 'التاريخ', zh: '日期', ru: 'Дата' })}
                   </span>
                   <span className="text-xs sm:text-sm font-black font-mono text-ink">
-                    {travelDate || '2026-09-20'}
+                    {travelDate || NA}
                   </span>
                 </div>
 
@@ -232,7 +245,7 @@ export function BoardingPassCard({
                     {lt(locale, { fa: 'ترمینال', en: 'Terminal', ar: 'المبنى', zh: '航站楼', ru: 'Терминал' })}
                   </span>
                   <span className="text-xs sm:text-sm font-black font-mono text-ink">
-                    {terminal}
+                    {terminal || NA}
                   </span>
                 </div>
 
@@ -241,7 +254,7 @@ export function BoardingPassCard({
                     {lt(locale, { fa: 'گیت خروجی', en: 'Gate', ar: 'البوابة', zh: '登机口', ru: 'Выход' })}
                   </span>
                   <span className="text-xs sm:text-sm font-black font-mono text-brand-dark dark:text-brand">
-                    {gate}
+                    {gate || NA}
                   </span>
                 </div>
 
@@ -250,17 +263,14 @@ export function BoardingPassCard({
                     {lt(locale, { fa: 'شماره صندلی', en: 'Seat', ar: 'المقعد', zh: '座位', ru: 'Место' })}
                   </span>
                   <span className="text-xs sm:text-sm font-black font-mono text-ink">
-                    {seat}
+                    {seat || NA}
                   </span>
                 </div>
               </div>
 
-              {/* Baggage and Amenities */}
+              {/* Baggage */}
               <div className="flex items-center justify-between gap-4 flex-wrap">
-                <BaggagePill checkedBaggage={baggage} cabinBaggage="7kg" locale={locale} />
-                <span className="text-xs font-mono text-sub">
-                  Aircraft: <strong className="text-ink font-sans">Airbus A340 / Boeing 737</strong>
-                </span>
+                <BaggagePill checkedBaggage={baggage || NA} cabinBaggage="7kg" locale={locale} />
               </div>
             </div>
           ) : (
@@ -271,11 +281,13 @@ export function BoardingPassCard({
                   <span className="text-[11px] font-bold text-sub block">
                     {lt(locale, { fa: 'اقامتگاه تایید شده', en: 'Confirmed Stay', ar: 'الإقامة المؤكدة', zh: '已确认入住', ru: 'Подтвержденное проживание' })}
                   </span>
-                  <h4 className="text-2xl font-black text-ink mt-0.5">{hotelName}</h4>
-                  <div className="flex items-center gap-1.5 text-xs text-sub font-bold mt-1">
-                    <MapPin size={14} className="text-brand" />
-                    <span>{city} — موقعیت مرکزی</span>
-                  </div>
+                  <h4 className="text-2xl font-black text-ink mt-0.5">{hotelName || title}</h4>
+                  {city && (
+                    <div className="flex items-center gap-1.5 text-xs text-sub font-bold mt-1">
+                      <MapPin size={14} className="text-brand" />
+                      <span>{city}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="text-end">
@@ -294,7 +306,7 @@ export function BoardingPassCard({
                     {lt(locale, { fa: 'تاریخ ورود (چک‌این)', en: 'Check-In', ar: 'تسجيل الوصول', zh: '入住', ru: 'Заезд' })}
                   </span>
                   <span className="text-xs sm:text-sm font-black font-mono text-ink">
-                    {travelDate || '2026-09-20'} ({checkIn})
+                    {travelDate || NA} {checkIn ? `(${checkIn})` : ''}
                   </span>
                 </div>
 
@@ -303,7 +315,7 @@ export function BoardingPassCard({
                     {lt(locale, { fa: 'ساعت تحویل (چک‌اوت)', en: 'Check-Out', ar: 'تسجيل المغادرة', zh: '退房', ru: 'Выезд' })}
                   </span>
                   <span className="text-xs sm:text-sm font-black font-mono text-ink">
-                    {checkOut}
+                    {checkOut || NA}
                   </span>
                 </div>
 
@@ -312,7 +324,7 @@ export function BoardingPassCard({
                     {lt(locale, { fa: 'نوع اتاق', en: 'Room Type', ar: 'نوع الغرفة', zh: '房型', ru: 'Тип номера' })}
                   </span>
                   <span className="text-xs sm:text-sm font-black text-ink">
-                    {roomType}
+                    {roomType || NA}
                   </span>
                 </div>
               </div>

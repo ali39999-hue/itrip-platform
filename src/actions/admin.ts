@@ -751,11 +751,14 @@ export async function retryOutboxEvent(eventId: string) {
  */
 export async function getPassengerManifestAction(travelDate: string, serviceType?: string) {
   try {
-    await requirePermission('booking:view:all');
+    const user = await requirePermission('booking:view:all');
+    const tenantCtx = await getTenantAuthContext(user.id);
     const { PassengerManifestService } = await import('@/domains/booking/PassengerManifestService');
     const list = await PassengerManifestService.getManifestForDate({
       travelDate,
       serviceType: serviceType === 'ALL' ? undefined : serviceType,
+      organizationId: tenantCtx.organizationId,
+      isPlatformAdmin: tenantCtx.isSuperAdmin,
     });
     const csv = PassengerManifestService.generateCsv(list);
     return { success: true, manifest: list, csv };

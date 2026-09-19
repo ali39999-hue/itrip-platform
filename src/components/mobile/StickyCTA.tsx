@@ -3,6 +3,8 @@
 import React from 'react';
 import { Loader2, ChevronUp } from 'lucide-react';
 import { num } from '@/lib/format';
+import { useLocale } from 'next-intl';
+import { lt } from '@/lib/lt';
 
 export interface StickyCTAProps {
   /** Primary action button label (e.g. "ادامه و تکمیل رزرو", "پرداخت نهایی") */
@@ -25,6 +27,8 @@ export interface StickyCTAProps {
   loading?: boolean;
   /** Accessible loading label (defaults to localized "processing" via caller; never hardcode) */
   loadingLabel?: string;
+  /** Optional locale override */
+  locale?: string;
   /**
    * Form submitter mode (parity with checkout StickyMobileBar):
    * renders the CTA as `type=submit` bound to `formId` instead of onClick.
@@ -66,18 +70,27 @@ export function StickyCTA({
   disabled = false,
   loading = false,
   loadingLabel,
+  locale: propLocale,
   formId,
   badge,
   secondaryAction,
   aboveNav = false,
   className = '',
 }: StickyCTAProps) {
+  const contextLocale = useLocale();
+  const locale = propLocale || contextLocale || 'fa';
   const formattedPrice =
-    typeof price === 'number' ? num(price, 'fa') : price !== undefined ? String(price) : null;
+    typeof price === 'number' ? num(price, locale) : price !== undefined ? String(price) : null;
 
   return (
     <aside
-      aria-label="نوار رزرو و پرداخت سریع"
+      aria-label={lt(locale, {
+        fa: 'نوار رزرو و پرداخت سریع',
+        en: 'Fast Booking and Payment Bar',
+        ar: 'شريط الحجز والدفع السريع',
+        zh: '快捷预订与支付栏',
+        ru: 'Панель быстрого бронирования и оплаты',
+      })}
       className={`fixed inset-x-0 ${aboveNav ? 'bottom-[calc(72px+env(safe-area-inset-bottom,0px))]' : 'bottom-0'} z-[80] border-t border-line/80 bg-surface/95 backdrop-blur-xl shadow-[0_-10px_35px_rgba(5,63,62,.10)] lg:hidden transition-all duration-200 ${className}`}
       style={aboveNav ? undefined : { paddingBottom: 'max(env(safe-area-inset-bottom), 10px)' }}
     >
@@ -102,7 +115,16 @@ export function StickyCTA({
                 onClick={onPriceDetailsClick}
                 className="relative inline-flex items-center gap-0.5 text-[10.5px] font-bold text-brand hover:text-brand-dark active:underline text-start min-h-[24px] after:content-[''] after:absolute after:-inset-y-2.5 after:-inset-x-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded"
               >
-                <span>{priceLabel} (جزئیات)</span>
+                <span>
+                  {priceLabel}{' '}
+                  {lt(locale, {
+                    fa: '(جزئیات)',
+                    en: '(Details)',
+                    ar: '(التفاصيل)',
+                    zh: '(详情)',
+                    ru: '(Детали)',
+                  })}
+                </span>
                 <ChevronUp size={12} aria-hidden="true" />
               </button>
             ) : (

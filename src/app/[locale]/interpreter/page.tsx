@@ -123,7 +123,7 @@ export default function InterpreterPage() {
 
   const specChips: ('all' | InterpreterSpecialty)[] = ['all', 'tourism', 'business', 'medical', 'pilgrimage'];
   const chip = (on: boolean) =>
-    `min-h-9 px-4 rounded-full text-[12.5px] font-black inline-flex items-center gap-1.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${on ? 'bg-brand text-surface shadow-sm shadow-brand/25' : 'bg-soft/80 border border-line/70 text-sub hover:text-brand-dark'}`;
+    `min-h-[44px] px-4 rounded-full text-[12.5px] font-black inline-flex items-center gap-1.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${on ? 'bg-brand text-surface shadow-sm shadow-brand/25' : 'bg-soft/80 border border-line/70 text-sub hover:text-brand-dark'}`;
 
   return (
     <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-6 md:pt-8 pb-20">
@@ -319,7 +319,7 @@ export default function InterpreterPage() {
                     <button
                       type="button"
                       onClick={() => speakPhrase(ph.local, kitLang)}
-                      className="w-8 h-8 rounded-xl bg-surface border border-line text-brand-dark hover:bg-mint grid place-items-center transition active:scale-95 shadow-2xs"
+                      className="min-w-[44px] min-h-[44px] rounded-xl bg-surface border border-line text-brand-dark hover:bg-mint grid place-items-center transition active:scale-95 shadow-2xs"
                       title="پخش صوتی تلفظ"
                     >
                       <Volume2 size={15} />
@@ -327,7 +327,7 @@ export default function InterpreterPage() {
                     <button
                       type="button"
                       onClick={() => copyPhraseText(ph.local)}
-                      className="w-8 h-8 rounded-xl bg-surface border border-line text-sub hover:text-ink grid place-items-center transition active:scale-95 shadow-2xs"
+                      className="min-w-[44px] min-h-[44px] rounded-xl bg-surface border border-line text-sub hover:text-ink grid place-items-center transition active:scale-95 shadow-2xs"
                       title="کپی عبارت"
                     >
                       {copiedPhrase === ph.local ? <Check size={14} className="text-success" /> : <Copy size={14} />}
@@ -344,15 +344,16 @@ export default function InterpreterPage() {
         <p className="m-0 text-[13px] font-black text-price inline-flex items-center gap-2">
           <Wallet size={17} /> {t('moneyLink', { country: countryName(country, locale) })}
         </p>
-        <button onClick={() => router.push('/wallet')} className="min-h-10 px-5 rounded-full bg-surface border border-gold/40 text-price font-black text-[12.5px] inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+        <button onClick={() => router.push('/wallet')} className="min-h-[44px] px-5 rounded-full bg-surface border border-gold/40 text-price font-black text-[12.5px] inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
           {isEn ? 'Go to wallet' : 'رفتن به کیف پول'} <ArrowLeft size={14} className="ltr:rotate-180" />
         </button>
       </div>
 
       {/* ---------- SOS Modal ---------- */}
       {sosOpen && (
-        <div className="fixed inset-0 z-[200] grid place-items-center p-4 bg-ink/60 backdrop-blur-sm fade-soft" onClick={() => { setSosOpen(false); setSosPhase('idle'); }}>
-          <div className="w-full max-w-md rounded-xl bg-surface shadow-sm overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center sm:p-4 bg-ink/60 backdrop-blur-sm fade-soft" onClick={() => { setSosOpen(false); setSosPhase('idle'); }}>
+          <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-xl bg-surface shadow-sm overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="sm:hidden pt-3" aria-hidden="true"><div className="w-10 h-1 rounded-full bg-line mx-auto" /></div>
             <div className={`p-6 text-center text-surface ${sosPhase === 'live' ? 'bg-gradient-to-b from-success to-[#0d5c39]' : 'bg-gradient-to-b from-rose-warm to-[#8f2417]'}`}>
               <span className={`mx-auto mb-4 w-20 h-20 rounded-full grid place-items-center ${sosPhase === 'live' ? 'bg-surface/20' : 'bg-surface/15 animate-pulse'}`}>
                 {sosPhase === 'live' ? <PhoneCall size={34} /> : <Siren size={34} />}

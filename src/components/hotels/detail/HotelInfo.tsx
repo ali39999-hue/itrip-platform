@@ -220,7 +220,7 @@ export function HotelReviews({ hotel }: { hotel: Hotel }) {
           <button
             key={f.key}
             onClick={() => setRevType(f.key)}
-            className={`min-h-8 px-3 rounded-full border text-[11.5px] font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer ${
+            className={`min-h-[44px] px-3 rounded-full border text-[11.5px] font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer ${
               revType === f.key ? 'border-brand text-surface bg-brand' : 'border-line text-sub bg-surface'
             }`}
           >

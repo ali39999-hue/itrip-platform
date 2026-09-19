@@ -53,13 +53,15 @@ export interface E2eCredentials {
   identifier: string;
   password?: string;
   envKey: 'ADMIN_PASSWORD' | 'USER_PASSWORD';
-  fallback: string;
 }
 
 export async function apiLogin(page: Page, credentials: E2eCredentials): Promise<boolean> {
+  // SEC-014: candidates come from the environment / .env the dev server was
+  // actually seeded with. There is deliberately no hardcoded password here — a
+  // default in the repository is a published credential.
   const candidates = Array.from(
     new Set(
-      [process.env[credentials.envKey], credentials.password, readDotEnv(credentials.envKey), credentials.fallback].filter(
+      [process.env[credentials.envKey], credentials.password, readDotEnv(credentials.envKey)].filter(
         (v): v is string => Boolean(v && v.length > 0)
       )
     )
@@ -76,10 +78,8 @@ export async function apiLogin(page: Page, credentials: E2eCredentials): Promise
 export const E2E_ADMIN: E2eCredentials = {
   identifier: 'admin@firuzo.com',
   envKey: 'ADMIN_PASSWORD',
-  fallback: 'Admin@Firuzo2026!Secure',
 };
 export const E2E_USER: E2eCredentials = {
   identifier: 'user@firuzo.com',
   envKey: 'USER_PASSWORD',
-  fallback: 'User@Firuzo2026!Secure',
 };

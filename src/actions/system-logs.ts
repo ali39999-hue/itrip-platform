@@ -12,23 +12,7 @@ import {
 async function checkDiagnosticsAuth(): Promise<{ isAuthed: boolean; userId?: string }> {
   try {
     const session = await auth();
-    if (session?.user) {
-      const role = session.user.role;
-      if (
-        role === 'SUPER_ADMIN' ||
-        role === 'ADMIN' ||
-        role === 'OPS' ||
-        role === 'OPERATOR' ||
-        role === 'FINANCE'
-      ) {
-        return { isAuthed: true, userId: session.user.id };
-      }
-
-      const { isKnownAdminIdentifier } = await import('@/auth');
-      if (session.user.email && isKnownAdminIdentifier(session.user.email)) {
-        return { isAuthed: true, userId: session.user.id };
-      }
-
+    if (session?.user?.id) {
       const { hasErpRole } = await import('@/domains/identity/permission-service');
       const hasRole = await hasErpRole(session.user.id);
       if (hasRole) return { isAuthed: true, userId: session.user.id };

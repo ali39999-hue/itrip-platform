@@ -44,6 +44,7 @@ interface BookingRecordSummary {
   reference: string;
   status: string;
   totalAmount: unknown;
+  currency?: string | null;
   createdAt: Date;
   travelDate?: string;
   items: BookingRecordItem[];
@@ -461,7 +462,7 @@ export default function MyTripsPage() {
                           b.status === 'CONFIRMED'
                             ? 'bg-brand text-surface'
                             : b.status === 'CANCELLED'
-                            ? 'bg-line/90 text-sub'
+                            ? 'bg-rose-warm/90 text-surface'
                             : 'bg-hotel text-surface'
                         }`}
                       >
@@ -480,8 +481,8 @@ export default function MyTripsPage() {
                             <Icon size={14} className="text-brand-dark" aria-hidden="true" />
                             {meta.label}
                           </span>
-                          <span className="font-mono text-xs font-bold text-sub">
-                            {lt(locale, { fa: 'کد رزرو:', en: 'Booking Code:', ar: 'رمز الحجز:', zh: '预订码：', ru: 'Код бронирования:' })} #{b.reference || b.id.slice(0, 8)}
+                          <span className="font-mono text-xs font-bold text-sub min-w-0 truncate">
+                            {lt(locale, { fa: 'کد رزرو:', en: 'Booking Code:', ar: 'رمز الحجز:', zh: '预订码：', ru: 'Код бронирования:' })} <bdi dir="ltr">#{b.reference || b.id.slice(0, 8)}</bdi>
                           </span>
                         </div>
 
@@ -501,7 +502,7 @@ export default function MyTripsPage() {
                               })}
                             </span>
                             <span className="text-ink font-mono">
-                              {new Date(b.createdAt).toISOString().slice(0, 10)}
+                              {new Intl.DateTimeFormat(locale === 'fa' ? 'fa-IR-u-ca-persian' : locale, { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(b.createdAt))}
                             </span>
                           </div>
                           <div>
@@ -518,7 +519,9 @@ export default function MyTripsPage() {
                               {totalAmt.toLocaleString(
                                 lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })
                               )}{' '}
-                              {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
+                              {b.currency && b.currency !== 'IRR'
+                                ? b.currency
+                                : lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
                             </span>
                           </div>
                         </div>
@@ -538,7 +541,7 @@ export default function MyTripsPage() {
                           <button
                             type="button"
                             onClick={() => copyPnr(b.reference || b.id.slice(0, 8))}
-                            className="h-8 px-2.5 rounded-xl border border-line text-xs font-bold text-sub hover:text-brand-dark hover:bg-soft transition flex items-center gap-1"
+                            className="min-h-[44px] px-2.5 rounded-xl border border-line text-xs font-bold text-sub hover:text-brand-dark hover:bg-soft transition flex items-center gap-1"
                             title="کپی شماره رزرو"
                           >
                             {copiedRef === (b.reference || b.id.slice(0, 8)) ? (

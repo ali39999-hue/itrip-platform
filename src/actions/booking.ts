@@ -8,7 +8,7 @@ import { safeAuth } from '@/auth';
 import { BookingApplicationService } from '@/domains/booking/BookingApplicationService';
 import { BookingDomainService } from '@/domains/booking/BookingDomainService';
 import { ReferralDomainService } from '@/domains/referral/ReferralDomainService';
-import { getTenantAuthContext, assertTenantAccess } from '@/domains/identity/permission-service';
+import { getTenantAuthContext, assertTenantAccess, hasErpRole } from '@/domains/identity/permission-service';
 import { ERP_STAFF_ROLES } from '@/domains/identity/permissions';
 import { decryptSensitive } from '@/lib/security/crypto-vault';
 import { acquireIdempotencyLock, completeIdempotency } from '@/lib/security/idempotency';
@@ -393,7 +393,7 @@ export async function getMyBookings() {
       },
     });
 
-    const isStaff = Boolean(session.user.role && (ERP_STAFF_ROLES as readonly string[]).includes(session.user.role));
+    const isStaff = await hasErpRole(session.user.id);
 
     const sanitizedBookings = bookings.map((b) => ({
       ...b,
@@ -485,7 +485,7 @@ export async function getBookingById(id: string) {
     const isStaff =
       tenantCtx.isSuperAdmin ||
       (ERP_STAFF_ROLES as readonly string[]).includes(tenantCtx.role) ||
-      Boolean(session.user.role && (ERP_STAFF_ROLES as readonly string[]).includes(session.user.role));
+      (await hasErpRole(session.user.id));
 
     const sanitizedBooking = {
       ...booking,

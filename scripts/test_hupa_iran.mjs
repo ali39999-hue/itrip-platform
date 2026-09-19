@@ -1,3 +1,9 @@
+// SEC-014: credentials must come from the environment — never from source.
+if (!process.env.SMSWBS_USERNAME || !process.env.SMSWBS_PASSWORD) {
+  console.error('SMSWBS_USERNAME / SMSWBS_PASSWORD are not configured. Refusing to run this diagnostic with embedded credentials.');
+  process.exit(1);
+}
+
 import http from 'node:http';
 
 async function testCombination(payloadObj, path = '/class/sms/restful/getData.php') {
@@ -32,12 +38,12 @@ async function testCombination(payloadObj, path = '/class/sms/restful/getData.ph
 
 async function run() {
   const combos = [
-    { username: '09123764868', password: '@Hvd1367++' },
-    { uname: '09123764868', pass: '@Hvd1367++' },
-    { username: '09123764868', api_password: '@Hvd1367++' },
-    { user: '09123764868', pass: '@Hvd1367++' },
-    { username: '09123764868', password: 'Hvd1367++@' },
-    { uname: '09123764868', pass: 'Hvd1367++@' }
+    { username: process.env.SMSWBS_USERNAME, password: process.env.SMSWBS_PASSWORD },
+    { uname: process.env.SMSWBS_USERNAME, pass: process.env.SMSWBS_PASSWORD },
+    { username: process.env.SMSWBS_USERNAME, api_password: process.env.SMSWBS_PASSWORD },
+    { user: process.env.SMSWBS_USERNAME, pass: process.env.SMSWBS_PASSWORD },
+    { username: process.env.SMSWBS_USERNAME, password: process.env.SMSWBS_PASSWORD },
+    { uname: process.env.SMSWBS_USERNAME, pass: process.env.SMSWBS_PASSWORD }
   ];
 
   for (const c of combos) {

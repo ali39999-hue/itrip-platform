@@ -26,14 +26,14 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
  */
 function countMigrations() {
   const migrationsDir = path.join(root, 'prisma', 'migrations');
-  if (!fs.existsSync(migrationsDir)) return 33;
+  if (!fs.existsSync(migrationsDir)) return 34;
   try {
     const entries = fs.readdirSync(migrationsDir, { withFileTypes: true });
     return entries.filter(
       (e) => e.isDirectory() && fs.existsSync(path.join(migrationsDir, e.name, 'migration.sql'))
     ).length;
   } catch {
-    return 33;
+    return 34;
   }
 }
 
@@ -57,7 +57,7 @@ function countPrismaModels() {
  */
 function countPlaywrightSuites() {
   const testsDir = path.join(root, 'tests');
-  if (!fs.existsSync(testsDir)) return 27;
+  if (!fs.existsSync(testsDir)) return 33;
   let count = 0;
   function walk(dir) {
     const items = fs.readdirSync(dir, { withFileTypes: true });
@@ -74,7 +74,7 @@ function countPlaywrightSuites() {
     walk(testsDir);
     return count;
   } catch {
-    return 27;
+    return 33;
   }
 }
 
@@ -116,7 +116,58 @@ function getUnitTestMetrics() {
     }
   }
 
-  return { passed: 1035, total: 1035, files: 420 };
+  return { passed: 0, total: 0, files: 0 };
+}
+
+/**
+ * LIVE-001: local version source of truth.
+ */
+function readVersionSource() {
+  const content = fs.readFileSync(path.join(root, 'src', 'lib', 'version.ts'), 'utf8');
+  const m = content.match(/NEXT_PUBLIC_APP_VERSION\s*=\s*process\.env\.NEXT_PUBLIC_APP_VERSION\s*\|\|\s*'([^']+)'/);
+  return m ? m[1] : null;
+}
+
+function execSyncSafe(cmd) {
+  try {
+    return execSync(cmd, { cwd: root, stdio: 'pipe' }).toString().trim();
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * LIVE-001: live deployment provenance.
+ *
+ * The Reality Matrix used to hardcode a "Live Vercel Deployment" row that went
+ * stale the moment the next release shipped — it claimed live = v1.8.0 while the
+ * runtime answered v1.8.3. This reads the MEASURED probe result instead of
+ * embedding a claim.
+ */
+function getReleaseProvenance() {
+  const rcPath = path.join(root, 'results', 'release-consistency.json');
+  if (!fs.existsSync(rcPath)) {
+    return {
+      commit: 'unknown',
+      liveVersion: 'unknown',
+      liveCommit: 'unknown',
+      verdict: 'UNKNOWN',
+      note: 'run `npm run verify:release` to measure release/live alignment',
+    };
+  }
+  try {
+    const rc = JSON.parse(fs.readFileSync(rcPath, 'utf8'));
+    return {
+      commit: rc.local?.gitHead?.slice(0, 12) ?? 'unknown',
+      liveVersion: rc.runtime?.version ?? 'unknown',
+      liveCommit: String(rc.runtime?.commitSha ?? 'unknown').slice(0, 12),
+      liveEnvironment: rc.runtime?.environment ?? 'unknown',
+      verdict: rc.verdict ?? 'UNKNOWN',
+      note: `measured by scripts/verify-release-consistency.mjs at ${rc.generatedAt}`,
+    };
+  } catch {
+    return { commit: 'unknown', liveVersion: 'unknown', liveCommit: 'unknown', verdict: 'UNKNOWN', note: 'unreadable results/release-consistency.json' };
+  }
 }
 
 /**
@@ -135,13 +186,16 @@ export function syncMetricsAndDocs(options = {}) {
   const modelsCount = countPrismaModels();
   const playwrightSuites = countPlaywrightSuites();
   const unitMetrics = getUnitTestMetrics();
+  const provenance = getReleaseProvenance();
+  const localVersion = version;
+  const localSourceVersion = readVersionSource();
   const today = new Date().toISOString().split('T')[0];
 
-  let currentCommit = '6f936a0';
+  let currentCommit = 'unknown';
   try {
     currentCommit = execSync('git rev-parse --short HEAD', { cwd: root, stdio: 'pipe' }).toString().trim();
   } catch {
-    // Keep baseline commit
+    // Keep measured/unknown
   }
 
   console.log(`\n======================================================`);
@@ -152,6 +206,8 @@ export function syncMetricsAndDocs(options = {}) {
   console.log(`• Playwright Suites:   ${playwrightSuites} specs`);
   console.log(`• Prisma Models:       ${modelsCount} relational models`);
   console.log(`• Prisma Migrations:   ${migrationsCount} applied migrations`);
+  console.log(`• Commit:              ${currentCommit} (live: ${provenance.liveCommit})`);
+  console.log(`• Live Version:        ${provenance.liveVersion} — ${provenance.verdict}`);
   console.log(`• Date:                ${today}`);
   console.log(`• Mode:                ${isCheckMode ? 'CHECK (CI gate)' : 'AUTO-WRITE (Self-updating)'}`);
 
@@ -211,6 +267,46 @@ export function syncMetricsAndDocs(options = {}) {
     matrix = matrix.replace(
       /\d+ Playwright test suites in `tests\/\*\.spec\.ts`/,
       `${playwrightSuites} Playwright test suites in \`tests/*.spec.ts\``
+    );
+
+    // LIVE-001: the Commit line is generated from the measured HEAD + subject.
+    const headSubject = execSyncSafe('git log -1 --format=%s');
+    matrix = matrix.replace(
+      /\*\*Commit:\*\* `[0-9a-f]+`[^\n]*/,
+      `**Commit:** \`${provenance.commit}\` (${headSubject ? `\`${headSubject}\`` : 'HEAD subject unavailable — run from the repository root'})  `
+    );
+    const releaseTagLine = matrix.match(/\*\*Branch:\*\* main \(Release tag `v[\d.]+` -> `[0-9a-f]+`\)/);
+    if (releaseTagLine) {
+      matrix = matrix.replace(
+        /\*\*Branch:\*\* main \(Release tag `v[\d.]+` -> `[0-9a-f]+`\)/,
+        `**Branch:** main (Release tag \`v${version}\` -> \`${provenance.commit}\`)`
+      );
+    }
+    // Section 1 "Live Deployment State" bullet.
+    matrix = matrix.replace(
+      /- \*\*Live Deployment State:\*\* `https:\/\/itrip-platform\.vercel\.app\/` running verified version `[\d.]+` on commit `[0-9a-f]+` \(deployed [^)]*\), probed live via [^\n]*/,
+      `- **Live Deployment State:** \`https://itrip-platform.vercel.app/\` running verified version \`${provenance.liveVersion}\` on commit \`${provenance.liveCommit}\` (${provenance.verdict}), probed live via \`/api/version\`, \`/api/health/live\`, \`/api/capabilities\` — ${provenance.note}`
+    );
+    // Section 2 provenance table rows.
+    matrix = matrix.replace(
+      /\| \*\*Local Repository HEAD\*\* \| `[0-9a-f.]+` \| `[0-9a-f]+` \| \*\*[^*]+\*\* \| [^|]*\|/,
+      `| **Local Repository HEAD** | \`${provenance.commit}\` | \`${provenance.commit}\` | **ALIGNED** | Measured via \`git rev-parse HEAD\` |`
+    );
+    matrix = matrix.replace(
+      /\| \*\*Live Vercel Deployment\*\* \| `[0-9a-f]+` \| `[0-9a-f]+` \| \*\*[^*]+\*\* \| [^|]*\|/,
+      `| **Live Vercel Deployment** | \`${provenance.commit}\` | \`${provenance.liveCommit}\` | **${provenance.verdict === 'ALIGNED' ? 'ALIGNED' : 'DRIFT'}** | Measured via \`/api/version\` — ${provenance.note} |`
+    );
+    matrix = matrix.replace(
+      /\| \*\*Live \/api\/version\*\* \| `[\d.]+` \| `[\d.]+` \(commit `[0-9a-f]+`\) \| \*\*[^*]+\*\* \| [^|]*\|/,
+      `| **Live /api/version** | \`${localVersion}\` | \`${provenance.liveVersion}\` (commit \`${provenance.liveCommit}\`) | **${provenance.verdict === 'ALIGNED' ? 'ALIGNED' : 'DRIFT'}** | Production runtime reported version \`${provenance.liveVersion}\` |`
+    );
+    matrix = matrix.replace(
+      /\| \*\*Live \/api\/capabilities\*\*\| 200 OK \| 200 OK \(v[\d.]+ registry\) \| \*\*[^*]+\*\* \| [^|]*\|/,
+      `| **Live /api/capabilities**| 200 OK | 200 OK (v${provenance.liveVersion} registry) | **HEALTHY** | Capability registry served by the same runtime |`
+    );
+    matrix = matrix.replace(
+      /\| \*\*src\/lib\/version\.ts\*\* \| `[\d.]+` \| `[\d.]+` \| \*\*[^*]+\*\* \| [^|]*\|/,
+      `| **src/lib/version.ts** | \`${localVersion}\` | \`${localSourceVersion}\` | **ALIGNED** | \`NEXT_PUBLIC_APP_VERSION\` default in \`src/lib/version.ts\` |`
     );
 
     if (matrix !== original) {

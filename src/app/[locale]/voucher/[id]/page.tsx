@@ -45,7 +45,7 @@ export default async function VoucherPage({ params }: VoucherPageProps) {
       </div>
 
       {/* Main A4 Printable Document Container */}
-      <main className="max-w-4xl mx-auto bg-white border border-neutral-200 rounded-xl p-8 shadow-lg print:border-none print:shadow-none print:p-6 print:rounded-none">
+      <main className="max-w-4xl mx-auto bg-white border border-neutral-200 rounded-xl p-4 sm:p-8 shadow-lg print:border-none print:shadow-none print:p-6 print:rounded-none">
         {/* Header Block */}
         <header className="border-b border-neutral-200 pb-6 mb-6 flex items-start justify-between">
           <div>
@@ -127,12 +127,104 @@ export default async function VoucherPage({ params }: VoucherPageProps) {
           )}
         </section>
 
+        {/* Dedicated CIP Lounge Voucher Block (if applicable) */}
+        {voucher.service.cipDetails && (
+          <section className="mb-6 rounded-xl p-5 border-2 border-amber-300 bg-amber-50/60 shadow-xs">
+            <div className="flex items-center justify-between border-b border-amber-200 pb-2.5 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-xs">★</span>
+                <h3 className="text-base font-bold text-amber-950">
+                  {isRtl ? 'واچر تشریفات اختصاصی جایگاه CIP فرودگاه' : 'Airport Executive CIP Lounge Voucher'}
+                </h3>
+              </div>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 font-bold">
+                {voucher.service.cipDetails.airportCode} CIP
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs text-neutral-800">
+              <div>
+                <div className="text-neutral-500 mb-0.5">{isRtl ? 'فرودگاه و جایگاه' : 'Airport & Terminal'}</div>
+                <div className="font-bold">{voucher.service.cipDetails.airportName}</div>
+                <div className="text-[11px] text-neutral-600">{voucher.service.cipDetails.terminal}</div>
+              </div>
+              <div>
+                <div className="text-neutral-500 mb-0.5">{isRtl ? 'نوع پرواز مسافر' : 'Flight Direction'}</div>
+                <div className="font-bold">
+                  {voucher.service.cipDetails.flightDirection === 'DEPARTURE'
+                    ? (isRtl ? 'پرواز خروجی (Departure)' : 'Departure')
+                    : voucher.service.cipDetails.flightDirection === 'ARRIVAL'
+                    ? (isRtl ? 'پرواز ورودی (Arrival)' : 'Arrival')
+                    : (isRtl ? 'پرواز ترانزیت (Transit)' : 'Transit')}
+                </div>
+              </div>
+              <div>
+                <div className="text-neutral-500 mb-0.5">{isRtl ? 'ترانسفر باند پرواز' : 'Tarmac Transfer'}</div>
+                <div className="font-bold text-emerald-800">
+                  {isRtl ? 'خودروی تشریفاتی اختصاصی باند' : 'Private Apron Limousine'}
+                </div>
+              </div>
+              <div>
+                <div className="text-neutral-500 mb-0.5">{isRtl ? 'همراهان / خدمات ویژه' : 'Guests & Extras'}</div>
+                <div className="font-bold">
+                  {voucher.service.cipDetails.accompanyingGuests > 0
+                    ? `${voucher.service.cipDetails.accompanyingGuests} ${isRtl ? 'نفر همراه' : 'Guest(s)'}`
+                    : (isRtl ? 'پذیرایی کامل سلف‌سرویس' : 'All-inclusive buffet')}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Dedicated Travel Insurance Certificate Block (if applicable) */}
+        {voucher.service.insuranceDetails && (
+          <section className="mb-6 rounded-xl p-5 border-2 border-emerald-300 bg-emerald-50/60 shadow-xs">
+            <div className="flex items-center justify-between border-b border-emerald-200 pb-2.5 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">✓</span>
+                <h3 className="text-base font-bold text-emerald-950">
+                  {isRtl ? 'گواهی رسمی بیمه‌نامه مسافرتی بین‌المللی' : 'Official Travel Insurance Certificate'}
+                </h3>
+              </div>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-900 font-bold">
+                {isRtl ? 'مورد تایید سفارتخانه‌ها' : 'Embassy Approved'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs text-neutral-800 mb-3">
+              <div>
+                <div className="text-neutral-500 mb-0.5">{isRtl ? 'شماره بیمه‌نامه' : 'Policy Number'}</div>
+                <div className="font-mono font-bold text-emerald-900">{voucher.service.insuranceDetails.policyNumber}</div>
+              </div>
+              <div>
+                <div className="text-neutral-500 mb-0.5">{isRtl ? 'شرکت بیمه‌گر' : 'Insurer Company'}</div>
+                <div className="font-bold">{voucher.service.insuranceDetails.companyName}</div>
+              </div>
+              <div>
+                <div className="text-neutral-500 mb-0.5">{isRtl ? 'شرکت کمک‌رسان بین‌المللی' : 'Assistance Partner'}</div>
+                <div className="font-bold">{voucher.service.insuranceDetails.assistancePartner}</div>
+                <div className="text-[11px] font-mono text-neutral-600">{voucher.service.insuranceDetails.assistancePhone}</div>
+              </div>
+              <div>
+                <div className="text-neutral-500 mb-0.5">{isRtl ? 'سقف تعهدات خسارت' : 'Coverage Limit'}</div>
+                <div className="font-bold text-emerald-800 font-mono">
+                  €{voucher.service.insuranceDetails.coverageEur.toLocaleString('en-US')}
+                </div>
+              </div>
+            </div>
+
+            <div className="text-[11px] text-emerald-800 bg-white/70 p-2.5 rounded-lg border border-emerald-200">
+              <span>{voucher.service.insuranceDetails.validityNotice}</span>
+            </div>
+          </section>
+        )}
+
         {/* Travelers Manifest Section */}
         <section className="mb-6">
           <div className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">
             {isRtl ? 'اسامی مسافران و مشخصات شناسایی' : 'Passenger & Guest Manifest'}
           </div>
-          <div className="border border-neutral-200 rounded-lg overflow-hidden">
+          <div className="hidden md:block border border-neutral-200 rounded-lg overflow-hidden print:block">
             <table className="w-full text-start text-sm">
               <thead className="bg-neutral-100 border-b border-neutral-200 text-xs font-semibold text-neutral-600">
                 <tr>
@@ -158,6 +250,21 @@ export default async function VoucherPage({ params }: VoucherPageProps) {
               </tbody>
             </table>
           </div>
+          {/* فهرست کارتی موبایل — جدول در ۳۹۰px له می‌شد */}
+          <div className="md:hidden print:hidden space-y-2">
+            {voucher.travelers.map((t, idx) => (
+              <div key={idx} className="border border-neutral-200 rounded-lg p-3 text-sm">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="font-medium text-neutral-900">{t.fullName}</span>
+                  <span className="text-xs text-neutral-500">{t.type}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2 text-xs text-neutral-700">
+                  <span className="font-mono">{t.passportNumber || t.nationalId || '-'}</span>
+                  <span className="font-mono">{t.seat || t.room || '-'}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
 
         {/* Policies & Baggage Allowance */}
@@ -181,7 +288,7 @@ export default async function VoucherPage({ params }: VoucherPageProps) {
             </span>
           </div>
           <div className="text-xs text-neutral-500 text-end">
-            <div>{isRtl ? 'تاریخ صدور سند:' : 'Issued At:'} {new Date(voucher.issuedAt).toLocaleString(locale)}</div>
+            <div>{isRtl ? 'تاریخ صدور سند:' : 'Issued At:'} {new Intl.DateTimeFormat(isRtl ? 'fa-IR-u-ca-persian' : locale, { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(voucher.issuedAt))}</div>
             <div>{isRtl ? 'پشتیبانی ۲۴ ساعته سفر:' : '24/7 Support:'} +98 21 8888 0000 | support@firuzo.com</div>
           </div>
         </section>

@@ -1,3 +1,9 @@
+// SEC-014: credentials must come from the environment — never from source.
+if (!process.env.SMSWBS_USERNAME || !process.env.SMSWBS_PASSWORD) {
+  console.error('SMSWBS_USERNAME / SMSWBS_PASSWORD are not configured. Refusing to run this diagnostic with embedded credentials.');
+  process.exit(1);
+}
+
 async function test() {
   const urls = [
     'http://smswbs.ir/class/sms/restful/getData.php',
@@ -11,7 +17,7 @@ async function test() {
       const res = await fetch(u, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uname: '09123764868', pass: 'Hvd1367++@' }),
+        body: JSON.stringify({ uname: process.env.SMSWBS_USERNAME, pass: process.env.SMSWBS_PASSWORD }),
         signal: AbortSignal.timeout(5000)
       });
       const text = await res.text();

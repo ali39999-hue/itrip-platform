@@ -405,7 +405,144 @@ export function UsersClientPage({
             description={lt(locale, { fa: 'می‌توانید فیلتر جستجو را تغییر دهید یا با دکمه بالا همکار جدید اضافه کنید.', en: 'Try changing your search query or add a staff member.' , ar: 'غيّر استعلام البحث أو أضف موظفًا جديدًا من الزر أعلاه.', zh: '请更改搜索条件，或使用上方按钮添加新员工。', ru: 'Измените поисковый запрос или добавьте сотрудника кнопкой выше.'})}
           />
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* کارت موبایل — جدول ۶ ستونه در ۳۹۰px له می‌شد (الگوی ERPDataGrid) */}
+          <div className="md:hidden divide-y divide-line/60">
+            {users.map((u) => {
+              const isStaffM = u.roles.some((r) => ['SUPER_ADMIN', 'FINANCE', 'OPS'].includes(r));
+              return (
+                <div key={u.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2 pb-2 border-b border-line/50">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className={`w-8 h-8 rounded-full grid place-items-center font-black text-xs shrink-0 ${isStaffM ? 'bg-brand/15 text-brand-dark' : 'bg-soft text-sub'}`}>
+                        {u.name?.slice(0, 1) || 'U'}
+                      </div>
+                      <div className="min-w-0">
+                        <Link
+                          href={`/admin/users/${u.id}`}
+                          className="font-black text-ink hover:text-brand-dark hover:underline block truncate"
+                        >
+                          {u.name}
+                        </Link>
+                        <span className="font-mono text-[10px] text-sub block">{u.id.slice(0, 12)}…</span>
+                      </div>
+                    </div>
+                    <span className={`inline-flex items-center gap-1 text-xs font-black shrink-0 ${u.isActive ? 'text-success' : 'text-destructive'}`}>
+                      {u.isActive ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
+                      <span>{u.isActive ? lt(locale, { fa: 'فعال', en: 'Active' , ar: 'نشط', zh: '活跃', ru: 'Активен'}) : lt(locale, { fa: 'غیرفعال', en: 'Inactive' , ar: 'غير نشط', zh: '停用', ru: 'Неактивен'})}</span>
+                    </span>
+                  </div>
+
+                  <div className="space-y-1 text-[11px] font-mono">
+                    {u.email && (
+                      <div className="flex items-center gap-1 text-ink" dir="ltr">
+                        <Mail size={11} className="text-sub shrink-0" />
+                        <span className="truncate">{u.email}</span>
+                      </div>
+                    )}
+                    {u.phone && (
+                      <div className="flex items-center gap-1 text-sub" dir="ltr">
+                        <Phone size={11} className="text-sub shrink-0" />
+                        <span>{u.phone}</span>
+                      </div>
+                    )}
+                    {!u.email && !u.phone && <span className="text-sub">—</span>}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1">
+                    {u.roles.map((r) => (
+                      <ErpBadge
+                        key={r}
+                        tone={
+                          r === 'SUPER_ADMIN'
+                            ? 'rose'
+                            : r === 'FINANCE'
+                              ? 'gold'
+                              : r === 'OPS'
+                                ? 'green'
+                                : 'neutral'
+                        }
+                      >
+                        {r}
+                      </ErpBadge>
+                    ))}
+                    <span className="font-mono text-[10px] text-sub ms-auto" title={u.createdAt.slice(0, 10)}>
+                      {new Intl.DateTimeFormat(locale === 'fa' ? 'fa-IR-u-ca-persian' : locale, { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(u.createdAt))}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    <Link
+                      href={`/admin/users/${u.id}`}
+                      className="inline-flex items-center gap-1 rounded-xl bg-mint hover:bg-mint/80 text-brand-dark px-2.5 min-h-[36px] text-xs font-black transition cursor-pointer"
+                    >
+                      <Eye size={13} />
+                      <span>{lt(locale, { fa: '۳۶۰°', en: '360°', ar: '360°', zh: '360°', ru: '360°'})}</span>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingProfileUser(u);
+                        setEditName(u.name || '');
+                        setEditPhone(u.phone || '');
+                        setEditEmail(u.email || '');
+                      }}
+                      className="inline-flex items-center gap-1 rounded-xl bg-soft hover:bg-line/50 text-ink px-2.5 min-h-[36px] text-xs font-black transition cursor-pointer"
+                    >
+                      <Edit size={12} />
+                      <span>{lt(locale, { fa: 'ویرایش', en: 'Edit', ar: 'تعديل', zh: '编辑', ru: 'Правка' })}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResettingUser(u);
+                        setNewPassword('');
+                      }}
+                      aria-label={lt(locale, { fa: 'تغییر رمز عبور', en: 'Reset Password', ar: 'إعادة تعيين كلمة المرور', zh: '重置密码', ru: 'Сброс пароля' })}
+                      className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl bg-soft hover:bg-line/50 text-ink text-xs font-black transition cursor-pointer"
+                    >
+                      <KeyRound size={12} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingUser(u);
+                        const currentRole = u.roles[0];
+                        setSelectedNewRole(
+                          currentRole === 'SUPER_ADMIN' || currentRole === 'FINANCE' || currentRole === 'OPS' || currentRole === 'CUSTOMER'
+                            ? currentRole
+                            : 'OPS'
+                        );
+                      }}
+                      className="inline-flex items-center gap-1 rounded-xl bg-brand/10 hover:bg-brand/20 text-brand-dark px-2.5 min-h-[36px] text-xs font-black transition cursor-pointer"
+                    >
+                      <UserCog size={13} />
+                      <span>{lt(locale, { fa: 'نقش', en: 'Role' , ar: 'الدور', zh: '角色', ru: 'Роль'})}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleActive(u)}
+                      disabled={togglingId === u.id}
+                      className={`inline-flex items-center gap-1 rounded-xl px-2.5 min-h-[36px] text-xs font-black transition cursor-pointer disabled:opacity-60 ${
+                        u.isActive ? 'bg-rose-50 text-rose-700 hover:bg-rose-100' : 'bg-mint text-brand-dark hover:bg-mint/80'
+                      }`}
+                    >
+                      {togglingId === u.id ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : u.isActive ? (
+                        <span>{lt(locale, { fa: 'غیرفعال‌سازی', en: 'Deactivate' , ar: 'تعطيل', zh: '停用', ru: 'Деактивировать'})}</span>
+                      ) : (
+                        <span>{lt(locale, { fa: 'فعال‌سازی', en: 'Activate' , ar: 'تفعيل', zh: '启用', ru: 'Активировать'})}</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* جدول دسکتاپ */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-start text-xs">
               <thead className="border-b border-line bg-soft/50 text-sub font-black text-[11px]">
                 <tr>
@@ -482,8 +619,8 @@ export function UsersClientPage({
                           <span>{u.isActive ? lt(locale, { fa: 'فعال', en: 'Active' , ar: 'نشط', zh: '活跃', ru: 'Активен'}) : lt(locale, { fa: 'غیرفعال', en: 'Inactive' , ar: 'غير نشط', zh: '停用', ru: 'Неактивен'})}</span>
                         </span>
                       </td>
-                      <td className="p-3 font-mono text-sub text-[11px]">
-                        {u.createdAt.slice(0, 10)}
+                      <td className="p-3 font-mono text-sub text-[11px]" title={u.createdAt.slice(0, 10)}>
+                        {new Intl.DateTimeFormat(locale === 'fa' ? 'fa-IR-u-ca-persian' : locale, { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(u.createdAt))}
                       </td>
                       <td className="p-3 text-end">
                         <div className="inline-flex items-center gap-1.5">
@@ -561,6 +698,7 @@ export function UsersClientPage({
               </tbody>
             </table>
           </div>
+          </>
         )}
       </ErpSectionCard>
 

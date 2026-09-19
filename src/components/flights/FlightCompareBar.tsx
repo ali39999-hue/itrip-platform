@@ -50,7 +50,7 @@ export function FlightCompareBar({
         <button
           type="button"
           onClick={onClearCmp}
-          className="text-[11px] sm:text-xs font-bold text-sub hover:text-destructive transition"
+          className="min-h-[44px] px-2 -me-2 text-[11px] sm:text-xs font-bold text-sub hover:text-destructive transition"
         >
           {lt(locale, { fa: 'پاک کردن همه', en: 'Clear all', ar: 'مسح الكل', zh: '清除全部', ru: 'Сбросить всё' })}
         </button>
@@ -77,7 +77,8 @@ export function FlightCompareBar({
                   {fl ? fl.airline : `Flight #${id}`}
                 </span>
                 <span className="font-mono text-[10px] text-sub">
-                  {fl ? `${fl.flightNo} · ${num(fl.price, locale)}` : ''}
+                  {/* قیمت کارت‌ها به تومان است (ریال ÷ ۱۰) — یکسان‌سازی تا مقایسه گمراه‌کننده نشود */}
+                  {fl ? `${fl.flightNo} · ${num(Math.round(fl.price / 10), locale)}` : ''}
                 </span>
               </div>
               <button

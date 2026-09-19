@@ -16,6 +16,10 @@ const envText = fs.existsSync(path.resolve(process.cwd(), '.env'))
   ? fs.readFileSync(path.resolve(process.cwd(), '.env'), 'utf8')
   : '';
 const dbUrl = envText.match(/^DATABASE_URL="?([^"\r\n]+)"?/m)?.[1];
+// SEC-014: credentials come from the environment / .env only — never from source.
+const userPassword =
+  process.env.USER_PASSWORD || envText.match(/^USER_PASSWORD="?([^"\r\n]+)"?/m)?.[1];
+if (!userPassword) throw new Error('USER_PASSWORD missing — cannot log the seeded customer in');
 
 test.describe('KYC completion flow', () => {
   let prisma: import('@prisma/client').PrismaClient | null = null;
@@ -41,7 +45,7 @@ test.describe('KYC completion flow', () => {
     await page.goto('/fa/auth', { waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: /ورود با کلمه عبور/i }).click();
     await page.locator('#staff-identifier').fill('user@firuzo.com');
-    await page.locator('#staff-password').fill('User@Firuzo2026!');
+    await page.locator('#staff-password').fill(userPassword);
     await page.getByRole('button', { name: /ورود به پنل مدیریت ERP/i }).click();
 
     // 2) KYC is at purchase, NOT registration: user is NOT trapped in wizard,

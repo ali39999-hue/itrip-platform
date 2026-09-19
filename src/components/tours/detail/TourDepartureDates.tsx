@@ -5,6 +5,7 @@ import type { Tour, TourDepartureDate } from '@/lib/types';
 import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
 import { getCurrencyLabel } from '@/lib/currencies';
+import { stayDateShort } from '@/lib/hotel-format';
 import {
   CalendarDays,
   CalendarCheck,
@@ -60,9 +61,9 @@ export function TourDepartureDates({
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="inline-flex items-center gap-1.5 text-xs font-black text-ink">
                   <CalendarCheck size={14} className="text-brand-dark shrink-0" />
-                  <span className="font-mono">{d.startDate}</span>
-                  <span className="text-sub font-normal">تا</span>
-                  <span className="font-mono">{d.endDate}</span>
+                  <span className="font-mono">{stayDateShort(new Date(`${d.startDate}T00:00:00`), locale)}</span>
+                  <span className="text-sub font-normal">{lt(locale, { fa: 'تا', en: 'to', ar: 'إلى', zh: '至', ru: 'до' })}</span>
+                  <span className="font-mono">{stayDateShort(new Date(`${d.endDate}T00:00:00`), locale)}</span>
                 </span>
 
                 {d.guaranteed && (

@@ -162,7 +162,7 @@ export function HotelRooms({ booking, hotel, onApplyCombo, onOpenEdit }: HotelRo
                             key={pCode}
                             type="button"
                             onClick={() => setSelectedPlans((prev) => ({ ...prev, [rid]: pCode }))}
-                            className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition flex items-center gap-1 border ${
+                            className={`min-h-[44px] px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition flex items-center gap-1 border ${
                               isSelected
                                 ? 'bg-brand text-surface border-brand shadow-2xs'
                                 : 'bg-soft/70 text-sub border-line hover:border-brand/40'
@@ -222,7 +222,7 @@ export function HotelRooms({ booking, hotel, onApplyCombo, onOpenEdit }: HotelRo
                       onValueChange={(v) => { if (!v && v !== '0') return; const val = +v; setSel((s) => { const n = { ...s }; if (val) n[k] = val; else delete n[k]; return n; }); }}
                       disabled={maxSel < 1}
                     >
-                      <SelectTrigger className="w-24 min-h-10 border border-line rounded-[10px] bg-surface text-[12.5px] font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                      <SelectTrigger className="w-24 min-h-11 border border-line rounded-[10px] bg-surface text-[12.5px] font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
                         <SelectValue placeholder="—" />
                       </SelectTrigger>
                       <SelectContent>
@@ -415,7 +415,7 @@ export function HotelRooms({ booking, hotel, onApplyCombo, onOpenEdit }: HotelRo
                           onValueChange={(v) => { if (!v && v !== '0') return; const val = +v; setSel((s) => { const n = { ...s }; if (val) n[k] = val; else delete n[k]; return n; }); }}
                           disabled={maxSel < 1}
                         >
-                          <SelectTrigger className="w-24 min-h-10 border border-line rounded-[10px] bg-surface text-[12.5px] font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                          <SelectTrigger className="w-24 min-h-11 border border-line rounded-[10px] bg-surface text-[12.5px] font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
                             <SelectValue placeholder="—" />
                           </SelectTrigger>
                           <SelectContent>

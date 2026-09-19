@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Search, ArrowLeftRight, Plus } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
+import { toLocalIso } from '@/lib/utils';
 import { CityAutocomplete } from '../CityAutocomplete';
 import { JalaliDatePicker } from '@/components/ui/DatePicker';
 import { TravelerPicker } from '../TravelerPicker';
@@ -74,7 +75,7 @@ export function FlightSearchForm({
                 if (!date2 && date1) {
                   const d = new Date(date1);
                   d.setDate(d.getDate() + 3);
-                  setDate2(d.toISOString().slice(0, 10));
+                  setDate2(toLocalIso(d));
                 }
               } else {
                 setTripType('oneWay');
@@ -111,7 +112,7 @@ export function FlightSearchForm({
               if (!date2 && date1) {
                 const d = new Date(date1);
                 d.setDate(d.getDate() + 3);
-                setDate2(d.toISOString().slice(0, 10));
+                setDate2(toLocalIso(d));
               }
             }}
             className={`min-h-[44px] px-4 py-1.5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer ${
@@ -198,7 +199,7 @@ export function FlightSearchForm({
                 if (!date2 && date1) {
                   const d = new Date(date1);
                   d.setDate(d.getDate() + 3);
-                  setDate2(d.toISOString().slice(0, 10));
+                  setDate2(toLocalIso(d));
                 }
               }}
               aria-label={lt(locale, { fa: 'افزودن تاریخ برگشت', en: 'Add return date', ar: 'إضافة تاريخ العودة', zh: '添加返程日期', ru: 'Добавить дату возвраتا' })}
@@ -314,7 +315,7 @@ export function FlightSearchForm({
               if (!date2 && date1) {
                 const d = new Date(date1);
                 d.setDate(d.getDate() + 3);
-                setDate2(d.toISOString().slice(0, 10));
+                setDate2(toLocalIso(d));
               }
             }}
             onKeyDown={(e) => {
@@ -324,7 +325,7 @@ export function FlightSearchForm({
                 if (!date2 && date1) {
                   const d = new Date(date1);
                   d.setDate(d.getDate() + 3);
-                  setDate2(d.toISOString().slice(0, 10));
+                  setDate2(toLocalIso(d));
                 }
               }
             }}

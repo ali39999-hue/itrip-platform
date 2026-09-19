@@ -3,12 +3,14 @@
 import { RefundButton } from '@/components/admin/RefundButton';
 import { ERPDataGrid, ColumnDef } from '@/components/admin/ERPDataGrid';
 import { ErpBadge, ErpHint, ErpPageHeader } from '@/components/admin/erp-ui';
-import { PlaneTakeoff } from 'lucide-react';
+import { PlaneTakeoff, Crown, ShieldCheck, Plane, BedDouble, Compass, CarTaxiFront } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
 export type BookingRow = {
   id: string;
   reference: string;
+  serviceType: string;
+  itemTypes?: string[];
   title: string;
   subtitle: string;
   passenger: string;
@@ -24,6 +26,63 @@ const STATUS_LT: Record<string, { fa: string; en: string; ar: string; zh: string
   CANCELLED: { fa: 'لغو شده', en: 'Cancelled', ar: 'ملغى', zh: '已取消', ru: 'Отменено' },
   REFUNDED: { fa: 'مسترد شده', en: 'Refunded', ar: 'مسترد', zh: '已退款', ru: 'Возвращено' },
 };
+
+function renderServiceBadge(type: string, locale: string) {
+  const t = type.toUpperCase();
+  if (t === 'CIP' || t === 'CIPS') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+        <Crown size={11} className="text-amber-700" />
+        <span>{lt(locale, { fa: 'تشریفات CIP', en: 'CIP', ar: 'CIP', zh: 'CIP', ru: 'CIP' })}</span>
+      </span>
+    );
+  }
+  if (t === 'INSURANCE') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+        <ShieldCheck size={11} className="text-emerald-700" />
+        <span>{lt(locale, { fa: 'بیمه مسافرتی', en: 'Insurance', ar: 'تأمين', zh: '保险', ru: 'Страховка' })}</span>
+      </span>
+    );
+  }
+  if (t === 'FLIGHT' || t === 'FLIGHTS') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-100 text-blue-900 border border-blue-300">
+        <Plane size={11} className="text-blue-700" />
+        <span>{lt(locale, { fa: 'پرواز', en: 'Flight', ar: 'طيران', zh: '机票', ru: 'Рейс' })}</span>
+      </span>
+    );
+  }
+  if (t === 'HOTEL' || t === 'HOTELS') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-orange-100 text-orange-900 border border-orange-300">
+        <BedDouble size={11} className="text-orange-700" />
+        <span>{lt(locale, { fa: 'هتل', en: 'Hotel', ar: 'فندق', zh: '酒店', ru: 'Отель' })}</span>
+      </span>
+    );
+  }
+  if (t === 'TOUR' || t === 'TOURS') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-purple-100 text-purple-900 border border-purple-300">
+        <Compass size={11} className="text-purple-700" />
+        <span>{lt(locale, { fa: 'تور', en: 'Tour', ar: 'جولة', zh: '旅游', ru: 'Тур' })}</span>
+      </span>
+    );
+  }
+  if (t === 'TRANSFER' || t === 'TRANSFERS') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-100 text-teal-900 border border-teal-300">
+        <CarTaxiFront size={11} className="text-teal-700" />
+        <span>{lt(locale, { fa: 'ترانسفر', en: 'Transfer', ar: 'توصيل', zh: '接送', ru: 'Трансфер' })}</span>
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-sub/10 text-sub">
+      {type}
+    </span>
+  );
+}
 
 function statusTone(status: string): 'green' | 'gold' | 'rose' | 'neutral' {
   if (status === 'CONFIRMED') return 'green';
@@ -52,6 +111,32 @@ export function BookingsClientPage({
         <span className="inline-block rounded-lg bg-deep px-2.5 py-1 font-mono text-[11px] font-black tracking-wider text-surface" dir="ltr">
           {r.reference}
         </span>
+      ),
+    },
+    {
+      key: 'serviceType',
+      header: lt(locale, { fa: 'دسته‌بندی', en: 'Category', ar: 'الفئة', zh: '类别', ru: 'Категория' }),
+      sortable: true,
+      filterable: true,
+      filterOptions: [
+        { label: 'پرواز (FLIGHT)', value: 'FLIGHT' },
+        { label: 'هتل (HOTEL)', value: 'HOTEL' },
+        { label: 'تور (TOUR)', value: 'TOUR' },
+        { label: 'ترانسفر (TRANSFER)', value: 'TRANSFER' },
+        { label: 'تشریفات CIP (CIP)', value: 'CIP' },
+        { label: 'بیمه مسافرتی (INSURANCE)', value: 'INSURANCE' },
+      ],
+      csvAccessor: (r) => r.serviceType,
+      render: (r) => (
+        <div className="flex flex-wrap items-center gap-1">
+          {r.itemTypes && r.itemTypes.length > 1 ? (
+            r.itemTypes.map((t, idx) => (
+              <span key={idx}>{renderServiceBadge(t, locale)}</span>
+            ))
+          ) : (
+            renderServiceBadge(r.serviceType, locale)
+          )}
+        </div>
       ),
     },
     {

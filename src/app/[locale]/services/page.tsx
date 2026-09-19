@@ -7,7 +7,7 @@ import { CountryExperiencesSection } from '@/components/shared/CountryExperience
 import {
   Plane, Building2, Map, CarFront, FileCheck2, ShieldCheck, Wifi, Wallet,
   Compass, Headset, UserRound, ArrowLeft, ArrowRight, CreditCard,
-  Search, X, Sparkles, TrainFront
+  Search, X, Sparkles, TrainFront, Crown
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
@@ -48,6 +48,15 @@ export default function ServicesPage() {
         bg: 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300',
         category: 'transit' as const,
         tag: lt(locale, { fa: 'پایش تاخیر پرواز', en: 'Flight Delay Tracking', ar: 'تتبع الرحلات', zh: '航班延误追踪', ru: 'Отслеживание рейса' })
+      },
+      {
+        title: lt(locale, { fa: 'تشریفات اختصاصی فرودگاهی (CIP)', en: 'Airport Executive CIP Lounges', ar: 'تشريفات المطار الخاصة (CIP)', zh: '机场贵宾室与CIP尊享', ru: 'CIP Сервис и VIP залы' }),
+        desc: lt(locale, { fa: 'گیت‌های اختصاصی گذرنامه، ترانسفر باند تا پای پلکان پرواز و بوفه سلف‌سرویس مجلل', en: 'Fast-track immigration, private tarmac escort to aircraft stairs, and gourmet buffet', ar: 'بوابات جوازات خاصة، ونقل على المدرج حتى سلم الطائرة، وبوفيه مفتوح', zh: '独立通关通道、机坪专车登机及豪华贵宾餐饮', ru: 'Выделенный паспортный контроль, трансфер к трапу и шведский стол' }),
+        icon: Crown,
+        href: '/cip',
+        bg: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300',
+        category: 'transit' as const,
+        tag: lt(locale, { fa: 'لوکس و بدون معطلی', en: 'Luxury & Fast-Track', ar: 'فاخر وسريع', zh: '尊享快速通道', ru: 'Люкс и без очередей' })
       },
       {
         title: lt(locale, { fa: 'قطارهای لوکس بین‌شهری', en: 'Intercity Trains', ar: 'القطارات الفاخرة', zh: '城际列车', ru: 'Поезда' }),
@@ -198,7 +207,7 @@ export default function ServicesPage() {
                   <button
                     type="button"
                     onClick={() => setSearchQuery('')}
-                    className="w-6 h-6 rounded-full bg-soft text-sub grid place-items-center"
+                    className="min-w-[44px] min-h-[44px] -me-2 -my-1 rounded-full bg-soft text-sub grid place-items-center active:scale-95 transition"
                   >
                     <X size={13} />
                   </button>

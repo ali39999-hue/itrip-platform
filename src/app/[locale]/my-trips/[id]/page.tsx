@@ -213,8 +213,8 @@ export default function TripDetailsPage({
     : [];
   const refCode = booking?.reference || booking?.id.slice(0, 8) || '';
   const effectivePnr = booking?.externalPnr || booking?.pnr || booking?.supplierRef || null;
-  const effectiveTravelDate = (booking?.travelDate as string) || (detailsObj.travelDate as string) || '2026-09-20';
-  const effectiveDepartureTime = (detailsObj.departureTime as string) || '08:30';
+  const effectiveTravelDate = (booking?.travelDate as string) || (detailsObj.travelDate as string) || '';
+  const effectiveDepartureTime = (detailsObj.departureTime as string) || '';
 
   const copyReference = () => {
     if (!refCode) return;
@@ -255,15 +255,15 @@ export default function TripDetailsPage({
       status: booking.status,
       serviceType: firstItem?.type || 'FLIGHT',
       title,
-      travelDate: effectiveTravelDate,
-      departureTime: effectiveDepartureTime,
-      arrivalTime: (detailsObj.arrivalTime as string) || '11:45',
-      origin: (detailsObj.origin as string) || 'THR',
-      destination: (detailsObj.destination as string) || 'IST',
-      airline: (detailsObj.airline as string) || 'هواپیمایی ماهان',
-      flightNo: (detailsObj.flightNo as string) || 'W5-1152',
+      travelDate: effectiveTravelDate || undefined,
+      departureTime: effectiveDepartureTime || undefined,
+      arrivalTime: (detailsObj.arrivalTime as string) || undefined,
+      origin: (detailsObj.origin as string) || undefined,
+      destination: (detailsObj.destination as string) || undefined,
+      airline: (detailsObj.airline as string) || undefined,
+      flightNo: (detailsObj.flightNo as string) || undefined,
       hotelName: (detailsObj.hotelName as string) || title,
-      roomType: (detailsObj.roomType as string) || 'اتاق دابل لوکس',
+      roomType: (detailsObj.roomType as string) || undefined,
       passengers,
       totalAmount: totalAmt,
       currency: booking.currency || 'IRR',
@@ -346,7 +346,7 @@ export default function TripDetailsPage({
                 <button
                   type="button"
                   onClick={copyReference}
-                  className="w-7 h-7 rounded-lg bg-soft border border-line text-sub hover:text-brand-dark grid place-items-center transition active:scale-95"
+                  className="min-w-[44px] min-h-[44px] rounded-lg bg-soft border border-line text-sub hover:text-brand-dark grid place-items-center transition active:scale-95"
                   title="کپی کد رهگیری"
                 >
                   {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
@@ -524,25 +524,25 @@ export default function TripDetailsPage({
           status={booking?.status || 'CONFIRMED'}
           travelDate={effectiveTravelDate}
           title={title}
-          airline={(detailsObj.airline as string) || 'هواپیمایی ماهان'}
-          flightNo={(detailsObj.flightNo as string) || 'W5-1152'}
-          origin={(detailsObj.origin as string) || 'THR'}
-          originCity={(detailsObj.originCity as string) || 'تهران'}
-          destination={(detailsObj.destination as string) || 'IST'}
-          destinationCity={(detailsObj.destinationCity as string) || 'استانبول'}
-          departureTime={effectiveDepartureTime}
-          arrivalTime={(detailsObj.arrivalTime as string) || '11:45'}
-          terminal={(detailsObj.terminal as string) || 'T1'}
-          gate={(detailsObj.gate as string) || 'B14'}
-          seat={(detailsObj.seat as string) || 'Auto'}
-          cabinClass={(detailsObj.cabinClass as string) || 'Economy'}
-          baggage={(detailsObj.baggage as string) || '30kg'}
+          airline={(detailsObj.airline as string) || undefined}
+          flightNo={(detailsObj.flightNo as string) || undefined}
+          origin={(detailsObj.origin as string) || undefined}
+          originCity={(detailsObj.originCity as string) || undefined}
+          destination={(detailsObj.destination as string) || undefined}
+          destinationCity={(detailsObj.destinationCity as string) || undefined}
+          departureTime={effectiveDepartureTime || undefined}
+          arrivalTime={(detailsObj.arrivalTime as string) || undefined}
+          terminal={(detailsObj.terminal as string) || undefined}
+          gate={(detailsObj.gate as string) || undefined}
+          seat={(detailsObj.seat as string) || undefined}
+          cabinClass={(detailsObj.cabinClass as string) || undefined}
+          baggage={(detailsObj.baggage as string) || undefined}
           hotelName={(detailsObj.hotelName as string) || title}
-          city={(detailsObj.city as string) || 'تهران'}
+          city={(detailsObj.city as string) || undefined}
           nights={Number(detailsObj.nights || 1)}
-          roomType={(detailsObj.roomType as string) || 'اتاق دابل لوکس'}
-          checkIn={(detailsObj.checkIn as string) || '14:00'}
-          checkOut={(detailsObj.checkOut as string) || '12:00'}
+          roomType={(detailsObj.roomType as string) || undefined}
+          checkIn={(detailsObj.checkIn as string) || undefined}
+          checkOut={(detailsObj.checkOut as string) || undefined}
           passengers={passengers}
           totalAmount={totalAmt}
           currency={booking?.currency || 'IRR'}
@@ -633,7 +633,7 @@ export default function TripDetailsPage({
                 <button
                   type="button"
                   onClick={() => setCancelModal(false)}
-                  className="w-8 h-8 rounded-full bg-soft text-sub grid place-items-center"
+                  className="min-w-[44px] min-h-[44px] rounded-full bg-soft text-sub grid place-items-center"
                 >
                   <X size={16} />
                 </button>

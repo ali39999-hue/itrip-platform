@@ -176,7 +176,7 @@ export function Footer() {
                 <button
                   type="submit"
                   aria-live="polite"
-                  className="w-full py-2.5 rounded-xl bg-brand-dark text-surface text-[12px] font-black hover:bg-deep transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full min-h-[44px] py-2.5 rounded-xl bg-brand-dark text-surface text-[12px] font-black hover:bg-deep transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   {subscribed ? (
                     <>

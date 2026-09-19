@@ -267,7 +267,7 @@ export function FlightPriceCalendar({
           <button
             type="button"
             onClick={() => setModalOpen(true)}
-            className="text-[11.5px] font-black text-brand hover:text-brand-dark flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-soft transition cursor-pointer"
+            className="min-h-[44px] text-[11.5px] font-black text-brand hover:text-brand-dark flex items-center gap-1.5 px-2.5 py-2.5 rounded-lg hover:bg-soft transition cursor-pointer"
           >
             <Calendar size={13} />
             <span>
@@ -381,9 +381,14 @@ export function FlightPriceCalendar({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 bg-ink/50 backdrop-blur-sm grid place-items-center p-4 animate-in fade-in duration-200"
+          onClick={(e) => { if (e.target === e.currentTarget) setModalOpen(false); }}
+          className="fixed inset-0 z-50 bg-ink/50 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 animate-in fade-in duration-200"
         >
-          <div className="w-full max-w-3xl bg-surface rounded-2xl border border-line shadow-elev-3 overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="w-full sm:max-w-3xl bg-surface rounded-t-3xl sm:rounded-2xl border border-line shadow-elev-3 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh]">
+            {/* دستگیره درگ — فقط موبایل (قاعده bottom-sheet) */}
+            <div className="sm:hidden pt-3 pb-1 bg-surface border-b border-line/40">
+              <div className="w-10 h-1 rounded-full bg-line mx-auto" aria-hidden="true" />
+            </div>
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 border-b border-line">
               <div className="flex items-center gap-2">
@@ -401,7 +406,7 @@ export function FlightPriceCalendar({
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-soft text-sub hover:text-ink grid place-items-center transition cursor-pointer"
+                className="min-w-[44px] min-h-[44px] -me-2 -my-1 rounded-full bg-soft text-sub hover:text-ink grid place-items-center transition cursor-pointer"
               >
                 <X size={16} />
               </button>

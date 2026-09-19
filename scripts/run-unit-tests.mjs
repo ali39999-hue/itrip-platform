@@ -7,8 +7,16 @@
 // is used unchanged; TEST_DATABASE_URL always wins when provided.
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawnSync, execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+
+function execSyncSafe(cmd) {
+  try {
+    return execSync(cmd, { stdio: 'pipe', encoding: 'utf8' }).toString().trim();
+  } catch {
+    return '';
+  }
+}
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const envText = fs.existsSync(path.join(root, '.env'))
@@ -66,6 +74,24 @@ const vitest = spawnSync('npx', ['vitest', 'run', ...process.argv.slice(2), ...r
     NEXT_PUBLIC_DEMO_MODE: process.env.NEXT_PUBLIC_DEMO_MODE || 'true',
   },
 });
+// QR-003: bind the evidence artifact to the measured commit. A unit.json from
+// another commit must not be mistaken for evidence about this one.
+try {
+  const commit = execSyncSafe('git rev-parse HEAD');
+  const branch = execSyncSafe('git rev-parse --abbrev-ref HEAD');
+  const dirty = execSyncSafe('git status --porcelain') !== '';
+  const artifactPath = path.join(artifactDir, 'unit.json');
+  if (fs.existsSync(artifactPath)) {
+    const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
+    artifact.commit = commit;
+    artifact.branch = branch;
+    artifact.dirty = dirty;
+    artifact.generatedAt = new Date().toISOString();
+    fs.writeFileSync(artifactPath, JSON.stringify(artifact, null, 2));
+  }
+} catch {
+  // provenance stamping is best-effort; the vitest exit code stays authoritative
+}
 if (vitest.status === 0) {
   try {
     const { syncMetricsAndDocs } = await import('./sync-metrics-and-docs.mjs');

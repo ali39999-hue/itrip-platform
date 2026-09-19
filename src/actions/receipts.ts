@@ -7,7 +7,7 @@ import { Prisma } from '@prisma/client';
 import { Money } from '@/lib/finance';
 import { GeneralLedgerService } from '@/domains/ledger/GeneralLedgerService';
 import { InvoiceDomainService } from '@/domains/finance/InvoiceDomainService';
-import { requirePermission } from '@/domains/identity/permission-service';
+import { requirePermission, hasErpRole } from '@/domains/identity/permission-service';
 
 export interface DestinationBankCardDto {
   id: string;
@@ -86,7 +86,7 @@ export async function getBookingReceiptContext(bookingId: string) {
     }
 
     const isCustomer = booking.customerId === session.user.id;
-    const isStaff = session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN';
+    const isStaff = await hasErpRole(session.user.id);
 
     if (!isCustomer && !isStaff) {
       return { success: false, error: 'عدم دسترسی به این سفارش' };
@@ -175,7 +175,8 @@ export async function submitCardTransferReceipt(input: SubmitReceiptInput) {
       return { success: false, error: 'سفارش مورد نظر یافت نشد' };
     }
 
-    if (booking.customerId !== session.user.id && session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
+    const isStaff = await hasErpRole(session.user.id);
+    if (booking.customerId !== session.user.id && !isStaff) {
       return { success: false, error: 'عدم دسترسی به این سفارش' };
     }
 
@@ -286,6 +287,25 @@ export async function reviewCardTransferReceipt(
     const now = new Date();
 
     if (decision === 'APPROVE') {
+      // SHEET-01: a PENDING_REVIEW receipt must never resurrect a booking that has
+      // already reached a terminal/refunded state, nor double-capture one whose
+      // payment was already settled. Without this guard, approving a stale receipt
+      // would flip an EXPIRED/CANCELLED booking back to CONFIRMED + CAPTURED and
+      // post a second set of ledger entries for money that was never collected.
+      const TERMINAL_BOOKING_STATES = ['EXPIRED', 'CANCELLED', 'REFUND_INITIATED', 'REFUNDED', 'FAILED'] as const;
+      if ((TERMINAL_BOOKING_STATES as readonly string[]).includes(booking.status)) {
+        return {
+          success: false,
+          error: `Cannot approve receipt: booking status is terminal (${booking.status})`,
+        };
+      }
+      if (booking.paymentStatus === 'CAPTURED' || booking.paymentStatus === 'REFUNDED' || booking.paymentStatus === 'PARTIALLY_REFUNDED') {
+        return {
+          success: false,
+          error: `Cannot approve receipt: booking payment is already settled (${booking.paymentStatus})`,
+        };
+      }
+
       await prisma.$transaction(async (tx) => {
         // 1. Update Receipt to APPROVED
         await tx.cardTransferReceipt.update({

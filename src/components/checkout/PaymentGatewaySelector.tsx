@@ -225,7 +225,7 @@ export function PaymentGatewaySelector({
           <button
             type="button"
             onClick={() => setKycSheetOpen(true)}
-            className="self-start sm:self-auto min-h-9 px-3.5 rounded-xl bg-brand/10 hover:bg-brand/20 text-brand-dark text-xs font-black transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+            className="self-start sm:self-auto min-h-[44px] px-3.5 rounded-xl bg-brand/10 hover:bg-brand/20 text-brand-dark text-xs font-black transition flex items-center gap-1.5 cursor-pointer active:scale-95"
           >
             <Sparkles size={13} />
             <span>{lt(locale, { fa: 'ارتقای سطح و افزایش سقف (+)', en: 'Upgrade KYC (+)', ar: 'ترقية الحساب (+)', zh: '提升认证额度 (+)', ru: 'Повысить лимит (+)' })}</span>
@@ -688,7 +688,7 @@ export function PaymentGatewaySelector({
               <button
                 type="button"
                 onClick={() => setKycSheetOpen(true)}
-                className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-surface hover:bg-line border border-line text-sub hover:text-ink shrink-0 flex items-center gap-1 cursor-pointer"
+                className="min-h-[44px] text-[11px] font-bold px-3 rounded-full bg-surface hover:bg-line border border-line text-sub hover:text-ink shrink-0 flex items-center gap-1 cursor-pointer"
               >
                 <Lock size={11} />
                 <span>{lt(locale, { fa: 'ارتقای KYC', en: 'Upgrade KYC', ar: 'ترقية', zh: '去认证', ru: 'KYC' })}</span>

@@ -389,7 +389,7 @@ function ToursContent() {
                     <div className="flex items-center gap-1.5 mt-3 shrink-0">
                       <Link
                         href={`/tours/${tour.id}`}
-                        className="h-9 px-3 rounded-xl border border-line bg-surface hover:bg-soft text-ink font-extrabold text-xs transition flex items-center justify-center"
+                        className="h-11 px-3 rounded-xl border border-line bg-surface hover:bg-soft text-ink font-extrabold text-xs transition flex items-center justify-center"
                       >
                         {lt(locale, { fa: 'جزئیات', en: 'Details', ar: 'التفاصيل', zh: '详情', ru: 'Инфо' })}
                       </Link>
@@ -426,7 +426,7 @@ function ToursContent() {
               <button
                 type="button"
                 onClick={() => setSelectedTourPreview(null)}
-                className="w-8 h-8 rounded-full bg-soft text-sub grid place-items-center"
+                className="min-w-[44px] min-h-[44px] -me-2 -mt-2 rounded-full bg-soft text-sub grid place-items-center"
               >
                 <X size={16} />
               </button>

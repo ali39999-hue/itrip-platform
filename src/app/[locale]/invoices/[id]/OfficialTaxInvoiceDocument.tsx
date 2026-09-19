@@ -190,7 +190,7 @@ export function OfficialTaxInvoiceDocument({ invoiceData }: Props) {
 
           {/* Line Items Table */}
           <div className="mb-6 overflow-x-auto">
-            <table className="w-full text-xs text-start border border-slate-300 rounded-2xl overflow-hidden">
+            <table className="w-full min-w-[680px] text-xs text-start border border-slate-300 rounded-2xl overflow-hidden">
               <thead>
                 <tr className="bg-slate-100 text-slate-800 border-b border-slate-300 font-black">
                   <th className="py-2.5 px-3 text-center w-10">ردیف</th>

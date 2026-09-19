@@ -590,7 +590,19 @@ export class GeneralLedgerService {
         }
       }
 
-      const supplierId = booking.supplierId || 'default_supplier';
+      let supplierId = booking.supplierId;
+      if (!supplierId && booking.items && booking.items.length > 0) {
+        const itemTypes = booking.items.map((i) => i.type.toUpperCase());
+        if (itemTypes.includes('CIP') || itemTypes.includes('CIPS')) {
+          supplierId = 'sup_cip_airport';
+        } else if (itemTypes.includes('INSURANCE')) {
+          supplierId = 'sup_insurance_provider';
+        } else {
+          supplierId = 'default_supplier';
+        }
+      } else if (!supplierId) {
+        supplierId = 'default_supplier';
+      }
 
       await this.postRevenueRealization(
         {

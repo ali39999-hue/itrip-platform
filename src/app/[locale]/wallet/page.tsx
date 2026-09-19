@@ -266,12 +266,12 @@ export default function WalletPage() {
         <>
           {/* Mobile Balance Allocation Summary (Available / Pending / Locked) */}
           <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-surface border border-line/80 shadow-xs mb-6 text-center">
-            <div className="p-1">
+            <div className="p-1 min-w-0">
               <span className="text-[10.5px] font-bold text-sub block leading-none mb-1">
                 {lt(locale, { fa: 'در دسترس', en: 'Available', ar: 'المتاح', zh: '可用余额', ru: 'Доступно' })}
               </span>
-              <span className="text-sm sm:text-base font-black text-emerald-700 font-mono">
-                {wallet.IRR.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
+              <span className="text-sm sm:text-base font-black text-emerald-700 font-mono num block truncate">
+                {(wallet.IRR ?? 0).toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
               </span>
             </div>
             <div className="p-1 border-x border-line/60">
@@ -314,8 +314,8 @@ export default function WalletPage() {
                 </span>
                 <Banknote size={18} className="opacity-80 shrink-0" aria-hidden="true" />
               </div>
-              <span className="text-2xl font-black font-price num block mb-3">
-                {wallet.IRR.toLocaleString(
+              <span className="text-2xl font-black font-price num block mb-3 truncate">
+                {(wallet.IRR ?? 0).toLocaleString(
                   lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' })
                 )}
               </span>
@@ -328,12 +328,12 @@ export default function WalletPage() {
                   <span className="text-xs font-black text-sub">USDT (Tether)</span>
                   <Coins size={18} className="text-sub shrink-0" aria-hidden="true" />
                 </div>
-                <span className="text-2xl font-black text-ink font-price num block mb-1">
-                  ${wallet.USDT.toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
+                <span className="text-2xl font-black text-ink font-price num block mb-1 truncate">
+                  ${(wallet.USDT ?? 0).toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}
                 </span>
               </div>
-              <span className="text-[11px] font-bold text-sub">
-                ≈ {(wallet.USDT * CURRENCY_TO_TOMAN.USDT).toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}{' '}
+              <span className="text-[11px] font-bold text-sub truncate">
+                ≈ {((wallet.USDT ?? 0) * CURRENCY_TO_TOMAN.USDT).toLocaleString(lt(locale, { fa: 'fa-IR', en: 'en-US', ar: 'ar', zh: 'zh', ru: 'ru' }))}{' '}
                 {lt(locale, { fa: 'تومان', en: 'Toman', ar: 'تومان', zh: '图曼', ru: 'томанов' })}
               </span>
             </div>
@@ -678,7 +678,7 @@ export default function WalletPage() {
                         const maxVal = wallet[exFrom] ?? 0;
                         if (maxVal > 0) setExAmount(String(maxVal));
                       }}
-                      className="text-[11px] font-black text-brand-dark hover:underline"
+                      className="min-h-[44px] px-3 -me-3 text-[11px] font-black text-brand-dark hover:underline"
                     >
                       {lt(locale, { fa: 'کل موجودی (Max)', en: 'Max Balance', ar: 'أقصى رصيد', zh: '全部余额', ru: 'Макс' })}
                     </button>
@@ -795,7 +795,7 @@ export default function WalletPage() {
                             : lt(locale, { fa: 'شارژ کیف پول', en: 'Wallet Top-up', ar: 'شحن المحفظة', zh: '钱包充值', ru: 'Пополнение кошелька' })}
                         </h3>
                         <span className="text-[10.5px] font-mono text-sub block">
-                          {new Date(tx.createdAt).toISOString().slice(0, 10)} • #{tx.id.slice(0, 8)}
+                          {new Intl.DateTimeFormat(locale === 'fa' ? 'fa-IR-u-ca-persian' : locale, { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(tx.createdAt))} • #{tx.id.slice(0, 8)}
                         </span>
                       </div>
                     </div>

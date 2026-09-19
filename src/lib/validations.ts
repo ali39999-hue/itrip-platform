@@ -22,6 +22,7 @@ export const BookingType = z.enum([
   "INSURANCE",
   "ESIM",
   "VISA",
+  "CIP",
 ]);
 export type BookingType = z.infer<typeof BookingType>;
 
@@ -46,6 +47,8 @@ export function normalizeBookingType(raw: string | null | undefined): BookingTyp
     INSURANCE: "INSURANCE",
     ESIM: "ESIM",
     VISA: "VISA",
+    CIP: "CIP",
+    CIPS: "CIP",
   };
   return map[raw.trim().toUpperCase()];
 }
@@ -418,3 +421,37 @@ export const guideInputSchema = guideRawObject.refine((d) => Boolean(d.title || 
 });
 
 export const guideUpdateSchema = guideRawObject.partial();
+
+// ─── CIP (Commercial Important Person) Airport Services ───────────────────────
+
+export const FlightDirection = z.enum(["DEPARTURE", "ARRIVAL", "TRANSIT"]);
+export type FlightDirection = z.infer<typeof FlightDirection>;
+
+export const CipSuiteType = z.enum(["NONE", "6_HOURS", "10_HOURS", "OVERNIGHT"]);
+export type CipSuiteType = z.infer<typeof CipSuiteType>;
+
+export const cipBookingSchema = z.object({
+  airportCode: z.string().trim().min(3).max(4),
+  flightDirection: FlightDirection.default("DEPARTURE"),
+  airline: z.string().trim().min(2, "Airline name is required"),
+  flightNumber: z.string().trim().min(2, "Flight number is required"),
+  flightDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid flight date (must be YYYY-MM-DD)"),
+  flightTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Invalid flight time (must be HH:MM)"),
+  originCity: z.string().trim().optional(),
+  destinationCity: z.string().trim().optional(),
+  adults: z.coerce.number().int().min(1, "At least one adult passenger is required").max(20),
+  children: z.coerce.number().int().min(0).max(20).default(0),
+  infants: z.coerce.number().int().min(0).max(10).default(0),
+  accompanyingGuests: z.coerce.number().int().min(0).max(20).default(0),
+  petCount: z.coerce.number().int().min(0).max(5).default(0),
+  wheelchairCount: z.coerce.number().int().min(0).max(10).default(0),
+  suiteType: CipSuiteType.default("NONE"),
+  transferVehicle: z.string().trim().optional().default("NONE"),
+  transferAddress: z.string().trim().optional(),
+  contactName: z.string().trim().min(2, "Contact name is required"),
+  contactPhone: z.string().trim().min(10, "Contact phone is required"),
+  contactEmail: z.string().trim().email("Invalid email").optional().or(z.literal("")),
+  specialRequests: z.string().trim().max(500).optional(),
+});
+export type CipBookingInput = z.infer<typeof cipBookingSchema>;
+

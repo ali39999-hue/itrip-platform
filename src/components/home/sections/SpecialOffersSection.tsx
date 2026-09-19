@@ -102,7 +102,7 @@ export function SpecialOffersSection() {
           <div className="flex items-center gap-2 shrink-0">
             <Link
               href="/plan"
-              className="hidden sm:inline-flex items-center gap-1.5 min-h-10 px-4 rounded-full bg-brand-dark text-white text-[13px] font-black whitespace-nowrap hover:bg-deep transition shadow-sm shadow-brand-dark/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="hidden sm:inline-flex items-center gap-1.5 min-h-[44px] px-4 rounded-full bg-brand-dark text-white text-[13px] font-black whitespace-nowrap hover:bg-deep transition shadow-sm shadow-brand-dark/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <Sparkles size={14} aria-hidden="true" /> {t2('plannerCta')}
             </Link>

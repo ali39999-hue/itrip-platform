@@ -818,7 +818,7 @@ model BookingItem {
   id              String   @id @default(cuid())
   bookingId       String
   inventoryItemId String?
-  type            String   // FLIGHT, HOTEL, VISA, TOUR, TRANSFER, etc
+  type            String   // FLIGHT, HOTEL, VISA, TOUR, TRANSFER, CIP, etc
   netCost         Decimal  // cost from supplier
   markup          Decimal  // platform profit
   taxAmount       Decimal  @default(0)

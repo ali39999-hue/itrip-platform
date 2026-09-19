@@ -8,6 +8,7 @@ import { useBookingStore } from '@/stores/booking-store';
 import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
 import { getCurrencyLabel } from '@/lib/currencies';
+import { stayDateShort, stayDate } from '@/lib/hotel-format';
 import {
   Calendar,
   Plus,
@@ -195,7 +196,7 @@ export function TourBookingWidget({
             >
               {dates.map((d) => (
                 <option key={d.id} value={d.id}>
-                  {d.startDate} {lt(locale, { fa: 'تا', en: 'to', ar: 'إلى', zh: '至', ru: 'до' })} {d.endDate} — {num(d.price, locale)} {getCurrencyLabel(d.currency || currency, locale)} ({num(d.availableSeats, locale)} {lt(locale, { fa: 'صندلی', en: 'seats', ar: 'مقاعد', zh: '余位', ru: 'мест' })})
+                  {stayDate(new Date(`${d.startDate}T00:00:00`), locale)} {lt(locale, { fa: 'تا', en: 'to', ar: 'إلى', zh: '至', ru: 'до' })} {stayDate(new Date(`${d.endDate}T00:00:00`), locale)} — {num(d.price, locale)} {getCurrencyLabel(d.currency || currency, locale)} ({num(d.availableSeats, locale)} {lt(locale, { fa: 'صندلی', en: 'seats', ar: 'مقاعد', zh: '余位', ru: 'мест' })})
                 </option>
               ))}
             </select>
@@ -364,7 +365,7 @@ export function TourBookingWidget({
               {num(adults + children, locale)} {lt(locale, { fa: 'نفر', en: 'travelers', ar: 'أشخاص', zh: '人', ru: 'чел.' })}
             </span>
             <span>•</span>
-            <span className="truncate font-mono">{activeDate?.startDate ? activeDate.startDate.slice(5) : ''}</span>
+            <span className="truncate">{activeDate?.startDate ? stayDateShort(new Date(`${activeDate.startDate}T00:00:00`), locale) : ''}</span>
             <SlidersHorizontal size={11} className="text-brand-dark ms-0.5" />
           </div>
           <div className="text-base font-black text-price font-price flex items-baseline gap-1">
@@ -417,7 +418,8 @@ export function TourBookingWidget({
           aria-label={lt(locale, { fa: 'تنظیم تاریخ و تعداد مسافران', en: 'Customize Date & Passengers', ar: 'تحديد الموعد والمسافرين', zh: '选择出行班期与人数', ru: 'Настройка даты и участников' })}
           className="lg:hidden fixed inset-0 z-[200] bg-ink/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
         >
-          <div className="w-full max-w-md bg-surface rounded-t-3xl sm:rounded-3xl p-5 border border-line shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
+          <div className="w-full max-w-md bg-surface rounded-t-3xl sm:rounded-3xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] border border-line shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="hidden sm:flex w-10 h-1 rounded-full bg-line mx-auto mb-3" aria-hidden="true" />
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <h3 className="font-black text-sm text-ink">
                 {lt(locale, { fa: 'تنظیم تاریخ و تعداد مسافران', en: 'Customize Date & Passengers', ar: 'تحديد الموعد والمسافرين', zh: '选择出行班期与人数', ru: 'Настройка даты и участников' })}
@@ -447,7 +449,7 @@ export function TourBookingWidget({
                         selectedDateId === d.id ? 'bg-mint/30 border-brand text-brand-dark' : 'bg-soft border-line text-ink'
                       }`}
                     >
-                      <span className="font-mono">{d.startDate} تا {d.endDate}</span>
+                      <span>{stayDateShort(new Date(`${d.startDate}T00:00:00`), locale)} {lt(locale, { fa: 'تا', en: 'to', ar: 'إلى', zh: '至', ru: 'до' })} {stayDateShort(new Date(`${d.endDate}T00:00:00`), locale)}</span>
                       <span className="font-price text-price">{num(d.price, locale)} {getCurrencyLabel(d.currency || currency, locale)}</span>
                     </div>
                   ))}

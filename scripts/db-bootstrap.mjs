@@ -253,7 +253,13 @@ async function bootstrap() {
   }
 
   // 1. Resolve Admin Password
-  const adminPassword = process.env.ADMIN_PASSWORD?.trim() || 'Admin@Firuzo2026!';
+  // SEC-014: no published default. The bootstrap refuses to provision a
+  // privileged account with an unset/empty password.
+  const adminPassword = process.env.ADMIN_PASSWORD?.trim() || '';
+  if (!adminPassword) {
+    console.error('• FATAL: ADMIN_PASSWORD is not configured. Refusing to bootstrap an admin account.');
+    process.exit(1);
+  }
   const adminPasswordHash = await bcrypt.hash(adminPassword, 10);
 
   // 2. Bootstrap Permissions

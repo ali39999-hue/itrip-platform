@@ -20,8 +20,8 @@ export interface FareBrandOption {
   code: FareBrandCode;
   title: { fa: string; en: string };
   priceMultiplier: number;
-  cabinBaggage: string;
-  checkedBaggage: string;
+  cabinBaggage: { fa: string; en: string };
+  checkedBaggage: { fa: string; en: string };
   hasMeal: boolean;
   freeSeatSelection: boolean;
   isRefundable: boolean;
@@ -34,8 +34,8 @@ export const FARE_BRANDS: FareBrandOption[] = [
     code: 'LIGHT',
     title: { fa: 'اکونومی پایه (لایت)', en: 'Economy Light' },
     priceMultiplier: 1.0,
-    cabinBaggage: '۷ کیلوگرم',
-    checkedBaggage: 'بدون بار تحویلی',
+    cabinBaggage: { fa: '۷ کیلوگرم', en: '7 kg' },
+    checkedBaggage: { fa: 'بدون بار تحویلی', en: 'No checked baggage' },
     hasMeal: true,
     freeSeatSelection: false,
     isRefundable: false,
@@ -45,8 +45,8 @@ export const FARE_BRANDS: FareBrandOption[] = [
     code: 'STANDARD',
     title: { fa: 'اکونومی استاندارد', en: 'Economy Standard' },
     priceMultiplier: 1.15,
-    cabinBaggage: '۷ کیلوگرم',
-    checkedBaggage: '۲۰ کیلوگرم',
+    cabinBaggage: { fa: '۷ کیلوگرم', en: '7 kg' },
+    checkedBaggage: { fa: '۲۰ کیلوگرم', en: '20 kg' },
     hasMeal: true,
     freeSeatSelection: true,
     isRefundable: true,
@@ -57,8 +57,8 @@ export const FARE_BRANDS: FareBrandOption[] = [
     code: 'FLEX_BUSINESS',
     title: { fa: 'بیزینس فلکس اختصاصی', en: 'Business Flex' },
     priceMultiplier: 1.6,
-    cabinBaggage: '۱۰ کیلوگرم',
-    checkedBaggage: '۳۵ کیلوگرم (۲ چمدان)',
+    cabinBaggage: { fa: '۱۰ کیلوگرم', en: '10 kg' },
+    checkedBaggage: { fa: '۳۵ کیلوگرم (۲ چمدان)', en: '35 kg (2 pieces)' },
     hasMeal: true,
     freeSeatSelection: true,
     isRefundable: true,
@@ -124,8 +124,12 @@ export function FareBrandedMatrix({
           return (
             <div
               key={brand.code}
+              role="radio"
+              aria-checked={isSelected}
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelect(brand); } }}
               onClick={() => handleSelect(brand)}
-              className={`rounded-2xl border-2 p-5 flex flex-col justify-between transition cursor-pointer relative ${
+              className={`rounded-2xl border-2 p-5 flex flex-col justify-between transition cursor-pointer relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                 isSelected
                   ? 'border-brand bg-brand/5 shadow-md dark:bg-brand/10'
                   : 'border-line bg-surface hover:border-brand/40 shadow-xs'
@@ -156,19 +160,15 @@ export function FareBrandedMatrix({
                     <Briefcase size={14} className="text-sub shrink-0" />
                     <span>
                       {lt(locale, { fa: 'بار کابین:', en: 'Cabin baggage:', ar: 'أمتعة المقصورة:', zh: '手提行李：', ru: 'Ручная кладь:' })}{' '}
-                      {brand.cabinBaggage}
+                      {lt(locale, brand.cabinBaggage)}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <Luggage size={14} className="text-sub shrink-0" />
-                    <span className={brand.checkedBaggage.includes('بدون') ? 'text-amber-700' : ''}>
+                    <span className={brand.checkedBaggage.fa.includes('بدون') ? 'text-amber-700 dark:text-amber-400' : ''}>
                       {lt(locale, { fa: 'بار باربری:', en: 'Checked baggage:', ar: 'الأمتعة المسجلة:', zh: '托运行李：', ru: 'Багаж:' })}{' '}
-                      {locale === 'fa'
-                        ? brand.checkedBaggage
-                        : brand.checkedBaggage.includes('بدون')
-                        ? lt(locale, { fa: 'بدون بار', en: 'No checked baggage', ar: 'بدون أمتعة', zh: '无托运行李', ru: 'Без багажа' })
-                        : brand.checkedBaggage}
+                      {lt(locale, brand.checkedBaggage)}
                     </span>
                   </div>
 
@@ -202,7 +202,9 @@ export function FareBrandedMatrix({
               <div className="pt-5 mt-4 border-t border-line/60">
                 <button
                   type="button"
-                  className={`w-full h-10 rounded-xl font-black text-xs transition flex items-center justify-center gap-1.5 ${
+                  tabIndex={-1}
+                  aria-hidden="true"
+                  className={`w-full min-h-[44px] rounded-xl font-black text-xs transition flex items-center justify-center gap-1.5 ${
                     isSelected
                       ? 'bg-brand text-surface shadow-xs'
                       : 'bg-soft hover:bg-line text-ink'

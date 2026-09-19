@@ -201,8 +201,7 @@ export async function middleware(request: NextRequest) {
         const isSuperOrAdmin =
           userRole === 'SUPER_ADMIN' ||
           userRole === 'ADMIN' ||
-          tokenEmail === 'admin@firuzo.com' ||
-          tokenEmail.startsWith('admin@');
+          tokenEmail === 'admin@firuzo.com';
         const normalizedPath = pathname.replace(/^\/(fa|en|ar|zh|ru)/, '');
         const matchingRoute = Object.keys(ROUTE_REQUIRED_PERMISSIONS)
           .sort((a, b) => b.length - a.length)

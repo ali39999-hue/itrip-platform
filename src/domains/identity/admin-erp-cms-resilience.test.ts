@@ -3,10 +3,12 @@ import { isKnownAdminIdentifier, getAdminPhones, DEFAULT_ADMIN_PHONES } from '@/
 import { mergeStaticTours, ContentDomainService } from '@/domains/content/ContentDomainService';
 
 describe('Admin ERP & CMS Resilience Suite', () => {
-  it('identifies known admin identifiers accurately', () => {
+  it('routes bootstrap identifiers without granting privilege from the string alone', () => {
+    // In the vitest environment (DEMO_MODE=true, NODE_ENV=test) the demo
+    // bootstrap lists are active — identifier ROUTING only. No caller may
+    // escalate from these matches without a DB role + credential proof.
     expect(isKnownAdminIdentifier('admin@firuzo.com')).toBe(true);
     expect(isKnownAdminIdentifier('ADMIN@FIRUZO.COM')).toBe(true);
-    expect(isKnownAdminIdentifier('admin')).toBe(true);
     expect(isKnownAdminIdentifier('09120000000')).toBe(true);
     expect(isKnownAdminIdentifier('09123456789')).toBe(true);
     expect(isKnownAdminIdentifier('09304064124')).toBe(true);

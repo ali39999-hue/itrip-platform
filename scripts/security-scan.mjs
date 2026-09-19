@@ -79,14 +79,64 @@ try {
 // ============================================================================
 console.log('\n[Phase 2/5] Scanning Source Code for Hardcoded Secrets & Credentials...');
 
+const NON_SECRET_ENV_SUFFIXES = [
+  'NAME', 'LANG', 'SENDER', 'LINE', 'URL', 'HOST', 'ID', 'CODE', 'MODE', 'TYPE', 'UNIT', 'DAYS', 'MINUTES',
+  'MS', 'ENABLED', 'SOURCE', 'ORIGIN', 'EMAIL', 'PHONE', 'NUMBER', 'BASE', 'PATH', 'DIR', 'PREFIX', 'SCOPE',
+  'VERSION', 'TTL', 'ROUTES', 'TIMEZONE', 'LOCALE', 'CURRENCY', 'TEMPLATE', 'FORMAT', 'CHANNEL', 'PROVIDER',
+  'ENDPOINT', 'REGION', 'PORT', 'BUCKET', 'MAX', 'LIMIT',
+];
+
+/** True when `process.env.X` names a configuration knob rather than a credential. */
+function envNameLooksNonSecret(line) {
+  const m = line.match(/process\.env\.([A-Z0-9_]+)/);
+  if (!m) return true;
+  return NON_SECRET_ENV_SUFFIXES.includes(m[1].split('_').pop());
+}
+
 const SECRET_PATTERNS = [
   { name: 'Private Key', regex: /-----BEGIN (RSA|EC|OPENSSH|DSA|PGP|ENCRYPTED|PRIVATE) KEY-----/ },
   { name: 'AWS Access Key', regex: /AKIA[0-9A-Z]{16}/ },
   { name: 'Generic Live Secret Token', regex: /(api[_-]?key|secret[_-]?key|auth[_-]?token|private[_-]?key)\s*[:=]\s*["'][A-Za-z0-9_\-]{32,}["']/i },
   { name: 'Database Password in Connection URI', regex: /(postgres|mysql|mongodb):\/\/[a-zA-Z0-9_-]+:[a-zA-Z0-9_#$!@%^&*()-]{8,}@/ },
+  {
+    // SEC-014: a credential-bearing environment variable with a hardcoded literal
+    // fallback is a published secret. This is how `AUTH_SECRET || '<literal>'`
+    // and `ADMIN_PASSWORD || readDotEnv(...) || '<literal>'` shipped for months
+    // unnoticed. The guard inspects the tail after every `||`/`??` so chained
+    // fallbacks cannot hide the literal.
+    name: 'Credential env fallback',
+    regex:
+      /process\.env\.[A-Z0-9_]*(?:PASSWORD|PASSWD|SECRET|TOKEN|API_?KEY|CREDENTIAL|PRIVATE)[A-Z0-9_]*/,
+    guard: (line) => {
+      const ref = line.match(
+        /process\.env\.[A-Z0-9_]*(?:PASSWORD|PASSWD|SECRET|TOKEN|API_?KEY|CREDENTIAL|PRIVATE)[A-Z0-9_]*/
+      );
+      if (!ref || ref.index === undefined) return false;
+      // Only the text AFTER the credential reference can be a fallback for it —
+      // this keeps ternaries like `process.env.X ? 'a' : 'b'` out of the results.
+      const segments = line.slice(ref.index + ref[0].length).split(/\|\||\?\?/);
+      if (segments.length < 2) return false;
+      // A quoted ENV-style identifier (`readEnv('SOME_SECRET')`) is a lookup, not
+      // a fallback value — only a real literal counts. Regex literals (`/.../m`)
+      // are also stripped before the check so their metacharacters are not
+      // mistaken for quoted content.
+      return segments.slice(1).some((segment) => {
+        const withoutRegexLiterals = segment.replace(/\/[^/\n]+\/[gimsuy]*/g, '');
+        const quoted = withoutRegexLiterals.match(/['"`]([^'"`]{4,})['"`]/);
+        return Boolean(quoted) && !/^[A-Z][A-Z0-9_]*$/.test(quoted[1]);
+      });
+    },
+  },
+  {
+    // Same class of defect for non-credential-looking names, but only when the
+    // literal is a plausible key material (long + mixed alphabet).
+    name: 'Env fallback with key-like literal',
+    regex: /process\.env\.[A-Z0-9_]+\s*(?:\|\||\?\?)\s*['"`][A-Za-z0-9_\-]{16,}['"`]/,
+    guard: (line) => !envNameLooksNonSecret(line),
+  },
 ];
 
-function scanDirectoryForSecrets(dir) {
+function scanDirectoryForSecrets(dir, patterns = SECRET_PATTERNS, { includeTests = false } = {}) {
   const findings = [];
   const entries = fs.readdirSync(dir, { withFileTypes: true });
 
@@ -107,15 +157,18 @@ function scanDirectoryForSecrets(dir) {
     if (entry.isDirectory()) {
       findings.push(...scanDirectoryForSecrets(fullPath));
     } else if (entry.isFile()) {
-      // Skip test files, mocks, seeds, and markdown docs for secret scanning
+      // Skip test files, mocks, seeds, and markdown docs for secret scanning.
+      // NOTE: credential-fallback rules run with includeTests=true — a hardcoded
+      // password in an e2e spec is just as published as one in src.
       if (
-        relPath.endsWith('.test.ts') ||
-        relPath.endsWith('.test.tsx') ||
-        relPath.endsWith('.spec.ts') ||
-        relPath.endsWith('.md') ||
-        relPath.includes('/mock/') ||
-        relPath.includes('clean_test_seeds') ||
-        relPath.includes('seed-')
+        !includeTests &&
+        (relPath.endsWith('.test.ts') ||
+          relPath.endsWith('.test.tsx') ||
+          relPath.endsWith('.spec.ts') ||
+          relPath.endsWith('.md') ||
+          relPath.includes('/mock/') ||
+          relPath.includes('clean_test_seeds') ||
+          relPath.includes('seed-'))
       ) {
         continue;
       }
@@ -127,9 +180,15 @@ function scanDirectoryForSecrets(dir) {
           const lines = content.split('\n');
 
           lines.forEach((line, idx) => {
-            // Ignore placeholder / dummy / test comments
+            // Ignore explicitly-annotated lines and placeholder/dummy values.
+            //
+            // SEC-014 REGRESSION GUARD: `process.env.` alone must NOT suppress a
+            // line. The previous blanket skip meant `process.env.AUTH_SECRET ||
+            // '<published literal>'` — the exact shape of the hardcoded admin
+            // password and the voucher signing key — was invisible to this gate,
+            // which then reported "Zero Hardcoded Secrets" (false PASS).
             if (
-              line.includes('process.env.') ||
+              line.includes('security-scan-allow') ||
               line.includes('dummy') ||
               line.includes('mock') ||
               line.includes('example') ||
@@ -139,14 +198,14 @@ function scanDirectoryForSecrets(dir) {
               return;
             }
 
-            for (const pattern of SECRET_PATTERNS) {
-              if (pattern.regex.test(line)) {
-                findings.push({
-                  file: relPath,
-                  line: idx + 1,
-                  type: pattern.name,
-                });
-              }
+            for (const pattern of patterns) {
+              if (!pattern.regex.test(line)) continue;
+              if (pattern.guard && !pattern.guard(line)) continue;
+              findings.push({
+                file: relPath,
+                line: idx + 1,
+                type: pattern.name,
+              });
             }
           });
         } catch {
@@ -163,6 +222,37 @@ reportCheck(
   'Zero Hardcoded Secrets in Production Source',
   secretFindings.length === 0,
   `Found ${secretFindings.length} potential secrets: ${JSON.stringify(secretFindings.slice(0, 3))}`
+);
+
+// SEC-014: tooling, e2e helpers and CI workflow defaults must not republish a
+// production credential either — a QA-script default is copied into runbooks and
+// then into deployments. Only the credential-fallback rules run here so ordinary
+// placeholder fixtures do not create noise.
+const CREDENTIAL_FALLBACK_RULES = [
+  SECRET_PATTERNS.find((p) => p.name === 'Credential env fallback'),
+  SECRET_PATTERNS.find((p) => p.name === 'Env fallback with key-like literal'),
+  {
+    name: 'Password-shaped literal',
+    regex:
+      /(?:password|passwd|secret|api_?key|token|credential)[a-z_]*\s*["']?\s*[:=]\s*\[?\s*["'][^"']{6,}["']/i,
+  },
+  {
+    // A `fallback`/`default` key holding a literal next to a credential identifier.
+    name: 'Credential fallback key',
+    regex: /(?:fallback|default)[a-z_]*\s*:\s*["'][^"']{6,}["']/i,
+  },
+].filter(Boolean);
+
+const toolingFindings = [];
+for (const rel of ['scripts', 'tests', '.github/workflows']) {
+  const abs = path.join(root, rel);
+  if (fs.existsSync(abs))
+    toolingFindings.push(...scanDirectoryForSecrets(abs, CREDENTIAL_FALLBACK_RULES, { includeTests: true }));
+}
+reportCheck(
+  'Zero Credential Fallbacks in Tooling / E2E / CI',
+  toolingFindings.length === 0,
+  `Found ${toolingFindings.length} credential fallbacks: ${JSON.stringify(toolingFindings.slice(0, 5))}`
 );
 
 // ============================================================================
@@ -304,6 +394,35 @@ reportCheck(
   headerPass,
   headerErrors.join('; ')
 );
+
+// ============================================================================
+// Machine-readable evidence artifact (consumed by the quality report + CI)
+// ============================================================================
+try {
+  const resultsDir = path.join(root, 'results');
+  fs.mkdirSync(resultsDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(resultsDir, 'security-scan.json'),
+    JSON.stringify(
+      {
+        generatedAt: new Date().toISOString(),
+        commit: process.env.GITHUB_SHA || null,
+        passedChecks,
+        totalChecks,
+        exitCode,
+        findings: {
+          sourceSecrets: secretFindings,
+          toolingCredentialFallbacks: toolingFindings,
+          antiPatterns: antiPatternFindings,
+        },
+      },
+      null,
+      2
+    )
+  );
+} catch {
+  // artifact writing is best-effort; the exit code remains authoritative
+}
 
 // ============================================================================
 // Scan Summary

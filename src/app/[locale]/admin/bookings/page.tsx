@@ -33,10 +33,14 @@ export default async function AdminBookingsPage() {
   const fallbackTitle = lt(locale, { fa: 'سفارش سفر', en: 'Travel Order', ar: 'طلب سفر', zh: '旅行订单', ru: 'Заказ' });
 
   const rows: BookingRow[] = bookings.map((b) => {
+    const itemTypes = (b.items || []).map((i) => i.type.toUpperCase());
+    const primaryType = itemTypes[0] || 'FLIGHT';
     const d = parseDetails(b);
     return {
       id: b.id,
       reference: b.reference || b.id.substring(0, 8).toUpperCase(),
+      serviceType: primaryType,
+      itemTypes,
       title: d.title || b.items?.[0]?.type || fallbackTitle,
       subtitle: d.subtitle,
       passenger: d.passenger,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import { AccountSidebar } from '@/components/account/AccountSidebar';
 import {
@@ -27,6 +27,7 @@ import {
   Loader2,
   X,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { JalaliWheelDatePicker, formatJalaliDisplay } from '@/components/ui/JalaliWheelDatePicker';
 
 export function TravelersClientPage() {
@@ -63,21 +64,31 @@ export function TravelersClientPage() {
     holderName: '',
   });
 
-  const loadProfiles = async () => {
+  const loadProfiles = useCallback(async () => {
     setLoading(true);
     setError(null);
     const res = await getMyTravelerProfilesAction();
     if (res.success && res.data) {
       setProfiles(res.data);
     } else {
-      setError(res.error || 'خطا در دریافت لیست مسافران');
+      setError(
+        res.error ||
+          lt(locale, {
+            fa: 'خطا در دریافت لیست مسافران',
+            en: 'Failed to load traveler profiles',
+            ar: 'خطأ في استرجاع قائمة المسافرين',
+            zh: '获取旅客列表失败',
+            ru: 'Не удалось загрузить список пассажиров',
+          })
+      );
     }
     setLoading(false);
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     loadProfiles();
-  }, []);
+  }, [loadProfiles]);
 
   const openAddModal = () => {
     setEditingProfile(null);
@@ -113,7 +124,15 @@ export function TravelersClientPage() {
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      alert(lt(locale, { fa: 'نام و نام خانوادگی الزامی است.', en: 'First and last name are required.', ar: 'الاسم واسم العائلة مطلوبان.', zh: '必须填写名字和姓氏。', ru: 'Имя и фамилия обязательны.'}));
+      toast.error(
+        lt(locale, {
+          fa: 'نام و نام خانوادگی الزامی است.',
+          en: 'First and last name are required.',
+          ar: 'الاسم واسم العائلة مطلوبان.',
+          zh: '必须填写名字和姓氏。',
+          ru: 'Имя и фамилия обязательны.',
+        })
+      );
       return;
     }
 
@@ -130,7 +149,16 @@ export function TravelersClientPage() {
       });
 
       if (!res.success || !res.profile) {
-        throw new Error(res.error || 'خطا در ذخیره مسافر');
+        throw new Error(
+          res.error ||
+            lt(locale, {
+              fa: 'خطا در ذخیره مسافر',
+              en: 'Failed to save traveler profile',
+              ar: 'خطأ في حفظ المسافر',
+              zh: '保存旅客资料失败',
+              ru: 'Ошибка сохранения пассажира',
+            })
+        );
       }
 
       // If passport is provided, save or update it
@@ -146,8 +174,27 @@ export function TravelersClientPage() {
 
       setIsModalOpen(false);
       await loadProfiles();
+      toast.success(
+        lt(locale, {
+          fa: 'اطلاعات مسافر با موفقیت ذخیره شد.',
+          en: 'Traveler profile saved successfully.',
+          ar: 'تم حفظ بيانات المسافر بنجاح.',
+          zh: '旅客资料已成功保存。',
+          ru: 'Профиль пассажира успешно сохранен.',
+        })
+      );
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'خطایی رخ داد.');
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : lt(locale, {
+              fa: 'خطایی رخ داد.',
+              en: 'An error occurred.',
+              ar: 'حدث خطأ.',
+              zh: '发生错误。',
+              ru: 'Произошла ошибка.',
+            })
+      );
     } finally {
       setActionLoading(false);
     }
@@ -155,7 +202,9 @@ export function TravelersClientPage() {
 
   const handleDeleteProfile = async (id: string) => {
     const confirmMsg = lt(locale, {
-      ar: 'هل أنت متأكد من حذف هذا المسافر؟', zh: '确定要删除此旅客资料吗？', ru: 'Вы уверены, что хотите удалить этот профиль пассажира?',
+      ar: 'هل أنت متأكد من حذف هذا المسافر؟',
+      zh: '确定要删除此旅客资料吗？',
+      ru: 'Вы уверены, что хотите удалить этот профиль пассажира?',
       fa: 'آیا از حذف این مسافر اطمینان دارید؟',
       en: 'Are you sure you want to delete this traveler profile?',
     });
@@ -165,8 +214,26 @@ export function TravelersClientPage() {
     const res = await deleteTravelerProfileAction(id);
     if (res.success) {
       await loadProfiles();
+      toast.success(
+        lt(locale, {
+          fa: 'مسافر حذف شد.',
+          en: 'Traveler deleted.',
+          ar: 'تم حذف المسافر.',
+          zh: '旅客已删除。',
+          ru: 'Пассажир удален.',
+        })
+      );
     } else {
-      alert(res.error || 'خطا در حذف مسافر');
+      toast.error(
+        res.error ||
+          lt(locale, {
+            fa: 'خطا در حذف مسافر',
+            en: 'Failed to delete traveler',
+            ar: 'خطأ في حذف المسافر',
+            zh: '删除旅客失败',
+            ru: 'Не удалось удалить пассажира',
+          })
+      );
     }
     setActionLoading(false);
   };
@@ -199,8 +266,26 @@ export function TravelersClientPage() {
       if (res.success) {
         setIsDocModalOpen(false);
         await loadProfiles();
+        toast.success(
+          lt(locale, {
+            fa: 'مدرک با موفقیت ثبت شد.',
+            en: 'Document saved successfully.',
+            ar: 'تم حفظ المستند بنجاح.',
+            zh: '证件已成功保存。',
+            ru: 'Документ успешно сохранен.',
+          })
+        );
       } else {
-        alert(res.error || 'خطا در ثبت مدرک');
+        toast.error(
+          res.error ||
+            lt(locale, {
+              fa: 'خطا در ثبت مدرک',
+              en: 'Failed to save document',
+              ar: 'خطأ في حفظ المستند',
+              zh: '保存证件失败',
+              ru: 'Ошибка сохранения документа',
+            })
+        );
       }
     } finally {
       setActionLoading(false);
@@ -209,7 +294,9 @@ export function TravelersClientPage() {
 
   const handleDeleteDoc = async (profileId: string, docId: string) => {
     const confirmMsg = lt(locale, {
-      ar: 'هل أنت متأكد من حذف هذا المستند؟', zh: '确定要删除此证件吗？', ru: 'Вы уверены, что хотите удалить этот документ?',
+      ar: 'هل أنت متأكد من حذف هذا المستند؟',
+      zh: '确定要删除此证件吗？',
+      ru: 'Вы уверены, что хотите удалить этот документ?',
       fa: 'آیا از حذف این مدرک اطمینان دارید؟',
       en: 'Are you sure you want to delete this document?',
     });
@@ -219,8 +306,26 @@ export function TravelersClientPage() {
     const res = await deleteTravelDocumentAction(profileId, docId);
     if (res.success) {
       await loadProfiles();
+      toast.success(
+        lt(locale, {
+          fa: 'مدرک حذف شد.',
+          en: 'Document deleted.',
+          ar: 'تم حذف المستند.',
+          zh: '证件已删除。',
+          ru: 'Документ удален.',
+        })
+      );
     } else {
-      alert(res.error || 'خطا در حذف مدرک');
+      toast.error(
+        res.error ||
+          lt(locale, {
+            fa: 'خطا در حذف مدرک',
+            en: 'Failed to delete document',
+            ar: 'خطأ في حذف المستند',
+            zh: '删除证件失败',
+            ru: 'Не удалось удалить документ',
+          })
+      );
     }
     setActionLoading(false);
   };
@@ -341,14 +446,14 @@ export function TravelersClientPage() {
                           <button
                             onClick={() => openEditModal(profile)}
                             title={lt(locale, { fa: 'ویرایش', en: 'Edit', ar: 'تعديل', zh: '编辑', ru: 'Изменить'})}
-                            className="w-9 h-9 rounded-xl flex items-center justify-center text-sub hover:text-brand hover:bg-soft transition-colors"
+                            className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-sub hover:text-brand hover:bg-soft transition-colors"
                           >
                             <Edit2 size={16} />
                           </button>
                           <button
                             onClick={() => handleDeleteProfile(profile.id)}
                             title={lt(locale, { fa: 'حذف', en: 'Delete', ar: 'حذف', zh: '删除', ru: 'Удалить'})}
-                            className="w-9 h-9 rounded-xl flex items-center justify-center text-sub hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-sub hover:text-rose-600 hover:bg-rose-50 transition-colors"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -482,7 +587,7 @@ export function TravelersClientPage() {
             <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto mb-3" />
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-5 end-5 text-sub hover:text-ink w-8 h-8 rounded-full flex items-center justify-center hover:bg-soft"
+              className="absolute top-3 end-3 text-sub hover:text-ink min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center hover:bg-soft"
             >
               <X size={18} />
             </button>
@@ -527,6 +632,8 @@ export function TravelersClientPage() {
                   <label className="block text-xs font-black text-ink mb-1.5">کد ملی (۱۰ رقم)</label>
                   <input
                     type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     maxLength={10}
                     value={formData.nationalId}
                     onChange={(e) => setFormData({ ...formData, nationalId: e.target.value })}
@@ -630,7 +737,7 @@ export function TravelersClientPage() {
             <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto mb-3" />
             <button
               onClick={() => setIsDocModalOpen(false)}
-              className="absolute top-5 end-5 text-sub hover:text-ink w-8 h-8 rounded-full flex items-center justify-center hover:bg-soft"
+              className="absolute top-3 end-3 text-sub hover:text-ink min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center hover:bg-soft"
             >
               <X size={18} />
             </button>

@@ -8,6 +8,7 @@ import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES } from '@/lib/countries';
 import { num } from '@/lib/format';
 import { lt } from '@/lib/lt';
+import { stayDateShort } from '@/lib/hotel-format';
 import { JalaliDatePicker } from '@/components/ui/DatePicker';
 import type { HotelSearchHeaderProps } from './types';
 
@@ -121,7 +122,7 @@ export function HotelSearchHeader({
                 {query || lt(locale, { fa: 'همه مقاصد و هتل‌ها', en: 'All Destinations & Hotels', ar: 'جميع الوجهات والفنادق', zh: '所有目的地与酒店', ru: 'Все отели' })}
               </span>
               <span className="text-[10.5px] font-bold text-sub block truncate mt-0.5">
-                {checkin} ➔ {checkout} ({num(nights, locale)} {lt(locale, { fa: 'شب', en: 'nights', ar: 'ليالٍ', zh: '晚', ru: 'ноч.' })}) • {num(adults, locale)} {lt(locale, { fa: 'بزرگسال', en: 'Adults', ar: 'بالغين', zh: '成人', ru: 'вزрослых' })}
+                {stayDateShort(new Date(`${checkin}T00:00:00`), locale)} ➔ {stayDateShort(new Date(`${checkout}T00:00:00`), locale)} ({num(nights, locale)} {lt(locale, { fa: 'شب', en: 'nights', ar: 'ليالٍ', zh: '晚', ru: 'ноч.' })}) • {num(adults, locale)} {lt(locale, { fa: 'بزرگسال', en: 'Adults', ar: 'بالغين', zh: '成人', ru: 'взрослых' })}
               </span>
             </div>
           </div>

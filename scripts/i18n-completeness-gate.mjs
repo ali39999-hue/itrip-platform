@@ -126,7 +126,20 @@ export function auditLocaleCompleteness(messagesDir = MESSAGES_DIR) {
 // `lt(locale, {...})` sites than catalog keys, so "100% i18n" was an overclaim.
 // These metrics are baselined and the gate FAILS when inline localization grows,
 // so the debt can only go down deliberately.
+//
+// I18N-104 (defect fixed): the previous ratchet counted *total* inline
+// `lt(locale, {...})` call sites and FAILED when the count grew. That penalized
+// the correct repair — converting a hardcoded Persian literal into a fully
+// localized 5-locale dictionary — and let this gate report PASS while it was
+// actually red on the v1.8.3 release commit. Debt is now measured by the shared
+// scanner (scripts/lib/i18n-debt.mjs) as:
+//   1. unlocalizedFaLiterals — Persian literals living OUTSIDE any lt() dictionary,
+//   2. incompleteLtCalls     — lt() dictionaries missing one or more locales.
+// `inlineSites` is reported for visibility only; a 5/5-complete dictionary is
+// localized, not debt.
 // ---------------------------------------------------------------------------
+import { measureI18nDebt } from './lib/i18n-debt.mjs';
+
 const SRC_DIR = path.join(ROOT, 'src');
 const BASE_FILE = path.join(ROOT, 'docs', 'baseline', 'i18n-metrics.json');
 const UPDATE_BASELINE = process.argv.includes('--update-baseline');
@@ -136,43 +149,35 @@ function walkSource(dir, out = []) {
     const p = path.join(dir, name);
     const st = fs.statSync(p);
     if (st.isDirectory()) {
-      if (!['node_modules', '.next', '__tests__'].includes(name)) walkSource(p, out);
+      if (!['node_modules', '.next', 'graphify-out', '__tests__'].includes(name)) walkSource(p, out);
     } else if (/\.(ts|tsx)$/.test(name) && !/\.(test|spec)\./.test(name)) {
-      out.push(p);
+      out.push({
+        relPath: path.relative(ROOT, p).replace(/\\/g, '/'),
+        content: fs.readFileSync(p, 'utf8'),
+      });
     }
   }
   return out;
 }
 
-/** Inline localized objects: `lt(locale, { fa: …, en: … })`. */
-const INLINE_LT_RE = /lt\(\s*(?:locale|Locale)\s*,\s*\{/g;
-/** Raw Persian string literals living outside the message catalog. */
-const HARDCODED_FA_RE = /(['"`])(?=[^'"`]*[\u0600-\u06FF])[^'"`]{2,}?\1/g;
-
 export function measureLocalizationDebt() {
-  const files = walkSource(SRC_DIR);
-  let inlineSites = 0;
-  let filesWithInline = 0;
-  let hardcodedFaStrings = 0;
-
-  for (const file of files) {
-    const src = fs.readFileSync(file, 'utf8');
-    const inline = src.match(INLINE_LT_RE)?.length || 0;
-    if (inline > 0) {
-      inlineSites += inline;
-      filesWithInline += 1;
-    }
-    hardcodedFaStrings += src.match(HARDCODED_FA_RE)?.length || 0;
-  }
-
-  return { scannedFiles: files.length, inlineSites, filesWithInline, hardcodedFaStrings };
+  const debt = measureI18nDebt(walkSource(SRC_DIR));
+  return {
+    scannedFiles: debt.files,
+    inlineSites: debt.ltCalls,
+    hardcodedFaStrings: debt.unlocalizedFaLiterals,
+    completeLtCalls: debt.completeLtCalls,
+    incompleteLtCalls: debt.incompleteLtCalls,
+    incompleteSamples: debt.incompleteSamples,
+  };
 }
 
 function printAndCheckDebt(report) {
   const debt = measureLocalizationDebt();
-  console.log('\n--- Localization honesty metrics (I18N-103) ---');
-  console.log(`inline lt() call sites : ${debt.inlineSites} across ${debt.filesWithInline} of ${debt.scannedFiles} source files`);
-  console.log(`hardcoded FA literals  : ${debt.hardcodedFaStrings}`);
+  console.log('\n--- Localization honesty metrics (I18N-103 / I18N-104) ---');
+  console.log(`inline lt() call sites : ${debt.inlineSites} of which ${debt.completeLtCalls} are complete (5/5 locales)`);
+  console.log(`unlocalized FA literals (outside lt()): ${debt.hardcodedFaStrings}`);
+  console.log(`incomplete lt() calls  : ${debt.incompleteLtCalls}`);
   console.log('NOTE: catalog key parity above does NOT mean the UI is fully localized.');
 
   let baseline = null;
@@ -201,16 +206,43 @@ function printAndCheckDebt(report) {
     return { debt, regressed: false };
   }
 
-  const delta = debt.inlineSites - baseline.inlineSites;
-  console.log(`baseline inline sites  : ${baseline.inlineSites} (${baseline.updatedAt})`);
-  console.log(`delta                  : ${delta >= 0 ? '+' : ''}${delta}`);
-  if (delta > 0) {
+  const debtRegressions = collectDebtRegressions(debt, baseline);
+  if (debtRegressions.some((r) => r.startsWith('incomplete lt()'))) {
     console.error(
-      `\n[gate:i18n] FAILED — inline localization grew by ${delta} call site(s). ` +
-        'Move the copy into messages/*.json (all 5 locales), or re-baseline intentionally with --update-baseline.',
+      `\n[gate:i18n] FAILED — incomplete lt() dictionaries grew. Add the missing locale keys (fa, en, ar, zh, ru).`
     );
   }
-  return { debt, regressed: delta > 0 };
+  if (debtRegressions.some((r) => r.startsWith('unlocalized FA'))) {
+    console.error(
+      `\n[gate:i18n] FAILED — unlocalized FA literals grew. Wrap the copy in lt() with all 5 locales or move it into messages/*.json.`
+    );
+  }
+  const unlocalizedDelta = debt.hardcodedFaStrings - (baseline.unlocalizedFaLiterals ?? 0);
+  const incompleteDelta = debt.incompleteLtCalls - (baseline.incompleteLtCalls ?? 0);
+  console.log(`baseline unlocalized FA : ${baseline.unlocalizedFaLiterals ?? 'n/a'} (${baseline.updatedAt})`);
+  console.log(`delta unlocalized FA    : ${unlocalizedDelta >= 0 ? '+' : ''}${unlocalizedDelta}`);
+  console.log(`baseline incomplete lt(): ${baseline.incompleteLtCalls ?? 'n/a'}`);
+  console.log(`delta incomplete lt()   : ${incompleteDelta >= 0 ? '+' : ''}${incompleteDelta}`);
+
+  const regressed = debtRegressions.length > 0;
+  if (regressed) {
+    console.error(
+      `\n[gate:i18n] FAILED — localization debt grew (${debtRegressions.join('; ')}). ` +
+        'Localize the copy (all 5 locales) instead of hardcoding it.'
+    );
+  }
+  return { debt, regressed };
+}
+
+function collectDebtRegressions(debt, baseline) {
+  const regressions = [];
+  if (debt.incompleteLtCalls > (baseline.incompleteLtCalls ?? Number.MAX_SAFE_INTEGER)) {
+    regressions.push(`incomplete lt() calls ${debt.incompleteLtCalls} > ${baseline.incompleteLtCalls}`);
+  }
+  if (debt.hardcodedFaStrings > (baseline.unlocalizedFaLiterals ?? Number.MAX_SAFE_INTEGER)) {
+    regressions.push(`unlocalized FA literals ${debt.hardcodedFaStrings} > ${baseline.unlocalizedFaLiterals}`);
+  }
+  return regressions;
 }
 
 // Direct CLI execution

@@ -352,7 +352,7 @@ export function ErpModal({
 
   return (
     <div
-      className="fade-soft fixed inset-0 z-[200] grid place-items-center overflow-y-auto bg-deep/60 p-4 backdrop-blur-sm"
+      className="fade-soft fixed inset-0 z-[200] flex items-end sm:items-center justify-center sm:p-4 overflow-y-auto bg-deep/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
@@ -361,10 +361,14 @@ export function ErpModal({
         aria-label={typeof title === 'string' ? title : 'Dialog'}
         onClick={(e) => e.stopPropagation()}
         className={cn(
-          'sheet-up my-8 w-full overflow-hidden rounded-3xl border border-line bg-surface shadow-elev-3',
+          'sheet-up w-full sm:my-8 overflow-hidden rounded-t-3xl sm:rounded-3xl border border-line bg-surface shadow-elev-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:pb-0',
           wide ? 'max-w-2xl' : 'max-w-md',
         )}
       >
+        {/* دستگیره درگ موبایل — قاعده bottom-sheet */}
+        <div className="sm:hidden pt-3" aria-hidden="true">
+          <div className="w-10 h-1 rounded-full bg-line mx-auto" />
+        </div>
         <div className="flex items-start justify-between gap-3 border-b border-line px-6 py-4">
           <div className="min-w-0">
             <h3 className="truncate text-[15px] font-black text-ink">{title}</h3>

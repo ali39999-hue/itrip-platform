@@ -409,7 +409,7 @@ export function DestinationComparator({
           <button
             type="button"
             onClick={handleAddDestination}
-            className="self-start md:self-auto min-h-10 px-4 rounded-xl bg-brand/10 hover:bg-brand/20 text-brand-dark font-black text-xs transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+            className="self-start md:self-auto min-h-[44px] px-4 rounded-xl bg-brand/10 hover:bg-brand/20 text-brand-dark font-black text-xs transition flex items-center gap-1.5 cursor-pointer active:scale-95"
           >
             <Plus size={16} />
             <span>
@@ -437,7 +437,7 @@ export function DestinationComparator({
               aria-label={`انتخاب مقصد شماره ${idx + 1} برای مقایسه`}
               value={curId}
               onChange={(e) => handleSelectDest(idx, e.target.value)}
-              className="h-9 px-2.5 rounded-xl bg-surface border border-line text-xs font-bold text-ink cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-xs max-w-[130px] sm:max-w-[200px] truncate"
+              className="h-11 px-2.5 rounded-xl bg-surface border border-line text-xs font-bold text-ink cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand shadow-xs max-w-[150px] sm:max-w-[200px] truncate"
             >
               {COUNTRY_ORDER.map((cId) => {
                 const cObj = COUNTRIES[cId];
@@ -552,7 +552,7 @@ export function DestinationComparator({
                     <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
                     <span>{lt(locale, { fa: 'شرایط روادید (ویزا):', en: 'Visa Requirement:', ar: 'التأشيرة:', zh: '签证政策：', ru: 'Виза:' })}</span>
                   </span>
-                  <span className={`font-black text-[11px] text-end ${dest.visaPolicy.isEasy ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
+                  <span className={`font-black text-[11px] text-end min-w-0 max-w-[60%] leading-snug ${dest.visaPolicy.isEasy ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
                     {locale === 'fa' ? dest.visaPolicy.fa : dest.visaPolicy.en}
                   </span>
                 </div>
@@ -563,7 +563,7 @@ export function DestinationComparator({
                     <Sun size={14} className="text-amber-500 shrink-0" />
                     <span>{lt(locale, { fa: 'بهترین فصل سفر:', en: 'Best Season:', ar: 'أفضل موسم:', zh: '最佳季节：', ru: 'Сезон:' })}</span>
                   </span>
-                  <span className="text-end text-[11px] font-bold text-ink">
+                  <span className="text-end text-[11px] font-bold text-ink min-w-0 max-w-[60%] leading-snug">
                     {locale === 'fa' ? dest.bestSeason.fa : dest.bestSeason.en}
                   </span>
                 </div>

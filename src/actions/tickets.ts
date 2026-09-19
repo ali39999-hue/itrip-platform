@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { safeAuth } from '@/auth';
 import { revalidatePath } from 'next/cache';
-import { requirePermission } from '@/domains/identity/permission-service';
+import { requirePermission, hasErpRole } from '@/domains/identity/permission-service';
 import {
   TicketDomainService,
   TicketCategory,
@@ -92,11 +92,7 @@ export async function getTicketDetailsAction(
     }
 
     const isOwner = session?.user?.id && ticket.userId === session.user.id;
-    const isStaff =
-      session?.user?.role === 'SUPER_ADMIN' ||
-      session?.user?.role === 'ADMIN' ||
-      session?.user?.role === 'OPS' ||
-      session?.user?.role === 'FINANCE';
+    const isStaff = await hasErpRole(session?.user?.id);
 
     // Allow owner or staff, or guest if created in this session
     if (!isOwner && !isStaff && ticket.userId) {
@@ -127,11 +123,7 @@ export async function addTicketReplyAction(
       return { success: false, error: 'تیکت یافت نشد' };
     }
 
-    const isStaff =
-      session?.user?.role === 'SUPER_ADMIN' ||
-      session?.user?.role === 'ADMIN' ||
-      session?.user?.role === 'OPS' ||
-      session?.user?.role === 'FINANCE';
+    const isStaff = await hasErpRole(session?.user?.id);
 
     const authorName = isStaff
       ? session?.user?.name || 'پشتیبانی فیروزو'

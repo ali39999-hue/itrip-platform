@@ -218,7 +218,7 @@ export default function TransfersPage() {
                       checked={types.includes(c.id)}
                       onChange={() => toggleType(c.id)}
                       aria-label={`Filter by ${c.label}`}
-                      className="rounded border-line text-brand focus:ring-brand w-4 h-4"
+                      className="rounded border-line text-brand focus:ring-brand w-5 h-5"
                     />
                     <span className="text-[14px] font-bold text-ink">{c.label}</span>
                   </label>

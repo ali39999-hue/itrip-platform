@@ -1,9 +1,15 @@
+// SEC-014: credentials must come from the environment — never from source.
+if (!process.env.SMSWBS_USERNAME || !process.env.SMSWBS_PASSWORD) {
+  console.error('SMSWBS_USERNAME / SMSWBS_PASSWORD are not configured. Refusing to run this diagnostic with embedded credentials.');
+  process.exit(1);
+}
+
 import https from 'node:https';
 
 async function testLogin() {
   const params = new URLSearchParams({
-    username: '09123764868',
-    password: 'Hvd1367++@'
+    username: process.env.SMSWBS_USERNAME,
+    password: process.env.SMSWBS_PASSWORD
   });
   const body = params.toString();
 

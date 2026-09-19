@@ -12,7 +12,7 @@ interface VerifyPageProps {
 
 export default async function VerifyPage({ params, searchParams }: VerifyPageProps) {
   const { locale } = await params;
-  const { token, ref } = await searchParams;
+  const { token } = await searchParams;
 
   let verifiedPayload: { ref: string; bookingId: string; pnr?: string | null; exp: number } | null = null;
   let tokenError: string | null = null;
@@ -24,12 +24,18 @@ export default async function VerifyPage({ params, searchParams }: VerifyPagePro
     } else {
       tokenError = res.error || 'invalid_token';
     }
+  } else {
+    // Verification is token-anchored (VERIFY-01): accepting a bare `?ref=` here
+    // skipped signature verification entirely and exposed a booking's
+    // customer/date/status for any enumerable reference. No token → nothing
+    // trustworthy to resolve.
+    tokenError = 'missing_token';
   }
 
-  const queryRef = verifiedPayload?.ref || ref;
+  const queryRef = verifiedPayload?.ref;
   const queryId = verifiedPayload?.bookingId;
 
-  const booking = await VoucherService.getBookingForVerification(queryRef, queryId);
+  const booking = tokenError ? null : await VoucherService.getBookingForVerification(queryRef, queryId);
 
   // Determine Invariant State (VOUCH-INV / §26, §29)
   type VoucherVerificationState = 'VALID' | 'REVOKED' | 'INVALID' | 'EXPIRED' | 'NOT_FOUND';
@@ -84,7 +90,7 @@ export default async function VerifyPage({ params, searchParams }: VerifyPagePro
     });
   } else if (
     (booking.status === 'CONFIRMED' || booking.status === 'ISSUED' || booking.status === 'COMPLETED') &&
-    booking.paymentStatus === 'PAID'
+    (booking.paymentStatus === 'CAPTURED' || booking.paymentStatus === 'PARTIALLY_REFUNDED')
   ) {
     state = 'VALID';
     statusMessage = lt(locale, {

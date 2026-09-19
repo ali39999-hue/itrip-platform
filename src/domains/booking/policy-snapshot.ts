@@ -28,36 +28,69 @@ export class PolicySnapshotDomainService {
     const pType = productType.toUpperCase();
     const isRefundable = pType !== 'VISA' && pType !== 'ESIM';
 
-    const cancellationRules: CancellationRule[] = isRefundable
-      ? [
-          {
-            hoursBeforeTravel: 72,
-            penaltyPercentage: 0.0,
-            description: 'لغو رایگان تا ۷۲ ساعت قبل از زمان سفر / Free cancellation up to 72h before',
-          },
-          {
-            hoursBeforeTravel: 24,
-            penaltyPercentage: 0.3,
-            description: 'جریمه ۳۰ درصد در بازه ۷۲ تا ۲۴ ساعت قبل از سفر / 30% fee between 72h and 24h',
-          },
-          {
-            hoursBeforeTravel: 0,
-            penaltyPercentage: 0.8,
-            description: 'جریمه ۸۰ درصد در کمتر از ۲۴ ساعت قبل از سفر / 80% fee under 24h before',
-          },
-        ]
-      : [
-          {
-            hoursBeforeTravel: 0,
-            penaltyPercentage: 1.0,
-            description: 'غیرقابل استرداد طبق قوانین بین‌المللی و کنسولی / Non-refundable service',
-          },
-        ];
+    let cancellationRules: CancellationRule[];
+    if (pType === 'CIP' || pType === 'CIPS') {
+      cancellationRules = [
+        {
+          hoursBeforeTravel: 5,
+          penaltyPercentage: 0.0,
+          description: 'استرداد ۱۰۰٪ بدون جریمه تا ۵ ساعت قبل از پرواز / 100% refund up to 5h before flight',
+        },
+        {
+          hoursBeforeTravel: 0,
+          penaltyPercentage: 1.0,
+          description: 'جریمه ۱۰۰٪ در کمتر از ۵ ساعت قبل از پرواز یا عدم حضور / 100% penalty under 5h or no-show',
+        },
+      ];
+    } else if (pType === 'INSURANCE') {
+      cancellationRules = [
+        {
+          hoursBeforeTravel: 0,
+          penaltyPercentage: 0.0,
+          description: 'استرداد کامل قبل از تاریخ شروع سفر و پیش از درج مهر خروج گذرنامه / Full refund before policy start date',
+        },
+      ];
+    } else if (isRefundable) {
+      cancellationRules = [
+        {
+          hoursBeforeTravel: 72,
+          penaltyPercentage: 0.0,
+          description: 'لغو رایگان تا ۷۲ ساعت قبل از زمان سفر / Free cancellation up to 72h before',
+        },
+        {
+          hoursBeforeTravel: 24,
+          penaltyPercentage: 0.3,
+          description: 'جریمه ۳۰ درصد در بازه ۷۲ تا ۲۴ ساعت قبل از سفر / 30% fee between 72h and 24h',
+        },
+        {
+          hoursBeforeTravel: 0,
+          penaltyPercentage: 0.8,
+          description: 'جریمه ۸۰ درصد در کمتر از ۲۴ ساعت قبل از سفر / 80% fee under 24h before',
+        },
+      ];
+    } else {
+      cancellationRules = [
+        {
+          hoursBeforeTravel: 0,
+          penaltyPercentage: 1.0,
+          description: 'غیرقابل استرداد طبق قوانین بین‌المللی و کنسولی / Non-refundable service',
+        },
+      ];
+    }
 
     const capturedAt = new Date().toISOString();
     const policyId = `pol_${pType.toLowerCase()}_${Date.now().toString(36)}`;
     const raw = JSON.stringify({ productType: pType, isRefundable, cancellationRules, capturedAt });
     const rulesHash = crypto.createHash('sha256').update(raw).digest('hex');
+
+    let baggageAllowance: string | undefined = undefined;
+    if (pType === 'FLIGHT') {
+      baggageAllowance = '۲۰ کیلوگرم بار مجاز پرواز / 20kg standard checked luggage';
+    } else if (pType === 'CIP' || pType === 'CIPS') {
+      baggageAllowance = 'تحویل و حمل بار اختصاصی توسط پرسنل تشریفات (Porter Service)';
+    } else if (pType === 'INSURANCE') {
+      baggageAllowance = 'پوشش خسارت مفقودی چمدان و مدارک تا سقف ۱,۲۰۰ یورو';
+    }
 
     return {
       version: '2.0',
@@ -65,7 +98,7 @@ export class PolicySnapshotDomainService {
       productType: pType,
       isRefundable,
       cancellationRules,
-      baggageAllowance: pType === 'FLIGHT' ? '۲۰ کیلوگرم بار مجاز پرواز / 20kg standard checked luggage' : undefined,
+      baggageAllowance,
       changePolicy: isRefundable ? 'امکان تغییر تاریخ با پرداخت مابه‌التفاوت نرخ' : 'امکان تغییر وجود ندارد',
       noShowPenaltyPercentage: 1.0,
       termsUrl: 'https://firuzo.com/terms/policies',

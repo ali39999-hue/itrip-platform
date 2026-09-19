@@ -310,7 +310,15 @@ async function runLiveAudit() {
       const csrfRes = await adminPage.request.get(`${BASE_URL}/api/auth/csrf`);
       const { csrfToken } = await csrfRes.json();
 
-      const passwords = ['Admin@Firuzo2026!', 'Admin@Firuzo2026!Secure'];
+      // SEC-014: credentials come from the environment / .env only. A default
+      // password list in the repository is a published credential.
+      const passwords = [
+        process.env.ADMIN_PASSWORD,
+        process.env.E2E_ADMIN_PASSWORD,
+      ].filter((v) => typeof v === 'string' && v.length > 0);
+      if (passwords.length === 0) {
+        console.warn('ADMIN_PASSWORD is not configured — skipping authenticated admin QA checks.');
+      }
       let loggedIn = false;
 
       for (const pwd of passwords) {

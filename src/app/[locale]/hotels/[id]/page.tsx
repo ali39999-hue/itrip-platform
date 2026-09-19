@@ -15,7 +15,11 @@ import { HotelHero } from '@/components/hotels/detail/HotelHero';
 import { HotelOverview, HotelLocation, HotelAmenities, HotelReviews, HotelPolicies } from '@/components/hotels/detail/HotelInfo';
 import { HotelRooms } from '@/components/hotels/detail/HotelRooms';
 import { BookingPanel } from '@/components/hotels/detail/BookingPanel';
-import { EditStayModal } from '@/components/hotels/detail/EditStayModal';
+import dynamic from 'next/dynamic';
+const EditStayModal = dynamic(
+  () => import('@/components/hotels/detail/EditStayModal').then((m) => m.EditStayModal),
+  { ssr: false }
+);
 import { Loader2 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { toast as sonnerToast } from 'sonner';
@@ -327,7 +331,7 @@ export default function HotelDetailPage() {
       </div>
 
       {toast && (
-        <div className="fixed bottom-6 start-1/2 -translate-x-1/2 z-[150] px-5 py-3 rounded-xl bg-ink text-surface text-sm font-extrabold shadow-2xl animate-in fade-in slide-in-from-bottom-2">
+        <div className="fixed bottom-6 start-1/2 -translate-x-1/2 rtl:translate-x-1/2 z-[150] px-5 py-3 rounded-xl bg-ink text-surface text-sm font-extrabold shadow-2xl animate-in fade-in slide-in-from-bottom-2">
           {toast}
         </div>
       )}

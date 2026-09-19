@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma';
 import { ERP_STAFF_ROLES } from '@/domains/identity/permissions';
 import { encryptSensitive } from '@/lib/security/crypto-vault';
 import { createLogger } from '@/lib/observability/logger';
+import { isDemoMode } from '@/lib/runtime-mode';
 import { ProductionTelegramProvider, TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
 import { getNotificationProvider } from '@/domains/events/NotificationProvider';
 import { ProductionWhatsappProvider } from '@/domains/events/providers/ProductionWhatsappProvider';
@@ -39,9 +40,33 @@ if (!secret) {
 }
 const resolvedSecret = secret;
 
-const DEMO_MODE = process.env.DEMO_MODE === 'true' && process.env.NODE_ENV !== 'production';
+/**
+ * Demo-mode gate (AUTH-005): evaluated fresh on every call — never snapshotted
+ * at module scope, so later env mutations (config loaders, per-test setup)
+ * always take effect.
+ */
+const DEMO_MODE = () => isDemoMode();
 const OTP_TTL_MINUTES = 5;
 const OTP_MAX_ATTEMPTS = 5;
+
+/**
+ * SECURITY (AUTH-003): a one-time passcode must never be echoed back to the
+ * client, and OTP state must never live only in process memory, unless we are
+ * explicitly in demo mode outside production.
+ *
+ * The previous implementation also enabled the echo whenever `VERCEL` (or any
+ * `*_VERCEL_ENV`) was present. That env var is always set on Vercel — i.e. in
+ * production too — so any SMS/email outage silently turned into "show the login
+ * code in the browser and pre-fill it", which is a full authentication bypass
+ * for every account (including admins).
+ */
+/**
+ * SECURITY (AUTH-003/AUTH-005): a one-time passcode must never be echoed back to
+ * the client, and OTP state must never live only in process memory, unless we
+ * are explicitly in demo mode outside production.
+ */
+const DEV_OTP_VISIBLE = () => DEMO_MODE();
+const ALLOW_IN_MEMORY_OTP_FALLBACK = () => DEMO_MODE();
 
 /**
  * Whether any real SMS provider is configured. When true, OTP delivery failures
@@ -95,34 +120,84 @@ export function getPhoneLookupCandidates(phoneInput: string): string[] {
   return Array.from(candidates);
 }
 
-export const DEFAULT_ADMIN_PHONES = [
+/**
+ * Demo-only bootstrap identifiers (AUTH-002 / SEC-013).
+ *
+ * These constants are NEVER a production privilege authority. They exist so a
+ * fresh dev/demo database has a predictable bootstrap account; in production the
+ * lists come exclusively from ADMIN_EMAILS / ADMIN_PHONES. A published constant
+ * must not be able to mint a SUPER_ADMIN session (see admin-login tests).
+ */
+export const DEMO_ADMIN_PHONES = [
   '09120000000',
   '09123456789',
   '09304064124',
   '09127925583',
   '09105247414',
 ];
+/** @deprecated Demo alias kept for backwards-compatible imports (tests). Use DEMO_ADMIN_PHONES. */
+export const DEFAULT_ADMIN_PHONES = DEMO_ADMIN_PHONES;
+export const DEMO_ADMIN_EMAILS = ['admin@firuzo.com'];
 
 export function getAdminPhones(): string[] {
   const envPhones = (process.env.ADMIN_PHONES || '')
     .split(',')
     .map((p) => p.trim())
     .filter(Boolean);
-  return Array.from(new Set([...DEFAULT_ADMIN_PHONES, ...envPhones]));
+  return Array.from(new Set([...(DEMO_MODE() ? DEMO_ADMIN_PHONES : []), ...envPhones]));
 }
 
+export function getAdminEmails(): string[] {
+  const envEmails = (process.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return Array.from(new Set([...(DEMO_MODE() ? DEMO_ADMIN_EMAILS : []), ...envEmails]));
+}
+
+/**
+ * Returns true when the identifier is a *bootstrap* admin identifier.
+ *
+ * SECURITY: this is a routing hint only — it decides whether the bootstrap
+ * repair path may be attempted. It NEVER grants a role on its own: the caller
+ * must still prove the deployment's ADMIN_PASSWORD (bcrypt-verified) and the
+ * resulting identity always comes from the database row.
+ */
 export function isKnownAdminIdentifier(identifier: string): boolean {
   if (!identifier) return false;
   const clean = normalizeIdentifier(identifier).trim().toLowerCase();
-  if (clean === 'admin@firuzo.com' || clean === 'admin') return true;
+  if (!clean) return false;
+  if (getAdminEmails().includes(clean)) return true;
   const adminPhones = getAdminPhones();
-  const candidates = getPhoneLookupCandidates(clean);
-  return candidates.some((cand) => adminPhones.includes(cand));
+  if (adminPhones.length === 0) return false;
+  return getPhoneLookupCandidates(clean).some((cand) => adminPhones.includes(cand));
+}
+
+/**
+ * The admin bootstrap password (AUTH-002).
+ *
+ * There is deliberately NO hardcoded fallback in production: a default password
+ * committed to the repository would let anyone authenticate as SUPER_ADMIN on
+ * any deployment where ADMIN_PASSWORD is unset. Bootstrap therefore fails closed
+ * — the caller treats a `null` return as "no bootstrap available" and denies the
+ * privileged action.
+ */
+export function getAdminBootstrapPassword(): string | null {
+  const fromEnv = process.env.ADMIN_PASSWORD?.trim();
+  if (fromEnv) return fromEnv;
+  if (DEMO_MODE()) return 'firuzo-demo-admin-only';
+  return null;
 }
 
 export async function ensureAdminUserInDatabase(preferredEmail = 'admin@firuzo.com', phone?: string) {
   try {
-    const password = process.env.ADMIN_PASSWORD || 'Admin@Firuzo2026!';
+    const password = getAdminBootstrapPassword();
+    if (!password) {
+      authLogger.error('Admin bootstrap refused: ADMIN_PASSWORD is not configured (fail closed).', {
+        preferredEmail,
+      });
+      return null;
+    }
     const passwordHash = await bcrypt.hash(password, 10);
     const targetEmail = preferredEmail.includes('@') ? preferredEmail : 'admin@firuzo.com';
 
@@ -231,9 +306,10 @@ export async function issueOtp(
           dispatch?.success &&
           dispatch.provider === 'console-simulator' &&
           !hasRealSmsProvider() &&
-          (process.env.NODE_ENV !== 'production' || process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.DEMO_MODE === 'true')
+          DEMO_MODE()
         ) {
-          // No real SMS provider exists at all — safe dev simulation is the honest path.
+          // No real SMS provider exists at all AND we are explicitly in demo mode
+          // outside production — safe dev simulation is the honest path.
           providerUsed = 'console-simulator';
           dispatchError = undefined;
         }
@@ -277,15 +353,26 @@ export async function issueOtp(
       where: { expiresAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
     });
   } catch (dbErr) {
+    if (!ALLOW_IN_MEMORY_OTP_FALLBACK()) {
+      // Production fail-closed: without DB persistence the OTP cannot be stored
+      // or verified durably, so we must not pretend it was issued.
+      authLogger.error('OTP persistence failed and in-memory fallback is disabled (fail closed).', {
+        identifier,
+        channel,
+      });
+      return { sent: false, realSent: false, provider: providerUsed, error: 'OTP_STORAGE_UNAVAILABLE' };
+    }
     console.warn('[issueOtp] Database unreachable for OTP persistence (fallback to in-memory):', dbErr);
   }
 
-  // 2. Also keep in fast in-memory cache
-  inMemoryOtpStore.set(identifier, {
-    codeHash,
-    expiresAt,
-    attempts: 0,
-  });
+  // 2. Also keep in fast in-memory cache (demo/dev only — see AUTH-003)
+  if (ALLOW_IN_MEMORY_OTP_FALLBACK()) {
+    inMemoryOtpStore.set(identifier, {
+      codeHash,
+      expiresAt,
+      attempts: 0,
+    });
+  }
 
   if (!isIranMobile) {
     try {
@@ -344,16 +431,13 @@ export async function issueOtp(
   }
 
   return {
-    sent: true,
+    // `sent` reflects an actual dispatch: a simulated/blocked delivery must not
+    // be reported as a successful send (Product Truth, §11).
+    sent: realSent || DEV_OTP_VISIBLE(),
     realSent,
     provider: providerUsed,
     error: dispatchError,
-    devCode:
-      (process.env.NODE_ENV !== 'production' || process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.DEMO_MODE === 'true') &&
-      !realSent &&
-      providerUsed === 'console-simulator'
-        ? code
-        : undefined,
+    devCode: DEV_OTP_VISIBLE() && !realSent && providerUsed === 'console-simulator' ? code : undefined,
   };
 }
 
@@ -407,10 +491,19 @@ async function verifyStoredOtp(identifier: string, code: string): Promise<boolea
       return true;
     }
   } catch (dbErr) {
+    if (!ALLOW_IN_MEMORY_OTP_FALLBACK()) {
+      // Production fail-closed: a DB outage must deny the login, not fall back to
+      // a process-local store that cannot be audited or revoked (AUTH-003).
+      authLogger.error('OTP verification failed: database unreachable and in-memory fallback disabled.', {
+        identifier,
+      });
+      return false;
+    }
     console.warn('[verifyStoredOtp] Database unreachable for OTP verification, checking in-memory fallback:', dbErr);
   }
 
-  // 3. In-memory fallback check
+  // 3. In-memory fallback check (demo/dev only — see AUTH-003)
+  if (!ALLOW_IN_MEMORY_OTP_FALLBACK()) return false;
   const memRecord = inMemoryOtpStore.get(identifier);
 
   if (!memRecord) return false;
@@ -579,8 +672,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           const isValid = await verifyStoredOtp(rawIdentifier, otp);
           if (!isValid) return null;
 
-          const isAdmin = isKnownAdminIdentifier(rawIdentifier) || isKnownAdminIdentifier(identifier);
-          const targetRole = isAdmin ? 'SUPER_ADMIN' : 'CUSTOMER';
+          // AUTH-002: the OTP channel creates/authenticates CUSTOMER identities only.
+          // Privilege is NEVER derived from the identifier string — it comes from the
+          // relational RBAC rows attached to the resolved database user.
+          const targetRole = 'CUSTOMER';
 
           let user = null;
           try {
@@ -597,18 +692,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               },
             });
 
-            // Passwordless sign-up: first login creates user account.
+            // Passwordless sign-up: first login creates a CUSTOMER account.
             if (!user) {
-              const displayName = isAdmin
-                ? 'مدیر ارشد فیروزو'
-                : (rawIdentifier.startsWith('09') || rawIdentifier.startsWith('+98') || rawIdentifier.startsWith('9')
-                    ? rawIdentifier
-                    : 'کاربر فیروزو');
+              const displayName =
+                rawIdentifier.startsWith('09') || rawIdentifier.startsWith('+98') || rawIdentifier.startsWith('9')
+                  ? rawIdentifier
+                  : 'کاربر فیروزو';
 
               user = await prisma.user.create({
                 data: {
                   id: crypto.randomUUID(),
-                  email: identifier.includes('@') ? identifier : (isAdmin ? 'admin@firuzo.com' : undefined),
+                  email: identifier.includes('@') ? identifier : undefined,
                   phone: /^(\+?\d{7,15})$/.test(rawIdentifier) ? rawIdentifier : undefined,
                   telegramId: rawChannel === 'telegram' ? rawIdentifier : undefined,
                   whatsappPhone: rawChannel === 'whatsapp' ? rawIdentifier : undefined,
@@ -622,37 +716,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 },
               });
               await ensureUserRole(user.id, targetRole);
-            } else if (isAdmin && user.role !== 'SUPER_ADMIN') {
-              user = await prisma.user.update({
-                where: { id: user.id },
-                data: { role: 'SUPER_ADMIN' },
-              });
-              await ensureUserRole(user.id, 'SUPER_ADMIN');
             }
           } catch (dbErr) {
-            console.warn('[auth] Database unreachable during user lookup/creation fallback:', dbErr);
-            return {
-              id: isAdmin ? 'admin_super_resilient' : `user_${rawIdentifier.replace(/\D/g, '') || Date.now()}`,
-              email: identifier.includes('@') ? identifier : (isAdmin ? 'admin@firuzo.com' : `${rawIdentifier}@firuzo.com`),
-              name: isAdmin ? 'مدیر ارشد فیروزو' : rawIdentifier,
-              role: targetRole,
-            };
+            // Fail closed: an unverifiable identity must never be fabricated.
+            authLogger.error('[auth] OTP login denied: database unreachable during identity lookup.', {
+              error: String(dbErr),
+            });
+            return null;
           }
 
-          if (!user) {
-            return {
-              id: isAdmin ? 'admin_super_resilient' : `user_${rawIdentifier.replace(/\D/g, '') || Date.now()}`,
-              email: identifier.includes('@') ? identifier : (isAdmin ? 'admin@firuzo.com' : `${rawIdentifier}@firuzo.com`),
-              name: isAdmin ? 'مدیر ارشد فیروزو' : rawIdentifier,
-              role: targetRole,
-            };
-          }
+          if (!user || !user.isActive) return null;
 
           return {
             id: user.id,
             email: user.email || `${user.id}@firuzo.com`,
             name: user.name || user.phone || user.firstNameFa || rawIdentifier,
-            role: isAdmin ? 'SUPER_ADMIN' : user.role,
+            role: user.role,
           };
         }
 
@@ -695,42 +774,45 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             });
           }
         } catch (dbErr) {
-          console.warn('[auth] Database unreachable during credentials lookup:', dbErr);
+          // Fail closed: without a durable identity lookup there is nothing to
+          // authenticate against. Never fabricate a principal (AUTH-001).
+          authLogger.error('[auth] Credentials login denied: database unreachable during lookup.', {
+            error: String(dbErr),
+          });
+          return null;
         }
 
-        const expectedAdminPassword = process.env.ADMIN_PASSWORD || 'Admin@Firuzo2026!';
-        const isAdminIdentifier = isKnownAdminIdentifier(rawIdentifier) || isKnownAdminIdentifier(identifier);
-
-        const isPasswordMatchingAdmin = (pwd: string) => {
-          const trimmed = pwd.trim();
-          return (
-            pwd === expectedAdminPassword ||
-            pwd === `${expectedAdminPassword}Secure` ||
-            trimmed === expectedAdminPassword.trim() ||
-            trimmed === `!${expectedAdminPassword.replace(/!$/, '')}` ||
-            trimmed === `${expectedAdminPassword.replace(/^!/, '')}!`
+        /**
+         * AUTH-002 — admin bootstrap.
+         *
+         * The deployment's ADMIN_PASSWORD is the only bootstrap secret. It is
+         * verified with bcrypt (never with a plaintext `===` against a constant,
+         * which is what previously allowed the published default password to mint
+         * a SUPER_ADMIN session). The resulting principal ALWAYS comes from the
+         * database row; there is no synthetic fallback identity.
+         */
+        const bootstrapPassword = getAdminBootstrapPassword();
+        if (
+          bootstrapPassword &&
+          isKnownAdminIdentifier(rawIdentifier) &&
+          password &&
+          (await bcrypt.compare(password, await bcrypt.hash(bootstrapPassword, 10)))
+        ) {
+          const adminUser = await ensureAdminUserInDatabase(
+            identifier.includes('@') ? identifier : 'admin@firuzo.com',
+            rawIdentifier.startsWith('09') ? rawIdentifier : undefined
           );
-        };
-
-        // If credentials match admin, self-heal / ensure admin in DB and authenticate as SUPER_ADMIN
-        if (isAdminIdentifier && isPasswordMatchingAdmin(password)) {
-          let adminUser = user;
-          if (!adminUser || !adminUser.passwordHash || adminUser.role !== 'SUPER_ADMIN') {
-            adminUser = await ensureAdminUserInDatabase(
-              identifier.includes('@') ? identifier : 'admin@firuzo.com',
-              rawIdentifier.startsWith('09') ? rawIdentifier : undefined
-            );
-          }
+          if (!adminUser || adminUser.isActive === false) return null;
           return {
-            id: adminUser?.id || 'admin_super_resilient',
-            email: adminUser?.email || (identifier.includes('@') ? identifier : 'admin@firuzo.com'),
-            name: adminUser?.name || 'مدیر ارشد فیروزو',
+            id: adminUser.id,
+            email: adminUser.email || 'admin@firuzo.com',
+            name: adminUser.name || 'مدیر ارشد فیروزو',
             role: 'SUPER_ADMIN',
           };
         }
 
         // Demo fallback auto-creation only if DEMO_MODE is true AND strictly outside production
-        if (!user && DEMO_MODE && process.env.NODE_ENV !== 'production') {
+        if (!user && DEMO_MODE() && process.env.NODE_ENV !== 'production') {
           const email = identifier.includes('@') ? identifier : `${rawIdentifier.replace(/\D/g, '') || 'user'}@firuzo.com`;
           const demoHash = await bcrypt.hash('demo', 10);
 
@@ -755,32 +837,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!user || !user.isActive) return null;
 
-        // Standard verification with bcrypt
+        // Standard verification with bcrypt. The password is compared exactly as
+        // supplied — no punctuation-flipping "RTL compensation", which used to
+        // silently accept a second spelling of every password and halve the
+        // effective secret space (AUTH-004).
         if (!user.passwordHash || !password) return null;
-        let isValid = await bcrypt.compare(password, user.passwordHash);
-
-        // RTL / Punctuation compensation:
-        // In Persian and RTL environments, exclamation marks or punctuation at the
-        // end of English passwords commonly flip to the beginning (e.g. !Admin@Firuzo2026 vs Admin@Firuzo2026!).
-        if (!isValid) {
-          const trimmed = password.trim();
-          if (trimmed.startsWith('!')) {
-            const flipped = trimmed.slice(1) + '!';
-            isValid = await bcrypt.compare(flipped, user.passwordHash);
-          } else if (trimmed.endsWith('!')) {
-            const flipped = '!' + trimmed.slice(0, -1);
-            isValid = await bcrypt.compare(flipped, user.passwordHash);
-          }
-        }
-
+        const isValid = await bcrypt.compare(password, user.passwordHash);
         if (!isValid) return null;
 
-        const finalRole = (isAdminIdentifier || user.role === 'SUPER_ADMIN') ? 'SUPER_ADMIN' : user.role;
+        // AUTH-002: role comes from the database row only. Deriving SUPER_ADMIN
+        // from the identifier string would let anyone who can register a matching
+        // email/phone escalate without an RBAC grant.
         return {
           id: user.id,
           email: user.email || `${user.id}@firuzo.com`,
           name: user.name || user.firstNameFa || 'User',
-          role: finalRole,
+          role: user.role,
         };
       },
     }),
@@ -847,10 +919,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id;
 
-        const isExplicitSuperAdmin =
-          user.role === 'SUPER_ADMIN' ||
-          user.id === 'admin_super_resilient' ||
-          isKnownAdminIdentifier(user.email || '');
+        // AUTH-002: the super-admin flag is derived from the DB-verified role that
+        // `authorize()` returned — never from an identifier string.
+        const isExplicitSuperAdmin = user.role === 'SUPER_ADMIN';
 
         try {
           // Session permissions mirror relational RBAC authority (IAM-001, IAM-105).

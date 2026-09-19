@@ -1,6 +1,6 @@
 # معماری مرجع فیروزو — Firuzo Canonical Architecture
 
-**نسخه:** 1.4 — تاریخ: 2026-09-17 — هماهنگ با `itrip-platform@1.8.3`
+**نسخه:** 1.4 — تاریخ: 2026-09-19 — هماهنگ با `itrip-platform@1.8.4`
 **جایگاه:** این سند، مرجع رسمی و تک‌منبع حقیقت (Single Source of Truth) معماری پلتفرم است. هر تغییر معماری باید اول در همین سند ثبت شود، بعد در کد پیاده شود.
 
 > 🎯 هدف این سند: هر ایجنت یا هم‌تیمی، بدون خواندن ۱۰۰ فایل، بداند «ساختار چیست، کجا چه چیزی است، کدام قانون را نباید بشکند، و کجا مرجع تخصصی‌تر پیدا کند.»
@@ -16,7 +16,7 @@
 - [§4 — تصویر کلان: Modular Monolith](#4)
 - [§5 — قانون لایه‌بندی و جهت وابستگی‌ها](#5)
 - [§6 — نقشه دامنه‌ها (22 Domain)](#6)
-- [§7 — مدل داده (73 مدل Prisma)](#7)
+- [§7 — مدل داده (78 مدل Prisma)](#7)
 - [§8 — ناگفتنی‌های هستهٔ تراکنشی (Invariants)](#8)
 - [§9 — معماری تأمین‌کنندگان (Suppliers)](#9)
 - [§10 — قیمت‌گذاری و پول](#10)
@@ -217,7 +217,7 @@ flowchart TD
 ---
 
 <a name="7"></a>
-## §7 — مدل داده (73 مدل Prisma)
+## §7 — مدل داده (78 مدل Prisma)
 
 `prisma/schema.prisma` — PostgreSQL، **هیچ enum در DB نیست**؛ همهٔ status ها `String` هستند و مقادیر مجاز در state machine های TypeScript (`src/domains/*/…-state-machine.ts`) نگه‌داری می‌شوند. این یک ADR است (ADR-002): migration وضعیت‌ها بدون DDL، در TS با `assertTransition`.
 
@@ -233,11 +233,13 @@ flowchart TD
 | دفتر (5) | `ChartOfAccounts`، `JournalEntry(+Line)`؛ کیف پول/دوطرفه: `Account` (unique `[ownerType, ownerId, currency]`؛ sentinel‌های `#platform`: ESCROW/FEE/REVENUE/GATEWAY_SETTLEMENT/SUPPLIER_PAYABLE/TAX_PAYABLE) + `LedgerEntry` (groupId جفت بدهکار/بستانکار، fxRate) |
 | تأمین‌کننده/انبار (9) | `Supplier`، `SupplierConnection/Credential(vault)/Health/Statement/Contract`، `InventoryItem`، `Allotment (unique [item,date])`، `InventoryHold` |
 | کش پرواز/تقاضا (3) | `FlightOfferCache`، `FlightRouteDemand`، `CompetitorPriceSnapshot` |
-| اعتماد/عملیات (6) | `AuditLog`، `OutboxEvent`، `SagaExecution/Step`، `WorkerLease`، `OperationalException` |
+| اعتماد/عملیات/لاگ (7) | `AuditLog`، `OutboxEvent`، `SagaExecution/Step`، `WorkerLease`، `OperationalException`، `SystemErrorLog` |
 | مالیات (2) | `TaxJurisdiction`، `TaxRule (versioned)` |
-| محتوا/CMS (7) | `Tour(+DepartureDate/ItineraryDay)`، `SignatureExperience`، `Travelogue`، `GuideArticle`، `SiteContent (همچنین تنظیمات ران‌تایم ادمین: key/payload)` |
+| محتوا/CMS (8) | `Tour(+DepartureDate/ItineraryDay)`، `SignatureExperience`، `Travelogue`، `GuideArticle`، `SiteContent (تنظیمات ران‌تایم ادمین: key/payload)`، `DeletedStaticRef` |
 | معرف (3) | `ReferralCode`، `BookingReferral (1:1)`، `LeaderSettlement` |
 | اتوماسیون/AI (4) | `AutoBuyRule`، `AssistantConversation/Message`، `PushSubscription` |
+| پشتیبانی/تیکت (2) | `SupportTicket`، `TicketMessage` |
+| تحلیل رفتار (1) | `BehaviorHeatmap` |
 
 **زنجیرهٔ رابطهٔ هسته:**
 `User → Booking(customerId, tripId?, organizationId?) → BookingItem[] → PaymentIntent → PaymentAttempt → GatewayTransaction` و `Booking → PriceSnapshot[] / Refund*`؛ جریان پول در `Account/LedgerEntry` توسط `GeneralLedgerService` ثبت می‌شود.

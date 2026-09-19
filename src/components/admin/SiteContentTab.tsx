@@ -20,6 +20,8 @@ import {
   LifeBuoy,
   CarFront,
   FileCheck2,
+  Crown,
+  ShieldCheck,
 } from 'lucide-react';
 import { ErpSectionCard, ErpAlert, erpFieldCls, erpLabelCls, erpPrimaryBtnCls, erpGhostBtnCls, erpDangerBtnCls } from '@/components/admin/erp-ui';
 import { getSiteContentAction, saveSiteContentAction, resetSiteContentAction } from '@/actions/content';
@@ -28,6 +30,8 @@ import { DEFAULT_POPULAR_ROUTES } from '@/components/home/sections/PopularFlight
 import { DEFAULT_FAQ } from '@/components/home/sections/FaqSection';
 import { DEFAULT_ACCOUNT_SIDEBAR, DEFAULT_SUPPORT_PAGE } from '@/lib/account-panel-defaults';
 import { TRANSFERS, VISA_SERVICES, type TransferOption } from '@/lib/data';
+import { CIP_AIRPORTS } from '@/lib/cip-data';
+import { BASE_INSURANCE_PLANS } from '@/lib/insurance-data';
 import type {
   SiteContentKey,
   HeroOverride,
@@ -42,7 +46,21 @@ import type {
   SupportPageOverride,
 } from '@/domains/content/SiteContentService';
 
-type SiteTab = 'hero' | 'promos' | 'routes' | 'faq' | 'announcement' | 'support' | 'accounthero' | 'accountnav' | 'accountloyalty' | 'supportpage' | 'transfers' | 'visas';
+type SiteTab =
+  | 'hero'
+  | 'promos'
+  | 'routes'
+  | 'faq'
+  | 'announcement'
+  | 'support'
+  | 'accounthero'
+  | 'accountnav'
+  | 'accountloyalty'
+  | 'supportpage'
+  | 'transfers'
+  | 'visas'
+  | 'cip'
+  | 'insurance';
 
 const SITE_TABS: Array<{ id: SiteTab; key: SiteContentKey; label: string; icon: React.ReactNode; hint: string }> = [
   { id: 'hero', key: 'home.hero', label: 'بنر اصلی (Hero)', icon: <Home size={14} aria-hidden="true" />, hint: 'عنوان، توضیح و تصویر بالای صفحه اصلی. هر فیلدی خالی بماند، همان متن پیش‌فرض فعلی نمایش داده می‌شود.' },
@@ -57,6 +75,8 @@ const SITE_TABS: Array<{ id: SiteTab; key: SiteContentKey; label: string; icon: 
   { id: 'supportpage', key: 'support.page', label: 'صفحه پشتیبانی', icon: <LifeBuoy size={14} aria-hidden="true" />, hint: 'کانال‌های تماس صفحه /support (تلفن، ایمیل، تلگرام) و در صورت تمایل جایگزین سوالات متداول.' },
   { id: 'transfers', key: 'services.transfers', label: 'ترانسفرهای فرودگاهی', icon: <CarFront size={14} aria-hidden="true" />, hint: 'خودروها، مسیرهای فرودگاهی و بین‌شهری و قیمت‌های ترانسفر در صفحه /transfers و برنامه‌ریز سفر.' },
   { id: 'visas', key: 'services.visa', label: 'خدمات اخذ ویزا', icon: <FileCheck2 size={14} aria-hidden="true" />, hint: 'بسته‌های اخذ ویزا، روزهای کاری، درصد قبولی و قیمت‌های صفحه /visa.' },
+  { id: 'cip', key: 'services.cip', label: 'تشریفات فرودگاهی (CIP)', icon: <Crown size={14} aria-hidden="true" />, hint: 'تعرفه‌های جایگاه تشریفات CIP فرودگاه‌های امام، مشهد، شیراز، کیش و دبی همراه با خدمات جانبی (همراه، سوئیت، ویلچر).' },
+  { id: 'insurance', key: 'services.insurance', label: 'بیمه مسافرتی', icon: <ShieldCheck size={14} aria-hidden="true" />, hint: 'بسته‌های بیمه مسافرتی، شرکت‌های بیمه‌گر (کوثر، رازی، ایران، سامان)، کمک‌رسان‌های بین‌المللی و سقف‌های تعهد.' },
 ];
 
 interface StoredEntry {
@@ -89,6 +109,8 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
   const [supportPageFaqDraft, setSupportPageFaqDraft] = useState<FaqItemOverride[]>(DEFAULT_FAQ);
   const [transfersDraft, setTransfersDraft] = useState<TransferOption[]>(TRANSFERS);
   const [visaDraft, setVisaDraft] = useState<typeof VISA_SERVICES>(VISA_SERVICES);
+  const [cipDraft, setCipDraft] = useState<typeof CIP_AIRPORTS>(CIP_AIRPORTS);
+  const [insuranceDraft, setInsuranceDraft] = useState<typeof BASE_INSURANCE_PLANS>(BASE_INSURANCE_PLANS);
   const [announcementDraft, setAnnouncementDraft] = useState<AnnouncementOverride>({
     title: { fa: '', en: '' },
     message: { fa: '', en: '' },
@@ -136,6 +158,12 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
     if (map['services.visa']?.payload) setVisaDraft(map['services.visa'].payload as typeof VISA_SERVICES);
     else setVisaDraft(VISA_SERVICES);
 
+    if (map['services.cip']?.payload) setCipDraft(map['services.cip'].payload as typeof CIP_AIRPORTS);
+    else setCipDraft(CIP_AIRPORTS);
+
+    if (map['services.insurance']?.payload) setInsuranceDraft(map['services.insurance'].payload as typeof BASE_INSURANCE_PLANS);
+    else setInsuranceDraft(BASE_INSURANCE_PLANS);
+
     if (map['site.announcement']?.payload) setAnnouncementDraft(map['site.announcement'].payload as AnnouncementOverride);
     else
       setAnnouncementDraft({
@@ -182,6 +210,8 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
     if (key === 'account.loyalty') return accountLoyaltyDraft;
     if (key === 'services.transfers') return transfersDraft;
     if (key === 'services.visa') return visaDraft;
+    if (key === 'services.cip') return cipDraft;
+    if (key === 'services.insurance') return insuranceDraft;
     if (key === 'support.page') {
       return {
         ...supportPageDraft,
@@ -691,6 +721,102 @@ export function SiteContentTab({ onChanged }: { onChanged?: () => void }) {
                     <span>افزودن بسته ویزا جدید</span>
                   </button>
                 )}
+              </div>
+            )}
+
+            {activeSiteTab === 'cip' && (
+              <div className="space-y-3">
+                {cipDraft.map((airport, idx) => (
+                  <div key={airport.id || idx} className="p-3.5 rounded-2xl border border-line bg-soft/40 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black text-brand-dark flex items-center gap-1.5">
+                        <Crown size={12} className="text-amber-600" />
+                        <span>جایگاه تشریفات CIP: {airport.airportNameFa} ({airport.airportCode})</span>
+                      </span>
+                      {cipDraft.length > 1 && (
+                        <button type="button" onClick={() => setCipDraft(cipDraft.filter((_, i) => i !== idx))} className="min-h-[44px] min-w-[44px] w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف فرودگاه ${idx + 1}`}>
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      <div>
+                        <label className="text-[10px] text-sub block mb-1">نام فرودگاه (فارسی)</label>
+                        <input className={heroTextCls} value={airport.airportNameFa} onChange={(e) => updateArrayItem(cipDraft, setCipDraft, idx, { airportNameFa: e.target.value })} placeholder="نام فرودگاه (فارسی)" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-sub block mb-1">کد یاتا (IATA)</label>
+                        <input className={heroTextCls} value={airport.airportCode} onChange={(e) => updateArrayItem(cipDraft, setCipDraft, idx, { airportCode: e.target.value.toUpperCase() })} placeholder="IKA" dir="ltr" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-sub block mb-1">شهر (فارسی)</label>
+                        <input className={heroTextCls} value={airport.cityFa} onChange={(e) => updateArrayItem(cipDraft, setCipDraft, idx, { cityFa: e.target.value })} placeholder="تهران" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-sub block mb-1">ترمینال و موقعیت</label>
+                        <input className={heroTextCls} value={airport.terminal} onChange={(e) => updateArrayItem(cipDraft, setCipDraft, idx, { terminal: e.target.value })} placeholder="ضلع غربی ترمینال" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-sub block mb-1">تعرفه بزرگسال (تومان)</label>
+                        <input className={heroTextCls} type="number" value={airport.basePriceAdult} onChange={(e) => updateArrayItem(cipDraft, setCipDraft, idx, { basePriceAdult: Number(e.target.value) || 0 })} placeholder="بزرگسال (تومان)" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-sub block mb-1">تعرفه همراه (تومان)</label>
+                        <input className={heroTextCls} type="number" value={airport.basePriceGuest} onChange={(e) => updateArrayItem(cipDraft, setCipDraft, idx, { basePriceGuest: Number(e.target.value) || 0 })} placeholder="همراه (تومان)" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-sub block mb-1">قرنطینه حیوان خانگی (تومان)</label>
+                        <input className={heroTextCls} type="number" value={airport.petServicePrice} onChange={(e) => updateArrayItem(cipDraft, setCipDraft, idx, { petServicePrice: Number(e.target.value) || 0 })} placeholder="حیوان (تومان)" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-sub block mb-1">سوئیت ۶ ساعته (تومان)</label>
+                        <input className={heroTextCls} type="number" value={airport.suite6hPrice} onChange={(e) => updateArrayItem(cipDraft, setCipDraft, idx, { suite6hPrice: Number(e.target.value) || 0 })} placeholder="سوئیت (تومان)" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {activeSiteTab === 'insurance' && (
+              <div className="space-y-3">
+                {insuranceDraft.map((plan, idx) => (
+                  <div key={plan.id || idx} className="p-3.5 rounded-2xl border border-line bg-soft/40 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black text-brand-dark flex items-center gap-1.5">
+                        <ShieldCheck size={12} className="text-emerald-600" />
+                        <span>بسته بیمه: {plan.companyId} • کمک‌رسان {plan.assistanceId} • سقف €{plan.coverageEur.toLocaleString()}</span>
+                      </span>
+                      {insuranceDraft.length > 1 && (
+                        <button type="button" onClick={() => setInsuranceDraft(insuranceDraft.filter((_, i) => i !== idx))} className="min-h-[44px] min-w-[44px] w-7 h-7 rounded-lg bg-rose-50 text-rose-600 grid place-items-center cursor-pointer" aria-label={`حذف طرح بیمه ${idx + 1}`}>
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      <div>
+                        <label className="text-[10px] text-sub block mb-1">شناسه شرکت بیمه</label>
+                        <input className={heroTextCls} value={plan.companyId} onChange={(e) => updateArrayItem(insuranceDraft, setInsuranceDraft, idx, { companyId: e.target.value })} placeholder="kowsar, razi, iran..." dir="ltr" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-sub block mb-1">شناسه کمک‌رسان</label>
+                        <input className={heroTextCls} value={plan.assistanceId} onChange={(e) => updateArrayItem(insuranceDraft, setInsuranceDraft, idx, { assistanceId: e.target.value })} placeholder="swiss_assist, remed..." dir="ltr" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-sub block mb-1">سقف تعهد (یورو)</label>
+                        <select className={heroTextCls} value={plan.coverageEur} onChange={(e) => updateArrayItem(insuranceDraft, setInsuranceDraft, idx, { coverageEur: Number(e.target.value) as 10000 | 30000 | 50000 })}>
+                          <option value={10000}>۱۰,۰۰۰ یورو</option>
+                          <option value={30000}>۳۰,۰۰۰ یورو</option>
+                          <option value={50000}>۵۰,۰۰۰ یورو (الزامی شنگن)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-sub block mb-1">تعرفه ۱ تا ۷ روز (تومان)</label>
+                        <input className={heroTextCls} type="number" value={plan.basePriceToman1to7Days} onChange={(e) => updateArrayItem(insuranceDraft, setInsuranceDraft, idx, { basePriceToman1to7Days: Number(e.target.value) || 0 })} placeholder="قیمت پایه (تومان)" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 

@@ -164,8 +164,8 @@ export default function EsimPage() {
           </div>
 
           {/* Quick Filter Chips for Destinations */}
-          <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
-            <span className="text-xs text-surface/80 font-bold">{lt(locale, { fa: 'مقاصد سفر:', en: 'Destinations:', ar: 'الوجهات:', zh: '目的地：', ru: 'Направления:' })}</span>
+          <div className="flex items-center justify-start sm:justify-center gap-1.5 pt-1 overflow-x-auto scrollbar-none snap-x touch-pan-x pb-1 max-sm:-mx-4 max-sm:px-4">
+            <span className="text-xs text-surface/80 font-bold shrink-0">{lt(locale, { fa: 'مقاصد سفر:', en: 'Destinations:', ar: 'الوجهات:', zh: '目的地：', ru: 'Направления:' })}</span>
             {COUNTRY_ORDER.map((id) => (
               <button
                 key={`esim-c-${id}`}
@@ -175,7 +175,7 @@ export default function EsimPage() {
                   const name = countryName(id, locale);
                   setQuery(name);
                 }}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer ${
+                className={`shrink-0 snap-start min-h-[36px] px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer ${
                   country === id
                     ? 'bg-action text-ink font-black shadow-xs'
                     : 'bg-surface/20 hover:bg-surface/30 text-surface'
@@ -251,7 +251,7 @@ export default function EsimPage() {
               <button
                 type="button"
                 onClick={() => setSimTypeTab('all')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
+                className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
                   simTypeTab === 'all'
                     ? 'bg-brand text-surface shadow-xs'
                     : 'text-sub hover:text-ink'
@@ -262,7 +262,7 @@ export default function EsimPage() {
               <button
                 type="button"
                 onClick={() => setSimTypeTab('esim')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+                className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
                   simTypeTab === 'esim'
                     ? 'bg-brand text-surface shadow-xs'
                     : 'text-sub hover:text-ink'
@@ -274,7 +274,7 @@ export default function EsimPage() {
               <button
                 type="button"
                 onClick={() => setSimTypeTab('physical')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+                className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
                   simTypeTab === 'physical'
                     ? 'bg-brand text-surface shadow-xs'
                     : 'text-sub hover:text-ink'
@@ -487,12 +487,12 @@ export default function EsimPage() {
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <div className="flex items-center gap-2">
                 <Smartphone size={20} className="text-brand-dark" />
-                <h3 className="font-black text-base text-ink">دستگاه‌های پشتیبانی‌کننده از eSIM</h3>
+                <h3 className="font-black text-base text-ink">{lt(locale, { fa: 'دستگاه‌های پشتیبانی‌کننده از eSIM', en: 'eSIM-Compatible Devices', ar: 'الأجهزة المتوافقة مع eSIM', zh: '支持 eSIM 的设备', ru: 'Устройства с поддержкой eSIM' })}</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setCompatibilityModal(false)}
-                className="w-8 h-8 rounded-full bg-soft text-sub grid place-items-center"
+                className="min-w-[44px] min-h-[44px] -me-2 -mt-2 rounded-full bg-soft text-sub grid place-items-center"
               >
                 <X size={16} />
               </button>
@@ -520,7 +520,7 @@ export default function EsimPage() {
               onClick={() => setCompatibilityModal(false)}
               className="w-full h-11 rounded-xl bg-brand text-surface font-black text-xs transition"
             >
-              متوجه شدم
+              {lt(locale, { fa: 'متوجه شدم', en: 'Got it', ar: 'حسناً', zh: '知道了', ru: 'Понятно' })}
             </button>
           </div>
         </div>

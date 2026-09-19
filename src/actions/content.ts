@@ -24,21 +24,6 @@ async function checkAdminAuth(): Promise<boolean> {
   try {
     const session = await safeAuth();
     if (session?.user?.id) {
-      const role = session.user.role || '';
-      if (
-        role === 'SUPER_ADMIN' ||
-        role === 'ADMIN' ||
-        role === 'OPERATOR' ||
-        role === 'OPS' ||
-        role === 'FINANCE'
-      ) {
-        return true;
-      }
-      const { isKnownAdminIdentifier } = await import('@/auth');
-      if (session.user.email && isKnownAdminIdentifier(session.user.email)) {
-        return true;
-      }
-
       const { hasErpRole } = await import('@/domains/identity/permission-service');
       const hasRole = await hasErpRole(session.user.id);
       if (hasRole) return true;
@@ -66,6 +51,8 @@ function revalidateContentPaths() {
   revalidatePath('/[locale]/tours/[id]', 'page');
   revalidatePath('/[locale]/transfers', 'page');
   revalidatePath('/[locale]/visa', 'page');
+  revalidatePath('/[locale]/cip', 'page');
+  revalidatePath('/[locale]/insurance', 'page');
   revalidatePath('/[locale]/destinations', 'page');
   revalidatePath('/[locale]/travelogues', 'page');
   revalidatePath('/[locale]/guide', 'page');
