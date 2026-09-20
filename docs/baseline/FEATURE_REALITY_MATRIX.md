@@ -3,7 +3,7 @@
 **Latest Release Tag:** `v1.8.4` (`de150f55ab67`)  
 **Current Main Branch HEAD:** `48998aff8831` (`feat(evidence): canonical release identity, a11y remediation 32->3, unified cart & capability registry`) — 2 commits ahead of the v1.8.4 tag (unreleased development state)  
 **Current Live Deployment:** `1.8.4` on commit `f6c16800a60059f0142b47d9367a9023e5aa28ff` (deployed from main @ `f6c1680`; `48998af` pending push → CI → Vercel deploy)  
-**Audit Date:** 2026-09-19  
+**Audit Date:** 2026-09-20  
 **Authoritative Baseline:** v1.8.5 / `de150f5` (Release) / `48998af` (Main, unreleased) / `f6c1680` (Live)  
 **Supersedes:** `FEATURE_REALITY_MATRIX.md` (v1.8.3 / `c496370`)  
 
@@ -15,7 +15,7 @@
 
 - **Runtime & Framework:** Node.js 22.x · Next.js 16.3.4 (App Router) · React 19.2.8 · TypeScript 5 · Tailwind CSS v4
 - **Database & Persistence:** Prisma 5.22.0 · **78 Relational Models** · **34 Migrations** (PostgreSQL 16 canonical, zero SQLite drift)
-- **Unit & Domain Tests:** 164 test files / **1,126 verified tests** (100% passing across domain, observability, portability and UI suites — source: `docs/baseline/quality-report.json`)
+- **Unit & Domain Tests:** 164 test files / **1,130 verified tests** (100% passing across domain, observability, portability and UI suites — source: `docs/baseline/quality-report.json`)
 - **E2E Test Specifications:** 33 Playwright test suites in `tests/*.spec.ts` (golden journeys, mobile journeys, security, a11y)
 - **Internationalization:** 5 supported languages (`fa`, `en`, `ar`, `zh`, `ru`) with 100% key parity enforced via `scripts/i18n-completeness-gate.mjs`
 - **Design System & Primitives:** Semantic tokens (`text-ink`, `text-sub`, `bg-surface`, `bg-brand`, `bg-action`), Shadcn primitives, glassmorphism, responsive 320px–1440px

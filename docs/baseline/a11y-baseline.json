@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-20T07:02:28.250Z",
-  "commit": "289ee609bd31407c23ff6e42d9d98f5efb1e1654",
+  "generatedAt": "2026-09-20T07:17:49.627Z",
+  "commit": "f323abdc2b101ed54b78fa7a38536b91c15f3731",
   "version": "1.8.5",
   "baseUrl": "http://localhost:3000",
   "failImpacts": [
@@ -40,7 +40,7 @@
       "violationCount": 0,
       "failingNodeCount": 0,
       "byRule": [],
-      "passes": 32
+      "passes": 27
     },
     "fa:flights": {
       "url": "http://localhost:3000/fa/flights",
