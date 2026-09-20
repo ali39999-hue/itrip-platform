@@ -20,7 +20,7 @@
 - **Internationalization:** 5 supported languages (`fa`, `en`, `ar`, `zh`, `ru`) with 100% key parity enforced via `scripts/i18n-completeness-gate.mjs`
 - **Design System & Primitives:** Semantic tokens (`text-ink`, `text-sub`, `bg-surface`, `bg-brand`, `bg-action`), Shadcn primitives, glassmorphism, responsive 320px–1440px
 - **Capability Registry:** `src/lib/capabilities/index.ts` (45 tracked capabilities) controlling customer-facing claim states
-- **Live Deployment State:** `https://itrip-platform.vercel.app/` running verified version `1.8.5` on commit `024108085a94` (ALIGNED), probed live via `/api/version`, `/api/health/live`, `/api/capabilities` — measured by scripts/verify-release-consistency.mjs at 2026-09-19T18:37:57.662Z
+- **Live Deployment State:** `https://itrip-platform.vercel.app/` running verified version `1.8.5` on commit `584ed38e9631` (ALIGNED), probed live via `/api/version`, `/api/health/live`, `/api/capabilities` — measured by scripts/verify-release-consistency.mjs at 2026-09-20T07:36:08.250Z
 
 ---
 
