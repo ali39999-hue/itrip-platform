@@ -7,7 +7,7 @@
  * Dependency-free; accepts Persian or Latin digits everywhere.
  * (Adapted from the vibefarsi.ir component registry, MIT-style copy-in.)
  */
-import { toAsciiDigits, toPersianDigits, validateNationalId } from "./iranian-commerce";
+import { toAsciiDigits, toPersianDigits, validateNationalId, getShetabBank, validateShetabCard } from "./iranian-commerce";
 
 /** Latin digits for storage/validation: «۱۲۳»/«+۹۸…» → ASCII. */
 export const en = toAsciiDigits;
@@ -81,4 +81,33 @@ export function ibanBank(input: string): string | null {
 /** «ملت» → «بانک ملت»; names that already carry بانک/مؤسسه («پست بانک», «مؤسسه ملل») are left alone. */
 export function bankLabel(name: string): string {
   return /بانک|مؤسسه/.test(name) ? name : `بانک ${name}`;
+}
+
+/* ---------- card ---------- */
+
+/** 16 Latin digits at most; Persian digits, spaces and dashes are stripped. */
+export function normalizeCardNumber(input: string): string {
+  return en(input).replace(/\D/g, "").slice(0, 16);
+}
+
+/** «۶۰۳۷ ۹۹۱۱ ۲۲۳۳ ۴۴۵۵» — Persian digits, four groups. */
+export function formatCardNumber(input: string): string {
+  const d = normalizeCardNumber(input);
+  return fa(d.replace(/(.{4})/g, "$1 ").trim());
+}
+
+/** Bank name from the first six digits of the card, or null while fewer than six are typed / unknown. */
+export function cardBank(input: string): string | null {
+  const bank = getShetabBank(input);
+  return bank ? bank.nameFa : null;
+}
+
+/** Luhn check for 16-digit bank cards. */
+export function isCardNumber(input: string): boolean {
+  return validateShetabCard(input).isValid;
+}
+
+/** Format percentage: 50 -> «۵۰٪» */
+export function faPercent(n: number | string): string {
+  return `${fa(n)}٪`;
 }

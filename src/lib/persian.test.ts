@@ -3,6 +3,7 @@ import {
   en,
   fa,
   faNumber,
+  faPercent,
   normalizeNationalId,
   formatNationalId,
   isNationalId,
@@ -11,6 +12,10 @@ import {
   formatIban,
   ibanBank,
   bankLabel,
+  normalizeCardNumber,
+  formatCardNumber,
+  cardBank,
+  isCardNumber,
 } from './persian';
 
 describe('persian.ts — digits', () => {
@@ -67,5 +72,32 @@ describe('persian.ts — شبا (IBAN mod-97)', () => {
     expect(ibanBank(VALID)).toBe('ملی');
     expect(bankLabel('ملت')).toBe('بانک ملت');
     expect(bankLabel('پست بانک')).toBe('پست بانک');
+  });
+});
+
+describe('persian.ts — کارت بانکی شتاب (Luhn & BIN)', () => {
+  // Mellat test card passing Luhn:
+  const MELLAT = '6104337812345674';
+
+  it('detects issuing bank from 6-digit BIN', () => {
+    expect(cardBank('6037991234567890')).toBe('بانک ملی ایران');
+    expect(cardBank('6219861234567890')).toBe('بانک سامان');
+    expect(cardBank(MELLAT)).toBe('بانک ملت');
+    expect(cardBank('123456')).toBeNull();
+  });
+
+  it('validates 16-digit card via Luhn algorithm', () => {
+    expect(isCardNumber(MELLAT)).toBe(true);
+    expect(isCardNumber('6104337812345675')).toBe(false); // wrong checksum
+    expect(isCardNumber('610433')).toBe(false); // short
+  });
+
+  it('normalizes and formats into 4-digit Persian groups', () => {
+    expect(normalizeCardNumber('۶۱۰۴-۳۳۷۸-۱۲۳۴-۵۶۷۴')).toBe(MELLAT);
+    expect(formatCardNumber(MELLAT)).toBe('۶۱۰۴ ۳۳۷۸ ۱۲۳۴ ۵۶۷۴');
+  });
+
+  it('formats percentages with Persian digits and sign', () => {
+    expect(faPercent(50)).toBe('۵۰٪');
   });
 });

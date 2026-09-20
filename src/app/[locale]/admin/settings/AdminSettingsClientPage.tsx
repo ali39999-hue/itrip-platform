@@ -9,6 +9,7 @@ import {
 import { lt } from '@/lib/lt';
 import { Input } from '@/components/ui/input';
 import { IbanInput } from '@/components/ui/iban-input';
+import { CardNumberInput } from '@/components/ui/card-number-input';
 import { ErpBadge, ErpPageHeader } from '@/components/admin/erp-ui';
 import {
   saveSmsSettingsAction,
@@ -553,12 +554,16 @@ export function AdminSettingsClientPage({
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-sub mb-1">شماره ۱۶ رقمی کارت</label>
-                      <Input
-                        required
+                      {/* Live 4-digit formatting + Luhn validation + bank detection (vibefarsi pattern). */}
+                      <CardNumberInput
                         value={newCard.cardNumber}
-                        onChange={(e) => setNewCard({ ...newCard, cardNumber: e.target.value })}
-                        placeholder="62198610..."
-                        className="font-mono text-xs h-10 rounded-xl"
+                        onChange={(digits, _valid, bank) => {
+                          setNewCard((prev) => ({
+                            ...prev,
+                            cardNumber: digits,
+                            bankName: prev.bankName || (bank ? `بانک ${bank}` : ''),
+                          }));
+                        }}
                       />
                     </div>
                   </div>
