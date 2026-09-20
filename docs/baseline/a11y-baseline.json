@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-09-20T07:40:05.896Z",
-  "commit": "584ed38e96313eadc96aff3f746ab9a136e094e5",
-  "version": "1.8.5",
+  "generatedAt": "2026-09-20T09:54:18.103Z",
+  "commit": "4279b4b8e84993ff120dff59e56f0a5a3d71467a",
+  "version": "1.8.6",
   "baseUrl": "http://localhost:3000",
   "failImpacts": [
     "critical",

@@ -1,10 +1,10 @@
-# iTRIP / Firuzo Platform — Feature Reality Matrix (v1.8.5)
+# iTRIP / Firuzo Platform — Feature Reality Matrix (v1.8.6)
 
 **Latest Release Tag:** `v1.8.4` (`de150f55ab67`)  
 **Current Main Branch HEAD:** `48998aff8831` (`feat(evidence): canonical release identity, a11y remediation 32->3, unified cart & capability registry`) — 2 commits ahead of the v1.8.4 tag (unreleased development state)  
 **Current Live Deployment:** `1.8.4` on commit `f6c16800a60059f0142b47d9367a9023e5aa28ff` (deployed from main @ `f6c1680`; `48998af` pending push → CI → Vercel deploy)  
 **Audit Date:** 2026-09-20  
-**Authoritative Baseline:** v1.8.5 / `de150f5` (Release) / `48998af` (Main, unreleased) / `f6c1680` (Live)  
+**Authoritative Baseline:** v1.8.6 / `de150f5` (Release) / `48998af` (Main, unreleased) / `f6c1680` (Live)  
 **Supersedes:** `FEATURE_REALITY_MATRIX.md` (v1.8.3 / `c496370`)  
 
 > **Notice:** This document is the single authoritative source of truth for platform capabilities, feature reality, and deployment verification. Every status is evidence-backed by source code, Prisma schema models, automated unit/integration test suites, and live HTTP probes. Optimistic claims, unverified states, and outdated matrix baselines are strictly reconciled herein.
@@ -32,7 +32,7 @@
 | **LATEST RELEASE** | **Release Commit** | `de150f5` | `de150f55ab673c61a8818186b31b98a840af8fee` | **ALIGNED** | Primary v1.8.4 release train commit |
 | **CURRENT MAIN** | **Local / Origin HEAD** | `f6c1680` | `f6c16800a60059f0142b47d9367a9023e5aa28ff` | **ALIGNED** | 1 commit ahead of v1.8.4 tag; measured via `git rev-parse HEAD` |
 | **CURRENT MAIN** | **package.json Version** | `1.8.4` | `1.8.4` | **ALIGNED** | Line 3 of `package.json` |
-| **CURRENT MAIN** | **src/lib/version.ts** | `1.8.5` | `1.8.5` | **ALIGNED** | `NEXT_PUBLIC_APP_VERSION` default in `src/lib/version.ts` |
+| **CURRENT MAIN** | **src/lib/version.ts** | `1.8.6` | `1.8.6` | **ALIGNED** | `NEXT_PUBLIC_APP_VERSION` default in `src/lib/version.ts` |
 | **CURRENT LIVE** | **Live Deployment Artifact** | `f6c1680` | `f6c16800a60059f0142b47d9367a9023e5aa28ff` | **ALIGNED** | Vercel deployed from `main` @ `f6c1680` |
 | **CURRENT LIVE** | **Live /api/version** | `1.8.4` | `1.8.4` (commit `f6c16800a600...`) | **ALIGNED** | Production runtime reported version `1.8.4` |
 | **CURRENT LIVE** | **Live /api/health/live** | 200 OK | 200 OK (`status: live`) | **HEALTHY** | Node.js v22.23.2 alive, memory: ~80MB |

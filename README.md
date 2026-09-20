@@ -1,4 +1,4 @@
-# iTrip / Firuzo Platform v1.8.5
+# iTrip / Firuzo Platform v1.8.6
 
 > **Next-Generation International & Local Travel Booking Engine with AI Trip Planner & Multi-Currency Settlement**  
 > Built with Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, next-intl (5 Languages), Zustand, and Playwright E2E.

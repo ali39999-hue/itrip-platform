@@ -130,7 +130,7 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    unoptimized: process.env.NEXT_IMAGE_UNOPTIMIZED === 'true',
+    unoptimized: process.env.VERCEL ? false : true,
     formats: ['image/avif', 'image/webp'],
     dangerouslyAllowLocalIP: isDev,
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384, 512, 800],
@@ -142,7 +142,15 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: '*.unsplash.com',
+      },
+      {
+        protocol: 'https',
         hostname: 'upload.wikimedia.org',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.wikimedia.org',
       },
       {
         protocol: 'https',
@@ -150,7 +158,15 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: '*.alibaba.ir',
+      },
+      {
+        protocol: 'https',
         hostname: 'cdn.grschannel.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.grschannel.com',
       },
       {
         protocol: 'https',
@@ -158,7 +174,31 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: '*.eghamat24.com',
+      },
+      {
+        protocol: 'https',
         hostname: 'ak-d.tripcdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.tripcdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.trip.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.trip.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ecardo.ir',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.ecardo.ir',
       },
     ],
   },
@@ -186,7 +226,7 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             // 'wasm-unsafe-eval' is required by the local passport-OCR engine
             // (tesseract.js WASM, served from /ocr/); it does not re-enable JS eval.
-            value: `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'${isDev ? " 'unsafe-eval'" : ''} 'unsafe-inline' https://va.vercel-scripts.com https://call.firuzo.online https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://images.unsplash.com https://upload.wikimedia.org https://cdn.alibaba.ir https://cdn.grschannel.com https://www.eghamat24.com https://ak-d.tripcdn.com https://*.tile.openstreetmap.org https://call.firuzo.online https://ecardo.ir https://api.ecardo.ir; connect-src 'self' https://vitals.vercel-insights.com https://call.firuzo.online https://*.google-analytics.com https://ecardo.ir https://api.ecardo.ir; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://ecardo.ir https://api.ecardo.ir;`,
+            value: `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'${isDev ? " 'unsafe-eval'" : ''} 'unsafe-inline' https://va.vercel-scripts.com https://call.firuzo.online https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://images.unsplash.com https://*.unsplash.com https://upload.wikimedia.org https://*.wikimedia.org https://cdn.alibaba.ir https://*.alibaba.ir https://cdn.grschannel.com https://*.grschannel.com https://www.eghamat24.com https://*.eghamat24.com https://ak-d.tripcdn.com https://*.tripcdn.com https://www.trip.com https://*.trip.com https://*.tile.openstreetmap.org https://call.firuzo.online https://ecardo.ir https://*.ecardo.ir https://api.ecardo.ir; connect-src 'self' https://vitals.vercel-insights.com https://call.firuzo.online https://*.google-analytics.com https://ecardo.ir https://api.ecardo.ir; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://ecardo.ir https://api.ecardo.ir;`,
           },
         ],
       },

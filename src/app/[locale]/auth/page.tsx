@@ -9,7 +9,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { CheckCircle2, Loader2, Lock, LogIn, Mail, Phone, Send, MessageCircle, QrCode, MessageSquare, User, KeyRound } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { Logo } from '@/components/layout/Logo';
-import { OtpPinInput } from '@/components/ui/OtpPinInput';
+import { OtpField } from '@/components/ui/otp-field';
 import { AuthChannel, requestOtp, getAuthCapabilities, checkEmailRegistration, getSessionUser } from '@/actions/auth';
 import type { TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
 
@@ -1032,8 +1032,8 @@ export default function AuthPage() {
                 </label>
 
                 {/* 4-digit PIN Boxes for Phone, or 6-digit for other channels */}
-                <div className="my-2">
-                  <OtpPinInput
+                <div className="my-2 flex justify-center" dir="ltr">
+                  <OtpField
                     length={channel === 'phone' ? 4 : 6}
                     value={otp}
                     onChange={(val) => {
@@ -1041,14 +1041,14 @@ export default function AuthPage() {
                       if (error) setError('');
                     }}
                     onComplete={() => {
-                      // Automatically trigger verify when all 4 digits are filled
+                      // Automatically trigger verify when all digits are filled
                       setTimeout(() => {
                         const btn = document.getElementById('auth-verify-btn');
                         btn?.click();
                       }, 100);
                     }}
                     disabled={loading}
-                    autoFocus={true}
+                    size="md"
                   />
                 </div>
                 

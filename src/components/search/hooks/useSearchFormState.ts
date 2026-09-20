@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { useCountryStore } from '@/stores/country-store';
 import { COUNTRIES, type CountryId } from '@/lib/countries';
+import { daysFromNow } from '@/lib/utils';
 import { SEARCH_TABS, type SearchTabId } from '../SearchModeTabs';
 
 const ROUTES: Record<SearchTabId, string> = {
@@ -45,8 +46,8 @@ export function useSearchFormState(initialTab: SearchTabId = 'flights') {
   const [query, setQuery] = useState('');
   const [dest, setDest] = useState(initialTab === 'hotels' ? defaultHotelCity : defaultFrom);
   const [routeTo, setRouteTo] = useState(defaultTo);
-  const [date1, setDate1] = useState('2026-09-22');
-  const [date2, setDate2] = useState(initialTab === 'hotels' ? '2026-09-26' : '');
+  const [date1, setDate1] = useState(daysFromNow(2));
+  const [date2, setDate2] = useState(initialTab === 'hotels' ? daysFromNow(6) : '');
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
   const [rooms, setRooms] = useState(1);
@@ -88,7 +89,7 @@ export function useSearchFormState(initialTab: SearchTabId = 'flights') {
     if (newTab === 'hotels' || newTab === 'tours') {
       setDest(hotelDest);
       if (!date2) {
-        setDate2('2026-09-26');
+        setDate2(daysFromNow(6));
       }
     } else if (newTab === 'flights') {
       setDest(origin);

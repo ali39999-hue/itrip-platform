@@ -1,7 +1,8 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { Check } from 'lucide-react';
+import { fa } from '@/lib/persian';
 
 export type CheckoutPhase = 'passengers' | 'payment' | 'issuing' | 'success';
 
@@ -17,6 +18,7 @@ const STEPS = [
 
 export function CheckoutStepper({ phase }: CheckoutStepperProps) {
   const t = useTranslations('Checkout');
+  const locale = useLocale();
   const phaseIdx = phase === 'passengers' ? 0 : phase === 'payment' ? 1 : 2;
   const currentStepNum = phase === 'success' ? 3 : phaseIdx + 1;
 
@@ -62,7 +64,7 @@ export function CheckoutStepper({ phase }: CheckoutStepperProps) {
                         : 'bg-surface border-2 border-line text-sub'
                     }`}
                   >
-                    {isDone ? <Check size={18} aria-hidden="true" /> : step.num}
+                    {isDone ? <Check size={18} aria-hidden="true" /> : (locale === 'fa' ? fa(step.num) : step.num)}
                   </div>
                   <span
                     className={`mt-2 text-[11.5px] sm:text-[13px] font-bold text-center ${

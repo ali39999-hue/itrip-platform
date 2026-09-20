@@ -47,9 +47,17 @@ export function JalaliDatePicker({
   const locale = useLocale();
   const isFa = locale === 'fa';
 
-  // Convert incoming string (YYYY-MM-DD) to DateObject in local time without UTC rollback
-  const parsedDate = value ? new Date(value.includes('T') ? value : `${value}T00:00:00`) : undefined;
-  const dateObj = parsedDate && !Number.isNaN(parsedDate.getTime()) ? parsedDate : undefined;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const effectiveMinDate = minDate !== undefined ? minDate : today;
+
+  // Convert incoming string (YYYY-MM-DD) to DateObject in local time without UTC rollback.
+  // Guard against stale past dates: clamp any past date to today.
+  const rawDate = value ? new Date(value.includes('T') ? value : `${value}T00:00:00`) : undefined;
+  const parsedDate = rawDate && !Number.isNaN(rawDate.getTime())
+    ? (rawDate < today && effectiveMinDate ? today : rawDate)
+    : undefined;
+  const dateObj = parsedDate;
 
   const defaultPlaceholder = locale === 'fa'
     ? 'انتخاب تاریخ'
@@ -172,7 +180,7 @@ export function JalaliDatePicker({
                   }}
                   calendar={isFa ? persian : gregorian}
                   locale={getLocale()}
-                  minDate={minDate}
+                  minDate={effectiveMinDate}
                   maxDate={maxDate}
                   format={format || (isFa ? 'YYYY/MM/DD' : 'YYYY-MM-DD')}
                   className="rmdp-mobile-sheet"
@@ -201,7 +209,7 @@ export function JalaliDatePicker({
           calendar={isFa ? persian : gregorian}
           locale={getLocale()}
           calendarPosition="bottom-center"
-          minDate={minDate}
+          minDate={effectiveMinDate}
           maxDate={maxDate}
           containerClassName="w-full"
           inputClass="w-full bg-transparent border-0 outline-0 p-0 text-base md:text-[13px] font-bold text-ink cursor-pointer placeholder:text-sub focus:ring-0 leading-tight"

@@ -11,6 +11,7 @@ import type { CipAirportOption } from '@/lib/types';
 import type { FlightDirection, CipSuiteType } from '@/lib/validations';
 import { Sheet, SheetContent } from '@/components/ui/Sheet';
 import { lt } from '@/lib/lt';
+import { num } from '@/lib/format';
 import {
   Crown,
   PlaneTakeoff,
@@ -482,7 +483,7 @@ export default function CipPage() {
                       >
                         <Minus className="w-4 h-4" />
                       </button>
-                      <span className="font-bold text-base w-6 text-center font-price">{adults}</span>
+                      <span className="font-bold text-base w-6 text-center font-price num">{num(adults, locale)}</span>
                       <button
                         onClick={() => setAdults((prev) => Math.min(20, prev + 1))}
                         className="w-10 h-10 rounded-lg border border-border bg-surface flex items-center justify-center text-ink min-h-[44px] min-w-[44px] touch-target active:scale-95"
@@ -508,7 +509,7 @@ export default function CipPage() {
                       >
                         <Minus className="w-4 h-4" />
                       </button>
-                      <span className="font-bold text-base w-6 text-center font-price">{children}</span>
+                      <span className="font-bold text-base w-6 text-center font-price num">{num(children, locale)}</span>
                       <button
                         onClick={() => setChildren((prev) => Math.min(10, prev + 1))}
                         className="w-10 h-10 rounded-lg border border-border bg-surface flex items-center justify-center text-ink min-h-[44px] min-w-[44px] touch-target active:scale-95"
@@ -534,7 +535,7 @@ export default function CipPage() {
                       >
                         <Minus className="w-4 h-4" />
                       </button>
-                      <span className="font-bold text-base w-6 text-center font-price">{infants}</span>
+                      <span className="font-bold text-base w-6 text-center font-price num">{num(infants, locale)}</span>
                       <button
                         onClick={() => setInfants((prev) => Math.min(5, prev + 1))}
                         className="w-10 h-10 rounded-lg border border-border bg-surface flex items-center justify-center text-ink min-h-[44px] min-w-[44px] touch-target active:scale-95"

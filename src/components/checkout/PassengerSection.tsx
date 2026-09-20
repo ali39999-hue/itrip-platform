@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Controller, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { type Passenger } from '@/lib/validations';
 import { Input } from '@/components/ui/input';
+import { NationalIdInput } from '@/components/ui/national-id-input';
 import { JalaliWheelDatePicker } from '@/components/ui/JalaliWheelDatePicker';
 import { CheckCircle2, BookmarkPlus, ScanLine, Loader2, ChevronDown } from 'lucide-react';
 import { useLocale } from 'next-intl';
@@ -279,14 +280,17 @@ export function PassengerSection({
               : lt(locale, { fa: 'کد ملی / شناسه هویتی', en: 'National ID / Tax Code', ar: 'الرقم الوطني / الهوية', zh: '身份证件号码', ru: 'ИИН / Идентификационный номер' })}
             {hidePassport && <span className="text-rose-warm"> *</span>}
           </label>
-          <Input
-            id="nationalId"
-            {...register('nationalId')}
-            placeholder={lt(locale, { fa: 'مثلاً: ۰۰۱۲۳۴۵۶۷۸', en: 'e.g. 0012345678', ar: 'مثلاً: 0012345678', zh: '例如: 0012345678', ru: 'например: 0012345678' })}
-            dir="ltr"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            className="text-start font-mono font-bold"
+          <Controller
+            control={control}
+            name="nationalId"
+            render={({ field }) => (
+              <NationalIdInput
+                id="nationalId"
+                value={field.value || ''}
+                onChange={(digits) => field.onChange(digits)}
+                disabled={field.disabled}
+              />
+            )}
           />
           {errors.nationalId && (
             <span className="text-rose-warm text-[11px] font-bold mt-1 block">

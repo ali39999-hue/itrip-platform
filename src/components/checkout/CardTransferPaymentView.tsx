@@ -429,13 +429,14 @@ export function CardTransferPaymentView({
                       e.stopPropagation();
                       copyToClipboard(card.cardNumber, `card_${card.id}`);
                     }}
-                    className="p-1 rounded-lg hover:bg-soft text-sub hover:text-brand transition"
-                    title="کپی شماره کارت"
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-soft text-sub hover:text-brand transition active:scale-95"
+                    aria-label={lt(locale, { fa: 'کپی شماره کارت', en: 'Copy card number', ar: 'نسخ رقم البطاقة', zh: '复制卡号', ru: 'Скопировать номер карты' })}
+                    title={lt(locale, { fa: 'کپی شماره کارت', en: 'Copy card number', ar: 'نسخ رقم البطاقة', zh: '复制卡号', ru: 'Скопировать номер карты' })}
                   >
                     {copiedField === `card_${card.id}` ? (
-                      <CheckCircle2 size={15} className="text-success" />
+                      <CheckCircle2 size={16} className="text-success" />
                     ) : (
-                      <Copy size={15} />
+                      <Copy size={16} />
                     )}
                   </button>
                 </div>
@@ -452,13 +453,14 @@ export function CardTransferPaymentView({
                         e.stopPropagation();
                         copyToClipboard(card.iban!, `iban_${card.id}`);
                       }}
-                      className="p-1 rounded-lg hover:bg-soft text-sub hover:text-brand transition shrink-0"
-                      title="کپی شماره شبا"
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-soft text-sub hover:text-brand transition shrink-0 active:scale-95"
+                      aria-label={lt(locale, { fa: 'کپی شماره شبا', en: 'Copy IBAN', ar: 'نسخ رقم الآيبان', zh: '复制IBAN', ru: 'Скопировать IBAN' })}
+                      title={lt(locale, { fa: 'کپی شماره شبا', en: 'Copy IBAN', ar: 'نسخ رقم الآيبان', zh: '复制IBAN', ru: 'Скопировать IBAN' })}
                     >
                       {copiedField === `iban_${card.id}` ? (
-                        <CheckCircle2 size={13} className="text-success" />
+                        <CheckCircle2 size={15} className="text-success" />
                       ) : (
-                        <Copy size={13} />
+                        <Copy size={15} />
                       )}
                     </button>
                   </div>

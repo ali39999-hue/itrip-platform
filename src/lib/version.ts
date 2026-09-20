@@ -11,7 +11,7 @@
  *   - Quality Report & Reality Matrix
  */
 
-export const NEXT_PUBLIC_APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || '1.8.5';
+export const NEXT_PUBLIC_APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || '1.8.6';
 export const NEXT_PUBLIC_COMMIT_SHA =
   process.env.NEXT_PUBLIC_COMMIT_SHA ||
   process.env.VERCEL_GIT_COMMIT_SHA ||

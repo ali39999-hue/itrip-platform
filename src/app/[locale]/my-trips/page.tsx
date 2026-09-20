@@ -445,7 +445,7 @@ export default function MyTripsPage() {
                 return (
                   <article
                     key={b.id}
-                    className="bg-surface rounded-xl shadow-elev-1 hover:shadow-elev-2 transition-shadow border border-line overflow-hidden flex flex-col md:flex-row group"
+                    className="bg-surface rounded-2xl shadow-elev-1 hover:shadow-elev-2 active:scale-[0.99] transition-all border border-line/80 overflow-hidden flex flex-col md:flex-row group"
                   >
                     <div className="md:w-1/3 relative h-48 md:h-auto overflow-hidden bg-soft">
                       <Image

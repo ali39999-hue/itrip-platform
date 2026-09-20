@@ -14,6 +14,7 @@ import { isKycDataComplete } from '@/lib/kyc-wizard';
 import { AccountSidebar } from '@/components/account/AccountSidebar';
 import { PushNotificationAsk } from '@/components/account/PushNotificationAsk';
 import { KycCompletionSheet } from '@/components/account/KycCompletionSheet';
+import { NationalIdInput } from '@/components/ui/national-id-input';
 import {
   UserRound,
   Wallet,
@@ -662,15 +663,9 @@ export default function AccountPage() {
                   {lt(locale, { fa: 'کد ملی (برای تکمیل احراز هویت)', en: 'National ID (required to verify)', ar: 'الرقم الوطني (لإكمال التحقق)', zh: '身份证号（用于完成验证）', ru: 'Нац. ID (для верификации)' })}
                   <span className="text-rose-500"> *</span>
                 </label>
-                <input
-                  type="text"
-                  dir="ltr"
-                  inputMode="numeric"
-                  maxLength={10}
+                <NationalIdInput
                   value={formState.nationalId}
-                  placeholder="0012345678"
-                  onChange={(e) => setFormState({ ...formState, nationalId: e.target.value })}
-                  className="w-full h-11 rounded-xl border border-line px-3 text-sm font-bold font-mono bg-surface"
+                  onChange={(digits) => setFormState({ ...formState, nationalId: digits })}
                 />
               </div>
 

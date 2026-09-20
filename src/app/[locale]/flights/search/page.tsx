@@ -30,6 +30,7 @@ import {
 import { AirlineLogo } from '@/components/flights/AirlineLogo';
 import { CrossSellBundle } from '@/components/shared/CrossSellBundle';
 import { CapabilityBadge } from '@/components/ui/CapabilityBadge';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { trackFunnel } from '@/lib/analytics';
 
 /** Live-supplier overlay meta returned by /api/flights/search (null = static catalog). */
@@ -1225,23 +1226,31 @@ function FlightSearchInner() {
               </button>
             </div>
           ) : flights.length === 0 ? (
-            <div className="bg-surface rounded-2xl border border-line p-14 text-center">
-              <PlaneTakeoff size={32} className="mx-auto text-line mb-3" />
-              <p className="text-sub font-bold text-sm">{t('noFlightsFound')}</p>
-              <div className="mt-4 flex items-center justify-center gap-4">
-                <button onClick={clearAll} className="text-brand-dark text-[13px] font-black hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded">
-                  {t('clearFilters')}
-                </button>
-                {searchFiltered && (
-                  <button
-                    onClick={() => router.push('/flights/search')}
-                    className="text-brand-dark text-[13px] font-black hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded"
-                  >
-                    {lt(locale, { fa: 'جستجوی همه مسیرها', en: 'Search all routes', ar: 'البحث في كل المسارات', zh: '搜索全部航线', ru: 'Искать все направления' })}
-                  </button>
-                )}
-              </div>
-            </div>
+            <EmptyState
+              icon={PlaneTakeoff}
+              title={t('noFlightsFound')}
+              description={lt(locale, {
+                fa: 'پروازی با فیلترهای انتخابی شما یافت نشد. می‌توانید فیلترها را ریست کنید یا در تمامی مسیرها جستجو نمایید.',
+                en: 'No flights found matching your selected criteria. You can clear your filters or search across all routes.',
+                ar: 'لم يتم العثور على رحلات مطابقة لمعاييرك. يمكنك مسح الفلاتر أو البحث في كافة المسارات.',
+                zh: '未找到符合所选条件的航班。您可以清除筛选或搜索全部航线。',
+                ru: 'По заданным параметрам рейсов не найдено. Вы можете сбросить фильтры или искать по всем направлениям.',
+              })}
+              actionText={t('clearFilters')}
+              onAction={clearAll}
+              secondaryActionText={
+                searchFiltered
+                  ? lt(locale, {
+                      fa: 'جستجوی همه مسیرها',
+                      en: 'Search all routes',
+                      ar: 'البحث في كل المسارات',
+                      zh: '搜索全部航线',
+                      ru: 'Искать все направления',
+                    })
+                  : undefined
+              }
+              onSecondaryAction={searchFiltered ? () => router.push('/flights/search') : undefined}
+            />
           ) : (
             <div className="flex flex-col gap-4">
               {flights.map((f, idx) => (

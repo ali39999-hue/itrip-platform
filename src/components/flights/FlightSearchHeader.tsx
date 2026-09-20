@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { PlaneTakeoff, PlaneLanding, ArrowLeftRight, Search, X } from 'lucide-react';
+import { PlaneTakeoff, PlaneLanding, ArrowLeftRight, Search, X, Plane } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { useCountryStore } from '@/stores/country-store';
@@ -111,7 +111,27 @@ export function FlightSearchHeader({
     onSearchSubmit();
   }
 
-  const popularCities = CITIES.filter((c) => c.popular);
+  const filteredFromCities = useMemo(() => {
+    const q = from.trim().toLowerCase();
+    if (!q) return CITIES.filter((c) => c.popular);
+    return CITIES.filter(
+      (c) =>
+        c.nameFa.includes(q) ||
+        c.nameEn.toLowerCase().includes(q) ||
+        c.airportCode.toLowerCase().includes(q)
+    );
+  }, [from]);
+
+  const filteredToCities = useMemo(() => {
+    const q = to.trim().toLowerCase();
+    if (!q) return CITIES.filter((c) => c.popular);
+    return CITIES.filter(
+      (c) =>
+        c.nameFa.includes(q) ||
+        c.nameEn.toLowerCase().includes(q) ||
+        c.airportCode.toLowerCase().includes(q)
+    );
+  }, [to]);
 
   return (
     <>
@@ -163,24 +183,46 @@ export function FlightSearchHeader({
 
               {/* Origin Dropdown */}
               {fromSuggestionsOpen && (
-                <div className="absolute top-[calc(100%+6px)] start-0 z-[120] w-full min-w-[280px] p-3 rounded-2xl bg-surface border border-line shadow-elev-3 animate-in fade-in-50 zoom-in-95 duration-150">
-                  <div className="text-[11px] font-black text-sub px-2 pb-2 border-b border-line/60 flex items-center justify-between">
-                    <span>{lt(locale, { fa: 'شهرهای پرتردد مبدأ', en: 'Popular Origins', ar: 'مدن المغادرة الشائعة', zh: '热门出发地', ru: 'Популярные города' })}</span>
+                <div className="absolute top-[calc(100%+6px)] start-0 z-[120] w-[320px] sm:w-[360px] max-h-72 overflow-y-auto p-2 rounded-2xl bg-surface border border-line shadow-elev-3 animate-in fade-in-50 zoom-in-95 duration-150 scrollbar-none">
+                  <div className="text-[11px] font-black text-sub px-2.5 py-1.5 border-b border-line/60 flex items-center justify-between">
+                    <span>
+                      {from.trim()
+                        ? lt(locale, { fa: 'نتایج جستجو', en: 'Search Results', ar: 'نتائج البحث', zh: '搜索结果', ru: 'Результаты поиска' })
+                        : lt(locale, { fa: 'شهرهای پرتردد مبدأ', en: 'Popular Origins', ar: 'مدن المغادرة الشائعة', zh: '热门出发地', ru: 'Популярные города' })}
+                    </span>
+                    <span className="text-[10px] text-sub font-mono font-bold">
+                      {num(filteredFromCities.length, locale)} {lt(locale, { fa: 'شهر', en: 'cities', ar: 'مدينة', zh: '个城市', ru: 'городов' })}
+                    </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-1.5 pt-2">
-                    {popularCities.map((city) => (
-                      <button
-                        key={city.id}
-                        type="button"
-                        onClick={() => handleSelectFrom(locale === 'fa' ? city.nameFa : city.nameEn)}
-                        className={`flex items-center justify-between p-2 rounded-xl text-start transition cursor-pointer hover:bg-soft ${
-                          from === (locale === 'fa' ? city.nameFa : city.nameEn) ? 'bg-brand/10 text-brand font-black' : 'text-ink font-bold'
-                        }`}
-                      >
-                        <span className="text-xs truncate">{locale === 'fa' ? city.nameFa : city.nameEn}</span>
-                        <span className="text-[10px] font-mono text-sub">{city.airportCode}</span>
-                      </button>
-                    ))}
+                  <div className="space-y-1 pt-1.5">
+                    {filteredFromCities.map((city) => {
+                      const isSelected = from === (locale === 'fa' ? city.nameFa : city.nameEn);
+                      return (
+                        <button
+                          key={city.id}
+                          type="button"
+                          onClick={() => handleSelectFrom(locale === 'fa' ? city.nameFa : city.nameEn)}
+                          className={`w-full flex items-center justify-between p-2.5 rounded-xl text-start transition cursor-pointer active:scale-[0.99] ${
+                            isSelected ? 'bg-brand/10 text-brand font-black' : 'text-ink font-bold hover:bg-soft'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <Plane size={15} className="text-brand shrink-0 rtl:-scale-x-100" aria-hidden="true" />
+                            <div className="min-w-0">
+                              <span className="text-xs sm:text-[13px] font-bold text-ink block leading-tight truncate">
+                                {locale === 'fa' ? city.nameFa : city.nameEn}
+                              </span>
+                              <span className="text-[10.5px] text-sub block leading-tight truncate">
+                                {locale === 'fa' ? city.nameEn : city.nameFa}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-xs font-mono font-bold bg-soft px-2.5 py-1 rounded-md text-brand-dark border border-line shrink-0">
+                            {city.airportCode}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -242,24 +284,46 @@ export function FlightSearchHeader({
 
               {/* Destination Dropdown */}
               {toSuggestionsOpen && (
-                <div className="absolute top-[calc(100%+6px)] start-0 z-[120] w-full min-w-[280px] p-3 rounded-2xl bg-surface border border-line shadow-elev-3 animate-in fade-in-50 zoom-in-95 duration-150">
-                  <div className="text-[11px] font-black text-sub px-2 pb-2 border-b border-line/60 flex items-center justify-between">
-                    <span>{lt(locale, { fa: 'شهرهای پرتردد مقصد', en: 'Popular Destinations', ar: 'الوجهات الشائعة', zh: '热门目的地', ru: 'Популярные города' })}</span>
+                <div className="absolute top-[calc(100%+6px)] start-0 z-[120] w-[320px] sm:w-[360px] max-h-72 overflow-y-auto p-2 rounded-2xl bg-surface border border-line shadow-elev-3 animate-in fade-in-50 zoom-in-95 duration-150 scrollbar-none">
+                  <div className="text-[11px] font-black text-sub px-2.5 py-1.5 border-b border-line/60 flex items-center justify-between">
+                    <span>
+                      {to.trim()
+                        ? lt(locale, { fa: 'نتایج جستجو', en: 'Search Results', ar: 'نتائج البحث', zh: '搜索结果', ru: 'Результаты поиска' })
+                        : lt(locale, { fa: 'شهرهای پرتردد مقصد', en: 'Popular Destinations', ar: 'الوجهات الشائعة', zh: '热门目的地', ru: 'Популярные города' })}
+                    </span>
+                    <span className="text-[10px] text-sub font-mono font-bold">
+                      {num(filteredToCities.length, locale)} {lt(locale, { fa: 'شهر', en: 'cities', ar: 'مدينة', zh: '个城市', ru: 'городов' })}
+                    </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-1.5 pt-2">
-                    {popularCities.map((city) => (
-                      <button
-                        key={city.id}
-                        type="button"
-                        onClick={() => handleSelectTo(locale === 'fa' ? city.nameFa : city.nameEn)}
-                        className={`flex items-center justify-between p-2 rounded-xl text-start transition cursor-pointer hover:bg-soft ${
-                          to === (locale === 'fa' ? city.nameFa : city.nameEn) ? 'bg-brand/10 text-brand font-black' : 'text-ink font-bold'
-                        }`}
-                      >
-                        <span className="text-xs truncate">{locale === 'fa' ? city.nameFa : city.nameEn}</span>
-                        <span className="text-[10px] font-mono text-sub">{city.airportCode}</span>
-                      </button>
-                    ))}
+                  <div className="space-y-1 pt-1.5">
+                    {filteredToCities.map((city) => {
+                      const isSelected = to === (locale === 'fa' ? city.nameFa : city.nameEn);
+                      return (
+                        <button
+                          key={city.id}
+                          type="button"
+                          onClick={() => handleSelectTo(locale === 'fa' ? city.nameFa : city.nameEn)}
+                          className={`w-full flex items-center justify-between p-2.5 rounded-xl text-start transition cursor-pointer active:scale-[0.99] ${
+                            isSelected ? 'bg-brand/10 text-brand font-black' : 'text-ink font-bold hover:bg-soft'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <Plane size={15} className="text-brand shrink-0 rtl:-scale-x-100" aria-hidden="true" />
+                            <div className="min-w-0">
+                              <span className="text-xs sm:text-[13px] font-bold text-ink block leading-tight truncate">
+                                {locale === 'fa' ? city.nameFa : city.nameEn}
+                              </span>
+                              <span className="text-[10.5px] text-sub block leading-tight truncate">
+                                {locale === 'fa' ? city.nameEn : city.nameFa}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-xs font-mono font-bold bg-soft px-2.5 py-1 rounded-md text-brand-dark border border-line shrink-0">
+                            {city.airportCode}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}

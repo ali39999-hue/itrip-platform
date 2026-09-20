@@ -99,13 +99,13 @@ export function TravelerPicker({
                   <strong className="block text-[13px] font-bold text-ink">{t('adult')}</strong>
                   <span className="block text-[11px] text-sub">{t('adultHint')}</span>
                 </div>
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5" dir="ltr">
                   <button
                     type="button"
                     aria-label={t('adult') + ' -'}
                     onClick={() => setAdults(Math.max(1, adults - 1))}
                     disabled={adults <= 1}
-                    className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition"
+                    className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition active:scale-95"
                   >
                     <Minus size={13} />
                   </button>
@@ -117,7 +117,7 @@ export function TravelerPicker({
                     aria-label={t('adult') + ' +'}
                     onClick={() => setAdults(Math.min(9, adults + 1))}
                     disabled={adults >= 9}
-                    className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition"
+                    className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition active:scale-95"
                   >
                     <Plus size={13} />
                   </button>
@@ -130,13 +130,13 @@ export function TravelerPicker({
                   <strong className="block text-[13px] font-bold text-ink">{t('child')}</strong>
                   <span className="block text-[11px] text-sub">{t('childHint')}</span>
                 </div>
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5" dir="ltr">
                   <button
                     type="button"
                     aria-label={t('child') + ' -'}
                     onClick={() => setChildrenCount(Math.max(0, childrenCount - 1))}
                     disabled={childrenCount <= 0}
-                    className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition"
+                    className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition active:scale-95"
                   >
                     <Minus size={13} />
                   </button>
@@ -148,7 +148,7 @@ export function TravelerPicker({
                     aria-label={t('child') + ' +'}
                     onClick={() => setChildrenCount(Math.min(6, childrenCount + 1))}
                     disabled={childrenCount >= 6}
-                    className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition"
+                    className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition active:scale-95"
                   >
                     <Plus size={13} />
                   </button>
@@ -162,13 +162,13 @@ export function TravelerPicker({
                     <strong className="block text-[13px] font-bold text-ink">{t('room')}</strong>
                     <span className="block text-[11px] text-sub">{t('roomHint')}</span>
                   </div>
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2.5" dir="ltr">
                     <button
                       type="button"
                       aria-label={t('room') + ' -'}
                       onClick={() => setRooms(Math.max(1, rooms - 1))}
                       disabled={rooms <= 1}
-                      className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition"
+                      className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition active:scale-95"
                     >
                       <Minus size={13} />
                     </button>
@@ -180,7 +180,7 @@ export function TravelerPicker({
                       aria-label={t('room') + ' +'}
                       onClick={() => setRooms(Math.min(5, rooms + 1))}
                       disabled={rooms >= 5}
-                      className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition"
+                      className="min-h-[44px] min-w-[44px] w-8 h-8 rounded-lg bg-soft border border-line text-ink grid place-items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-line/40 transition active:scale-95"
                     >
                       <Plus size={13} />
                     </button>
@@ -219,7 +219,7 @@ export function TravelerPicker({
                     <strong className="block text-sm font-black text-ink">{t('adult')}</strong>
                     <span className="block text-xs text-sub">{t('adultHint')}</span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3" dir="ltr">
                     <button
                       type="button"
                       aria-label={t('adult') + ' -'}
@@ -250,7 +250,7 @@ export function TravelerPicker({
                     <strong className="block text-sm font-black text-ink">{t('child')}</strong>
                     <span className="block text-xs text-sub">{t('childHint')}</span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3" dir="ltr">
                     <button
                       type="button"
                       aria-label={t('child') + ' -'}
@@ -282,7 +282,7 @@ export function TravelerPicker({
                       <strong className="block text-sm font-black text-ink">{t('room')}</strong>
                       <span className="block text-xs text-sub">{t('roomHint')}</span>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3" dir="ltr">
                     <button
                       type="button"
                       aria-label={t('room') + ' -'}

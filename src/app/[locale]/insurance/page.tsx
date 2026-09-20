@@ -20,6 +20,7 @@ import type {
 } from '@/lib/types';
 import { Sheet, SheetContent } from '@/components/ui/Sheet';
 import { lt } from '@/lib/lt';
+import { num } from '@/lib/format';
 import { daysFromNow } from '@/lib/utils';
 import {
   ShieldCheck,
@@ -315,9 +316,11 @@ export default function InsurancePage() {
                 <div className="flex items-center gap-2 truncate">
                   <Users className="w-4 h-4 text-brand shrink-0" />
                   <span className="font-bold">
-                    {passengersAges.length} {lt(locale, { fa: 'مسافر', en: 'Traveler(s)', ar: 'مسافر', zh: '位旅客', ru: 'пассажир(ов)' })}
+                    {num(passengersAges.length, locale)} {lt(locale, { fa: 'مسافر', en: 'Traveler(s)', ar: 'مسافر', zh: '位旅客', ru: 'пассажир(ов)' })}
                   </span>
-                  <span className="text-xs text-muted">({passengersAges.join(', ')})</span>
+                  <span className="text-xs text-muted truncate max-w-[140px] sm:max-w-none">
+                    ({passengersAges.map((a) => AGE_BRACKETS.find((b) => b.id === a)?.[isRtl ? 'labelFa' : 'labelEn'] || a).join(isRtl ? '، ' : ', ')})
+                  </span>
                 </div>
                 <ChevronDown className="w-4 h-4 text-muted shrink-0" />
               </button>

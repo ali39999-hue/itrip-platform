@@ -38,7 +38,7 @@ export function HeroSection({ override }: { override?: HeroOverride } = {}) {
     HERO_IMAGES['turkey'];
 
   return (
-    <section className="relative w-full min-h-0 md:min-h-[580px] lg:min-h-[620px] flex items-center justify-center overflow-hidden pt-0 pb-0">
+    <section className="relative w-full min-h-0 md:min-h-[580px] lg:min-h-[620px] flex items-center justify-center pt-0 pb-0">
       {/* Background image + overlays — فول‌عرض با حداقل حاشیه تا گوشه‌های گرد دیده شوند */}
       <div className="absolute inset-0 z-0 p-1.5 md:p-2">
         <div className={`relative w-full h-full rounded-2xl md:rounded-3xl overflow-hidden shadow-elev-1 ${imgError ? 'bg-gradient-to-br from-brand-dark to-brand' : 'bg-surface'}`}>

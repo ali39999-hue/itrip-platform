@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { JalaliWheelDatePicker, formatJalaliDisplay } from '@/components/ui/JalaliWheelDatePicker';
+import { NationalIdInput } from '@/components/ui/national-id-input';
 
 export function TravelersClientPage() {
   const locale = useLocale();
@@ -630,15 +631,9 @@ export function TravelersClientPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-black text-ink mb-1.5">کد ملی (۱۰ رقم)</label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={10}
+                  <NationalIdInput
                     value={formData.nationalId}
-                    onChange={(e) => setFormData({ ...formData, nationalId: e.target.value })}
-                    placeholder="0012345678"
-                    className="w-full px-3.5 py-2.5 rounded-2xl bg-soft border border-line text-sm font-mono text-ink focus:outline-none focus:border-brand"
+                    onChange={(digits) => setFormData({ ...formData, nationalId: digits })}
                   />
                 </div>
                 <div>
