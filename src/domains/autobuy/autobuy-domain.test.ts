@@ -196,13 +196,14 @@ describe('Auto-Buy Domain & Smart Execution Suite', () => {
   });
 
   it('executes purchase, debits wallet, confirms booking and updates rule to FULFILLED when balance is sufficient', async () => {
-    // 1. Top up user wallet with sufficient funds
+    // 1. Top up user wallet with sufficient funds (unique reference to prevent FIN-102 dedupe)
+    const topupRef = `ab_topup_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     await GeneralLedgerService.postTopUp({
-      groupId: `topup_${suffix}`,
+      groupId: `grp_${topupRef}`,
       userId: testUserId,
       amount: new Money(100_000_000, 'IRR'),
       currency: 'IRR',
-      referenceId: `REF-${suffix}`,
+      referenceId: `ref_${topupRef}`,
     });
 
     // 2. Create rule that matches tour t2 (price: 52,000,000)
