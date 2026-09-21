@@ -1,8 +1,8 @@
 # Firuzo / iTRIP — UX Experience Transformation Pack
 
-**Status:** Phase 0 complete · Phase 1 architecture documented · **no product UI changed**  
-**Owner session:** UX transformation (this folder only)  
-**Isolation rule:** do not edit `src/`, tests, `docs/baseline/*`, or `package.json` from this workstream until a later phase explicitly starts implementation.
+**Status:** Phase 0–2 docs done · Phase 3 navigation on branch `feat/ux-ia-nav`  
+**Owner session:** UX transformation  
+**Isolation rule:** do not edit `docs/baseline/*` or other sessions’ worktrees. Product UI for Phase 3 lives on `feat/ux-ia-nav` only.
 
 ## Why this folder exists
 
@@ -20,6 +20,7 @@ Older docs (`docs/firuzo-route-audit.md`, `HANDOFF.md`) mix aspirational scores 
 | [UX-ARCHITECTURE.md](./UX-ARCHITECTURE.md) | Phase 1 experience architecture, IA, navigation, journeys, deep links |
 | [UX-ROADMAP.md](./UX-ROADMAP.md) | Ordered execution; later phases must not start until earlier gates pass |
 | [UX-DECISION-LOG.md](./UX-DECISION-LOG.md) | Decisions, what is preserved, session isolation |
+| [DESIGN-SYSTEM-GUIDE.md](./DESIGN-SYSTEM-GUIDE.md) | Phase 2: existing tokens/primitives — complete, don’t replace |
 
 ## Non-negotiable loop
 
@@ -34,4 +35,4 @@ Never: isolated redesign of a single page while Search → Checkout → My Trips
 
 - Other sessions currently touch `docs/baseline/a11y-baseline.json` and `docs/baseline/quality-report.json` on `main`.
 - Claude worktrees exist under `.claude/worktrees/*` (flight-card mobile work). Do not merge or overwrite them.
-- This pack writes **only** under `docs/ux-transformation/`.
+- Docs stay under `docs/ux-transformation/`. Phase 3 code is on `feat/ux-ia-nav` (nav + Explore hub only).

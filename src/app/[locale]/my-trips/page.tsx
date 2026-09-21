@@ -394,7 +394,7 @@ export default function MyTripsPage() {
                 })}
               </p>
               <Button
-                onClick={() => router.push('/services')}
+                onClick={() => router.push('/book')}
                 className="bg-brand hover:bg-brand-2 text-surface h-12 px-8 font-black rounded-xl text-[15px]"
               >
                 {lt(locale, {

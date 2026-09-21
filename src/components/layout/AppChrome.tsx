@@ -14,7 +14,10 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
   usePendingCartRestoration();
   const pathname = usePathname() || '';
   const isAdmin = /^\/([a-z]{2}\/)?admin(\/|$)/i.test(pathname);
-  const isCheckout = /^\/([a-z]{2}\/)?(checkout|payment-status|book|demo\/ecardo-checkout)(\/|$)/i.test(pathname);
+  // Checkout-style chrome: hide BottomNav/ContactDock where a thumb-zone
+  // sticky CTA owns the bottom (UX-ARCHITECTURE §3.2). /book is the Explore
+  // hub — a primary surface — so it keeps the standard chrome.
+  const isCheckout = /^\/([a-z]{2}\/)?(checkout|payment-status|demo\/ecardo-checkout)(\/|$)/i.test(pathname);
 
   if (isAdmin) {
     return (

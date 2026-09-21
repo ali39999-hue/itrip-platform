@@ -2,7 +2,7 @@
 
 Severity: **P0** blocks a critical journey · **P1** major usability/consistency · **P2** meaningful · **P3** polish.
 
-Implementation status for all rows: **documented only** (2026-09-21). Verification: not started.
+Implementation status (2026-09-21, branch `feat/ux-ia-nav`): P0-001, P0-002, P1-001, P1-003, P1-010, P1-011, P1-012 **implemented in nav/Explore hub**. Remaining rows still documented only.
 
 When many pages share a problem, the fix is the **systemic component**, not N page patches.
 

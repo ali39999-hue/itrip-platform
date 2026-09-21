@@ -10,7 +10,7 @@ import { UnifiedCartDrawer } from '@/components/cart/UnifiedCartDrawer';
 import { Logo } from './Logo';
 import { CountrySwitcher } from './header/CountrySwitcher';
 import { LocaleSwitcher } from './header/LocaleSwitcher';
-import { DesktopNav, NAV_CATEGORIES } from './header/DesktopNav';
+import { DesktopNav, NAV_CATEGORIES, PRIMARY_NAV_LINKS } from './header/DesktopNav';
 import { UserAccountMenu } from './header/UserAccountMenu';
 import { CityHotelSearch } from './header/CityHotelSearch';
 import { ThemeToggle } from './ThemeToggle';
@@ -182,8 +182,34 @@ export function Header() {
           </div>
         </div>
 
-        {/* Scrollable Categories List */}
+        {/* Scrollable Categories List — same IA as desktop: high-intent first, then Explore */}
         <div className="flex-1 overflow-y-auto p-4 space-y-5">
+          <div className="space-y-1.5">
+            <h4 className="text-[11px] font-black uppercase text-brand-dark px-1">
+              {t('book')}
+            </h4>
+            <div className="space-y-1">
+              {PRIMARY_NAV_LINKS.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-between min-h-[48px] p-3 rounded-xl hover:bg-soft text-sm font-bold text-ink transition active:scale-[0.98]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-soft grid place-items-center text-brand-dark shrink-0">
+                        <Icon size={16} />
+                      </div>
+                      <span>{t(item.key)}</span>
+                    </div>
+                    <ChevronRight size={15} className="text-sub/60 shrink-0 rtl:rotate-180" aria-hidden="true" />
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
           {NAV_CATEGORIES.map((cat) => (
             <div key={cat.key} className="space-y-1.5">
               <h4 className="text-[11px] font-black uppercase text-brand-dark px-1">

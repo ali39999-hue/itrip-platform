@@ -3,7 +3,7 @@
 import { useAuthStore } from '@/stores/auth-store';
 import { Link } from '@/i18n/routing';
 import { useTranslations, useLocale } from 'next-intl';
-import { UserRound, Headset, Sparkles, ShieldCheck } from 'lucide-react';
+import { UserRound, Headset, ShieldCheck } from 'lucide-react';
 import { lt } from '@/lib/lt';
 
 export function UserAccountMenu() {
@@ -37,15 +37,6 @@ export function UserAccountMenu() {
         className="hidden 2xl:grid h-11 w-11 place-items-center rounded-full bg-white/60 dark:bg-white/[0.07] backdrop-blur-md border border-white/40 dark:border-white/10 text-sub hover:text-ink transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none shrink-0"
       >
         <Headset size={15} />
-      </Link>
-
-      {/* Plan Button — glass pill */}
-      <Link
-        href="/plan"
-        className="hidden 2xl:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/70 dark:bg-white/[0.07] backdrop-blur-md border border-white/50 dark:border-white/10 text-ink hover:bg-white/85 dark:hover:bg-white/[0.12] text-[12px] font-bold tracking-tight transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none shadow-[0_1px_2px_rgba(5,63,62,0.06)]"
-      >
-        <Sparkles size={12} className="text-brand-dark" />
-        <span>{t('plan')}</span>
       </Link>
 
       {/* Auth / Account CTA */}

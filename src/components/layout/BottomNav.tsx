@@ -2,13 +2,20 @@
 
 import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/routing';
-import { Home, Search, Briefcase, Wallet, UserRound } from 'lucide-react';
+import { Home, Compass, Briefcase, Wallet, UserRound } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useHydration } from '@/hooks/useHydration';
 
-const ITEMS = [
+export function isHotelOrTourDetail(pathname: string): boolean {
+  const hotel = pathname.match(/(?:^|\/)hotels\/([^/]+)/);
+  if (hotel && hotel[1] !== 'search') return true;
+  const tour = pathname.match(/(?:^|\/)tours\/([^/]+)/);
+  return Boolean(tour);
+}
+
+export const BOTTOM_NAV_ITEMS = [
   { href: '/', labelKey: 'home', icon: Home },
-  { href: '/book', labelKey: 'search', icon: Search },
+  { href: '/book', labelKey: 'explore', icon: Compass },
   { href: '/my-trips', labelKey: 'myTrips', icon: Briefcase },
   { href: '/wallet', labelKey: 'wallet', icon: Wallet },
   { href: '/account', labelKey: 'account', icon: UserRound },
@@ -21,7 +28,7 @@ export function BottomNav() {
   const isHydrated = useHydration();
   const user = useAuthStore((s) => s.user);
   const effectiveUser = isHydrated ? user : null;
-  const items = ITEMS.map((it) => {
+  const items = BOTTOM_NAV_ITEMS.map((it) => {
     if (it.href === '/account' && !effectiveUser) return { ...it, href: '/auth?callbackUrl=/account' };
     if (it.href === '/my-trips' && !effectiveUser) return { ...it, href: '/auth?callbackUrl=/my-trips' };
     return it;
@@ -32,13 +39,13 @@ export function BottomNav() {
     return cleanHref === '/' ? pathname === '/' : pathname.startsWith(cleanHref);
   };
 
-  // Hide BottomNav during checkout, payment flows, and product detail pages
-  // to avoid viewport overcrowding with sticky reservation bars (FlyToday, Booking.com, Trip.com standard)
+  // Hide BottomNav only where a thumb-zone sticky CTA owns the bottom
+  // (UX-ARCHITECTURE §3.2). Explore hub `/book` and hotel/tour *search*
+  // keep the nav; only `[id]` detail pages hide it.
   const isExcludedPage =
     pathname.includes('/checkout') ||
     pathname.includes('/payment-status') ||
-    /^\/([a-z]{2}\/)?hotels\/[^/]+/.test(pathname) ||
-    /^\/([a-z]{2}\/)?tours\/[^/]+/.test(pathname);
+    isHotelOrTourDetail(pathname);
   if (isExcludedPage) return null;
 
   return (

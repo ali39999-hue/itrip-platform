@@ -86,13 +86,14 @@
     "esim": "国际eSIM流量卡",
     "myTrips": "我的行程",
     "wallet": "钱包",
-    "sos": "紧急翻译与援助",
+    "sos": "紧急与实时支持",
     "admin": "管理后台 (ERP)",
     "book": "预订",
     "search": "搜索",
     "places": "目的地",
     "ariaLabel": "移动端导航",
-    "about": "关于我们"
+    "about": "关于我们",
+    "interpreter": "随行翻译"
   },
   "Common": {
     "aria": {
@@ -874,14 +875,20 @@
     "guideBookSubtitle": "标志性活动、小众秘境与定制行程推荐"
   },
   "Book": {
-    "title": "凭证与机票管理",
-    "subtitle": "查看预订详情并下载官方凭证",
-    "startSearch": "搜索服务",
+    "title": "探索并预订行程",
+    "subtitle": "搜索、发现目的地，或把附加服务接到行程上。",
+    "startSearch": "开始搜索",
     "addons": "附加精选服务",
     "flights": "航班",
     "hotels": "酒店",
     "tours": "旅游",
-    "transfers": "接送"
+    "transfers": "接送",
+    "hubBadge": "Firuzo 探索中心",
+    "moreServices": "更多服务",
+    "tagFlights": "国内与国际",
+    "tagHotels": "透明房价住宿",
+    "tagTours": "线路与套餐",
+    "tagTransfers": "机场接机"
   },
   "Services": {
     "title": "Firuzo 全方位旅行服务",

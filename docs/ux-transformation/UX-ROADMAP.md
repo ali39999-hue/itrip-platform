@@ -12,8 +12,8 @@ Companion prompt principles are in the user master prompt; this file is the **re
 |---|---|---|
 | 0 | Baseline & freeze | **DONE** (this pack) |
 | 1 | Experience architecture | **DONE** (docs; not implemented) |
-| 2 | Design System 2.0 complete | NOT STARTED |
-| 3 | Global navigation + Home | NOT STARTED |
+| 2 | Design System 2.0 complete | **DONE** (`DESIGN-SYSTEM-GUIDE.md` matches tokens) |
+| 3 | Global navigation + Home | **IN PROGRESS** (`feat/ux-ia-nav`) |
 | 4 | Search UX | NOT STARTED |
 | 5 | Result & decision cards | NOT STARTED |
 | 6 | Detail pages | NOT STARTED |
@@ -52,7 +52,13 @@ Gate to Phase 2: architecture accepted. Implementation of nav still Phase 3.
 
 ---
 
-## Phase 2 — Design System 2.0
+## Phase 2 — Design System 2.0 — DONE (docs)
+
+Delivered: `DESIGN-SYSTEM-GUIDE.md` completing (not replacing) tokens in `globals.css`, `Button`, mobile primitives, density modes, sticky-CTA contract.
+
+---
+
+## Phase 2 — Design System 2.0 (historical brief)
 
 Complete, don’t replace, tokens and primitives:
 
@@ -165,6 +171,6 @@ Never declare done from screenshots or lint alone.
 
 ---
 
-## Next concrete action (when code is allowed)
+## Next concrete action
 
-Open branch → Phase 3 navigation only → update `DesktopNav`, `BottomNav`, `AppChrome`, Explore hub → tests → **do not** restyle Home cards in the same PR unless required to remove the duplicate catalog.
+Phase 3 nav is on `feat/ux-ia-nav`. After gates stay green: Phase 4 Search UX (shared filter sheet / session). Do **not** restyle Home cards further in this branch.

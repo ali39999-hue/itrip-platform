@@ -1,106 +1,116 @@
-# Firuzo Design System 2.0 — Core Tokens & Utilities
+# Firuzo Design System 2.0 — Completion Guide
 
-**Owner:** ZCode Agent (UX Transformation Workstream)  
-**Version:** 2.0 (post-audit)  
-**Status:** READY FOR IMPLEMENTATION — only docs, no src/ edits yet  
+**Owner:** UX Transformation workstream  
+**Status:** COMPLETE as documentation of the **existing** system (do not replace it)  
 **Last updated:** 2026-09-21  
+**Source of truth in code:** `src/app/globals.css`, `src/components/ui/button.tsx`, `src/components/mobile/*`, `src/components/ui/Sheet.tsx`, `src/components/ui/Dialog.tsx`
 
-## 1. Semantic Color Tokens (Tailwind v4 + CSS variables)
-
-```css
-/* globals.css @theme extension */
---color-brand: #00a9a5;           /* turquoise primary */
---color-brand-dark: #046E6B;      /* darker for text on white */
---color-action: #F0A62A;          /* gold booking CTA */
---color-price: #9C6209;           /* amber price */
---color-surface: #ffffff;
---color-surface-elevated: #f8fafc;
---color-border: #e5e7eb;
---color-text-primary: #111827;
---color-text-secondary: #6b7280;
-
-.dark {
-  --color-surface: #1f2937;
-  --color-surface-elevated: #374151;
-  --color-border: #374151;
-  --color-text-primary: #f9fafb;
-}
-```
-
-**Rule:** Only turquoise (#00a9a5) allowed for text on white surfaces. Never invert.
-
-## 2. Spacing & Touch Targets (Mobile-First)
-
-```css
-@utility touch-target {
-  @apply min-w-[44px] min-h-[44px] flex items-center justify-center;
-}
-
-@utility safe-pb {
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
-}
-
-@utility safe-pt {
-  padding-top: max(1rem, env(safe-area-inset-top));
-}
-
-@utility no-scrollbar {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  &::-webkit-scrollbar { display: none; }
-}
-```
-
-**Rule:** All CTAs (Book/Continue, filters, payment) must live in thumb zone (bottom fixed bar or bottom sheet). Minimum 44×44px interactive area, 8px gap.
-
-## 3. Typography & RTL
-
-- **Fonts:** Vazirmatn / Shabnam (line-height: 1.65) for Persian.
-- **Logical properties only:** start- / end- / ms- / me- / ps- / pe- (never left/right/ml/mr/pl/pr).
-- **Icons:** Chevrons flip in RTL (`rtl:rotate-180`), media icons (play/pause/star/clock) do **not** flip.
-
-## 4. Card & Elevation
-
-- Radius: `rounded-2xl`
-- Border: `border border-border/80`
-- Dark: `dark:border-white/10 dark:bg-surface-elevated`
-- Elevation shadows: `shadow-elev-1/2/3` (turquoise tint)
-
-## 5. Button Variants (from code audit)
-
-```tsx
-// src/components/ui/button.tsx
-const buttonVariants = cva(
-  "rounded-lg border border-transparent ...",
-  {
-    variants: {
-      variant: {
-        brand: "bg-brand-dark text-surface hover:bg-brand transition-colors",
-        action: "bg-action text-ink hover:bg-action-hover font-black active:scale-[0.98]",
-      },
-      size: { default: "h-10 ...", icon: "size-10" }
-    }
-  }
-)
-```
-
-**Rule:** `action` variant for all booking/payment CTAs (gold, bold, active scale).
-
-## 6. Bottom Sheets & Mobile Chrome
-
-- All dialogs <768px → Bottom Sheet (drag handle, swipe-down).
-- StickyMobileBar / StickyCTA ownership contract: use StickyMobileBar on checkout (BottomNav hidden), StickyCTA elsewhere.
-
-## 7. Non-Goals (from audit)
-
-- Never redesign away core card hierarchy, cart, checkout flow, wallet.
-- Never add Admin tab or service catalog as primary navigation.
-- Never use heavy drop-shadows or modals on mobile.
-
-**Exit Gate for Phase 2:** All tokens implemented in globals.css + Button + Card components. Run `npm run lint` + `npm run gate:uiux` (must stay green).
+This file completes Phase 2. It does **not** invent a second token set. New UI must reuse these names.
 
 ---
 
-**Next Action:** After user approval of this guide, proceed to Phase 3 (Navigation + Home) on branch `feat/ux-ia-nav` only.
+## 1. Color (semantic tokens already in `@theme inline`)
 
-(End of Phase 2 documentation — ready for implementation)
+| Token | Role | Rule |
+|---|---|---|
+| `brand` `#00a9a5` | Fill, rings, active nav | Never the only text color on white |
+| `brand-dark` `#046E6B` (light) | Text/icon on white/surface | **Only** turquoise allowed for text on white |
+| `mint-bright` `#7FD6D2` | Text on photography / deep | |
+| `action` `#F0A62A` | Booking / payment CTA | One action CTA per screen |
+| `price` `#9C6209` | Amounts | Use `--font-price` |
+| `ink` / `sub` | Primary / secondary text | |
+| `surface` / `surface-elevated` / `soft` / `paper` | Surfaces | |
+| `line` | Borders | Prefer `border-line` / `border-border` |
+| `flight` `#2980b9` · `hotel` `#F0A62A` · `tour` `#8e44ad` | Vertical accents only | Do not rainbow whole icon grids |
+
+Dark values live on `.dark` and are referenced through `--brand-dark`, `--ink`, `--surface`, etc. Do not hardcode `slate-*` / `blue-500` on product chrome.
+
+---
+
+## 2. Elevation, radius, motion
+
+- Shadows: `shadow-elev-1` / `shadow-elev-2` / `shadow-elev-3` / `shadow-brand` (turquoise-tinted, not grey blur).
+- Cards: `rounded-2xl` + `border border-line/80` (or `border-border/80`). Dark: `dark:border-white/10 dark:bg-surface-elevated`.
+- Press: `active:scale-[0.98] transition-transform duration-100` on cards and CTAs.
+- Reduced motion: respect `prefers-reduced-motion` (Motion library already does).
+
+---
+
+## 3. Type & RTL
+
+- Locale fonts are set on `<html>` (`--font-app-sans` / `--font-app-heading`). Persian digits: `FaNumFallback` unicode-range faces.
+- Body copy: `leading-relaxed` for fa/ar.
+- **Logical properties only:** `start-` / `end-` / `ms-` / `me-` / `ps-` / `pe-`. Physical `ml-`/`mr-`/`pl-`/`pr-`/`left-`/`right-` fail `gate:uiux`.
+- Directional chevrons: `rtl:rotate-180`. Media icons (play, star, clock, check) do **not** flip.
+
+---
+
+## 4. Spacing, touch, safe area
+
+Utilities already in `globals.css`:
+
+- `touch-target` → 44×44px
+- `safe-pb` / `safe-pt` / `safe-bottom` / `safe-top`
+- `no-scrollbar` (aliases: `scrollbar-none`, `hide-scrollbar`)
+- Fluid type: `text-fluid-h1` / `h2` / `h3`, `py-fluid-section`, `px-fluid-shell`
+
+Interactive minimum: 44×44px (`min-h-[44px] min-w-[44px]` or `size-11`). Gap between adjacent targets ≥ 8px. Viewport: `viewportFit: cover`.
+
+Thumb-zone CTAs sit in a **bottom bar or bottom sheet**, not the header.
+
+---
+
+## 5. Density modes (D-009)
+
+Same tokens, different density. Do not one-skin every page.
+
+| Mode | Surfaces | Density |
+|---|---|---|
+| Discovery | Home, Explore, destinations, travelogues | Airy, editorial, large imagery |
+| Search | Flight/hotel/tour results | Tight rows, filters, compare |
+| Commerce | Detail CTA, cart, checkout | Price + primary action always visible |
+| Trip | My Trips, boarding pass, timeline | Operational, status-first |
+| Finance | Wallet, invoices | Tabular, quiet |
+| Admin | ERP | Out of traveler IA |
+
+---
+
+## 6. Components to reuse (no new primitives)
+
+| Need | Use |
+|---|---|
+| Button | `Button` `variant="brand"` (nav/confirm) or `variant="action"` (book/pay). Sizes: `lg` = 48px row. |
+| Empty / error / loading | `EmptyState` / `ResultState` — not page-local copies |
+| Overlay `<768` | `Sheet` side=bottom + drag pill. Desktop: `Dialog` / popover |
+| Filter / date / pax | `FilterSheet`, `DatePickerSheet`, `PassengerPicker` |
+| Conversion bar | `StickyCTA` when BottomNav is visible (`aboveNav`). `StickyMobileBar` when BottomNav is hidden (checkout) |
+| Nav | `BottomNav` + `DesktopNav` + `AppChrome` only |
+
+---
+
+## 7. Z-index (do not invent new stacking)
+
+| Layer | z |
+|---|---|
+| Header | `z-[80]` |
+| BottomNav | `z-[85]` |
+| Sticky CTA / checkout bar | below nav or `aboveNav` offset |
+| Command palette | `z-[200]` |
+| Mobile drawer | `z-[250]` |
+
+---
+
+## 8. Capability honesty
+
+Bind live/mock/coming-soon to `FEATURE_REALITY_MATRIX` + `CapabilityBadge`. Never style a MOCK rail as a live GDS/PSP.
+
+---
+
+## 9. Non-goals
+
+- Do not add a second Button, Card, Sheet, or color palette.
+- Do not put Admin in traveler nav.
+- Do not use heavy drop-shadows or centered modals on mobile selection.
+- Visual polish (photography, extra motion) is Phase 13.
+
+**Phase 2 exit:** this guide matches code. Implementation of navigation is Phase 3 — no new competing components.

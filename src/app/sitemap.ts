@@ -16,8 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/insurance',
     '/esim',
     '/destinations',
-    '/services',
-    '/services/about',
+    '/book', // Explore hub (canonical; /services redirects here — UX-ARCHITECTURE §2)
     '/support',
     '/travelogues',
     '/city-pass',

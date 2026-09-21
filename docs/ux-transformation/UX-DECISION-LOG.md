@@ -129,7 +129,15 @@ A change is done only when: UX intent documented, UI hierarchy matches, responsi
 
 | ID | Question | Default if unanswered |
 |---|---|---|
-| Q-001 | Is mobile slot 2 **Explore** (`/destinations` or a new `/explore`) or **Search** (`/book`)? | Keep five tabs; retarget slot 2 to Explore hub that *contains* search entry |
-| Q-002 | Should `/book` be deleted or become the Explore hub? | Reuse `/book` as Explore hub (already a service directory) |
-| Q-003 | Desktop: keep Flights/Hotels/Tours as always-visible secondary, or fold into Explore? | Keep the three high-intent links; demote the rest |
-| Q-004 | Admin link in traveler `Trips` dropdown — hide unless role? | Hide from customer nav; keep command palette / account for staff |
+| Q-001 | Is mobile slot 2 **Explore** (`/destinations` or a new `/explore`) or **Search** (`/book`)? | **Resolved D-012:** Explore label, href `/book` (hub contains SearchWidget) |
+| Q-002 | Should `/book` be deleted or become the Explore hub? | **Resolved D-012:** reuse `/book`; `/services` redirects there |
+| Q-003 | Desktop: keep Flights/Hotels/Tours as always-visible secondary, or fold into Explore? | **Resolved D-012:** keep Flights/Hotels/Tours + Plan; Explore ▾ is ancillaries only |
+| Q-004 | Admin link in traveler `Trips` dropdown — hide unless role? | **Resolved D-012:** removed from traveler nav; staff still get ERP chip in `UserAccountMenu` |
+
+---
+
+## D-012 — Phase 3 navigation implemented on `feat/ux-ia-nav`
+
+**Date:** 2026-09-21  
+**Decision:** Mobile slot 2 is Explore → `/book`. Desktop always-on: Flights, Hotels, Tours, Plan. Explore mega-menu is destinations + ancillaries (interpreter as a service, not SOS). Admin is staff-only in the account cluster. `/services` aliases `/book`. QuickServicesBar uses mint/brand tokens; bus tile removed (no bus route).  
+**Why:** Defaults of Q-001–Q-004, P0-001/P0-002/P1-001/P1-003/P1-010/P1-011.

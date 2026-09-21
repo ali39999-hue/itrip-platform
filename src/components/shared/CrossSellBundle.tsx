@@ -90,7 +90,7 @@ export function CrossSellBundle({ currentService, destination }: CrossSellBundle
           </p>
         </div>
         <button 
-          onClick={() => router.push('/services')} 
+          onClick={() => router.push('/book')}
           className="shrink-0 hidden md:inline-flex items-center gap-1.5 text-brand-dark text-[13px] font-bold hover:gap-2.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded"
         >
           {lt(locale, {

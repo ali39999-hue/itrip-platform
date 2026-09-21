@@ -86,13 +86,14 @@
     "esim": "International eSIM",
     "myTrips": "My Bookings & Trips",
     "wallet": "Wallet",
-    "sos": "SOS Interpreter & Concierge",
+    "sos": "Emergency & live support",
     "admin": "Admin ERP Panel",
     "book": "Book",
     "search": "Search",
     "places": "Places",
     "ariaLabel": "Mobile navigation",
-    "about": "About Us"
+    "about": "About Us",
+    "interpreter": "Travel interpreter"
   },
   "Common": {
     "aria": {
@@ -874,14 +875,20 @@
     "guideBookSubtitle": "Iconic events, hidden gems, and tailored journeys for your itinerary"
   },
   "Book": {
-    "title": "Voucher & Ticket Management",
-    "subtitle": "View details and download official booking vouchers",
-    "startSearch": "Search Services",
+    "title": "Explore & book travel",
+    "subtitle": "Search, discover a destination, or attach extra services to a trip.",
+    "startSearch": "Start search",
     "addons": "Travel Add-ons",
     "flights": "Flights",
     "hotels": "Hotels",
     "tours": "Tours",
-    "transfers": "Transfers"
+    "transfers": "Transfers",
+    "hubBadge": "Firuzo Explore hub",
+    "moreServices": "More services",
+    "tagFlights": "Domestic & international",
+    "tagHotels": "Stays with clear rates",
+    "tagTours": "Tours & packages",
+    "tagTransfers": "Airport meet & greet"
   },
   "Services": {
     "title": "Firuzo Travel Services",
