@@ -273,6 +273,14 @@ export function syncMetricsAndDocs(options = {}) {
       `${unitMetrics.files} test files / **${unitMetrics.passed.toLocaleString()} verified tests**`
     );
     matrix = matrix.replace(
+      /\*\*Test Files Count:\*\* \*\*[\d,]+ test files\*\*/,
+      `**Test Files Count:** **${unitMetrics.files} test files**`
+    );
+    matrix = matrix.replace(
+      /\*\*Total Unit Test Specs:\*\* \*\*[\d,]+ verified passing tests\*\*/,
+      `**Total Unit Test Specs:** **${unitMetrics.passed.toLocaleString()} verified passing tests**`
+    );
+    matrix = matrix.replace(
       /\d+ Playwright test suites in `tests\/\*\.spec\.ts`/,
       `${playwrightSuites} Playwright test suites in \`tests/*.spec.ts\``
     );
@@ -296,6 +304,22 @@ export function syncMetricsAndDocs(options = {}) {
       `- **Live Deployment State:** \`https://itrip-platform.vercel.app/\` running verified version \`${provenance.liveVersion}\` on commit \`${provenance.liveCommit}\` (${provenance.verdict}), probed live via \`/api/version\`, \`/api/health/live\`, \`/api/capabilities\` — ${provenance.note}`
     );
     // Section 2 provenance table rows.
+    matrix = matrix.replace(
+      /\| \*\*CURRENT MAIN\*\* \| \*\*Local \/ Origin HEAD\*\* \| `[0-9a-f]+` \| `[0-9a-f]+` \| \*\*[^*]+\*\* \| [^|]*\|/,
+      `| **CURRENT MAIN** | **Local / Origin HEAD** | \`${provenance.commit}\` | \`${provenance.commit}\` | **ALIGNED** | Measured via \`git rev-parse HEAD\` |`
+    );
+    matrix = matrix.replace(
+      /\| \*\*CURRENT LIVE\*\* \| \*\*Live Deployment Artifact\*\* \| `[0-9a-f]+` \| `[0-9a-f]+` \| \*\*[^*]+\*\* \| [^|]*\|/,
+      `| **CURRENT LIVE** | **Live Deployment Artifact** | \`${provenance.commit}\` | \`${provenance.liveCommit}\` | **${provenance.verdict === 'ALIGNED' ? 'ALIGNED' : 'DRIFT'}** | Vercel deployed from commit \`${provenance.liveCommit}\` |`
+    );
+    matrix = matrix.replace(
+      /\| \*\*CURRENT LIVE\*\* \| \*\*Live \/api\/version\*\* \| `[\d.]+` \| `[\d.]+` \(commit `[0-9a-f.]+`\) \| \*\*[^*]+\*\* \| [^|]*\|/,
+      `| **CURRENT LIVE** | **Live /api/version** | \`${localVersion}\` | \`${provenance.liveVersion}\` (commit \`${provenance.liveCommit}...\`) | **${provenance.verdict === 'ALIGNED' ? 'ALIGNED' : 'DRIFT'}** | Production runtime reported version \`${provenance.liveVersion}\` |`
+    );
+    matrix = matrix.replace(
+      /\| \*\*CURRENT LIVE\*\* \| \*\*Live \/api\/capabilities\*\*\| 200 OK \| 200 OK \(v[\d.]+ registry\) \| \*\*[^*]+\*\* \| [^|]*\|/,
+      `| **CURRENT LIVE** | **Live /api/capabilities**| 200 OK | 200 OK (v${provenance.liveVersion} registry) | **HEALTHY** | Capability registry served by the same runtime |`
+    );
     matrix = matrix.replace(
       /\| \*\*Local Repository HEAD\*\* \| `[0-9a-f.]+` \| `[0-9a-f]+` \| \*\*[^*]+\*\* \| [^|]*\|/,
       `| **Local Repository HEAD** | \`${provenance.commit}\` | \`${provenance.commit}\` | **ALIGNED** | Measured via \`git rev-parse HEAD\` |`

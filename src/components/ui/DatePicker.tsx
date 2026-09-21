@@ -32,6 +32,47 @@ interface JalaliDatePickerProps {
   format?: string;
 }
 
+export function resolveEffectiveBoundary(minDate?: Date | string | number | DateObject): { today: Date; boundary: Date } {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let boundary = today;
+  if (minDate !== undefined) {
+    let parsedMin: Date | undefined;
+    if (minDate instanceof Date) {
+      parsedMin = new Date(minDate.getTime());
+    } else if (typeof minDate === 'string') {
+      parsedMin = new Date(minDate.includes('T') ? minDate : `${minDate}T00:00:00`);
+    } else if (typeof minDate === 'number') {
+      parsedMin = new Date(minDate);
+    } else if (minDate && typeof minDate === 'object' && 'toDate' in minDate && typeof (minDate as { toDate?: () => Date }).toDate === 'function') {
+      try {
+        parsedMin = (minDate as { toDate: () => Date }).toDate();
+      } catch {
+        parsedMin = undefined;
+      }
+    }
+    if (parsedMin && !Number.isNaN(parsedMin.getTime())) {
+      parsedMin.setHours(0, 0, 0, 0);
+      boundary = parsedMin > today ? parsedMin : today;
+    }
+  }
+
+  return { today, boundary };
+}
+
+export function clampDateToBoundary(
+  value: string | undefined,
+  minDate?: Date | string | number | DateObject
+): Date | undefined {
+  if (!value) return undefined;
+  const rawDate = new Date(value.includes('T') ? value : `${value}T00:00:00`);
+  if (Number.isNaN(rawDate.getTime())) return undefined;
+
+  const { boundary } = resolveEffectiveBoundary(minDate);
+  return rawDate < boundary ? boundary : rawDate;
+}
+
 export function JalaliDatePicker({
   value,
   onChange,
@@ -47,17 +88,12 @@ export function JalaliDatePicker({
   const locale = useLocale();
   const isFa = locale === 'fa';
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const { today } = resolveEffectiveBoundary(minDate);
   const effectiveMinDate = minDate !== undefined ? minDate : today;
 
-  // Convert incoming string (YYYY-MM-DD) to DateObject in local time without UTC rollback.
-  // Guard against stale past dates: clamp any past date to today.
-  const rawDate = value ? new Date(value.includes('T') ? value : `${value}T00:00:00`) : undefined;
-  const parsedDate = rawDate && !Number.isNaN(rawDate.getTime())
-    ? (rawDate < today && effectiveMinDate ? today : rawDate)
-    : undefined;
-  const dateObj = parsedDate;
+  // Convert incoming string (YYYY-MM-DD) to Date in local time without UTC rollback.
+  // Guard against stale dates: clamp any date earlier than boundary to boundary.
+  const dateObj = clampDateToBoundary(value, minDate);
 
   const defaultPlaceholder = locale === 'fa'
     ? 'انتخاب تاریخ'

@@ -26,7 +26,7 @@ import { AxeBuilder } from '@axe-core/playwright';
 import { execSync } from 'node:child_process';
 import fs from 'fs';
 
-const BASE = process.argv[2] || 'http://localhost:3000';
+const BASE = process.env.A11Y_BASE_URL || process.argv[2] || 'http://localhost:3000';
 const OUT = process.argv[3] || 'docs/baseline/a11y-baseline.json';
 
 // npm scripts run from the repo root; CI sets GITHUB_SHA explicitly.

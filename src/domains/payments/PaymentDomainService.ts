@@ -481,119 +481,134 @@ export class PaymentDomainService {
       throw new Error(`Payment webhook amount tampering detected: ${reason}`);
     }
 
-    // PAY-104: One capture per booking. A valid gateway event with a fresh eventId
-    // for an already-captured booking collapses into an idempotent DUPLICATE.
-    if (booking.status === 'CONFIRMED' && booking.paymentStatus === 'CAPTURED') {
-      await client.webhookEvent.update({
-        where: { id: webhookRecord.id },
-        data: { status: 'PROCESSED', processedAt: new Date() },
-      });
-      const existingPayment = await client.payment.findFirst({
-        where: { bookingId: booking.id, status: 'SUCCESS' },
-      });
-      return {
-        processed: false,
-        status: 'DUPLICATE',
-        paymentId: existingPayment?.id,
-        reason: 'Booking already captured — payment idempotency per booking (PAY-010)',
-      };
-    }
-
     // 5. Atomic Capture Execution (PAY-002, PAY-007, PAY-104)
-    const idempotencyKey = `webhook_${gatewayName}_${params.eventId}`;
+    // Run the critical capture sequence in a Serializable transaction to eliminate
+    // race conditions from concurrent IPN webhooks for the same booking.
+    const executeCapture = async (atomicClient: Prisma.TransactionClient): Promise<WebhookProcessResult> => {
+      // Re-read booking state under the serializable transaction lock
+      const freshBooking = await atomicClient.booking.findUnique({
+        where: { id: booking.id },
+        select: { id: true, status: true, paymentStatus: true, reference: true },
+      });
 
-    const linkedIntent = await client.paymentIntent.findFirst({
-      where: { bookingId: booking.id },
-      orderBy: { createdAt: 'desc' },
-    });
+      // PAY-104: One capture per booking. A valid gateway event with a fresh eventId
+      // for an already-captured booking collapses into an idempotent DUPLICATE.
+      if (freshBooking?.status === 'CONFIRMED' && freshBooking?.paymentStatus === 'CAPTURED') {
+        await atomicClient.webhookEvent.update({
+          where: { id: webhookRecord.id },
+          data: { status: 'PROCESSED', processedAt: new Date() },
+        });
+        const existingPayment = await atomicClient.payment.findFirst({
+          where: { bookingId: booking.id, status: 'SUCCESS' },
+        });
+        return {
+          processed: false,
+          status: 'DUPLICATE',
+          paymentId: existingPayment?.id,
+          reason: 'Booking already captured — payment idempotency per booking (PAY-010)',
+        };
+      }
 
-    const payment = await client.payment.create({
-      data: {
-        bookingId: params.bookingId,
-        paymentIntentId: linkedIntent?.id,
-        idempotencyKey,
-        method: gatewayName.startsWith('ECARDO') ? 'gateway_ecardo' : 'gateway_shetab',
-        gatewayRef: params.gatewayRef,
-        amount: incomingMoney.toDecimal(),
-        currency: settledCurrency,
-        status: 'SUCCESS',
-        rawPayload: params.rawPayload ? JSON.stringify(params.rawPayload) : null,
-      },
-    });
+      const idempotencyKey = `webhook_${gatewayName}_${params.eventId}`;
 
-    // Update WebhookEvent to PROCESSED
-    await client.webhookEvent.update({
-      where: { id: webhookRecord.id },
-      data: {
-        status: 'PROCESSED',
-        processedAt: new Date(),
-      },
-    });
+      const linkedIntent = await atomicClient.paymentIntent.findFirst({
+        where: { bookingId: booking.id },
+        orderBy: { createdAt: 'desc' },
+      });
 
-    // Update Booking status
-    await client.booking.update({
-      where: { id: booking.id },
-      data: {
-        paymentStatus: 'CAPTURED',
-        status: 'CONFIRMED',
-      },
-    });
-
-    // Add relational status history (BOOK-004)
-    await client.bookingStatusHistory.create({
-      data: {
-        bookingId: booking.id,
-        fromStatus: booking.status,
-        toStatus: 'CONFIRMED',
-        actor: 'GATEWAY_WEBHOOK',
-        reason: `Payment verified and captured via ${params.gatewayName} (ref: ${params.gatewayRef})`,
-        correlationId: `corr_wh_${params.eventId}`,
-      },
-    });
-
-    // FIN-106 / PAY-106: Wire verified payment to general ledger automatically (one posting per capture)
-    await GeneralLedgerService.postGatewayPayment(
-      {
-        groupId: `wh_grp_${params.eventId}`,
-        amount: incomingMoney,
-        currency: settledCurrency,
-        referenceId: booking.id,
-        memo: `Gateway webhook capture for booking ${booking.reference || booking.id}`,
-      },
-      client
-    );
-
-    // FIN-107, FIN-108: Wire revenue and supplier liability derived from PriceSnapshot
-    try {
-      await GeneralLedgerService.wireBookingConfirmationToLedger(booking.id, client);
-    } catch (err) {
-      console.warn('Booking confirmation revenue realization wiring note:', err);
-    }
-
-    // Sensitive-action audit trail
-    await client.auditLog.create({
-      data: {
-        action: 'PAYMENT_CAPTURED',
-        resource: 'Payment',
-        resourceId: payment.id,
-        newData: JSON.stringify({
-          bookingId: booking.id,
-          amount: incomingMoney.toString(),
-          currency: settledCurrency,
-          gateway: gatewayName,
+      const payment = await atomicClient.payment.create({
+        data: {
+          bookingId: params.bookingId,
+          paymentIntentId: linkedIntent?.id,
+          idempotencyKey,
+          method: gatewayName.startsWith('ECARDO') ? 'gateway_ecardo' : 'gateway_shetab',
           gatewayRef: params.gatewayRef,
-          eventId: params.eventId,
-        }),
-      },
-    });
+          amount: incomingMoney.toDecimal(),
+          currency: settledCurrency,
+          status: 'SUCCESS',
+          rawPayload: params.rawPayload ? JSON.stringify(params.rawPayload) : null,
+        },
+      });
 
-    businessMetrics.recordPaymentCaptured(gatewayName, incomingMoney.toNumber());
+      // Update WebhookEvent to PROCESSED
+      await atomicClient.webhookEvent.update({
+        where: { id: webhookRecord.id },
+        data: {
+          status: 'PROCESSED',
+          processedAt: new Date(),
+        },
+      });
 
-    return {
-      processed: true,
-      status: 'PROCESSED',
-      paymentId: payment.id,
+      // Update Booking status
+      await atomicClient.booking.update({
+        where: { id: booking.id },
+        data: {
+          paymentStatus: 'CAPTURED',
+          status: 'CONFIRMED',
+        },
+      });
+
+      // Add relational status history (BOOK-004)
+      await atomicClient.bookingStatusHistory.create({
+        data: {
+          bookingId: booking.id,
+          fromStatus: booking.status,
+          toStatus: 'CONFIRMED',
+          actor: 'GATEWAY_WEBHOOK',
+          reason: `Payment verified and captured via ${params.gatewayName} (ref: ${params.gatewayRef})`,
+          correlationId: `corr_wh_${params.eventId}`,
+        },
+      });
+
+      // FIN-106 / PAY-106: Wire verified payment to general ledger automatically (one posting per capture)
+      await GeneralLedgerService.postGatewayPayment(
+        {
+          groupId: `wh_grp_${params.eventId}`,
+          amount: incomingMoney,
+          currency: settledCurrency,
+          referenceId: booking.id,
+          memo: `Gateway webhook capture for booking ${booking.reference || booking.id}`,
+        },
+        atomicClient
+      );
+
+      // FIN-107, FIN-108: Wire revenue and supplier liability derived from PriceSnapshot
+      try {
+        await GeneralLedgerService.wireBookingConfirmationToLedger(booking.id, atomicClient);
+      } catch (err) {
+        console.warn('Booking confirmation revenue realization wiring note:', err);
+      }
+
+      // Sensitive-action audit trail
+      await atomicClient.auditLog.create({
+        data: {
+          action: 'PAYMENT_CAPTURED',
+          resource: 'Payment',
+          resourceId: payment.id,
+          newData: JSON.stringify({
+            bookingId: booking.id,
+            amount: incomingMoney.toString(),
+            currency: settledCurrency,
+            gateway: gatewayName,
+            gatewayRef: params.gatewayRef,
+            eventId: params.eventId,
+          }),
+        },
+      });
+
+      businessMetrics.recordPaymentCaptured(gatewayName, incomingMoney.toNumber());
+
+      return {
+        processed: true,
+        status: 'PROCESSED',
+        paymentId: payment.id,
+      };
     };
+
+    if (tx) {
+      return executeCapture(tx);
+    }
+    return prisma.$transaction(executeCapture, { isolationLevel: 'Serializable', timeout: 15000 });
   }
 
   /**

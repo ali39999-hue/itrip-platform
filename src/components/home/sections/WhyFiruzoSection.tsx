@@ -14,11 +14,11 @@ export function WhyFiruzoSection() {
       color: 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300',
       title: lt(locale, { fa: 'تضمین اصالت و کمترین نرخ', en: 'Best Price Guarantee', ar: 'ضمان أقل سعر', zh: '最优价格保证', ru: 'Гарантия лучшей цены' }),
       desc: lt(locale, {
-        fa: 'اتصال مستقیم به سامانه تأمین‌کنندگان رسمی با حذف واسطه‌ها و ارائه کمترین نرخ مصوب.',
-        en: 'Direct integration with official global suppliers with zero middleman markup.',
-        ar: 'اتصال مباشر بموردي الطيران والفنادق دون وسائط.',
-        zh: '直连全球官方优质供应商，无中间商加价。',
-        ru: 'Прямая интеграция с поставщиками без посредников.',
+        fa: 'پایش و تجمیع هوشمند نرخ تأمین‌کنندگان با حذف واسطه‌ها و ارائه شفاف‌ترین نرخ رقابتی.',
+        en: 'Smart aggregation and price comparison across accredited suppliers with zero unnecessary markups.',
+        ar: 'تجميع ذكي لأسعار الموردين دون وسطاء لتقديم أفضل الأسعار.',
+        zh: '智能比价与优质供应商整合，提供透明且具竞争力的价格。',
+        ru: 'Умная агрегация цен проверенных поставщиков без лишних наценок.',
       }),
     },
     {
@@ -50,11 +50,11 @@ export function WhyFiruzoSection() {
       color: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
       title: lt(locale, { fa: 'پرداخت چندارزی امن', en: 'Multi-Currency Settlement', ar: 'دفع متعدد العملات', zh: '多币种安全便捷支付', ru: 'Безопасная мультивалютная оплата' }),
       desc: lt(locale, {
-        fa: 'امکان پرداخت با کارت‌های بانکی شتاب، تتر (TRC-20) و کارت‌های بین‌المللی با پروتکل امنیتی.',
-        en: 'Pay securely using Iranian Shetab debit cards, Tether USDT, or international bank cards.',
-        ar: 'الدفع الآمن ببطاقات شتاب، وتيثر، والبطاقات العالمية.',
-        zh: '支持伊朗Shetab银行卡、USDT加密货币及国际银行卡合规结算。',
-        ru: 'Оплата картами Shetab, криптовалютой USDT и международными картами.',
+        fa: 'امکان پرداخت با کارت‌های بانکی شتاب و کیف‌پول چندارزی (تتر و کارت‌های بین‌المللی به‌زودی) با پروتکل امنیتی.',
+        en: 'Pay securely using Shetab debit cards and multi-currency wallet (Tether USDT & international cards coming soon).',
+        ar: 'الدفع الآمن ببطاقات شتاب والمحفظة متعددة العملات (تيثر والبطاقات العالمية قريباً).',
+        zh: '支持伊朗Shetab银行卡与多币种钱包结算（USDT与国际银行卡即将推出）。',
+        ru: 'Оплата картами Shetab и мультивалютным кошельком (USDT и международные карты — скоро).',
       }),
     },
   ];

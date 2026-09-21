@@ -397,9 +397,14 @@ export class RefundDomainService {
         payoutSuccess = true;
         payoutRef = `ledger:rfd_grp_${refund.id}`;
       } else if (channel === 'GATEWAY') {
+        const payment = await client.payment.findFirst({
+          where: { bookingId: booking.id, status: 'SUCCESS' },
+          orderBy: { createdAt: 'desc' },
+        });
+        const actualGatewayRef = payment?.gatewayRef || payment?.idempotencyKey || payment?.id || `gw_${booking.id}`;
         const adapter = new CustomerRefundAdapter();
         const res = await adapter.refundViaGateway({
-          gatewayRef: `gw_${booking.id}`,
+          gatewayRef: actualGatewayRef,
           amount: netMoney,
           reason: refund.reason || 'Customer cancellation',
         });
@@ -449,17 +454,22 @@ export class RefundDomainService {
       }
 
       // REF-106: Wire refund to General Ledger (refund posts exactly once)
-      await GeneralLedgerService.postRefund(
-        {
-          groupId: `rfd_grp_${refund.id}`,
-          userId: booking.customerId,
-          amount: netMoney,
-          currency: booking.currency,
-          referenceId: refund.id,
-          memo: `Booking refund credit for ${refund.refundNumber}`,
-        },
-        client
-      );
+      // Only WALLET refunds credit the user's personal wallet account.
+      // GATEWAY and PAYA payouts disburse funds to external banking rails;
+      // crediting the wallet as well would result in double refunding (REF-108).
+      if (channel === 'WALLET') {
+        await GeneralLedgerService.postRefund(
+          {
+            groupId: `rfd_grp_${refund.id}`,
+            userId: booking.customerId,
+            amount: netMoney,
+            currency: booking.currency,
+            referenceId: refund.id,
+            memo: `Booking refund credit for ${refund.refundNumber}`,
+          },
+          client
+        );
+      }
 
       // Walk booking status machine to REFUNDED
       const chain = CHAIN_TO_REFUNDED[booking.status as BookingState];

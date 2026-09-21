@@ -132,4 +132,21 @@ describe('FX exchange guard (BUG-002) & spread revenue leg (BUG-012)', () => {
     const usdtBalance = await GeneralLedgerService.getAccountBalance(usdtAccount!.id, 'USDT');
     expect(usdtBalance.amount.toNumber()).toBe(20 + 10 + 10); // 20 from test 2 + 10 + 10
   });
+
+  it('verifies Toman-anchored currency rates prevent 10x mis-scale between IRR and USDT/AED (FIN-107)', async () => {
+    const { CURRENCY_TO_TOMAN } = await import('@/lib/money');
+    // 55,000 Toman = 1 USDT
+    expect(CURRENCY_TO_TOMAN.USDT).toBe(55000);
+    // 16,500 Toman = 1 AED
+    expect(CURRENCY_TO_TOMAN.AED).toBe(16500);
+
+    // 1,100,000 Toman converts to exactly 20 USDT, not 2 USDT (which would happen with rial-scale 550,000)
+    const amountToman = 1_100_000;
+    const usdt = amountToman / CURRENCY_TO_TOMAN.USDT;
+    expect(usdt).toBe(20);
+
+    // 20 USDT converts to exactly 1,100,000 Toman, not 11,000,000
+    const backToToman = usdt * CURRENCY_TO_TOMAN.USDT;
+    expect(backToToman).toBe(1_100_000);
+  });
 });

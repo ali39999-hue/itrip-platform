@@ -140,7 +140,7 @@ export default function FlightsLandingPage() {
             </div>
             <h3 className="text-base font-black text-ink">{lt(locale, { fa: 'صدور آنی و کد رهگیری رسمی', en: 'Instant Ticketing & Official PNR', ar: 'إصدار فوري ورمز تتبع رسمي', zh: '即时出票与官方追踪码', ru: 'Мгновенное оформление и официальный PNR' })}</h3>
             <p className="text-xs text-sub font-bold leading-relaxed">
-              {lt(locale, { fa: 'صدور مستقیم بلیط و ثبت PNR رسمی در شبکه ایرلاین‌ها بدون کوچکترین تاخیر', en: 'Direct ticket issuance with an official PNR registered across airline networks — zero delay.', ar: 'إصدار التذاكر مباشرة مع تسجيل PNR رسمي في شبكات شركات الطيران دون تأخير.', zh: '直接出票并在航空公司网络中登记官方 PNR，零延迟。', ru: 'Прямое оформление билета с официальным PNR в сетях авиакомпаний — без задержек.' })}
+              {lt(locale, { fa: 'صدور واچر رسمی دیجیتال و پیگیری لحظه‌ای وضعیت بلیت در سامانه فیروزو', en: 'Official digital voucher issuance with real-time tracking in the Firuzo platform.', ar: 'إصدار قسيمة رقمية رسمية ومتابعة حالة التذكرة عبر منصة فيروزو.', zh: '出具官方数字凭证并在 Firuzo 平台实时追踪出票状态。', ru: 'Оформление официального цифрового ваучера и отслеживание статуса в платформе Firuzo.' })}
             </p>
           </div>
 

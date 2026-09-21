@@ -51,7 +51,7 @@ export function Footer() {
         { name: t('guidePage'), href: '/guide' },
         { name: t('myTrips'), href: '/my-trips' },
         { name: t('destinations'), href: '/destinations' },
-        { name: lt(locale, { fa: 'پنل مدیریت (ERP)', en: 'Admin ERP Panel', ar: 'لوحة الإدارة', zh: '管理后台', ru: 'Панель управления' }), href: '/admin' },
+        { name: lt(locale, { fa: 'راهنما و قوانین سفر', en: 'Travel Guide & Terms', ar: 'دليل وقوانين السفر', zh: '旅行指南与条款', ru: 'Правила и руководство' }), href: '/guide' },
       ],
     },
   ];
@@ -61,6 +61,8 @@ export function Footer() {
   try {
     if (locale === 'fa') {
       currentDisplayYear = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { year: 'numeric' }).format(new Date());
+    } else if (locale === 'ar') {
+      currentDisplayYear = new Intl.DateTimeFormat('ar-u-nu-arab', { year: 'numeric' }).format(new Date());
     }
   } catch {
     currentDisplayYear = String(currentGregorianYear);
@@ -196,11 +198,11 @@ export function Footer() {
           <div className="flex flex-wrap items-center justify-between gap-4 py-2 text-xs font-bold text-sub">
             <div className="flex items-center gap-2">
               <ShieldCheck size={16} className="text-brand-dark" />
-              <span>{lt(locale, { fa: ' -توسعه داده شده توسط رضاو علی - پلتفرم مورد تایید سازمان هواپیمایی کشوری و میراث فرهنگی', en: 'Certified by Civil Aviation Organization & Cultural Heritage - Developed by Ali & Reza', ar: 'معتمد من هيئة الطيران المدني والتراث', zh: '民航局与文化遗产认证平台', ru: 'Сертифицированная платформа гражданской авиации' })}</span>
+              <span>{lt(locale, { fa: 'پلتفرم هوشمند خدمات سفر و گردشگری — توسعه‌یافته بر پایه استانداردهای خدمات هوانوردی و گردشگری', en: 'Smart Travel Platform — Built to civil aviation & tourism service standards', ar: 'منصة السفر الذكية المطورة وفق معايير الطيران والسياحة', zh: '基于民航与旅游服务标准打造的智能出行平台', ru: 'Умная туристическая платформа по стандартам гражданской авиации' })}</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="px-2.5 py-1 rounded-lg bg-soft border border-line text-[11px] font-mono text-ink">
-                {lt(locale, { fa: 'SHETAB / شاپرک', en: 'SHETAB / Shaparak', ar: 'SHETAB / شتاب', zh: 'SHETAB / Shaparak', ru: 'SHETAB / Shaparak' })}
+                {lt(locale, { fa: 'درگاه امن eCardo / شتاب', en: 'eCardo / Shetab Gateway', ar: 'بوابة eCardo / شتاب', zh: 'eCardo / Shetab 安全网关', ru: 'Шлюз eCardo / Shetab' })}
               </span>
               <span className="px-2.5 py-1 rounded-lg bg-soft border border-line text-[11px] font-mono text-ink">
                 {lt(locale, { fa: 'USDT (به‌زودی)', en: 'USDT (Coming Soon)', ar: 'USDT (قريباً)', zh: 'USDT (即将推出)', ru: 'USDT (Скоро)' })}
@@ -216,7 +218,7 @@ export function Footer() {
       <div className="bg-deep text-surface">
         <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-4 flex items-center justify-center text-center">
           <p className="text-[12px] text-mint-bright font-bold">
-            {t('rights').replace(/\b(202\d|۱۴۰\d)\b/, currentDisplayYear)}
+            {t('rights').replace(/(202\d|[۰-۹]{4}|[٠-٩]{4})/u, currentDisplayYear)}
           </p>
         </div>
       </div>

@@ -1,11 +1,11 @@
 # iTRIP / Firuzo Platform — Feature Reality Matrix (v1.8.6)
 
-**Latest Release Tag:** `v1.8.4` (`de150f55ab67`)  
-**Current Main Branch HEAD:** `48998aff8831` (`feat(evidence): canonical release identity, a11y remediation 32->3, unified cart & capability registry`) — 2 commits ahead of the v1.8.4 tag (unreleased development state)  
-**Current Live Deployment:** `1.8.4` on commit `f6c16800a60059f0142b47d9367a9023e5aa28ff` (deployed from main @ `f6c1680`; `48998af` pending push → CI → Vercel deploy)  
-**Audit Date:** 2026-09-20  
-**Authoritative Baseline:** v1.8.6 / `de150f5` (Release) / `48998af` (Main, unreleased) / `f6c1680` (Live)  
-**Supersedes:** `FEATURE_REALITY_MATRIX.md` (v1.8.3 / `c496370`)  
+**Latest Release Tag:** `v1.8.6` (`2e139520d8ce`)  
+**Current Main Branch HEAD:** `2e139520d8ce` (`feat(release): v1.8.6 - UX ergonomics, date clamping, unified EmptyState & CSP improvements`)  
+**Current Live Deployment:** `1.8.6` on commit `2e139520d8cecb9af3baad39798342cd3f2fef5a` (deployed from `2e13952` on Vercel — ALIGNED)  
+**Audit Date:** 2026-09-21  
+**Authoritative Baseline:** v1.8.6 / `2e13952` (Release) / `2e13952` (Main) / `2e13952` (Live)  
+**Supersedes:** `FEATURE_REALITY_MATRIX.md` (v1.8.4 / `de150f5`)  
 
 > **Notice:** This document is the single authoritative source of truth for platform capabilities, feature reality, and deployment verification. Every status is evidence-backed by source code, Prisma schema models, automated unit/integration test suites, and live HTTP probes. Optimistic claims, unverified states, and outdated matrix baselines are strictly reconciled herein.
 
@@ -15,12 +15,12 @@
 
 - **Runtime & Framework:** Node.js 22.x · Next.js 16.3.4 (App Router) · React 19.2.8 · TypeScript 5 · Tailwind CSS v4
 - **Database & Persistence:** Prisma 5.22.0 · **78 Relational Models** · **34 Migrations** (PostgreSQL 16 canonical, zero SQLite drift)
-- **Unit & Domain Tests:** 164 test files / **1,130 verified tests** (100% passing across domain, observability, portability and UI suites — source: `docs/baseline/quality-report.json`)
+- **Unit & Domain Tests:** 166 test files / **1,140 verified tests** (100% passing across domain, observability, portability and UI suites — source: `docs/baseline/quality-report.json`)
 - **E2E Test Specifications:** 33 Playwright test suites in `tests/*.spec.ts` (golden journeys, mobile journeys, security, a11y)
 - **Internationalization:** 5 supported languages (`fa`, `en`, `ar`, `zh`, `ru`) with 100% key parity enforced via `scripts/i18n-completeness-gate.mjs`
 - **Design System & Primitives:** Semantic tokens (`text-ink`, `text-sub`, `bg-surface`, `bg-brand`, `bg-action`), Shadcn primitives, glassmorphism, responsive 320px–1440px
 - **Capability Registry:** `src/lib/capabilities/index.ts` (45 tracked capabilities) controlling customer-facing claim states
-- **Live Deployment State:** `https://itrip-platform.vercel.app/` running verified version `1.8.5` on commit `584ed38e9631` (ALIGNED), probed live via `/api/version`, `/api/health/live`, `/api/capabilities` — measured by scripts/verify-release-consistency.mjs at 2026-09-20T07:36:08.250Z
+- **Live Deployment State:** `https://itrip-platform.vercel.app/` running verified version `1.8.6` on commit `2e139520d8ce` (ALIGNED), probed live via `/api/version`, `/api/health/live`, `/api/capabilities` — measured by scripts/verify-release-consistency.mjs at 2026-09-20T10:42:58.684Z
 
 ---
 
@@ -28,20 +28,20 @@
 
 | Scope | Entity | Target / Expected | Observed Reality | Status | Evidence / Notes |
 |---|---|---|---|---|---|
-| **LATEST RELEASE** | **Git Release Tag** | `v1.8.4` | `refs/tags/v1.8.4` -> `de150f5` | **ALIGNED** | Tag points to commit `de150f55ab673c61a8818186b31b98a840af8fee` |
-| **LATEST RELEASE** | **Release Commit** | `de150f5` | `de150f55ab673c61a8818186b31b98a840af8fee` | **ALIGNED** | Primary v1.8.4 release train commit |
-| **CURRENT MAIN** | **Local / Origin HEAD** | `f6c1680` | `f6c16800a60059f0142b47d9367a9023e5aa28ff` | **ALIGNED** | 1 commit ahead of v1.8.4 tag; measured via `git rev-parse HEAD` |
-| **CURRENT MAIN** | **package.json Version** | `1.8.4` | `1.8.4` | **ALIGNED** | Line 3 of `package.json` |
+| **LATEST RELEASE** | **Git Release Tag** | `v1.8.6` | `refs/tags/v1.8.6` -> `2e13952` | **ALIGNED** | Tag points to commit `2e139520d8cecb9af3baad39798342cd3f2fef5a` |
+| **LATEST RELEASE** | **Release Commit** | `2e13952` | `2e139520d8cecb9af3baad39798342cd3f2fef5a` | **ALIGNED** | Primary v1.8.6 release train commit |
+| **CURRENT MAIN** | **Local / Origin HEAD** | `2e139520d8ce` | `2e139520d8ce` | **ALIGNED** | Measured via `git rev-parse HEAD` |
+| **CURRENT MAIN** | **package.json Version** | `1.8.6` | `1.8.6` | **ALIGNED** | Line 3 of `package.json` |
 | **CURRENT MAIN** | **src/lib/version.ts** | `1.8.6` | `1.8.6` | **ALIGNED** | `NEXT_PUBLIC_APP_VERSION` default in `src/lib/version.ts` |
-| **CURRENT LIVE** | **Live Deployment Artifact** | `f6c1680` | `f6c16800a60059f0142b47d9367a9023e5aa28ff` | **ALIGNED** | Vercel deployed from `main` @ `f6c1680` |
-| **CURRENT LIVE** | **Live /api/version** | `1.8.4` | `1.8.4` (commit `f6c16800a600...`) | **ALIGNED** | Production runtime reported version `1.8.4` |
+| **CURRENT LIVE** | **Live Deployment Artifact** | `2e139520d8ce` | `2e139520d8ce` | **ALIGNED** | Vercel deployed from commit `2e139520d8ce` |
+| **CURRENT LIVE** | **Live /api/version** | `1.8.6` | `1.8.6` (commit `2e139520d8ce...`) | **ALIGNED** | Production runtime reported version `1.8.6` |
 | **CURRENT LIVE** | **Live /api/health/live** | 200 OK | 200 OK (`status: live`) | **HEALTHY** | Node.js v22.23.2 alive, memory: ~80MB |
 | **CURRENT LIVE** | **Live /api/health/ready** | 200 OK | 200 OK (`status: ready`) | **HEALTHY** | Database healthy, eCardo gateway production mode |
-| **CURRENT LIVE** | **Live /api/capabilities**| 200 OK | 200 OK (v1.8.5 registry) | **HEALTHY** | Capability registry served by the same runtime |
+| **CURRENT LIVE** | **Live /api/capabilities**| 200 OK | 200 OK (v1.8.6 registry) | **HEALTHY** | Capability registry served by the same runtime |
 
 ---
 
-## 3. Comprehensive Feature Reality Matrix (v1.8.4)
+## 3. Comprehensive Feature Reality Matrix (v1.8.6)
 
 Status legend:
 - **REAL:** Verified end-to-end (Database, Backend, API, Frontend, Automated Tests) without simulation.
@@ -105,8 +105,8 @@ Status legend:
 
 ## 4. Test Metrics (Authoritative Single Source of Truth)
 
-- **Test Files Count:** **162 test files** (measured from `results/unit.json` `testResults.length` — `numTotalTestSuites` counts describe() blocks, not files)
-- **Total Unit Test Specs:** **1,112 verified passing tests** (100% pass rate — source: `docs/baseline/quality-report.json`)
+- **Test Files Count:** **166 test files** (measured from `results/unit.json` `testResults.length` — `numTotalTestSuites` counts describe() blocks, not files)
+- **Total Unit Test Specs:** **1,140 verified passing tests** (100% pass rate — source: `docs/baseline/quality-report.json`)
 - **Failure Count:** **0 failed**
 - **Skipped / Flaky Count:** **0 skipped, 0 flaky**
 - **Breakdown by Domain** (measured from test file paths in `results/unit.json`, buckets overlap by keyword priority):

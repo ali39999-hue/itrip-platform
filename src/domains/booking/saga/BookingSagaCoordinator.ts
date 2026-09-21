@@ -503,22 +503,31 @@ export class BookingSagaCoordinator {
           }
 
           case 'CAPTURE_PAYMENT': {
-            // Refund payment via GeneralLedger reversal
-            const amountStr = (resultSnapshot.amount as string) || (context.totalAmount as string);
-            const currency = (resultSnapshot.currency as string) || (context.currency as string) || 'IRR';
-            const customerId = context.customerId as string;
+            // SAGA-107: Only wallet payments are refunded via internal GeneralLedger reversal.
+            // Gateway card payments have not credited platform escrow at Step 2 and must be voided/reversed
+            // through the payment gateway rather than crediting free platform escrow to the user's wallet.
+            const paymentMethod = (resultSnapshot.method as string) || (context.paymentMethod as string);
+            const isWalletPayment = paymentMethod === 'wallet_irr' || paymentMethod === 'wallet_usdt';
 
-            if (amountStr && customerId) {
-              const refundMoney = new Money(amountStr, currency);
-              await GeneralLedgerService.postRefund({
-                groupId: `comp_pay_${sagaId}`,
-                userId: customerId,
-                amount: refundMoney,
-                currency,
-                referenceId: bookingId,
-                memo: `Saga rollback refund for booking ${bookingId}`,
-              });
-              sagaLogger.info('Compensation: Refunded payment to user', { amount: amountStr, currency, customerId });
+            if (isWalletPayment) {
+              const amountStr = (resultSnapshot.amount as string) || (context.totalAmount as string);
+              const currency = (resultSnapshot.currency as string) || (context.currency as string) || 'IRR';
+              const customerId = context.customerId as string;
+
+              if (amountStr && customerId) {
+                const refundMoney = new Money(amountStr, currency);
+                await GeneralLedgerService.postRefund({
+                  groupId: `comp_pay_${sagaId}`,
+                  userId: customerId,
+                  amount: refundMoney,
+                  currency,
+                  referenceId: `saga_comp_${sagaId}`,
+                  memo: `Saga rollback refund for booking ${bookingId}`,
+                });
+                sagaLogger.info('Compensation: Refunded wallet payment to user', { amount: amountStr, currency, customerId });
+              }
+            } else {
+              sagaLogger.info('Compensation: Gateway payment requires gateway reversal/void', { bookingId, sagaId });
             }
             break;
           }

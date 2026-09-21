@@ -670,7 +670,6 @@ export async function exchangeWalletCurrency(from: 'IRR' | 'USDT' | 'AED', to: '
     }
 
     const { GeneralLedgerService } = await import('@/domains/ledger/GeneralLedgerService');
-    const { defaultCurrencyService } = await import('@/domains/currency/CurrencyService');
     const { Money } = await import('@/lib/finance');
     const { Prisma } = await import('@prisma/client');
 
@@ -684,10 +683,18 @@ export async function exchangeWalletCurrency(from: 'IRR' | 'USDT' | 'AED', to: '
       return { success: false, error: 'Insufficient balance' };
     }
 
-    // 0.5% exchange spread retained as platform revenue.
-    const converted = defaultCurrencyService.convert(amount, from, to);
-    const toMoney = new Money(converted, to);
-    const spreadMoney = toMoney.mul(new Prisma.Decimal('0.005')).round(2);
+    // Wallet amounts for 'IRR' are stored in Toman (the platform's canonical base unit),
+    // matching CURRENCY_TO_TOMAN in @/lib/money and initiateEcardoPayment. We convert via
+    // Toman-anchored rates to prevent a 10x mis-scale against rial-based tables (FIN-107).
+    const { CURRENCY_TO_TOMAN } = await import('@/lib/money');
+    const fromRate = CURRENCY_TO_TOMAN[from] ?? 1;
+    const toRate = CURRENCY_TO_TOMAN[to] ?? 1;
+    const amountInToman = amount * fromRate;
+    const rawConverted = amountInToman / toRate;
+    const roundedConverted = to === 'IRR' ? Math.round(rawConverted) : Math.round(rawConverted * 100) / 100;
+
+    const toMoney = new Money(roundedConverted, to);
+    const spreadMoney = toMoney.mul(new Prisma.Decimal('0.005')).round(to === 'IRR' ? 0 : 2);
 
     // The ledger's FIN-102 dedupe keys on (referenceType, referenceId) globally,
     // so referenceId must be unique per exchange — a constant made every

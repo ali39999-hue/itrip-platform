@@ -50,18 +50,27 @@ for (const raw of candidateUrls) {
   } catch {}
 }
 
-const devTunnelOrigins = isDev
+const customPort = process.env.PORT || '3000';
+
+const devOnlyOrigins = isDev
   ? [
+      'localhost:3000',
+      '127.0.0.1:3000',
+      `localhost:${customPort}`,
+      `127.0.0.1:${customPort}`,
       '*.trycloudflare.com',
       '*.ngrok-free.app',
       '*.ngrok.io',
+      '*.railway.app',
+      '*.up.railway.app',
+      '*.onrender.com',
+      '*.fly.dev',
+      ...getLocalNetworkOrigins(),
     ]
   : [];
 
-const baseAllowedOrigins = [
-  'localhost:3000',
-  '127.0.0.1:3000',
-  '*.vercel.app',
+const prodOrigins = [
+  'itrip-platform.vercel.app',
   '*.firuzo.com',
   'firuzo.com',
   '*.firuzo.online',
@@ -69,23 +78,15 @@ const baseAllowedOrigins = [
   'call.firuzo.online',
   '*.itrip.ir',
   'itrip.ir',
-  ...devTunnelOrigins,
-  '*.railway.app',
-  '*.up.railway.app',
-  '*.onrender.com',
-  '*.fly.dev',
-  ...autoDetectedHosts,
-  ...envAllowed,
+  ...(process.env.VERCEL_ENV === 'preview' ? ['*.vercel.app'] : []),
 ];
-
-const customPort = process.env.PORT || '3000';
 
 const allAllowedOrigins = Array.from(
   new Set([
-    ...baseAllowedOrigins,
-    `localhost:${customPort}`,
-    `127.0.0.1:${customPort}`,
-    ...getLocalNetworkOrigins(),
+    ...prodOrigins,
+    ...devOnlyOrigins,
+    ...autoDetectedHosts,
+    ...envAllowed,
   ])
 );
 

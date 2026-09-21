@@ -178,7 +178,7 @@ export default function HotelsLandingPage() {
             </div>
             <h3 className="text-base font-black text-ink">{lt(locale, { fa: 'واچر الکترونیکی آنی', en: 'Instant E-Voucher', ar: 'قسيمة إلكترونية فورية', zh: '即时电子凭证', ru: 'Мгновенный электронный ваучер' })}</h3>
             <p className="text-xs text-sub font-bold leading-relaxed">
-              {lt(locale, { fa: 'صدور مستقیم برگه پذیرش رسمی هتل در لحظه پرداخت بدون معطلی و هماهنگی مجدد', en: 'Official hotel voucher issued at the moment of payment — no delays, no re-confirmation', ar: 'إصدار قسيمة الفندق الرسمية لحظة الدفع دون تأخير أو تأكيد إضافي', zh: '支付瞬间即出官方酒店凭证，无等待、无需二次确认', ru: 'Официальный ваучер отеля выдаётся в момент оплаты — без задержек и подтверждений' })}
+              {lt(locale, { fa: 'صدور واچر الکترونیکی معتبر در لحظه ثبت پرداخت همراه با کد پیگیری یکتا', en: 'Verified digital hotel voucher issued upon payment confirmation with unique tracking ID', ar: 'إصدار قسيمة فندقية إلكترونية معتمدة فور تأكيد الدفع مع رمز تتبع موحد', zh: '支付确认后即刻出具带唯一追溯码的官方电子凭证', ru: 'Выдача подтвержденного электронного ваучера сразу после оплаты с уникальным кодом' })}
             </p>
           </div>
 

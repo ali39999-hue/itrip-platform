@@ -18,6 +18,8 @@ import { lt } from '@/lib/lt';
 import { num } from '@/lib/format';
 import { getCurrencyLabel } from '@/lib/currencies';
 import { TourImage } from '@/components/tours/TourImage';
+import { getAllTours } from '@/services/tours-service';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 const TOUR_IMGS: Record<string, string> = {
   t1: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&q=70&w=800',
@@ -45,8 +47,8 @@ function ToursContent() {
   const [sort, setSort] = useState<SortKey>('rec');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTourPreview, setSelectedTourPreview] = useState<Tour | null>(null);
-  const [allTours, setAllTours] = useState<Tour[]>([]);
-  const [loadingTours, setLoadingTours] = useState(true);
+  const [allTours, setAllTours] = useState<Tour[]>(() => getAllTours());
+  const [loadingTours, setLoadingTours] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -57,15 +59,12 @@ function ToursContent() {
       .then((res) => res.json())
       .then((json) => {
         if (!mounted) return;
-        if (json.success && Array.isArray(json.data)) {
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
           setAllTours(json.data);
-        } else {
-          setAllTours([]);
         }
       })
       .catch((err) => {
-        console.error('Failed to fetch tours from API:', err);
-        if (mounted) setAllTours([]);
+        console.warn('Notice: Background tours refresh fallback to static catalog:', err);
       })
       .finally(() => {
         if (mounted) setLoadingTours(false);
@@ -357,15 +356,16 @@ function ToursContent() {
       ) : (
         <>
           {filtered.length === 0 ? (
-            <div className="py-16 text-center text-sub bg-surface rounded-3xl border border-line p-8">
-              <Tent size={36} className="mx-auto text-line mb-3" />
-              <h3 className="font-black text-base text-ink mb-1">
-                {lt(locale, { fa: 'توری با این مشخصات یافت نشد', en: 'No tours found matching your search', ar: 'لم يتم العثور على جولات مطابقة', zh: '未找到匹配的旅游产品', ru: 'Туры не найдены' })}
-              </h3>
-              <p className="text-xs font-bold text-sub">
-                {lt(locale, { fa: 'کلمات دیگری جستجو کنید یا فیلتر دسته‌بندی را تغییر دهید.', en: 'Try different search keywords or select another category.', ar: 'جرب كلمات بحث أخرى أو اختر فئة مختلفة.', zh: '请尝试其他关键词或更换分类。', ru: 'Попробуйте другие слова или смените категорию.' })}
-              </p>
-            </div>
+            <EmptyState
+              icon={Tent}
+              title={lt(locale, { fa: 'توری با این مشخصات یافت نشد', en: 'No tours found matching your search', ar: 'لم يتم العثور على جولات مطابقة', zh: '未找到匹配的旅游产品', ru: 'Туры не найдены' })}
+              description={lt(locale, { fa: 'کلمات دیگری جستجو کنید یا فیلتر دسته‌بندی و مقصد را تغییر دهید.', en: 'Try different search keywords or select another category or country.', ar: 'جرب كلمات بحث أخرى أو اختر فئة وبلداً مختلفاً.', zh: '请尝试其他关键词或更换分类与目的地。', ru: 'Попробуйте другие слова или смените категорию и направление.' })}
+              actionText={lt(locale, { fa: 'مشاهده همه تورها', en: 'View All Tours', ar: 'عرض جميع الجولات', zh: '查看全部旅游', ru: 'Показать все туры' })}
+              onAction={() => {
+                setCategory('all');
+                setSearchQuery('');
+              }}
+            />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {filtered.map((tour) => (
