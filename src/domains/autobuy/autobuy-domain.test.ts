@@ -49,12 +49,8 @@ describe('Auto-Buy Domain & Smart Execution Suite', () => {
         await prisma.booking.deleteMany({ where: { id: bId } }).catch(() => {});
       }
 
-      await prisma.ledgerEntry.deleteMany({ where: { referenceType: 'TOPUP', referenceId: { contains: suffix } } }).catch(() => {});
-      const userAccounts = await prisma.account.findMany({ where: { ownerId: testUserId }, select: { id: true } });
-      const accIds = userAccounts.map((a) => a.id);
-      if (accIds.length > 0) {
-        await prisma.ledgerEntry.deleteMany({ where: { accountId: { in: accIds } } }).catch(() => {});
-      }
+      await prisma.ledgerEntry.deleteMany({ where: { groupId: { contains: 'ab_topup' } } }).catch(() => {});
+      await prisma.ledgerEntry.deleteMany({ where: { groupId: { contains: suffix } } }).catch(() => {});
       await prisma.account.deleteMany({ where: { ownerId: testUserId } }).catch(() => {});
       await prisma.user.deleteMany({ where: { id: testUserId } }).catch(() => {});
     } catch (e) {
