@@ -5,7 +5,6 @@ import { useLocale } from 'next-intl';
 import Image from 'next/image';
 import QRCode from 'qrcode';
 import {
-  Smartphone,
   Download,
   ShieldCheck,
   QrCode,
@@ -16,10 +15,8 @@ import {
   ExternalLink,
   Lock,
   WifiOff,
-  Plane,
   CreditCard,
   Languages,
-  ChevronDown,
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { LATEST_MOBILE_RELEASE } from '@/app/api/download/apk/route';
@@ -166,14 +163,21 @@ export default function AppDownloadPage() {
 
             <div className="my-4 p-3 bg-white rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs">
               {qrCodeDataUrl ? (
-                <img src={qrCodeDataUrl} alt="iTRIP App Download QR" className="w-44 h-44 rounded-lg" />
+                <Image
+                  src={qrCodeDataUrl}
+                  alt="iTRIP App Download QR"
+                  width={176}
+                  height={176}
+                  unoptimized
+                  className="w-44 h-44 rounded-lg"
+                />
               ) : (
                 <div className="w-44 h-44 bg-slate-100 rounded-lg animate-pulse" />
               )}
             </div>
 
-            <span className="text-[11px] text-teal-600 dark:text-teal-400 font-medium">
-              firuzo.online/fa/app
+            <span className="text-[11px] text-teal-600 dark:text-teal-400 font-medium font-mono">
+              firuzo.online/{locale}/app
             </span>
           </div>
 
@@ -268,27 +272,27 @@ export default function AppDownloadPage() {
           <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
             {[
               {
-                step: '۱',
+                step: lt(locale, { fa: '۱', en: '1', ar: '١', zh: '1', ru: '1' }),
                 title: lt(locale, { fa: 'دانلود APK', en: 'Download APK', ar: 'تنزيل APK', zh: '下载 APK', ru: 'Скачать APK' }),
                 desc: lt(locale, { fa: 'روی دکمه دانلود مستقیم کلیک کنید.', en: 'Tap the direct download button above.', ar: 'اضغط على زر التنزيل المباشر أعلاه.', zh: '点击上方的直接下载按钮。', ru: 'Нажмите кнопку прямой загрузки выше.' }),
               },
               {
-                step: '۲',
+                step: lt(locale, { fa: '۲', en: '2', ar: '٢', zh: '2', ru: '2' }),
                 title: lt(locale, { fa: 'باز کردن فایل', en: 'Open File', ar: 'فتح الملف', zh: '打开文件', ru: 'Открыть файл' }),
                 desc: lt(locale, { fa: 'فایل دانلود شده را از نوار اعلان‌ها یا پوشه Downloads باز کنید.', en: 'Open downloaded file from notification bar or Downloads folder.', ar: 'افتح الملف الذي تم تنزيله من شريط الإشعارات أو التنزيلات.', zh: '从通知栏或下载文件夹中打开已下载文件。', ru: 'Откройте загруженный файл из шторки уведомлений.' }),
               },
               {
-                step: '۳',
+                step: lt(locale, { fa: '۳', en: '3', ar: '٣', zh: '3', ru: '3' }),
                 title: lt(locale, { fa: 'تأیید نصب', en: 'Allow Install', ar: 'السماح بالتثبيت', zh: '允许安装', ru: 'Разрешить установку' }),
                 desc: lt(locale, { fa: 'در صورت نمایش پیام امنیتی، گزینه Allow from this source را بزنید.', en: 'If prompted by Android, tap Settings and allow installation.', ar: 'إذا ظهرت رسالة أمان، اسمح بالتثبيت من هذا المصدر.', zh: '若系统提示安全警告，点击设置并允许安装。', ru: 'При запросе системы включите установку из источника.' }),
               },
               {
-                step: '۴',
+                step: lt(locale, { fa: '۴', en: '4', ar: '٤', zh: '4', ru: '4' }),
                 title: lt(locale, { fa: 'نصب برنامه', en: 'Tap Install', ar: 'تثبيت التطبيق', zh: '确认安装', ru: 'Установить' }),
                 desc: lt(locale, { fa: 'دکمه Install را بزنید و چند ثانیه صبر کنید.', en: 'Tap Install and wait a few seconds.', ar: 'اضغط على تثبيت وانتظر بضع ثوانٍ.', zh: '点击“安装”并稍候几秒钟。', ru: 'Нажмите «Установить» и подождите.' }),
               },
               {
-                step: '۵',
+                step: lt(locale, { fa: '۵', en: '5', ar: '٥', zh: '5', ru: '5' }),
                 title: lt(locale, { fa: 'ورود به اپ', en: 'Launch & Travel', ar: 'تشغيل والتسجيل', zh: '开启旅程', ru: 'Запуск и поездка' }),
                 desc: lt(locale, { fa: 'اپ را باز کنید؛ وارد شوید یا به عنوان مهمان سفر کنید.', en: 'Open iTRIP, sign in or explore as a guest traveler.', ar: 'افتح التطبيق وسجل الدخول أو تصفح كزائر.', zh: '打开 iTRIP，登录或直接以游客身份使用。', ru: 'Запустите iTRIP и используйте сейф.' }),
               },
@@ -353,7 +357,7 @@ export default function AppDownloadPage() {
               className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 text-xs font-bold text-slate-700 dark:text-slate-200 transition-all flex-shrink-0"
             >
               {copiedHash ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedHash ? 'کپی شد' : 'Copy'}</span>
+              <span>{copiedHash ? lt(locale, { fa: 'کپی شد', en: 'Copied', ar: 'تم النسخ', zh: '已复制', ru: 'Скопировано' }) : lt(locale, { fa: 'کپی', en: 'Copy', ar: 'نسخ', zh: '复制', ru: 'Копировать' })}</span>
             </button>
           </div>
         </div>
@@ -368,9 +372,13 @@ export default function AppDownloadPage() {
             <div className="p-4 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-between">
               <div>
                 <span className="text-xs font-bold text-slate-900 dark:text-white block">Direct APK</span>
-                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">دانلود مستقیم رسمی</span>
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                  {lt(locale, { fa: 'دانلود مستقیم رسمی', en: 'Official Direct Download', ar: 'تنزيل مباشر رسمي', zh: '官方直接下载', ru: 'Прямая загрузка' })}
+                </span>
               </div>
-              <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">فعال</span>
+              <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">
+                {lt(locale, { fa: 'فعال', en: 'Active', ar: 'نشط', zh: '已启用', ru: 'Активно' })}
+              </span>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
@@ -378,23 +386,37 @@ export default function AppDownloadPage() {
                 <span className="text-xs font-bold text-slate-900 dark:text-white block">Google Play</span>
                 <span className="text-[11px] text-slate-400 font-normal">AAB Package Ready</span>
               </div>
-              <span className="px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-bold">به زودی</span>
+              <span className="px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
+                {lt(locale, { fa: 'به زودی', en: 'Coming Soon', ar: 'قريباً', zh: '即将推出', ru: 'Скоро' })}
+              </span>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-slate-900 dark:text-white block">کافه بازار (Bazaar)</span>
-                <span className="text-[11px] text-slate-400 font-normal">در حال داوری</span>
+                <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                  {lt(locale, { fa: 'کافه بازار (Bazaar)', en: 'Cafe Bazaar', ar: 'كافيه بازار', zh: 'Cafe Bazaar', ru: 'Cafe Bazaar' })}
+                </span>
+                <span className="text-[11px] text-slate-400 font-normal">
+                  {lt(locale, { fa: 'در حال داوری', en: 'In Review', ar: 'قيد المراجعة', zh: '审核中', ru: 'На проверке' })}
+                </span>
               </div>
-              <span className="px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-bold">به زودی</span>
+              <span className="px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
+                {lt(locale, { fa: 'به زودی', en: 'Coming Soon', ar: 'قريباً', zh: '即将推出', ru: 'Скоро' })}
+              </span>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-slate-900 dark:text-white block">مایکت (Myket)</span>
-                <span className="text-[11px] text-slate-400 font-normal">در حال داوری</span>
+                <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                  {lt(locale, { fa: 'مایکت (Myket)', en: 'Myket Store', ar: 'مايكت', zh: 'Myket 应用商店', ru: 'Myket' })}
+                </span>
+                <span className="text-[11px] text-slate-400 font-normal">
+                  {lt(locale, { fa: 'در حال داوری', en: 'In Review', ar: 'قيد المراجعة', zh: '审核中', ru: 'На проверке' })}
+                </span>
               </div>
-              <span className="px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-bold">به زودی</span>
+              <span className="px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
+                {lt(locale, { fa: 'به زودی', en: 'Coming Soon', ar: 'قريباً', zh: '即将推出', ru: 'Скоро' })}
+              </span>
             </div>
           </div>
         </div>
