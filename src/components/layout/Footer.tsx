@@ -42,6 +42,7 @@ export function Footer() {
         { name: t('insurance'), href: '/insurance' },
         { name: t('esim'), href: '/esim' },
         { name: t('wallet'), href: '/wallet' },
+        { name: lt(locale, { fa: 'دانلود اپلیکیشن موبایل', en: 'Download Mobile App', ar: 'تحميل تطبيق الهاتف', zh: '下载手机应用', ru: 'Скачать мобильное приложение' }), href: '/app' },
       ],
     },
     {
@@ -144,7 +145,7 @@ export function Footer() {
                 <h4 className="font-black text-[14px] text-ink mb-4">{section.title}</h4>
                 <ul className="flex flex-col gap-3">
                   {section.links.map((link) => (
-                    <li key={link.href}>
+                    <li key={`${link.href}-${link.name}`}>
                       <Link href={link.href} className="text-sub hover:text-brand-dark transition-colors text-[13px] font-bold focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none">
                         {link.name}
                       </Link>

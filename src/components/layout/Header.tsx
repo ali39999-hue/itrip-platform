@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from '@/i18n/routing';
-import { Menu, X, ChevronRight, UserRound, LogOut, Briefcase, Wallet, Users, Sparkles, ShoppingCart } from 'lucide-react';
+import { Menu, X, ChevronRight, UserRound, LogOut, Briefcase, Wallet, Users, Sparkles, ShoppingCart, Smartphone } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useBookingStore } from '@/stores/booking-store';
 import { UnifiedCartDrawer } from '@/components/cart/UnifiedCartDrawer';
@@ -229,7 +229,7 @@ export function Header() {
                         <div className="w-8 h-8 rounded-lg bg-soft grid place-items-center text-brand-dark shrink-0">
                           <Icon size={16} />
                         </div>
-                        <span>{t(item.key)}</span>
+                        <span>{item.key === 'app' ? (locale === 'fa' ? 'دانلود اپلیکیشن' : 'Download App') : t(item.key)}</span>
                       </div>
                       <ChevronRight size={15} className="text-sub/60 shrink-0 rtl:rotate-180" aria-hidden="true" />
                     </Link>
@@ -285,6 +285,15 @@ export function Header() {
 
           {/* City & Hotel Search — سمت چپ نوبار (انتهای ردیف در RTL) */}
           <CityHotelSearch />
+
+          {/* Download Mobile App Link */}
+          <Link
+            href="/app"
+            aria-label={lt(locale, { fa: 'دانلود اپلیکیشن موبایل', en: 'Download Mobile App', ar: 'تحميل تطبيق الهاتف', zh: '下载手机应用', ru: 'Скачать мобильное приложение' })}
+            className="hidden lg:flex min-w-[44px] min-h-[44px] items-center justify-center rounded-2xl text-ink hover:text-brand-dark hover:bg-soft active:scale-95 transition focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none cursor-pointer"
+          >
+            <Smartphone size={19} />
+          </Link>
 
           {/* Unified Cart Button with Live Badge */}
           <button

@@ -1,7 +1,7 @@
 'use client';
 
 import { Link, usePathname } from '@/i18n/routing';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import {
   Map, Compass, Newspaper, BookOpen, Wallet, CreditCard, Plane,
   BedDouble, ShieldCheck, CarTaxiFront, Train, Smartphone,
@@ -36,6 +36,7 @@ export const NAV_CATEGORIES = [
       { key: 'cityPass', href: '/city-pass', icon: CreditCard },
       { key: 'snapp', href: '/snapp', icon: Wallet },
       { key: 'interpreter', href: '/interpreter', icon: Languages },
+      { key: 'app', href: '/app', icon: Smartphone },
     ],
   },
 ];
@@ -44,6 +45,7 @@ export function DesktopNav() {
   const t = useTranslations('Nav');
   const ct = useTranslations('Common');
   const pathname = usePathname();
+  const locale = useLocale();
 
   const isExploreActive =
     pathname === '/book' ||
@@ -116,7 +118,7 @@ export function DesktopNav() {
                     }`}
                   >
                     <Icon size={15} className={active ? 'text-brand-dark' : 'text-sub group-hover/item:text-brand-dark'} />
-                    <span>{t(item.key)}</span>
+                    <span>{item.key === 'app' ? (locale === 'fa' ? 'دانلود اپلیکیشن' : 'Download App') : t(item.key)}</span>
                   </Link>
                 );
               })}
