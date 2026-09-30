@@ -20,7 +20,7 @@
 - **Internationalization:** 5 supported languages (`fa`, `en`, `ar`, `zh`, `ru`) with 100% key parity enforced via `scripts/i18n-completeness-gate.mjs`
 - **Design System & Primitives:** Semantic tokens (`text-ink`, `text-sub`, `bg-surface`, `bg-brand`, `bg-action`), Shadcn primitives, glassmorphism, responsive 320px–1440px
 - **Capability Registry:** `src/lib/capabilities/index.ts` (45 tracked capabilities) controlling customer-facing claim states
-- **Live Deployment State:** `https://itrip-platform.vercel.app/` running verified version `1.8.6` on commit `2e139520d8ce` (ALIGNED), probed live via `/api/version`, `/api/health/live`, `/api/capabilities` — measured by scripts/verify-release-consistency.mjs at 2026-09-20T10:42:58.684Z
+- **Live Deployment State:** `https://itrip-platform.vercel.app/` running verified version `1.8.7` on commit `cd883a1519c3` (ALIGNED), probed live via `/api/version`, `/api/health/live`, `/api/capabilities` — measured by scripts/verify-release-consistency.mjs at 2026-09-30T06:16:02.766Z
 
 ---
 
@@ -30,14 +30,14 @@
 |---|---|---|---|---|---|
 | **LATEST RELEASE** | **Git Release Tag** | `v1.8.6` | `refs/tags/v1.8.6` -> `2e13952` | **ALIGNED** | Tag points to commit `2e139520d8cecb9af3baad39798342cd3f2fef5a` |
 | **LATEST RELEASE** | **Release Commit** | `2e13952` | `2e139520d8cecb9af3baad39798342cd3f2fef5a` | **ALIGNED** | Primary v1.8.6 release train commit |
-| **CURRENT MAIN** | **Local / Origin HEAD** | `2e139520d8ce` | `2e139520d8ce` | **ALIGNED** | Measured via `git rev-parse HEAD` |
+| **CURRENT MAIN** | **Local / Origin HEAD** | `cd883a1519c3` | `cd883a1519c3` | **ALIGNED** | Measured via `git rev-parse HEAD` |
 | **CURRENT MAIN** | **package.json Version** | `1.8.6` | `1.8.6` | **ALIGNED** | Line 3 of `package.json` |
 | **CURRENT MAIN** | **src/lib/version.ts** | `1.8.7` | `1.8.7` | **ALIGNED** | `NEXT_PUBLIC_APP_VERSION` default in `src/lib/version.ts` |
-| **CURRENT LIVE** | **Live Deployment Artifact** | `2e139520d8ce` | `2e139520d8ce` | **ALIGNED** | Vercel deployed from commit `2e139520d8ce` |
-| **CURRENT LIVE** | **Live /api/version** | `1.8.7` | `1.8.6` (commit `2e139520d8ce...`) | **ALIGNED** | Production runtime reported version `1.8.6` |
+| **CURRENT LIVE** | **Live Deployment Artifact** | `cd883a1519c3` | `cd883a1519c3` | **ALIGNED** | Vercel deployed from commit `cd883a1519c3` |
+| **CURRENT LIVE** | **Live /api/version** | `1.8.7` | `1.8.7` (commit `cd883a1519c3...`) | **ALIGNED** | Production runtime reported version `1.8.7` |
 | **CURRENT LIVE** | **Live /api/health/live** | 200 OK | 200 OK (`status: live`) | **HEALTHY** | Node.js v22.23.2 alive, memory: ~80MB |
 | **CURRENT LIVE** | **Live /api/health/ready** | 200 OK | 200 OK (`status: ready`) | **HEALTHY** | Database healthy, eCardo gateway production mode |
-| **CURRENT LIVE** | **Live /api/capabilities**| 200 OK | 200 OK (v1.8.6 registry) | **HEALTHY** | Capability registry served by the same runtime |
+| **CURRENT LIVE** | **Live /api/capabilities**| 200 OK | 200 OK (v1.8.7 registry) | **HEALTHY** | Capability registry served by the same runtime |
 
 ---
 

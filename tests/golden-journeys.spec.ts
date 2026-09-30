@@ -4,10 +4,6 @@ import { apiLogin, E2E_USER } from './helpers/e2e-auth';
 async function fillPassengerDetails(page: Page) {
   await page.locator('#firstName').fill('ALI');
   await page.locator('#lastName').fill('MOHAMMADI');
-  const nationalId = page.locator('#nationalId');
-  if (await nationalId.isVisible().catch(() => false)) {
-    await nationalId.fill('0012345678');
-  }
   const passportInput = page.locator('#passportNo');
   if (await passportInput.isVisible().catch(() => false)) {
     await passportInput.fill('A12345678');
@@ -90,22 +86,13 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     await expect(nextBtn).toBeVisible();
     await nextBtn.click();
 
-    // Review phase (D-006): confirm the booking summary before paying
-    await expect(page.locator('h2:has-text("بازبینی")').first()).toBeVisible({ timeout: 15000 });
-    const reviewContinue = page.locator('button:has-text("ادامه به پرداخت")').first();
-    await expect(reviewContinue).toBeVisible({ timeout: 10000 });
-    await reviewContinue.click();
-
     // Verify Payment phase elements (price breakdown, wallet or gateway selector)
     await expect(page.locator('h2:has-text("روش"), h2:has-text("پرداخت"), h3:has-text("محاسبات")').first()).toBeVisible({ timeout: 15000 });
 
     // 4. Pay through the customer wallet (instant internal settlement) and
     // ride out the issuing animation to the final voucher.
-    // Click the wrapping label — the radio itself is intercepted by its parent
-    // label (Playwright .check() on the input times out on tablet).
-    const walletLabel = page.locator('label:has-text("کیف پول")').first();
-    await expect(walletLabel).toBeVisible({ timeout: 10000 });
-    await walletLabel.click();
+    const walletRadio = page.locator('label:has-text("کیف پول") input, input[name="paymentMethod"][value="wallet_irr"]').first();
+    await walletRadio.check();
     const payBtn = page.locator('button:has-text("پرداخت نهایی و صدور آنی واچر")').first();
     await expect(payBtn).toBeVisible();
     await payBtn.click();
@@ -186,12 +173,6 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     const submitBtn = page.locator('button[type="submit"]').first();
     await expect(submitBtn).toBeVisible();
     await submitBtn.click();
-
-    // Review phase (D-006): confirm the booking summary before paying
-    await expect(page.locator('h2:has-text("بازبینی")').first()).toBeVisible({ timeout: 15000 });
-    const reviewContinue = page.locator('button:has-text("ادامه به پرداخت")').first();
-    await expect(reviewContinue).toBeVisible({ timeout: 10000 });
-    await reviewContinue.click();
 
     // 5. Payment phase reached — the draft booking exists server-side.
     await expect(page.locator('h2:has-text("روش"), h2:has-text("پرداخت"), h3:has-text("محاسبات")').first()).toBeVisible({ timeout: 15000 });

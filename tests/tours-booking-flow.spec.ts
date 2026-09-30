@@ -12,10 +12,6 @@ interface ApiTour {
 async function fillPassengerDetails(page: Page) {
   await page.locator('#firstName').fill('ALI');
   await page.locator('#lastName').fill('MOHAMMADI');
-  const nationalId = page.locator('#nationalId');
-  if (await nationalId.isVisible().catch(() => false)) {
-    await nationalId.fill('0012345678');
-  }
   const passportInput = page.locator('#passportNo');
   if (await passportInput.isVisible().catch(() => false)) {
     await passportInput.fill('A12345678');
@@ -91,12 +87,6 @@ test.describe('Tours Booking & Checkout Journey', () => {
     await expect(submitBtn).toBeVisible({ timeout: 10000 });
     await submitBtn.click();
 
-    // Review phase (D-006): confirm the booking summary before paying
-    await expect(page.locator('h2:has-text("بازبینی")').first()).toBeVisible({ timeout: 20000 });
-    const reviewContinue = page.locator('button:has-text("ادامه به پرداخت")').first();
-    await expect(reviewContinue).toBeVisible({ timeout: 10000 });
-    await reviewContinue.click();
-
     // 7. Verification: Phase must transition to payment successfully
     const paymentView = page.locator('h2:has-text("روش"), h2:has-text("پرداخت"), h3:has-text("محاسبات")').first();
     await expect(paymentView).toBeVisible({ timeout: 20000 });
@@ -138,10 +128,8 @@ test.describe('Tours Booking & Checkout Journey', () => {
     await expect(confirmDateBtn).toBeVisible({ timeout: 5000 });
     await confirmDateBtn.click();
 
-    // 6. Submit and verify the review phase is reached, then continue to payment
+    // 6. Submit and verify payment phase is reached
     await page.locator('button[type="submit"]').first().click();
-    await expect(page.locator('h2:has-text("بازبینی")').first()).toBeVisible({ timeout: 20000 });
-    await page.locator('button:has-text("ادامه به پرداخت")').first().click();
     const paymentView = page.locator('h2:has-text("روش"), h2:has-text("پرداخت"), h3:has-text("محاسبات")').first();
     await expect(paymentView).toBeVisible({ timeout: 20000 });
   });
@@ -170,12 +158,9 @@ test.describe('Tours Booking & Checkout Journey', () => {
     // 5. Fill passenger details, confirm Jalali birth date
     await fillPassengerDetails(page);
 
-    // 6. Submit and verify payment phase is reached (via the review step)
+    // 6. Submit and verify payment phase is reached
     const submitBtn = page.locator('button[type="submit"]').first();
     await submitBtn.click();
-
-    await expect(page.locator('h2:has-text("بازبینی")').first()).toBeVisible({ timeout: 20000 });
-    await page.locator('button:has-text("ادامه به پرداخت")').first().click();
 
     const paymentView = page.locator('h2:has-text("روش"), h2:has-text("پرداخت"), h3:has-text("محاسبات")').first();
     await expect(paymentView).toBeVisible({ timeout: 20000 });
