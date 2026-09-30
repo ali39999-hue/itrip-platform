@@ -1,0 +1,358 @@
+/* ==========================================================================
+   Firuzo Business — تور فناوری
+   یک فایل استایل مشترک برای هر هفت صفحه مسیر رزرو.
+   ترتیب: ۱) توکن‌ها  ۲) پایه  ۳) چیدمان  ۴) کامپوننت‌ها  ۵) ریسپانسیو
+   ========================================================================== */
+
+/* ---------- ۱) توکن‌ها ---------- */
+:root {
+  /* رنگ برند فیروزو */
+  --fz-brand: #0B6E66;
+  --fz-brand-deep: #084F4A;
+  --fz-action: #F2A33A;
+  --fz-action-ink: #2B1A00;
+
+  /* سطوح */
+  --fz-bg: #FBF4EE;            /* زمینه بخش بیزنس */
+  --fz-surface: #FFFFFF;
+  --fz-surface-sub: #FDF8F4;
+  --fz-tint: #E6F3F1;
+
+  /* حاشیه‌ها */
+  --fz-border: #DFD3C2;
+  --fz-border-soft: #EAE0D2;
+  --fz-divider: #EDE4D8;
+
+  /* متن */
+  --fz-text: #13302D;
+  --fz-text-muted: #3F5A57;
+  --fz-text-faint: #5B7572;
+  --fz-on-dark: #BFE3DE;
+
+  /* وضعیت */
+  --fz-warn-bg: #FDF0DC;
+  --fz-warn-ink: #7A4A00;
+  --fz-danger: #A2402F;
+
+  /* لهجه بخش سازمانی (فقط بدج‌ها) */
+  --fz-biz-bg: #F7E7E3;
+  --fz-biz-ink: #8C2733;
+
+  /* شعاع */
+  --fz-r-card: 24px;
+  --fz-r-card-sm: 18px;
+  --fz-r-control: 14px;
+  --fz-r-badge: 12px;
+  --fz-r-tile: 20px;
+
+  /* سایه */
+  --fz-shadow: 0 12px 32px rgba(8, 79, 74, .08);
+
+  /* فاصله */
+  --fz-gutter: 80px;
+  --fz-gap: 28px;
+  --fz-aside: 420px;
+  --fz-max: 1280px;
+}
+
+/* ---------- ۲) پایه ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+body.fz {
+  margin: 0;
+  direction: rtl;
+  font-family: Vazirmatn, Tahoma, sans-serif;
+  font-size: 15px;
+  line-height: 1.9;
+  background: var(--fz-bg);
+  color: var(--fz-text);
+}
+
+.fz h1, .fz h2, .fz h3 { margin: 0; color: var(--fz-brand-deep); line-height: 1.4; }
+.fz h1 { font-size: 30px; font-weight: 800; }
+.fz h2 { font-size: 20px; font-weight: 800; }
+.fz h3 { font-size: 18px; font-weight: 800; }
+.fz p  { margin: 0; }
+.fz a  { color: var(--fz-brand); }
+.fz a:hover { color: var(--fz-brand-deep); }
+
+.fz-muted { color: var(--fz-text-muted); }
+.fz-faint { color: var(--fz-text-faint); font-size: 13px; }
+.fz-strong { font-weight: 800; }
+.fz-num { font-variant-numeric: tabular-nums; }
+
+/* ---------- ۳) چیدمان ---------- */
+.fz-container {
+  max-width: var(--fz-max);
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+
+.fz-main { padding-block: 32px 48px; display: flex; flex-direction: column; gap: var(--fz-gap); }
+
+.fz-split { display: flex; align-items: flex-start; gap: var(--fz-gap); }
+.fz-split__main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 22px; }
+.fz-split__aside { flex: 0 0 var(--fz-aside); position: sticky; top: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+.fz-grid { display: grid; gap: 20px; }
+.fz-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fz-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.fz-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.fz-grid--6 { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
+
+/* ---------- ۴) کامپوننت‌ها ---------- */
+
+/* هدر */
+.fz-header {
+  background: var(--fz-surface);
+  border-bottom: 1px solid var(--fz-border-soft);
+}
+.fz-header__in { height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.fz-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+.fz-logo__mark {
+  width: 40px; height: 40px; border-radius: 20px 20px 8px 8px;
+  background: var(--fz-brand); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+.fz-logo__word { font-size: 24px; font-weight: 800; color: var(--fz-brand-deep); }
+.fz-nav { display: flex; align-items: center; gap: 32px; font-size: 15px; font-weight: 600; }
+.fz-nav a { color: var(--fz-text); text-decoration: none; }
+.fz-header__meta { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--fz-text-faint); }
+
+/* بدج */
+.fz-badge {
+  display: inline-flex; align-items: center; height: 30px; padding: 0 12px;
+  border-radius: var(--fz-r-badge); font-size: 13px; font-weight: 700;
+  background: var(--fz-tint); color: var(--fz-brand-deep);
+}
+.fz-badge--biz  { background: var(--fz-biz-bg); color: var(--fz-biz-ink); font-weight: 800; }
+.fz-badge--warn { background: var(--fz-warn-bg); color: var(--fz-warn-ink); }
+
+/* دکمه‌ها */
+.fz-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 0 20px; border: 1px solid var(--fz-border);
+  border-radius: var(--fz-r-control); background: var(--fz-surface); color: var(--fz-brand-deep);
+  font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none;
+  transition: background .2s, border-color .2s, box-shadow .2s;
+}
+.fz-btn:hover { border-color: var(--fz-brand); }
+.fz-btn--brand  { background: var(--fz-brand); border-color: var(--fz-brand); color: #fff; }
+.fz-btn--action { background: var(--fz-action); border-color: var(--fz-action); color: var(--fz-action-ink); font-size: 16px; font-weight: 800; min-height: 56px; width: 100%; }
+.fz-btn--ghost  { background: transparent; border-color: transparent; color: var(--fz-brand); }
+.fz-btn--sm     { min-height: 38px; font-size: 13px; padding: 0 14px; }
+.fz-btn[disabled], .fz-btn[aria-disabled="true"] {
+  background: var(--fz-divider); border-color: var(--fz-divider);
+  color: var(--fz-text-faint); cursor: not-allowed;
+}
+
+/* کارت */
+.fz-card {
+  background: var(--fz-surface);
+  border: 1px solid var(--fz-border-soft);
+  border-radius: var(--fz-r-card);
+  padding: 28px;
+  display: flex; flex-direction: column; gap: 18px;
+}
+.fz-card--sub   { background: var(--fz-surface-sub); border-radius: var(--fz-r-card-sm); padding: 20px; gap: 14px; }
+.fz-card--raised{ border-color: var(--fz-border); box-shadow: var(--fz-shadow); }
+.fz-card--dark  { background: var(--fz-brand-deep); color: #fff; border-color: var(--fz-brand-deep); }
+.fz-card--dark h2, .fz-card--dark h3 { color: #fff; }
+.fz-card--dark p, .fz-card--dark .fz-faint { color: var(--fz-on-dark); }
+.fz-card--tint  { background: var(--fz-tint); border-color: #9CCFC8; }
+.fz-card--warn  { background: var(--fz-warn-bg); border-color: var(--fz-warn-bg); color: var(--fz-warn-ink); }
+
+/* استپر */
+.fz-stepper { background: var(--fz-surface); border-bottom: 1px solid var(--fz-border-soft); }
+.fz-stepper__in { height: 88px; display: flex; align-items: center; gap: 12px; }
+.fz-step { display: flex; align-items: center; gap: 12px; flex: 1 1 auto; }
+.fz-step:last-child { flex: 0 0 auto; }
+.fz-step__dot {
+  width: 30px; height: 30px; flex: 0 0 auto; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800;
+  background: var(--fz-surface); color: var(--fz-text-faint); border: 1px solid var(--fz-border);
+}
+.fz-step__label { font-size: 14px; font-weight: 600; color: var(--fz-text-faint); white-space: nowrap; }
+.fz-step__line { flex: 1 1 auto; height: 2px; background: var(--fz-border-soft); }
+.fz-step.is-current .fz-step__dot { background: var(--fz-brand-deep); border-color: var(--fz-brand-deep); color: #fff; }
+.fz-step.is-current .fz-step__label { color: var(--fz-brand-deep); font-weight: 800; }
+.fz-step.is-done .fz-step__dot { background: var(--fz-tint); border-color: #9CCFC8; color: var(--fz-brand); }
+.fz-step.is-done .fz-step__line { background: #9CCFC8; }
+
+/* فیلدها */
+.fz-field { display: flex; flex-direction: column; gap: 8px; }
+.fz-label { font-size: 13px; font-weight: 700; color: var(--fz-text-muted); }
+.fz-input, .fz-textarea {
+  width: 100%; min-height: 52px; padding: 14px 18px;
+  background: var(--fz-surface); border: 1px solid var(--fz-border);
+  border-radius: var(--fz-r-card-sm); font: inherit; font-size: 15px; color: var(--fz-text);
+}
+.fz-textarea { min-height: 110px; resize: vertical; }
+.fz-input:focus-visible, .fz-textarea:focus-visible,
+.fz-btn:focus-visible, .fz-option:focus-visible, .fz-upload:focus-visible {
+  outline: 2px solid var(--fz-brand); outline-offset: 2px;
+}
+.fz-field__error { font-size: 13px; color: var(--fz-danger); }
+.fz-input[aria-invalid="true"] { border-color: var(--fz-danger); }
+
+/* گزینه انتخابی (روش پرداخت، خدمات افزوده) */
+.fz-option {
+  display: flex; align-items: center; gap: 16px; width: 100%; text-align: start;
+  padding: 20px; background: var(--fz-surface);
+  border: 1px solid var(--fz-border); border-radius: var(--fz-r-card-sm);
+  font: inherit; color: inherit; cursor: pointer;
+  transition: border-color .2s, background .2s, box-shadow .2s;
+}
+.fz-option__mark {
+  width: 24px; height: 24px; flex: 0 0 auto; border-radius: 50%;
+  border: 2px solid var(--fz-border); background: var(--fz-surface);
+}
+.fz-option--check .fz-option__mark { border-radius: 8px; }
+.fz-option__body { flex: 1 1 auto; display: flex; flex-direction: column; gap: 4px; }
+.fz-option__title { font-size: 16px; font-weight: 800; }
+.fz-option.is-selected { background: var(--fz-surface-sub); border-color: var(--fz-brand); box-shadow: 0 8px 20px rgba(11, 110, 102, .12); }
+.fz-option.is-selected .fz-option__mark { background: var(--fz-brand); border-color: var(--fz-brand); box-shadow: inset 0 0 0 3px #fff; }
+.fz-option--check.is-selected .fz-option__mark { box-shadow: none; }
+
+/* آپلود مدرک */
+.fz-upload {
+  min-height: 150px; padding: 18px; width: 100%;
+  border: 2px dashed #9CCFC8; border-radius: var(--fz-r-card-sm);
+  background: var(--fz-surface-sub); cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  font: inherit; text-align: center;
+}
+.fz-upload.is-done     { border-style: solid; border-color: var(--fz-brand); background: var(--fz-tint); }
+.fz-upload.is-rejected { border-style: solid; border-color: var(--fz-warn-ink); background: var(--fz-warn-bg); }
+
+/* تگ وضعیت */
+.fz-tag {
+  display: inline-flex; align-items: center; height: 30px; padding: 0 14px;
+  border-radius: 15px; font-size: 13px; font-weight: 700; white-space: nowrap;
+  background: var(--fz-divider); color: var(--fz-text-faint);
+}
+.fz-tag--ok   { background: var(--fz-tint); color: var(--fz-brand-deep); }
+.fz-tag--warn { background: var(--fz-warn-bg); color: var(--fz-warn-ink); }
+
+/* تایم‌لاین وضعیت */
+.fz-timeline { display: flex; flex-direction: column; }
+.fz-tl { display: flex; gap: 16px; }
+.fz-tl__rail { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 0 0 auto; }
+.fz-tl__dot {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800;
+  background: var(--fz-surface); border: 2px solid var(--fz-border); color: var(--fz-text-faint);
+}
+.fz-tl__line { width: 2px; flex: 1 1 auto; min-height: 46px; background: var(--fz-border-soft); }
+.fz-tl:last-child .fz-tl__line { background: transparent; }
+.fz-tl__body { display: flex; flex-direction: column; gap: 6px; padding-bottom: 20px; }
+.fz-tl__title { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 800; }
+.fz-tl.is-done .fz-tl__dot { background: var(--fz-tint); border-color: #9CCFC8; color: var(--fz-brand); }
+.fz-tl.is-done .fz-tl__line { background: #9CCFC8; }
+.fz-tl.is-doing .fz-tl__dot { border-color: var(--fz-action); color: var(--fz-warn-ink); }
+
+/* ردیف مبلغ */
+.fz-price { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--fz-divider); }
+.fz-price:last-child { border-bottom: 0; }
+.fz-price__amount { font-weight: 800; }
+.fz-price--credit .fz-price__amount, .fz-price--credit .fz-price__label { color: var(--fz-brand); }
+.fz-price--total { padding-top: 18px; font-size: 18px; font-weight: 800; color: var(--fz-brand-deep); }
+.fz-price--total .fz-price__amount { font-size: 24px; }
+
+/* چرخ انتخاب هدف سفر (صفحه اصلی) */
+.fz-hero { display: flex; align-items: center; gap: 40px; padding-block: 40px; }
+.fz-hero__text { flex: 0 0 480px; display: flex; flex-direction: column; gap: 22px; }
+.fz-hero__title { font-size: 46px; font-weight: 800; color: var(--fz-brand); }
+.fz-wheel { position: relative; flex: 1 1 auto; aspect-ratio: 1 / 1; max-width: 700px; }
+.fz-wheel__bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.fz-wheel__core {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 200px; height: 200px; padding: 20px; border-radius: 28px;
+  background: var(--fz-brand); color: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center;
+  box-shadow: 0 16px 40px rgba(11, 110, 102, .25);
+}
+.fz-wheel__core small { color: var(--fz-on-dark); font-size: 13px; }
+.fz-wheel__core strong { font-size: 20px; font-weight: 800; }
+.fz-node {
+  position: absolute; width: 120px; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  background: none; border: 0; padding: 0; font: inherit; color: var(--fz-text); cursor: pointer;
+}
+.fz-node__tile {
+  width: 76px; height: 76px; border-radius: var(--fz-r-tile);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--fz-surface); color: var(--fz-brand);
+  border: 1px solid var(--fz-border-soft); box-shadow: 0 4px 12px rgba(8, 79, 74, .08);
+  transition: background .2s, color .2s, box-shadow .2s;
+}
+.fz-node__label { font-size: 13px; font-weight: 700; text-align: center; }
+.fz-node[aria-pressed="true"] .fz-node__tile { background: var(--fz-brand); color: #fff; border-color: var(--fz-brand); box-shadow: 0 12px 26px rgba(11, 110, 102, .28); }
+.fz-chip {
+  position: absolute; width: 116px; min-height: 60px; padding: 12px 10px; transform: translate(-50%, -50%);
+  border-radius: 16px; border: 1px solid var(--fz-border); background: var(--fz-surface);
+  color: var(--fz-brand); font: inherit; font-size: 13px; font-weight: 700; text-align: center; cursor: pointer;
+  box-shadow: 0 4px 12px rgba(8, 79, 74, .08);
+}
+.fz-chip[aria-pressed="true"] { background: var(--fz-action); border-color: var(--fz-action); color: var(--fz-action-ink); box-shadow: 0 10px 24px rgba(242, 163, 58, .35); }
+
+/* شمارنده نفرات */
+.fz-counter { display: flex; align-items: center; gap: 12px; }
+.fz-counter__btn { width: 44px; height: 44px; border-radius: var(--fz-r-control); border: 1px solid var(--fz-border); background: var(--fz-surface); color: var(--fz-brand-deep); font-size: 20px; font-weight: 800; cursor: pointer; }
+.fz-counter__value { min-width: 32px; text-align: center; font-size: 18px; font-weight: 800; }
+
+/* ووچر */
+.fz-voucher { border: 1px solid var(--fz-border); border-radius: 28px; overflow: hidden; background: var(--fz-surface); }
+.fz-voucher__head { padding: 26px 30px; background: var(--fz-tint); display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.fz-voucher__code { font-size: 20px; font-weight: 800; letter-spacing: 1px; }
+.fz-voucher__body { padding: 30px; display: flex; gap: 30px; }
+.fz-voucher__qr { width: 170px; height: 170px; flex: 0 0 auto; border: 1px solid var(--fz-border); border-radius: var(--fz-r-card-sm); background: var(--fz-surface-sub); display: flex; align-items: center; justify-content: center; }
+.fz-dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; flex: 1 1 auto; }
+.fz-dl div { display: flex; flex-direction: column; gap: 4px; }
+.fz-dl dt { font-size: 13px; color: var(--fz-text-faint); }
+.fz-dl dd { margin: 0; font-size: 16px; font-weight: 700; }
+
+/* فوتر */
+.fz-footer { background: var(--fz-brand-deep); color: #fff; padding-block: 44px; }
+.fz-footer a { color: var(--fz-on-dark); text-decoration: none; font-size: 14px; }
+.fz-footer__cols { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1.4fr; gap: 32px; }
+.fz-footer__col { display: flex; flex-direction: column; gap: 12px; }
+.fz-footer__bar { margin-top: 28px; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, .18); display: flex; align-items: center; justify-content: space-between; gap: 16px; font-size: 13px; color: var(--fz-on-dark); }
+
+/* کمکی‌ها */
+.fz-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.fz-stack { display: flex; flex-direction: column; gap: 12px; }
+.fz-wrap { display: flex; flex-wrap: wrap; gap: 10px; }
+.fz-sr {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- ۵) ریسپانسیو ---------- */
+@media (max-width: 1024px) {
+  .fz-split, .fz-hero { flex-direction: column; }
+  .fz-split__aside { position: static; flex: 1 1 auto; width: 100%; }
+  .fz-hero__text { flex: 1 1 auto; }
+  .fz-hero__title { font-size: 34px; }
+  .fz-grid--3, .fz-grid--4, .fz-grid--6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fz-nav { display: none; }
+  .fz-stepper__in { overflow-x: auto; }
+  .fz-voucher__body { flex-direction: column; }
+}
+
+@media (max-width: 640px) {
+  .fz-grid--2, .fz-grid--3, .fz-grid--4, .fz-grid--6, .fz-dl { grid-template-columns: minmax(0, 1fr); }
+  .fz-card { padding: 20px; }
+  .fz-main { padding-block: 20px 32px; }
+  .fz-cta-sticky {
+    position: sticky; bottom: 0; z-index: 5;
+    padding: 12px 0; background: linear-gradient(to top, var(--fz-bg) 70%, transparent);
+  }
+}
+
+@media print {
+  .fz-header, .fz-stepper, .fz-footer, .fz-btn { display: none !important; }
+  body.fz { background: #fff; }
+  .fz-voucher { border-color: #000; }
+}
