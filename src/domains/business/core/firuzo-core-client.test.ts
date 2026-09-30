@@ -13,6 +13,13 @@ const log = createLogger('firuzo-core-client.test');
  */
 
 const suffix = `m1_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+// repPhone is NOT unique-constrained, but nationalId IS. Building the id by
+// slicing a prefix + suffix truncated the suffix away, so every run inserted the
+// same value and concurrent runs collided on the unique index. Derive both from
+// a per-run random block instead: 11 digits, genuinely unique, run-scoped — so a
+// concurrent run's cleanup cannot touch these rows.
+const nationalId = `00123${String(Math.floor(Math.random() * 1e6)).padStart(6, '0')}`;
+const repPhone = `0912${String(Math.floor(Math.random() * 1e7)).padStart(7, '0')}`;
 // Fixture tracking — deleted via unique-username deleteMany below, keeping the
 // suite idempotent and the database unpolluted (AGENTS.md §Testing Contract).
 const createdUsernames: string[] = [
@@ -27,7 +34,7 @@ afterAll(async () => {
   // the package, which restricts the company.
   await prisma.businessRequest.deleteMany({ where: { code: `FZB-2026-${suffix}` } });
   await prisma.businessTourPackage.deleteMany({ where: { slug: `biz-m1-${suffix}` } });
-  await prisma.businessCompany.deleteMany({ where: { repPhone: '09120000000' } });
+  await prisma.businessCompany.deleteMany({ where: { repPhone } });
   await prisma.booking.deleteMany({
     where: { reference: { in: [`ITR-${suffix}-OK`, `ITR-${suffix}-TX`] } },
   });
@@ -160,10 +167,10 @@ describe('FiruzoCoreClient — M1 boundary (BIZ-M1)', () => {
     const company = await prisma.businessCompany.create({
       data: {
         name: 'شرکت تست',
-        nationalId: `0012345${suffix}`.slice(0, 11),
+        nationalId,
         field: 'technology',
         repName: 'نماینده',
-        repPhone: '09120000000',
+        repPhone,
       },
     });
 
@@ -212,7 +219,7 @@ describe('FiruzoCoreClient — M1 boundary (BIZ-M1)', () => {
   it('cleans up the rows it created', async () => {
     await prisma.businessRequest.deleteMany({ where: { code: `FZB-2026-${suffix}` } });
     await prisma.businessTourPackage.deleteMany({ where: { slug: `biz-m1-${suffix}` } });
-    await prisma.businessCompany.deleteMany({ where: { repPhone: '09120000000' } });
+    await prisma.businessCompany.deleteMany({ where: { repPhone } });
 
     const left = await prisma.businessRequest.count({ where: { code: `FZB-2026-${suffix}` } });
     expect(left).toBe(0);
