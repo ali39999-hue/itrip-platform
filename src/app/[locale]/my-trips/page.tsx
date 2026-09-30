@@ -167,12 +167,14 @@ export default function MyTripsPage() {
   // Smart splitting: Upcoming vs Past
   const upcoming = dbBookings.filter((b) => {
     if (TERMINAL.has(b.status)) return false;
+    if (b.status === 'DRAFT' || b.status === 'PENDING') return true;
     const tDate = getTravelDate(b);
     return tDate >= now || b.status === 'CONFIRMED' || b.status === 'HELD';
   });
 
   const past = dbBookings.filter((b) => {
     if (TERMINAL.has(b.status)) return false;
+    if (b.status === 'DRAFT' || b.status === 'PENDING') return false;
     const tDate = getTravelDate(b);
     return b.status === 'COMPLETED' || tDate < now;
   });
