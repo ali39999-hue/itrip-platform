@@ -22,7 +22,7 @@ vi.mock('@/lib/prisma', () => {
 
   return {
     prisma: {
-      $transaction: vi.fn(async (cb: (tx: any) => Promise<any>) => cb(mockTx)),
+      $transaction: vi.fn(async (cb: (tx: unknown) => Promise<unknown>) => cb(mockTx)),
       payment: mockTx.payment,
       booking: mockTx.booking,
       account: mockTx.account,
@@ -39,7 +39,7 @@ vi.mock('../ledger/GeneralLedgerService', () => ({
 }));
 
 describe('TravelWalletCaptureService', () => {
-  const mockTx = (prisma as any)._mockTx;
+  const mockTx = (prisma as unknown as { _mockTx: typeof mockTx })._mockTx;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -76,7 +76,7 @@ describe('TravelWalletCaptureService', () => {
     mockTx.account.upsert.mockResolvedValue({ id: 'acc-1' });
 
     // User only has 10M IRR in balance
-    (GeneralLedgerService.getAccountBalance as any).mockResolvedValue(new Money('10000000', 'IRR'));
+    vi.mocked(GeneralLedgerService.getAccountBalance).mockResolvedValue(new Money('10000000', 'IRR'));
 
     const result = await TravelWalletCaptureService.captureWalletPayment({
       bookingId: 'b-1',
@@ -104,7 +104,7 @@ describe('TravelWalletCaptureService', () => {
     mockTx.payment.create.mockResolvedValue({ id: 'pay-1' });
     mockTx.booking.update.mockResolvedValue({});
 
-    (GeneralLedgerService.getAccountBalance as any).mockResolvedValue(new Money('25000000', 'IRR'));
+    vi.mocked(GeneralLedgerService.getAccountBalance).mockResolvedValue(new Money('25000000', 'IRR'));
 
     const result = await TravelWalletCaptureService.captureWalletPayment({
       bookingId: 'b-1',

@@ -19,7 +19,7 @@ vi.mock('@/lib/prisma', () => {
 
   return {
     prisma: {
-      $transaction: vi.fn(async (cb: (tx: any) => Promise<any>) => cb(mockTx)),
+      $transaction: vi.fn(async (cb: (tx: unknown) => Promise<unknown>) => cb(mockTx)),
       booking: mockTx.booking,
       bookingItem: mockTx.bookingItem,
       _mockTx: mockTx,
@@ -71,7 +71,7 @@ describe('TourMatchingEngine (تور یار)', () => {
 });
 
 describe('TourDomainService', () => {
-  const mockTx = (prisma as any)._mockTx;
+  const mockTx = (prisma as unknown as { _mockTx: typeof mockTx })._mockTx;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -137,7 +137,7 @@ describe('TourDomainService', () => {
 
     mockTx.booking.findUnique.mockResolvedValue(existingBooking);
     mockTx.bookingItem.update.mockResolvedValue({});
-    mockTx.booking.update.mockImplementation(async ({ data }: any) => ({
+    mockTx.booking.update.mockImplementation(async ({ data }: { data: { totalAmount?: number } }) => ({
       ...existingBooking,
       totalAmount: data.totalAmount,
     }));
@@ -212,7 +212,7 @@ describe('TourDomainService', () => {
 
     mockTx.booking.findUnique.mockResolvedValue(existingBooking);
     mockTx.bookingItem.update.mockResolvedValue({});
-    mockTx.booking.update.mockImplementation(async ({ data }: any) => ({
+    mockTx.booking.update.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({
       ...existingBooking,
       ...data,
     }));

@@ -17,7 +17,7 @@ describe('CancellationEligibilityService', () => {
 
   it('evaluates cancellation with 20% penalty when travel date is between 24 and 72 hours away', async () => {
     const travelDate = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(); // 48 hours away
-    (prisma.booking.findUniqueOrThrow as any).mockResolvedValue({
+    vi.mocked(prisma.booking.findUniqueOrThrow).mockResolvedValue({
       id: 'b-cancel-1',
       reference: 'ITR-778899',
       status: 'CONFIRMED',
@@ -25,7 +25,7 @@ describe('CancellationEligibilityService', () => {
       currency: 'IRR',
       travelDate,
       items: [{ type: 'HOTEL' }],
-    });
+    } as unknown as Awaited<ReturnType<typeof prisma.booking.findUniqueOrThrow>>);
 
     const result = await CancellationEligibilityService.evaluateEligibility('b-cancel-1');
 
@@ -38,7 +38,7 @@ describe('CancellationEligibilityService', () => {
 
   it('marks flight booking as requiring supplier review', async () => {
     const travelDate = new Date(Date.now() + 96 * 60 * 60 * 1000).toISOString(); // 96 hours away
-    (prisma.booking.findUniqueOrThrow as any).mockResolvedValue({
+    vi.mocked(prisma.booking.findUniqueOrThrow).mockResolvedValue({
       id: 'b-cancel-2',
       reference: 'ITR-778890',
       status: 'CONFIRMED',
@@ -46,7 +46,7 @@ describe('CancellationEligibilityService', () => {
       currency: 'IRR',
       travelDate,
       items: [{ type: 'FLIGHT' }],
-    });
+    } as unknown as Awaited<ReturnType<typeof prisma.booking.findUniqueOrThrow>>);
 
     const result = await CancellationEligibilityService.evaluateEligibility('b-cancel-2');
 
@@ -55,13 +55,13 @@ describe('CancellationEligibilityService', () => {
   });
 
   it('throws error if booking is already in a terminal state', async () => {
-    (prisma.booking.findUniqueOrThrow as any).mockResolvedValue({
+    vi.mocked(prisma.booking.findUniqueOrThrow).mockResolvedValue({
       id: 'b-cancel-3',
       status: 'CANCELLED',
       totalAmount: 10_000_000,
       currency: 'IRR',
       items: [],
-    });
+    } as unknown as Awaited<ReturnType<typeof prisma.booking.findUniqueOrThrow>>);
 
     await expect(
       CancellationEligibilityService.evaluateEligibility('b-cancel-3')

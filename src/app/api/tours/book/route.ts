@@ -27,9 +27,10 @@ export async function POST(req: Request) {
       success: true,
       data: booking,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to create tour booking';
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to create tour booking' },
+      { success: false, error: message },
       { status: 400 }
     );
   }

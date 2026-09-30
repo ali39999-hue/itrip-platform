@@ -16,7 +16,7 @@ export class TourMatchingEngine {
 
       // 1. Experiences & Category Match (Max 35 points)
       const selectedExperiences = answers.q5 || [];
-      if (selectedExperiences.includes(tour.category as any)) {
+      if ((selectedExperiences as string[]).includes(tour.category)) {
         score += 25;
         reasons.push('تطابق سبک تفریح و دسته تور');
       }

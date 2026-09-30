@@ -25,9 +25,10 @@ export async function POST(req: Request) {
         count: matches.length,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal error evaluating tour match';
     return NextResponse.json(
-      { success: false, error: error.message || 'Internal error evaluating tour match' },
+      { success: false, error: message },
       { status: 500 }
     );
   }
