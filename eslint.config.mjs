@@ -71,6 +71,40 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // The Business (technology-tour) vertical must reach core capabilities only
+  // through `FiruzoCoreClient`. A direct Prisma or core-domain import would let
+  // it read core tables and undo the separation the vertical is built on, so
+  // this is an error, not a warn — there is no legacy debt here to ratchet.
+  {
+    files: ["src/domains/business/**/*.{ts,tsx}"],
+    ignores: ["src/domains/business/core/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/lib/prisma", "@prisma/client"],
+              message:
+                "The business vertical must not touch core data directly. Go through FiruzoCoreClient (src/domains/business/core) so a later physical DB split stays possible.",
+            },
+            {
+              group: [
+                "@/domains/inventory/*",
+                "@/domains/booking/*",
+                "@/domains/ledger/*",
+                "@/domains/identity/*",
+                "@/domains/payments/*",
+                "@/domains/finance/*",
+              ],
+              message:
+                "Core capabilities are reached via FiruzoCoreClient, not by importing core domain modules. Add a method to the client interface instead.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

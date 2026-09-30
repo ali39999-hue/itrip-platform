@@ -1595,3 +1595,278 @@ model TicketMessage {
 }
 
 
+
+// ==================== Firuzo Business: Technology Tour Vertical ====================
+//
+// Executable spec: «فیروزو بیزنس — سند تحویل فنی تور فناوری».
+//
+// Two deliberate deviations from the core models above:
+//  1. NO physical foreign keys to core tables. Identity, booking, inventory and
+//     ledger are reached through `FiruzoCoreClient` (src/domains/business/core),
+//     so a later physical database split stays cheap. Every `*Id` field below is
+//     a plain indexed string, never a `references:` clause.
+//  2. Money is a plain Int of RIAL, per the spec ("همه مبالغ به ریال و به‌صورت
+//     عدد صحیح ذخیره شوند؛ تبدیل به تومان فقط در نمایش"). Deliberately NOT
+//     Prisma.Decimal: the values are whole rial, and Int removes the float traps
+//     that Decimal/Number conversions invite. Aggregating here is integer
+//     arithmetic, so no rounding error is possible.
+//
+// Documents live in private storage behind short-lived signed URLs; `fileUrl`
+// stores that reference, never a public path.
+
+/// A company placing a tour request. Linked to the core Organization by id
+/// only — `organizationId` deliberately carries no FK (see header note).
+model BusinessCompany {
+  id             String    @id @default(cuid())
+  name           String
+  nationalId     String    @unique // exactly 11 digits, validated at the edge
+  economicCode   String?
+  field          String // industry / vertical of the company
+  repName        String
+  repPhone       String // 09xxxxxxxxx
+  organizationId String? // core Organization.id — no FK, deliberate
+  verifiedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  requests BusinessRequest[]
+
+  @@index([organizationId])
+  @@index([verifiedAt])
+}
+
+model BusinessTourPackage {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  title           String
+  titleEn         String?
+  destination     String
+  destinationEn   String?
+  durationDays    Int      @default(1)
+  basePrice       Int // rial
+  includes        String[] @default([])
+  requiredDocs    String[] @default([])
+  status          String   @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
+  /// Core inventory identity this package's capacity is held against (no FK).
+  inventoryItemId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  departures BusinessDeparture[]
+  addons     BusinessAddon[]
+
+  @@index([status])
+  @@index([destination])
+}
+
+/// A dated departure. `capacity`/`bookedCount` are the only capacity authority
+/// for this vertical — `bookedCount` increments ONLY on a successful deposit.
+model BusinessDeparture {
+  id          String   @id @default(cuid())
+  packageId   String
+  departDate  DateTime
+  returnDate  DateTime
+  capacity    Int
+  bookedCount Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  package  BusinessTourPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  requests BusinessRequest[]
+
+  @@index([packageId, departDate])
+}
+
+model BusinessAddon {
+  id        String   @id @default(cuid())
+  packageId String?
+  code      String   @unique
+  title     String
+  price     Int // rial
+  unit      String   @default("per_person") // per_person | per_group
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  package  BusinessTourPackage? @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  requests BusinessRequestAddon[]
+
+  @@index([packageId])
+}
+
+/// Root of the whole process. Amounts are LOCKED at `submitted` so a later price
+/// change cannot alter an already-submitted request.
+model BusinessRequest {
+  id            String    @id @default(cuid())
+  /// Display code, format FZB-<year>-<seq>, shown on every page and email.
+  code          String    @unique
+  companyId     String
+  departureId   String
+  paxCount      Int
+  /// draft | submitted | deposit_paid | under_review | changes_requested |
+  /// approved | issued | cancelled — see BusinessStateMachine.
+  status        String    @default("draft")
+  totalAmount   Int       @default(0) // rial, locked at submitted
+  depositAmount Int       @default(0) // rial, configurable percentage
+  grantAmount   Int       @default(0) // government grant, deducted from the total
+  paidAmount    Int       @default(0) // rial
+  currency      String    @default("IRR")
+  /// 48h hold on capacity; on expiry the request moves to `cancelled`.
+  expiresAt     DateTime?
+  /// Core User.id of the reviewing agent (no FK).
+  assigneeId    String?
+  note          String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  company   BusinessCompany   @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  departure BusinessDeparture @relation(fields: [departureId], references: [id], onDelete: Restrict)
+
+  travelers    BusinessTraveler[]
+  documents    BusinessDocument[]
+  payments     BusinessPayment[]
+  invoices     BusinessInvoice[]
+  vouchers     BusinessVoucher[]
+  statusEvents BusinessStatusEvent[]
+  addons       BusinessRequestAddon[]
+
+  @@index([status])
+  @@index([companyId])
+  @@index([expiresAt])
+}
+
+/// Many-to-many join: a request may carry several add-ons.
+model BusinessRequestAddon {
+  requestId String
+  addonId   String
+  quantity  Int      @default(1)
+  /// Unit price frozen at submit time, in rial.
+  price     Int
+  createdAt DateTime @default(now())
+
+  request BusinessRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  addon   BusinessAddon   @relation(fields: [addonId], references: [id], onDelete: Restrict)
+
+  @@id([requestId, addonId])
+  @@index([addonId])
+}
+
+model BusinessTraveler {
+  id             String    @id @default(cuid())
+  requestId      String
+  fullNameLatin  String // letters and spaces only, must match the passport
+  passportNo     String // 6-9 alphanumeric
+  passportExpiry DateTime // must be >= return date + 6 months
+  birthDate      DateTime?
+  createdAt      DateTime  @default(now())
+
+  request   BusinessRequest    @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  documents BusinessDocument[]
+  vouchers  BusinessVoucher[]
+
+  @@index([requestId])
+}
+
+model BusinessDocument {
+  id           String    @id @default(cuid())
+  requestId    String
+  travelerId   String?
+  type         String // e.g. passport_scan, company_letter
+  fileUrl      String // signed short-lived private-storage reference
+  originalName String?
+  mimeType     String?
+  sizeBytes    Int?
+  /// pending | approved | rejected
+  state        String    @default("pending")
+  rejectReason String?
+  reviewedBy   String? // core User.id, no FK
+  reviewedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  request  BusinessRequest   @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  traveler BusinessTraveler? @relation(fields: [travelerId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, state])
+  @@index([travelerId])
+}
+
+/// Two rows in the normal case: one `deposit`, one `settlement`.
+model BusinessPayment {
+  id             String    @id @default(cuid())
+  requestId      String
+  /// deposit | settlement
+  kind           String
+  method         String // gateway method chosen by the company
+  amount         Int // rial
+  /// pending | processing | paid | failed | refunded
+  status         String    @default("pending")
+  currency       String    @default("IRR")
+  /// Client-supplied Idempotency-Key; unique, so a double-click cannot double-charge.
+  idempotencyKey String?   @unique
+  gatewayRef     String?
+  receiptUrl     String?
+  paidAt         DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  request BusinessRequest @relation(fields: [requestId], references: [id], onDelete: Restrict)
+
+  @@index([requestId, kind])
+  @@index([status])
+}
+
+model BusinessInvoice {
+  id        String   @id @default(cuid())
+  requestId String
+  /// proforma | official
+  type      String
+  /// Frozen line items: [{ label, quantity, unitPrice, amount }] in rial.
+  lines     Json
+  total     Int // rial
+  issuedAt  DateTime @default(now())
+  pdfUrl    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  request BusinessRequest @relation(fields: [requestId], references: [id], onDelete: Restrict)
+
+  @@index([requestId, type])
+}
+
+/// One group voucher (travelerId null) plus one per traveller.
+model BusinessVoucher {
+  id         String    @id @default(cuid())
+  requestId  String
+  travelerId String?
+  code       String    @unique
+  /// Carries the voucher code and the public verification link encoded in the QR.
+  qrPayload  String
+  pdfUrl     String?
+  issuedAt   DateTime  @default(now())
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  request  BusinessRequest   @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  traveler BusinessTraveler? @relation(fields: [travelerId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([travelerId])
+}
+
+/// Append-only history. Every status change writes one row — never updated,
+/// never deleted.
+model BusinessStatusEvent {
+  id         String   @id @default(cuid())
+  requestId  String
+  fromStatus String?
+  toStatus   String
+  /// Core User.id of whoever caused the transition (no FK).
+  actorId    String?
+  note       String?
+  createdAt  DateTime @default(now())
+
+  request BusinessRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, createdAt])
+}

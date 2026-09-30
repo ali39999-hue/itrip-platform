@@ -52,7 +52,7 @@ graph TD
 
 | Domain Subsystem | Status | Implementation Details |
 | :--- | :---: | :--- |
-| **Database & Migrations** | `PRODUCTION-READY` | PostgreSQL 16 canonical, 34 Prisma migrations applied, strict indexes & foreign keys. |
+| **Database & Migrations** | `PRODUCTION-READY` | PostgreSQL 16 canonical, 35 Prisma migrations applied, strict indexes & foreign keys. |
 | **Inventory Concurrency** | `PRODUCTION-READY` | PostgreSQL row-locking (`FOR UPDATE`) & atomic conditional updates. Oversell = 0 guaranteed. |
 | **Financial Kernel & Money** | `PRODUCTION-READY` | Zero JavaScript floating-point arithmetic. 100% `Prisma.Decimal` Money kernel. |
 | **12-Stage Pricing Pipeline** | `PRODUCTION-READY` | Server-side authoritative calculations generating immutable `PriceSnapshot` audit records. |
