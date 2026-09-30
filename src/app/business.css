@@ -1,0 +1,572 @@
+/* ==========================================================================
+   FIRUZO BUSINESS — استایل اختصاصی بخش بیزنس (تور فناوری)
+   فقط متغیرهای --fz-* (تعریف‌شده در globals.css) مصرف می‌شود؛ هگز مستقیم ممنوع.
+   ترتیب: ۱) پایه  ۲) چیدمان  ۳) هدر/استپر  ۴) کارت‌ها و کنترل‌ها  ۵) چرخ  ۶) ووچر  ۷) ریسپانسیو
+   ========================================================================== */
+
+/* ---------- ۱) پایه ---------- */
+.fz {
+  direction: rtl;
+  background: var(--fz-bg);
+  color: var(--fz-text);
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+.fz[dir="ltr"],
+[dir="ltr"] .fz {
+  direction: ltr;
+}
+
+.fz h1,
+.fz h2,
+.fz h3 {
+  margin: 0;
+  color: var(--fz-brand-deep);
+  line-height: 1.4;
+  font-weight: 800;
+}
+.fz h1 { font-size: 30px; }
+.fz h2 { font-size: 20px; }
+.fz h3 { font-size: 18px; }
+.fz p  { margin: 0; }
+
+.fz a { color: var(--fz-brand); }
+.fz a:hover { color: var(--fz-brand-deep); }
+
+.fz-muted { color: var(--fz-text-muted); }
+.fz-faint { color: var(--fz-text-faint); font-size: 13px; }
+.fz-strong { font-weight: 800; }
+.fz-num { font-variant-numeric: tabular-nums; }
+
+/* ---------- ۲) چیدمان ---------- */
+.fz-container {
+  max-width: var(--fz-max);
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+
+.fz-main {
+  padding-block: 32px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fz-gap);
+}
+
+.fz-split {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fz-gap);
+}
+.fz-split__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.fz-split__aside {
+  flex: 0 0 var(--fz-aside);
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.fz-grid { display: grid; gap: 20px; }
+.fz-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fz-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.fz-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.fz-grid--6 { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
+
+.fz-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.fz-stack { display: flex; flex-direction: column; gap: 12px; }
+.fz-wrap { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.fz-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- ۳) هدر و استپر ---------- */
+.fz-header {
+  background: var(--fz-surface);
+  border-bottom: 1px solid var(--fz-border-soft);
+}
+.fz-header__in {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding-block: 10px;
+}
+.fz-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+.fz-logo__mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 20px 20px 8px 8px;
+  background: var(--fz-brand);
+  color: var(--fz-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fz-logo__word { font-size: 24px; font-weight: 800; color: var(--fz-brand-deep); }
+.fz-nav { display: flex; align-items: center; gap: 32px; font-size: 15px; font-weight: 600; }
+.fz-nav a { color: var(--fz-text); text-decoration: none; }
+.fz-header__meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--fz-text-faint);
+}
+
+/* بدج */
+.fz-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: var(--fz-r-badge);
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--fz-tint);
+  color: var(--fz-brand-deep);
+  white-space: nowrap;
+}
+.fz-badge--biz { background: var(--fz-biz-bg); color: var(--fz-biz-ink); font-weight: 800; }
+.fz-badge--warn { background: var(--fz-warn-bg); color: var(--fz-warn-ink); }
+
+/* استپر */
+.fz-stepper {
+  background: var(--fz-surface);
+  border-bottom: 1px solid var(--fz-border-soft);
+}
+.fz-stepper__in {
+  min-height: 88px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+}
+.fz-step { display: flex; align-items: center; gap: 12px; flex: 1 1 auto; }
+.fz-step:last-child { flex: 0 0 auto; }
+.fz-step__dot {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  background: var(--fz-surface);
+  color: var(--fz-text-faint);
+  border: 1px solid var(--fz-border);
+}
+.fz-step__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fz-text-faint);
+  white-space: nowrap;
+}
+.fz-step__line { flex: 1 1 auto; height: 2px; background: var(--fz-border-soft); }
+.fz-step.is-current .fz-step__dot { background: var(--fz-brand-deep); border-color: var(--fz-brand-deep); color: var(--fz-surface); }
+.fz-step.is-current .fz-step__label { color: var(--fz-brand-deep); font-weight: 800; }
+.fz-step.is-done .fz-step__dot { background: var(--fz-tint); border-color: var(--fz-brand); color: var(--fz-brand); }
+.fz-step.is-done .fz-step__line { background: var(--fz-brand); }
+
+/* ---------- ۴) کارت‌ها، دکمه‌ها، فیلدها، گزینه‌ها ---------- */
+.fz-card {
+  background: var(--fz-surface);
+  border: 1px solid var(--fz-border-soft);
+  border-radius: var(--fz-r-card);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.fz-card--sub { background: var(--fz-surface-sub); border-radius: var(--fz-r-card-sm); padding: 20px; gap: 14px; }
+.fz-card--raised { border-color: var(--fz-border); box-shadow: var(--fz-shadow); }
+.fz-card--dark { background: var(--fz-brand-deep); color: var(--fz-surface); border-color: var(--fz-brand-deep); }
+.fz-card--dark h2,
+.fz-card--dark h3 { color: var(--fz-surface); }
+.fz-card--dark p,
+.fz-card--dark .fz-faint { color: var(--fz-on-dark); }
+.fz-card--tint { background: var(--fz-tint); border-color: var(--fz-brand); }
+.fz-card--warn { background: var(--fz-warn-bg); border-color: var(--fz-warn-bg); color: var(--fz-warn-ink); }
+
+.fz-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--fz-border);
+  border-radius: var(--fz-r-control);
+  background: var(--fz-surface);
+  color: var(--fz-brand-deep);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+.fz-btn:hover { border-color: var(--fz-brand); }
+.fz-btn--brand { background: var(--fz-brand); border-color: var(--fz-brand); color: var(--fz-surface); }
+.fz-btn--action {
+  background: var(--fz-action);
+  border-color: var(--fz-action);
+  color: var(--fz-action-ink);
+  font-size: 16px;
+  font-weight: 800;
+  min-height: 56px;
+  width: 100%;
+}
+.fz-btn--ghost { background: transparent; border-color: transparent; color: var(--fz-brand); }
+.fz-btn--sm { min-height: 38px; font-size: 13px; padding: 0 14px; }
+.fz-btn[disabled],
+.fz-btn[aria-disabled="true"] {
+  background: var(--fz-divider);
+  border-color: var(--fz-divider);
+  color: var(--fz-text-faint);
+  cursor: not-allowed;
+}
+.fz-btn:focus-visible,
+.fz-option:focus-visible,
+.fz-upload:focus-visible,
+.fz-input:focus-visible,
+.fz-textarea:focus-visible,
+.fz-node:focus-visible,
+.fz-chip:focus-visible {
+  outline: 2px solid var(--fz-brand);
+  outline-offset: 2px;
+}
+
+/* فیلدها */
+.fz-field { display: flex; flex-direction: column; gap: 8px; }
+.fz-label { font-size: 13px; font-weight: 700; color: var(--fz-text-muted); }
+.fz-input,
+.fz-textarea {
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 18px;
+  background: var(--fz-surface);
+  border: 1px solid var(--fz-border);
+  border-radius: var(--fz-r-card-sm);
+  font: inherit;
+  font-size: 15px;
+  color: var(--fz-text);
+}
+.fz-textarea { min-height: 110px; resize: vertical; }
+.fz-field__error { font-size: 13px; color: var(--fz-danger); }
+.fz-input[aria-invalid="true"],
+.fz-textarea[aria-invalid="true"] { border-color: var(--fz-danger); }
+
+/* گزینه انتخابی (روش پرداخت، خدمات افزوده) */
+.fz-option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  text-align: start;
+  padding: 20px;
+  background: var(--fz-surface);
+  border: 1px solid var(--fz-border);
+  border-radius: var(--fz-r-card-sm);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.fz-option__mark {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 2px solid var(--fz-border);
+  background: var(--fz-surface);
+}
+.fz-option--check .fz-option__mark { border-radius: 8px; }
+.fz-option__body { flex: 1 1 auto; display: flex; flex-direction: column; gap: 4px; }
+.fz-option__title { font-size: 16px; font-weight: 800; }
+.fz-option.is-selected {
+  background: var(--fz-surface-sub);
+  border-color: var(--fz-brand);
+  box-shadow: 0 8px 20px rgba(11, 110, 102, .12);
+}
+.fz-option.is-selected .fz-option__mark {
+  background: var(--fz-brand);
+  border-color: var(--fz-brand);
+  box-shadow: inset 0 0 0 3px var(--fz-surface);
+}
+.fz-option--check.is-selected .fz-option__mark { box-shadow: none; }
+
+/* آپلود مدرک */
+.fz-upload {
+  min-height: 150px;
+  padding: 18px;
+  width: 100%;
+  border: 2px dashed var(--fz-brand);
+  border-radius: var(--fz-r-card-sm);
+  background: var(--fz-surface-sub);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font: inherit;
+  text-align: center;
+}
+.fz-upload.is-done { border-style: solid; border-color: var(--fz-brand); background: var(--fz-tint); }
+.fz-upload.is-rejected { border-style: solid; border-color: var(--fz-warn-ink); background: var(--fz-warn-bg); }
+
+/* تگ وضعیت */
+.fz-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 15px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  background: var(--fz-divider);
+  color: var(--fz-text-faint);
+}
+.fz-tag--ok { background: var(--fz-tint); color: var(--fz-brand-deep); }
+.fz-tag--warn { background: var(--fz-warn-bg); color: var(--fz-warn-ink); }
+
+/* تایم‌لاین وضعیت */
+.fz-timeline { display: flex; flex-direction: column; }
+.fz-tl { display: flex; gap: 16px; }
+.fz-tl__rail { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 0 0 auto; }
+.fz-tl__dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  background: var(--fz-surface);
+  border: 2px solid var(--fz-border);
+  color: var(--fz-text-faint);
+}
+.fz-tl__line { width: 2px; flex: 1 1 auto; min-height: 46px; background: var(--fz-border-soft); }
+.fz-tl:last-child .fz-tl__line { background: transparent; }
+.fz-tl__body { display: flex; flex-direction: column; gap: 6px; padding-bottom: 20px; }
+.fz-tl__title { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 800; }
+.fz-tl.is-done .fz-tl__dot { background: var(--fz-tint); border-color: var(--fz-brand); color: var(--fz-brand); }
+.fz-tl.is-done .fz-tl__line { background: var(--fz-brand); }
+.fz-tl.is-doing .fz-tl__dot { border-color: var(--fz-action); color: var(--fz-warn-ink); }
+
+/* ردیف مبلغ */
+.fz-price {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--fz-divider);
+}
+.fz-price:last-child { border-bottom: 0; }
+.fz-price__amount { font-weight: 800; }
+.fz-price--credit .fz-price__amount,
+.fz-price--credit .fz-price__label { color: var(--fz-brand); }
+.fz-price--total { padding-top: 18px; font-size: 18px; font-weight: 800; color: var(--fz-brand-deep); }
+.fz-price--total .fz-price__amount { font-size: 24px; }
+
+/* شمارنده نفرات */
+.fz-counter { display: flex; align-items: center; gap: 12px; }
+.fz-counter__btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--fz-r-control);
+  border: 1px solid var(--fz-border);
+  background: var(--fz-surface);
+  color: var(--fz-brand-deep);
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.fz-counter__value { min-width: 32px; text-align: center; font-size: 18px; font-weight: 800; }
+
+/* چرخ انتخاب هدف (صفحه اصلی) */
+.fz-hero { display: flex; align-items: center; gap: 40px; padding-block: 40px; }
+.fz-hero__text { flex: 0 0 480px; display: flex; flex-direction: column; gap: 22px; }
+.fz-hero__title { font-size: 46px; font-weight: 800; color: var(--fz-brand); margin: 0; line-height: 1.4; }
+.fz-wheel { position: relative; flex: 1 1 auto; aspect-ratio: 1 / 1; max-width: 700px; }
+.fz-wheel__bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.fz-wheel__core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  padding: 20px;
+  border-radius: 28px;
+  background: var(--fz-brand);
+  color: var(--fz-surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(11, 110, 102, .25);
+}
+.fz-wheel__core small { color: var(--fz-on-dark); font-size: 13px; }
+.fz-wheel__core strong { font-size: 20px; font-weight: 800; }
+.fz-node {
+  position: absolute;
+  width: 120px;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--fz-text);
+  cursor: pointer;
+}
+.fz-node__tile {
+  width: 76px;
+  height: 76px;
+  border-radius: var(--fz-r-tile);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fz-surface);
+  color: var(--fz-brand);
+  border: 1px solid var(--fz-border-soft);
+  box-shadow: 0 4px 12px rgba(8, 79, 74, .08);
+}
+.fz-node__label { font-size: 13px; font-weight: 700; text-align: center; }
+.fz-node[aria-pressed="true"] .fz-node__tile {
+  background: var(--fz-brand);
+  color: var(--fz-surface);
+  border-color: var(--fz-brand);
+  box-shadow: 0 12px 26px rgba(11, 110, 102, .28);
+}
+.fz-chip {
+  position: absolute;
+  width: 116px;
+  min-height: 60px;
+  padding: 12px 10px;
+  transform: translate(-50%, -50%);
+  border-radius: 16px;
+  border: 1px solid var(--fz-border);
+  background: var(--fz-surface);
+  color: var(--fz-brand);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(8, 79, 74, .08);
+}
+.fz-chip[aria-pressed="true"] {
+  background: var(--fz-action);
+  border-color: var(--fz-action);
+  color: var(--fz-action-ink);
+  box-shadow: 0 10px 24px rgba(242, 163, 58, .35);
+}
+
+/* اسکلت بارگذاری */
+.fz-skeleton {
+  border-radius: var(--fz-r-card-sm);
+  background: linear-gradient(90deg, var(--fz-surface-sub) 25%, var(--fz-divider) 50%, var(--fz-surface-sub) 75%);
+  background-size: 200% 100%;
+  animation: fz-shimmer 1.4s ease infinite;
+}
+@keyframes fz-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* ---------- ۵) ووچر ---------- */
+.fz-voucher {
+  border: 1px solid var(--fz-border);
+  border-radius: 28px;
+  overflow: hidden;
+  background: var(--fz-surface);
+}
+.fz-voucher__head {
+  padding: 26px 30px;
+  background: var(--fz-tint);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.fz-voucher__code { font-size: 20px; font-weight: 800; letter-spacing: 1px; }
+.fz-voucher__body { padding: 30px; display: flex; gap: 30px; }
+.fz-voucher__qr {
+  width: 170px;
+  height: 170px;
+  flex: 0 0 auto;
+  border: 1px solid var(--fz-border);
+  border-radius: var(--fz-r-card-sm);
+  background: var(--fz-surface-sub);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fz-dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; flex: 1 1 auto; margin: 0; }
+.fz-dl > div { display: flex; flex-direction: column; gap: 4px; }
+.fz-dl dt { font-size: 13px; color: var(--fz-text-faint); }
+.fz-dl dd { margin: 0; font-size: 16px; font-weight: 700; }
+
+/* ---------- ۶) ریسپانسیو ---------- */
+@media (max-width: 1024px) {
+  .fz-split, .fz-hero { flex-direction: column; }
+  .fz-split__aside { position: static; flex: 1 1 auto; width: 100%; }
+  .fz-hero__text { flex: 1 1 auto; }
+  .fz-hero__title { font-size: 34px; }
+  .fz-grid--3, .fz-grid--4, .fz-grid--6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fz-nav { display: none; }
+  .fz-stepper__in { overflow-x: auto; }
+  .fz-voucher__body { flex-direction: column; }
+  /* دکمه اقدام اصلی چسبان به پایین در موبایل */
+  .fz-cta-sticky {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    padding: 12px 0;
+    background: linear-gradient(to top, var(--fz-bg) 70%, transparent);
+  }
+}
+
+@media (max-width: 640px) {
+  .fz-grid--2, .fz-grid--3, .fz-grid--4, .fz-grid--6, .fz-dl { grid-template-columns: minmax(0, 1fr); }
+  .fz-card { padding: 20px; }
+  .fz-main { padding-block: 20px 32px; }
+}
+
+/* ---------- ۷) چاپ ووچر ---------- */
+@media print {
+  .fz-print-hide { display: none !important; }
+  body { background: #fff !important; }
+}

@@ -1089,5 +1089,407 @@
         "en": "Live"
       }
     }
+  },
+  "Business": {
+    "header": {
+      "badge": "Business",
+      "navPackages": "Packages",
+      "navHow": "How it works",
+      "navSupport": "Business support",
+      "requestCode": "Request number",
+      "tagline": "For companies",
+      "homeAria": "Firuzo Business home",
+      "navAria": "Business section menu"
+    },
+    "stepper": {
+      "ariaLabel": "Booking steps",
+      "package": "Package",
+      "info": "Details",
+      "deposit": "Deposit",
+      "review": "Review",
+      "settlement": "Final payment",
+      "voucher": "Voucher"
+    },
+    "common": {
+      "networkErrorTitle": "Connection failed",
+      "networkErrorBody": "Something went wrong while loading data. Your form data is safe.",
+      "retry": "Try again",
+      "selected": "Selected",
+      "notSelected": "Not selected"
+    },
+    "price": "{amount} IRT",
+    "landing": {
+      "heroBadge": "For companies and trade managers",
+      "heroTitle": "Your company’s tech travel, in one track",
+      "heroLead": "From trade fairs and delegations to factory visits and B2B meetings — manage request, coordination, payment and voucher in one place.",
+      "cta": "Start a request",
+      "yourRequest": "Your request",
+      "grantHint": "Eligible for government grants for trade and technology delegations.",
+      "benefitsAria": "Included services",
+      "packagesTitle": "Ready-made packages",
+      "packagesLead": "Each package includes flights, hotel, visa, transfers and a visit program; add-ons are selected in the next step.",
+      "perPaxRate": "Rate per person",
+      "detailsCta": "Details & book",
+      "daysUnit": "days",
+      "howTitle": "From booking to voucher",
+      "wheelAria": "Travel goal selector",
+      "coreSmall": "Corporate panel"
+    },
+    "goals": {
+      "expo": {
+        "label": "Fairs & delegations",
+        "note": "Your team at international fairs and trade visits, with visa, flights and hotel.",
+        "subs": {
+          "canton": "Canton Fair",
+          "electronics": "Electronics",
+          "textile": "Textile",
+          "medical": "Medical equipment"
+        }
+      },
+      "factory": {
+        "label": "Factory visits",
+        "note": "Visits to selected supplier production lines with prior coordination and a technical interpreter.",
+        "subs": {
+          "mobile": "Mobile & parts",
+          "machinery": "Machinery",
+          "materials": "Raw materials"
+        }
+      },
+      "b2b": {
+        "label": "B2B meetings",
+        "note": "Pre-arranged meetings with manufacturers; negotiate pricing and dealerships.",
+        "subs": {
+          "sourcing": "Sourcing",
+          "negotiation": "Price negotiation",
+          "dealership": "Sales dealerships"
+        }
+      },
+      "visa": {
+        "label": "Group visa & insurance",
+        "note": "Business visa file, official invitation and travel insurance for the whole group.",
+        "subs": {
+          "visa": "Business visa",
+          "invitation": "Fair invitation",
+          "insurance": "Group insurance"
+        }
+      },
+      "budget": {
+        "label": "Budget & reporting",
+        "note": "Travel cost estimate, official corporate invoice and final report for finance.",
+        "subs": {
+          "estimate": "Cost estimate",
+          "grant": "Delegation grant",
+          "report": "Trip report"
+        }
+      },
+      "tech": {
+        "label": "Tech delegation",
+        "note": "Send your tech team to innovation parks and accelerators for know-how and cooperation.",
+        "subs": {
+          "park": "Tech park",
+          "accelerator": "Accelerator",
+          "startup": "Deep-tech startups"
+        }
+      }
+    },
+    "benefits": {
+      "visa": {
+        "title": "Business visa & invitation",
+        "desc": "Fair invitations, embassy appointments and corporate file follow-up."
+      },
+      "interpreter": {
+        "title": "Industry interpreter",
+        "desc": "An interpreter fluent in technical terms and pricing, in meetings and on the market."
+      },
+      "contract": {
+        "title": "Contracts & inspection",
+        "desc": "Trade counsel, purchase contracts and pre-shipment inspection."
+      },
+      "grant": {
+        "title": "Grants & official invoice",
+        "desc": "Documentation for delegation grants plus corporate invoicing."
+      }
+    },
+    "how": [
+      {
+        "title": "Choose package",
+        "desc": "Departure date, party size and add-ons."
+      },
+      {
+        "title": "Enter details",
+        "desc": "Company info, travellers and documents."
+      },
+      {
+        "title": "Deposit",
+        "desc": "Hold capacity with a 30% payment."
+      },
+      {
+        "title": "Review & approval",
+        "desc": "Document checks, visa and capacity confirmation."
+      },
+      {
+        "title": "Final payment",
+        "desc": "Settle the balance per the final invoice."
+      },
+      {
+        "title": "Voucher issued",
+        "desc": "Travel voucher, tickets and group program."
+      }
+    ],
+    "tour": {
+      "days": "days",
+      "galleryPlaceholder": "Fair & city gallery",
+      "itinerary": "Day-by-day program",
+      "dayN": "Day {n}",
+      "includes": "Included",
+      "requiredDocs": "Required documents",
+      "grantDocNote": "A chamber of commerce endorsement is also required to use the government grant.",
+      "perPaxRate": "Rate per person",
+      "departureDate": "Departure date",
+      "paxCount": "Party size",
+      "paxMinus": "Fewer travellers",
+      "paxPlus": "More travellers",
+      "addons": "Add-ons",
+      "baseLine": "Base package × {count}",
+      "addonLine": "Add-ons",
+      "total": "Total",
+      "depositHint": "Deposit required to hold capacity: 30% ({deposit})",
+      "submitCta": "Request & continue",
+      "holdNote": "On request, capacity is held for your company for 48 hours.",
+      "errors": {
+        "departureRequired": "Select a departure date.",
+        "paxRange": "Party size must be between 1 and {max}."
+      }
+    },
+    "form": {
+      "title": "Company & traveller details",
+      "companySection": "Company information",
+      "companyName": "Company name",
+      "companyNamePh": "Registered name",
+      "nationalId": "National ID",
+      "nationalIdPh": "11 digits",
+      "field": "Field of activity",
+      "fieldPh": "e.g. mobile & accessories",
+      "economicCode": "Economic code",
+      "optional": "Optional",
+      "repName": "Representative & role",
+      "repNamePh": "Full name — title",
+      "repPhone": "Representative mobile",
+      "repPhonePh": "09xxxxxxxxx",
+      "travelersSection": "Travellers",
+      "addTraveler": "+ Add traveller",
+      "travelerN": "Traveller {n}",
+      "removeTraveler": "Remove",
+      "latinName": "Full name (Latin)",
+      "latinNamePh": "As in passport",
+      "passportNo": "Passport number",
+      "passportNoPh": "e.g. A1234567",
+      "passportExpiry": "Passport expiry",
+      "passportExpiryPh": "1406/05/12",
+      "docsSection": "Document upload",
+      "note": "Request notes",
+      "notePh": "Trip goal, target suppliers, special requests",
+      "docTypes": {
+        "passport": "Passport first page",
+        "registration": "Company registration gazette",
+        "intro_letter": "Team introduction letter",
+        "photo": "Personal photo"
+      },
+      "summaryTitle": "Request summary",
+      "summaryPackage": "Package",
+      "summaryPackageValue": "Canton Fair — Guangzhou",
+      "summaryDeparture": "Departure",
+      "summaryPax": "Party",
+      "paxUnit": "pax",
+      "summaryTotal": "Total",
+      "summaryDeposit": "Deposit (30%)",
+      "terms": "I have read and accept the cancellation terms, visa rules and document responsibilities.",
+      "submitCta": "Submit & go to deposit",
+      "submitting": "Submitting…",
+      "saveDraft": "Save draft",
+      "dataPreserved": "Your form data has been saved and is not lost.",
+      "grantNote": "If you intend to use the delegation grant, name the relevant chamber or association in the notes.",
+      "autosaveNote": "The form is auto-saved every 30 seconds.",
+      "errors": {
+        "required": "This field is required",
+        "nationalId": "National ID must be 11 digits",
+        "mobile": "Invalid mobile number",
+        "latinName": "Name must match the passport, in Latin letters",
+        "passport": "Invalid passport number",
+        "terms": "You must accept the terms to continue",
+        "fileFormat": "File format or size is not allowed"
+      }
+    },
+    "upload": {
+      "chooseFile": "Choose file",
+      "formatHint": "JPG or PDF — up to 5 MB",
+      "uploading": "Uploading…",
+      "uploaded": "Uploaded",
+      "replaceHint": "Select another file to replace.",
+      "rejectedTitle": "Document rejected",
+      "retry": "Re-upload",
+      "fileAria": "Select document file"
+    },
+    "statusTag": {
+      "ok": "Approved",
+      "warn": "Needs changes",
+      "pending": "Pending"
+    },
+    "timeline": {
+      "done": "Done",
+      "doing": "In progress",
+      "waiting": "Waiting"
+    },
+    "deposit": {
+      "title": "Deposit & capacity hold",
+      "lead": "With a 30% payment, flights and hotel capacity are held for your company and the visa file starts. The balance is due after document approval and visa issuance.",
+      "methodTitle": "Payment method",
+      "methods": {
+        "gateway": {
+          "title": "Online payment gateway",
+          "note": "Pay by bank card via the secure gateway"
+        },
+        "wallet": {
+          "title": "Firuzo wallet",
+          "note": "Debit from your company’s IRR or FX balance"
+        },
+        "credit": {
+          "title": "Corporate credit",
+          "note": "Pay with agreed credit, settle at maturity"
+        },
+        "receipt": {
+          "title": "Bank transfer & receipt",
+          "note": "Finance desk approves after reviewing your receipt"
+        }
+      },
+      "tags": {
+        "instant": "Instant",
+        "noFee": "No fees",
+        "needsApproval": "Needs approval",
+        "within24h": "Within 24h"
+      },
+      "receiptAccount": "Transfer to Firuzo corporate account",
+      "accountName": "Account holder",
+      "uploadReceipt": "Upload receipt image",
+      "invoiceTitle": "Proforma invoice",
+      "linePackage": "Package × {count} pax",
+      "lineTranslator": "Dedicated interpreter",
+      "lineVisa": "Visa file fee",
+      "total": "Total",
+      "payNow": "Amount due now (30%)",
+      "remainingAfter": "Balance after approval: {remaining}",
+      "payCta": "Pay deposit",
+      "redirecting": "Redirecting to gateway…",
+      "gatewayNote": "Secure payment via eCardo / Shetab",
+      "backToForm": "Back to edit details",
+      "refundPolicy": "Within 72 hours of payment, the deposit is refundable minus the visa file fee if the company cancels. After visa issuance, the package cancellation terms apply.",
+      "paymentFailed": "Payment failed. You can try again."
+    },
+    "status": {
+      "bannerTitle": "Deposit received — capacity is held",
+      "bannerBody": "Status updates are sent by SMS and email.",
+      "bannerWithAssignee": "Case manager: {assignee} — status updates are sent by SMS and email.",
+      "refreshAria": "Refresh status",
+      "reviewTitle": "Review stages",
+      "step1": "Request & deposit",
+      "step1Note": "Flight and hotel capacity reserved for the company.",
+      "step2": "Document check",
+      "step2Note": "Passport validity, letters and registration documents.",
+      "step3": "Visa file & embassy",
+      "step3Note": "Fair invitation sent; interview slot requested.",
+      "step4": "Flight & hotel confirmation",
+      "step4Note": "Group tickets and rooms finalized with the destination supplier.",
+      "step5": "Final approval & invoice",
+      "step5Note": "Happens after the stages above are complete.",
+      "docsTitle": "Document status",
+      "reupload": "Re-upload",
+      "view": "View",
+      "financeTitle": "Financial summary",
+      "total": "Total",
+      "paidDeposit": "Deposit paid",
+      "grantPending": "Grant deduction (pending approval)",
+      "grantDeducted": "Grant deduction",
+      "remaining": "Estimated balance",
+      "reviewingTitle": "Under review",
+      "reviewingBody": "The final invoice activates once documents and visa are complete.",
+      "disabledSettleCta": "Final payment unlocks after approval",
+      "settleCta": "View final invoice",
+      "cancelledTitle": "Request cancelled",
+      "cancelledBody": "This request was cancelled and is read-only.",
+      "embassyTitle": "Embassy appointment",
+      "embassyBody": "Interview date and location appear here once the file is complete, and are texted to your representative."
+    },
+    "settlement": {
+      "title": "Final invoice",
+      "lead": "Documents and visas are approved. Pay the balance to issue tickets and travel vouchers.",
+      "colDesc": "Description",
+      "colAmount": "Amount",
+      "linePackage": "Package × {count} pax",
+      "linePackageNote": "Flights, hotel, transfers and visits",
+      "lineTranslator": "Dedicated interpreter",
+      "lineTranslatorNote": "With the group at fairs and markets",
+      "lineVisa": "Business visa × {count}",
+      "lineVisaNote": "Embassy and file fees",
+      "lineGrant": "Grant deduction",
+      "lineGrantNote": "Per the granting authority’s confirmation",
+      "lineDeposit": "Deposit deduction",
+      "lineDepositNote": "Paid at the capacity-hold stage",
+      "lineRemaining": "Balance due",
+      "methodTitle": "Settlement method",
+      "methods": {
+        "gateway": {
+          "title": "Online gateway",
+          "note": "One-off payment by bank card"
+        },
+        "wallet": {
+          "title": "Firuzo wallet",
+          "note": "Debit from your company’s IRR or FX balance"
+        },
+        "transfer": {
+          "title": "Corporate bank transfer",
+          "note": "Upload receipt; finance approves within 24h"
+        }
+      },
+      "officialInvoice": "Issue an official invoice to the company (for the grant and your organization)",
+      "tripInfo": "Trip details",
+      "package": "Package",
+      "date": "Dates",
+      "pax": "Party",
+      "visa": "Visa",
+      "visaIssued": "Issued",
+      "payAmount": "Amount due",
+      "deadline": "Payment window: 48 hours",
+      "payCta": "Pay & finalize",
+      "backToStatus": "Back to request status",
+      "afterPayNote": "After payment, the travel voucher, tickets and group program are issued immediately and sent to your representative."
+    },
+    "voucher": {
+      "bannerTitle": "Booking finalized — voucher issued",
+      "bannerBody": "Voucher and tickets were emailed and texted to your representative.",
+      "downloadPdf": "Download voucher (PDF)",
+      "sendEmail": "Email to company",
+      "groupVoucher": "Group travel voucher",
+      "code": "Voucher code",
+      "company": "Company",
+      "rep": "Group representative",
+      "travelDate": "Travel dates",
+      "pax": "Party size",
+      "outbound": "Outbound flight",
+      "return": "Return flight",
+      "hotel": "Hotel",
+      "guide": "Interpreter & leader",
+      "qrHint": "Show this code at the airport, hotel and fair entrance",
+      "confirmedServices": "Confirmed services",
+      "perTraveler": "Per-traveller vouchers",
+      "download": "Download",
+      "nextSteps": "Next steps",
+      "nextStep1": "Online group briefing three days before the flight.",
+      "nextStep2": "Hand over visa-stamped passports to the company representative.",
+      "nextStep3": "Your group joins the in-destination support channel.",
+      "nextStep4": "Send your target-supplier list to schedule B2B meetings.",
+      "viewFile": "View travel file",
+      "supportTitle": "In-destination support",
+      "supportBody": "24/7, Persian-speaking, from landing until return."
+    }
   }
 }

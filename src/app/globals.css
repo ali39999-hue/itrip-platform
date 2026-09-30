@@ -790,3 +790,60 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   .print-area article,
   .print-area section { break-inside: avoid; page-break-inside: avoid; border-color: #d8e0df !important; }
 }
+
+/* ==========================================================================
+   FIRUZO BUSINESS — توکن‌های اختصاصی بخش بیزنس (تور فناوری)
+   منبع حقیقت: سند تحویل فنی 2026-09-28 — «این مقادیر دقیقاً همان چیزی است
+   که در طرح استفاده شده». این توکن‌ها با پیشوند --fz-* از سیستم معنایی
+   سراسری (--brand/--ink/...) جدا هستند و فقط در صفحات /business مصرف می‌شوند.
+   هیچ هگز دیگری در کامپوننت‌های business مجاز نیست — فقط این متغیرها.
+   ========================================================================== */
+:root {
+  /* رنگ برند فیروزو بیزنس */
+  --fz-brand: #0B6E66;
+  --fz-brand-deep: #084F4A;
+  --fz-action: #F2A33A;
+  --fz-action-ink: #2B1A00;
+
+  /* سطوح */
+  --fz-bg: #FBF4EE;
+  --fz-surface: #FFFFFF;
+  --fz-surface-sub: #FDF8F4;
+  --fz-tint: #E6F3F1;
+
+  /* حاشیه‌ها */
+  --fz-border: #DFD3C2;
+  --fz-border-soft: #EAE0D2;
+  --fz-divider: #EDE4D8;
+
+  /* متن */
+  --fz-text: #13302D;
+  --fz-text-muted: #3F5A57;
+  --fz-text-faint: #5B7572;
+  --fz-on-dark: #BFE3DE;
+
+  /* وضعیت */
+  --fz-warn-bg: #FDF0DC;
+  --fz-warn-ink: #7A4A00;
+  --fz-danger: #A2402F;
+
+  /* لهجه بخش سازمانی (فقط بدج «بیزنس» و «ویژه شرکت‌ها») */
+  --fz-biz-bg: #F7E7E3;
+  --fz-biz-ink: #8C2733;
+
+  /* شعاع */
+  --fz-r-card: 24px;
+  --fz-r-card-sm: 18px;
+  --fz-r-control: 14px;
+  --fz-r-badge: 12px;
+  --fz-r-tile: 20px;
+
+  /* سایه کارت شناور */
+  --fz-shadow: 0 12px 32px rgba(8, 79, 74, .08);
+
+  /* شبکه و فاصله */
+  --fz-gutter: 80px;
+  --fz-gap: 28px;
+  --fz-aside: 420px;
+  --fz-max: 1280px;
+}

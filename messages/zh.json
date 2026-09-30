@@ -1089,5 +1089,407 @@
         "en": "Live"
       }
     }
+  },
+  "Business": {
+    "header": {
+      "badge": "商务",
+      "navPackages": "套餐",
+      "navHow": "预订流程",
+      "navSupport": "商务支持",
+      "requestCode": "申请编号",
+      "tagline": "专为企业",
+      "homeAria": "Firuzo 商务首页",
+      "navAria": "商务栏目菜单"
+    },
+    "stepper": {
+      "ariaLabel": "预订步骤",
+      "package": "选择套餐",
+      "info": "填写信息",
+      "deposit": "预付款",
+      "review": "审核确认",
+      "settlement": "尾款支付",
+      "voucher": "凭证"
+    },
+    "common": {
+      "networkErrorTitle": "连接失败",
+      "networkErrorBody": "加载数据时出现问题。您的表单数据不会丢失。",
+      "retry": "重试",
+      "selected": "已选择",
+      "notSelected": "未选择"
+    },
+    "price": "{amount} 图曼",
+    "landing": {
+      "heroBadge": "专为企业与贸易管理者",
+      "heroTitle": "企业科技出行，一站式完成",
+      "heroLead": "从展会商务考察到工厂参观与 B2B 会议；申请、协调、支付与凭证一站式管理。",
+      "cta": "提交申请",
+      "yourRequest": "您的申请",
+      "grantHint": "可申请商务与科技出访政府补贴。",
+      "benefitsAria": "配套服务",
+      "packagesTitle": "成团套餐",
+      "packagesLead": "每套套餐含机票、酒店、签证、接送与参观行程；附加服务在下一步选择。",
+      "perPaxRate": "每人价格",
+      "detailsCta": "详情与预订",
+      "daysUnit": "天",
+      "howTitle": "从预订到凭证的流程",
+      "wheelAria": "出行目标选择器",
+      "coreSmall": "企业面板"
+    },
+    "goals": {
+      "expo": {
+        "label": "展会与商务考察",
+        "note": "团队参加国际展会与商务考察，含签证、机票与住宿。",
+        "subs": {
+          "canton": "广交会",
+          "electronics": "电子展",
+          "textile": "纺织展",
+          "medical": "医疗器械"
+        }
+      },
+      "factory": {
+        "label": "工厂参观",
+        "note": "在协调与翻译陪同下参观优选供应商生产线。",
+        "subs": {
+          "mobile": "手机与配件",
+          "machinery": "机械设备",
+          "materials": "原材料"
+        }
+      },
+      "b2b": {
+        "label": "B2B 会议",
+        "note": "预先安排的制造商会谈，洽谈价格与代理。",
+        "subs": {
+          "sourcing": "供应商对接",
+          "negotiation": "价格谈判",
+          "dealership": "销售代理"
+        }
+      },
+      "visa": {
+        "label": "团体签证与保险",
+        "note": "为全体团员办理商务签证、正式邀请函与旅行保险。",
+        "subs": {
+          "visa": "商务签证",
+          "invitation": "展会邀请函",
+          "insurance": "团体保险"
+        }
+      },
+      "budget": {
+        "label": "预算与报告",
+        "note": "差旅费用预估、正式公司发票与财务最终报告。",
+        "subs": {
+          "estimate": "费用预估",
+          "grant": "出访补贴",
+          "report": "行程报告"
+        }
+      },
+      "tech": {
+        "label": "科技考察团",
+        "note": "派技术团队赴科技园区与孵化器，促进知识转移与合作。",
+        "subs": {
+          "park": "科技园区",
+          "accelerator": "孵化器",
+          "startup": "高科技企业"
+        }
+      }
+    },
+    "benefits": {
+      "visa": {
+        "title": "商务签证与邀请函",
+        "desc": "办理展会邀请函、使馆预约并跟进公司档案。"
+      },
+      "interpreter": {
+        "title": "行业专业翻译",
+        "desc": "熟悉技术术语与价格谈判的翻译，全程陪同。"
+      },
+      "contract": {
+        "title": "合同与验货",
+        "desc": "商务律师、采购合同起草与发运前验货。"
+      },
+      "grant": {
+        "title": "补贴与正式发票",
+        "desc": "提供出访补贴所需文件及公司发票。"
+      }
+    },
+    "how": [
+      {
+        "title": "选择套餐",
+        "desc": "出发日期、人数与附加服务。"
+      },
+      {
+        "title": "填写信息",
+        "desc": "公司信息、旅客资料与文件上传。"
+      },
+      {
+        "title": "预付款",
+        "desc": "支付 30% 锁定名额。"
+      },
+      {
+        "title": "审核确认",
+        "desc": "文件审核、签证与席位确认。"
+      },
+      {
+        "title": "尾款支付",
+        "desc": "按账单结清尾款。"
+      },
+      {
+        "title": "凭证签发",
+        "desc": "旅行凭证、机票与团队行程。"
+      }
+    ],
+    "tour": {
+      "days": "天",
+      "galleryPlaceholder": "展会与城市图片",
+      "itinerary": "每日行程",
+      "dayN": "第 {n} 天",
+      "includes": "费用包含",
+      "requiredDocs": "所需文件",
+      "grantDocNote": "使用政府补贴还需商会出具证明。",
+      "perPaxRate": "每人价格",
+      "departureDate": "出发日期",
+      "paxCount": "人数",
+      "paxMinus": "减少人数",
+      "paxPlus": "增加人数",
+      "addons": "附加服务",
+      "baseLine": "基础套餐 × {count} 人",
+      "addonLine": "附加服务",
+      "total": "总计",
+      "depositHint": "锁定名额所需预付款：30%（{deposit}）",
+      "submitCta": "提交申请并继续",
+      "holdNote": "提交申请后，名额将为您保留 48 小时。",
+      "errors": {
+        "departureRequired": "请选择出发日期。",
+        "paxRange": "人数需在 1 至 {max} 之间。"
+      }
+    },
+    "form": {
+      "title": "公司与旅客信息",
+      "companySection": "公司信息",
+      "companyName": "公司名称",
+      "companyNamePh": "注册名称",
+      "nationalId": "国民识别号",
+      "nationalIdPh": "11 位数字",
+      "field": "经营领域",
+      "fieldPh": "如：手机及配件",
+      "economicCode": "经济代码",
+      "optional": "选填",
+      "repName": "代表及职务",
+      "repNamePh": "姓名 — 职务",
+      "repPhone": "代表手机",
+      "repPhonePh": "09xxxxxxxxx",
+      "travelersSection": "旅客",
+      "addTraveler": "+ 添加旅客",
+      "travelerN": "旅客 {n}",
+      "removeTraveler": "删除",
+      "latinName": "姓名（拉丁字母）",
+      "latinNamePh": "与护照一致",
+      "passportNo": "护照号码",
+      "passportNoPh": "如 A1234567",
+      "passportExpiry": "护照有效期至",
+      "passportExpiryPh": "1406/05/12",
+      "docsSection": "上传文件",
+      "note": "申请备注",
+      "notePh": "出行目的、目标供应商及特殊需求",
+      "docTypes": {
+        "passport": "护照首页",
+        "registration": "公司注册公报",
+        "intro_letter": "人员介绍信",
+        "photo": "个人照片"
+      },
+      "summaryTitle": "申请摘要",
+      "summaryPackage": "套餐",
+      "summaryPackageValue": "广交会 — 广州",
+      "summaryDeparture": "出发日期",
+      "summaryPax": "人数",
+      "paxUnit": "人",
+      "summaryTotal": "总计",
+      "summaryDeposit": "预付款（30%）",
+      "terms": "我已阅读并接受取消条款、签证规定与文件责任。",
+      "submitCta": "提交并前往付款",
+      "submitting": "提交中…",
+      "saveDraft": "保存草稿",
+      "dataPreserved": "您的表单数据已保存，不会丢失。",
+      "grantNote": "如需申请出访补贴，请在备注中写明相关商会名称。",
+      "autosaveNote": "表单每 30 秒自动保存。",
+      "errors": {
+        "required": "此字段为必填",
+        "nationalId": "国民识别号须为 11 位数字",
+        "mobile": "手机号无效",
+        "latinName": "姓名须与护照一致，使用拉丁字母",
+        "passport": "护照号码无效",
+        "terms": "接受条款后才能继续",
+        "fileFormat": "文件格式或大小不符合要求"
+      }
+    },
+    "upload": {
+      "chooseFile": "选择文件",
+      "formatHint": "JPG 或 PDF — 最大 5 MB",
+      "uploading": "上传中…",
+      "uploaded": "已上传",
+      "replaceHint": "选择其他文件即可替换。",
+      "rejectedTitle": "文件被驳回",
+      "retry": "重新上传",
+      "fileAria": "选择文件"
+    },
+    "statusTag": {
+      "ok": "已通过",
+      "warn": "需要修改",
+      "pending": "等待中"
+    },
+    "timeline": {
+      "done": "已完成",
+      "doing": "进行中",
+      "waiting": "等待中"
+    },
+    "deposit": {
+      "title": "预付款与名额锁定",
+      "lead": "支付 30% 后，机票与酒店名额将为贵司锁定，并启动签证档案。余额在文件审核与签证签发后支付。",
+      "methodTitle": "支付方式",
+      "methods": {
+        "gateway": {
+          "title": "在线支付网关",
+          "note": "通过安全网关使用银行卡支付"
+        },
+        "wallet": {
+          "title": "Firuzo 钱包",
+          "note": "从公司本币或外币余额扣款"
+        },
+        "credit": {
+          "title": "企业信用额度",
+          "note": "使用协议信用额度，到期结算"
+        },
+        "receipt": {
+          "title": "银行转账并上传回执",
+          "note": "财务审核回执后确认申请"
+        }
+      },
+      "tags": {
+        "instant": "即时",
+        "noFee": "免手续费",
+        "needsApproval": "需审批",
+        "within24h": "24 小时内"
+      },
+      "receiptAccount": "转入 Firuzo 公司账户",
+      "accountName": "户名",
+      "uploadReceipt": "上传回执图片",
+      "invoiceTitle": "初步账单",
+      "linePackage": "套餐 × {count} 人",
+      "lineTranslator": "专属翻译",
+      "lineVisa": "签证档案费",
+      "total": "总计",
+      "payNow": "现在应付（30%）",
+      "remainingAfter": "审核后余额：{remaining}",
+      "payCta": "支付预付款",
+      "redirecting": "正在跳转至支付网关…",
+      "gatewayNote": "通过 eCardo / Shetab 安全支付",
+      "backToForm": "返回修改信息",
+      "refundPolicy": "付款后 72 小时内如取消，可退预付款（扣除签证档案费）。签证签发后按套餐取消条款执行。",
+      "paymentFailed": "支付失败，可重试。"
+    },
+    "status": {
+      "bannerTitle": "已收到预付款，名额已锁定",
+      "bannerBody": "状态更新将通过短信和邮件通知。",
+      "bannerWithAssignee": "案件经理：{assignee} — 状态更新将通过短信和邮件通知。",
+      "refreshAria": "刷新状态",
+      "reviewTitle": "审核阶段",
+      "step1": "申请与预付款",
+      "step1Note": "机票与酒店名额已为贵司预留。",
+      "step2": "文件审核",
+      "step2Note": "核查护照有效期、介绍信与注册文件。",
+      "step3": "签证档案与使馆预约",
+      "step3Note": "发送展会邀请函并预约面签时间。",
+      "step4": "机票酒店确认",
+      "step4Note": "与当地供应商确认团体机票与客房。",
+      "step5": "最终确认与账单",
+      "step5Note": "在以上阶段完成后进行。",
+      "docsTitle": "文件状态",
+      "reupload": "重新上传",
+      "view": "查看",
+      "financeTitle": "财务摘要",
+      "total": "总计",
+      "paidDeposit": "已付预付款",
+      "grantPending": "补贴扣减（待审批）",
+      "grantDeducted": "补贴扣减",
+      "remaining": "预计余额",
+      "reviewingTitle": "审核中",
+      "reviewingBody": "文件与签证完成后即可使用最终账单。",
+      "disabledSettleCta": "最终支付将在审批后开启",
+      "settleCta": "查看最终账单",
+      "cancelledTitle": "申请已取消",
+      "cancelledBody": "该申请已取消，仅供查看。",
+      "embassyTitle": "使馆预约",
+      "embassyBody": "档案完成后在此显示面签时间与地点，并以短信通知代表。"
+    },
+    "settlement": {
+      "title": "最终账单",
+      "lead": "文件与签证已批准。结清尾款后即出票并签发凭证。",
+      "colDesc": "项目",
+      "colAmount": "金额",
+      "linePackage": "套餐 × {count} 人",
+      "linePackageNote": "机票、酒店、接送与参观",
+      "lineTranslator": "专属翻译",
+      "lineTranslatorNote": "展会与市场期间随团",
+      "lineVisa": "商务签证 × {count} 人",
+      "lineVisaNote": "使馆及档案费用",
+      "lineGrant": "出访补贴扣减",
+      "lineGrantNote": "依据审批机构确认",
+      "lineDeposit": "预付款扣减",
+      "lineDepositNote": "锁定名额阶段已支付",
+      "lineRemaining": "应付尾款",
+      "methodTitle": "结算方式",
+      "methods": {
+        "gateway": {
+          "title": "在线支付",
+          "note": "银行卡一次性支付"
+        },
+        "wallet": {
+          "title": "Firuzo 钱包",
+          "note": "从公司余额扣款"
+        },
+        "transfer": {
+          "title": "企业银行转账",
+          "note": "上传回执，财务 24 小时内审批"
+        }
+      },
+      "officialInvoice": "开具公司抬头的正式发票（用于报销与补贴）",
+      "tripInfo": "行程信息",
+      "package": "套餐",
+      "date": "日期",
+      "pax": "人数",
+      "visa": "签证",
+      "visaIssued": "已签发",
+      "payAmount": "应付金额",
+      "deadline": "支付期限：48 小时",
+      "payCta": "支付并完成预订",
+      "backToStatus": "返回申请状态",
+      "afterPayNote": "付款后立即签发凭证、机票与团队行程，并发送给代表。"
+    },
+    "voucher": {
+      "bannerTitle": "预订完成，凭证已签发",
+      "bannerBody": "凭证与机票已通过邮件和短信发送给代表。",
+      "downloadPdf": "下载凭证（PDF）",
+      "sendEmail": "发送至公司邮箱",
+      "groupVoucher": "团体旅行凭证",
+      "code": "凭证代码",
+      "company": "公司",
+      "rep": "团长",
+      "travelDate": "旅行日期",
+      "pax": "人数",
+      "outbound": "去程航班",
+      "return": "回程航班",
+      "hotel": "酒店",
+      "guide": "翻译与领队",
+      "qrHint": "在机场、酒店与展会入口出示此码",
+      "confirmedServices": "已确认服务",
+      "perTraveler": "每位旅客凭证",
+      "download": "下载",
+      "nextSteps": "后续步骤",
+      "nextStep1": "出发前三天召开线上行前说明会。",
+      "nextStep2": "将已贴签的护照交还公司代表。",
+      "nextStep3": "团队加入目的地支持频道。",
+      "nextStep4": "发送目标供应商名单以安排 B2B 会议。",
+      "viewFile": "查看旅行档案",
+      "supportTitle": "目的地支持",
+      "supportBody": "全天候波斯语支持，从落地到返程。"
+    }
   }
 }
