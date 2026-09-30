@@ -5,6 +5,13 @@
 // applies migrations, and runs vitest — so test fixtures never pollute dev data.
 // CI/other environments: any DATABASE_URL whose database is not exactly `itrip`
 // is used unchanged; TEST_DATABASE_URL always wins when provided.
+//
+// The local-dev database is matched by name, not by an exact `/itrip` suffix:
+// a dev setup that names its database `itrip_dev` (or `itrip_local`) is still a
+// local dev database and must be retargeted too. Without this, the suite runs
+// against the dev database itself and test fixtures pollute real data — and,
+// worse, skips the migrations it depends on, producing failures that look like
+// product bugs.
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync, execSync } from 'node:child_process';
@@ -33,9 +40,17 @@ if (!dbUrl) {
   process.exit(1);
 }
 
-const isLocalDevDb = /\/itrip(\?|$)/.test(dbUrl);
+// Retargets a LOCAL DEV database by name — `itrip`, `itrip_dev`, `itrip_local`
+// — onto `itrip_test` so fixtures never touch dev data. Two guards matter:
+//   1. only a loopback host is a local dev database. A URL naming db `itrip` on
+//      a remote host is a real environment and must be used verbatim, or test
+//      fixtures would run against production.
+//   2. `itrip_test` and CI's `itrip_test_db` are already test databases and are
+//      left untouched.
+const LOCAL_DEV_DB = /^postgres(?:ql)?:\/\/[^/]*@(?:127\.0\.0\.1|localhost|\[::1\]):\d+\/itrip(?:_dev|_local)?(\?|$)/;
+const isLocalDevDb = LOCAL_DEV_DB.test(dbUrl);
 const testUrl = isLocalDevDb && !process.env.TEST_DATABASE_URL
-  ? dbUrl.replace(/\/itrip(\?|$)/, '/itrip_test$1')
+  ? dbUrl.replace(/\/itrip(?:_dev|_local)?(\?|$)/, '/itrip_test$1')
   : dbUrl;
 
 if (isLocalDevDb) {
