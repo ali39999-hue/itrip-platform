@@ -474,6 +474,7 @@
   "Checkout": {
     "title": "Оформление и мгновенная выписка ваучера",
     "stepPassengers": "Данные пассажиров",
+    "stepReview": "Проверка",
     "stepPayment": "Оплата и проверка",
     "stepIssuing": "Выписка ваучера",
     "passportScan": "Сканер паспорта (OCR)",

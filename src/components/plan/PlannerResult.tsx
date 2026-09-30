@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from '@/i18n/routing';
 import { useBookingStore } from '@/stores/booking-store';
 import { Sparkles, Share2 } from 'lucide-react';
 import { num } from '@/lib/format';
@@ -14,6 +13,7 @@ import { lt } from '@/lib/lt';
 import { PlannerTimeline } from './PlannerTimeline';
 import { PlannerSidebar } from './PlannerSidebar';
 import { TravelRulesAdvisoryCard } from '@/components/travel/TravelRulesAdvisoryCard';
+import { UnifiedCartDrawer } from '@/components/cart/UnifiedCartDrawer';
 
 export interface PlannerResultProps {
   ans: Answers;
@@ -41,8 +41,8 @@ export function PlannerResult(props: PlannerResultProps) {
     onRefineWithPrompt 
   } = props;
   const t = useTranslations('Plan');
-  const router = useRouter();
-  const setBookingContext = useBookingStore((s) => s.setBookingContext);
+  const addToCart = useBookingStore((s) => s.addToCart);
+  const [cartOpen, setCartOpen] = useState(false);
 
   const [tune, setTune] = useState<{ cheaper: boolean; more: boolean }>({ cheaper: false, more: false });
   const [addOnTransfer, setAddOnTransfer] = useState(true);
@@ -50,22 +50,100 @@ export function PlannerResult(props: PlannerResultProps) {
   const [addOnInsurance, setAddOnInsurance] = useState(true);
   const [addOnInterpreter, setAddOnInterpreter] = useState(true);
 
-  const { plan, c, days, travelers, adults, children, budget, pace } = usePlanner({
+  const { plan, c, days, travelers, pace } = usePlanner({
     ans, tune, addOnTransfer, addOnEsim, addOnInsurance, addOnInterpreter, seed, isEn
   });
 
   function bookAll() {
-    setBookingContext({
-      type: 'tours',
-      title: `${t('kicker')} · ${countryName(c.id, locale)} · ${num(days, locale)} ${t('qDays')}`,
-      subtitle: `${num(travelers, locale)} pax · ${plan.flight.flightNo}${plan.returnFlight ? ` ↔ ${plan.returnFlight.flightNo}` : ''} · ${plan.hotel.name} · ${num(plan.picked.length, locale)} exp`,
-      amount: plan.total,
-      travelDate: daysFromNow(days + 7),
-      adults,
-      children,
-      meta: { planner: 'smart', country: c.id, budget, pace, tripType: plan.returnFlight ? 'round' : 'oneway', adults: String(adults), children: String(children) },
+    // D-008 APPLY — the AI proposes, the user confirms through the cart.
+    // Only real, server-resolvable SKUs enter the cart with the catalog id as
+    // the cart item id, so resolveServerBasePrice keeps price authority.
+    // Experiences are editorial content (no bookable SKU) and stay in the
+    // plan; the AI-estimated total is never booked as money.
+    const travelDate = daysFromNow(days + 7);
+    const isEnLocale = locale === 'en';
+
+    addToCart({
+      id: plan.flight.id,
+      type: 'FLIGHT',
+      title: isEnLocale
+        ? `${plan.flight.airlineEn || plan.flight.airline} ${plan.flight.flightNo}`
+        : `${plan.flight.airline} ${plan.flight.flightNo}`,
+      count: travelers,
+      unitPrice: plan.flight.price,
+      currency: 'IRR',
+      travelDate,
+      details: { planner: 'smart', leg: 'outbound' },
     });
-    router.push('/checkout');
+    if (plan.returnFlight) {
+      addToCart({
+        id: plan.returnFlight.id,
+        type: 'FLIGHT',
+        title: isEnLocale
+          ? `${plan.returnFlight.airlineEn || plan.returnFlight.airline} ${plan.returnFlight.flightNo}`
+          : `${plan.returnFlight.airline} ${plan.returnFlight.flightNo}`,
+        count: travelers,
+        unitPrice: plan.returnFlight.price,
+        currency: 'IRR',
+        travelDate,
+        details: { planner: 'smart', leg: 'return' },
+      });
+    }
+    addToCart({
+      id: plan.hotel.id,
+      type: 'HOTEL',
+      title: isEnLocale ? plan.hotel.nameEn || plan.hotel.name : plan.hotel.name,
+      count: 1,
+      nights: plan.nights,
+      unitPrice: plan.hotel.pricePerNight,
+      currency: 'IRR',
+      travelDate,
+      details: { planner: 'smart' },
+    });
+    if (addOnTransfer && plan.transfer) {
+      addToCart({
+        id: plan.transfer.id,
+        type: 'TRANSFER',
+        title: isEnLocale
+          ? `${plan.transfer.vehicleTypeEn} · ${plan.transfer.fromEn} → ${plan.transfer.toEn}`
+          : `${plan.transfer.vehicleType} · ${plan.transfer.from} → ${plan.transfer.to}`,
+        count: 1,
+        unitPrice: plan.transfer.price,
+        currency: 'IRR',
+        travelDate,
+        details: { planner: 'smart' },
+      });
+    }
+    if (addOnEsim && plan.esim) {
+      addToCart({
+        id: plan.esim.id,
+        type: 'ESIM',
+        title: `${isEnLocale ? plan.esim.countryEn : plan.esim.countryFa} • ${plan.esim.dataGb}GB`,
+        count: 1,
+        unitPrice: plan.esim.price,
+        currency: 'IRR',
+        travelDate,
+        details: { planner: 'smart', packageId: plan.esim.id },
+      });
+    }
+    if (addOnInsurance && plan.insurance) {
+      addToCart({
+        id: plan.insurance.id,
+        type: 'INSURANCE',
+        title: isEnLocale
+          ? `Travel Insurance — ${plan.insurance.nameEn || plan.insurance.name}`
+          : `بیمه مسافرتی — ${plan.insurance.name}`,
+        count: travelers,
+        unitPrice: plan.insurance.price,
+        currency: 'IRR',
+        travelDate,
+        inventoryItemId: plan.insurance.id,
+        details: { planner: 'smart' },
+      });
+    }
+
+    // Cart drawer = REVIEW; checkout = CONFIRM; payment = APPLY.
+    setCartOpen(true);
   }
 
   return (
@@ -193,6 +271,10 @@ export function PlannerResult(props: PlannerResultProps) {
           {t('bookAll')}
         </button>
       </div>
+
+      {/* REVIEW step of the planner APPLY flow (D-008): the cart drawer owns
+          the unified-checkout contract — multi-item draft, server pricing. */}
+      <UnifiedCartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
     </div>
   );
 }

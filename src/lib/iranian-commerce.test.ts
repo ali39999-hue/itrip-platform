@@ -8,6 +8,12 @@ import {
   normalizePersianText,
   toAsciiDigits,
   toPersianDigits,
+  validatePostalCode,
+  formatPostalCode,
+  validateIranianMobile,
+  formatIranianMobile,
+  resolvePaymentFlow,
+  requiresPaymentSession,
 } from "./iranian-commerce";
 
 describe("iranian-commerce utilities", () => {
@@ -164,6 +170,73 @@ describe("iranian-commerce utilities", () => {
     it("strips Arabic diacritics", () => {
       expect(normalizePersianText("سَفَر")).toBe("سفر");
       expect(normalizePersianText("مُسَافِر")).toBe("مسافر");
+    });
+  });
+
+  describe("validatePostalCode & formatPostalCode", () => {
+    it("validates legitimate 10-digit Iranian postal codes", () => {
+      expect(validatePostalCode("1997834512")).toBe(true);
+      expect(validatePostalCode("۱۹۹۷۸۳۴۵۱۲")).toBe(true);
+      expect(validatePostalCode("3145678901")).toBe(true);
+    });
+
+    it("rejects postal codes starting with 0 or 2 per Iranian postal rules", () => {
+      expect(validatePostalCode("0123456789")).toBe(false);
+      expect(validatePostalCode("2123456789")).toBe(false);
+    });
+
+    it("rejects repetitive or wrong-length postal codes", () => {
+      expect(validatePostalCode("1111111111")).toBe(false);
+      expect(validatePostalCode("12345")).toBe(false);
+      expect(validatePostalCode("12345678901")).toBe(false);
+      expect(validatePostalCode("")).toBe(false);
+    });
+
+    it("formats 10-digit postal codes into 5-5 blocks", () => {
+      expect(formatPostalCode("1997834512")).toBe("19978 - 34512");
+      expect(formatPostalCode("1997834512", "/")).toBe("19978/34512");
+    });
+  });
+
+  describe("validateIranianMobile & formatIranianMobile", () => {
+    it("validates valid 11-digit Iranian mobile numbers", () => {
+      expect(validateIranianMobile("09123456789")).toBe(true);
+      expect(validateIranianMobile("۰۹۱۲۳۴۵۶۷۸۹")).toBe(true);
+      expect(validateIranianMobile("٠٩٣٥١٢٣٤٥٦٧")).toBe(true);
+    });
+
+    it("rejects non-Iranian or wrong-format numbers", () => {
+      expect(validateIranianMobile("08123456789")).toBe(false);
+      expect(validateIranianMobile("0912345678")).toBe(false);
+      expect(validateIranianMobile("091234567890")).toBe(false);
+      expect(validateIranianMobile("")).toBe(false);
+    });
+
+    it("formats mobile numbers into readable blocks", () => {
+      expect(formatIranianMobile("09123456789")).toBe("0912 345 6789");
+      expect(formatIranianMobile("۰۹۱۲۳۴۵۶۷۸۹")).toBe("0912 345 6789");
+    });
+  });
+
+  describe("payment routing doctrine (resolvePaymentFlow & requiresPaymentSession)", () => {
+    it("classifies card transfer as card_transfer without online session requirement", () => {
+      expect(resolvePaymentFlow("card_transfer")).toBe("card_transfer");
+      expect(resolvePaymentFlow("card2card")).toBe("card_transfer");
+      expect(requiresPaymentSession("card_transfer")).toBe(false);
+    });
+
+    it("classifies in-page settlement for wallet and demo", () => {
+      expect(resolvePaymentFlow("wallet")).toBe("in_page");
+      expect(resolvePaymentFlow("demo")).toBe("in_page");
+      expect(requiresPaymentSession("wallet")).toBe(true);
+    });
+
+    it("classifies online gateways as gateway requiring payment session", () => {
+      expect(resolvePaymentFlow("shetab")).toBe("gateway");
+      expect(resolvePaymentFlow("zarinpal")).toBe("gateway");
+      expect(resolvePaymentFlow("idpay")).toBe("gateway");
+      expect(resolvePaymentFlow("crypto")).toBe("gateway");
+      expect(requiresPaymentSession("shetab")).toBe(true);
     });
   });
 });

@@ -29,27 +29,36 @@ export function TourQuickBar({ tour }: TourQuickBarProps) {
     {
       icon: Plane,
       label: lt(locale, { fa: 'حمل و نقل', en: 'Transport', ar: 'المواصلات', zh: '交通方式', ru: 'Транспорт' }),
-      value: locale === 'fa' ? (tour.transportType || 'پرواز رفت و برگشت + ترانسفر') : (tour.transportTypeEn || 'Return flight + transfers'),
+      // No invented defaults: when the tour has no transport data we say so.
+      value: locale === 'fa' ? (tour.transportType || '—') : (tour.transportTypeEn || '—'),
     },
     {
       icon: Building2,
       label: lt(locale, { fa: 'اقامتگاه', en: 'Accommodation', ar: 'الإقامة', zh: '住宿标准', ru: 'Проживание' }),
-      value: tour.hotelName || lt(locale, { fa: 'هتل ۵ ستاره لوکس', en: '5-star Luxury Hotel', ar: 'فندق ٥ نجوم فاخر', zh: '五星级豪华酒店', ru: '5-звёздочный отель' }),
+      value: tour.hotelName || '—',
     },
     {
       icon: Users,
       label: lt(locale, { fa: 'نوع گروه', en: 'Group Type', ar: 'نوع المجموعة', zh: '出行规模', ru: 'Группа' }),
-      value: locale === 'fa' ? (tour.groupSize || 'حداکثر ۱۲ نفر') : (tour.groupSizeEn || 'Max 12 people'),
+      value: locale === 'fa' ? (tour.groupSize || '—') : (tour.groupSizeEn || '—'),
     },
     {
       icon: Languages,
       label: lt(locale, { fa: 'زبان راهنما', en: 'Guide Languages', ar: 'لغات المرشد', zh: '导游语言', ru: 'Языки гида' }),
-      value: (tour.guideLanguages || ['فارسی', 'English']).join('، '),
+      value: tour.guideLanguages && tour.guideLanguages.length > 0 ? tour.guideLanguages.join('، ') : '—',
     },
     {
       icon: ShieldCheck,
-      label: lt(locale, { fa: 'بیمه مسافرتی', en: 'Travel Insurance', ar: 'التأمين', zh: '旅游保险', ru: 'Страховка' }),
-      value: lt(locale, { fa: 'پوشش کامل حوادث', en: 'Full Coverage', ar: 'تغطية شاملة', zh: '全额保障', ru: 'Полная страховка' }),
+      label: lt(locale, { fa: 'کنسلی رایگان', en: 'Free Cancellation', ar: 'إلغاء مجاني', zh: '免费取消', ru: 'Бесплатная отмена' }),
+      value: tour.cancellationPolicy
+        ? lt(locale, {
+            fa: `تا ${num(tour.cancellationPolicy.freeUntilDays, locale)} روز قبل اعزام`,
+            en: `Up to ${tour.cancellationPolicy.freeUntilDays} days before departure`,
+            ar: `حتى ${num(tour.cancellationPolicy.freeUntilDays, locale)} يوم قبل المغادرة`,
+            zh: `出发前 ${tour.cancellationPolicy.freeUntilDays} 天`,
+            ru: `За ${tour.cancellationPolicy.freeUntilDays} дн. до выезда`,
+          })
+        : '—',
     },
   ];
 

@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { lt } from '@/lib/lt';
+import { toast } from 'sonner';
 import { getSimCatalogAction } from '@/actions/sim';
 import type { SimPackageItem, SimCatalogResult } from '@/services/sim-service';
 
@@ -37,6 +38,7 @@ export default function EsimPage() {
   const locale = useLocale();
   const router = useRouter();
   const setBookingContext = useBookingStore((s) => s.setBookingContext);
+  const addToCart = useBookingStore((s) => s.addToCart);
   const { country, setCountry } = useCountryStore();
   const c = COUNTRIES[country] || COUNTRIES.iran;
 
@@ -126,6 +128,38 @@ export default function EsimPage() {
     router.push('/checkout');
   }
 
+  // D-007 attach: joins the persistent cart so the package becomes part of the
+  // user's next consolidated booking (one checkout, one trip record).
+  function attachToCart(pkg: SimPackageItem) {
+    addToCart({
+      type: 'ESIM',
+      title: pkg.name,
+      subtitle: `${pkg.dataGb} GB • ${pkg.durationDays} ${lt(locale, { fa: 'روزه', en: 'Days', ar: 'أيام', zh: '天', ru: 'дн.' })}`,
+      supplier: 'eCardo',
+      count: 1,
+      // Display hint only — the server re-resolves ESIM pricing authoritatively.
+      unitPrice: pkg.priceToman,
+      currency: 'IRR',
+      travelDate: daysFromNow(3),
+      details: {
+        packageId: String(pkg.id ?? pkg.productId ?? ''),
+        productId: String(pkg.productId ?? pkg.id ?? ''),
+        dataGb: pkg.dataGb,
+        durationDays: pkg.durationDays,
+        isEsim: pkg.isEsim,
+      },
+    });
+    toast.success(
+      lt(locale, {
+        fa: 'به سبد سفر اضافه شد؛ در پرداخت بعدی با بقیه اقلام یک رزرو یکپارچه می‌سازد',
+        en: 'Added to your trip cart — it will join your next consolidated booking',
+        ar: 'أضيف إلى سلة الرحلة — سينضم إلى حجزك الموحد التالي',
+        zh: '已加入行程购物车 — 将并入你的下一个合并订单',
+        ru: 'Добавлено в корзину поездки — войдёт в ваше следующее объединённое бронирование',
+      })
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-dvh bg-soft">
       {/* Hero Section */}
@@ -175,7 +209,7 @@ export default function EsimPage() {
                   const name = countryName(id, locale);
                   setQuery(name);
                 }}
-                className={`shrink-0 snap-start min-h-[36px] px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer ${
+                className={`shrink-0 snap-start min-h-[44px] px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer ${
                   country === id
                     ? 'bg-action text-ink font-black shadow-xs'
                     : 'bg-surface/20 hover:bg-surface/30 text-surface'
@@ -217,7 +251,7 @@ export default function EsimPage() {
           <button
             type="button"
             onClick={() => setCompatibilityModal(true)}
-            className="h-10 px-4 rounded-xl bg-soft hover:bg-line/60 text-brand-dark font-black text-xs transition shrink-0 flex items-center gap-1.5"
+            className="min-h-[44px] px-4 rounded-xl bg-soft hover:bg-line/60 text-brand-dark font-black text-xs transition shrink-0 inline-flex items-center gap-1.5"
           >
             <HelpCircle size={15} />
             <span>{lt(locale, { fa: 'بررسی مدل گوشی', en: 'Check Device List', ar: 'قائمة الأجهزة', zh: '查看支持机型', ru: 'Проверить модель' })}</span>
@@ -359,20 +393,36 @@ export default function EsimPage() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => buy(pkg)}
-                      aria-label={lt(locale, {
-                        fa: `خرید بسته ${pkg.name}`,
-                        en: `Buy ${pkg.name}`,
-                        ar: `شراء ${pkg.name}`,
-                        zh: `购买${pkg.name}`,
-                        ru: `Купить ${pkg.name}`,
-                      })}
-                      className="w-full min-h-[44px] py-3 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-[13px] flex items-center justify-center gap-2 transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
-                    >
-                      <ShoppingCart size={16} />
-                      <span>{pkg.isEsim ? t('buyEsim') : lt(locale, { fa: 'سفارش سیم‌کارت فیزیکی', en: 'Order Physical SIM', ar: 'طلب شريحة فيزيائية', zh: '订购实体 SIM 卡', ru: 'Заказать физическую SIM-карту'})}</span>
-                    </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <button
+                        onClick={() => buy(pkg)}
+                        aria-label={lt(locale, {
+                          fa: `خرید بسته ${pkg.name}`,
+                          en: `Buy ${pkg.name}`,
+                          ar: `شراء ${pkg.name}`,
+                          zh: `购买${pkg.name}`,
+                          ru: `Купить ${pkg.name}`,
+                        })}
+                        className="w-full min-h-[44px] py-3 rounded-xl bg-action hover:bg-action-hover text-ink font-black text-[13px] flex items-center justify-center gap-2 transition-all shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
+                      >
+                        <ShoppingCart size={16} />
+                        <span>{pkg.isEsim ? t('buyEsim') : lt(locale, { fa: 'سفارش سیم‌کارت فیزیکی', en: 'Order Physical SIM', ar: 'طلب شريحة فيزيائية', zh: '订购实体 SIM 卡', ru: 'Заказать физическую SIM-карту'})}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => attachToCart(pkg)}
+                        aria-label={lt(locale, {
+                          fa: `افزودن ${pkg.name} به سبد سفر`,
+                          en: `Add ${pkg.name} to trip cart`,
+                          ar: `إضافة ${pkg.name} إلى سلة الرحلة`,
+                          zh: `将${pkg.name}加入行程购物车`,
+                          ru: `Добавить ${pkg.name} в корзину поездки`,
+                        })}
+                        className="w-full min-h-[44px] py-3 rounded-xl bg-surface border border-line hover:border-brand hover:text-brand-dark text-sub font-black text-[13px] flex items-center justify-center gap-2 transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
+                      >
+                        {lt(locale, { fa: '+ افزودن به سبد سفر', en: '+ Add to trip cart', ar: '+ أضف إلى سلة الرحلة', zh: '+ 加入行程购物车', ru: '+ В корзину поездки' })}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

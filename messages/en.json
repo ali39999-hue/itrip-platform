@@ -474,6 +474,7 @@
   "Checkout": {
     "title": "Checkout & Instant Voucher Issuance",
     "stepPassengers": "Passenger Details",
+    "stepReview": "Review",
     "stepPayment": "Payment & Review",
     "stepIssuing": "Issuance & Voucher",
     "passportScan": "Smart Passport Scanner (OCR)",

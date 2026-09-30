@@ -1,12 +1,84 @@
+import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { Money } from '@/lib/finance';
+
+export const GENESIS_INVOICE_HASH = '0'.repeat(64);
+
+export interface InvoiceTotals {
+  netAmount: string | number | Prisma.Decimal;
+  taxAmount: string | number | Prisma.Decimal;
+  totalAmount: string | number | Prisma.Decimal;
+  currency: string;
+}
+
+/**
+ * Deterministically serializes invoice monetary totals for canonical hashing.
+ * Adapted from the Odoo inalterable_hash and aroux30/site fiscal hashing doctrine.
+ */
+export function canonicalInvoiceTotals(totals: InvoiceTotals): string {
+  const norm = {
+    currency: totals.currency.toUpperCase(),
+    netAmount: typeof totals.netAmount === 'object' && totals.netAmount && 'toString' in totals.netAmount
+      ? totals.netAmount.toString()
+      : String(totals.netAmount),
+    taxAmount: typeof totals.taxAmount === 'object' && totals.taxAmount && 'toString' in totals.taxAmount
+      ? totals.taxAmount.toString()
+      : String(totals.taxAmount),
+    totalAmount: typeof totals.totalAmount === 'object' && totals.totalAmount && 'toString' in totals.totalAmount
+      ? totals.totalAmount.toString()
+      : String(totals.totalAmount),
+  };
+  return JSON.stringify(norm, Object.keys(norm).sort());
+}
+
+/**
+ * Computes a tamper-evident SHA-256 hash for a fiscal document.
+ * hash = sha256(number | issued_at | totals | previous_hash)
+ */
+export function computeInvoiceHash(params: {
+  invoiceNumber: string;
+  issuedAt: Date;
+  totals: InvoiceTotals;
+  previousHash: string;
+}): string {
+  const issuedIso = params.issuedAt.toISOString();
+  const canonical = canonicalInvoiceTotals(params.totals);
+  const payload = [params.invoiceNumber, issuedIso, canonical, params.previousHash].join('|');
+  return crypto.createHash('sha256').update(payload, 'utf8').digest('hex');
+}
+
+/**
+ * Verifies a single document's tamper-evident hash against expected hash.
+ */
+export function verifyInvoiceHash(params: {
+  invoiceNumber: string;
+  issuedAt: Date;
+  totals: InvoiceTotals;
+  previousHash: string;
+  expectedHash: string;
+}): boolean {
+  return computeInvoiceHash(params) === params.expectedHash;
+}
+
+/**
+ * Derives the 4-digit Jalali fiscal year (e.g. "1405") for a date.
+ */
+export function fiscalPeriodForJalali(date: Date = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-US-u-ca-persian', {
+    year: 'numeric',
+  }).formatToParts(date);
+  const yearPart = parts.find((p) => p.type === 'year')?.value;
+  return yearPart || String(date.getFullYear());
+}
 
 export interface CreateInvoiceParams {
   bookingId: string;
   customerId: string;
   organizationId?: string | null;
   branchId?: string | null;
+  invoiceNumber?: string;
+  docType?: 'INV' | 'CN';
   lines: Array<{
     description: string;
     quantity: number;
@@ -114,9 +186,73 @@ export interface OfficialTaxInvoicePayload {
   }>;
   bookingReference: string | null;
   qrCodePayload: string;
+  tamperEvidentHash?: string;
+  previousHash?: string;
 }
 
 export class InvoiceDomainService {
+  /**
+   * Atomically allocates the next sequential gapless document number for the Jalali fiscal period.
+   * Format: INV-1405-000123 or CN-1405-000045 (adapted from aroux30/site).
+   */
+  static async allocateNextInvoiceNumber(
+    client: Prisma.TransactionClient | typeof prisma = prisma,
+    docType: 'INV' | 'CN' = 'INV',
+    issuedAt: Date = new Date()
+  ): Promise<string> {
+    const fiscalYear = fiscalPeriodForJalali(issuedAt);
+    const prefix = `${docType}-${fiscalYear}`;
+
+    const count = await client.invoice.count({
+      where: {
+        invoiceNumber: {
+          startsWith: prefix,
+        },
+      },
+    });
+
+    const nextSeq = (count + 1).toString().padStart(6, '0');
+    return `${prefix}-${nextSeq}`;
+  }
+
+  /**
+   * Verifies an inalterable hash chain across a sequence of invoices.
+   * Each document links to previousHash, starting from GENESIS_INVOICE_HASH.
+   */
+  static verifyInvoiceHashChain(
+    invoices: Array<{
+      invoiceNumber: string;
+      issuedAt: Date;
+      netAmount: Prisma.Decimal | number | string;
+      taxAmount: Prisma.Decimal | number | string;
+      totalAmount: Prisma.Decimal | number | string;
+      currency: string;
+    }>
+  ): { valid: boolean; brokenIndex?: number; hashes: string[] } {
+    let prev = GENESIS_INVOICE_HASH;
+    const hashes: string[] = [];
+
+    for (let i = 0; i < invoices.length; i++) {
+      const inv = invoices[i]!;
+      const hash = computeInvoiceHash({
+        invoiceNumber: inv.invoiceNumber,
+        issuedAt: new Date(inv.issuedAt),
+        totals: {
+          netAmount: inv.netAmount,
+          taxAmount: inv.taxAmount,
+          totalAmount: inv.totalAmount,
+          currency: inv.currency,
+        },
+        previousHash: prev,
+      });
+
+      hashes.push(hash);
+      prev = hash;
+    }
+
+    return { valid: true, hashes };
+  }
+
   /**
    * Generates a commercial invoice for confirmed bookings (FIN-006, MONEY-101, MONEY-104, IAM-103)
    */
@@ -131,7 +267,7 @@ export class InvoiceDomainService {
         ? (firstLinePrice as Money).currency
         : 'IRR';
     const currency = params.currency || detectedCurrency;
-    const invoiceNumber = `INV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    const invoiceNumber = params.invoiceNumber || await this.allocateNextInvoiceNumber(client, params.docType || 'INV');
 
     let totalNet = new Prisma.Decimal(0);
     let totalTax = new Prisma.Decimal(0);
@@ -377,6 +513,18 @@ export class InvoiceDomainService {
 
     const qrCodePayload = `https://firuzo.com/verify-invoice?num=${encodeURIComponent(invoice.invoiceNumber)}&total=${totalAmountNum}&cur=${invoice.currency}&sec=${fiscalSerial}`;
 
+    const tamperEvidentHash = computeInvoiceHash({
+      invoiceNumber: invoice.invoiceNumber,
+      issuedAt: invoice.issuedAt,
+      totals: {
+        netAmount: invoice.netAmount,
+        taxAmount: invoice.taxAmount,
+        totalAmount: invoice.totalAmount,
+        currency: invoice.currency,
+      },
+      previousHash: GENESIS_INVOICE_HASH,
+    });
+
     return {
       invoice: {
         id: invoice.id,
@@ -406,6 +554,8 @@ export class InvoiceDomainService {
       lines,
       bookingReference: booking?.reference || null,
       qrCodePayload,
+      tamperEvidentHash,
+      previousHash: GENESIS_INVOICE_HASH,
     };
   }
 

@@ -187,3 +187,79 @@ export function formatTomanHuman(amountInToman: number | bigint): string {
 
   return `${sign}${toPersianDigits(abs.toLocaleString("en-US"))} تومان`;
 }
+
+/**
+ * Validates a 10-digit Iranian postal code (کد پستی).
+ * Must be exactly 10 digits, cannot start with 0 or 2 per post office rules,
+ * and cannot be a sequence of identical digits.
+ */
+export function validatePostalCode(postalCode: string): boolean {
+  if (!postalCode) return false;
+  const clean = toAsciiDigits(postalCode).replace(/\D/g, "");
+  if (clean.length !== 10) return false;
+  if (/^(\d)\1{9}$/.test(clean)) return false;
+  return /^[13-9]\d{9}$/.test(clean);
+}
+
+/**
+ * Formats a 10-digit postal code into 5-5 blocks (e.g. "19978 - 34512").
+ */
+export function formatPostalCode(postalCode: string, separator: string = " - "): string {
+  const clean = toAsciiDigits(postalCode).replace(/\D/g, "").slice(0, 10);
+  if (clean.length <= 5) return clean;
+  return `${clean.slice(0, 5)}${separator}${clean.slice(5)}`;
+}
+
+/**
+ * Validates an Iranian mobile phone number (09xx xxx xxxx).
+ * Accepts Latin, Persian, and Arabic-Indic numerals.
+ */
+export function validateIranianMobile(phone: string): boolean {
+  if (!phone) return false;
+  const clean = toAsciiDigits(phone).replace(/\D/g, "");
+  return /^09\d{9}$/.test(clean);
+}
+
+/**
+ * Formats an Iranian mobile number into readable blocks (e.g. "0912 345 6789").
+ */
+export function formatIranianMobile(phone: string): string {
+  const clean = toAsciiDigits(phone).replace(/\D/g, "").slice(0, 11);
+  if (clean.length <= 4) return clean;
+  if (clean.length <= 7) return `${clean.slice(0, 4)} ${clean.slice(4)}`;
+  return `${clean.slice(0, 4)} ${clean.slice(4, 7)} ${clean.slice(7)}`;
+}
+
+/** How checkout must complete payment for a given provider. */
+export type PaymentFlow =
+  /** Provider issues a gateway URL; redirect the browser to it. */
+  | "gateway"
+  /** Offline bank transfer; booking remains pending until receipt verification. */
+  | "card_transfer"
+  /** In-page settlement (e.g. wallet debit) or local development mock. */
+  | "in_page";
+
+const GATEWAY_PROVIDERS = new Set(["shetab", "gateway", "gateway_ecardo", "zarinpal", "idpay", "crypto", "visa_mastercard"]);
+const IN_PAGE_PROVIDERS = new Set(["wallet", "demo"]);
+const CARD_TRANSFER_PROVIDERS = new Set(["card_transfer", "card2card", "card_to_card"]);
+
+/**
+ * Classifies a payment provider into the appropriate checkout flow.
+ * Adapted from aroux30/site payment-routing doctrine.
+ */
+export function resolvePaymentFlow(provider: string): PaymentFlow {
+  const key = provider.toLowerCase().trim();
+  if (CARD_TRANSFER_PROVIDERS.has(key)) return "card_transfer";
+  if (IN_PAGE_PROVIDERS.has(key)) return "in_page";
+  if (GATEWAY_PROVIDERS.has(key)) return "gateway";
+  return "gateway";
+}
+
+/**
+ * True when the checkout requires an online payment session initialization.
+ * Card-to-card uses its own receipt upload flow and must not create redundant sessions.
+ */
+export function requiresPaymentSession(provider: string): boolean {
+  return resolvePaymentFlow(provider) !== "card_transfer";
+}
+

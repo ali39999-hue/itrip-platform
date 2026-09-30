@@ -128,10 +128,10 @@ export default function TransfersPage() {
               <span className="text-brand-dark font-black text-[14px] border-b-2 border-brand pb-3 flex items-center gap-2 whitespace-nowrap">
                 <CarFront size={18} /> {t('title')}
               </span>
-              <Link href="/trains" className="text-sub hover:text-brand-dark font-black text-[14px] pb-3 flex items-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+              <Link href="/trains" className="min-h-[44px] text-sub hover:text-brand-dark font-black text-[14px] pb-3 flex items-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
                 <TrainFront size={18} /> {lt(locale, { fa: 'قطار', en: 'Trains', ar: 'قطارات', zh: '火车', ru: 'Поезда' })}
               </Link>
-              <Link href="/trains" className="text-sub hover:text-brand-dark font-black text-[14px] pb-3 flex items-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+              <Link href="/trains" className="min-h-[44px] text-sub hover:text-brand-dark font-black text-[14px] pb-3 flex items-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
                 <BusFront size={18} /> {lt(locale, { fa: 'اتوبوس', en: 'Buses', ar: 'حافلات', zh: '巴士', ru: 'Автобусы' })}
               </Link>
             </div>
@@ -146,7 +146,7 @@ export default function TransfersPage() {
                   key={`tr-country-${id}`}
                   type="button"
                   onClick={() => setCountry(id)}
-                  className={`px-3 py-1.5 rounded-xl whitespace-nowrap text-xs font-black transition cursor-pointer ${
+                  className={`min-h-[44px] px-3 py-1.5 rounded-xl whitespace-nowrap text-xs font-black transition cursor-pointer ${
                     country === id
                       ? 'bg-brand text-surface shadow-xs'
                       : 'bg-soft text-sub hover:text-ink hover:bg-line/60'
@@ -162,7 +162,7 @@ export default function TransfersPage() {
               <div className="relative">
                 <PlaneTakeoff size={18} className="absolute start-3 top-1/2 -translate-y-1/2 text-sub pointer-events-none z-10" />
                 <Select value={from || undefined} onValueChange={(v) => setFrom(v ?? '')}>
-                  <SelectTrigger aria-label={t('airportPickup')} className="h-12 w-full rounded-lg border-line bg-surface ps-10 focus:ring-brand focus:border-brand focus-visible:ring-brand font-bold text-[14px]">
+                  <SelectTrigger aria-label={t('airportPickup')} className="!h-12 w-full rounded-lg border-line bg-surface ps-10 focus:ring-brand focus:border-brand focus-visible:ring-brand font-bold text-[14px]">
                     <SelectValue placeholder={t('airportPickup')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -176,7 +176,7 @@ export default function TransfersPage() {
               <div className="relative">
                 <MapPin size={18} className="absolute start-3 top-1/2 -translate-y-1/2 text-sub pointer-events-none z-10" />
                 <Select value={to || undefined} onValueChange={(v) => setTo(v ?? '')}>
-                  <SelectTrigger aria-label={t('hotelDropoff')} className="h-12 w-full rounded-lg border-line bg-surface ps-10 focus:ring-brand focus:border-brand focus-visible:ring-brand font-bold text-[14px]">
+                  <SelectTrigger aria-label={t('hotelDropoff')} className="!h-12 w-full rounded-lg border-line bg-surface ps-10 focus:ring-brand focus:border-brand focus-visible:ring-brand font-bold text-[14px]">
                     <SelectValue placeholder={t('hotelDropoff')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -242,7 +242,7 @@ export default function TransfersPage() {
                   key={c.id}
                   type="button"
                   onClick={() => toggleType(c.id)}
-                  className={`px-3 py-1.5 rounded-xl transition whitespace-nowrap border ${
+                  className={`min-h-[44px] px-3 py-1.5 rounded-xl transition whitespace-nowrap border ${
                     types.includes(c.id)
                       ? 'bg-brand border-brand text-surface shadow-xs'
                       : 'bg-surface border-line text-sub hover:text-ink'

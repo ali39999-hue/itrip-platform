@@ -30,6 +30,8 @@ export function FilterSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange} side="bottom">
       <SheetContent className="max-w-lg mx-auto flex flex-col max-h-[85vh] p-0">
+        {/* Drag indicator pill (AGENTS.md §1.2 — swipe-down affordance) */}
+        <div className="w-10 h-1 rounded-full bg-border mx-auto mt-3 shrink-0" aria-hidden="true" />
         {/* Header */}
         <div className="p-4 border-b border-line flex items-center justify-between bg-soft/40">
           <div className="flex items-center gap-2">

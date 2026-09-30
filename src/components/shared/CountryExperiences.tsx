@@ -245,7 +245,7 @@ export function CountryExperiencesSection({
         <div className="flex gap-1.5 flex-wrap mb-6">
           <button
             onClick={() => setFilter('all')}
-            className={`min-h-9 px-4 rounded-full text-[12.5px] font-black transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+            className={`min-h-[44px] px-4 rounded-full text-[12.5px] font-black transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
               filter === 'all'
                 ? 'bg-brand text-surface shadow-sm shadow-brand/25'
                 : 'bg-soft/80 border border-line/70 text-sub hover:text-brand-dark'
@@ -257,7 +257,7 @@ export function CountryExperiencesSection({
             <button
               key={cat}
               onClick={() => setFilter(cat)}
-              className={`inline-flex items-center gap-1.5 min-h-9 px-4 rounded-full text-[12.5px] font-black transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+              className={`inline-flex items-center gap-1.5 min-h-[44px] px-4 rounded-full text-[12.5px] font-black transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                 filter === cat
                   ? 'bg-brand text-surface shadow-sm shadow-brand/25'
                   : 'bg-soft/80 border border-line/70 text-sub hover:text-brand-dark'

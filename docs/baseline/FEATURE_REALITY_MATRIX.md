@@ -3,7 +3,7 @@
 **Latest Release Tag:** `v1.8.6` (`2e139520d8ce`)  
 **Current Main Branch HEAD:** `2e139520d8ce` (`feat(release): v1.8.6 - UX ergonomics, date clamping, unified EmptyState & CSP improvements`)  
 **Current Live Deployment:** `1.8.6` on commit `2e139520d8cecb9af3baad39798342cd3f2fef5a` (deployed from `2e13952` on Vercel — ALIGNED)  
-**Audit Date:** 2026-09-21  
+**Audit Date:** 2026-09-30  
 **Authoritative Baseline:** v1.8.6 / `2e13952` (Release) / `2e13952` (Main) / `2e13952` (Live)  
 **Supersedes:** `FEATURE_REALITY_MATRIX.md` (v1.8.4 / `de150f5`)  
 
@@ -15,7 +15,7 @@
 
 - **Runtime & Framework:** Node.js 22.x · Next.js 16.3.4 (App Router) · React 19.2.8 · TypeScript 5 · Tailwind CSS v4
 - **Database & Persistence:** Prisma 5.22.0 · **78 Relational Models** · **34 Migrations** (PostgreSQL 16 canonical, zero SQLite drift)
-- **Unit & Domain Tests:** 166 test files / **1,140 verified tests** (100% passing across domain, observability, portability and UI suites — source: `docs/baseline/quality-report.json`)
+- **Unit & Domain Tests:** 174 test files / **1,196 verified tests** (100% passing across domain, observability, portability and UI suites — source: `docs/baseline/quality-report.json`)
 - **E2E Test Specifications:** 33 Playwright test suites in `tests/*.spec.ts` (golden journeys, mobile journeys, security, a11y)
 - **Internationalization:** 5 supported languages (`fa`, `en`, `ar`, `zh`, `ru`) with 100% key parity enforced via `scripts/i18n-completeness-gate.mjs`
 - **Design System & Primitives:** Semantic tokens (`text-ink`, `text-sub`, `bg-surface`, `bg-brand`, `bg-action`), Shadcn primitives, glassmorphism, responsive 320px–1440px
@@ -105,8 +105,8 @@ Status legend:
 
 ## 4. Test Metrics (Authoritative Single Source of Truth)
 
-- **Test Files Count:** **166 test files** (measured from `results/unit.json` `testResults.length` — `numTotalTestSuites` counts describe() blocks, not files)
-- **Total Unit Test Specs:** **1,140 verified passing tests** (100% pass rate — source: `docs/baseline/quality-report.json`)
+- **Test Files Count:** **174 test files** (measured from `results/unit.json` `testResults.length` — `numTotalTestSuites` counts describe() blocks, not files)
+- **Total Unit Test Specs:** **1,196 verified passing tests** (100% pass rate — source: `docs/baseline/quality-report.json`)
 - **Failure Count:** **0 failed**
 - **Skipped / Flaky Count:** **0 skipped, 0 flaky**
 - **Breakdown by Domain** (measured from test file paths in `results/unit.json`, buckets overlap by keyword priority):

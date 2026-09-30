@@ -94,7 +94,7 @@ export default function SnappChargePage() {
               </div>
               <button 
                 onClick={() => selectPackage(10000000)}
-                className="w-full py-3 rounded-xl border border-brand text-brand-dark font-black text-xs hover:bg-brand hover:text-surface transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
+                className="w-full min-h-[44px] py-3 rounded-xl border border-brand text-brand-dark font-black text-xs hover:bg-brand hover:text-surface transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
               >
                 {t('selectPackage')}
               </button>
@@ -120,7 +120,7 @@ export default function SnappChargePage() {
               </div>
               <button 
                 onClick={() => selectPackage(25000000)}
-                className="w-full py-3 rounded-xl bg-brand text-surface font-black text-xs hover:bg-brand-dark transition shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
+                className="w-full min-h-[44px] py-3 rounded-xl bg-brand text-surface font-black text-xs hover:bg-brand-dark transition shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
               >
                 {t('selectPackage')}
               </button>
@@ -143,7 +143,7 @@ export default function SnappChargePage() {
               </div>
               <button 
                 onClick={() => selectPackage(50000000)}
-                className="w-full py-3 rounded-xl border border-brand text-brand-dark font-black text-xs hover:bg-brand hover:text-surface transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
+                className="w-full min-h-[44px] py-3 rounded-xl border border-brand text-brand-dark font-black text-xs hover:bg-brand hover:text-surface transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
               >
                 {t('selectPackage')}
               </button>

@@ -141,3 +141,14 @@ A change is done only when: UX intent documented, UI hierarchy matches, responsi
 **Date:** 2026-09-21  
 **Decision:** Mobile slot 2 is Explore → `/book`. Desktop always-on: Flights, Hotels, Tours, Plan. Explore mega-menu is destinations + ancillaries (interpreter as a service, not SOS). Admin is staff-only in the account cluster. `/services` aliases `/book`. QuickServicesBar uses mint/brand tokens; bus tile removed (no bus route).  
 **Why:** Defaults of Q-001–Q-004, P0-001/P0-002/P1-001/P1-003/P1-010/P1-011.
+
+---
+
+## D-013 — One autocomplete; map is a hotels capability, not flights
+
+**Date:** 2026-09-21 (Phase 4)  
+**Decision:**
+1. `CityAutocomplete` is the single city picker. `FlightSearchHeader`'s duplicate hand-rolled dropdowns were removed; header, SearchWidget forms, and the edit sheet all render the same component. Any future picker change happens in one file.
+2. Map/list view is a **hotels** capability (already shipped: desktop side-by-side + mobile fullscreen). Flights stay list-only — results are route/timeline based, a geo-map adds no decision value and would fake parity. Do not add a flight map without a real use case.
+
+**Why:** P1-004 (interaction model gap) and P1-005 (overlay sprawl) — the systemic fix is consolidation onto shared primitives, not more page-local chrome.

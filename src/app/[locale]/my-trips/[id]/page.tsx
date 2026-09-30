@@ -7,7 +7,6 @@ import { useHydration } from '@/hooks/useHydration';
 import { useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { getBookingById, cancelBookingAction } from '@/actions/booking';
-import { AccountSidebar } from '@/components/account/AccountSidebar';
 import { notFound } from 'next/navigation';
 import {
   UserRound,
@@ -23,6 +22,12 @@ import {
   X,
   Sparkles,
   ReceiptText,
+  Plane,
+  BedDouble,
+  Compass,
+  Smartphone,
+  CarTaxiFront,
+  Train,
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
 import { TripCountdown } from '@/components/trips/TripCountdown';
@@ -216,6 +221,29 @@ export default function TripDetailsPage({
   const effectiveTravelDate = (booking?.travelDate as string) || (detailsObj.travelDate as string) || '';
   const effectiveDepartureTime = (detailsObj.departureTime as string) || '';
 
+  // Trip shell (P0-004): every service on this booking, not just the first one.
+  const tripItems = (booking?.items || []).map((it) => {
+    let d: Record<string, unknown> = {};
+    if (it.details) {
+      try {
+        d = JSON.parse(it.details) as Record<string, unknown>;
+      } catch {
+        d = {};
+      }
+    }
+    return { id: it.id, type: it.type, title: (d.itemTitle as string) || (d.title as string) || '' };
+  });
+
+  const TRIP_ITEM_META: Record<string, { icon: typeof Plane; label: ReturnType<typeof lt> }> = {
+    FLIGHT: { icon: Plane, label: lt(locale, { fa: 'پرواز', en: 'Flight', ar: 'رحلة', zh: '航班', ru: 'Рейс' }) },
+    HOTEL: { icon: BedDouble, label: lt(locale, { fa: 'اقامتگاه', en: 'Stay', ar: 'إقامة', zh: '住宿', ru: 'Отель' }) },
+    TOUR: { icon: Compass, label: lt(locale, { fa: 'تور', en: 'Tour', ar: 'جولة', zh: '旅游', ru: 'Тур' }) },
+    ESIM: { icon: Smartphone, label: lt(locale, { fa: 'سیم‌کارت eSIM', en: 'eSIM', ar: 'eSIM', zh: 'eSIM', ru: 'eSIM' }) },
+    INSURANCE: { icon: ShieldCheck, label: lt(locale, { fa: 'بیمه', en: 'Insurance', ar: 'تأمين', zh: '保险', ru: 'Страховка' }) },
+    TRANSFER: { icon: CarTaxiFront, label: lt(locale, { fa: 'ترانسفر', en: 'Transfer', ar: 'نقل', zh: '接送', ru: 'Трансфер' }) },
+    TRAIN: { icon: Train, label: lt(locale, { fa: 'قطار', en: 'Train', ar: 'قطار', zh: '火车', ru: 'Поезд' }) },
+  };
+
   const copyReference = () => {
     if (!refCode) return;
     navigator.clipboard.writeText(refCode);
@@ -276,13 +304,8 @@ export default function TripDetailsPage({
   };
 
   return (
-    <div className="flex flex-col md:flex-row w-full max-w-[1280px] mx-auto px-4 md:px-10 py-8 gap-8">
-      {/* Sidebar hidden in Print */}
-      <div className="print:hidden">
-        <AccountSidebar activeSection="trips" />
-      </div>
-
-      {/* Main Content */}
+    <div className="w-full max-w-[1280px] mx-auto px-4 md:px-10 py-8">
+      {/* Main Content — Trip density (D-009): account sidebar stays in /account */}
       <main className="flex-1 flex flex-col gap-6 print:w-full">
         {/* Printable Official Header */}
         <div className="hidden print:flex items-center justify-between pb-4 border-b border-line mb-4">
@@ -549,6 +572,48 @@ export default function TripDetailsPage({
           locale={locale}
           onSaveOffline={handleSaveOffline}
         />
+
+        {/* Trip shell: every service on this booking (P0-004). Multi-item trips
+            only — a single-service trip is fully covered by the voucher above. */}
+        {tripItems.length > 1 && (
+          <div className="bg-surface rounded-2xl p-5 border border-line shadow-xs">
+            <h3 className="text-sm font-black text-ink mb-3">
+              {lt(locale, {
+                fa: 'خدمات این سفر',
+                en: 'Services on this trip',
+                ar: 'خدمات هذه الرحلة',
+                zh: '本次行程的服务',
+                ru: 'Услуги этой поездки',
+              })}
+            </h3>
+            <ol className="m-0 p-0 list-none space-y-2">
+              {tripItems.map((it) => {
+                const meta = TRIP_ITEM_META[it.type];
+                const Icon = meta?.icon || FileText;
+                const typeLabel = meta?.label || it.type;
+                return (
+                  <li
+                    key={it.id}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-soft/50 border border-line/60"
+                  >
+                    <span className="w-9 h-9 rounded-xl bg-mint text-brand-dark grid place-items-center shrink-0">
+                      <Icon size={16} aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-black text-ink truncate">
+                        {it.title || typeLabel}
+                      </p>
+                      <p className="text-[10.5px] text-sub font-bold">{typeLabel}</p>
+                    </div>
+                    {booking?.status === 'CONFIRMED' && (
+                      <CheckCircle2 size={16} className="text-success shrink-0" aria-hidden="true" />
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        )}
 
         {/* Passenger Manifest and Breakdown Table */}
         <div className="bg-surface rounded-3xl p-6 sm:p-8 border border-line shadow-xs print:border-black">

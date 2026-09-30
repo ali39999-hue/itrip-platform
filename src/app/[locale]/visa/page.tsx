@@ -141,7 +141,7 @@ export default function VisaPage() {
                 key={`visa-country-${id}`}
                 type="button"
                 onClick={() => setCountry(id)}
-                className={`px-3 py-1.5 rounded-xl whitespace-nowrap text-xs font-black transition cursor-pointer ${
+                className={`min-h-[44px] px-3 py-1.5 rounded-xl whitespace-nowrap text-xs font-black transition cursor-pointer ${
                   country === id
                     ? 'bg-brand text-surface shadow-xs'
                     : 'bg-soft text-sub hover:text-ink hover:bg-line/60'

@@ -8,6 +8,7 @@ import { useLocale } from 'next-intl';
 import { SlidersHorizontal } from 'lucide-react';
 import type { Hotel } from '@/lib/types';
 import { lt } from '@/lib/lt';
+import { firstParam, CITY_PARAM_KEYS } from '@/lib/search-params';
 import { useScrollDirection } from '@/hooks/useScrollDirection';
 import { num } from '@/lib/format';
 import {
@@ -52,9 +53,8 @@ function HotelsSearchInner() {
   const router = useRouter();
   const locale = useLocale();
   const searchParams = useSearchParams();
-  // Accept both `city` (new) and `destination` (legacy SearchWidget) params.
-  const initialCity =
-    searchParams.get('city') || searchParams.get('destination') || searchParams.get('q') || '';
+  // Accept both `city` (canonical) and `destination`/`q` (legacy) params — UX-P2-002.
+  const initialCity = firstParam(searchParams, CITY_PARAM_KEYS);
   // Backward compat: legacy landing links used `?type=5star|boutique|resort|budget`.
   const legacyType = (searchParams.get('type') || '').toLowerCase();
   const parseNumList = (v: string | null) =>

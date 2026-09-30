@@ -61,7 +61,11 @@ export class UnifiedCartService {
     const pricedItems: Array<UnifiedCartItem & { unitPrice: number }> = [];
 
     for (const item of items) {
-      let unitPrice = await BookingApplicationService.resolveServerBasePrice(item.type, item.itemId);
+      let unitPrice = await BookingApplicationService.resolveServerBasePrice(
+        item.type,
+        item.itemId,
+        item.details as Record<string, unknown> | undefined
+      );
 
       if (unitPrice === null && item.inventoryItemId) {
         const inv = await prisma.inventoryItem.findUnique({

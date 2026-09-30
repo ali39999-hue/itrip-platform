@@ -1,17 +1,19 @@
 'use client';
 
 import Image from 'next/image';
-import { Link } from '@/i18n/routing';
+import { Link, useRouter } from '@/i18n/routing';
 import { useLocale } from 'next-intl';
 import { lt } from '@/lib/lt';
 import { Plane, ShieldCheck, RefreshCcw, Clock, ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
 import { SearchWidget } from '@/components/search/SearchWidget';
+import { RecentSearchChips } from '@/components/search/RecentSearchChips';
 import { FareBrandedMatrix } from '@/components/flights/FareBrandedMatrix';
 import { shimmerDataUrl } from '@/lib/image-utils';
 import { num } from '@/lib/format';
 
 export default function FlightsLandingPage() {
   const locale = useLocale();
+  const router = useRouter();
 
   const popularRoutes = [
     { from: 'THR', fromName: 'Tehran', fromFa: 'تهران', to: 'IST', toName: 'Istanbul', toFa: 'استانبول', price: 8500000, img: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=800&q=80', duration: '۳ ساعت', durationEn: '3h' },
@@ -41,6 +43,16 @@ export default function FlightsLandingPage() {
 
         <div className="max-w-[1280px] mx-auto">
           <SearchWidget initialTab="flights" />
+          <RecentSearchChips
+            className="mt-4"
+            onPick={(r) => {
+              const q = new URLSearchParams();
+              if (r.from) q.set('from', r.from);
+              if (r.to) q.set('to', r.to);
+              if (r.depart) q.set('depart', r.depart);
+              router.push(`/flights/search?${q.toString()}`);
+            }}
+          />
         </div>
       </section>
 

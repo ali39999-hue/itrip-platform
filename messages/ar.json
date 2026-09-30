@@ -474,6 +474,7 @@
   "Checkout": {
     "title": "إتمام الحجز وإصدار القسيمة الفوري",
     "stepPassengers": "بيانات المسافرين",
+    "stepReview": "مراجعة",
     "stepPayment": "الدفع والمراجعة",
     "stepIssuing": "إصدار القسيمة",
     "passportScan": "المسح الذكي لجواز السفر (OCR)",

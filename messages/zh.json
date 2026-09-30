@@ -474,6 +474,7 @@
   "Checkout": {
     "title": "结账与即时凭证出票",
     "stepPassengers": "旅客信息",
+    "stepReview": "确认订单",
     "stepPayment": "支付与确认",
     "stepIssuing": "出票凭证",
     "passportScan": "智能护照扫描 (OCR)",

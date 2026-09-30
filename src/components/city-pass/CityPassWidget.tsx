@@ -50,7 +50,7 @@ export function CityPassWidget({ locale }: { locale: string }) {
                   key={k}
                   type="button"
                   onClick={() => setCity(k as keyof typeof CITIES)}
-                  className={`px-4 py-2 text-[14px] font-bold border-2 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                  className={`min-h-[44px] px-4 py-2 text-[14px] font-bold border-2 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                     city === k 
                       ? 'bg-brand border-brand text-surface' 
                       : 'bg-soft border-transparent text-ink hover:border-brand/40'

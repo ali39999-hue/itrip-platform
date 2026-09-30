@@ -331,7 +331,7 @@ export default function HotelDetailPage() {
       </div>
 
       {toast && (
-        <div className="fixed bottom-6 start-1/2 -translate-x-1/2 rtl:translate-x-1/2 z-[150] px-5 py-3 rounded-xl bg-ink text-surface text-sm font-extrabold shadow-2xl animate-in fade-in slide-in-from-bottom-2">
+        <div className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] start-1/2 -translate-x-1/2 rtl:translate-x-1/2 z-[150] px-5 py-3 rounded-xl bg-ink text-surface text-sm font-extrabold shadow-2xl animate-in fade-in slide-in-from-bottom-2">
           {toast}
         </div>
       )}

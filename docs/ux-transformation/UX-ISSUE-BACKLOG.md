@@ -2,7 +2,7 @@
 
 Severity: **P0** blocks a critical journey · **P1** major usability/consistency · **P2** meaningful · **P3** polish.
 
-Implementation status (2026-09-21, branch `feat/ux-ia-nav`): P0-001, P0-002, P1-001, P1-003, P1-010, P1-011, P1-012 **implemented in nav/Explore hub**. Remaining rows still documented only.
+Implementation status (2026-09-21, branch `feat/ux-ia-nav`): P0-001, P0-002, P1-001, P1-003, P1-010, P1-011, P1-012 **implemented in nav/Explore hub**. P1-004/P1-005 **implemented for Phase 4 scope** (shared `FilterSheet`, `ResultState` retry, `CityAutocomplete` everywhere incl. `FlightSearchHeader` dedupe, recents memory, D-013 map decision). P2-002 **implemented** (`src/lib/search-params.ts`). Remaining rows still documented only.
 
 When many pages share a problem, the fix is the **systemic component**, not N page patches.
 
@@ -104,6 +104,7 @@ When many pages share a problem, the fix is the **systemic component**, not N pa
 - **Routes:** `/esim`, `/insurance`, `/transfers`, `/cip`, `/visa`, `/city-pass`
 - **Evidence:** pages call `setBookingContext` / cart independently.
 - **Solution:** After buy: “Add to Istanbul trip” → visible in `/my-trips/[id]`. Checkout addons already a seed (`AddonsSection`).
+- **Status (progressing):** eSIM attach-to-cart shipped (server resolver extended additively for live eSIM packages). Insurance/CIP/tours already cart-capable. Transfers/visa/city-pass buttons + post-purchase attach to an *existing* trip (booking-link API) remain.
 
 ### UX-P1-009 — AI is a destination, not a companion
 
@@ -124,6 +125,16 @@ When many pages share a problem, the fix is the **systemic component**, not N pa
 
 - **File:** `book/page.tsx` `tag: '۴۰۰+ ایرلاین'` etc.
 - **Solution:** `useTranslations` / `lt()` — i18n gate does not catch JSX literals.
+- **Status:** fixed on `feat/ux-ia-nav` (Explore hub copy is i18n'd).
+
+### UX-P1-013 — Invented badges on decision cards (fake basis)
+
+- **Routes:** `/flights/search` (BentoFlightCard), hotels results (HotelCard)
+- **Problem:** "Cheapest" badge driven by a hardcoded price threshold *and* by `idx === 0` of whatever sort the user chose; hotels showed fabricated «فقط ۲ اتاق باقی مانده» purely when `rating >= 8.5`. Trust and decision quality damage — users can compare against a lie.
+- **Root cause:** badges written as marketing copy, not derived from data.
+- **Solution (shipped):** bind "Cheapest" to the real min price of the current result set; delete scarcity badges without an inventory field. Rule: every badge states a basis that exists in data (`seatsLeft`, `freeCancellation`, rating, breakfast).
+- **Save parity (shipped):** flights results gained a device-local Heart control (`src/lib/favorites.ts` + `useFlightComparison.favs`). Hotels' favorites are still session-only (lost on reload) — migration to the shared lib is open follow-up.
+- **Tour card WHEN (shipped):** next real departure + guaranteed flag + real seats-left bound to `Tour.departureDates`; nothing renders when a tour has no departure data.
 
 ---
 

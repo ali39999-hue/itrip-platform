@@ -79,10 +79,39 @@ export class BookingApplicationService {
   /**
    * Resolves canonical supplier base price server-side
    */
-  static async resolveServerBasePrice(type: string, itemId?: string): Promise<number | null> {
+  static async resolveServerBasePrice(
+    type: string,
+    itemId?: string,
+    details?: Record<string, unknown>
+  ): Promise<number | null> {
     if (!itemId) {
       if (type === 'TOUR' || type === 'TOURS') return TOURS[0]?.price ?? 85000000;
       return null;
+    }
+
+    // Live eSIM catalog (eCardo) — cart-attach passes the package id through
+    // `details` because the cart item's own id is generated client-side.
+    // Static ESIM_PACKAGES ids keep their existing resolution below, so every
+    // pre-existing money path is byte-for-byte unchanged.
+    if (type === 'ESIM' || type === 'SIM') {
+      const isStaticEsim = ESIM_PACKAGES.some((e) => e.id === itemId);
+      const packageId = (details?.packageId as string) || (details?.productId as string) || itemId;
+      if (!isStaticEsim && packageId) {
+        try {
+          const { SimService } = await import('@/services/sim-service');
+          const catalog = await SimService.getCatalog();
+          const pkg = catalog.packages.find(
+            (p) => String(p.id) === packageId || String(p.productId) === packageId
+          );
+          if (pkg) {
+            // priceToman is display Toman; booking currency IRR = ×10 (same
+            // conversion the CIP branch applies).
+            return pkg.priceToman * 10;
+          }
+        } catch {
+          // fall through to fail-closed
+        }
+      }
     }
 
     const flight = FLIGHTS.find((f) => f.id === itemId);
