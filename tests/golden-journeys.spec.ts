@@ -142,6 +142,8 @@ test.describe('Firuzo v2 Master Suite — 5 Deterministic Golden Journeys', () =
     const singleAdultUrl = new URL(page.url());
     singleAdultUrl.searchParams.set('adults', '1');
     singleAdultUrl.searchParams.set('children', '0');
+    singleAdultUrl.searchParams.set('checkin', '2026-10-15');
+    singleAdultUrl.searchParams.set('checkout', '2026-10-19');
     await page.goto(singleAdultUrl.toString(), { waitUntil: 'domcontentloaded' });
     await expect(page.locator('h1').first()).toBeVisible({ timeout: 15000 });
 

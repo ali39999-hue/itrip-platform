@@ -12,8 +12,8 @@ export const FREE_CANCEL_HOURS = 48;
 export const RATE_TOMAN = 2350;
 
 // Default fallback dates & guests
-export const DEFAULT_CHECKIN = '2026-09-22';
-export const DEFAULT_CHECKOUT = '2026-09-26';
+export const DEFAULT_CHECKIN = '2026-10-15';
+export const DEFAULT_CHECKOUT = '2026-10-19';
 export const DEFAULT_ADULTS = 2;
 export const DEFAULT_CHILDREN = 0;
 
@@ -22,8 +22,8 @@ export function nightsOf(a: string, b: string): Date[] {
   const end = new Date(b + 'T00:00:00');
   const start = new Date(a + 'T00:00:00');
   if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) {
-    const fallbackEnd = new Date('2026-09-26T00:00:00');
-    for (let d = new Date('2026-09-22T00:00:00'); d < fallbackEnd; d = new Date(d.getTime() + 864e5)) {
+    const fallbackEnd = new Date('2026-10-19T00:00:00');
+    for (let d = new Date('2026-10-15T00:00:00'); d < fallbackEnd; d = new Date(d.getTime() + 864e5)) {
       out.push(new Date(d));
     }
     return out;
