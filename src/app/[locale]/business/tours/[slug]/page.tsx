@@ -245,7 +245,7 @@ export default function PackageDetailPage({
                 <div className="fz-counter" role="group" aria-label={t('tour.paxCount')}>
                   <button
                     type="button"
-                    className="fz-counter__btn"
+                    className="fz-counter__btn min-h-[44px] min-w-[44px]"
                     aria-label={t('tour.paxMinus')}
                     disabled={pax <= 1}
                     onClick={() => setPax((v) => Math.max(1, v - 1))}
@@ -255,7 +255,7 @@ export default function PackageDetailPage({
                   <span className="fz-counter__value fz-num" aria-live="polite">{num(pax, locale)}</span>
                   <button
                     type="button"
-                    className="fz-counter__btn"
+                    className="fz-counter__btn min-h-[44px] min-w-[44px]"
                     aria-label={t('tour.paxPlus')}
                     disabled={pax >= maxPax}
                     onClick={() => setPax((v) => Math.min(maxPax, v + 1))}

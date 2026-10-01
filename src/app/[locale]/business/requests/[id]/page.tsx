@@ -135,7 +135,7 @@ export default function RequestStatusPage({ params }: { params: Promise<{ id: st
                     : t('status.bannerBody')}
                 </p>
               </div>
-              <button type="button" className="fz-btn fz-btn--sm" onClick={() => load(false)} aria-label={t('status.refreshAria')}>
+              <button type="button" className="fz-btn fz-btn--sm min-h-[44px] min-w-[44px]" onClick={() => load(false)} aria-label={t('status.refreshAria')}>
                 <RefreshCw size={14} aria-hidden="true" /> {refreshedAt}
               </button>
             </div>

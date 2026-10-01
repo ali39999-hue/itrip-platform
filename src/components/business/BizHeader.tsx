@@ -17,7 +17,7 @@ export function BizHeader({ requestCode }: { requestCode?: string | null }) {
     <header className="fz-header">
       <div className="fz-container fz-header__in">
         <div className="fz-row" style={{ gap: 12, justifyContent: 'flex-start' }}>
-          <Link className="fz-logo" href="/business" aria-label={t('homeAria')}>
+          <Link className="fz-logo min-h-[44px] min-w-[44px]" href="/business" aria-label={t('homeAria')}>
             <span className="fz-logo__mark" aria-hidden="true">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M6 3h12l4 6-10 12L2 9z" />
