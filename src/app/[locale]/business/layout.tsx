@@ -1,5 +1,5 @@
 import { localizedMetadata } from '@/lib/page-metadata';
-import '../business.css';
+import '@/app/business.css';
 
 export const generateMetadata = localizedMetadata({
   title: {

@@ -16,7 +16,7 @@
 - **Runtime & Framework:** Node.js 22.x · Next.js 16.3.4 (App Router) · React 19.2.8 · TypeScript 5 · Tailwind CSS v4
 - **Database & Persistence:** Prisma 5.22.0 · **90 Relational Models** · **35 Migrations** (PostgreSQL 16 canonical, zero SQLite drift)
 - **Unit & Domain Tests:** 174 test files / **1,196 verified tests** (100% passing across domain, observability, portability and UI suites — source: `docs/baseline/quality-report.json`)
-- **E2E Test Specifications:** 33 Playwright test suites in `tests/*.spec.ts` (golden journeys, mobile journeys, security, a11y)
+- **E2E Test Specifications:** 34 Playwright test suites in `tests/*.spec.ts` (golden journeys, mobile journeys, security, a11y)
 - **Internationalization:** 5 supported languages (`fa`, `en`, `ar`, `zh`, `ru`) with 100% key parity enforced via `scripts/i18n-completeness-gate.mjs`
 - **Design System & Primitives:** Semantic tokens (`text-ink`, `text-sub`, `bg-surface`, `bg-brand`, `bg-action`), Shadcn primitives, glassmorphism, responsive 320px–1440px
 - **Capability Registry:** `src/lib/capabilities/index.ts` (45 tracked capabilities) controlling customer-facing claim states

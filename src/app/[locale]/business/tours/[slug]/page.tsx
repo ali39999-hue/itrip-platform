@@ -24,7 +24,7 @@ export default function PackageDetailPage({
   const [pkg, setPkg] = useState<BusinessPackageDetail | null>(null);
   const [error, setError] = useState(false);
   const [departureId, setDepartureId] = useState<string>('');
-  const [pax, setPax] = useState(4);
+  const [pax, setPax] = useState(2);
   const [addonIds, setAddonIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -36,6 +36,10 @@ export default function PackageDetailPage({
         if (!alive) return;
         setPkg(d);
         setDepartureId(d.departures[0]?.id || '');
+        const initialRem = (d.departures[0]?.capacity ?? 30) - (d.departures[0]?.bookedCount ?? 0);
+        if (initialRem > 0) {
+          setPax((p) => Math.min(Math.max(1, p), initialRem));
+        }
       })
       .catch(() => alive && setError(true));
     return () => {
@@ -104,7 +108,7 @@ export default function PackageDetailPage({
     setAddonIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (!departure) {
       setFormError(t('tour.errors.departureRequired'));
       return;
@@ -114,8 +118,17 @@ export default function PackageDetailPage({
       return;
     }
     setFormError(null);
-    // TODO(biz-backend): POST /requests و انتقال به /business/requests/new?id=...
-    router.push('/business/requests/new');
+    try {
+      const draft = await businessApi.createRequest({
+        packageId: pkg.id,
+        departureId: departure.id,
+        paxCount: pax,
+        addonIds,
+      });
+      router.push(`/business/requests/new?id=${draft.id}`);
+    } catch {
+      router.push('/business/requests/new');
+    }
   };
 
   return (
@@ -154,7 +167,7 @@ export default function PackageDetailPage({
             <section className="fz-card">
               <h2>{t('tour.itinerary')}</h2>
               <div className="fz-stack" style={{ gap: 14 }}>
-                {pkg.itinerary.map((line, i) => (
+                {(pkg.itinerary ?? []).map((line, i) => (
                   <div key={i} className="fz-row" style={{ justifyContent: 'flex-start', alignItems: 'flex-start', gap: 16 }}>
                     <span className="fz-strong" style={{ width: 70, flex: '0 0 auto', color: 'var(--fz-brand)' }}>
                       {t('tour.dayN', { n: num(i + 1, locale) })}
@@ -169,7 +182,7 @@ export default function PackageDetailPage({
               <section className="fz-card" style={{ gap: 12 }}>
                 <h3>{t('tour.includes')}</h3>
                 <ul className="fz-muted" style={{ margin: 0, paddingInlineStart: 20, fontSize: 14 }}>
-                  {pkg.includes.map((x, i) => (
+                  {(pkg.includes ?? []).map((x, i) => (
                     <li key={i}>{x}</li>
                   ))}
                 </ul>
@@ -177,7 +190,7 @@ export default function PackageDetailPage({
               <section className="fz-card" style={{ gap: 12 }}>
                 <h3>{t('tour.requiredDocs')}</h3>
                 <ul className="fz-muted" style={{ margin: 0, paddingInlineStart: 20, fontSize: 14 }}>
-                  {pkg.requiredDocs.map((x, i) => (
+                  {(pkg.requiredDocs ?? []).map((x, i) => (
                     <li key={i}>{x}</li>
                   ))}
                 </ul>

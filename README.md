@@ -3,7 +3,7 @@
 > **Next-Generation International & Local Travel Booking Engine with AI Trip Planner & Multi-Currency Settlement**  
 > Built with Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, next-intl (5 Languages), Zustand, and Playwright E2E.
 
-[![Playwright Tests](https://img.shields.io/badge/Playwright-33%20E2E%20Suites-brightgreen)](https://playwright.dev/)
+[![Playwright Tests](https://img.shields.io/badge/Playwright-34%20E2E%20Suites-brightgreen)](https://playwright.dev/)
 [![Vitest](https://img.shields.io/badge/Vitest-1196%20Unit%20Tests%20Passed-brightgreen)](https://vitest.dev/)
 [![Next.js](https://img.shields.io/badge/Next.js-16.3-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2-blue)](https://react.dev/)

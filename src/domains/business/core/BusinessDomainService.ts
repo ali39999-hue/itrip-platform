@@ -70,6 +70,17 @@ export class BusinessDomainService {
       destination: pkg.destination,
       durationDays: pkg.durationDays,
       basePriceRial: pkg.basePrice,
+      summary:
+        'برنامه‌ای برای بازرگانان و فعالان: بازدید نمایشگاه، بازار تخصصی و جلسات B2B هماهنگ‌شده با مترجم گروهی.',
+      itinerary: [
+        'پرواز تهران، ترانسفر فرودگاهی و استقرار در هتل، جلسه توجیهی گروه.',
+        'بازدید نمایشگاه با مترجم گروهی، ثبت لیست تامین‌کنندگان هدف.',
+        'ادامه نمایشگاه و جلسات B2B از پیش هماهنگ‌شده در غرفه‌ها.',
+        'بازار تخصصی و بررسی نمونه و قیمت‌گیری.',
+        'بازدید کارخانه تولیدکننده منتخب و گفت‌وگو درباره تولید سفارشی.',
+        'نهایی‌سازی مذاکرات با حضور مترجم و مشاور حقوقی، هماهنگی بازرسی کالا.',
+        'زمان آزاد، ترانسفر به فرودگاه و پرواز بازگشت.',
+      ],
       includes: pkg.includes,
       requiredDocs: pkg.requiredDocs,
       departures: pkg.departures.map((d) => ({
@@ -222,17 +233,57 @@ export class BusinessDomainService {
     }
 
     if (data.company) {
-      await prisma.businessCompany.update({
-        where: { id: request.companyId },
-        data: {
-          ...(data.company.name ? { name: data.company.name } : {}),
-          ...(data.company.nationalId ? { nationalId: data.company.nationalId } : {}),
-          ...(data.company.economicCode !== undefined ? { economicCode: data.company.economicCode } : {}),
-          ...(data.company.field ? { field: data.company.field } : {}),
-          ...(data.company.repName ? { repName: data.company.repName } : {}),
-          ...(data.company.repPhone ? { repPhone: data.company.repPhone } : {}),
-        },
-      });
+      const targetNationalId = data.company.nationalId;
+      if (targetNationalId) {
+        const existingCompany = await prisma.businessCompany.findUnique({
+          where: { nationalId: targetNationalId },
+        });
+
+        if (existingCompany && existingCompany.id !== request.companyId) {
+          // Link request to existing company and update it
+          await prisma.businessRequest.update({
+            where: { id },
+            data: { companyId: existingCompany.id },
+          });
+          await prisma.businessCompany.update({
+            where: { id: existingCompany.id },
+            data: {
+              ...(data.company.name ? { name: data.company.name } : {}),
+              ...(data.company.economicCode !== undefined ? { economicCode: data.company.economicCode } : {}),
+              ...(data.company.field ? { field: data.company.field } : {}),
+              ...(data.company.repName ? { repName: data.company.repName } : {}),
+              ...(data.company.repPhone ? { repPhone: data.company.repPhone } : {}),
+            },
+          });
+          // Clean up temp company if this request was its only user
+          if (request.company.nationalId.startsWith('temp_')) {
+            await prisma.businessCompany.delete({ where: { id: request.companyId } }).catch(() => {});
+          }
+        } else {
+          await prisma.businessCompany.update({
+            where: { id: request.companyId },
+            data: {
+              ...(data.company.name ? { name: data.company.name } : {}),
+              ...(data.company.nationalId ? { nationalId: data.company.nationalId } : {}),
+              ...(data.company.economicCode !== undefined ? { economicCode: data.company.economicCode } : {}),
+              ...(data.company.field ? { field: data.company.field } : {}),
+              ...(data.company.repName ? { repName: data.company.repName } : {}),
+              ...(data.company.repPhone ? { repPhone: data.company.repPhone } : {}),
+            },
+          });
+        }
+      } else {
+        await prisma.businessCompany.update({
+          where: { id: request.companyId },
+          data: {
+            ...(data.company.name ? { name: data.company.name } : {}),
+            ...(data.company.economicCode !== undefined ? { economicCode: data.company.economicCode } : {}),
+            ...(data.company.field ? { field: data.company.field } : {}),
+            ...(data.company.repName ? { repName: data.company.repName } : {}),
+            ...(data.company.repPhone ? { repPhone: data.company.repPhone } : {}),
+          },
+        });
+      }
     }
 
     if (data.travelers && data.travelers.length > 0) {

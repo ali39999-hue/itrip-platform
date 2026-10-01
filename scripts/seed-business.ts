@@ -11,7 +11,7 @@ async function seedBusiness() {
       destination: 'گوانگژو، چین',
       destinationEn: 'Guangzhou, China',
       durationDays: 7,
-      basePrice: 1_450_000_000,
+      basePrice: 145_000_000,
       includes: [
         'پرواز رفت و برگشت با بار مجاز',
         'هتل ۴ ستاره نزدیک محل نمایشگاه با صبحانه',
@@ -34,10 +34,10 @@ async function seedBusiness() {
         { departDate: new Date('2026-11-04T00:00:00Z'), returnDate: new Date('2026-11-11T00:00:00Z'), capacity: 30, bookedCount: 2 },
       ],
       addons: [
-        { code: 'cf-translator', title: 'مترجم اختصاصی', price: 120_000_000, unit: 'per_group' },
-        { code: 'cf-legal', title: 'مشاور حقوقی و قرارداد', price: 80_000_000, unit: 'per_group' },
-        { code: 'cf-booth', title: 'غرفه یا میز نمایشگاهی', price: 250_000_000, unit: 'per_group' },
-        { code: 'cf-driver', title: 'خودرو و راننده اختصاصی', price: 90_000_000, unit: 'per_group' },
+        { code: 'cf-translator', title: 'مترجم اختصاصی', price: 12_000_000, unit: 'per_group' },
+        { code: 'cf-legal', title: 'مشاور حقوقی و قرارداد', price: 8_000_000, unit: 'per_group' },
+        { code: 'cf-booth', title: 'غرفه یا میز نمایشگاهی', price: 25_000_000, unit: 'per_group' },
+        { code: 'cf-driver', title: 'خودرو و راننده اختصاصی', price: 9_000_000, unit: 'per_group' },
       ],
     },
     {
@@ -47,7 +47,7 @@ async function seedBusiness() {
       destination: 'شنژن، چین',
       destinationEn: 'Shenzhen, China',
       durationDays: 6,
-      basePrice: 1_280_000_000,
+      basePrice: 128_000_000,
       includes: [
         'پرواز رفت و برگشت با بار مجاز',
         'هتل ۴ ستاره با صبحانه',
@@ -68,9 +68,9 @@ async function seedBusiness() {
         { departDate: new Date('2026-10-27T00:00:00Z'), returnDate: new Date('2026-11-02T00:00:00Z'), capacity: 20, bookedCount: 3 },
       ],
       addons: [
-        { code: 'sz-translator', title: 'مترجم فنی اختصاصی', price: 120_000_000, unit: 'per_group' },
-        { code: 'sz-legal', title: 'مشاور حقوقی و قرارداد', price: 80_000_000, unit: 'per_group' },
-        { code: 'sz-inspection', title: 'بازرسی پیش از حمل', price: 95_000_000, unit: 'per_group' },
+        { code: 'sz-translator', title: 'مترجم فنی اختصاصی', price: 12_000_000, unit: 'per_group' },
+        { code: 'sz-legal', title: 'مشاور حقوقی و قرارداد', price: 8_000_000, unit: 'per_group' },
+        { code: 'sz-inspection', title: 'بازرسی پیش از حمل', price: 9_500_000, unit: 'per_group' },
       ],
     },
     {
@@ -80,7 +80,7 @@ async function seedBusiness() {
       destination: 'مسکو، روسیه',
       destinationEn: 'Moscow, Russia',
       durationDays: 5,
-      basePrice: 1_690_000_000,
+      basePrice: 169_000_000,
       includes: [
         'پرواز رفت و برگشت با بار مجاز',
         'هتل ۴ ستاره مرکزی با صبحانه',
@@ -102,8 +102,8 @@ async function seedBusiness() {
         { departDate: new Date('2026-11-15T00:00:00Z'), returnDate: new Date('2026-11-20T00:00:00Z'), capacity: 25, bookedCount: 4 },
       ],
       addons: [
-        { code: 'mo-translator', title: 'مترجم اختصاصی', price: 130_000_000, unit: 'per_group' },
-        { code: 'mo-b2b', title: 'هماهنگی جلسات B2B با اتاق بازرگانی', price: 160_000_000, unit: 'per_group' },
+        { code: 'mo-translator', title: 'مترجم اختصاصی', price: 13_000_000, unit: 'per_group' },
+        { code: 'mo-b2b', title: 'هماهنگی جلسات B2B با اتاق بازرگانی', price: 16_000_000, unit: 'per_group' },
       ],
     },
   ];
@@ -120,6 +120,13 @@ async function seedBusiness() {
         where: { slug: pkg.slug },
         data: pkgDetails,
       });
+      for (const a of addons) {
+        await prisma.businessAddon.upsert({
+          where: { code: a.code },
+          update: { price: a.price, title: a.title, unit: a.unit },
+          create: { ...a, packageId: existing.id },
+        });
+      }
     } else {
       console.log(`Creating package ${pkg.slug}...`);
       const created = await prisma.businessTourPackage.create({

@@ -7,7 +7,7 @@ import { BizHeader } from '@/components/business/BizHeader';
 import { RequestStepper } from '@/components/business/RequestStepper';
 import { UploadBox, type UploadState } from '@/components/business/UploadBox';
 import { BizPrice, BizFieldError } from '@/components/business/BizText';
-import { businessApi, BusinessApiError } from '@/services/business-client';
+import { businessApi } from '@/services/business-client';
 import { num } from '@/lib/format';
 import { Plus, Trash2 } from 'lucide-react';
 
@@ -153,13 +153,55 @@ export default function NewRequestPage() {
     setSubmitting(true);
     setNetworkError(false);
     try {
-      // TODO(biz-backend): POST /requests/:id/submit با Idempotency-Key — تا آن موقع mock
-      await businessApi.submitRequest('draft', true, crypto.randomUUID());
+      const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      let targetId = searchParams?.get('id') || searchParams?.get('requestId');
+
+      if (!targetId) {
+        const pkgs = await businessApi.listPackages();
+        const firstSlug = pkgs[0]?.slug || 'canton-fair';
+        const pkgDetail = await businessApi.getPackage(firstSlug);
+        const departureId = pkgDetail.departures[0]?.id;
+
+        if (!departureId) {
+          throw new Error('No departure available');
+        }
+
+        const draft = await businessApi.createRequest({
+          packageId: pkgDetail.id,
+          departureId,
+          paxCount: travelers.length,
+          companyName: company.name,
+          nationalId: company.nationalId,
+          repName: company.repName,
+          repPhone: company.repPhone,
+          field: company.field || 'Technology',
+        });
+        targetId = draft.id;
+      }
+
+      await businessApi.updateRequest(targetId, {
+        company: {
+          name: company.name,
+          nationalId: company.nationalId,
+          economicCode: company.economicCode,
+          field: company.field,
+          repName: company.repName,
+          repPhone: company.repPhone,
+        },
+        travelers: travelers.map((t) => ({
+          fullNameLatin: t.fullNameLatin,
+          passportNo: t.passportNo,
+          passportExpiry: t.passportExpiry,
+        })),
+        note,
+      });
+
+      await businessApi.submitRequest(targetId, true);
       saveDraftNow();
-      router.push('/business/requests/draft/deposit');
-    } catch (e) {
-      if (e instanceof BusinessApiError) setNetworkError(true);
-      else setNetworkError(true);
+      router.push(`/business/requests/${targetId}/deposit`);
+    } catch (err) {
+      console.error('Submit failed in requests/new:', err);
+      setNetworkError(true);
     } finally {
       setSubmitting(false);
     }

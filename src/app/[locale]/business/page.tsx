@@ -75,7 +75,7 @@ export default function BusinessLandingPage() {
                 <Link
                   className="fz-btn fz-btn--action"
                   style={{ width: 'auto', minHeight: 52 }}
-                  href={`/business/tours/${packages[0]?.slug || 'canton-fair-mobile-market'}${
+                  href={`/business/tours/${packages[0]?.slug || 'canton-fair'}${
                     goal || sub ? `?${new URLSearchParams({ ...(goal ? { goal } : {}), ...(sub ? { sub } : {}) }).toString()}` : ''
                   }`}
                 >
