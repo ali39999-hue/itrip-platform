@@ -12,6 +12,7 @@ export async function GET(
       where: { id },
       include: {
         departure: { include: { package: true } },
+        company: true,
         vouchers: true,
         travelers: true,
       },
@@ -44,10 +45,26 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: {
+        code: groupVoucher.code,
+        packageTitle: request.departure.package.title,
+        companyName: request.company?.name || 'شرکت تجاری',
+        repName: request.company?.repName || 'نماینده شرکت',
+        travelDate: request.departure.departDate.toISOString(),
+        paxCount: request.paxCount,
+        outboundFlight: 'تهران ← مقصد — پرواز رفت با بار مجاز',
+        returnFlight: 'مقصد ← تهران — پرواز برگشت با بار مجاز',
+        hotel: 'هتل ۴ ستاره مرکز شهر — با صبحانه بوفه',
+        guide: 'سرپرست و مترجم همراه — پشتیبانی ۲۴ ساعته',
+        qrPayload: groupVoucher.qrPayload,
+        services: [
+          'ویزای تجاری تاییدشده',
+          'ترانسفر فرودگاهی و روزانه',
+          'بیمه مسافرتی تجاری',
+          'مترجم همراه',
+          'گواهی حضور در رویداد',
+        ],
         voucher: groupVoucher,
         travelers: request.travelers,
-        packageTitle: request.departure.package.title,
-        departureDate: request.departure.departDate.toISOString(),
       },
     });
   } catch (error: unknown) {

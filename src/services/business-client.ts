@@ -129,19 +129,63 @@ export class BusinessApiError extends Error {
   /** برای validation_error: نام فیلدهای مشکل‌دار */
   fields?: Record<string, string>;
 
-  constructor(code: BusinessApiErrorCode, fields?: Record<string, string>) {
-    super(`business_api_error:${code}`);
+  constructor(code: BusinessApiErrorCode, fields?: Record<string, string>, message?: string) {
+    super(message || `business_api_error:${code}`);
     this.code = code;
     this.fields = fields;
+  }
+}
+
+export const BUSINESS_ERROR_I18N_KEYS: Record<BusinessApiErrorCode, string> = {
+  capacity_full: 'Business.tour.errors.paxRange',
+  invalid_transition: 'Business.common.networkErrorBody',
+  request_expired: 'Business.common.networkErrorBody',
+  payment_failed: 'Business.deposit.paymentFailed',
+  validation_error: 'Business.form.errors.required',
+  unauthorized: 'Business.common.networkErrorBody',
+  not_found: 'Business.common.networkErrorBody',
+  network_error: 'Business.common.networkErrorBody',
+};
+
+export function getBusinessErrorMessage(
+  code: BusinessApiErrorCode,
+  t?: (key: string) => string
+): string {
+  if (t) {
+    const key = BUSINESS_ERROR_I18N_KEYS[code];
+    if (key) return t(key);
+  }
+  switch (code) {
+    case 'capacity_full':
+      return 'ظرفیت تاریخ انتخابی تکمیل شده است. لطفاً تاریخ دیگری انتخاب کنید.';
+    case 'invalid_transition':
+      return 'تغییر وضعیت نامعتبر است یا این مرحله قبلاً انجام شده است.';
+    case 'request_expired':
+      return 'مهلت پرداخت یا تکمیل این درخواست منقضی شده است.';
+    case 'payment_failed':
+      return 'پرداخت ناموفق بود. لطفاً مجدداً تلاش کنید.';
+    case 'validation_error':
+      return 'اطلاعات وارد شده نامعتبر یا ناقص است.';
+    case 'not_found':
+      return 'اطلاعات مورد نظر یافت نشد.';
+    case 'unauthorized':
+      return 'دسترسی غیرمجاز است.';
+    case 'network_error':
+    default:
+      return 'خطا در برقراری ارتباط با سرور.';
   }
 }
 
 /* ---------------- شکل پاسخ (قرارداد سند: { data, meta?, error? }) ---------------- */
 
 interface ApiEnvelope<T> {
+  success?: boolean;
   data?: T;
   meta?: { page?: number; total?: number };
-  error?: { code: BusinessApiErrorCode; fields?: Record<string, string>; message?: string };
+  error?: string | { code: BusinessApiErrorCode; fields?: Record<string, string>; message?: string };
+  code?: BusinessApiErrorCode;
+  fields?: Record<string, string>;
+  redirect_url?: string;
 }
 
 /* ---------------- لایه fetch مشترک ---------------- */
@@ -172,24 +216,39 @@ export async function callBusinessApi<T>(
     } catch {
       // پاسخ غیر JSON — کد بر اساس HTTP status
     }
-    throw new BusinessApiError(body?.error?.code || 'network_error', body?.error?.fields);
+
+    const errCode =
+      (typeof body?.error === 'object' ? body.error?.code : body?.code) ||
+      (res.status === 404
+        ? 'not_found'
+        : res.status === 401
+        ? 'unauthorized'
+        : res.status === 409
+        ? (body?.code as BusinessApiErrorCode) || 'invalid_transition'
+        : res.status === 422
+        ? 'validation_error'
+        : res.status === 402
+        ? 'payment_failed'
+        : res.status === 410
+        ? 'request_expired'
+        : 'network_error');
+
+    const fields = typeof body?.error === 'object' ? body.error?.fields : body?.fields;
+    const msg = typeof body?.error === 'string' ? body.error : typeof body?.error === 'object' ? body.error?.message : undefined;
+    throw new BusinessApiError(errCode as BusinessApiErrorCode, fields, msg);
   }
 
   const json = (await res.json()) as ApiEnvelope<T>;
-  return json.data as T;
+  if (json && typeof json === 'object' && 'data' in json && json.data !== undefined) {
+    if ('redirect_url' in json && typeof json.data === 'object' && json.data !== null) {
+      (json.data as Record<string, unknown>).redirect_url = json.redirect_url;
+    }
+    return json.data as T;
+  }
+  return json as unknown as T;
 }
 
-/* ---------------- MOCK ---------------- */
-
-/**
- * تا آماده‌شدن بک‌اند: داده mock مطابق سند.
- * اتصال واقعی فقط با تعویض پیاده‌سازی توابع زیر انجام می‌شود.
- */
-const MOCK_LATENCY = 400;
-
-function mock<T>(data: T): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(data), MOCK_LATENCY));
-}
+/* ---------------- MOCK DATA FOR FALLBACK / TESTS ---------------- */
 
 export const MOCK_PACKAGES: BusinessPackageSummary[] = [
   {
@@ -270,7 +329,7 @@ export const MOCK_PACKAGE_DETAIL: Record<string, BusinessPackageDetail> = Object
   ])
 );
 
-const MOCK_REQUEST: BusinessRequestDetail = {
+export const MOCK_REQUEST: BusinessRequestDetail = {
   id: 'req-0001',
   code: 'FZB-1405-0001',
   status: 'under_review',
@@ -293,91 +352,160 @@ const MOCK_REQUEST: BusinessRequestDetail = {
 /* ---------------- توابع عمومی (قرارداد سند، بخش APIها) ---------------- */
 
 import type { VoucherData } from '@/components/business/VoucherCard';
+export type { VoucherData };
 
 export const businessApi = {
   /** GET /packages */
-  listPackages(params?: { goal?: string; destination?: string; month?: string }) {
-    void params;
-    return mock(MOCK_PACKAGES);
+  listPackages(params?: { goal?: string; destination?: string; month?: string }): Promise<BusinessPackageSummary[]> {
+    const qs = new URLSearchParams();
+    if (params?.goal) qs.set('goal', params.goal);
+    if (params?.destination) qs.set('destination', params.destination);
+    const query = qs.toString() ? `?${qs.toString()}` : '';
+    return callBusinessApi<BusinessPackageSummary[]>(`/packages${query}`);
+  },
+
+  /** Alias: getPackages */
+  getPackages(filters?: { goal?: string; destination?: string; month?: string }): Promise<BusinessPackageSummary[]> {
+    return this.listPackages(filters);
   },
 
   /** GET /packages/:slug */
-  getPackage(slug: string) {
-    const d = MOCK_PACKAGE_DETAIL[slug];
-    if (!d) return Promise.reject(new BusinessApiError('not_found'));
-    return mock(d);
+  getPackage(slug: string): Promise<BusinessPackageDetail> {
+    return callBusinessApi<BusinessPackageDetail>(`/packages/${slug}`);
+  },
+
+  /** Alias: getPackageBySlug */
+  getPackageBySlug(slug: string): Promise<BusinessPackageDetail> {
+    return this.getPackage(slug);
   },
 
   /** POST /requests → draft + expires_at */
-  createRequest(input: { packageId: string; departureId: string; paxCount: number; addonIds: string[] }) {
-    void input;
-    return mock<BusinessRequestDetail>({ ...MOCK_REQUEST, status: 'draft' });
-  },
-
-  /** PATCH /requests/:id — ذخیره خودکار draft */
-  updateRequest(id: string, body: { company?: Record<string, string>; travelers?: BusinessTraveler[]; note?: string }) {
-    void body;
-    return mock<BusinessRequestDetail>({ ...MOCK_REQUEST, id });
-  },
-
-  /** POST /requests/:id/documents — multipart */
-  uploadDocument(id: string, form: FormData) {
-    void id;
-    return mock<BusinessDocument>({
-      id: `doc-${Date.now()}`,
-      type: String(form.get('type') || 'passport'),
-      fileName: String(form.get('fileName') || 'file.pdf'),
-      state: 'pending',
-      rejectReason: null,
+  createRequest(input: {
+    packageId: string;
+    departureId: string;
+    paxCount: number;
+    addonIds?: string[];
+    companyName?: string;
+    nationalId?: string;
+    repName?: string;
+    repPhone?: string;
+    field?: string;
+  }): Promise<BusinessRequestDetail> {
+    return callBusinessApi<BusinessRequestDetail>('/requests', {
+      method: 'POST',
+      body: JSON.stringify(input),
     });
   },
 
+  /** PATCH /requests/:id — ذخیره خودکار draft */
+  updateRequest(
+    id: string,
+    body: {
+      company?: {
+        name?: string;
+        nationalId?: string;
+        economicCode?: string;
+        field?: string;
+        repName?: string;
+        repPhone?: string;
+      };
+      travelers?: BusinessTraveler[];
+      note?: string;
+    }
+  ): Promise<BusinessRequestDetail> {
+    return callBusinessApi<BusinessRequestDetail>(`/requests/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    });
+  },
+
+  /** Alias: saveRequestDraft */
+  saveRequestDraft(
+    id: string,
+    body: {
+      company?: {
+        name?: string;
+        nationalId?: string;
+        economicCode?: string;
+        field?: string;
+        repName?: string;
+        repPhone?: string;
+      };
+      travelers?: BusinessTraveler[];
+      note?: string;
+    }
+  ): Promise<BusinessRequestDetail> {
+    return this.updateRequest(id, body);
+  },
+
+  /** POST /requests/:id/documents — multipart */
+  async uploadDocument(id: string, form: FormData): Promise<BusinessDocument> {
+    let res: Response;
+    try {
+      res = await fetch(`${BUSINESS_API_BASE}/requests/${id}/documents`, {
+        method: 'POST',
+        body: form,
+      });
+    } catch {
+      throw new BusinessApiError('network_error');
+    }
+    if (!res.ok) {
+      let body: ApiEnvelope<unknown> | null = null;
+      try {
+        body = (await res.json()) as ApiEnvelope<unknown>;
+      } catch {}
+      const code = (typeof body?.error === 'object' ? body.error?.code : body?.code) || 'validation_error';
+      throw new BusinessApiError(code as BusinessApiErrorCode);
+    }
+    const json = (await res.json()) as ApiEnvelope<BusinessDocument>;
+    return json.data as BusinessDocument;
+  },
+
   /** POST /requests/:id/submit — terms_accepted + Idempotency-Key */
-  submitRequest(id: string, termsAccepted: true, idempotencyKey: string) {
-    void termsAccepted;
-    void idempotencyKey;
-    return mock<BusinessRequestDetail>({
-      ...MOCK_REQUEST,
-      id,
-      status: 'submitted',
+  submitRequest(id: string, termsAccepted: boolean = true, idempotencyKey?: string): Promise<BusinessRequestDetail> {
+    return callBusinessApi<BusinessRequestDetail>(`/requests/${id}/submit`, {
+      method: 'POST',
+      body: JSON.stringify({ terms_accepted: termsAccepted }),
+      idempotencyKey,
     });
   },
 
   /** POST /requests/:id/payments — kind, method, receipt? */
-  createPayment(id: string, body: { kind: 'deposit' | 'settlement'; method: string; receipt?: File }, idempotencyKey: string) {
-    void id;
-    void body;
-    void idempotencyKey;
-    return mock<{ redirectUrl: string | null }>({ redirectUrl: null });
+  async createPayment(
+    id: string,
+    body: { kind: 'deposit' | 'settlement'; method: string; receipt?: File },
+    idempotencyKey?: string
+  ): Promise<{ redirectUrl: string | null; data?: unknown }> {
+    const res = await callBusinessApi<{ redirect_url?: string; [key: string]: unknown }>(`/requests/${id}/payments`, {
+      method: 'POST',
+      body: JSON.stringify({ kind: body.kind, method: body.method }),
+      idempotencyKey,
+    });
+    return {
+      redirectUrl: res?.redirect_url || null,
+      data: res,
+    };
   },
 
   /** GET /requests/:id — درخواست کامل: وضعیت، تایم‌لاین، مدارک، مالی */
-  getRequest(id: string) {
-    void id;
-    return mock(MOCK_REQUEST);
+  getRequest(id: string): Promise<BusinessRequestDetail> {
+    return callBusinessApi<BusinessRequestDetail>(`/requests/${id}`);
   },
 
   /** GET /requests/:id/invoice?type= */
-  getInvoice(id: string, type: 'proforma' | 'official') {
-    return mock<{ pdfUrl: string }>({ pdfUrl: `/api/v1/business/requests/${id}/invoice?type=${type}` });
+  getInvoice(id: string, type: 'proforma' | 'official'): Promise<{ pdfUrl: string }> {
+    return Promise.resolve({ pdfUrl: `${BUSINESS_API_BASE}/requests/${id}/invoice?type=${type}` });
   },
 
   /** GET /requests/:id/voucher */
-  getVoucher(id: string) {
-    void id;
-    return mock<VoucherData>({
-      code: 'FZ-VCH-0001',
-      packageTitle: MOCK_REQUEST.packageTitle,
-      companyName: 'شرکت نمونه',
-      repName: 'نماینده شرکت',
-      travelDate: '۱۵ تا ۲۱ مهر ۱۴۰۵',
-      paxCount: 4,
-      outboundFlight: 'تهران ← گوانگژو — W5-081',
-      returnFlight: 'گوانگژو ← تهران — W5-082',
-      hotel: 'هتل نمونه — ۶ شب، اتاق دبل',
-      guide: 'مترجم گروه — ۰۹xxxxxxxxx',
-      qrPayload: 'https://firuzo.com/api/v1/business/vouchers/verify/FZ-VCH-0001',
-      services: ['ویزای تجاری صادر شده', 'ترانسفر فرودگاهی رفت و برگشت', 'کارت ورود به نمایشگاه', 'بیمه مسافرتی', 'مترجم گروهی', 'فاکتور رسمی شرکتی'],
-    });
+  getVoucher(id: string): Promise<VoucherData> {
+    return callBusinessApi<VoucherData>(`/requests/${id}/voucher`);
+  },
+
+  /** GET /vouchers/verify/:code */
+  verifyVoucher(code: string): Promise<{ valid: boolean; code: string; companyName?: string; packageTitle?: string }> {
+    return callBusinessApi<{ valid: boolean; code: string; companyName?: string; packageTitle?: string }>(
+      `/vouchers/verify/${code}`
+    );
   },
 };
