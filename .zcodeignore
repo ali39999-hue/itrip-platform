@@ -1,0 +1,128 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+# machine-readable test artifacts (regenerated every run; evidence lives in docs/baseline/quality-report.json)
+/results/
+
+# temporary files
+.tmp*
+.tmp-*/
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+*.log
+dev_out.log
+server.log
+start-server.bat
+/public/uploads/**
+!/public/uploads/.gitkeep
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files
+.env
+.env*.local
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# playwright & tests
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/screenshots/
+
+
+cloudflared.exe
+*.exe
+
+# Database
+prisma/*.db
+prisma/*.db-journal
+
+
+# Testing Artifacts
+playwright-report/
+test-results/
+screenshots/
+snapshots/
+audit-screenshots/
+scripts/*.png
+*.ans
+captcha_*
+after_submit*.png
+login_preview*.png
+.superdesign
+  
+# Parto portal session (human-in-the-loop capture, never commit)  
+.parto-portal-state.json  
+.env*
+
+# Supplier portal capture bundles (local parser calibration artifacts)
+api_hunt/
+
+.zcode/
+.claude/
+
+# Graphify knowledge graph artifacts
+graphify-out/
+.graphify*
+
+# ===== ↑ 以上同步自 .gitignore（「从 .gitignore 同步」只重写以上部分）=====
+.git/
+.hg/
+.svn/
+node_modules/
+bower_components/
+jspm_packages/
+__pycache__/
+site-packages/
+venv/
+coverage/
+htmlcov/
+lcov-report/
+cmakefiles/
+cmake-build-*/
+bazel-*/
+pods/
+deriveddata/
+storybook-static/
+allure-results/
+allure-report/
+cdk.out/
+*.egg-info/
+*.dist-info/
+eggs/
+pip-wheel-metadata/
+wheels/
+# ----- ↑ 以上为 ZCode 默认排除规则（自定义规则请写在本行下方，不会被同步/恢复改动）-----
+# 自定义规则写在下方（本行提示可删除）
