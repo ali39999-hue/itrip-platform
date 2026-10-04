@@ -1738,6 +1738,7 @@ model BusinessRequest {
   @@index([status])
   @@index([companyId])
   @@index([expiresAt])
+  @@index([createdById])
 }
 
 /// Many-to-many join: a request may carry several add-ons.
