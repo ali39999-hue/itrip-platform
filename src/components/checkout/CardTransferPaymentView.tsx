@@ -295,10 +295,10 @@ export function CardTransferPaymentView({
           <button
             type="button"
             onClick={onBackToMethods}
-            className="flex items-center gap-1.5 text-[12px] font-bold text-sub hover:text-brand transition"
+            className="flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold text-sub hover:text-brand hover:bg-soft transition touch-target"
           >
+            <ArrowRight size={15} className="rtl:rotate-0 ltr:rotate-180 shrink-0" />
             <span>{lt(locale, { fa: 'بازگشت به روش‌ها', en: 'Back to methods', ar: 'العودة إلى الطرق', zh: '返回支付方式', ru: 'К способам оплаты' })}</span>
-            <ArrowRight size={15} className="rtl:rotate-0 ltr:rotate-180" />
           </button>
         )}
       </div>

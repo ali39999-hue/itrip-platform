@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
+import { Money } from '@/lib/finance';
 import { InventoryEngine } from '@/domains/inventory/InventoryEngine';
 import { BookingApplicationService } from './BookingApplicationService';
 
@@ -123,14 +124,15 @@ export class UnifiedCartService {
     });
 
     const discountPercent = hasCombo ? 0.05 : 0.0;
-    const discountAmount = Math.round(gross * discountPercent);
-    const net = gross - discountAmount;
+    const grossMoney = new Money(gross, currency);
+    const discountMoney = grossMoney.mul(discountPercent).roundForCurrency().rounded;
+    const netMoney = grossMoney.sub(discountMoney);
 
     return {
-      grossAmount: gross,
+      grossAmount: grossMoney.toNumber(),
       bundleDiscountPercent: discountPercent,
-      bundleDiscountAmount: discountAmount,
-      netAmount: net,
+      bundleDiscountAmount: discountMoney.toNumber(),
+      netAmount: netMoney.toNumber(),
       currency,
       hasFlightHotelCombo: hasCombo,
       itemBreakdown: breakdown,
@@ -237,12 +239,20 @@ export class UnifiedCartService {
           },
         });
 
+        // Link all acquired hold tokens to this booking (INV-101, zero oversell)
+        for (const token of holdRes.holdTokens) {
+          await tx.inventoryHold.updateMany({
+            where: { token },
+            data: { bookingId: b.id },
+          });
+        }
+
         // Create individual BookingItems (sell price is the server-resolved price)
         for (const item of pricedItems) {
           const nights = item.type.toUpperCase() === 'HOTEL' ? (item.nights || 1) : 1;
-          const sellPrice = item.unitPrice * item.count * nights;
-          const netCost = Math.round(sellPrice * 0.9); // 10% platform gross margin
-          const markup = sellPrice - netCost;
+          const sellPriceMoney = new Money(item.unitPrice, currency).mul(item.count * nights);
+          const netCostMoney = sellPriceMoney.mul(0.9).roundForCurrency().rounded; // 10% platform gross margin
+          const markupMoney = sellPriceMoney.sub(netCostMoney);
 
           const itemDetails = {
             title: item.title,
@@ -261,23 +271,26 @@ export class UnifiedCartService {
               bookingId: b.id,
               inventoryItemId: item.inventoryItemId || null,
               type: item.type,
-              netCost,
-              markup,
+              netCost: netCostMoney.toDecimal(),
+              markup: markupMoney.toDecimal(),
               taxAmount: 0,
               feeAmount: 0,
-              sellPrice,
+              sellPrice: sellPriceMoney.toDecimal(),
               details: JSON.stringify(itemDetails),
             },
           });
         }
 
         // Attach Price Snapshot
+        const netPricingMoney = new Money(pricing.netAmount, currency);
+        const snapshotMarkup = netPricingMoney.mul(0.1).roundForCurrency().rounded;
+
         await tx.priceSnapshot.create({
           data: {
             bookingId: b.id,
             baseAmount: pricing.grossAmount,
             discountAmount: pricing.bundleDiscountAmount,
-            markupAmount: Math.round(pricing.netAmount * 0.1),
+            markupAmount: snapshotMarkup.toDecimal(),
             serviceFee: 0,
             taxAmount: 0,
             sellPrice: pricing.netAmount,

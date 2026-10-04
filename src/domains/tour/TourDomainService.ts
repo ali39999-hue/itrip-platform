@@ -38,7 +38,7 @@ export class TourDomainService {
       throw new Error('INSUFFICIENT_SEATS');
     }
 
-    const holdToken = `hold_tour_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const holdToken = null;
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15-minute soft-lock
 
     const baseAdultPrice = new Prisma.Decimal(departure.price || tour.price);
@@ -264,16 +264,28 @@ export class TourDomainService {
         data: { details: JSON.stringify(details) },
       });
 
-      return tx.booking.update({
+      const updatedBooking = await tx.booking.update({
         where: { id: booking.id },
         data: {
           status: 'CONFIRMED',
-          paymentStatus: cmd.paymentMode === 'DEPOSIT' ? 'PARTIALLY_REFUNDED' : 'CAPTURED', // mirrors partial payment state
-          ticketStatus: 'ISSUED',
+          paymentStatus: cmd.paymentMode === 'DEPOSIT' ? 'AUTHORIZED' : 'CAPTURED',
+          ticketStatus: cmd.paymentMode === 'DEPOSIT' ? 'ISSUING' : 'ISSUED',
           holdToken: null,
         },
         include: { items: true },
       });
+
+      await tx.bookingStatusHistory.create({
+        data: {
+          bookingId: booking.id,
+          fromStatus: booking.status,
+          toStatus: 'CONFIRMED',
+          actor: 'TOUR_PAYMENT',
+          reason: `Tour booking confirmed via ${cmd.paymentMode} payment`,
+        },
+      });
+
+      return updatedBooking;
     });
   }
 
@@ -308,13 +320,26 @@ export class TourDomainService {
         data: { details: JSON.stringify(details) },
       });
 
-      return tx.booking.update({
+      const updatedBooking = await tx.booking.update({
         where: { id: booking.id },
         data: {
           paymentStatus: 'CAPTURED',
+          ticketStatus: 'ISSUED',
         },
         include: { items: true },
       });
+
+      await tx.bookingStatusHistory.create({
+        data: {
+          bookingId: booking.id,
+          fromStatus: booking.status,
+          toStatus: 'CONFIRMED',
+          actor: 'TOUR_REMAINDER_PAYMENT',
+          reason: 'Tour remainder balance paid in full',
+        },
+      });
+
+      return updatedBooking;
     });
   }
 }

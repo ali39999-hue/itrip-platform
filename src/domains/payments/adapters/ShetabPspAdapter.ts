@@ -35,10 +35,9 @@ export class LivePspConfigurationError extends Error {
  */
 export function validateLivePspConfiguration(config?: ShetabPspConfig): void {
   const isProduction = process.env.NODE_ENV === 'production';
-  const isDemo = process.env.DEMO_MODE === 'true';
 
-  // If running in production (and not an explicitly permitted test harness), credentials must exist
-  if (isProduction && !isDemo) {
+  // In production mode, live credentials must exist strictly (fail-closed)
+  if (isProduction) {
     const merchantId = config?.merchantId || process.env.SHETAB_MERCHANT_ID;
     const secretKey = config?.secretKey || process.env.SHETAB_SECRET_KEY;
     const terminalId = config?.terminalId || process.env.SHETAB_TERMINAL_ID;
@@ -110,7 +109,7 @@ export class ShetabPspAdapter implements PaymentGatewayPort {
    * Generates Shaparak-compliant token request for Saman (SEP) or Pasargad (PEP).
    */
   async createPayment(req: GatewayPaymentRequest): Promise<GatewayPaymentResponse> {
-    if (!this.isConfigured() && process.env.NODE_ENV === 'production' && process.env.DEMO_MODE !== 'true') {
+    if (!this.isConfigured() && process.env.NODE_ENV === 'production') {
       throw new LivePspConfigurationError(
         'Payment gateway configuration missing: Live Shetab PSP credentials required in production'
       );

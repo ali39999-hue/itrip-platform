@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { apiLogin, E2E_ADMIN } from './helpers/e2e-auth';
 
 test.describe('Business Technology Tour — End-to-End Verification Suite', () => {
   test.describe.configure({ mode: 'serial' });
@@ -96,9 +97,17 @@ test.describe('Business Technology Tour — End-to-End Verification Suite', () =
     await expect(page).toHaveURL(new RegExp(`/fa/business/requests/${requestId}$`), { timeout: 20000 });
     await expect(page.locator('.fz-status-tag, .fz-timeline, h1, h2').first()).toBeVisible({ timeout: 10000 });
 
-    // 6. Simulate review approval via official API endpoint
-    const reviewRes = await request.post(`/api/v1/business/requests/${requestId}/review`, {
+    // 6. Review approval via the official operator endpoint. SEC-P0: the
+    // endpoint is permission-guarded, so the reviewer signs in first and the
+    // call rides the browser session cookie (page.request, not the bare
+    // APIRequestContext fixture).
+    const loggedIn = await apiLogin(page, E2E_ADMIN);
+    expect(loggedIn).toBe(true);
+    // The CSRF middleware requires an Origin on cookie-carrying state-changing
+    // requests — a real browser always sends one; the bare API context does not.
+    const reviewRes = await page.request.post(`/api/v1/business/requests/${requestId}/review`, {
       data: { decision: 'approve', note: 'Approved in E2E automated test' },
+      headers: { Origin: 'http://localhost:3000' },
     });
     expect(reviewRes.ok()).toBe(true);
 

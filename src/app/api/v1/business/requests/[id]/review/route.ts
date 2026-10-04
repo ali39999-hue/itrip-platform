@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BusinessDomainService } from '@/domains/business/core/BusinessDomainService';
+import { requireBusinessPermission, getSessionUserId } from '../../../_lib/guard';
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const denied = await requireBusinessPermission('business:request:review');
+    if (denied) return denied;
+
     const { id } = await params;
     const body = await req.json();
     const { decision, document_results, note } = body;
@@ -22,6 +26,7 @@ export async function POST(
       decision,
       docResults: document_results,
       note,
+      actorId: await getSessionUserId(),
     });
 
     return NextResponse.json({ success: true, data });

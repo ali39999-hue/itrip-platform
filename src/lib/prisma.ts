@@ -9,7 +9,7 @@
  */
 
 import { PrismaClient } from "@prisma/client";
-import { createTenantScoper } from "@/domains/identity/tenant-scoper";
+import { createTenantScoper } from "./tenant-scoper";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;

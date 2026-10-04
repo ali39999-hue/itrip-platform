@@ -99,13 +99,19 @@ describe('Dedicated Workers, Outbox & Crash Recovery Suite (ASYNC-101 to ASYNC-1
       },
     });
 
-    // Run outbox cycle
-    await OutboxConsumer.processPendingEvents('test_consumer_wrk');
-
-    // Verify event is in DEAD_LETTER status, NOT PROCESSED
-    const updated = await prisma.outboxEvent.findUnique({
+    // Run outbox cycle(s). Parallel suites may enqueue many pending events;
+    // the consumer claims bounded batches (take: 20), so keep cycling until
+    // our event is claimed. The assertion intent is unchanged: an unknown
+    // event type must end DEAD_LETTER, never silently PROCESSED.
+    let updated = await prisma.outboxEvent.findUnique({
       where: { id: event.id },
     });
+    for (let cycle = 0; cycle < 10 && updated?.status === 'PENDING'; cycle++) {
+      await OutboxConsumer.processPendingEvents('test_consumer_wrk');
+      updated = await prisma.outboxEvent.findUnique({
+        where: { id: event.id },
+      });
+    }
 
     expect(updated?.status).toBe('DEAD_LETTER');
     expect(updated?.lastError).toContain('UNKNOWN_EVENT_TYPE');

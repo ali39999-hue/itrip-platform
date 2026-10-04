@@ -5,6 +5,7 @@ import { useRouter } from '@/i18n/routing';
 import { ArrowLeft, ArrowRight, Search, Headphones } from 'lucide-react';
 import { Logo } from '@/components/layout/Logo';
 import { useLocale } from 'next-intl';
+import { lt } from '@/lib/lt';
 
 export interface MobileHeaderProps {
   /** Optional title to display instead of logo */
@@ -64,7 +65,7 @@ export function MobileHeader({
               type="button"
               onClick={handleBack}
               className="min-h-[44px] min-w-[44px] w-10 h-10 rounded-xl border border-line bg-soft/60 hover:bg-soft text-ink grid place-items-center active:scale-95 transition"
-              aria-label="بازگشت به صفحه قبل"
+              aria-label={lt(locale, { fa: 'بازگشت به صفحه قبل', en: 'Back to previous page', ar: 'العودة إلى الصفحة السابقة', zh: '返回上一页', ru: 'Вернуться назад' })}
             >
               <BackIcon size={20} />
             </button>
@@ -105,7 +106,7 @@ export function MobileHeader({
               type="button"
               onClick={onSearchClick}
               className="min-h-[44px] min-w-[44px] w-10 h-10 rounded-xl border border-line bg-soft/60 hover:bg-soft text-ink grid place-items-center active:scale-95 transition"
-              aria-label="جستجو"
+              aria-label={lt(locale, { fa: 'جستجو', en: 'Search', ar: 'بحث', zh: '搜索', ru: 'Поиск' })}
             >
               <Search size={18} />
             </button>
@@ -116,7 +117,7 @@ export function MobileHeader({
               type="button"
               onClick={onSupportClick}
               className="min-h-[44px] min-w-[44px] w-10 h-10 rounded-xl border border-line bg-soft/60 hover:bg-soft text-brand-dark grid place-items-center active:scale-95 transition"
-              aria-label="پشتیبانی ۲۴ ساعته"
+              aria-label={lt(locale, { fa: 'پشتیبانی ۲۴ ساعته', en: '24/7 Support', ar: 'دعم على مدار الساعة', zh: '24/7全天候支持', ru: 'Круглосуточная поддержка' })}
             >
               <Headphones size={18} />
             </button>

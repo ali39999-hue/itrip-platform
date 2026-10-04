@@ -142,11 +142,11 @@ export class EcardoGatewayAdapter implements PaymentGatewayPort {
     // Map to an eCardo-supported currency (platform IRR/TOMAN → IRT; USD/USDT/CNY pass through).
     const targetCurrency = mapToEcardoCurrency(req.amount.currency || 'IRR');
 
-    // Amount formatting
-    const numAmount = req.amount.toNumber();
+    // Amount formatting: preserve Decimal precision without intermediate float drift (FIN-101)
+    const dec = req.amount.toDecimal();
     const formattedAmount = (targetCurrency === 'IRR' || targetCurrency === 'IRT')
-      ? Math.round(numAmount)
-      : Number(numAmount.toFixed(2));
+      ? Number(dec.toFixed(0))
+      : Number(dec.toFixed(2));
 
     // Resolve explicit payment mode (e.g. from Admin switch) vs environment fallback
     const isExplicitDemo = req.paymentMode === 'demo';

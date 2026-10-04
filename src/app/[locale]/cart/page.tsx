@@ -305,7 +305,7 @@ export default function CartPage() {
 
       {/* ─── Mobile Sticky Bottom Bar (when cart has items) ─────────── */}
       {cart.length > 0 && (
-        <div className="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-border z-40 shadow-elev-3">
+        <div className="md:hidden fixed bottom-0 inset-x-0 bg-surface/95 backdrop-blur-md p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-line z-50 shadow-elev-3">
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="text-[11px] text-muted">

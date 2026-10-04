@@ -1,10 +1,10 @@
-# iTRIP / Firuzo Platform — Feature Reality Matrix (v1.8.7)
+# iTRIP / Firuzo Platform — Feature Reality Matrix (v1.10.0)
 
 **Latest Release Tag:** `v1.8.6` (`2e139520d8ce`)  
 **Current Main Branch HEAD:** `2e139520d8ce` (`feat(release): v1.8.6 - UX ergonomics, date clamping, unified EmptyState & CSP improvements`)  
 **Current Live Deployment:** `1.8.6` on commit `2e139520d8cecb9af3baad39798342cd3f2fef5a` (deployed from `2e13952` on Vercel — ALIGNED)  
-**Audit Date:** 2026-10-01  
-**Authoritative Baseline:** v1.8.7 / `2e13952` (Release) / `2e13952` (Main) / `2e13952` (Live)  
+**Audit Date:** 2026-10-04  
+**Authoritative Baseline:** v1.10.0 / `2e13952` (Release) / `2e13952` (Main) / `2e13952` (Live)  
 **Supersedes:** `FEATURE_REALITY_MATRIX.md` (v1.8.4 / `de150f5`)  
 
 > **Notice:** This document is the single authoritative source of truth for platform capabilities, feature reality, and deployment verification. Every status is evidence-backed by source code, Prisma schema models, automated unit/integration test suites, and live HTTP probes. Optimistic claims, unverified states, and outdated matrix baselines are strictly reconciled herein.
@@ -14,9 +14,9 @@
 ## 1. System Baseline Metrics
 
 - **Runtime & Framework:** Node.js 22.x · Next.js 16.3.4 (App Router) · React 19.2.8 · TypeScript 5 · Tailwind CSS v4
-- **Database & Persistence:** Prisma 5.22.0 · **90 Relational Models** · **35 Migrations** (PostgreSQL 16 canonical, zero SQLite drift)
-- **Unit & Domain Tests:** 174 test files / **1,196 verified tests** (100% passing across domain, observability, portability and UI suites — source: `docs/baseline/quality-report.json`)
-- **E2E Test Specifications:** 34 Playwright test suites in `tests/*.spec.ts` (golden journeys, mobile journeys, security, a11y)
+- **Database & Persistence:** Prisma 5.22.0 · **92 Relational Models** · **38 Migrations** (PostgreSQL 16 canonical, zero SQLite drift)
+- **Unit & Domain Tests:** 190 test files / **1,450 verified tests** (100% passing across domain, observability, portability and UI suites — source: `docs/baseline/quality-report.json`)
+- **E2E Test Specifications:** 36 Playwright test suites in `tests/*.spec.ts` (golden journeys, mobile journeys, security, a11y)
 - **Internationalization:** 5 supported languages (`fa`, `en`, `ar`, `zh`, `ru`) with 100% key parity enforced via `scripts/i18n-completeness-gate.mjs`
 - **Design System & Primitives:** Semantic tokens (`text-ink`, `text-sub`, `bg-surface`, `bg-brand`, `bg-action`), Shadcn primitives, glassmorphism, responsive 320px–1440px
 - **Capability Registry:** `src/lib/capabilities/index.ts` (45 tracked capabilities) controlling customer-facing claim states
@@ -32,7 +32,7 @@
 | **LATEST RELEASE** | **Release Commit** | `2e13952` | `2e139520d8cecb9af3baad39798342cd3f2fef5a` | **ALIGNED** | Primary v1.8.6 release train commit |
 | **CURRENT MAIN** | **Local / Origin HEAD** | `unknown` | `unknown` | **ALIGNED** | Measured via `git rev-parse HEAD` |
 | **CURRENT MAIN** | **package.json Version** | `1.8.6` | `1.8.6` | **ALIGNED** | Line 3 of `package.json` |
-| **CURRENT MAIN** | **src/lib/version.ts** | `1.8.7` | `1.8.7` | **ALIGNED** | `NEXT_PUBLIC_APP_VERSION` default in `src/lib/version.ts` |
+| **CURRENT MAIN** | **src/lib/version.ts** | `1.10.0` | `1.10.0` | **ALIGNED** | `NEXT_PUBLIC_APP_VERSION` default in `src/lib/version.ts` |
 | **CURRENT LIVE** | **Live Deployment Artifact** | `unknown` | `unknown` | **DRIFT** | Vercel deployed from commit `unknown` |
 | **CURRENT LIVE** | **Live /api/version** | `1.8.7` | `unknown` (commit `unknown...`) | **DRIFT** | Production runtime reported version `unknown` |
 | **CURRENT LIVE** | **Live /api/health/live** | 200 OK | 200 OK (`status: live`) | **HEALTHY** | Node.js v22.23.2 alive, memory: ~80MB |
@@ -105,8 +105,8 @@ Status legend:
 
 ## 4. Test Metrics (Authoritative Single Source of Truth)
 
-- **Test Files Count:** **174 test files** (measured from `results/unit.json` `testResults.length` — `numTotalTestSuites` counts describe() blocks, not files)
-- **Total Unit Test Specs:** **1,196 verified passing tests** (100% pass rate — source: `docs/baseline/quality-report.json`)
+- **Test Files Count:** **190 test files** (measured from `results/unit.json` `testResults.length` — `numTotalTestSuites` counts describe() blocks, not files)
+- **Total Unit Test Specs:** **1,450 verified passing tests** (100% pass rate — source: `docs/baseline/quality-report.json`)
 - **Failure Count:** **0 failed**
 - **Skipped / Flaky Count:** **0 skipped, 0 flaky**
 - **Breakdown by Domain** (measured from test file paths in `results/unit.json`, buckets overlap by keyword priority):

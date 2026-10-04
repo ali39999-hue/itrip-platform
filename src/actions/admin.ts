@@ -1134,7 +1134,17 @@ export async function updateTravelFileStatus(
   status: 'PLANNING' | 'BOOKED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
   reason?: string
 ) {
-  const user = await requirePermission(['booking:modify', 'ops:override:cancel']);
+  const [user, ctx] = await Promise.all([
+    requirePermission(['booking:modify', 'ops:override:cancel']),
+    getTenantAuthContext(),
+  ]);
+  const trip = await prisma.trip.findUnique({
+    where: { id: tripId },
+    select: { organizationId: true, userId: true, branchId: true },
+  });
+  if (!trip) throw new Error('Travel file not found');
+  assertTenantAccess(ctx, { organizationId: trip.organizationId, customerId: trip.userId, branchId: trip.branchId });
+
   const result = await TravelFileService.updateStatus(tripId, user.id, status, reason);
   revalidatePath(`/admin/travel-files/${tripId}`);
   revalidatePath('/admin/travel-files');
@@ -1142,7 +1152,17 @@ export async function updateTravelFileStatus(
 }
 
 export async function issueTravelFileInvoice(tripId: string, bookingId: string) {
-  const user = await requirePermission(['finance:post', 'ops:override:cancel']);
+  const [user, ctx] = await Promise.all([
+    requirePermission(['finance:post', 'ops:override:cancel']),
+    getTenantAuthContext(),
+  ]);
+  const trip = await prisma.trip.findUnique({
+    where: { id: tripId },
+    select: { organizationId: true, userId: true, branchId: true },
+  });
+  if (!trip) throw new Error('Travel file not found');
+  assertTenantAccess(ctx, { organizationId: trip.organizationId, customerId: trip.userId, branchId: trip.branchId });
+
   const result = await TravelFileService.issueInvoice(tripId, bookingId, user.id);
   revalidatePath(`/admin/travel-files/${tripId}`);
   return result;
@@ -1153,7 +1173,17 @@ export async function triggerTravelFileRefund(
   bookingId: string,
   params: { amount?: number; penalty?: number; reason: string }
 ) {
-  const user = await requirePermission(['booking:refund:approve', 'ops:override:cancel']);
+  const [user, ctx] = await Promise.all([
+    requirePermission(['booking:refund:approve', 'ops:override:cancel']),
+    getTenantAuthContext(),
+  ]);
+  const trip = await prisma.trip.findUnique({
+    where: { id: tripId },
+    select: { organizationId: true, userId: true, branchId: true },
+  });
+  if (!trip) throw new Error('Travel file not found');
+  assertTenantAccess(ctx, { organizationId: trip.organizationId, customerId: trip.userId, branchId: trip.branchId });
+
   const result = await TravelFileService.triggerRefund(tripId, bookingId, user.id, params);
   revalidatePath(`/admin/travel-files/${tripId}`);
   return result;

@@ -9,6 +9,7 @@ import { num } from '@/lib/format';
 import { useLocale } from 'next-intl';
 import { BizPrice } from '@/components/business/BizText';
 import { businessApi, MOCK_PACKAGES } from '@/services/business-client';
+import { ChildFunnelTracker } from '@/components/business/ChildFunnelTracker';
 import { useEffect, useState } from 'react';
 
 /** شش هدف سفر — متن‌ها از messages/Business.goals، آیکون‌ها path SVG */
@@ -53,7 +54,9 @@ export default function BusinessLandingPage() {
 
   const [packages, setPackages] = useState<typeof MOCK_PACKAGES>([]);
   useEffect(() => {
-    businessApi.listPackages().then(setPackages);
+    // The /business experience is the technology vertical (§36); other
+    // verticals get their own section/route as they come online.
+    businessApi.listPackages({ vertical: 'technology' }).then(setPackages);
   }, []);
 
   const stepDots = [1, 2, 3, 4, 5, 6];
@@ -61,6 +64,8 @@ export default function BusinessLandingPage() {
   return (
     <>
       <BizHeader />
+      {/* T1111: top-of-funnel view event (allowlisted, PII-safe). */}
+      <ChildFunnelTracker event="child_home_viewed" />
 
       <main className="fz-container fz-main">
         {/* هیرو: متن + چرخ انتخاب هدف سفر */}

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { BusinessDomainService } from '@/domains/business/core/BusinessDomainService';
+import { requireRequestAccess } from '../../../_lib/guard';
 
 export async function POST(
   req: NextRequest,
@@ -7,6 +9,16 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+    const ownership = await BusinessDomainService.getRequestOwnership(id);
+    if (!ownership) {
+      return NextResponse.json(
+        { success: false, error: 'Request not found', code: 'not_found' },
+        { status: 404 }
+      );
+    }
+    const denied = await requireRequestAccess(ownership);
+    if (denied) return denied;
+
     const formData = await req.formData();
     const type = (formData.get('type') as string) || 'document';
     const travelerId = (formData.get('traveler_id') as string) || null;

@@ -6,8 +6,9 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const destination = searchParams.get('destination') || undefined;
     const goal = searchParams.get('goal') || undefined;
+    const vertical = searchParams.get('vertical') || undefined;
 
-    const data = await BusinessDomainService.listPackages({ destination, goal });
+    const data = await BusinessDomainService.listPackages({ destination, goal, vertical });
     return NextResponse.json({ success: true, data });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to fetch packages';

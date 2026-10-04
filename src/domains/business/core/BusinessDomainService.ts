@@ -1,21 +1,108 @@
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
 import { assertTransition } from '../status-contracts';
 import { computeQuote, isVoucherIssuable } from '../pricing';
 import { createLogger } from '@/lib/observability/logger';
+import { getFiruzoCoreClient } from './InProcessFiruzoCoreClient';
 
 const log = createLogger('BusinessDomainService');
 
 export class BusinessDomainService {
   /**
-   * List available tour packages with optional destination or goal filtering
+   * Single write path for the request audit trail (T0213). Appends the
+   * BusinessStatusEvent row and fans the transition out to the core Outbox
+   * via the FiruzoCoreClient contract (NOTIFICATION_DISPATCH), so SMS/email
+   * follow-up runs on the shared Notify infrastructure.
+   *
+   * Inside a transaction both rows commit atomically (transactional outbox).
+   * Outside a transaction the outbox fan-out is best-effort: the audit row
+   * is already durable and a queue failure must not fail the mutation
+   * (roadmap §9 — non-critical dependency).
    */
-  static async listPackages(filters?: { goal?: string; destination?: string }) {
+  private static async recordStatusTransition(
+    params: {
+      requestId: string;
+      fromStatus: string | null;
+      toStatus: string;
+      note?: string;
+      /** Core User.id of the acting principal (T1013 audit attribution). */
+      actorId?: string | null;
+    },
+    tx?: Prisma.TransactionClient
+  ) {
+    const client = tx ?? prisma;
+    const request = await client.businessRequest.findUnique({
+      where: { id: params.requestId },
+      select: { company: { select: { repPhone: true } } },
+    });
+
+    const event = await client.businessStatusEvent.create({
+      data: {
+        requestId: params.requestId,
+        fromStatus: params.fromStatus,
+        toStatus: params.toStatus,
+        actorId: params.actorId || null,
+        note: params.note,
+      },
+    });
+
+    const emit = () =>
+      getFiruzoCoreClient().emitDomainEvent(
+        {
+          eventType: 'NOTIFICATION_DISPATCH',
+          aggregateType: 'BUSINESS_REQUEST',
+          aggregateId: params.requestId,
+          correlationId: event.id,
+          payload: {
+            phone: request?.company?.repPhone || undefined,
+            title: 'به‌روزرسانی وضعیت درخواست فیروزو بیزنس',
+            content: params.note || `وضعیت درخواست به «${params.toStatus}» تغییر کرد.`,
+            requestId: params.requestId,
+            fromStatus: params.fromStatus,
+            toStatus: params.toStatus,
+            actorId: params.actorId || undefined,
+          },
+        },
+        tx
+      );
+
+    if (!tx) {
+      try {
+        await emit();
+      } catch (err) {
+        log.warn('Business status outbox fan-out failed (non-blocking)', {
+          requestId: params.requestId,
+          statusEventId: event.id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    } else {
+      await emit();
+    }
+
+    return event;
+  }
+
+  /**
+   * List available tour packages with optional vertical, destination or goal
+   * filtering. Omitting `vertical` returns every published package across
+   * verticals (§36 — the catalog is the multi-vertical surface).
+   */
+  static async listPackages(filters?: {
+    goal?: string;
+    destination?: string;
+    vertical?: string;
+  }) {
     const where: Record<string, unknown> = {
       status: 'PUBLISHED',
     };
 
     if (filters?.destination) {
       where.destination = { contains: filters.destination, mode: 'insensitive' };
+    }
+
+    if (filters?.vertical) {
+      where.vertical = filters.vertical;
     }
 
     const packages = await prisma.businessTourPackage.findMany({
@@ -40,6 +127,7 @@ export class BusinessDomainService {
         destination: pkg.destination,
         durationDays: pkg.durationDays,
         basePriceRial: pkg.basePrice,
+        vertical: pkg.vertical,
         nearestDepartureDate: nearest ? nearest.departDate.toISOString() : null,
         imageUrl: null,
       };
@@ -113,6 +201,8 @@ export class BusinessDomainService {
     repName?: string;
     repPhone?: string;
     field?: string;
+    /** Core User.id of the authenticated creator; null for guest requests. */
+    createdById?: string | null;
   }) {
     const departure = await prisma.businessDeparture.findUnique({
       where: { id: params.departureId },
@@ -174,6 +264,7 @@ export class BusinessDomainService {
         status: 'draft',
         totalAmount: quote.totalAmount,
         depositAmount: quote.depositAmount,
+        createdById: params.createdById || null,
         expiresAt: new Date(Date.now() + 48 * 3600 * 1000), // 48h hold
         addons: {
           create: addons.map((a) => ({
@@ -185,13 +276,11 @@ export class BusinessDomainService {
       },
     });
 
-    await prisma.businessStatusEvent.create({
-      data: {
-        requestId: request.id,
-        fromStatus: null,
-        toStatus: 'draft',
-        note: 'درخواست ایجاد شد (پیش‌نویس)',
-      },
+    await this.recordStatusTransition({
+      requestId: request.id,
+      fromStatus: null,
+      toStatus: 'draft',
+      note: 'درخواست ایجاد شد (پیش‌نویس)',
     });
 
     return request;
@@ -351,13 +440,11 @@ export class BusinessDomainService {
       },
     });
 
-    await prisma.businessStatusEvent.create({
-      data: {
-        requestId: id,
-        fromStatus: request.status,
-        toStatus: 'submitted',
-        note: 'درخواست رسماً ارسال شد و مبالغ قفل گردید',
-      },
+    await this.recordStatusTransition({
+      requestId: id,
+      fromStatus: request.status,
+      toStatus: 'submitted',
+      note: 'درخواست رسماً ارسال شد و مبالغ قفل گردید',
     });
 
     log.info('Business request submitted and locked', {
@@ -424,35 +511,37 @@ export class BusinessDomainService {
       assertTransition('submitted', 'deposit_paid');
       assertTransition('deposit_paid', 'under_review');
 
-      await prisma.$transaction([
-        prisma.businessRequest.update({
+      await prisma.$transaction(async (tx) => {
+        await tx.businessRequest.update({
           where: { id: params.requestId },
           data: {
             status: 'under_review',
             paidAmount: request.paidAmount + amount,
           },
-        }),
-        prisma.businessDeparture.update({
+        });
+        await tx.businessDeparture.update({
           where: { id: request.departureId },
           data: { bookedCount: { increment: request.paxCount } },
-        }),
-        prisma.businessStatusEvent.create({
-          data: {
+        });
+        await this.recordStatusTransition(
+          {
             requestId: params.requestId,
             fromStatus: 'submitted',
             toStatus: 'deposit_paid',
             note: 'پیش‌پرداخت دریافت شد',
           },
-        }),
-        prisma.businessStatusEvent.create({
-          data: {
+          tx
+        );
+        await this.recordStatusTransition(
+          {
             requestId: params.requestId,
             fromStatus: 'deposit_paid',
             toStatus: 'under_review',
             note: 'پرونده وارد مرحله بررسی کارشناس شد',
           },
-        }),
-      ]);
+          tx
+        );
+      });
     } else {
       // Settlement paid -> check if voucher issuable -> transition to issued
       const newPaid = request.paidAmount + amount;
@@ -473,30 +562,31 @@ export class BusinessDomainService {
           verified: true,
         });
 
-        await prisma.$transaction([
-          prisma.businessRequest.update({
+        await prisma.$transaction(async (tx) => {
+          await tx.businessRequest.update({
             where: { id: params.requestId },
             data: {
               status: 'issued',
               paidAmount: newPaid,
             },
-          }),
-          prisma.businessVoucher.create({
+          });
+          await tx.businessVoucher.create({
             data: {
               requestId: params.requestId,
               code: voucherCode,
               qrPayload,
             },
-          }),
-          prisma.businessStatusEvent.create({
-            data: {
+          });
+          await this.recordStatusTransition(
+            {
               requestId: params.requestId,
               fromStatus: 'approved',
               toStatus: 'issued',
               note: 'تسویه نهایی انجام شد و ووچر صادر گردید',
             },
-          }),
-        ]);
+            tx
+          );
+        });
       }
     }
 
@@ -517,13 +607,11 @@ export class BusinessDomainService {
       data: { status: 'under_review' },
     });
 
-    await prisma.businessStatusEvent.create({
-      data: {
-        requestId,
-        fromStatus: request.status,
-        toStatus: 'under_review',
-        note: note || 'مدارک اصلاح‌شده بارگذاری و جهت بررسی مجدد ارسال گردید',
-      },
+    await this.recordStatusTransition({
+      requestId,
+      fromStatus: request.status,
+      toStatus: 'under_review',
+      note: note || 'مدارک اصلاح‌شده بارگذاری و جهت بررسی مجدد ارسال گردید',
     });
 
     return this.getRequestDetail(requestId);
@@ -537,6 +625,8 @@ export class BusinessDomainService {
     decision: 'approve' | 'request_changes';
     docResults?: Array<{ id: string; state: 'approved' | 'rejected'; reason?: string }>;
     note?: string;
+    /** Core User.id of the reviewing agent (T1013 audit attribution). */
+    actorId?: string | null;
   }) {
     const request = await prisma.businessRequest.findUnique({
       where: { id: params.requestId },
@@ -566,13 +656,12 @@ export class BusinessDomainService {
       data: { status: nextStatus },
     });
 
-    await prisma.businessStatusEvent.create({
-      data: {
-        requestId: params.requestId,
-        fromStatus: request.status,
-        toStatus: nextStatus,
-        note: params.note || (nextStatus === 'approved' ? 'تایید مدارک توسط کارشناس' : 'درخواست اصلاح مدارک'),
-      },
+    await this.recordStatusTransition({
+      requestId: params.requestId,
+      fromStatus: request.status,
+      toStatus: nextStatus,
+      note: params.note || (nextStatus === 'approved' ? 'تایید مدارک توسط کارشناس' : 'درخواست اصلاح مدارک'),
+      actorId: params.actorId,
     });
 
     return this.getRequestDetail(params.requestId);
@@ -581,7 +670,11 @@ export class BusinessDomainService {
   /**
    * Set government grant amount
    */
-  static async applyGrant(requestId: string, grantAmountRial: number) {
+  static async applyGrant(
+    requestId: string,
+    grantAmountRial: number,
+    actorId?: string | null
+  ) {
     const request = await prisma.businessRequest.findUnique({ where: { id: requestId } });
     if (!request) throw new Error('REQUEST_NOT_FOUND');
 
@@ -590,23 +683,33 @@ export class BusinessDomainService {
       data: { grantAmount: grantAmountRial },
     });
 
-    await prisma.businessStatusEvent.create({
-      data: {
-        requestId,
-        fromStatus: request.status,
-        toStatus: request.status,
-        note: `کمک‌هزینه دولتی به مبلغ ${grantAmountRial} ریال اعمال شد`,
-      },
+    await this.recordStatusTransition({
+      requestId,
+      fromStatus: request.status,
+      toStatus: request.status,
+      note: `کمک‌هزینه دولتی به مبلغ ${grantAmountRial} ریال اعمال شد`,
+      actorId,
     });
 
     return this.getRequestDetail(requestId);
   }
 
   /**
+   * Minimal ownership projection for object-level route guards (T0804).
+   */
+  static async getRequestOwnership(
+    id: string
+  ): Promise<{ createdById: string | null } | null> {
+    return prisma.businessRequest.findUnique({
+      where: { id },
+      select: { createdById: true },
+    });
+  }
+
+  /**
    * Fetch full request details
    */
-  static async getRequestDetail(id: string) {
-    const req = await prisma.businessRequest.findUnique({
+  static async getRequestDetail(id: string) {    const req = await prisma.businessRequest.findUnique({
       where: { id },
       include: {
         company: true,

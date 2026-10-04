@@ -53,6 +53,9 @@ describe('Business API & Journey Integration Suite', () => {
   });
 
   afterAll(async () => {
+    // Outbox fan-out rows produced by recordStatusTransition must be cleaned so
+    // parallel suites (outbox consumer tests) are not starved by our events.
+    await prisma.outboxEvent.deleteMany({ where: { aggregateType: 'BUSINESS_REQUEST' } });
     if (testRequestId) {
       await prisma.businessVoucher.deleteMany({ where: { requestId: testRequestId } });
       await prisma.businessPayment.deleteMany({ where: { requestId: testRequestId } });

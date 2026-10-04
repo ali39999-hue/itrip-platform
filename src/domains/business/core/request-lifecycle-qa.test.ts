@@ -22,8 +22,8 @@
 
 import { describe, it, expect, afterAll } from 'vitest';
 import { prisma } from '@/lib/prisma';
-import {
-  assertTransition,
+import { BusinessDomainService } from './BusinessDomainService';
+import {  assertTransition,
   canTransition,
   InvalidTransitionError,
 } from '../status-contracts';
@@ -39,6 +39,9 @@ let packageId: string | null = null;
 const createdIds: { departures: string[]; requests: string[] } = { departures: [], requests: [] };
 
 afterAll(async () => {
+  // Outbox fan-out rows produced by recordStatusTransition must be cleaned so
+  // parallel suites (outbox consumer tests) are not starved by our events.
+  await prisma.outboxEvent.deleteMany({ where: { aggregateType: 'BUSINESS_REQUEST' } });
   await prisma.businessRequest.deleteMany({ where: { id: { in: createdIds.requests } } });
   await prisma.businessDeparture.deleteMany({ where: { id: { in: createdIds.departures } } });
   await prisma.businessTourPackage.deleteMany({ where: { id: packageId } });
@@ -177,5 +180,41 @@ describe('QA — terminal states are never resurrected', () => {
 
   it('a cancelled expired request cannot be brought back by re-submitting', () => {
     expect(() => assertTransition('cancelled', 'submitted')).toThrow(InvalidTransitionError);
+  });
+});
+
+describe('QA — T1013 audit attribution (actorId on status events)', () => {
+  it('reviewRequest records the acting agent on the appended status event', async () => {
+    const departureId = await makeDeparture(5);
+    const requestId = await makeRequest(departureId, { status: 'under_review' });
+    const actorId = `usr_agent_${suffix}`;
+
+    await BusinessDomainService.reviewRequest({
+      requestId,
+      decision: 'approve',
+      note: 'تایید تستی',
+      actorId,
+    });
+
+    const event = await prisma.businessStatusEvent.findFirstOrThrow({
+      where: { requestId, toStatus: 'approved' },
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(event.actorId).toBe(actorId);
+    expect(event.fromStatus).toBe('under_review');
+  });
+
+  it('applyGrant records the finance actor even for a same-status event', async () => {
+    const departureId = await makeDeparture(5);
+    const requestId = await makeRequest(departureId, { status: 'approved' });
+    const actorId = `usr_finance_${suffix}`;
+
+    await BusinessDomainService.applyGrant(requestId, 50_000_000, actorId);
+
+    const event = await prisma.businessStatusEvent.findFirstOrThrow({
+      where: { requestId, note: { contains: 'کمک‌هزینه' } },
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(event.actorId).toBe(actorId);
   });
 });

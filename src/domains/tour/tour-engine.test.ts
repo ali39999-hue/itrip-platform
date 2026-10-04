@@ -15,6 +15,9 @@ vi.mock('@/lib/prisma', () => {
     bookingItem: {
       update: vi.fn(),
     },
+    bookingStatusHistory: {
+      create: vi.fn(),
+    },
   };
 
   return {

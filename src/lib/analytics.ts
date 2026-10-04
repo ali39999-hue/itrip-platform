@@ -41,6 +41,11 @@ const ALLOWED_EVENTS = new Set([
   'soft_lock_expired',
   'hold_created',
   'rate_limit_exceeded',
+  // Firuzo Child (specialist vertical) funnel — roadmap §50 event standard
+  'child_home_viewed',
+  'tour_viewed',
+  'booking_started',
+  'support_opened',
 ]);
 
 export type AnalyticsEvent = Parameters<typeof trackEvent>[0];

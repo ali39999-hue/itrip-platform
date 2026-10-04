@@ -106,37 +106,58 @@ export class OutboxConsumer {
         console.warn(`[Outbox] Recovered ${recovered.count} stale PROCESSING events`);
       }
 
-      // 2. Concurrency-Safe Claim
+      // 2. Concurrency-Safe Claim using SKIP LOCKED (ASYNC-102)
       const now = new Date();
       const queryTime = new Date(now.getTime() + 2000); // 2s clock skew tolerance
-      const pendingEvents = await prisma.outboxEvent.findMany({
-        where: {
-          status: 'PENDING',
-          availableAt: { lte: queryTime },
-        },
-        orderBy: { availableAt: 'asc' },
-        take: 20,
-      });
 
-      if (pendingEvents.length === 0) {
-        return 0;
-      }
+      type OutboxRecord = Awaited<ReturnType<typeof prisma.outboxEvent.findMany>>[number];
+      let claimedEvents: OutboxRecord[] = [];
 
-      const claimedEvents = [];
-      for (const ev of pendingEvents) {
-        const updateRes = await prisma.outboxEvent.updateMany({
+      try {
+        const claimedRows: Array<{ id: string }> = await prisma.$queryRaw`
+          UPDATE "OutboxEvent"
+          SET status = 'PROCESSING', "lockedAt" = ${now}, "workerId" = ${workerId}
+          WHERE id IN (
+            SELECT id FROM "OutboxEvent"
+            WHERE status = 'PENDING' AND "availableAt" <= ${queryTime}
+            ORDER BY "availableAt" ASC
+            LIMIT 20
+            FOR UPDATE SKIP LOCKED
+          )
+          RETURNING id
+        `;
+        if (claimedRows && claimedRows.length > 0) {
+          const claimedIds = claimedRows.map((r) => r.id);
+          claimedEvents = await prisma.outboxEvent.findMany({
+            where: { id: { in: claimedIds } },
+          });
+        }
+      } catch {
+        // Fallback for environments where raw SKIP LOCKED is not supported
+        const pendingEvents = await prisma.outboxEvent.findMany({
           where: {
-            id: ev.id,
             status: 'PENDING',
+            availableAt: { lte: queryTime },
           },
-          data: {
-            status: 'PROCESSING',
-            lockedAt: now,
-            workerId,
-          },
+          orderBy: { availableAt: 'asc' },
+          take: 20,
         });
-        if (updateRes.count > 0) {
-          claimedEvents.push(ev);
+
+        for (const ev of pendingEvents) {
+          const updateRes = await prisma.outboxEvent.updateMany({
+            where: {
+              id: ev.id,
+              status: 'PENDING',
+            },
+            data: {
+              status: 'PROCESSING',
+              lockedAt: now,
+              workerId,
+            },
+          });
+          if (updateRes.count > 0) {
+            claimedEvents.push(ev);
+          }
         }
       }
 

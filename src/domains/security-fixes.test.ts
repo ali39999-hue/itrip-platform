@@ -54,6 +54,14 @@ describe('Security: payment idempotency is booking-scoped', () => {
     // gateway_shetab payments start as PENDING (awaiting PSP callback), so
     // the first call returns success=false, status=PENDING. Use wallet_irr
     // for the idempotency test since it settles immediately.
+    // WAL-001: wallet payments now debit the balance under row lock, so the
+    // wallet must be funded before the first payment can succeed.
+    await GeneralLedgerService.postTopUp({
+      groupId: `sec_topup_${suffix}`,
+      userId: user.id,
+      amount: new Money(5000, 'IRR'),
+      currency: 'IRR',
+    });
     const first = await PaymentDomainService.processPayment({ bookingId: bookingA.id, idempotencyKey: key, method: 'wallet_irr', amount: new Money(1000, 'IRR') });
     expect(first.success).toBe(true);
     createdIds.payments.push(first.paymentId!);

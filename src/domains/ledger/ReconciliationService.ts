@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { OperationalExceptionService, ExceptionSeverity } from '../finance/three-way-reconciliation';
 
 export interface ReconciliationGroupMismatch {
@@ -45,24 +46,25 @@ export class ReconciliationService {
       _count: { id: true },
     });
 
-    // Build a merged map of all groups
+    // Build a merged map of all groups using Prisma.Decimal for exact arithmetic (FIN-001)
     const groupsMap = new Map<string, {
-      totalDebit: number;
-      totalCredit: number;
+      totalDebit: Prisma.Decimal;
+      totalCredit: Prisma.Decimal;
       currency: string;
       entriesCount: number;
     }>();
 
     for (const row of debitGroups) {
       const key = `${row.groupId}::${row.currency}`;
+      const amount = row._sum.amount ? new Prisma.Decimal(row._sum.amount.toString()) : new Prisma.Decimal(0);
       const existing = groupsMap.get(key);
       if (existing) {
-        existing.totalDebit += Number(row._sum.amount || 0);
+        existing.totalDebit = existing.totalDebit.add(amount);
         existing.entriesCount += row._count.id;
       } else {
         groupsMap.set(key, {
-          totalDebit: Number(row._sum.amount || 0),
-          totalCredit: 0,
+          totalDebit: amount,
+          totalCredit: new Prisma.Decimal(0),
           currency: row.currency || 'IRR',
           entriesCount: row._count.id,
         });
@@ -71,43 +73,44 @@ export class ReconciliationService {
 
     for (const row of creditGroups) {
       const key = `${row.groupId}::${row.currency}`;
+      const amount = row._sum.amount ? new Prisma.Decimal(row._sum.amount.toString()) : new Prisma.Decimal(0);
       const existing = groupsMap.get(key);
       if (existing) {
-        existing.totalCredit += Number(row._sum.amount || 0);
+        existing.totalCredit = existing.totalCredit.add(amount);
         existing.entriesCount += row._count.id;
       } else {
         groupsMap.set(key, {
-          totalDebit: 0,
-          totalCredit: Number(row._sum.amount || 0),
+          totalDebit: new Prisma.Decimal(0),
+          totalCredit: amount,
           currency: row.currency || 'IRR',
           entriesCount: row._count.id,
         });
       }
     }
 
-    let totalSystemDebit = 0;
-    let totalSystemCredit = 0;
+    let totalSystemDebit = new Prisma.Decimal(0);
+    let totalSystemCredit = new Prisma.Decimal(0);
     const summaryByCurrency: Record<string, { totalDebit: number; totalCredit: number; diff: number }> = {};
     const mismatches: ReconciliationGroupMismatch[] = [];
 
     for (const [key, stats] of groupsMap.entries()) {
       const groupId = key.split('::')[0];
-      totalSystemDebit += stats.totalDebit;
-      totalSystemCredit += stats.totalCredit;
+      totalSystemDebit = totalSystemDebit.add(stats.totalDebit);
+      totalSystemCredit = totalSystemCredit.add(stats.totalCredit);
 
       if (!summaryByCurrency[stats.currency]) {
         summaryByCurrency[stats.currency] = { totalDebit: 0, totalCredit: 0, diff: 0 };
       }
-      summaryByCurrency[stats.currency].totalDebit += stats.totalDebit;
-      summaryByCurrency[stats.currency].totalCredit += stats.totalCredit;
+      summaryByCurrency[stats.currency].totalDebit += stats.totalDebit.toNumber();
+      summaryByCurrency[stats.currency].totalCredit += stats.totalCredit.toNumber();
 
-      const diff = Math.abs(stats.totalDebit - stats.totalCredit);
-      if (diff > 0.001) {
+      const diff = stats.totalDebit.sub(stats.totalCredit).abs();
+      if (!diff.isZero()) {
         mismatches.push({
           groupId,
-          totalDebit: stats.totalDebit,
-          totalCredit: stats.totalCredit,
-          diff,
+          totalDebit: stats.totalDebit.toNumber(),
+          totalCredit: stats.totalCredit.toNumber(),
+          diff: diff.toNumber(),
           currency: stats.currency,
           entriesCount: stats.entriesCount,
         });
@@ -122,8 +125,8 @@ export class ReconciliationService {
       timestamp: new Date().toISOString(),
       totalGroupsChecked: groupsMap.size,
       unbalancedGroupsCount: mismatches.length,
-      totalSystemDebit,
-      totalSystemCredit,
+      totalSystemDebit: totalSystemDebit.toNumber(),
+      totalSystemCredit: totalSystemCredit.toNumber(),
       isBalanced: mismatches.length === 0,
       mismatches,
       summaryByCurrency,
@@ -157,30 +160,30 @@ export class ReconciliationService {
       throw new Error(`Booking ${bookingId} not found`);
     }
 
-    const bookingTotal = Number(booking.totalAmount);
+    const bookingTotal = new Prisma.Decimal(booking.totalAmount.toString());
 
     // Aggregate successful payments for this booking
     const payments = await prisma.payment.aggregate({
       where: { bookingId, status: 'SUCCESS' },
       _sum: { amount: true },
     });
-    const paidTotal = Number(payments._sum.amount || 0);
+    const paidTotal = payments._sum.amount ? new Prisma.Decimal(payments._sum.amount.toString()) : new Prisma.Decimal(0);
 
     // Aggregate issued invoices for this booking
     const invoices = await prisma.invoice.aggregate({
       where: { bookingId, status: { in: ['ISSUED', 'PAID'] } },
       _sum: { totalAmount: true },
     });
-    const invoicedTotal = Number(invoices._sum.totalAmount || 0);
+    const invoicedTotal = invoices._sum.totalAmount ? new Prisma.Decimal(invoices._sum.totalAmount.toString()) : new Prisma.Decimal(0);
 
-    const paymentDiff = Math.abs(bookingTotal - paidTotal);
-    const invoiceDiff = Math.abs(bookingTotal - invoicedTotal);
+    const paymentDiff = bookingTotal.sub(paidTotal).abs();
+    const invoiceDiff = bookingTotal.sub(invoicedTotal).abs();
 
     let confidenceScore = 100;
-    if (paymentDiff > 0.01) confidenceScore -= 50;
-    if (invoiceDiff > 0.01 && invoicedTotal > 0) confidenceScore -= 25;
+    if (!paymentDiff.isZero()) confidenceScore -= 50;
+    if (!invoiceDiff.isZero() && !invoicedTotal.isZero()) confidenceScore -= 25;
 
-    const isMatch = paymentDiff <= 0.01;
+    const isMatch = paymentDiff.isZero();
     const status = confidenceScore >= 95 ? 'MATCHED' : confidenceScore >= 80 ? 'REVIEW' : 'MISMATCH';
 
     let exceptionId: string | undefined;
@@ -194,16 +197,16 @@ export class ReconciliationService {
         entityType: 'BOOKING',
         entityId: booking.id,
         title: `Payment discrepancy on booking ${booking.reference}`,
-        description: `Expected booking total ${bookingTotal} ${booking.currency}, but recorded payments total ${paidTotal} ${booking.currency}. Difference: ${paymentDiff}`,
+        description: `Expected booking total ${bookingTotal.toString()} ${booking.currency}, but recorded payments total ${paidTotal.toString()} ${booking.currency}. Difference: ${paymentDiff.toString()}`,
       });
     }
 
     return {
       matched: isMatch,
       confidenceScore,
-      bookingAmount: bookingTotal,
-      paidAmount: paidTotal,
-      invoicedAmount: invoicedTotal,
+      bookingAmount: bookingTotal.toNumber(),
+      paidAmount: paidTotal.toNumber(),
+      invoicedAmount: invoicedTotal.toNumber(),
       status,
       exceptionId,
     };

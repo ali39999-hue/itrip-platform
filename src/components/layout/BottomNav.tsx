@@ -45,6 +45,7 @@ export function BottomNav() {
   const isExcludedPage =
     pathname.includes('/checkout') ||
     pathname.includes('/payment-status') ||
+    pathname.includes('/cart') ||
     isHotelOrTourDetail(pathname);
   if (isExcludedPage) return null;
 

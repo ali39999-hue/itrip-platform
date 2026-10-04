@@ -8,6 +8,7 @@ import { ERP_STAFF_ROLES } from '@/domains/identity/permissions';
 import { encryptSensitive } from '@/lib/security/crypto-vault';
 import { createLogger } from '@/lib/observability/logger';
 import { isDemoMode } from '@/lib/runtime-mode';
+import { timingSafeEqualStrings } from '@/lib/security/timing-safe';
 import { ProductionTelegramProvider, TelegramAuthPayload } from '@/domains/events/providers/ProductionTelegramProvider';
 import { getNotificationProvider } from '@/domains/events/NotificationProvider';
 import { ProductionWhatsappProvider } from '@/domains/events/providers/ProductionWhatsappProvider';
@@ -482,7 +483,7 @@ async function verifyStoredOtp(identifier: string, code: string): Promise<boolea
       if (record.attempts >= OTP_MAX_ATTEMPTS) {
         return false;
       }
-      if (record.codeHash !== codeHash) {
+      if (!timingSafeEqualStrings(record.codeHash, codeHash)) {
         await prisma.otpVerification.update({ where: { id: record.id }, data: { attempts: { increment: 1 } } });
         return false;
       }
@@ -515,7 +516,7 @@ async function verifyStoredOtp(identifier: string, code: string): Promise<boolea
   if (memRecord.attempts >= OTP_MAX_ATTEMPTS) {
     return false;
   }
-  if (memRecord.codeHash !== codeHash) {
+  if (!timingSafeEqualStrings(memRecord.codeHash, codeHash)) {
     memRecord.attempts += 1;
     return false;
   }

@@ -132,6 +132,17 @@ export interface CoreTx {
   postRevenueRealization: (params: CoreRevenueRealizationParams) => Promise<void>;
 }
 
+/** Typed params for the child → core event producer contract (T0311). */
+export interface CoreEmitEventParams {
+  /** Core outbox eventType, e.g. 'NOTIFICATION_DISPATCH'. */
+  eventType: string;
+  aggregateType: string;
+  aggregateId: string;
+  correlationId?: string;
+  causationId?: string;
+  payload: Record<string, unknown>;
+}
+
 export interface FiruzoCoreClient {
   // --- Identity / tenant (read-only core access) ---
   getUser(userId: string): Promise<CoreUserView | null>;
@@ -160,6 +171,9 @@ export interface FiruzoCoreClient {
 
   // --- Exceptions (delegates to OperationalExceptionService, ERP-009 dedupe) ---
   raiseException(params: CoreRaiseExceptionParams): Promise<string>;
+
+  // --- Events (delegates to the core Outbox; T0311 producer contract) ---
+  emitDomainEvent(params: CoreEmitEventParams, tx?: Prisma.TransactionClient): Promise<{ id: string }>;
 
   // --- Transactional boundary ---
   runInTransaction<T>(fn: (tx: CoreTx) => Promise<T>): Promise<T>;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { BusinessDomainService } from '@/domains/business/core/BusinessDomainService';
+import { verifyBusinessPaymentCallback } from '@/domains/payments/callback-security';
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,6 +15,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Roadmap §21 / Gate E: the result callback is authoritative and must be
+    // signed. An unsigned callback can never confirm a payment — fail closed.
+    const signature = req.headers.get('x-business-signature');
+    if (!verifyBusinessPaymentCallback(signature, payment_id)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid callback signature', code: 'invalid_signature' },
+        { status: 403 }
+      );
+    }
+
     const payment = await prisma.businessPayment.findUnique({
       where: { id: payment_id },
     });
@@ -22,6 +33,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Payment not found', code: 'not_found' },
         { status: 404 }
+      );
+    }
+
+    // Idempotency: an already-settled or already-failed payment is never
+    // re-processed by a replayed callback.
+    if (payment.status !== 'pending') {
+      return NextResponse.json(
+        {
+          success: true,
+          data: { paymentId: payment.id, status: payment.status, reconciled: true },
+        },
+        { status: 200 }
       );
     }
 

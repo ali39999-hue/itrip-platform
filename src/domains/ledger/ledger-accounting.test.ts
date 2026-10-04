@@ -203,4 +203,50 @@ describe('General Ledger, Double-Entry & Wallet Suite (FIN-001 to FIN-003, WAL-0
     const balanceAfter = await GeneralLedgerService.getAccountBalance(userAcc.id, testCurrency);
     expect(balanceAfter.toNumber()).toBe(balanceBefore.toNumber() + refundAmount);
   });
+
+  it('FIN-101: fails loudly (no partial state) when posting an unmapped Account.ownerType', async () => {
+    // Guard for future verticals (e.g. BUSINESS_* from the specialist Child):
+    // an ownerType missing from OWNER_TYPE_TO_CHART_ACCOUNT must abort the
+    // posting with an explicit error, never silently skip the chart mirror.
+    const groupId = `grp_map_${suffix}`;
+    const unmappedAcc = await prisma.account.create({
+      data: { ownerType: 'BUSINESS_REQUEST', ownerId: testUserId, currency: testCurrency },
+    });
+    const mappedAcc = await prisma.account.upsert({
+      where: {
+        ownerType_ownerId_currency: {
+          ownerType: 'PLATFORM_REVENUE',
+          ownerId: '#platform',
+          currency: testCurrency,
+        },
+      },
+      update: {},
+      create: { ownerType: 'PLATFORM_REVENUE', ownerId: '#platform', currency: testCurrency },
+    });
+
+    await expect(
+      prisma.$transaction(async (tx) => {
+        await GeneralLedgerService.postBalancedEntry(
+          {
+            groupId,
+            referenceType: 'REVENUE_REALIZATION',
+            referenceId: `biz_${suffix}`,
+            currency: testCurrency,
+            memo: 'Unmapped ownerType must fail loudly',
+            legs: [
+              { account: unmappedAcc, direction: 'DEBIT', amount: new Prisma.Decimal(1000) },
+              { account: mappedAcc, direction: 'CREDIT', amount: new Prisma.Decimal(1000) },
+            ],
+          },
+          tx
+        );
+      })
+    ).rejects.toThrow(/no ChartOfAccounts mapping for Account.ownerType 'BUSINESS_REQUEST'/);
+
+    // Atomicity: the failed posting must leave zero ledger rows behind.
+    const persisted = await prisma.ledgerEntry.findMany({ where: { groupId } });
+    expect(persisted.length).toBe(0);
+
+    await prisma.account.delete({ where: { id: unmappedAcc.id } });
+  });
 });

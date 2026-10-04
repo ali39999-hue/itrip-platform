@@ -142,7 +142,10 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ success: false, error: errorMsg }, { status: 500 });
+    console.error('[TelegramAuthCallback] Internal authentication error:', err);
+    return NextResponse.json(
+      { success: false, error: 'INTERNAL_AUTH_ERROR' },
+      { status: 500 }
+    );
   }
 }

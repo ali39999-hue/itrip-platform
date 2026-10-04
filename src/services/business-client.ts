@@ -356,16 +356,17 @@ export type { VoucherData };
 
 export const businessApi = {
   /** GET /packages */
-  listPackages(params?: { goal?: string; destination?: string; month?: string }): Promise<BusinessPackageSummary[]> {
+  listPackages(params?: { goal?: string; destination?: string; month?: string; vertical?: string }): Promise<BusinessPackageSummary[]> {
     const qs = new URLSearchParams();
     if (params?.goal) qs.set('goal', params.goal);
     if (params?.destination) qs.set('destination', params.destination);
+    if (params?.vertical) qs.set('vertical', params.vertical);
     const query = qs.toString() ? `?${qs.toString()}` : '';
     return callBusinessApi<BusinessPackageSummary[]>(`/packages${query}`);
   },
 
   /** Alias: getPackages */
-  getPackages(filters?: { goal?: string; destination?: string; month?: string }): Promise<BusinessPackageSummary[]> {
+  getPackages(filters?: { goal?: string; destination?: string; month?: string; vertical?: string }): Promise<BusinessPackageSummary[]> {
     return this.listPackages(filters);
   },
 

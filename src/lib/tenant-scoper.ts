@@ -1,0 +1,86 @@
+import { Prisma } from '@prisma/client';
+import { prisma } from './prisma';
+
+/**
+ * Prisma Client Extension ($extends) for Automatic Multi-Tenant Scoping (IAM-002)
+ * Automatically restricts read, write, count, and mutation operations on tenant models
+ * to the active organization ID, preventing data leakage and IDOR.
+ */
+export function createTenantScoper(activeOrganizationId?: string, isPlatformAdmin: boolean = false) {
+  return Prisma.defineExtension({
+    name: 'tenant-isolation-extension',
+    query: {
+      $allModels: {
+        async $allOperations({ model, operation, args, query }) {
+          // Models that belong to specific organizations (IAM-002, IAM-103)
+          const tenantScopedModels = ['Booking', 'Invoice', 'Trip', 'SettlementBatch', 'TravelDocument'];
+
+          if (!tenantScopedModels.includes(model) || isPlatformAdmin) {
+            return query(args);
+          }
+
+          if (!activeOrganizationId) {
+            throw new Error(`SECURITY_ERROR: Access denied. Missing tenant organization context for model ${model}`);
+          }
+
+          const modifiedArgs = (args ?? {}) as Record<string, unknown>;
+
+          if (['findFirst', 'findMany', 'count', 'updateMany', 'deleteMany'].includes(operation)) {
+            modifiedArgs.where = {
+              ...(modifiedArgs.where as Record<string, unknown> || {}),
+              organizationId: activeOrganizationId,
+            };
+            return query(modifiedArgs as typeof args);
+          }
+
+          if (['create'].includes(operation)) {
+            const data = (modifiedArgs.data as Record<string, unknown> || {});
+            if (data.organizationId && data.organizationId !== activeOrganizationId) {
+              throw new Error(`SECURITY_ERROR: Cross-tenant write blocked. Organization ${activeOrganizationId} cannot create resource for ${data.organizationId}`);
+            }
+            if (!data.organizationId) {
+              data.organizationId = activeOrganizationId;
+            }
+            modifiedArgs.data = data;
+            return query(modifiedArgs as typeof args);
+          }
+
+          if (['upsert'].includes(operation)) {
+            const createData = (modifiedArgs.create as Record<string, unknown> || {});
+            if (createData.organizationId && createData.organizationId !== activeOrganizationId) {
+              throw new Error(`SECURITY_ERROR: Cross-tenant write blocked. Organization ${activeOrganizationId} cannot create resource for ${createData.organizationId}`);
+            }
+            if (!createData.organizationId) {
+              createData.organizationId = activeOrganizationId;
+            }
+            modifiedArgs.create = createData;
+            return query(modifiedArgs as typeof args);
+          }
+
+          if (['findUnique', 'findUniqueOrThrow'].includes(operation)) {
+            const result = (await query(args)) as Record<string, unknown> | null;
+            if (result && 'organizationId' in result && result.organizationId && result.organizationId !== activeOrganizationId) {
+              if (operation === 'findUniqueOrThrow') {
+                throw new Error(`SECURITY_ERROR: Cross-tenant access denied for model ${model}`);
+              }
+              return null;
+            }
+            return result;
+          }
+
+          if (['update', 'delete'].includes(operation)) {
+            const where = (modifiedArgs.where as Record<string, unknown> || {});
+            const delegate = (prisma as unknown as Record<string, { findUnique: (a: unknown) => Promise<Record<string, unknown> | null> }>)[model];
+            const existing = delegate ? await delegate.findUnique({ where }) : null;
+            if (existing && 'organizationId' in existing && existing.organizationId && existing.organizationId !== activeOrganizationId) {
+              throw new Error(`SECURITY_ERROR: Cross-tenant mutation blocked for model ${model}`);
+            }
+            return query(args);
+          }
+
+          return query(args);
+        },
+      },
+    },
+  });
+}

@@ -91,12 +91,19 @@ export async function getTicketDetailsAction(
       return { success: false, error: 'تیکت مورد نظر یافت نشد' };
     }
 
-    const isOwner = session?.user?.id && ticket.userId === session.user.id;
-    const isStaff = await hasErpRole(session?.user?.id);
+    const isOwner = Boolean(session?.user?.id && ticket.userId === session.user.id);
+    const isStaff = Boolean(await hasErpRole(session?.user?.id));
 
-    // Allow owner or staff, or guest if created in this session
-    if (!isOwner && !isStaff && ticket.userId) {
-      return { success: false, error: 'عدم دسترسی به این تیکت' };
+    // Access control: registered ticket requires owner or staff; guest ticket requires staff or matching email
+    if (ticket.userId) {
+      if (!isOwner && !isStaff) {
+        return { success: false, error: 'UNAUTHORIZED_TICKET_ACCESS' };
+      }
+    } else {
+      const isEmailMatch = Boolean(session?.user?.email && session.user.email.toLowerCase() === ticket.email?.toLowerCase());
+      if (!isStaff && !isEmailMatch) {
+        return { success: false, error: 'UNAUTHORIZED_TICKET_ACCESS' };
+      }
     }
 
     return { success: true, ticket };
@@ -123,7 +130,13 @@ export async function addTicketReplyAction(
       return { success: false, error: 'تیکت یافت نشد' };
     }
 
-    const isStaff = await hasErpRole(session?.user?.id);
+    const isStaff = Boolean(await hasErpRole(session?.user?.id));
+    const isOwner = Boolean(session?.user?.id && ticket.userId === session.user.id);
+    const isEmailMatch = Boolean(session?.user?.email && session.user.email.toLowerCase() === ticket.email?.toLowerCase());
+
+    if (!isStaff && !isOwner && !isEmailMatch) {
+      return { success: false, error: 'UNAUTHORIZED_REPLY_ACCESS' };
+    }
 
     const authorName = isStaff
       ? session?.user?.name || 'پشتیبانی فیروزو'
