@@ -1,10 +1,10 @@
-# iTRIP / Firuzo Platform — Feature Reality Matrix (v1.8.7)
+# iTRIP / Firuzo Platform — Feature Reality Matrix (v1.10.0)
 
 **Latest Release Tag:** `v1.8.6` (`2e139520d8ce`)  
 **Current Main Branch HEAD:** `2e139520d8ce` (`feat(release): v1.8.6 - UX ergonomics, date clamping, unified EmptyState & CSP improvements`)  
 **Current Live Deployment:** `1.8.6` on commit `2e139520d8cecb9af3baad39798342cd3f2fef5a` (deployed from `2e13952` on Vercel — ALIGNED)  
 **Audit Date:** 2026-10-04  
-**Authoritative Baseline:** v1.8.7 / `2e13952` (Release) / `2e13952` (Main) / `2e13952` (Live)  
+**Authoritative Baseline:** v1.10.0 / `2e13952` (Release) / `2e13952` (Main) / `2e13952` (Live)  
 **Supersedes:** `FEATURE_REALITY_MATRIX.md` (v1.8.4 / `de150f5`)  
 
 > **Notice:** This document is the single authoritative source of truth for platform capabilities, feature reality, and deployment verification. Every status is evidence-backed by source code, Prisma schema models, automated unit/integration test suites, and live HTTP probes. Optimistic claims, unverified states, and outdated matrix baselines are strictly reconciled herein.
@@ -32,7 +32,7 @@
 | **LATEST RELEASE** | **Release Commit** | `2e13952` | `2e139520d8cecb9af3baad39798342cd3f2fef5a` | **ALIGNED** | Primary v1.8.6 release train commit |
 | **CURRENT MAIN** | **Local / Origin HEAD** | `unknown` | `unknown` | **ALIGNED** | Measured via `git rev-parse HEAD` |
 | **CURRENT MAIN** | **package.json Version** | `1.8.6` | `1.8.6` | **ALIGNED** | Line 3 of `package.json` |
-| **CURRENT MAIN** | **src/lib/version.ts** | `1.8.7` | `1.8.7` | **ALIGNED** | `NEXT_PUBLIC_APP_VERSION` default in `src/lib/version.ts` |
+| **CURRENT MAIN** | **src/lib/version.ts** | `1.10.0` | `1.10.0` | **ALIGNED** | `NEXT_PUBLIC_APP_VERSION` default in `src/lib/version.ts` |
 | **CURRENT LIVE** | **Live Deployment Artifact** | `unknown` | `unknown` | **DRIFT** | Vercel deployed from commit `unknown` |
 | **CURRENT LIVE** | **Live /api/version** | `1.8.7` | `unknown` (commit `unknown...`) | **DRIFT** | Production runtime reported version `unknown` |
 | **CURRENT LIVE** | **Live /api/health/live** | 200 OK | 200 OK (`status: live`) | **HEALTHY** | Node.js v22.23.2 alive, memory: ~80MB |
