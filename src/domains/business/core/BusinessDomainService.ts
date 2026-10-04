@@ -4,6 +4,8 @@ import { assertTransition } from '../status-contracts';
 import { computeQuote, isVoucherIssuable } from '../pricing';
 import { createLogger } from '@/lib/observability/logger';
 import { getFiruzoCoreClient } from './InProcessFiruzoCoreClient';
+import { ensureCanonicalPackagesSeeded } from './canonical-packages';
+import { ensureDatabaseSchemaHealed } from '@/lib/db-schema-guard';
 
 const log = createLogger('BusinessDomainService');
 
@@ -93,6 +95,8 @@ export class BusinessDomainService {
     destination?: string;
     vertical?: string;
   }) {
+    await ensureCanonicalPackagesSeeded().catch(() => {});
+
     const where: Record<string, unknown> = {
       status: 'PUBLISHED',
     };
@@ -138,6 +142,8 @@ export class BusinessDomainService {
    * Get single tour package by slug
    */
   static async getPackageBySlug(slug: string) {
+    await ensureCanonicalPackagesSeeded().catch(() => {});
+
     const pkg = await prisma.businessTourPackage.findUnique({
       where: { slug },
       include: {
@@ -204,6 +210,8 @@ export class BusinessDomainService {
     /** Core User.id of the authenticated creator; null for guest requests. */
     createdById?: string | null;
   }) {
+    await ensureDatabaseSchemaHealed().catch(() => {});
+
     const departure = await prisma.businessDeparture.findUnique({
       where: { id: params.departureId },
       include: { package: true },
@@ -700,6 +708,7 @@ export class BusinessDomainService {
   static async getRequestOwnership(
     id: string
   ): Promise<{ createdById: string | null } | null> {
+    await ensureDatabaseSchemaHealed().catch(() => {});
     return prisma.businessRequest.findUnique({
       where: { id },
       select: { createdById: true },
@@ -709,7 +718,9 @@ export class BusinessDomainService {
   /**
    * Fetch full request details
    */
-  static async getRequestDetail(id: string) {    const req = await prisma.businessRequest.findUnique({
+  static async getRequestDetail(id: string) {
+    await ensureDatabaseSchemaHealed().catch(() => {});
+    const req = await prisma.businessRequest.findUnique({
       where: { id },
       include: {
         company: true,
