@@ -10,7 +10,7 @@
 import { getCorrelationContext } from './correlation-context';
 
 export const SENSITIVE_KEY_PATTERN =
-  /^(pass(word)?|passwd|pwd|secret|api_?key|private_?key|token|access_?token|refresh_?token|auth|authorization|bearer|cookie|session_?id|sessionid|otp|code|pin|verification_?code|card_?(number)?|cc_?(number)?|pan|cvv\d?|cvc\d?|security_?code|expiry|passport_?(number)?|national_?(id|code|number)?|ssn|identity_?number|melli_?(code)?|codemelli|shomaremelli)$/i;
+  /^(pass(word)?|passwd|pwd|secret|api_?key|private_?key|token|access_?token|refresh_?token|auth|authorization|bearer|cookie|session_?id|sessionid|otp|code|pin|verification_?code|card_?(number)?|cc_?(number)?|pan|cvv\d?|cvc\d?|security_?code|expiry|passport_?(number)?|national_?(id|code|number)?|ssn|identity_?number|melli_?(code)?|codemelli|shomaremelli|phone|mobile|cell(phone)?|telephone|phonenumber|contact_?phone|email|email_?address|contact_?email)$/i;
 
 // Regex patterns for sensitive values appearing anywhere in strings
 const CARD_NUMBER_REGEX = /\b(?:\d{4}[ -]?){3}\d{4}\b|\b\d{16}\b/g;
@@ -29,6 +29,28 @@ function maskCard(card: string): string {
     return `****-****-****-${digits.slice(-4)}`;
   }
   return '[REDACTED_CARD]';
+}
+
+/**
+ * Masks a phone number, preserving the prefix and suffix.
+ */
+function maskPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length >= 7) {
+    return `${digits.slice(0, 4)}***${digits.slice(-4)}`;
+  }
+  return '[REDACTED_PHONE]';
+}
+
+/**
+ * Masks an email address, obfuscating user mailbox name.
+ */
+function maskEmail(email: string): string {
+  const parts = email.split('@');
+  if (parts.length === 2 && parts[0].length > 1) {
+    return `${parts[0][0]}***${parts[0].slice(-1)}@${parts[1]}`;
+  }
+  return '[REDACTED_EMAIL]';
 }
 
 /**
@@ -69,8 +91,16 @@ export function redactSensitiveData(value: unknown, depth: number = 0): unknown 
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
       if (SENSITIVE_KEY_PATTERN.test(k)) {
-        if (typeof v === 'string' && /card|pan/i.test(k)) {
-          out[k] = maskCard(v);
+        if (typeof v === 'string') {
+          if (/card|pan/i.test(k)) {
+            out[k] = maskCard(v);
+          } else if (/phone|mobile|cell/i.test(k)) {
+            out[k] = maskPhone(v);
+          } else if (/email/i.test(k)) {
+            out[k] = maskEmail(v);
+          } else {
+            out[k] = '[REDACTED]';
+          }
         } else {
           out[k] = '[REDACTED]';
         }

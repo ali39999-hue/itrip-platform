@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireRequestAccess } from '../../../_lib/guard';
 
 export async function GET(
   _req: NextRequest,
@@ -17,6 +18,16 @@ export async function GET(
         travelers: true,
       },
     });
+
+    if (!request) {
+      return NextResponse.json(
+        { success: false, error: 'Request not found', code: 'not_found' },
+        { status: 404 }
+      );
+    }
+
+    const denied = await requireRequestAccess(request);
+    if (denied) return denied;
 
     if (!request) {
       return NextResponse.json(

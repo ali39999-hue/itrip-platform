@@ -34,10 +34,15 @@ export type ERPPermission =
   | 'audit:view'
   | 'ops:override:cancel'
   | 'ops:notify'
-  | 'traveler:pii:view';
+  | 'traveler:pii:view'
+  // Content (roadmap §20 — Content Editor role)
+  | 'content:manage'
+  // Specialist Child vertical (Firuzo Business) — granular per roadmap §20
+  | 'business:request:review'
+  | 'business:request:grant';
 
 /** Role names that grant ERP back-office access (checked relationally via UserRole). */
-export const ERP_STAFF_ROLES = ['SUPER_ADMIN', 'FINANCE', 'OPS', 'OPERATOR'] as const;
+export const ERP_STAFF_ROLES = ['SUPER_ADMIN', 'FINANCE', 'OPS', 'OPERATOR', 'CONTENT_EDITOR'] as const;
 
 export const ROLE_DEFAULT_PERMISSIONS: Record<string, ERPPermission[]> = {
   SUPER_ADMIN: [
@@ -72,6 +77,9 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, ERPPermission[]> = {
     'ops:override:cancel',
     'ops:notify',
     'traveler:pii:view',
+    'content:manage',
+    'business:request:review',
+    'business:request:grant',
   ],
   FINANCE: [
     'booking:view',
@@ -86,6 +94,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, ERPPermission[]> = {
     'finance:reports:view',
     'finance:settlement:match',
     'audit:view',
+    'business:request:grant',
   ],
   OPS: [
     'booking:view',
@@ -124,6 +133,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, ERPPermission[]> = {
     'ops:notify',
     'audit:view',
     'traveler:pii:view',
+    'business:request:review',
   ],
   SUPPORT: [
     'booking:view',
@@ -141,5 +151,13 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, ERPPermission[]> = {
   CUSTOMER: [
     'booking:view',
     'booking:create',
+  ],
+  /**
+   * CONTENT_EDITOR — non-developer content authors (roadmap §20). Owns the
+   * specialist CMS: drafts, publishing, scheduling, revision restore. No
+   * booking, finance, or identity permissions by design.
+   */
+  CONTENT_EDITOR: [
+    'content:manage',
   ],
 };

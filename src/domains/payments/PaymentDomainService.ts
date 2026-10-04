@@ -4,6 +4,7 @@ import { Money } from '@/lib/finance';
 import { DemoPaymentAdapter, InternalWalletGatewayAdapter, EcardoGatewayAdapter } from './gateway-port';
 import { ShetabPspAdapter, validateLivePspConfiguration } from './adapters/ShetabPspAdapter';
 import { GeneralLedgerService } from '../ledger/GeneralLedgerService';
+import { InventoryEngine } from '../inventory/InventoryEngine';
 import { OperationalExceptionService, ExceptionSeverity } from '../finance/three-way-reconciliation';
 import { businessMetrics } from '@/lib/observability/business-metrics';
 import { getAppBaseUrl } from '@/lib/runtime-url';
@@ -20,6 +21,7 @@ export interface InitiatePaymentParams {
   customerInfo?: {
     phone?: string;
     email?: string;
+    userId?: string;
   };
 }
 
@@ -217,9 +219,51 @@ export class PaymentDomainService {
     const gatewayRef = gatewayRes.gatewayRef;
 
     // PAY-103: PSP authority is mandatory. Local state alone can never mean successful payment.
-    // Wallet is internal balance, but gateway payments MUST remain PENDING until signed authority arrives.
-    let initialStatus: 'PENDING' | 'SUCCESS' = (params.method === 'gateway_shetab' || params.method === 'gateway_ecardo') ? 'PENDING' : 'SUCCESS';
-    if (adapter.isDemo && initialStatus !== 'SUCCESS' && gatewayRes.status !== 'SUCCESS' && adapter.verifyPayment) {
+    // Wallet is internal balance and MUST be verified and debited under row-level lock (WAL-001).
+    // Gateway payments MUST remain PENDING until signed authority arrives.
+    let initialStatus: 'PENDING' | 'SUCCESS' = 'PENDING';
+
+    if (params.method === 'wallet_irr' || params.method === 'wallet_usdt') {
+      let customerId = params.customerInfo?.userId;
+      if (!customerId && params.bookingId && params.bookingId !== 'standalone') {
+        const b = await client.booking.findUnique({
+          where: { id: params.bookingId },
+          select: { customerId: true },
+        });
+        if (b) customerId = b.customerId;
+      }
+
+      if (!customerId) {
+        return {
+          success: false,
+          status: 'FAILED',
+          error: 'Customer ID is required for wallet payment debit',
+        };
+      }
+
+      try {
+        await GeneralLedgerService.postWalletPayment(
+          {
+            groupId: `wal_pay_${params.idempotencyKey}`,
+            userId: customerId,
+            amount: new Money(decimalAmount, currency),
+            currency,
+            referenceId: params.bookingId || intent.id,
+            memo: `Wallet payment for booking ${params.bookingId || intent.id}`,
+          },
+          tx
+        );
+        initialStatus = 'SUCCESS';
+      } catch (walErr: unknown) {
+        const msg = walErr instanceof Error ? walErr.message : String(walErr);
+        businessMetrics.recordPaymentFailed('INTERNAL_WALLET', msg);
+        return {
+          success: false,
+          status: 'FAILED',
+          error: `Wallet payment failed: ${msg}`,
+        };
+      }
+    } else if (adapter.isDemo && gatewayRes.status !== 'SUCCESS' && adapter.verifyPayment) {
       try {
         const verifyRes = await adapter.verifyPayment({
           gatewayRef,
@@ -284,6 +328,45 @@ export class PaymentDomainService {
       },
     });
 
+    if (initialStatus === 'SUCCESS' && params.bookingId && params.bookingId !== 'standalone') {
+      // Capture any active inventory holds for this booking (INV-001, zero oversell)
+      const activeHolds = await client.inventoryHold.findMany({
+        where: { bookingId: params.bookingId, status: 'ACTIVE' },
+        select: { token: true },
+      });
+      for (const h of activeHolds) {
+        const capRes = await InventoryEngine.captureHold(h.token, tx);
+        if (!capRes.success) {
+          throw new Error(`Failed to capture inventory hold ${h.token}: ${capRes.error}`);
+        }
+      }
+
+      await client.booking.update({
+        where: { id: params.bookingId },
+        data: {
+          paymentStatus: 'CAPTURED',
+          status: 'CONFIRMED',
+        },
+      });
+
+      await client.bookingStatusHistory.create({
+        data: {
+          bookingId: params.bookingId,
+          fromStatus: 'HELD',
+          toStatus: 'CONFIRMED',
+          actor: 'INTERNAL_WALLET',
+          reason: `Payment completed and captured via ${params.method}`,
+          correlationId: `corr_init_${params.idempotencyKey}`,
+        },
+      });
+
+      try {
+        await GeneralLedgerService.wireBookingConfirmationToLedger(params.bookingId, tx);
+      } catch (err) {
+        console.warn('Booking confirmation revenue realization wiring note:', err);
+      }
+    }
+
     return {
       success: initialStatus === 'SUCCESS',
       paymentId: payment.id,
@@ -309,7 +392,15 @@ export class PaymentDomainService {
     const eventType = params.eventType || 'payment.captured';
 
     // 1. Replay Protection: Timestamp freshness check (PAY-006)
-    if (params.timestamp) {
+    if (!params.timestamp) {
+      if (process.env.NODE_ENV === 'production') {
+        return {
+          processed: false,
+          status: 'REJECTED',
+          reason: 'WEBHOOK_FAIL_CLOSED: Missing timestamp for replay verification',
+        };
+      }
+    } else {
       const eventTime = Number(params.timestamp);
       const ageMs = Math.abs(now - eventTime);
       const maxAgeMs = 5 * 60 * 1000; // 5 minutes max clock skew / replay window
@@ -538,6 +629,18 @@ export class PaymentDomainService {
           processedAt: new Date(),
         },
       });
+
+      // Capture any active inventory holds for this booking (INV-001, zero oversell)
+      const activeHolds = await atomicClient.inventoryHold.findMany({
+        where: { bookingId: booking.id, status: 'ACTIVE' },
+        select: { token: true },
+      });
+      for (const h of activeHolds) {
+        const captureRes = await InventoryEngine.captureHold(h.token, atomicClient);
+        if (!captureRes.success) {
+          throw new Error(`Failed to capture inventory hold ${h.token}: ${captureRes.error}`);
+        }
+      }
 
       // Update Booking status
       await atomicClient.booking.update({

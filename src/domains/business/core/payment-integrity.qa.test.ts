@@ -35,6 +35,9 @@ let seq = 0;
 afterAll(async () => {
   // Children first — payments/vouchers restrict the request, which restricts
   // the departure and company (mirrors firuzo-core-client.test.ts cleanup).
+  // Outbox fan-out rows must be cleaned so parallel outbox-consumer suites
+  // are not starved by our events.
+  await prisma.outboxEvent.deleteMany({ where: { aggregateType: 'BUSINESS_REQUEST' } });
   await prisma.businessPayment.deleteMany({ where: { requestId: { in: requestIds } } });
   await prisma.businessRequest.deleteMany({ where: { code: { startsWith: `${requestCode}-` } } });
   await prisma.businessDeparture.deleteMany({ where: { id: departureRef?.id } });

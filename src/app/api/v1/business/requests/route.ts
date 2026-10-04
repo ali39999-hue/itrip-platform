@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BusinessDomainService } from '@/domains/business/core/BusinessDomainService';
+import { getSessionUserId } from '../_lib/guard';
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
       repName,
       repPhone,
       field,
+      createdById: await getSessionUserId(),
     });
 
     return NextResponse.json({ success: true, data }, { status: 201 });

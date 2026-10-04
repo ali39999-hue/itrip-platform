@@ -58,6 +58,15 @@ export interface RefundPostingParams {
   memo?: string;
 }
 
+export interface SupplierSettlementPostingParams {
+  groupId: string;
+  supplierId: string;
+  amount: number | Prisma.Decimal | Money;
+  currency?: string;
+  referenceId?: string;
+  memo?: string;
+}
+
 const PLATFORM = '#platform';
 
 /**
@@ -719,6 +728,34 @@ export class GeneralLedgerService {
           ],
         }, client);
       }
+    };
+
+    if (tx) return runner(tx);
+    return prisma.$transaction(runner);
+  }
+
+  /**
+   * Template 6: Supplier Settlement Payout (DEBIT Supplier Payable -> CREDIT Gateway/Bank) (SET-103)
+   */
+  static async postSupplierSettlement(params: SupplierSettlementPostingParams, tx?: Prisma.TransactionClient) {
+    const runner = async (client: Prisma.TransactionClient) => {
+      const currency = resolveCurrency(params.amount, params.currency);
+      const amount = toDecimal(params.amount);
+
+      const supplierPayableAcc = await this.getOrCreateAccount('SUPPLIER_PAYABLE', params.supplierId, currency, client);
+      const gatewayAcc = await this.getOrCreateAccount('GATEWAY_SETTLEMENT', null, currency, client);
+
+      await this.postBalancedEntry({
+        groupId: params.groupId,
+        referenceType: 'SETTLEMENT',
+        referenceId: params.referenceId,
+        currency,
+        memo: params.memo || 'Supplier settlement payout',
+        legs: [
+          { account: supplierPayableAcc, direction: 'DEBIT', amount },
+          { account: gatewayAcc, direction: 'CREDIT', amount },
+        ],
+      }, client);
     };
 
     if (tx) return runner(tx);

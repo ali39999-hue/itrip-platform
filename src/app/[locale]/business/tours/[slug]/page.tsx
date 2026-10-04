@@ -8,6 +8,7 @@ import { OptionRow } from '@/components/business/OptionRow';
 import { BizPrice, BizFieldError } from '@/components/business/BizText';
 import { businessApi, type BusinessPackageDetail } from '@/services/business-client';
 import { num } from '@/lib/format';
+import { ChildFunnelTracker } from '@/components/business/ChildFunnelTracker';
 import { useRouter } from '@/i18n/routing';
 import { Minus, Plus } from 'lucide-react';
 
@@ -134,6 +135,8 @@ export default function PackageDetailPage({
   return (
     <>
       <BizHeader />
+      {/* T1112: mid-funnel tour view event (allowlisted, PII-safe). */}
+      <ChildFunnelTracker event="tour_viewed" props={{ slug }} />
       <RequestStepper activeStep={0} />
 
       <main className="fz-container fz-main">

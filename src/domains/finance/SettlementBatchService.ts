@@ -267,8 +267,9 @@ export class SettlementBatchService {
     const settledAt = new Date();
 
     // Post clearing entry to General Ledger: DEBIT Supplier Payable -> CREDIT Gateway/Bank
-    await GeneralLedgerService.postGatewayPayment({
+    await GeneralLedgerService.postSupplierSettlement({
       groupId: `stlb_pay_${batch.id}`,
+      supplierId: batch.supplierId,
       amount: new Money(batch.netSettlement.toString(), batch.currency),
       currency: batch.currency,
       referenceId: batch.id,

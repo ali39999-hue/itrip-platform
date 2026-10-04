@@ -54,17 +54,17 @@ export function DialogContent({
 
   return (
     <div
-      className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-ink/60 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[150] flex items-end md:items-center justify-center p-0 md:p-4 bg-ink/60 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={() => onOpenChange(false)}
     >
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        className={`relative w-full max-w-lg rounded-t-3xl sm:rounded-3xl bg-surface border-t sm:border border-line p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pb-6 shadow-elev-3 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom sm:slide-in-from-none sm:zoom-in-95 duration-200 ${className}`}
+        className={`relative w-full max-w-lg rounded-t-3xl md:rounded-3xl bg-surface border-t md:border border-line p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] md:pb-6 shadow-elev-3 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom md:slide-in-from-none md:zoom-in-95 duration-200 ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sm:hidden w-12 h-1.5 rounded-full bg-line/80 mx-auto -mt-2 mb-4" />
+        <div className="md:hidden w-10 h-1 rounded-full bg-line mx-auto -mt-2 mb-4" />
         <button
           type="button"
           onClick={() => onOpenChange(false)}

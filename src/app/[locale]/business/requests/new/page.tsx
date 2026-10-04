@@ -9,6 +9,7 @@ import { UploadBox, type UploadState } from '@/components/business/UploadBox';
 import { BizPrice, BizFieldError } from '@/components/business/BizText';
 import { businessApi } from '@/services/business-client';
 import { num } from '@/lib/format';
+import { ChildFunnelTracker } from '@/components/business/ChildFunnelTracker';
 import { Plus, Trash2 } from 'lucide-react';
 
 /* قواعد اعتبارسنجی سند تحویل — پیام‌ها از messages (نه هاردکد) */
@@ -277,6 +278,8 @@ export default function NewRequestPage() {
   return (
     <>
       <BizHeader requestCode="FZB-1405-0001" />
+      {/* T1112: booking-start event (allowlisted, PII-safe). */}
+      <ChildFunnelTracker event="booking_started" />
       <RequestStepper activeStep={1} />
 
       <main className="fz-container fz-main">

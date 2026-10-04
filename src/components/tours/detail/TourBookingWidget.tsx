@@ -457,7 +457,7 @@ export function TourBookingWidget({
           className="lg:hidden fixed inset-0 z-[200] bg-ink/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
         >
           <div className="w-full max-w-md bg-surface rounded-t-3xl sm:rounded-3xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] border border-line shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
-            <div className="hidden sm:flex w-10 h-1 rounded-full bg-line mx-auto mb-3" aria-hidden="true" />
+            <div className="w-10 h-1 rounded-full bg-line mx-auto mb-3 sm:hidden" aria-hidden="true" />
             <div className="flex items-center justify-between pb-3 border-b border-line">
               <h3 className="font-black text-sm text-ink">
                 {lt(locale, { fa: 'تنظیم تاریخ و تعداد مسافران', en: 'Customize Date & Passengers', ar: 'تحديد الموعد والمسافرين', zh: '选择出行班期与人数', ru: 'Настройка даты и участников' })}

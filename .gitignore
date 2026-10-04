@@ -35,6 +35,8 @@ server.log
 start-server.bat
 /public/uploads/**
 !/public/uploads/.gitkeep
+/storage/**
+!/storage/.gitkeep
 
 # debug
 npm-debug.log*

@@ -1636,6 +1636,8 @@ model BusinessCompany {
 }
 
 model BusinessTourPackage {
+  /// Specialist vertical key (§36 scale layer): technology | health_wellness | …
+  vertical     String   @default("technology")
   id              String   @id @default(cuid())
   slug            String   @unique
   title           String
@@ -1657,6 +1659,7 @@ model BusinessTourPackage {
 
   @@index([status])
   @@index([destination])
+  @@index([vertical])
 }
 
 /// A dated departure. `capacity`/`bookedCount` are the only capacity authority
@@ -1714,6 +1717,9 @@ model BusinessRequest {
   expiresAt     DateTime?
   /// Core User.id of the reviewing agent (no FK).
   assigneeId    String?
+  /// Core User.id of the creator when the caller is authenticated (no FK).
+  /// Null for guest-created requests — access then relies on the unguessable id.
+  createdById   String?
   note          String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -1869,4 +1875,51 @@ model BusinessStatusEvent {
   request BusinessRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
   @@index([requestId, createdAt])
+}
+
+/// T0501 — Child-owned typed CMS page. Sections are typed entries validated
+/// against the section registry (BusinessContentService.SECTION_REGISTRY),
+/// never raw HTML blobs. Status lifecycle: draft → scheduled → published → archived.
+model BusinessContentPage {
+  id          String   @id @default(cuid())
+  slug        String
+  /// Content locale (fa | en | ar | zh | ru) — one row per locale.
+  locale      String   @default("fa")
+  /// Specialist vertical key, e.g. technology | health_wellness.
+  vertical    String   @default("technology")
+  title       String
+  /// draft | scheduled | published | archived
+  status      String   @default("draft")
+  /// Typed section entries: [{ key, props }] — registry-validated.
+  sections    Json
+  /// T0510: { metaTitle, metaDescription, canonicalUrl, ogImage, structuredData }
+  seo         Json?
+  /// T0508: when set (status=scheduled), publishDuePages() promotes it at due time.
+  scheduledAt DateTime?
+  publishedAt DateTime?
+  createdById String?
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  revisions BusinessContentRevision[]
+
+  @@unique([slug, locale])
+  @@index([status, vertical])
+  @@index([scheduledAt])
+}
+
+/// T0507 — immutable revision snapshot taken on every save, restore, and publish.
+model BusinessContentRevision {
+  id        String   @id @default(cuid())
+  pageId    String
+  /// Full page snapshot: { title, sections, seo, status }
+  snapshot  Json
+  authorId  String?
+  note      String?
+  createdAt DateTime @default(now())
+
+  page BusinessContentPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId, createdAt])
 }

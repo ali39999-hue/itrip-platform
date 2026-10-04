@@ -8,10 +8,12 @@ import { GeneralLedgerService } from '@/domains/ledger/GeneralLedgerService';
 import type { RevenueRealizationParams } from '@/domains/ledger/GeneralLedgerService';
 import { OperationalExceptionService, ExceptionSeverity } from '@/domains/finance/three-way-reconciliation';
 import { getTenantAuthContext } from '@/domains/identity/permission-service';
+import { wrapOutboxPayload } from '@/domains/events/OutboxConsumer';
 import type {
   CoreCompensateResult,
   CoreCreateBookingParams,
   CoreCreateBookingResult,
+  CoreEmitEventParams,
   CoreHoldParams,
   CoreHoldResult,
   CoreReleaseResult,
@@ -161,6 +163,25 @@ export class InProcessFiruzoCoreClient implements FiruzoCoreClient {
       ...params,
       severity: ExceptionSeverity[params.severity],
     });
+  }
+
+  async emitDomainEvent(
+    params: CoreEmitEventParams,
+    tx?: Prisma.TransactionClient
+  ): Promise<{ id: string }> {
+    const client = tx ?? prisma;
+    const event = await client.outboxEvent.create({
+      data: {
+        eventType: params.eventType,
+        aggregateType: params.aggregateType,
+        aggregateId: params.aggregateId,
+        correlationId: params.correlationId,
+        causationId: params.causationId,
+        // ASYNC-105 versioned wrapper so core consumers can evolve safely.
+        payload: wrapOutboxPayload(params.payload),
+      },
+    });
+    return { id: event.id };
   }
 
   async runInTransaction<T>(fn: (tx: CoreTx) => Promise<T>): Promise<T> {

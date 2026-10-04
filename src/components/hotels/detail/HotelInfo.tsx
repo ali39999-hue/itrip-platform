@@ -239,7 +239,7 @@ export function HotelReviews({ hotel }: { hotel: Hotel }) {
                 <b className="block text-[12.5px] font-black leading-snug">{r.n}</b>
                 <span className="block text-[11px] font-bold text-sub">{r.t} · {r.c} · {r.d}</span>
               </div>
-              <span className="me-auto min-w-[38px] h-7 grid place-items-center rounded-lg rounded-bl-sm text-surface bg-brand text-xs font-black">{fa1(r.s)}</span>
+              <span className="me-auto min-w-[38px] h-7 grid place-items-center rounded-lg rounded-es-sm text-surface bg-brand text-xs font-black">{fa1(r.s)}</span>
             </div>
             <div className="text-[12.5px] leading-loose text-ink/80">
               <div className="flex gap-2 mt-1"><ThumbsUp size={13} className="text-success shrink-0 mt-1" /><span>{r.good}</span></div>

@@ -51,8 +51,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error:'شما به این سفارش دسترسی ندارید' }, { status: 403 });
     }
 
-    // Prepare upload directory with strict path resolution
-    const uploadDir = path.resolve(process.cwd(), 'public', 'uploads', 'receipts');
+    // Prepare private upload directory with strict path resolution (SEC-004)
+    const uploadDir = path.resolve(process.cwd(), 'storage', 'receipts');
     await fs.mkdir(uploadDir, { recursive: true });
 
     // Handle receipt images (1 to 10)
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
       }
 
       await fs.writeFile(filePath, buffer);
-      savedReceiptUrls.push(`/uploads/receipts/${safeFilename}`);
+      savedReceiptUrls.push(`/api/payments/receipt-upload?file=${safeFilename}`);
     }
 
     // Optional National ID card image
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
       }
 
       await fs.writeFile(nidPath, nidBuffer);
-      nationalIdUrl = `/uploads/receipts/${nidFilename}`;
+      nationalIdUrl = `/api/payments/receipt-upload?file=${nidFilename}`;
     }
 
     return NextResponse.json({
@@ -140,5 +140,89 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Receipt upload error:', error);
     return NextResponse.json({ success: false, error:'خطا در ذخیره‌سازی فایل‌ها' }, { status: 500 });
+  }
+}
+
+/**
+ * Authenticated Receipt Image Retrieval (SEC-004)
+ * Serves private payment receipts and National ID documents exclusively to authenticated
+ * booking owners or authorized staff members with anti-path-traversal and nosniff guards.
+ */
+export async function GET(req: NextRequest) {
+  try {
+    const session = await safeAuth();
+    if (!session || !session.user) {
+      return NextResponse.json({ success: false, error: 'UNAUTHORIZED' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const file = searchParams.get('file');
+
+    if (!file || typeof file !== 'string') {
+      return NextResponse.json({ success: false, error: 'FILE_NAME_REQUIRED' }, { status: 400 });
+    }
+
+    // Strict filename validation to eliminate path traversal
+    if (!/^[a-zA-Z0-9_\-\.]+\.(jpg|jpeg|png|webp)$/i.test(file) || file.includes('..')) {
+      return NextResponse.json({ success: false, error: 'INVALID_FILE_NAME' }, { status: 400 });
+    }
+
+    // Check authorization: Staff (ADMIN, SUPER_ADMIN) or booking owner
+    const isStaff = session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN';
+
+    if (!isStaff) {
+      const receiptMatch = await prisma.cardTransferReceipt.findFirst({
+        where: {
+          OR: [
+            { receiptImages: { contains: file } },
+            { nationalIdImage: { contains: file } },
+          ],
+          booking: { customerId: session.user.id },
+        },
+        select: { id: true },
+      });
+
+      if (!receiptMatch) {
+        return NextResponse.json({ success: false, error: 'FORBIDDEN' }, { status: 403 });
+      }
+    }
+
+    const privateUploadDir = path.resolve(process.cwd(), 'storage', 'receipts');
+    const filePath = path.resolve(privateUploadDir, file);
+
+    let fileBuffer: Buffer | null = null;
+    try {
+      if (filePath.startsWith(privateUploadDir + path.sep)) {
+        fileBuffer = await fs.readFile(filePath);
+      }
+    } catch {
+      // Fallback for legacy files uploaded before migration
+      const publicUploadDir = path.resolve(process.cwd(), 'public', 'uploads', 'receipts');
+      const publicPath = path.resolve(publicUploadDir, file);
+      if (publicPath.startsWith(publicUploadDir + path.sep)) {
+        try {
+          fileBuffer = await fs.readFile(publicPath);
+        } catch {}
+      }
+    }
+
+    if (!fileBuffer) {
+      return NextResponse.json({ success: false, error: 'FILE_NOT_FOUND' }, { status: 404 });
+    }
+
+    const ext = path.extname(file).toLowerCase();
+    const contentType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+
+    return new NextResponse(new Uint8Array(fileBuffer), {
+      status: 200,
+      headers: {
+        'Content-Type': contentType,
+        'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+        'X-Content-Type-Options': 'nosniff',
+      },
+    });
+  } catch (error) {
+    console.error('Receipt serve error:', error);
+    return NextResponse.json({ success: false, error: 'FILE_FETCH_ERROR' }, { status: 500 });
   }
 }

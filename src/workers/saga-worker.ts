@@ -87,13 +87,30 @@ export class SagaWorker {
 
           const handler = this.handlers.get(step.stepType);
           if (!handler) {
-            // Default mock handler for demo/standalone steps
+            const isProduction = process.env.NODE_ENV === 'production';
+            if (isProduction || process.env.DEMO_MODE !== 'true') {
+              step.status = 'FAILED';
+              step.error = `No registered saga handler for stepType: ${step.stepType}`;
+              failedSteps++;
+              sagaFailed = true;
+              await prisma.sagaStep.update({
+                where: { id: step.id },
+                data: {
+                  status: 'FAILED',
+                  finishedAt: new Date(),
+                  error: `No registered saga handler for stepType: ${step.stepType}`,
+                },
+              });
+              break;
+            }
+
+            // Default mock handler ONLY for non-production demo walkthroughs
             await prisma.sagaStep.update({
               where: { id: step.id },
               data: {
                 status: 'SUCCEEDED',
                 finishedAt: new Date(),
-                resultSnapshot: JSON.stringify({ note: `Auto-succeeded by ${workerId}` }),
+                resultSnapshot: JSON.stringify({ note: `Demo auto-succeeded by ${workerId}` }),
               },
             });
             completedSteps++;

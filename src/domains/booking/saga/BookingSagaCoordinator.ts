@@ -161,16 +161,8 @@ export class BookingSagaCoordinator {
 
         context.paymentId = payRes.paymentId;
 
-        // Debit wallet immediately on payment capture
-        if (params.paymentMethod === 'wallet_irr' || params.paymentMethod === 'wallet_usdt') {
-          await GeneralLedgerService.postWalletPayment({
-            groupId: `saga_pay_${booking.id}`,
-            userId: booking.customerId,
-            amount: new Money(booking.totalAmount, booking.currency),
-            currency: booking.currency,
-            referenceId: booking.id,
-          });
-        }
+        // Wallet debit is owned exclusively by PaymentDomainService.processPayment
+        // (WAL-001 row-locked). Posting it here again would double-debit the wallet.
 
         return {
           paymentId: payRes.paymentId,
@@ -483,10 +475,10 @@ export class BookingSagaCoordinator {
       data: { status: 'COMPENSATING' },
     });
 
-    // Fetch succeeded steps in reverse order
+    // Fetch succeeded steps in reverse chronological order
     const succeededSteps = await prisma.sagaStep.findMany({
       where: { sagaId, status: 'SUCCEEDED' },
-      orderBy: { id: 'desc' },
+      orderBy: { startedAt: 'desc' },
     });
 
     for (const s of succeededSteps) {
@@ -535,8 +527,8 @@ export class BookingSagaCoordinator {
           case 'CAPTURE_INVENTORY_HOLD': {
             const holdToken = (resultSnapshot.holdToken as string) || (context.holdToken as string);
             if (holdToken) {
-              await InventoryEngine.releaseHold(holdToken);
-              sagaLogger.info('Compensation: Released inventory hold', { holdToken });
+              await InventoryEngine.compensateCapturedHold(holdToken);
+              sagaLogger.info('Compensation: Compensated captured inventory hold', { holdToken });
             }
             break;
           }

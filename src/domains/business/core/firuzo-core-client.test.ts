@@ -31,7 +31,9 @@ const createdUsernames: string[] = [
 
 afterAll(async () => {
   // Children first: BusinessRequest restricts the departure, which restricts
-  // the package, which restricts the company.
+  // the package, which restricts the company. Outbox fan-out rows must be
+  // cleaned so parallel outbox-consumer suites are not starved by our events.
+  await prisma.outboxEvent.deleteMany({ where: { aggregateType: 'BUSINESS_REQUEST' } });
   await prisma.businessRequest.deleteMany({ where: { code: `FZB-2026-${suffix}` } });
   await prisma.businessTourPackage.deleteMany({ where: { slug: `biz-m1-${suffix}` } });
   await prisma.businessCompany.deleteMany({ where: { repPhone } });

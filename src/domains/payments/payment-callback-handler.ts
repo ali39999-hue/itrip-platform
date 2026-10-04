@@ -242,10 +242,14 @@ export async function handlePaymentCallback(req: NextRequest) {
   }
 
   if (isFailed && payment && payment.status === 'PENDING') {
-    await prisma.payment.update({
-      where: { id: payment.id },
-      data: { status: 'FAILED' },
-    }).catch(() => {});
+    // Only update database state to FAILED if the callback is cryptographically verified;
+    // unauthenticated browser returns must not cancel pending payments.
+    if (sig) {
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: { status: 'FAILED' },
+      }).catch(() => {});
+    }
   }
 
   // Authoritative status resolution:

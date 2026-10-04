@@ -5,6 +5,7 @@ import { DemoPaymentAdapter } from './gateway-port';
 import { ShetabPspAdapter } from './adapters/ShetabPspAdapter';
 import { prisma } from '@/lib/prisma';
 import { Money } from '@/lib/finance';
+import { GeneralLedgerService } from '../ledger/GeneralLedgerService';
 
 describe('Payment Hardening Suite (PAY-001 to PAY-008)', () => {
   const suffix = `pay_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
@@ -51,6 +52,15 @@ describe('Payment Hardening Suite (PAY-001 to PAY-008)', () => {
       },
     });
     testBookingId = booking.id;
+
+    // Top up test user wallet with sufficient funds for wallet payment test
+    await GeneralLedgerService.postTopUp({
+      groupId: `topup_setup_${suffix}`,
+      userId: testUserId,
+      amount: new Money(10_000_000, testCurrency),
+      currency: testCurrency,
+      memo: 'Test wallet setup top-up',
+    });
 
     expect(booking.totalAmount.toNumber()).toBe(testAmount);
   });
@@ -147,6 +157,12 @@ describe('Payment Hardening Suite (PAY-001 to PAY-008)', () => {
   });
 
   it('PAY-007: Same webhook x3 produces exactly 1 capture and 2 idempotent DUPLICATE responses', async () => {
+    // Reset test booking to PENDING_PAYMENT / INITIATED for webhook capture test
+    await prisma.booking.update({
+      where: { id: testBookingId },
+      data: { status: 'PENDING_PAYMENT', paymentStatus: 'INITIATED' },
+    });
+
     const eventId = `evt_repeat_x3_${suffix}`;
     const gatewayRef = `ref_x3_${suffix}`;
     const now = Date.now();

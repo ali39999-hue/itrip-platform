@@ -12,12 +12,14 @@ function getCallbackSecret(): string {
     process.env.ECARDO_SECRET_KEY;
 
   if (!secret) {
-    if (process.env.NODE_ENV === 'production' && process.env.DEMO_MODE !== 'true') {
+    if (process.env.NODE_ENV === 'production') {
       throw new Error(
-        'SEC-008: AUTH_SECRET or ECARDO_SECRET_KEY must be configured in production for callback security'
+        'SEC-008: AUTH_SECRET, NEXTAUTH_SECRET, or ECARDO_SECRET_KEY must be configured in production for callback security'
       );
     }
-    return 'firuzo_callback_authoritative_salt';
+    return process.env.DATABASE_URL
+      ? crypto.createHash('sha256').update(process.env.DATABASE_URL).digest('hex')
+      : 'development_temporary_secret_key_only_non_prod';
   }
 
   return secret;
@@ -51,5 +53,28 @@ export function verifyTopUpCallback(
 ): boolean {
   if (!sig || !userId || !topupId) return false;
   const expected = signTopUpCallback(userId, topupId, amount, currency);
+  return timingSafeEqualStrings(sig, expected);
+}
+
+/**
+ * Signs the Firuzo Business (specialist Child) payment result callback.
+ * Binds the payment id so the PSP result callback cannot be forged or
+ * replayed for a different payment (roadmap §21 — webhook verification).
+ */
+export function signBusinessPaymentCallback(paymentId: string): string {
+  const secret = getCallbackSecret();
+  const payload = `bizpay:${paymentId}`;
+  return crypto.createHmac('sha256', secret).update(payload).digest('hex');
+}
+
+/**
+ * Timing-safe verification of the business payment callback signature.
+ */
+export function verifyBusinessPaymentCallback(
+  sig: string | null | undefined,
+  paymentId: string
+): boolean {
+  if (!sig || !paymentId) return false;
+  const expected = signBusinessPaymentCallback(paymentId);
   return timingSafeEqualStrings(sig, expected);
 }

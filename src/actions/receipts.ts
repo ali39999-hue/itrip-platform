@@ -7,7 +7,8 @@ import { Prisma } from '@prisma/client';
 import { Money } from '@/lib/finance';
 import { GeneralLedgerService } from '@/domains/ledger/GeneralLedgerService';
 import { InvoiceDomainService } from '@/domains/finance/InvoiceDomainService';
-import { requirePermission, hasErpRole } from '@/domains/identity/permission-service';
+import { requirePermission, hasErpRole, getTenantAuthContext, assertTenantAccess } from '@/domains/identity/permission-service';
+import { InventoryEngine } from '@/domains/inventory/InventoryEngine';
 
 export interface DestinationBankCardDto {
   id: string;
@@ -264,7 +265,10 @@ export async function reviewCardTransferReceipt(
   adminNote?: string
 ) {
   try {
-    const admin = await requirePermission(['finance:post', 'payment:capture', 'finance:view']);
+    const [admin, ctx] = await Promise.all([
+      requirePermission(['finance:post', 'payment:capture', 'finance:view']),
+      getTenantAuthContext(),
+    ]);
 
     const receipt = await prisma.cardTransferReceipt.findUnique({
       where: { id: receiptId },
@@ -278,6 +282,8 @@ export async function reviewCardTransferReceipt(
     if (!receipt || !receipt.booking) {
       return { success: false, error: 'فیش مورد نظر یا سفارش مربوطه یافت نشد' };
     }
+
+    assertTenantAccess(ctx, receipt.booking);
 
     if (receipt.status !== 'PENDING_REVIEW') {
       return { success: false, error: `این فیش قبلاً تعیین وضعیت شده است (${receipt.status})` };
@@ -352,7 +358,19 @@ export async function reviewCardTransferReceipt(
           });
         }
 
-        // 4. Update Booking to CONFIRMED
+        // 4. Capture any active inventory holds for this booking (INV-001, zero oversell)
+        const activeHolds = await tx.inventoryHold.findMany({
+          where: { bookingId: booking.id, status: 'ACTIVE' },
+          select: { token: true },
+        });
+        for (const h of activeHolds) {
+          const capRes = await InventoryEngine.captureHold(h.token, tx);
+          if (!capRes.success) {
+            throw new Error(`Failed to capture inventory hold ${h.token}: ${capRes.error}`);
+          }
+        }
+
+        // 5. Update Booking to CONFIRMED
         await tx.booking.update({
           where: { id: booking.id },
           data: {

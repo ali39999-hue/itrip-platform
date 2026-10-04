@@ -169,10 +169,38 @@ async function processWebhookRequest(req: NextRequest, rawBody: string, override
       req.headers.get('x-signature') ||
       req.headers.get('x-shaparak-signature') ||
       (payload.signature as string | undefined);
-    const timestampHeader = req.headers.get('x-timestamp') || req.headers.get('x-shaparak-timestamp');
-    const timestamp = timestampHeader ? parseInt(timestampHeader, 10) : Number(payload.timestamp) || Date.now();
 
-    const eventId = String(payload.eventId || payload.id || (isEcardoIpn ? `ecardo_${gatewayRef}` : `evt_${Date.now()}`));
+    const timestampHeader = req.headers.get('x-timestamp') || req.headers.get('x-shaparak-timestamp');
+    const rawTimestamp =
+      timestampHeader ||
+      payload.timestamp ||
+      (payload.data && typeof payload.data === 'object' ? (payload.data as Record<string, unknown>).timestamp : undefined);
+
+    let timestamp: number;
+    if (rawTimestamp) {
+      timestamp = parseInt(String(rawTimestamp), 10);
+    } else {
+      if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json(
+          { error: 'WEBHOOK_FAIL_CLOSED: Missing required timestamp for replay defense' },
+          { status: 400 }
+        );
+      }
+      timestamp = Date.now();
+    }
+
+    const rawEventId =
+      payload.eventId ||
+      payload.id ||
+      (isEcardoIpn ? (gatewayRef ? `ecardo_${gatewayRef}` : undefined) : (gatewayRef || undefined));
+
+    if (!rawEventId) {
+      return NextResponse.json(
+        { error: 'WEBHOOK_FAIL_CLOSED: Missing authoritative gateway event identifier' },
+        { status: 400 }
+      );
+    }
+    const eventId = String(rawEventId);
     logEventId = eventId;
     logGateway = gatewayName;
     const eventType = String(payload.eventType || payload.type || 'payment.captured');

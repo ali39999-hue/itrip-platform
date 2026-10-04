@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BusinessDomainService } from '@/domains/business/core/BusinessDomainService';
+import { requireRequestAccess } from '../../_lib/guard';
 
 export async function GET(
   _req: NextRequest,
@@ -7,15 +8,17 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const data = await BusinessDomainService.getRequestDetail(id);
-
-    if (!data) {
+    const ownership = await BusinessDomainService.getRequestOwnership(id);
+    if (!ownership) {
       return NextResponse.json(
         { success: false, error: 'Request not found', code: 'not_found' },
         { status: 404 }
       );
     }
+    const denied = await requireRequestAccess(ownership);
+    if (denied) return denied;
 
+    const data = await BusinessDomainService.getRequestDetail(id);
     return NextResponse.json({ success: true, data });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to fetch request';
@@ -29,6 +32,16 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
+    const ownership = await BusinessDomainService.getRequestOwnership(id);
+    if (!ownership) {
+      return NextResponse.json(
+        { success: false, error: 'Request not found', code: 'not_found' },
+        { status: 404 }
+      );
+    }
+    const denied = await requireRequestAccess(ownership);
+    if (denied) return denied;
+
     const body = await req.json();
 
     const data = await BusinessDomainService.updateDraftRequest(id, body);

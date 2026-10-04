@@ -11,8 +11,8 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { lt } from '@/lib/lt';
-import { importExternalBookingAction } from '@/actions/booking';
-import { TravelIngestionService, ParsedTravelDetails } from '@/domains/booking/TravelIngestionService';
+import { importExternalBookingAction, parseTravelConfirmationAction } from '@/actions/booking';
+import type { ParsedTravelDetails } from '@/domains/booking/TravelIngestionService';
 
 interface ImportTicketModalProps {
   isOpen: boolean;
@@ -34,12 +34,12 @@ export function ImportTicketModal({
 
   if (!isOpen) return null;
 
-  const handleTextChange = (text: string) => {
+  const handleTextChange = async (text: string) => {
     setRawText(text);
     setError(null);
     if (text.trim().length > 15) {
       try {
-        const parsed = TravelIngestionService.parseRawConfirmation(text);
+        const parsed = await parseTravelConfirmationAction(text);
         setPreview(parsed);
       } catch {
         setPreview(null);

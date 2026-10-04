@@ -6,6 +6,7 @@ async function seedBusiness() {
   const packagesData = [
     {
       slug: 'canton-fair',
+      vertical: 'technology',
       title: 'نمایشگاه کانتون فر + بازار موبایل گوانگژو',
       titleEn: 'Canton Fair & Guangzhou Electronics Market',
       destination: 'گوانگژو، چین',
@@ -42,6 +43,7 @@ async function seedBusiness() {
     },
     {
       slug: 'shenzhen-factory',
+      vertical: 'technology',
       title: 'بازدید کارخانه و تامین‌کننده‌یابی شنژن',
       titleEn: 'Shenzhen Factory Visit & Supplier Sourcing',
       destination: 'شنژن، چین',
@@ -75,6 +77,7 @@ async function seedBusiness() {
     },
     {
       slug: 'moscow-delegation',
+      vertical: 'technology',
       title: 'هیئت تجاری صنعت و تجهیزات مسکو',
       titleEn: 'Moscow Industrial & Technology Delegation',
       destination: 'مسکو، روسیه',
@@ -104,6 +107,39 @@ async function seedBusiness() {
       addons: [
         { code: 'mo-translator', title: 'مترجم اختصاصی', price: 13_000_000, unit: 'per_group' },
         { code: 'mo-b2b', title: 'هماهنگی جلسات B2B با اتاق بازرگانی', price: 16_000_000, unit: 'per_group' },
+      ],
+    },
+    {
+      // §36 scale layer: second vertical seeded to prove multi-vertical catalog.
+      slug: 'istanbul-wellness',
+      vertical: 'health_wellness',
+      title: 'سفر سلامت‌محور استانبول — چکاپ و بازتوانی',
+      titleEn: 'Istanbul Wellness & Checkup Retreat',
+      destination: 'استانبول، ترکیه',
+      destinationEn: 'Istanbul, Turkey',
+      durationDays: 5,
+      basePrice: 96_000_000,
+      includes: [
+        'پرواز رفت و برگشت با بار مجاز',
+        'هتل ۴ ستاره با اقلام سلامت‌محور',
+        'چکاپ کامل در بیمارستان طرف قرارداد (JCI)',
+        'ترانسفر‌های درمان و بازدید',
+        'همراه مترجم بیمارستان',
+        'بیمه مسافرتی با پوشش درمانی',
+      ],
+      requiredDocs: [
+        'پاسپورت با اعتبار حداقل ۶ ماه',
+        'شرح‌حال پزشکی (در صورت وجود)',
+        'لیست داروهای مصرفی فعلی',
+      ],
+      status: 'PUBLISHED',
+      departures: [
+        { departDate: new Date('2026-11-10T00:00:00Z'), returnDate: new Date('2026-11-15T00:00:00Z'), capacity: 12, bookedCount: 2 },
+        { departDate: new Date('2026-12-01T00:00:00Z'), returnDate: new Date('2026-12-06T00:00:00Z'), capacity: 12, bookedCount: 0 },
+      ],
+      addons: [
+        { code: 'wl-interpreter', title: 'مترجم پزشکی اختصاصی', price: 7_000_000, unit: 'per_group' },
+        { code: 'wl-nurse', title: 'مراقبت پرستاری در هتل', price: 11_000_000, unit: 'per_person' },
       ],
     },
   ];

@@ -62,9 +62,12 @@ export function assertProductionConfig(): void {
   );
   const walletOnly = process.env.GATEWAY_MODE === 'internal_wallet';
   if (!gatewayConfigured && !walletOnly) {
+    if (process.env.NODE_ENV === 'production' && process.env.REQUIRE_LIVE_PSP === 'true') {
+      throw new Error('[runtime-mode] FAIL_CLOSED: Production runtime requires configured Shetab or eCardo credentials');
+    }
     process.env.GATEWAY_MODE = 'internal_wallet';
     console.warn(
-      '[runtime-mode] Auto-configured GATEWAY_MODE=internal_wallet (Shetab and eCardo credentials unset; wallet engine active).'
+      '[runtime-mode] Warning: Neither Shetab nor eCardo credentials set; fallback to internal_wallet active.'
     );
   }
 }

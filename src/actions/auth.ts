@@ -38,6 +38,12 @@ function isProfileComplete(
 
 export async function loginWithCredentials(email: string, pass: string) {
   try {
+    const ip = await getAuthClientIp();
+    const rateCheck = await RateLimiter.checkRateLimit(`auth:credentials:${ip}`, 5, 300);
+    if (!rateCheck.allowed) {
+      return { success: false, error: 'RATE_LIMITED' };
+    }
+
     const res = await signIn('credentials', {
       identifier: email,
       password: pass,
